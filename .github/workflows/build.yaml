@@ -15,6 +15,7 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
 
+    # We patch docker to use all the HD available in GH action free runners
     - name: Patch Docker Daemon data-root
       run: |
         DOCKER_DATA_ROOT='/mnt/var/lib/docker'
