@@ -1,0 +1,12 @@
+requires:
+- name: "golang"
+  category: "build"
+  version: ">=0"
+
+prelude:
+- |
+   git clone https://github.com/k3s-io/k3s.git && cd k3s && git checkout v{{.Values.version}} -b build && \
+   cd k3s && export PATH=$PATH:/usr/local/go/bin && \
+   ./scripts/build
+steps:
+- cp -rfv bin/* /usr/bin/

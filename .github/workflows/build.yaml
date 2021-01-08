@@ -1,0 +1,42 @@
+name: Build
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - run: |
+        git fetch --prune --unshallow
+
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@0.0.1
+
+    - name: Patch Docker Daemon data-root
+      run: |
+        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
+        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+        sudo mkdir -p "${DOCKER_DATA_ROOT}"
+        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
+        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
+        sudo systemctl restart docker
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.14.3' # The Go version to download (if necessary) and use.
+
+    - name: Install deps
+      run: |
+        curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
+
+    - name: Build packages 🔧
+      env:
+        CLEAN: "true"
+        TARGET: "target"
+        SUDO: "sudo -E"
+      run: |
+        make rebuild-all
+        ls -liah $PWD/build

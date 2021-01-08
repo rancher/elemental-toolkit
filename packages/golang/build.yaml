@@ -1,0 +1,11 @@
+requires:
+- name: "tumbleweed"
+  category: "distro"
+  version: ">=0"
+
+prelude:
+- zypper in -y wget tar gzip git && zypper install -y -t pattern devel_basis
+- wget https://golang.org/dl/go{{.Values.version}}.linux-{{.Values.arch}}.tar.gz -O golang.tar.gz
+
+steps:
+- tar -C /usr/local -xzf golang.tar.gz
