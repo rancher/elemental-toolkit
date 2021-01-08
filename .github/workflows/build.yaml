@@ -24,10 +24,6 @@ jobs:
         sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
         sudo systemctl restart docker
 
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.14.3' # The Go version to download (if necessary) and use.
-
     - name: Install deps
       run: |
         curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
