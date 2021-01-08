@@ -5,7 +5,7 @@ packages:
   labels:
     github.repo: "k3s"
     github.owner: "rancher"
-# - name: "k3s"
+# - name: "k3s-master"
 #   category: "container"
 #   version: "9999"
 #   branch: "master"
