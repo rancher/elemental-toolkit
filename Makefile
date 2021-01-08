@@ -13,7 +13,7 @@ BUILD_ARGS?=--pull --no-spinner --only-target-package
 SUDO?=
 VALIDATE_OPTIONS?=-s
 ARCH?=amd64
-REPO_CACHE?=cos/$(ARCH)
+REPO_CACHE?=raccos/$(ARCH)
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
