@@ -1,11 +1,6 @@
-name: Build
+name: Build and publish
 on:
   push:
-    paths:
-    - 'conf/**'
-    - 'packages/**'
-    - '.github/workflows/**'
-  pull_request:
     paths:
     - 'conf/**'
     - 'packages/**'
@@ -51,6 +46,15 @@ jobs:
         SUDO: "sudo -E"
       run: |
         make rebuild-all
+        ls -liah $PWD/build
+    - name: Create repository 🔧
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      env:
+        CLEAN: "true"
+        TARGET: "target"
+        SUDO: "sudo -E"
+      run: |
+        make create-repo
         ls -liah $PWD/build
 
     - name: Deploy GH Pages 🚀
