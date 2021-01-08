@@ -2,11 +2,16 @@ requires:
 - name: "golang"
   category: "build"
   version: ">=0"
-
+env:
+- PATH=$PATH:/usr/local/go/bin
 prelude:
 - |
-   git clone https://github.com/k3s-io/k3s.git && cd k3s && git checkout v{{.Values.version}} -b build && \
-   cd k3s && export PATH=$PATH:/usr/local/go/bin && \
-   ./scripts/build
+   git clone https://github.com/k3s-io/k3s.git && \
+   cd k3s && git checkout v{{.Values.version}} -b build
+- |
+   zypper in -y libseccomp-devel
+# && \
+# cd k3s && go mod vendor
+-  cd k3s && ./scripts/build
 steps:
-- cp -rfv bin/* /usr/bin/
+- cd k3s && cp -rfv bin/* /usr/bin/
