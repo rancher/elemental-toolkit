@@ -1,0 +1,11 @@
+packages:
+- name: "k3s"
+  category: "container"
+  version: "1.20.0+k3s2"
+  labels:
+    github.repo: "k3s"
+    github.owner: "rancher"
+# - name: "k3s"
+#   category: "container"
+#   version: "9999"
+#   branch: "master"
