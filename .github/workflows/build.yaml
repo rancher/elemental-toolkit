@@ -1,8 +1,15 @@
 name: Build
 on:
   push:
+    paths:
+    - 'conf/**'
+    - 'packages/**'
+    - '.github/workflows/**'
   pull_request:
-
+    paths:
+    - 'conf/**'
+    - 'packages/**'
+    - '.github/workflows/**'
 jobs:
   test:
     runs-on: ubuntu-latest
