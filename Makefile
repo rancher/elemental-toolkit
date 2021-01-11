@@ -19,15 +19,12 @@ ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
 endif
 
-.PHONY: all
 all: deps build
 
-.PHONY: deps
 deps:
 	@echo "Installing luet"
 	go get -u github.com/mudler/luet
 
-.PHONY: clean
 clean:
 	$(SUDO) rm -rf build/ *.tar *.metadata.yaml
 
@@ -36,20 +33,23 @@ build: clean
 	mkdir -p $(ROOT_DIR)/build
 	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) $(PACKAGES) --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
 
-.PHONY: build-all
 build-all: clean
 	mkdir -p $(ROOT_DIR)/build
-	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) --full --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
+	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) --all --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
 
-.PHONY: rebuild
 rebuild:
 	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) $(PACKAGES) --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
 
-.PHONY: rebuild-all
 rebuild-all:
+	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) --all --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
+
+rebuild-full:
 	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) --full --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
 
-.PHONY: create-repo
+build-full: clean
+	mkdir -p $(ROOT_DIR)/build
+	$(SUDO) $(LUET) build $(BUILD_ARGS) --values $(ROOT_DIR)/conf/$(ARCH).yaml --tree=$(TREE) --full --destination $(ROOT_DIR)/build --backend $(BACKEND) --concurrency $(CONCURRENCY) --compression $(COMPRESSION)
+
 create-repo:
 	$(SUDO) $(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
@@ -62,7 +62,6 @@ create-repo:
     --meta-compression $(COMPRESSION) \
     --type http
 
-.PHONY: serve-repo
 serve-repo:
 	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(ROOT_DIR)/build
 
