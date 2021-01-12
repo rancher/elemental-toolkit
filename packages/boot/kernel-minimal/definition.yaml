@@ -1,0 +1,6 @@
+category: "kernel"
+name: "default-minimal"
+version: "5.10.5"
+description: "Minimal set of kernel + kernel modules needed to start up a LiveCD"
+
+kernel_id: "5.10.5-1-default"
