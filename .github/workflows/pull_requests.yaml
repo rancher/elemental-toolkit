@@ -36,10 +36,12 @@ jobs:
       run: |
         curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
 
+    - name: Validate 🌳
+      run: |
+        make validate
+
     - name: Build packages 🔧
       env:
-        CLEAN: "true"
-        TARGET: "target"
         SUDO: "sudo -E"
       run: |
         make rebuild-all

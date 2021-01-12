@@ -7,7 +7,7 @@ on:
     - '.github/workflows/**'
     branches: [ master ]
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -40,10 +40,12 @@ jobs:
       run: |
         curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
 
+    - name: Validate 🌳
+      run: |
+        make validate
+
     - name: Build packages 🔧
       env:
-        CLEAN: "true"
-        TARGET: "target"
         SUDO: "sudo -E"
       run: |
         make rebuild-full
@@ -51,8 +53,6 @@ jobs:
     - name: Create repository 🔧
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       env:
-        CLEAN: "true"
-        TARGET: "target"
         SUDO: "sudo -E"
       run: |
         make create-repo
