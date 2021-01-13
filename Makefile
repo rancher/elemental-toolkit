@@ -63,7 +63,7 @@ create-repo:
     --type http
 
 serve-repo:
-	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(ROOT_DIR)/build
+	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(ROOT_DIR)/build &
 
 auto-bump:
 	TREE_DIR=$(ROOT_DIR) $(LUET) autobump-github
@@ -72,3 +72,11 @@ autobump: auto-bump
 
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
+
+local-iso: serve-repo create-repo
+	$(SUDO) touch $(ROOT_DIR)/build/conf.yaml || true
+	$(SUDO) yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'local'
+	$(SUDO) yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'http'
+	$(SUDO) yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
+	$(SUDO) yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' http://127.0.0.1:8000
+	$(SUDO) luet geniso-isospec $(ROOT_DIR)/iso/cOS-local.yaml
