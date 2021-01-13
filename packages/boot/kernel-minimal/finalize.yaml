@@ -1,2 +1,2 @@
 install:
-- ln -s /boot/vmlinuz-* /boot/bzImage || true
+- ln -s /boot/vmlinuz-* /boot/bzImage
