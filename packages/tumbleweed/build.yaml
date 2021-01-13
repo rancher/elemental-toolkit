@@ -1,0 +1,23 @@
+requires:
+- name: "tumbleweed"
+  category: "distro"
+  version: ">=0"
+
+steps:
+- zypper in -y kernel-default systemd systemd-default-settings
+
+unpack: true
+excludes:
+- ^/etc/shadow
+- ^/etc/gshadow
+- ^/etc/group
+- ^/etc/hostname
+- ^/etc/hosts
+- ^/etc/machine-id
+- ^/etc/fstab
+- ^/etc/passwd
+- ^/etc/machineid
+- ^/var/log
+- ^/sys
+- ^/proc
+- ^/luetbuild
