@@ -1,0 +1,27 @@
+packages:
+  rootfs:
+#  - live/busybox
+  - system/tumbleweed
+  - live/boot
+
+  uefi:
+  - live/systemd-boot
+  - live/boot
+  isoimage:
+  - live/syslinux
+  - live/boot
+  initramfs:
+  - live/busybox
+  - kernel/default-minimal
+  - live/init
+  - live/boot
+  #- live/skel
+
+overlay: "true"
+image_prefix: "cOS-0."
+image_date: "true"
+
+luet:
+  config: build/conf.yaml
+
+ca_certificate: ../../assets/ca-certificates.crt
