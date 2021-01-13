@@ -5,6 +5,40 @@ requires:
 
 steps:
 - zypper in -y kernel-default systemd systemd-default-settings
+# Removing packages that we don't need at the moment
+- zypper rm -y dracut ncurses-utils
+# Cleans up cache
+- zypper cc
+
+# Most of the size bloat come from kernel:
+
+# cbd0cf3430f9:/luetbuild # rpm -qa --queryformat '%10{size} - %-25{name} \t %{version} \t %{os} \n' | sort -rh | head -25 | awk '{print $1/1024/1024, $2, $3, $4}' 
+# 180.077 - kernel-default 5.10.5
+# 12.4307 - glibc-locale-base 2.32
+# 11.0003 - systemd 246.9
+# 7.60744 - udev 246.9
+# 7.49606 - file-magic 5.39
+# 7.49081 - libzypp 17.25.5
+# 7.10046 - zypper 1.14.41
+# 5.95417 - glibc 2.32
+# 5.9036 - coreutils 8.32
+# 5.74755 - libsolv-tools 0.7.16
+# 5.5852 - perl-base 5.32.0
+# 5.58036 - gpg2 2.2.25
+# 4.06195 - util-linux 2.35.1
+# 4.05395 - kbd 2.3.0
+# 3.5594 - libopenssl1_1 1.1.1h
+# 3.39311 - gawk 5.1.0
+# 3.01739 - shadow 4.8.1
+# 2.68816 - rpm 4.15.1
+# 2.6414 - elfutils 0.182
+# 1.92351 - krb5 1.18.3
+# 1.8625 - libstdc++6 10.2.1+git1030
+# 1.71149 - libp11-kit0 0.23.20
+# 1.69769 - libxml2-2 2.9.10
+# 1.67791 - libglib-2_0-0 2.66.4
+# 1.61761 - pam 1.5.1
+
 
 unpack: true
 excludes:
