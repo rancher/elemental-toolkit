@@ -1,0 +1,11 @@
+requires:
+- name: "tumbleweed"
+  category: "distro"
+  version: ">=0"
+
+prelude:
+- mkdir -p /output
+
+steps:
+- cp -rfv package/* /output/
+package_dir: /output
