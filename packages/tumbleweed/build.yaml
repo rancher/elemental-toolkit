@@ -1,12 +1,13 @@
 requires:
-- name: "tumbleweed"
+- name: "base"
   category: "distro"
   version: ">=0"
 
 steps:
-- zypper in -y kernel-default systemd systemd-default-settings
+- zypper in -y systemd systemd-default-settings systemd-sysvinit
 # Removing packages that we don't need at the moment
-- zypper rm -y dracut ncurses-utils
+#- zypper rm -y dracut ncurses-utils
+- zypper rm -y ncurses-utils
 # Cleans up cache
 - zypper cc
 

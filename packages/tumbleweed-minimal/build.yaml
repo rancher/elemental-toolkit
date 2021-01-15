@@ -1,0 +1,27 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+steps:
+- touch /boot/.keep
+- zypper in -y {{.Values.zypper_packages}}
+
+unpack: true
+excludes:
+- ^/etc/shadow
+- ^/etc/gshadow
+- ^/etc/group
+- ^/etc/hostname
+- ^/etc/hosts
+- ^/etc/machine-id
+- ^/etc/fstab
+- ^/etc/passwd
+- ^/etc/machineid
+- ^/var/log
+- ^/sys
+- ^/proc
+- ^/luetbuild
+- ^/var/cache
+
+# TODO: Strip zypper, ncurses etc.
