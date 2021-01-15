@@ -1,8 +1,14 @@
 ## Requirements
 
 - Luet installed locally (You can install it with `curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh` )
-- Luet-extensions (It comes pre-installed with the above command, or add the [official luet-repo](https://github.com/Luet-lab/luet-repo) and install it with `luet install -y system/luet-extensions`)
+
+### Building packages
+
 - Docker/or img for building packages locally
+
+### Building ISO
+
+- Luet-extensions (It comes pre-installed with the above command, or add the [official luet-repo](https://github.com/Luet-lab/luet-repo) and install it with `luet install -y system/luet-extensions`)
 - squashfs/xorriso/dosfstools for building ISO
 - yq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq`)
 
