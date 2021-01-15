@@ -6,11 +6,22 @@
 - squashfs/xorriso/dosfstools for building ISO
 - yq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq`)
 
+## Repository layout
+
+- `packages`: contain packages definition for luet
+- `iso`: yaml spec files for development iso generation
+- `values`: interpolation files, needed only for multi-arch build
+- `assets`: static files needed by the iso generation process
+
 ## Build all packages locally
 
 ```
 make build-full
 ```
+
+To rebuild packages, and keep the previous runs, use `make rebuild-full` instead.
+
+You might want to build packages running as `root` or define `SUDO="sudo -E"` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
 
 ## Build ISO
 
