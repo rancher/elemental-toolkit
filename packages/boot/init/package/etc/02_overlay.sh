@@ -8,21 +8,7 @@
 #  |
 #  +--(2) /etc/02_overlay.sh (this file)
 #          |
-#          +-- /etc/03_init.sh
-#               |
-#               +-- /sbin/init
-#                    |
-#                    +--(1) /etc/04_bootscript.sh
-#                    |       |
-#                    |       +-- /etc/autorun/* (all scripts)
-#                    |
-#                    +--(2) /bin/sh (Alt + F1, main console)
-#                    |
-#                    +--(2) /bin/sh (Alt + F2)
-#                    |
-#                    +--(2) /bin/sh (Alt + F3)
-#                    |
-#                    +--(2) /bin/sh (Alt + F4)
+#          +-- /sbin/init
 
 # Create the new mountpoint in RAM.
 mount -t tmpfs none /mnt
@@ -63,30 +49,24 @@ DEFAULT_OVERLAY_DIR="/tmp/minimal/overlay"
 DEFAULT_UPPER_DIR="/tmp/minimal/rootfs"
 DEFAULT_WORK_DIR="/tmp/minimal/work"
 
-depmod -a 2>/dev/null
-
-modprobe ext2 2>/dev/null
-modprobe ext4 2>/dev/null
-modprobe uas 2>/dev/null
-modprobe usb_storage 2>/dev/null
-modprobe usbcore 2>/dev/null
-modprobe scsi_mod 2>/dev/null
-modprobe usb_common 2>/dev/null
-modprobe sd_mod 2>/dev/null
-modprobe ehci_hcd 2>/dev/null
-modprobe uhci_hcd 2>/dev/null
-modprobe ohci_hcd 2>/dev/null
-modprobe ehci_pci 2>/dev/null
-modprobe xhci_pci 2>/dev/null
-modprobe xhci_hcd 2>/dev/null
-modprobe virtio_blk 2>/dev/null
-modprobe virtio_pci 2>/dev/null
-modprobe part_msdos 2>/dev/null
-modprobe usbms 2>/dev/null
-modprobe usbhid 2>/dev/null
-modprobe hid-generic 2>/dev/null
-
 rootfstype=auto
+
+load_modules() {
+  depmod -a 2>/dev/null
+
+  modules="ahci virtio_blk virtio_pci pata_acpi ahcpi-plaftorm libahcpi-platform ata_piix" 
+  modules="$modules ohci_pci ehci_pci loop ext4 isofs squashfs"
+  modules="$modules ata_generic cdrom sd_mod sr_mod ext2 uas usb_storage usbcore paride"
+  modules="$modules scsi_mod usb_common ehci_hcd uhci_hcd ohci_hcd"
+  modules="$modules ehci_pci xhci_pci xhci_hcd virtio_blk virtio_pci"
+  modules="$modules part_msdos usbms usbhid hid-generic"
+
+  for mod in $modules; 
+  do      
+      echo "Loading $mod ..."
+      modprobe $mod #2>/dev/null
+  done
+}
 
 shell() {
 	setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
@@ -128,6 +108,8 @@ mount_root() {
 	fi
 }
 
+load_modules
+
 # Give a chance to load usb and avoid races
 for x in $(cat /proc/cmdline); do
     case "$x" in
@@ -137,10 +119,7 @@ for x in $(cat /proc/cmdline); do
     esac
 done
 
-
 parse_cmdline
-
-[ -e "/usr/bin/yip-init" ] && /usr/bin/yip-init initramfs
 
 if [ -n "$device" ]; then
   mount_root /mnt
@@ -290,10 +269,8 @@ else
 
 fi
 
-[ -e "/usr/bin/yip-init" ] && /usr/bin/yip-init pre-switch
-
-if [ ! -e "/mnt/etc/03_init.sh" ]; then
-  echo -e "  \\e[31mRootfs not found, dropping to emergency shell\\e[0m"
+if [ ! -e "/mnt/sbin/init" ]; then
+  echo -e "  \\e[31m/sbin/init in rootfs not found, dropping to emergency shell\\e[0m"
 
   # Set flag which indicates that we have obtained controlling terminal.
   export PID1_SHELL=true
@@ -313,9 +290,7 @@ echo -e "Mount locations \\e[94m/dev\\e[0m, \\e[94m/sys\\e[0m, \\e[94m/tmp\\e[0m
 # deleted automatically as part of the command execution. The '/sbin/init'
 # process is invoked and it becomes the new PID 1 parent process.
 echo "Switching from initramfs root area to overlayfs root area."
-exec switch_root /mnt /etc/03_init.sh
+exec switch_root /mnt /sbin/init
 
-echo "(/etc/02_overlay.sh) - there is a serious bug."
-
-# Wait until any key has been pressed.
+# If fails, wait until any key has been pressed.
 read -n1 -s
