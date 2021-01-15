@@ -1,2 +1,6 @@
 build/
 isowork/
+*.iso
+*.iso.sha256
+iso-meta.json
+iso-meta.yaml
