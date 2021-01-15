@@ -43,7 +43,7 @@ To test changes against a specific set of packages, you can for example:
 
 ```bash
 
-SUDO="sudo -E" PACKAGES="live/init kernel/default-minimal" make rebuild local-iso
+SUDO="sudo -E" PACKAGES="live/init" make rebuild local-iso
 
 ```
 
