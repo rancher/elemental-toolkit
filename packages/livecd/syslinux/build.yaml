@@ -12,6 +12,6 @@ steps:
 package_dir: /output
 
 requires:
-- name: "tumbleweed"
+- name: "base"
   category: "distro"
   version: ">=0"
