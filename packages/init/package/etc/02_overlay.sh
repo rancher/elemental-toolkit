@@ -63,8 +63,8 @@ load_modules() {
 
   for mod in $modules; 
   do      
-      echo "Loading $mod ..."
-      modprobe $mod #2>/dev/null
+      #echo "Loading $mod ..."
+      modprobe $mod 2>/dev/null
   done
 }
 

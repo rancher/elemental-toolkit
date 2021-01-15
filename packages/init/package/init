@@ -17,26 +17,36 @@ echo -e "Welcome to \\e[1mcOS \\e[32mLinux \\e[31mLive\\e[0m (/init)"
 # Let's mount all core file systems.
 /etc/01_prepare.sh
 
-# Print first message on screen.
-cat /etc/msg/init_01.txt
+debug_mode() {
+  # Print first message on screen.
+  cat /etc/msg/init_01.txt
 
-# Wait 5 second or until any keybord key is pressed.
-read -t 5 -n1 -s key
+  # Wait 5 second or until any keybord key is pressed.
+  read -t 5 -n1 -s key
 
-if [ ! "$key" = "" ] ; then
-  # Print second message on screen.
-  cat /etc/msg/init_02.txt
+  if [ ! "$key" = "" ] ; then
+    # Print second message on screen.
+    cat /etc/msg/init_02.txt
 
-  # Set flag which indicates that we have obtained controlling terminal.
-  export PID1_SHELL=true
+    # Set flag which indicates that we have obtained controlling terminal.
+    export PID1_SHELL=true
 
-  # Interactive shell with controlling tty as PID 1.
-  exec setsid sh
-fi
+    # Interactive shell with controlling tty as PID 1.
+    exec setsid sh
+  fi
+}
+
+# Give a chance to debug, by passing the "debug" option from the boot cmdline
+for x in $(cat /proc/cmdline); do
+    case "$x" in
+        debug)
+          debug_mode
+        ;;
+    esac
+done
 
 # Create new mountpoint in RAM, make it our new root location and overlay it
-# with our storage area (if overlay area exists at all). This operation invokes
-# the script '/etc/03_init.sh' as the new init process.
+# with our storage area (if overlay area exists at all).
 exec /etc/02_overlay.sh
 
 echo "(/init) - you can never see this unless there is a serious bug."
