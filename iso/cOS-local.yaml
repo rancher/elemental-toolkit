@@ -3,16 +3,17 @@ packages:
   - system/tumbleweed
   - live/boot
   - init/skel
-
+  - kernel/vanilla
   uefi:
   - live/systemd-boot
   - live/boot
   isoimage:
   - live/syslinux
   - live/boot
+  # Really simple/dumb initramfs until we go into dracut
   initramfs:
-  - live/busybox
-  - kernel/default-minimal
+  - live/minimal
+  - kernel/vanilla-minimal
   - live/init
   - live/boot
   - init/skel
