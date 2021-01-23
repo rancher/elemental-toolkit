@@ -8,7 +8,7 @@
 
 ### Building ISO
 
-- Luet-extensions (It comes pre-installed with the above command, or add the [official luet-repo](https://github.com/Luet-lab/luet-repo) and install it with `luet install -y system/luet-extensions`)
+- Luet-devkit (If you manually installed luet add the [official luet-repo](https://github.com/Luet-lab/luet-repo) first. Install it with `luet install -y system/luet-devkit`)
 - squashfs/xorriso/dosfstools for building ISO
 - yq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq`)
 

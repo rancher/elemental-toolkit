@@ -37,7 +37,7 @@ jobs:
         sudo apt-get install -y xorriso squashfs-tools dosfstools
         curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
         sudo luet install -y repository/mocaccino-extra-stable
-        sudo luet install -y utils/jq utils/yq
+        sudo luet install -y system/luet-devkit utils/jq utils/yq
 
     - name: Validate 🌳
       run: |
