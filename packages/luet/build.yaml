@@ -1,0 +1,13 @@
+requires:
+- name: "golang"
+  category: "build"
+  version: ">=0"
+prelude:
+- zypper in -y git upx
+- git clone https://github.com/mudler/luet
+steps:
+- |
+  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+  cd luet && git checkout "${PACKAGE_VERSION}" && make build-small && mv luet /usr/bin/luet
+includes:
+- /usr/bin/luet
