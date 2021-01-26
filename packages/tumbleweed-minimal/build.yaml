@@ -24,4 +24,36 @@ excludes:
 - ^/luetbuild
 - ^/var/cache
 
-# TODO: Strip zypper, ncurses etc.
+- ^/srv
+- ^/root/.bash_history
+- ^/run/reboot-needed
+# Zypper
+- ^/var/lib/zypp
+- ^/var/cache/zypp
+- ^/usr/share/zypper
+- ^/usr/share/zypp
+- ^/usr/share/zsh
+- ^/usr/share/licenses/zypper
+- ^/usr/bin/zypp-.*
+- ^/usr/bin/zypper
+- ^/usr/lib/zypp$
+- ^/usr/lib/zypper
+- ^/usr/lib/rpm
+- ^/usr/bin/yzpper
+- ^/usr/bin/susetags2solv
+- ^/run/zypp.*
+- ^/etc/zypp
+- ^/usr/bin/rpm.*
+
+- ^/usr/lib64/rpm-plugins
+# Yast
+- ^/var/lib/YaST2
+
+
+
+- ^/usr/bin/perl.*
+- ^/usr/lib/perl.*
+- ^/usr/include
+
+# Ncurses
+- ^/usr/lib64/libncurses
