@@ -14,3 +14,4 @@ packages: >-
       grub2-i386-pc
       grub2-x86_64-efi
       which
+      curl
