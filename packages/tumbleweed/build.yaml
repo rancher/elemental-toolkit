@@ -78,6 +78,8 @@ excludes:
 - ^/usr/lib/zypper
 - ^/usr/lib/rpm
 - ^/usr/bin/yzpper
+- ^/usr/sbin/zypp-.*
+- ^/usr/bin/zypp-.*
 - ^/usr/bin/susetags2solv
 - ^/run/zypp.*
 - ^/etc/zypp
