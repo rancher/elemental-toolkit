@@ -2,7 +2,9 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
-
+- name: "luet"
+  category: "system"
+  version: ">=0"
 steps:
 - zypper in -y {{.Values.packages}}
 # Removing packages that we don't need at the moment
@@ -65,6 +67,7 @@ excludes:
 - ^/srv
 - ^/root/.bash_history
 - ^/run/reboot-needed
+
 # Zypper
 - ^/var/lib/zypp
 - ^/var/cache/zypp
@@ -84,13 +87,42 @@ excludes:
 - ^/run/zypp.*
 - ^/etc/zypp
 - ^/usr/bin/rpm.*
+- ^/var/lib/rpm
 
+# Build deps that got thrown-in by zypper
+# XXX: To keep until https://github.com/mudler/luet/issues/173 is delivered,
+# or we either create another luet repository for runtime deps
+- ^/usr/share/bison
+- ^/usr/share/automake
+- ^/usr/share/autoconf
+- ^/usr/share/aclocal
+- ^/usr/share/texinfo
+- ^/usr/share/libtool
+
+- texinfo.mo
+- git.mo
+- flex.mo
+- ^/usr/libexec/git
+- ^/usr/lib64/pkgconfig
+- ^/usr/lib64/ldscripts
+- ^/usr/lib64/gcc
+- ^/usr/bin/git.*
+- ^/usr/bin/gcc.*
+- ^/usr/bin/flex.*
+- ^/usr/bin/autom.*
+- ^/usr/bin/autoconf.*
+- ^/usr/bin/bison.*
+- ^/usr/bin/libtool.*
+- ^/usr/x86_64-suse-linux
 - ^/usr/lib64/rpm-plugins
 # Yast
 - ^/var/lib/YaST2
-# - ^/usr/bin/perl.*
-# - ^/usr/lib/perl.*
+
+# Perl
+- ^/usr/bin/perl.*
+- ^/usr/lib/perl.*
 
 # General
 - ^/usr/include
 - ^/usr/local
+- ^/root
