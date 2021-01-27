@@ -122,6 +122,11 @@ excludes:
 - ^/usr/bin/perl.*
 - ^/usr/lib/perl.*
 
+# Wget - we are only shipping curl
+- ^/etc/wgetrc
+- ^/usr/share/licenses/wget/COPYING
+- ^/usr/bin/wget
+
 # General
 - ^/usr/include
 - ^/usr/local

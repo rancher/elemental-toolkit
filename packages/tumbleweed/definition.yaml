@@ -1,9 +1,15 @@
 name: "tumbleweed"
 category: "system"
-version: "0.3"
+version: "0.3.1"
 
 packages: >-
       systemd
       systemd-default-settings
       systemd-sysvinit
       parted
+      e2fsprogs
+      coreutils
+      dosfstools
+      grub2
+      grub2-i386-pc
+      grub2-x86_64-efi
