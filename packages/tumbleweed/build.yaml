@@ -4,7 +4,7 @@ requires:
   version: ">=0"
 
 steps:
-- zypper in -y systemd systemd-default-settings systemd-sysvinit
+- zypper in -y {{.Values.packages}}
 # Removing packages that we don't need at the moment
 #- zypper rm -y dracut ncurses-utils
 - zypper rm -y ncurses-utils
@@ -85,5 +85,8 @@ excludes:
 # Yast
 - ^/var/lib/YaST2
 # - ^/usr/bin/perl.*
-# - ^/usr/lib/perl5
+# - ^/usr/lib/perl.*
+
+# General
 - ^/usr/include
+- ^/usr/local

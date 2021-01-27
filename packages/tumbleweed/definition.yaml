@@ -1,3 +1,9 @@
 name: "tumbleweed"
 category: "system"
-version: "0.2"
+version: "0.3"
+
+packages: >-
+      systemd
+      systemd-default-settings
+      systemd-sysvinit
+      parted
