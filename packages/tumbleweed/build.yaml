@@ -11,6 +11,8 @@ steps:
 # Cleans up cache
 - zypper cc
 
+- systemctl enable multi-user.target
+- systemctl set-default multi-user.target
 # XXX: To replace with dynamic mechanisms (cloud-init?)
 # Setup a system default locale, for first boot
 - echo "LANG=en_US.UTF-8" > /etc/locale.conf
