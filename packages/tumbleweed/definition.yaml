@@ -1,6 +1,6 @@
 name: "tumbleweed"
 category: "system"
-version: "0.3.1"
+version: "0.3.2"
 
 packages: >-
       systemd
@@ -13,3 +13,4 @@ packages: >-
       grub2
       grub2-i386-pc
       grub2-x86_64-efi
+      which
