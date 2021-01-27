@@ -2,12 +2,19 @@ requires:
 - name: "golang"
   category: "build"
   version: ">=0"
+env:
+- PATH=$PATH:/usr/local/go/bin
+- GOPATH=/luetbuild/go
+- GO111MODULE=off
 prelude:
 - zypper in -y git upx
-- git clone https://github.com/mudler/luet
+
+- |
+   mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
+   git clone https://github.com/mudler/luet && cd luet && git checkout "${PACKAGE_VERSION}"
 steps:
 - |
-  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-  cd luet && git checkout "${PACKAGE_VERSION}" && make build-small && mv luet /usr/bin/luet
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   cd /luetbuild/go/src/github.com/mudler/luet && git checkout "${PACKAGE_VERSION}" && make build-small && mv luet /usr/bin/luet
 includes:
 - /usr/bin/luet
