@@ -1,6 +1,7 @@
 packages:
   rootfs:
   - system/tumbleweed
+  - utils/installer
   - live/boot
   - init/skel
   - kernel/vanilla
