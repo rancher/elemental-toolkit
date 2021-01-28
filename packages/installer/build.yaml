@@ -1,0 +1,7 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+steps:
+- cp -rfv installer.sh /usr/sbin/installer && chmod +x /usr/sbin/installer
