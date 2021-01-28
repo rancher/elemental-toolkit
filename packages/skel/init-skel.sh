@@ -45,7 +45,7 @@ COS
 
 cat >> /etc/issue << EOF
 
-Welcome to cOS (login with user: root, password: cos)
+Welcome to cOS (login with user: root, password: cos). Start the installer with `installer <device>` to install it in the local system
 
 EOF
 
