@@ -10,11 +10,12 @@ prelude:
 - zypper in -y git upx
 
 - |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
    mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
-   git clone https://github.com/mudler/luet && cd luet && git checkout "${PACKAGE_VERSION}"
+   git clone https://github.com/mudler/luet && cd luet && git checkout "${PACKAGE_VERSION}" -b build
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   cd /luetbuild/go/src/github.com/mudler/luet && git checkout "${PACKAGE_VERSION}" && make build-small && mv luet /usr/bin/luet
+   cd /luetbuild/go/src/github.com/mudler/luet && make build-small && mv luet /usr/bin/luet
 includes:
 - /usr/bin/luet
