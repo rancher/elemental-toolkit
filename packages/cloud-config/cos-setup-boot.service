@@ -1,0 +1,11 @@
+[Unit]
+Description=cOS system configuration
+Before=getty.target
+
+[Service]
+Type=oneshot
+#RemainAfterExit=true
+ExecStart=/bin/bash -c "systemd-inhibit /usr/bin/cos-setup boot"
+
+[Install]
+WantedBy=multi-user.target

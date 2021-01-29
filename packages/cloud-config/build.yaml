@@ -1,0 +1,15 @@
+requires:
+- category: "distro"
+  name: "base"
+  version: ">=0"
+
+package_dir: /integration
+steps:
+- mkdir -p /integration/usr/bin/
+- mkdir -p /integration/lib/systemd/system
+- cp -rfv *.service /integration/lib/systemd/system
+- cp -rfv *.timer /integration/lib/systemd/system
+- mkdir -p /integration/usr/local/setup
+- cp -rfv yipfiles/*.yaml /integration/usr/local/setup
+- cp -rfv cos-setup /integration/usr/bin/
+- chmod +x /integration/usr/bin/cos-setup

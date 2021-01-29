@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+STAGE="${1:-boot}"
+set -- $(cat /proc/cmdline)
+for x in "$@"; do
+    case "$x" in
+        cos.setup=*)
+        yip -s "$STAGE" "${x#yip=}"
+        ;;
+    esac
+done
+
+for dir in "/usr/local/setup/" "/oem"; do
+    if [ -d "$dir" ]; then
+        yip -s "$STAGE" "$dir"
+    fi
+done

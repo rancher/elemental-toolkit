@@ -1,0 +1,8 @@
+name: cos-config
+category: system
+version: "0.1.2"
+
+requires:
+- category: "system"
+  name: "yip"
+  version: ">=0"

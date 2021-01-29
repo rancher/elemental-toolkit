@@ -1,0 +1,4 @@
+install:
+- systemctl enable cos-setup-reconcile.timer
+- systemctl enable cos-setup-network.service
+- systemctl enable cos-setup-boot.service
