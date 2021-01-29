@@ -1,0 +1,23 @@
+requires:
+- name: "golang"
+  category: "build"
+  version: ">=0"
+env:
+- PATH=$PATH:/usr/local/go/bin
+- GOPATH=/luetbuild/go
+- GO111MODULE=on
+- CGO_ENABLED=0
+- LDFLAGS="-s -w"
+prelude:
+- zypper in -y git upx
+
+- |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
+   git clone https://github.com/mudler/yip && cd yip && git checkout "${PACKAGE_VERSION}" -b build
+steps:
+- |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   cd /luetbuild/go/src/github.com/mudler/yip && CGO_ENABLED=0 go build && upx --brute -1 yip && mv yip /usr/bin/yip
+includes:
+- /usr/bin/yip
