@@ -128,6 +128,8 @@ find_boot_device
 parse_cmdline
 
 if [ -n "$device" ]; then
+  # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENCY (/usr/local)
+  rwopt="rw"
   mount_root /mnt
 else
 
