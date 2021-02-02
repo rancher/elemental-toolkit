@@ -61,3 +61,9 @@ jobs:
         SUDO: "sudo -E"
       run: |
         make local-iso
+    - uses: actions/upload-artifact@v2
+      with:
+        name: ISO
+        path: |
+          *.iso
+          *.sha256
