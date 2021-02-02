@@ -1,5 +1,5 @@
 name: "init"
 category: "live"
-version: "0.4.6"
+version: "0.4.7"
 description: "Init for liveCD boot, based from LML"
 hidden: true # No need to make it installable for now

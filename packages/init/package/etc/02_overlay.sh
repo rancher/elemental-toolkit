@@ -96,6 +96,11 @@ parse_cmdline() {
 	esac
 }
 
+find_boot_device(){
+  # Grab device by label if we find it in blkid
+  device=$(blkid -t LABEL=COS_STATE -o device)
+}
+
 mount_root() {
 	newroot=$1
 	if [ ! "$device" ]; then
@@ -119,6 +124,7 @@ for x in $(cat /proc/cmdline); do
     esac
 done
 
+find_boot_device
 parse_cmdline
 
 if [ -n "$device" ]; then
