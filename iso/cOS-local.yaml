@@ -4,7 +4,7 @@ packages:
   - system/tumbleweed
   - utils/installer
   - live/boot
-  - init/skel
+#- init/skel
   - kernel/vanilla
   uefi:
   - live/systemd-boot
@@ -18,7 +18,7 @@ packages:
   - kernel/vanilla-minimal
   - live/init
   - live/boot
-  - init/skel
+#  - init/skel
 
 overlay: "true"
 image_prefix: "cOS-0."
