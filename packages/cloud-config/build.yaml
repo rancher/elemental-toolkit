@@ -1,6 +1,6 @@
 requires:
-- category: "distro"
-  name: "base"
+- name: "base"
+  category: "distro"
   version: ">=0"
 
 package_dir: /integration
@@ -13,3 +13,4 @@ steps:
 - cp -rfv yipfiles/*.yaml /integration/usr/local/setup
 - cp -rfv cos-setup /integration/usr/bin/
 - chmod +x /integration/usr/bin/cos-setup
+- chmod -R 600 /integration/usr/local/setup

@@ -1,0 +1,251 @@
+# Default cOS OEM configuration file
+## FIXME: Move this to a separate package. Or either copy a stub of a /system/etc.default that have to be shipped by the distro package
+stages:
+   initramfs.after:
+     ## FIXME: Dropping of /etc is due to how the iso generation process is done
+     ## luet geniso-spec it is dumping ca-certificates and the luet.yaml file inside the rootfs, while this should be just optional
+     - name: "Wipe current /etc"
+       commands:
+       - rm -rf /etc
+       - mkdir /etc
+     - name: "Setup fstab"
+       files:
+        - path: /etc/fstab
+          content: |
+                    tmpfs   /etc         tmpfs   rw,nodev,nosuid,size=20MB          0  0
+          permissions: 0644
+          owner: 0
+          group: 0
+     - name: "Mount volatile /etc"
+       commands:
+       - mount -t tmpfs -o size=20m tmpfs /etc
+     - name: "Setup distro"
+       commands:
+       - ln -s /usr/share/zoneinfo/UTC /etc/localtime
+       files:
+        - path: /etc/shadow
+          content: |
+               root:$6$g9DDJRDNRS8MEzhH$w6Cn6PNzFnUVnatwRbNoLk6etanvAbcxUzfYlQcj6y/JLGq3Yrl7wXi6SkMzp1/tEM3NheMr5fH8.92NdiaB/0:18640::::::
+               catchlog:!:14761:0:99999:7:::
+               alias:!:14761:0:99999:7:::
+               nobody:!:14314:0:99999:7:::
+               klog:!:14793::::::
+               kllog:!:14793::::::
+               syslog:!:14793::::::
+               sysllog:!:14793::::::
+               sysfdh:!:15041::::::
+               sshlog:!:14849::::::
+          permissions: 0640
+          owner: 0
+          group: 0
+        - path: /etc/hostname
+          content: "cos"
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/locale.conf
+          content: "LANG=en_US.UTF-8"
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/group
+          content: |
+                    root:x:0:
+                    catchlog:x:98:
+                    nogroup:x:65534:
+                    log:x:61:
+                    fdh:x:76:
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/hosts
+          content: |
+                     #
+                     # hosts         This file describes a number of hostname-to-address
+                     #               mappings for the TCP/IP subsystem.  It is mostly
+                     #               used at boot time, when no name servers are running.
+                     #               On small systems, this file can be used instead of a
+                     #               "named" name server.
+                     # Syntax:
+                     #    
+                     # IP-Address  Full-Qualified-Hostname  Short-Hostname
+                     #
+
+                     127.0.0.1       localhost
+
+                     # special IPv6 addresses
+                     ::1             localhost ipv6-localhost ipv6-loopback
+
+                     fe00::0         ipv6-localnet
+
+                     ff00::0         ipv6-mcastprefix
+                     ff02::1         ipv6-allnodes
+                     ff02::2         ipv6-allrouters
+                     ff02::3         ipv6-allhosts
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/passwd
+          content: |
+               root:x:0:0:root:/root:/bin/bash
+               catchlog:x:98:98:catchlog:/run/uncaught-logs:/nonexistent
+               alias:x:999:100:alias:/home/alias:/nonexistent
+               nobody:x:65534:65534:nobody:/:/nonexistent
+               klog:x:101:61:klog:/:/nonexistent
+               kllog:x:102:61:kllog:/:/nonexistent
+               syslog:x:103:61:syslog:/:/nonexistent
+               sysllog:x:104:61:sysllog:/:/nonexistent
+               sysfdh:x:137:76:sysfdh:/:/nonexistent
+               sshlog:x:138:61:sshlog:/var/log/sshd-4:/nonexistent
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/profile
+          content: |
+               # Begin /etc/profile
+               # Set the initial path
+               export PATH=/bin:/usr/bin
+
+               if [ "$(id -u)" = "0" ]; then
+                     export PATH=/sbin:/usr/sbin:$PATH
+                     unset HISTFILE
+               fi
+
+               # Setup some environment variables.
+               export HISTSIZE=1000
+               export HISTIGNORE="&:[bf]g:exit"
+               export PS1="[\u@\h \w]\\$ "
+               #export PS1='\u@\h:\w\$ '
+
+               for script in /etc/profile.d/*.sh ; do
+                     if [ -r $script ] ; then
+                              . $script
+                     fi
+               done
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/issue
+          content: |
+            .-----.
+            | .-. |
+            | |.| |
+            | `-' |
+            `-----'
+
+            Welcome to cOS!
+            Login with user: root, password: cos
+            Start the installer with "installer <device>" to install it in the local system
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/sysctl.conf
+          content: ""
+          permissions: 0644
+          owner: 0
+          group: 0
+       directories: 
+       - path: "/run/vsysctl.d"
+         permissions: 0644
+         owner: 0
+         group: 0
+       - path: "/root"
+         permissions: 0700
+         owner: 0
+         group: 0
+       - path: "/etc/profile.d"
+         permissions: 0755
+         owner: 0
+         group: 0
+       - path: "/etc/sysconfig"
+         permissions: 0755
+         owner: 0
+         group: 0
+       - path: "/etc/pam.d"
+         permissions: 0755
+         owner: 0
+         group: 0
+       - path: "/etc/security"
+         permissions: 0755
+         owner: 0
+         group: 0
+     - name: "Setup pam"
+       commands:
+       - pam-config --initialize
+       files:
+       - path: /etc/security/limits.conf
+         content: ""
+         permissions: 0644
+         owner: 0
+         group: 0
+       - path: /etc/security/pam_env.conf
+         content: ""
+         permissions: 0644
+         owner: 0
+         group: 0
+     - name: "Setup sysconfig"
+       files:
+       - path: "/etc/sysconfig/keyboard"
+         permissions: 0644
+         owner: 0
+         group: 0
+         content: |
+               ## Path:        Hardware/Keyboard
+               ## Description: Keyboard settings for the text console
+               ## ServiceRestart: kbdsettings
+               #
+
+               ## Type:        integer
+               ## Default:
+               #
+               # Keyboard delay time in ms (250, 500, 750, 1000)
+               KBD_DELAY=""
+
+               ## Type:	string(2.0,2.1,2.3,2.5,2.7,3.0,3.3,3.7,4.0,4.3,4.6,5.0,5.5,6.0,6.7,7.5,8.0,8.6,9.2,10.0,10.9,12.0,13.3,15.0,16.0,17.1,18.5,20.0,21.8,24.0,26.7,30.0)
+               ## Default:
+               #
+               # Keyboard repeat rate (2.0 - 30.0)
+               KBD_RATE=""
+
+               ## Type:        list(bios,yes,no)
+               ## Default:     bios
+               #
+               # NumLock on? ("yes" or "no" or "bios" for BIOS setting)
+               # This setting may interfere with GNOME /org/gnome/settings-daemon/peripherals/keyboard/remember-numlock-state DConf key.
+               KBD_NUMLOCK="bios"
+
+               ## Type:        yesno
+               ## Default:     no
+               #
+               # ScrollLock on? ("yes" or "no")
+               KBD_SCRLOCK="no"
+
+               ## Type:        yesno
+               ## Default:     no
+               #
+               # CapsLock on? ("yes" or "no")
+               KBD_CAPSLOCK="no"
+
+               ## Type:        yesno
+               ## Default:     no
+               #
+               # Disable CAPS LOCK and make it a normal Shift key?
+               # (Ctrl Caps Lock will still toggle Caps Lock functionality)
+               # Note that you need to tweak the xkb maps or use xmodmap
+               # if you want to do the same under X-Windows. In ~/.Xmodmap:
+               # keycode 0x42 = Shift_L Shift_L
+               #
+               KBD_DISABLE_CAPS_LOCK="no"
+
+               ## Type:        string
+               ## Default:
+               #
+               # ttys for the above settings 
+               # Example: "tty1 tty2"
+               # "" for tty's 1-6
+               #
+               KBD_TTY=""
+
+               # The YaST-internal identifier of the attached keyboard.
+               #
+               YAST_KEYBOARD="english-us,pc104"

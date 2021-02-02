@@ -1,6 +1,6 @@
 name: cos-config
 category: system
-version: "0.1.2"
+version: "0.1.33"
 
 requires:
 - category: "system"

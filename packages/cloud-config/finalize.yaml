@@ -1,4 +1,9 @@
 install:
-- systemctl enable cos-setup-reconcile.timer
-- systemctl enable cos-setup-network.service
-- systemctl enable cos-setup-boot.service
+- cos-setup-reconcile.timer
+- cos-setup-network.service
+- cos-setup-boot.service
+#- cos-setup-fs-before.service
+- cos-setup-fs-after.service
+shell:
+- /usr/bin/systemctl
+- enable

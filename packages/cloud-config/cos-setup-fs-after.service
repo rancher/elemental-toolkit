@@ -1,0 +1,15 @@
+[Unit]
+Description=cOS system after FS setup
+#After=systemd-remount-fs.service
+After=local-fs-pre.target local-fs.target systemd-remount-fs.service
+Wants=local-fs-pre.target
+Before=systemd-logind.service
+
+OnFailure=emergency.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/cos-setup fs.after
+
+[Install]
+WantedBy=multi-user.target
