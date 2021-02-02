@@ -286,6 +286,8 @@ mount --move /proc /mnt/proc
 mount --move /tmp /mnt/tmp
 echo -e "Mount locations \\e[94m/dev\\e[0m, \\e[94m/sys\\e[0m, \\e[94m/tmp\\e[0m and \\e[94m/proc\\e[0m have been moved to \\e[94m/mnt\\e[0m."
 
+chroot /mnt /usr/bin/cos-setup initramfs.after
+
 # The new mountpoint becomes file system root. All original root folders are
 # deleted automatically as part of the command execution. The '/sbin/init'
 # process is invoked and it becomes the new PID 1 parent process.
