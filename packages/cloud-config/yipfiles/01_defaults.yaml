@@ -2,13 +2,10 @@
 ## FIXME: Move this to a separate package. Or either copy a stub of a /system/etc.default that have to be shipped by the distro package
 stages:
    initramfs.after:
-     ## FIXME: Dropping of /etc is due to how the iso generation process is done
-     ## luet geniso-spec it is dumping ca-certificates and the luet.yaml file inside the rootfs, while this should be just optional
-     - name: "Wipe current /etc"
+     - name: "Create /etc"
        commands:
-       - rm -rf /etc
        - mkdir /etc
-     - name: "Setup fstab"
+     - name: "Mount volatile /etc"
        files:
         - path: /etc/fstab
           content: |
@@ -16,12 +13,15 @@ stages:
           permissions: 0644
           owner: 0
           group: 0
-     - name: "Mount volatile /etc"
        commands:
        - mount -t tmpfs -o size=20m tmpfs /etc
      - name: "Setup distro"
        commands:
        - ln -s /usr/share/zoneinfo/UTC /etc/localtime
+       - /usr/bin/systemctl enable cos-setup-reconcile.timer
+       - /usr/bin/systemctl enable cos-setup-fs-after.service
+       - /usr/bin/systemctl enable cos-setup-boot.service
+       - /usr/bin/systemctl enable cos-setup-network.service
        files:
         - path: /etc/shadow
           content: |
