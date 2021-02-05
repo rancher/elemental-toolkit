@@ -1,13 +1,13 @@
 packages:
 - category: "kernel"
   name: "vanilla"
-  version: "5.10.5+4"
+  version: "5.10.12"
   description: "Standard kernel"
-  kernel_id: "5.10.5-1-vanilla"
+  kernel_id: "5.10.12-1-vanilla"
   minimal: false
 - category: "kernel"
   name: "vanilla-minimal"
-  version: "5.10.5+4"
+  version: "5.10.12"
   description: "Minimal kernel"
-  kernel_id: "5.10.5-1-vanilla"
+  kernel_id: "5.10.12-1-vanilla"
   minimal: true
