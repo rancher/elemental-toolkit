@@ -13,41 +13,49 @@ env:
 
 prelude:
 - mkdir /boot || true
-- cp -rf uinit $GOPATH/src/uinit
+- rm -rf $GOPATH/src/github.com/u-root/u-root/cmds/core/init
+- cp -rf init $GOPATH/src/github.com/u-root/u-root/cmds/core/init
+
 steps:
 
+# grab deps library for udev probe init functionalities
+- go get github.com/pilebones/go-udev
+
 - mkdir modules
-- find /lib/modules/**/kernel/fs -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/lib -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/crypto -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/crypto -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/usb -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/hid -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/input -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/block -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/ata -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/md -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/virtio -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/cdrom -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/drivers/scsi -type f -name '*.ko.xz' -exec cp {} ./modules \;
+- find /lib/modules/**/kernel/fs  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/lib  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/crypto  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/crypto  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/usb  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/hid  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/input  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/block  -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/ata -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/md -exec cp {} --parents ./modules \;
+- find /lib/modules/**/kernel/drivers/virtio  -exec cp --parents {} ./modules \;
+- find /lib/modules/**/kernel/drivers/cdrom  -exec cp --parents {} ./modules \;
+- find /lib/modules/**/kernel/drivers/scsi  -exec cp --parents {} ./modules \;
 
-# Ethernet + address family
-- find /lib/modules/**/kernel/drivers/net/ethernet -type f -name '*.ko.xz' -exec cp {} ./modules \;
-- find /lib/modules/**/kernel/net/packet -type f -name '*.ko.xz' -exec cp {} ./modules \;
+# Ethernet + address family: af_packet
+- find /lib/modules/**/kernel/drivers/net/ethernet  -exec cp --parents {} ./modules \;
+- find /lib/modules/**/kernel/net/packet  -exec cp --parents {} ./modules \;
+- cp -rf /lib/modules/**/modules.* ./modules/lib/modules/**/
 
-# Unxz it until we replace default u-root init with ours (at the moment we provide just uinit)
-- find ./modules -type f -name '*.ko.xz' -exec unxz {} \;
 - |
    u-root \
    -files "/luetbuild/loader.sh:/loader" \
-   -files "/luetbuild/modules:/lib/modules" \
-   -format=cpio -build=bb -o initramfs.cpio core uinit/
-# This embeds alla available modules, plus native stuff
-# - |
-#    u-root -files "/lib/modules/" \
-#           -files "/sbin/modprobe" \
-#           -files "/sbin/depmod" \
-#           -format=cpio -build=bb -o initramfs.cpio core uinit/
+   -files "/luetbuild/modules/lib/modules:/lib/modules" \
+   -files "/sbin/blkid" \
+   -files "/usr/bin/mount" \
+   -files "/usr/sbin/modprobe" \
+   -files "/usr/sbin/depmod" \
+   -files "/usr/sbin/losetup" \
+   -files "/usr/bin/setsid" \
+   -files "/sbin/switch_root" \
+   -files "/bin/mkdir" \
+   -files "/bin/sh" \
+   -format=cpio -build=bb -defaultsh="" -o initramfs.cpio github.com/u-root/u-root/cmds/core/{ip,ls,dhclient,init,cat,echo,chroot}
+
 - |
    xz --check=crc32 -9 --lzma2=dict=1MiB \
       --stdout initramfs.cpio \

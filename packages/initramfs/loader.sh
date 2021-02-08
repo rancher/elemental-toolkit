@@ -2,6 +2,15 @@
 
 export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
 
+
+mount -t devtmpfs none /dev
+mount -t proc none /proc
+mount -t tmpfs none /tmp -o mode=1777
+mount -t sysfs none /sys
+
+mkdir -p /dev/pts
+mount -t devpts none /dev/pts
+
 # Create the new mountpoint in RAM.
 mount -t tmpfs none /mnt
 
@@ -34,6 +43,32 @@ load_modules() {
       modprobe $mod 2>/dev/null
   done
 }
+
+
+parse_cmdline() {
+	read -r cmdline < /proc/cmdline
+
+	for param in $cmdline ; do
+		case $param in
+			*=*) key=${param%%=*}; value=${param#*=} ;;
+			'#'*) break ;;
+			*) key=$param
+		esac
+		case $key in
+			ro|rw) rwopt=$key ;;
+			[![:alpha:]_]*|[[:alpha:]_]*[![:alnum:]_]*) ;;
+			*) eval "$key"=${value:-y} ;;
+		esac
+		unset key value
+	done
+
+	case "$root" in
+		/dev/* ) device=$root ;;
+		UUID=* ) eval $root; device="/dev/disk/by-uuid/$UUID"  ;;
+		LABEL=*) eval $root; device="/dev/disk/by-label/$LABEL" ;;
+	esac
+}
+
 
 shell() {
 	setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
@@ -68,6 +103,7 @@ for x in $(cat /proc/cmdline); do
 done
 
 find_boot_device
+parse_cmdline
 
 if [ -n "$device" ]; then
   # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENCY (/usr/local)
