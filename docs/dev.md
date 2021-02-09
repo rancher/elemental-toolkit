@@ -22,10 +22,10 @@
 ## Build all packages locally
 
 ```
-make build-full
+make build-all
 ```
 
-To rebuild packages, and keep the previous runs, use `make rebuild-full` instead.
+To rebuild packages, and keep the previous runs, use `make rebuild-all` instead.
 
 You might want to build packages running as `root` or define `SUDO="sudo -E"` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
 
