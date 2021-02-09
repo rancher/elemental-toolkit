@@ -1,1 +1,2 @@
 image: "opensuse/tumbleweed"
+unpack: true
