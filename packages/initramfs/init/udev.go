@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"github.com/pilebones/go-udev/crawler"
 	"log"
-	"syscall"
-	"path/filepath"
 	"os"
-	"strings"
+	"path/filepath"
 	"regexp"
-	"bufio"
+	"strings"
+	"syscall"
 )
 
 func charsToString(ca [65]int8) string {
@@ -23,16 +23,16 @@ func charsToString(ca [65]int8) string {
 	return string(s[0:lens])
 }
 
-func uname()string {
+func uname() string {
 	utsname := syscall.Utsname{}
 	syscall.Uname(&utsname)
 	return charsToString(utsname.Release)
 }
 
-type moduleAlias  map[*regexp.Regexp]string
+type moduleAlias map[*regexp.Regexp]string
 
 func (a moduleAlias) FindModule(alias string) string {
-	for k,v := range a {
+	for k, v := range a {
 		if k.MatchString(alias) {
 			return v
 		}
@@ -41,46 +41,45 @@ func (a moduleAlias) FindModule(alias string) string {
 }
 
 func readAlias(alias string) moduleAlias {
-	res:=moduleAlias{}
+	res := moduleAlias{}
 
 	file, err := os.Open(alias)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
 
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-		data := strings.Split(scanner.Text()," ")
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		data := strings.Split(scanner.Text(), " ")
 		// modalias contains '?' which aren't valid golang regexes
-		moduleAlias:= strings.ReplaceAll(data[1],"?",".*") 
+		moduleAlias := strings.ReplaceAll(data[1], "?", ".*")
 		module := data[2]
 		r, err := regexp.Compile(moduleAlias)
 		if err != nil {
-			log.Println("Failed compiling",moduleAlias)
+			log.Println("Failed compiling", moduleAlias)
 			continue
 		}
 		res[r] = module
-    }
+	}
 
-    if err := scanner.Err(); err != nil {
-        log.Fatal(err)
-    }
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 	return res
 }
 
 func unique(intSlice []string) []string {
-    keys := make(map[string]interface{})
-    list := []string{} 
-    for _, entry := range intSlice {
-        if _, value := keys[entry]; !value {
-            keys[entry] = nil
-            list = append(list, entry)
-        }
-    }    
-    return list
+	keys := make(map[string]interface{})
+	list := []string{}
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = nil
+			list = append(list, entry)
+		}
+	}
+	return list
 }
-
 
 func probeKernelModules() (kernelModules []string) {
 	queue := make(chan crawler.Device)
@@ -88,9 +87,9 @@ func probeKernelModules() (kernelModules []string) {
 	crawler.ExistingDevices(queue, errors, nil)
 
 	// Find out the alias file path
-	aliasFile:=os.Getenv("ALIAS_FILE")
+	aliasFile := os.Getenv("ALIAS_FILE")
 	if aliasFile == "" {
-		aliasFile=filepath.Join(string(filepath.Separator),"lib","modules",uname(),"modules.alias")
+		aliasFile = filepath.Join(string(filepath.Separator), "lib", "modules", uname(), "modules.alias")
 	}
 	// Parse modules.alias, and pre-compile regexes for each driver
 	mods := readAlias(aliasFile)
@@ -103,18 +102,17 @@ func probeKernelModules() (kernelModules []string) {
 				kernelModules = unique(kernelModules)
 				return
 			}
-			if alias,ok := device.Env["MODALIAS"];ok {
-				driver:= mods.FindModule(alias)
+			if alias, ok := device.Env["MODALIAS"]; ok {
+				driver := mods.FindModule(alias)
 				if driver != "" {
-					kernelModules=append(kernelModules,driver)
+					kernelModules = append(kernelModules, driver)
 				}
 			}
-			if driver,ok := device.Env["DRIVER"];ok {
-				kernelModules=append(kernelModules,driver)
+			if driver, ok := device.Env["DRIVER"]; ok {
+				kernelModules = append(kernelModules, driver)
 			}
 		case err := <-errors:
 			log.Println("ERROR:", err)
 		}
 	}
 }
-
