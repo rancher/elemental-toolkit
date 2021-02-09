@@ -67,3 +67,8 @@ jobs:
         path: |
           *.iso
           *.sha256
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: build-log
+        path: isowork/*.log
