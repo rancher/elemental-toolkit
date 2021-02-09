@@ -1,49 +1,24 @@
 #!/bin/sh
 
-export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
+prepare_workarea() {
+  mount -t devtmpfs none /dev
+  mount -t proc none /proc
+  mount -t tmpfs none /tmp -o mode=1777
+  mount -t sysfs none /sys
 
+  mkdir -p /dev/pts
+  mount -t devpts none /dev/pts
 
-mount -t devtmpfs none /dev
-mount -t proc none /proc
-mount -t tmpfs none /tmp -o mode=1777
-mount -t sysfs none /sys
+  # Create the new mountpoint in RAM.
+  mount -t tmpfs none /mnt
 
-mkdir -p /dev/pts
-mount -t devpts none /dev/pts
-
-# Create the new mountpoint in RAM.
-mount -t tmpfs none /mnt
-
-# Create folders for all critical file systems.
-mkdir /mnt/dev
-mkdir /mnt/sys
-mkdir /mnt/proc
-mkdir /mnt/tmp
-echo "Created folders for all critical file systems."
-
-DEFAULT_OVERLAY_DIR="/tmp/minimal/overlay"
-DEFAULT_UPPER_DIR="/tmp/minimal/rootfs"
-DEFAULT_WORK_DIR="/tmp/minimal/work"
-
-rootfstype=auto
-
-load_modules() {
-  depmod -a 2>/dev/null
-
-  modules="ahci virtio_blk virtio_pci pata_acpi ahcpi-plaftorm libahcpi-platform ata_piix" 
-  modules="$modules ohci_pci ehci_pci loop ext4 isofs squashfs"
-  modules="$modules ata_generic cdrom sd_mod sr_mod ext2 uas usb_storage usbcore paride"
-  modules="$modules scsi_mod usb_common ehci_hcd uhci_hcd ohci_hcd"
-  modules="$modules ehci_pci xhci_pci xhci_hcd virtio_blk virtio_pci"
-  modules="$modules part_msdos usbms usbhid hid-generic"
-
-  for mod in $modules; 
-  do      
-      #echo "Loading $mod ..."
-      modprobe $mod 2>/dev/null
-  done
+  # Create folders for all critical file systems.
+  mkdir /mnt/dev
+  mkdir /mnt/sys
+  mkdir /mnt/proc
+  mkdir /mnt/tmp
+  echo "Created folders for all critical file systems."
 }
-
 
 parse_cmdline() {
 	read -r cmdline < /proc/cmdline
@@ -69,7 +44,6 @@ parse_cmdline() {
 	esac
 }
 
-
 shell() {
 	setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
 }
@@ -91,26 +65,7 @@ mount_root() {
 	fi
 }
 
-load_modules
-
-# Give a chance to load usb and avoid races
-for x in $(cat /proc/cmdline); do
-    case "$x" in
-        rootdelay=*)
-        sleep "${x#rootdelay=}"
-        ;;
-    esac
-done
-
-find_boot_device
-parse_cmdline
-
-if [ -n "$device" ]; then
-  # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENCY (/usr/local)
-  rwopt="rw"
-  mount_root /mnt
-else
-
+search_overlay() {
   echo "Searching available devices for overlay content."
   for DEVICE in /dev/* ; do
     DEV=$(echo "${DEVICE##*/}")
@@ -252,33 +207,75 @@ else
     umount $DEVICE_MNT 2>/dev/null
     rm -rf $DEVICE_MNT 2>/dev/null
   done
+}
 
-fi
+delay() {
+  # Give a chance to load usb and avoid races
+  for x in $(cat /proc/cmdline); do
+      case "$x" in
+          rootdelay=*)
+          sleep "${x#rootdelay=}"
+          ;;
+      esac
+  done
+}
 
-if [ ! -e "/mnt/sbin/init" ]; then
-  echo -e "  \\e[31m/sbin/init in rootfs not found, dropping to emergency shell\\e[0m"
+mount_system() {
+  if [ -n "$device" ]; then
+    # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENCY (/usr/local)
+    rwopt="rw"
+    mount_root /mnt
+  else
+    search_overlay
+  fi
+}
 
-  # Set flag which indicates that we have obtained controlling terminal.
-  export PID1_SHELL=true
+switch_system() {
+  if [ ! -e "/mnt/sbin/init" ]; then
+    echo -e "  \\e[31m/sbin/init in rootfs not found, dropping to emergency shell\\e[0m"
 
-  # Interactive shell with controlling tty as PID 1.
-  exec setsid sh
-fi
+    # Set flag which indicates that we have obtained controlling terminal.
+    export PID1_SHELL=true
 
-# Move critical file systems to the new mountpoint.
-mount --move /dev /mnt/dev
-mount --move /sys /mnt/sys
-mount --move /proc /mnt/proc
-mount --move /tmp /mnt/tmp
-echo -e "Mount locations \\e[94m/dev\\e[0m, \\e[94m/sys\\e[0m, \\e[94m/tmp\\e[0m and \\e[94m/proc\\e[0m have been moved to \\e[94m/mnt\\e[0m."
+    # Interactive shell with controlling tty as PID 1.
+    exec setsid sh
+  fi
 
-chroot /mnt /usr/bin/cos-setup initramfs.after
+  # Move critical file systems to the new mountpoint.
+  mount --move /dev /mnt/dev
+  mount --move /sys /mnt/sys
+  mount --move /proc /mnt/proc
+  mount --move /tmp /mnt/tmp
+  echo -e "Mount locations \\e[94m/dev\\e[0m, \\e[94m/sys\\e[0m, \\e[94m/tmp\\e[0m and \\e[94m/proc\\e[0m have been moved to \\e[94m/mnt\\e[0m."
 
-# The new mountpoint becomes file system root. All original root folders are
-# deleted automatically as part of the command execution. The '/sbin/init'
-# process is invoked and it becomes the new PID 1 parent process.
-echo "Switching from initramfs root area to overlayfs root area."
-exec switch_root /mnt /sbin/init
+  chroot /mnt /usr/bin/cos-setup initramfs.after
 
-# If fails, wait until any key has been pressed.
-read -n1 -s
+  echo "Switching from initramfs root area to overlayfs root area."
+  exec switch_root /mnt /sbin/init
+}
+
+export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
+
+DEFAULT_OVERLAY_DIR="/tmp/minimal/overlay"
+DEFAULT_UPPER_DIR="/tmp/minimal/rootfs"
+DEFAULT_WORK_DIR="/tmp/minimal/work"
+
+rootfstype=auto
+
+# Prepare work area with needed folder structures
+prepare_workarea
+
+# Delay boot if rootdelay is provided in cmdline
+delay
+
+# Find boot device if a COS version is installed already
+find_boot_device
+
+# Parse cmdline for root device if the system was installed already
+parse_cmdline
+
+# Mount the new system, or search for a squashfs (LiveCD)
+mount_system
+
+# Switch to the new system (if found)
+switch_system
