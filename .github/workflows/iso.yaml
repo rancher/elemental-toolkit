@@ -47,7 +47,7 @@ jobs:
       env:
         SUDO: "sudo -E"
       run: |
-        make rebuild-full
+        make rebuild-all
         ls -liah $PWD/build
     - name: Create repository 🔧
       env:
