@@ -5,9 +5,3 @@ packages:
   description: "Standard kernel"
   kernel_id: "5.10.12-1-vanilla"
   minimal: false
-- category: "kernel"
-  name: "vanilla-minimal"
-  version: "5.10.12"
-  description: "Minimal kernel"
-  kernel_id: "5.10.12-1-vanilla"
-  minimal: true

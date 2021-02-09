@@ -4,18 +4,17 @@ packages:
   - system/tumbleweed
   - utils/installer
   - kernel/vanilla
+  - system/initramfs
   uefi:
   - live/systemd-boot
   - live/boot
   isoimage:
   - live/syslinux
   - live/boot
-  # Really simple/dumb initramfs until we go into dracut
-  initramfs:
-  - live/minimal
-  - kernel/vanilla-minimal
-  - live/init
-  - live/boot
+
+initramfs:
+  kernel_file: "vmlinuz-vanilla"
+  rootfs_file: "initramfs"
 
 overlay: "true"
 image_prefix: "cOS-0."

@@ -47,7 +47,7 @@ jobs:
       env:
         SUDO: "sudo -E"
       run: |
-        make rebuild-full
+        make rebuild-all
         ls -liah $PWD/build
     - name: Create repository 🔧
       env:
@@ -67,3 +67,8 @@ jobs:
         path: |
           *.iso
           *.sha256
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: build-log
+        path: isowork/*.log

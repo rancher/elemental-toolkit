@@ -107,13 +107,7 @@ do_mount()
 
 do_copy()
 {
-    #tar cf - -C ${DISTRO} cos | tar xvf - -C ${TARGET}
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
-    cp -rf ${ISOBOOT}/rootfs.xz ${TARGET}/boot/rootfs.xz
-    pushd ${TARGET}/boot >/dev/null
-    ln -s rootfs.xz Initrd
-    # ln -s vmlinuz-* bzImage
-    popd >/dev/null
 }
 
 install_grub()
@@ -135,7 +129,7 @@ insmod gfxterm
 
 menuentry "cOS" {
   linux /boot/vmlinuz-vanilla console=tty1
-  initrd /boot/Initrd
+  initrd /boot/initramfs
 }
 EOF
     if [ -z "${COS_INSTALL_TTY}" ]; then
@@ -165,7 +159,6 @@ EOF
     mount --rbind /sys ${TARGET}/sys
 
     chroot ${TARGET} /bin/sh <<EOF
-    echo "GRUB_CMDLINE_LINUX_DEFAULT=\"root=${STATE}\"" >> /etc/default/grub
     grub2-install ${GRUB_TARGET} ${DEVICE}
 EOF
 
