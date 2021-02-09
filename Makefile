@@ -14,6 +14,7 @@ SUDO?=
 VALIDATE_OPTIONS?=-s
 ARCH?=amd64
 REPO_CACHE?=raccos/$(ARCH)
+FINAL_REPO?=raccos/releases-$(ARCH)
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
@@ -61,6 +62,19 @@ create-repo:
     --tree-filename tree.tar \
     --meta-compression $(COMPRESSION) \
     --type http
+
+publish-repo:
+	$(SUDO) $(LUET) create-repo --tree "$(TREE)" \
+    --output $(FINAL_REPO) \
+    --packages $(DESTINATION) \
+    --name "cOS" \
+    --descr "cOS $(ARCH)" \
+    --urls "" \
+    --tree-compression $(COMPRESSION) \
+    --tree-filename tree.tar \
+    --meta-compression $(COMPRESSION) \
+    --push-images \
+    --type docker
 
 serve-repo:
 	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(ROOT_DIR)/build &
