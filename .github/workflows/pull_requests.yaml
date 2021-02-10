@@ -44,5 +44,5 @@ jobs:
       env:
         SUDO: "sudo -E"
       run: |
-        make rebuild-all
+        make rebuild-full
         ls -liah $PWD/build
