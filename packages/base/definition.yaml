@@ -3,3 +3,4 @@ category: "distro"
 version: "0.20210108"
 
 hidden: true # No need to make it installable for now
+image: opensuse/tumbleweed

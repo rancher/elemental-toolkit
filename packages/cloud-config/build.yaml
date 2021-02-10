@@ -1,16 +1,11 @@
 requires:
-- name: "base"
-  category: "distro"
+- name: "initramfs"
+  category: "system"
   version: ">=0"
-
-package_dir: /integration
+- name: "cos-setup"
+  category: "system"
+  version: ">=0"
 steps:
-- mkdir -p /integration/usr/bin/
-- mkdir -p /integration/lib/systemd/system
-- cp -rfv *.service /integration/lib/systemd/system
-- cp -rfv *.timer /integration/lib/systemd/system
-- mkdir -p /integration/usr/local/setup
-- cp -rfv yipfiles/*.yaml /integration/usr/local/setup
-- cp -rfv cos-setup /integration/usr/bin/
-- chmod +x /integration/usr/bin/cos-setup
-- chmod -R 600 /integration/usr/local/setup
+- mkdir -p /usr/local/setup
+- cp -rfv yipfiles/*.yaml /usr/local/setup
+- chmod -R 600 /usr/local/setup

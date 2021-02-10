@@ -1,10 +1,6 @@
 packages:
   rootfs:
-  - system/cos-config
-  - system/tumbleweed
-  - utils/installer
-  - kernel/vanilla
-  - system/initramfs
+  - system/cos
   uefi:
   - live/systemd-boot
   - live/boot

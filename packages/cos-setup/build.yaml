@@ -1,0 +1,13 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+- name: "initramfs"
+  category: "system"
+  version: ">=0"
+steps:
+- mkdir -p /lib/systemd/system
+- cp -rfv *.service /lib/systemd/system
+- cp -rfv *.timer /lib/systemd/system
+- cp -rfv cos-setup /usr/bin/
+- chmod +x /usr/bin/cos-setup

@@ -22,6 +22,7 @@ stages:
        - /usr/bin/systemctl enable cos-setup-fs-after.service
        - /usr/bin/systemctl enable cos-setup-boot.service
        - /usr/bin/systemctl enable cos-setup-network.service
+       - /usr/bin/systemctl mask purge-kernels
        files:
         - path: /etc/shadow
           content: |
