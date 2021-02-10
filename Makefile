@@ -74,7 +74,6 @@ publish-repo:
     --tree-filename tree.tar \
     --meta-compression $(COMPRESSION) \
     --push-images \
-    --force-push \
     --type docker
 
 serve-repo:
