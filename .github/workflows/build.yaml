@@ -50,13 +50,6 @@ jobs:
       run: |
         make rebuild-all
         ls -liah $PWD/build
-    - name: Create repository 🔧
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      env:
-        SUDO: "sudo -E"
-      run: |
-        make create-repo
-        ls -liah $PWD/build
 
     - name: Publish to DockerHub 🚀
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
