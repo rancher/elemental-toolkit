@@ -4,7 +4,7 @@ requires:
   version: ">=0"
 
 steps:
-- zypper in -y kernel-vanilla
+- zypper in -y -f kernel-vanilla-{{.Values.version}}
 
 includes:
 # Kernel

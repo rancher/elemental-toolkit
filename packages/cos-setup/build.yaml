@@ -1,8 +1,5 @@
 requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
-- name: "initramfs"
+- name: "yip"
   category: "system"
   version: ">=0"
 steps:

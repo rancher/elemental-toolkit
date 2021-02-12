@@ -32,11 +32,11 @@ cleanup()
 
 usage()
 {
-    echo "Usage: $PROG [--force-efi] [--debug] [--tty TTY] [--poweroff] [--no-format] DEVICE"
+    echo "Usage: $PROG [--force-efi] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "Example: $PROG /dev/vda"
     echo ""
-    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
+    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_ACTIVE partition (/dev/vda2)"
     echo ""
     echo "The parameters names refer to the same names used in the cmdline, refer to README.md for"
     echo "more info."
@@ -47,12 +47,15 @@ usage()
 do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
-        STATE=$(blkid -L COS_STATE || true)
+        STATE=$(blkid -L COS_ACTIVE || true)
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
-            tune2fs -L COS_STATE $DEVICE
-            STATE=$(blkid -L COS_STATE)
+            tune2fs -L COS_ACTIVE $DEVICE
+            STATE=$(blkid -L COS_ACTIVE)
         fi
-
+        OEM=$(blkid -L COS_OEM || true)
+        STATE=$(blkid -L COS_ACTIVE || true)
+        PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+        PASSIVE=$(blkid -L COS_PASSIVE || true)
         return 0
     fi
 
@@ -60,14 +63,27 @@ do_format()
     parted -s ${DEVICE} mklabel ${PARTTABLE}
     if [ "$PARTTABLE" = "gpt" ]; then
         BOOT_NUM=1
-        STATE_NUM=2
+        OEM_NUM=2
+        STATE_NUM=3
+        PASSIVE_NUM=4
+        PERSISTENT_NUM=5
         parted -s ${DEVICE} mkpart primary fat32 0% 50MB
-        parted -s ${DEVICE} mkpart primary ext4 50MB 750MB
+        parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
+        parted -s ${DEVICE} mkpart primary ext4 100MB 800MB
+        parted -s ${DEVICE} mkpart primary ext4 800MB 1600MB
+        parted -s ${DEVICE} mkpart primary ext4 1600MB 100% # persistent
     else
         BOOT_NUM=
-        STATE_NUM=1
-        parted -s ${DEVICE} mkpart primary ext4 0% 700MB
+        OEM_NUM=1
+        STATE_NUM=2
+        PASSIVE_NUM=3
+        PERSISTENT_NUM=4
+        parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
+        parted -s ${DEVICE} mkpart primary ext4 50MB 750MB
+        parted -s ${DEVICE} mkpart primary ext4 750MB 1500MB
+        parted -s ${DEVICE} mkpart primary ext4 1500MB 100% # persistent
     fi
+
     parted -s ${DEVICE} set 1 ${BOOTFLAG} on
     partprobe ${DEVICE} 2>/dev/null || true
     sleep 2
@@ -86,12 +102,19 @@ do_format()
         BOOT=${PREFIX}${BOOT_NUM}
     fi
     STATE=${PREFIX}${STATE_NUM}
+    OEM=${PREFIX}${OEM_NUM}
+    PERSISTENT=${PREFIX}${PERSISTENT_NUM}
+    PASSIVE=${PREFIX}${PASSIVE_NUM}
 
-    mkfs.ext4 -F -L COS_STATE ${STATE}
+    mkfs.ext4 -F -L COS_ACTIVE ${STATE}
     if [ -n "${BOOT}" ]; then
         mkfs.vfat -F 32 ${BOOT}
         fatlabel ${BOOT} COS_GRUB
     fi
+
+    mkfs.ext4 -F -L COS_OEM ${OEM}
+    mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
+    mkfs.ext4 -F -L COS_PASSIVE ${PASSIVE}
 }
 
 do_mount()
@@ -103,11 +126,42 @@ do_mount()
         mkdir -p ${TARGET}/boot/efi
         mount ${BOOT} ${TARGET}/boot/efi
     fi
+    mkdir -p ${TARGET}/oem
+    mount ${OEM} ${TARGET}/oem
+    mkdir -p ${TARGET}/usr/local
+    mount ${PERSISTENT} ${TARGET}/usr/local
+}
+
+get_url()
+{
+    FROM=$1
+    TO=$2
+    case $FROM in
+        ftp*|http*|tftp*)
+            n=0
+            attempts=5
+            until [ "$n" -ge "$attempts" ]
+            do
+                curl -o $TO -fL ${FROM} && break
+                n=$((n+1))
+                echo "Failed to download, retry attempt ${n} out of ${attempts}"
+                sleep 2
+            done
+            ;;
+        *)
+            cp -f $FROM $TO
+            ;;
+    esac
 }
 
 do_copy()
 {
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
+    if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
+        OEM=${TARGET}/oem/02_config.yaml
+        get_url "$COS_INSTALL_CONFIG_URL" $OEM
+        chmod 600 ${OEM}
+    fi
 }
 
 install_grub()
@@ -119,16 +173,24 @@ install_grub()
     # FIXME: vmlinuz-vanilla needs to be a generic one. e.g. vmlinuz
     mkdir -p ${TARGET}/boot/grub2
     cat > ${TARGET}/boot/grub2/grub.cfg << EOF
-set default=0
-set timeout=10
 
+
+set timeout=10
+set default=cos
+
+set fallback=fallback
 set gfxmode=auto
 set gfxpayload=keep
 insmod all_video
 insmod gfxterm
 
-menuentry "cOS" {
-  linux /boot/vmlinuz-vanilla console=tty1
+menuentry "cOS" --id cos {
+  linux /boot/vmlinuz-vanilla console=tty1 root=LABEL=COS_ACTIVE panic=5
+  initrd /boot/initramfs
+}
+
+menuentry "cOS (fallback)" --id fallback {
+  linux /boot/vmlinuz-vanilla console=tty1 root=LABEL=COS_PASSIVE panic=5
   initrd /boot/initramfs
 }
 EOF
@@ -222,6 +284,10 @@ while [ "$#" -gt 0 ]; do
         --debug)
             set -x
             COS_INSTALL_DEBUG=true
+            ;;
+        --config)
+            shift 1
+            COS_INSTALL_CONFIG_URL=$1
             ;;
         --tty)
             shift 1

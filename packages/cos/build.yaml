@@ -124,4 +124,8 @@ excludes:
 - ^/usr/local/share
 - ^/usr/local/src
 - ^/root
-- ^/etc
+#- ^/etc
+- ^/etc/.+$
+
+# Not needed, we don't handle multiple kernels here
+#- ^/var/lib/systemd/migrated/purge-kernels

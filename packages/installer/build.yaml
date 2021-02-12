@@ -4,4 +4,6 @@ requires:
   version: ">=0"
 
 steps:
-- cp -rfv installer.sh /usr/sbin/installer && chmod +x /usr/sbin/installer
+- cp -rfv installer.sh /usr/sbin/cos-installer && chmod +x /usr/sbin/cos-installer
+- cp -rfv upgrade.sh /usr/sbin/cos-upgrade && chmod +x /usr/sbin/cos-upgrade
+

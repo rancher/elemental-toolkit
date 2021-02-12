@@ -20,6 +20,14 @@ prepare_workarea() {
   echo "Created folders for all critical file systems."
 }
 
+shell() {
+  # Set flag which indicates that we have obtained controlling terminal.
+  export PID1_SHELL=true
+
+  # Interactive shell with controlling tty as PID 1.
+  exec setsid sh
+}
+
 parse_cmdline() {
 	read -r cmdline < /proc/cmdline
 
@@ -40,7 +48,7 @@ parse_cmdline() {
 	case "$root" in
 		/dev/* ) device=$root ;;
 		UUID=* ) eval $root; device="/dev/disk/by-uuid/$UUID"  ;;
-		LABEL=*) eval $root; device="/dev/disk/by-label/$LABEL" ;;
+		LABEL=*) eval $root; device=$(blkid -t LABEL=$LABEL -o device) ;;
 	esac
 }
 
@@ -48,19 +56,15 @@ shell() {
 	setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
 }
 
-find_boot_device(){
-  # Grab device by label if we find it in blkid
-  device=$(blkid -t LABEL=COS_STATE -o device)
-}
-
 mount_root() {
 	newroot=$1
-	if [ ! "$device" ]; then
+	dev=$2
+	if [ ! "$dev" ]; then
 		echo "device not specified!"
 		shell
 	fi
-	if ! mount -n ${rootfstype:+-t $rootfstype} -o ${rwopt:-ro}${rootflags:+,$rootflags} "$device" "$newroot" ; then
-		echo "cant mount: $device"
+	if ! mount -n ${rootfstype:+-t $rootfstype} -o ${rwopt:-ro}${rootflags:+,$rootflags} "$dev" "$newroot" ; then
+		echo "cant mount: $dev"
 		shell
 	fi
 }
@@ -88,68 +92,7 @@ search_overlay() {
     WORK_DIR=""
 
     mount $DEVICE $DEVICE_MNT 2>/dev/null
-    if [ -d $DEVICE_MNT/minimal/rootfs -a -d $DEVICE_MNT/minimal/work ] ; then
-      # folder
-      echo -e "  Found \\e[94m/minimal\\e[0m folder on device \\e[31m$DEVICE\\e[0m."
-      touch $DEVICE_MNT/minimal/rootfs/minimal.pid 2>/dev/null
-      if [ -f $DEVICE_MNT/minimal/rootfs/minimal.pid ] ; then
-        # read/write mode
-        echo -e "  Device \\e[31m$DEVICE\\e[0m is mounted in read/write mode."
-
-        rm -f $DEVICE_MNT/minimal/rootfs/minimal.pid
-
-        OVERLAY_DIR=$DEFAULT_OVERLAY_DIR
-        OVERLAY_MNT=$DEVICE_MNT
-        UPPER_DIR=$DEVICE_MNT/minimal/rootfs
-        WORK_DIR=$DEVICE_MNT/minimal/work
-      else
-        # read only mode
-        echo -e "  Device \\e[31m$DEVICE\\e[0m is mounted in read only mode."
-
-        OVERLAY_DIR=$DEVICE_MNT/minimal/rootfs
-        OVERLAY_MNT=$DEVICE_MNT
-        UPPER_DIR=$DEFAULT_UPPER_DIR
-        WORK_DIR=$DEFAULT_WORK_DIR
-      fi
-    elif [ -f $DEVICE_MNT/minimal.img ] ; then
-      #image
-      echo -e "  Found \\e[94m/minimal.img\\e[0m image on device \\e[31m$DEVICE\\e[0m."
-
-      mkdir -p /tmp/mnt/image
-      IMAGE_MNT=/tmp/mnt/image
-
-      LOOP_DEVICE=$(losetup -f)
-      losetup $LOOP_DEVICE $DEVICE_MNT/minimal.img
-
-      mount $LOOP_DEVICE $IMAGE_MNT
-      if [ -d $IMAGE_MNT/rootfs -a -d $IMAGE_MNT/work ] ; then
-        touch $IMAGE_MNT/rootfs/minimal.pid 2>/dev/null
-        if [ -f $IMAGE_MNT/rootfs/minimal.pid ] ; then
-          # read/write mode
-          echo -e "  Image \\e[94m$DEVICE/minimal.img\\e[0m is mounted in read/write mode."
-
-          rm -f $IMAGE_MNT/rootfs/minimal.pid
-
-          OVERLAY_DIR=$DEFAULT_OVERLAY_DIR
-          OVERLAY_MNT=$IMAGE_MNT
-          UPPER_DIR=$IMAGE_MNT/rootfs
-          WORK_DIR=$IMAGE_MNT/work
-        else
-          # read only mode
-          echo -e "  Image \\e[94m$DEVICE/minimal.img\\e[0m is mounted in read only mode."
-
-          OVERLAY_DIR=$IMAGE_MNT/rootfs
-          OVERLAY_MNT=$IMAGE_MNT
-          UPPER_DIR=$DEFAULT_UPPER_DIR
-          WORK_DIR=$DEFAULT_WORK_DIR
-        fi
-      else
-        umount $IMAGE_MNT
-        rm -rf $IMAGE_MNT
-      fi
-
-
-    elif [ -f $DEVICE_MNT/rootfs.squashfs ] ; then
+    if [ -f $DEVICE_MNT/rootfs.squashfs ] ; then
       #image
       echo -e "  Found \\e[94m/rootfs.squashfs\\e[0m image on device \\e[31m$DEVICE\\e[0m."
 
@@ -221,10 +164,26 @@ delay() {
 }
 
 mount_system() {
+  # Parse cmdline for root device if the system was installed already
+  parse_cmdline
+
+  rootdevice=/mnt
+
   if [ -n "$device" ]; then
-    # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENCY (/usr/local)
+    # FIXME: Temporarly, until we separate COS_STATE from COS_PERSISTENT (/usr/local)
     rwopt="rw"
-    mount_root /mnt
+    mount_root $rootdevice $device
+
+    persistent=$(blkid -t LABEL=COS_PERSISTENT -o device)
+    if [ -n "$persistent" ]; then
+      mount_root "$rootdevice/usr/local" $persistent
+    fi
+
+    oem=$(blkid -t LABEL=COS_OEM -o device)
+    if [ -n "$oem" ]; then
+      mount_root "$rootdevice/oem" $oem
+    fi
+
   else
     search_overlay
   fi
@@ -233,12 +192,7 @@ mount_system() {
 switch_system() {
   if [ ! -e "/mnt/sbin/init" ]; then
     echo -e "  \\e[31m/sbin/init in rootfs not found, dropping to emergency shell\\e[0m"
-
-    # Set flag which indicates that we have obtained controlling terminal.
-    export PID1_SHELL=true
-
-    # Interactive shell with controlling tty as PID 1.
-    exec setsid sh
+    shell
   fi
 
   # Move critical file systems to the new mountpoint.
@@ -267,12 +221,6 @@ prepare_workarea
 
 # Delay boot if rootdelay is provided in cmdline
 delay
-
-# Find boot device if a COS version is installed already
-find_boot_device
-
-# Parse cmdline for root device if the system was installed already
-parse_cmdline
 
 # Mount the new system, or search for a squashfs (LiveCD)
 mount_system

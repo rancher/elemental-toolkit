@@ -1,11 +1,8 @@
 requires:
-- name: "initramfs"
-  category: "system"
-  version: ">=0"
 - name: "cos-setup"
   category: "system"
   version: ">=0"
 steps:
-- mkdir -p /usr/local/setup
-- cp -rfv yipfiles/*.yaml /usr/local/setup
-- chmod -R 600 /usr/local/setup
+- mkdir -p /oem
+- cp -rfv yipfiles/*.yaml /oem
+- chmod -R 600 /oem

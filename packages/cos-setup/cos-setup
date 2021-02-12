@@ -11,7 +11,7 @@ for x in "$@"; do
     esac
 done
 
-for dir in "/usr/local/setup/" "/oem"; do
+for dir in "/oem/" "/usr/local/cloud-config/"; do
     if [ -d "$dir" ]; then
         yip -s "$STAGE" "$dir"
     fi

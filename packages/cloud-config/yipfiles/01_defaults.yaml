@@ -1,20 +1,54 @@
 # Default cOS OEM configuration file
-## FIXME: Move this to a separate package. Or either copy a stub of a /system/etc.default that have to be shipped by the distro package
 stages:
    initramfs.after:
-     - name: "Create /etc"
+     - name: "Create needed folders"
        commands:
        - mkdir /etc
      - name: "Mount volatile /etc"
+       commands:
+       - mount -t tmpfs -o size=20m tmpfs /etc
+     - name: "Write fstab"
        files:
         - path: /etc/fstab
           content: |
                     tmpfs   /etc         tmpfs   rw,nodev,nosuid,size=20MB          0  0
+#                    LABEL=COS_OEM        /oem       ext4  defaults                    0  1
+#                    LABEL=COS_PERSISTENT /usr/local ext4  data=ordered                0  2
+#                    LABEL=COS_GRUB       /boot/efi  vfat  defaults                    0  0
           permissions: 0644
           owner: 0
           group: 0
-       commands:
-       - mount -t tmpfs -o size=20m tmpfs /etc
+     - name: "Setup Luet config file"
+       directories: 
+       - path: "/etc/luet"
+         permissions: 0600
+         owner: 0
+         group: 0
+       files:
+       - path: /etc/luet/luet.yaml
+         content: |
+                  general:
+                     debug: false
+                  system:
+                    rootfs: /tmp/upgrade
+                    database_engine: "memory"
+                  repositories:
+                  - name: "cos"
+                    description: "cOS official"
+                    type: "docker"
+                    enable: true
+                    cached: true
+                    priority: 1
+                    urls:
+                    - "raccos/releases-amd64"
+         permissions: 0600
+         owner: 0
+         group: 0
+       - path: /etc/cos-upgrade-image
+         content: "system/cos"
+         permissions: 0600
+         owner: 0
+         group: 0
      - name: "Setup distro"
        commands:
        - ln -s /usr/share/zoneinfo/UTC /etc/localtime
@@ -136,7 +170,7 @@ stages:
 
             Welcome to cOS!
             Login with user: root, password: cos
-            Start the installer with "installer <device>" to install it in the local system
+            Start the installer with "cos-installer <device>" to install it in the local system
           permissions: 0644
           owner: 0
           group: 0

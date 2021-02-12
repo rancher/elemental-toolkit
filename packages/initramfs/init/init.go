@@ -17,7 +17,7 @@ type initCmds struct {
 var (
 	debug   = func(string, ...interface{}) {}
 	modules = []string{
-		"af_packet", "e1000e", "e1000",
+		"af_packet", "e1000e", "e1000", "dm_mod",
 		"ahci", "virtio_blk", "virtio_pci", "pata_acpi", "ahcpi-plaftorm", "libahcpi-platform", "ata_piix",
 		"ohci_pci", "ehci_pci", "loop", "ext4", "isofs", "squashfs",
 		"ata_generic", "cdrom", "sd_mod", "sr_mod", "ext2", "uas", "usb_storage", "usbcore", "paride",

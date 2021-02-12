@@ -1,7 +1,6 @@
 packages:
 - category: "kernel"
   name: "vanilla"
-  version: "5.10.12"
+  version: "5.10.12-1.2"
   description: "Standard kernel"
   kernel_id: "5.10.12-1-vanilla"
-  minimal: false
