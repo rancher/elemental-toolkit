@@ -1,6 +1,6 @@
 name: "cos"
 category: "system"
-version: "0.4.9"
+version: "0.4.9+1"
 
 packages: >-
       systemd
@@ -18,3 +18,4 @@ packages: >-
       curl
       iproute2
       nano
+      gawk

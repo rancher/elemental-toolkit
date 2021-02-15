@@ -27,6 +27,35 @@ find_partitions() {
         echo "OEM partition cannot be found"
         exit 1
     fi
+
+    CURRENT=$(df $0 | tail -1 | gawk '{print $1}')
+    if [ -z "$CURRENT" ]; then
+        echo "Could not determine current partition"
+        exit 1
+    fi
+    if [ -z "$ACTIVE" ]; then
+        echo "Could not determine active partition"
+        exit 1
+    fi
+    if [ -z "$PASSIVE" ]; then
+        echo "Could not determine passive partition"
+        exit 1
+    fi
+
+    if [[ $CURRENT == $ACTIVE ]]; then
+        TARGET_PARTITION=$PASSIVE
+        NEW_ACTIVE=$PASSIVE
+        NEW_PASSIVE=$ACTIVE
+    elif [[ $CURRENT == $PASSIVE ]]; then
+        # We booted from the fallback, and we are attempting to fixup the active one
+        TARGET_PARTITION=$ACTIVE
+        NEW_ACTIVE=$ACTIVE
+        NEW_PASSIVE=$PASSIVE
+    fi
+    if [ -z "$TARGET_PARTITION" ]; then
+        echo "Could not determine target partition"
+        exit 1
+    fi
 }
 
 # cos-upgrade-image: system/cos
@@ -41,7 +70,10 @@ find_upgrade_channel() {
 mount_image() {
     TARGET=/tmp/upgrade
     mkdir ${TARGET} || true
-    mount $PASSIVE ${TARGET}
+    mount $TARGET_PARTITION ${TARGET}
+}
+
+mount_persistent() {
     mkdir -p ${TARGET}/oem || true
     mount ${OEM} ${TARGET}/oem
     mkdir -p ${TARGET}/usr/local || true
@@ -49,21 +81,33 @@ mount_image() {
 }
 
 upgrade() {
-    mount -t auto $PASSIVE /tmp/upgrade
-    luet install -y $UPGRADE_IMAGE
+    mount_image
+
+    # XXX: Wipe old - until we have a persistent luet state - if we ever want that
+    if [ -d "/tmp/empty" ]; then
+        rm -rf /tmp/empty
+    fi
+    mkdir /tmp/empty
+    rsync -a --delete /tmp/empty/ /tmp/upgrade/
+
+    mount_persistent
+
+    # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
+    # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
+    # for the state
+    # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
+    XDG_RUNTIME_DIR=/var/tmp TMPDIR=/var/tmp luet install -y $UPGRADE_IMAGE
     luet cleanup
 }
 
 switch_active() {
-    tune2fs -L COS_ACTIVE $PASSIVE
-    tune2fs -L COS_PASSIVE $ACTIVE
+    tune2fs -L COS_ACTIVE $NEW_ACTIVE
+    tune2fs -L COS_PASSIVE $NEW_PASSIVE
 }
 
 find_partitions
 
 find_upgrade_channel
-
-mount_image
 
 upgrade
 
