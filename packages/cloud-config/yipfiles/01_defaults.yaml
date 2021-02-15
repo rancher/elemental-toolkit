@@ -50,6 +50,11 @@ stages:
          owner: 0
          group: 0
      - name: "Setup distro"
+       dns:
+         path: /etc/resolv.conf
+         nameservers:
+         - 8.8.8.8
+         - 1.1.1.1
        commands:
        - ln -s /usr/share/zoneinfo/UTC /etc/localtime
        - /usr/bin/systemctl enable cos-setup-reconcile.timer
@@ -57,6 +62,9 @@ stages:
        - /usr/bin/systemctl enable cos-setup-boot.service
        - /usr/bin/systemctl enable cos-setup-network.service
        - /usr/bin/systemctl mask purge-kernels
+       - mkdir /etc/ssl
+       - ln -s /var/lib/ca-certificates/pem /etc/ssl/certs
+       - ln -s /var/lib/ca-certificates/ca-bundle.pem /etc/ssl/ca-bundle.pem
        files:
         - path: /etc/shadow
           content: |
