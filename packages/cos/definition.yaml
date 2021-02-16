@@ -1,6 +1,6 @@
 name: "cos"
 category: "system"
-version: "0.4.9+1"
+version: "0.4.10"
 
 packages: >-
       systemd
