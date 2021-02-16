@@ -67,11 +67,11 @@ do_format()
         STATE_NUM=3
         PASSIVE_NUM=4
         PERSISTENT_NUM=5
-        parted -s ${DEVICE} mkpart primary fat32 0% 50MB
+        parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
         parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 800MB
-        parted -s ${DEVICE} mkpart primary ext4 800MB 1600MB
-        parted -s ${DEVICE} mkpart primary ext4 1600MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 100MB 2100MB # active
+        parted -s ${DEVICE} mkpart primary ext4 2100MB 4100MB # passive
+        parted -s ${DEVICE} mkpart primary ext4 4100MB 100% # persistent
     else
         BOOT_NUM=
         OEM_NUM=1
@@ -79,9 +79,9 @@ do_format()
         PASSIVE_NUM=3
         PERSISTENT_NUM=4
         parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 750MB
-        parted -s ${DEVICE} mkpart primary ext4 750MB 1500MB
-        parted -s ${DEVICE} mkpart primary ext4 1500MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 50MB 2050MB # active
+        parted -s ${DEVICE} mkpart primary ext4 2050MB 4050MB # passive
+        parted -s ${DEVICE} mkpart primary ext4 4050MB 100% # persistent
     fi
 
     parted -s ${DEVICE} set 1 ${BOOTFLAG} on
