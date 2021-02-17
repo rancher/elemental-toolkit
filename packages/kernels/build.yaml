@@ -5,7 +5,7 @@ requires:
 
 steps:
 - zypper in -y -f kernel-vanilla-{{.Values.version}}
-
+- depmod -a {{ .Values.kernel_id }}
 includes:
 # Kernel
 - /boot$
