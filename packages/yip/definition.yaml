@@ -1,6 +1,6 @@
 category: "system"
 name: "yip"
-version: "0.6.3"
+version: "0.6.4"
 labels:
   github.repo: "yip"
   github.owner: "mudler"
