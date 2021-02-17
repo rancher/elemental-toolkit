@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Runs a supplied stage from cmdline args and local folders
+# it emit also "stage.before" and "stage.after" to able to hook
+# into different stages. E.g. if one depends on another for network setup
 STAGE="${1:-boot}"
 set -- $(cat /proc/cmdline)
 for x in "$@"; do
@@ -12,7 +15,9 @@ done
 
 for dir in "/oem/" "/usr/local/cloud-config/"; do
     if [ -d "$dir" ]; then
+        yip -s "$STAGE".before "$dir"
         yip -s "$STAGE" "$dir"
+        yip -s "$STAGE".after "$dir"
     fi
 done
 
