@@ -1,6 +1,16 @@
 packages:
 - category: "kernel"
   name: "vanilla"
-  version: "5.10.14-1.1"
+  version: "5.10.16-1.2"
   description: "Standard kernel"
-  kernel_id: "5.10.14-1-vanilla"
+  kernel_id: "5.10.16-1-vanilla"
+
+  labels:
+    autobump.revdeps: "false"
+    autobump.string_replace: '{ "prefix": "" }'
+    autobump.strategy: "custom"
+    autobump.prefix: "prefix"
+    autobump.hook: |
+            docker run -ti --rm opensuse/tumbleweed bash -c 'zypper se -v kernel-vanilla | awk "{ print \$6 }" | grep -P "\d" | uniq'
+    autobump.version_hook:
+            docker run -ti --rm opensuse/tumbleweed bash -c 'zypper se -v kernel-vanilla | awk "{ print \$6 }" | grep -P "\d" | uniq'
