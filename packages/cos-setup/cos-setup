@@ -1,12 +1,11 @@
 #!/bin/sh
-set -e
 
 STAGE="${1:-boot}"
 set -- $(cat /proc/cmdline)
 for x in "$@"; do
     case "$x" in
         cos.setup=*)
-        yip -s "$STAGE" "${x#yip=}"
+        yip -s "$STAGE".before "${x#cos.setup=}"
         ;;
     esac
 done
@@ -15,4 +14,12 @@ for dir in "/oem/" "/usr/local/cloud-config/"; do
     if [ -d "$dir" ]; then
         yip -s "$STAGE" "$dir"
     fi
+done
+
+for x in "$@"; do
+    case "$x" in
+        cos.setup=*)
+        yip -s "$STAGE".after "${x#cos.setup=}"
+        ;;
+    esac
 done

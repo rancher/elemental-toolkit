@@ -1,54 +1,9 @@
 # Default cOS OEM configuration file
 stages:
    initramfs.after:
-     - name: "Create needed folders"
-       commands:
-       - mkdir /etc
      - name: "Mount volatile /etc"
        commands:
        - mount -t tmpfs -o size=20m tmpfs /etc
-     - name: "Write fstab"
-       files:
-        - path: /etc/fstab
-          content: |
-                    tmpfs   /etc         tmpfs   rw,nodev,nosuid,size=20MB          0  0
-#                    LABEL=COS_OEM        /oem       ext4  defaults                    0  1
-#                    LABEL=COS_PERSISTENT /usr/local ext4  data=ordered                0  2
-#                    LABEL=COS_GRUB       /boot/efi  vfat  defaults                    0  0
-          permissions: 0644
-          owner: 0
-          group: 0
-     - name: "Setup Luet config file"
-       directories: 
-       - path: "/etc/luet"
-         permissions: 0600
-         owner: 0
-         group: 0
-       files:
-       - path: /etc/luet/luet.yaml
-         content: |
-                  general:
-                     debug: false
-                  system:
-                    rootfs: /tmp/upgrade
-                    database_engine: "memory"
-                  repositories:
-                  - name: "cos"
-                    description: "cOS official"
-                    type: "docker"
-                    enable: true
-                    cached: true
-                    priority: 1
-                    urls:
-                    - "raccos/releases-amd64"
-         permissions: 0600
-         owner: 0
-         group: 0
-       - path: /etc/cos-upgrade-image
-         content: "system/cos"
-         permissions: 0600
-         owner: 0
-         group: 0
      - name: "Setup distro"
        dns:
          path: /etc/resolv.conf
@@ -61,7 +16,10 @@ stages:
        - /usr/bin/systemctl enable cos-setup-fs-after.service
        - /usr/bin/systemctl enable cos-setup-boot.service
        - /usr/bin/systemctl enable cos-setup-network.service
+       - /usr/bin/systemctl enable multi-user.target
+       - /usr/bin/systemctl set-default multi-user.target
        - /usr/bin/systemctl mask purge-kernels
+       - /usr/bin/systemctl enable getty@tty1
        - mkdir /etc/ssl
        - ln -s /var/lib/ca-certificates/pem /etc/ssl/certs
        - ln -s /var/lib/ca-certificates/ca-bundle.pem /etc/ssl/ca-bundle.pem
