@@ -158,7 +158,7 @@ do_copy()
 {
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${TARGET}/oem/02_config.yaml
+        OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi

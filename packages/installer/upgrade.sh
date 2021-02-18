@@ -113,10 +113,42 @@ switch_active() {
     tune2fs -L COS_PASSIVE $NEW_PASSIVE
 }
 
+cleanup2()
+{
+    if [ -n "${TARGET}" ]; then
+        umount ${TARGET}/oem || true
+        umount ${TARGET}/usr/local || true
+        umount ${TARGET}/ || true
+    fi
+}
+
+cleanup()
+{
+    EXIT=$?
+    cleanup2 2>/dev/null || true
+    return $EXIT
+}
+
 find_partitions
 
 find_upgrade_channel
 
+trap cleanup exit
+
 upgrade
 
 switch_active
+
+sync
+
+if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then
+    if grep -q 'cos.upgrade.power_off=true' /proc/cmdline; then
+        poweroff -f
+    else
+        echo " * Rebooting system in 5 seconds (CTRL+C to cancel)"
+        sleep 5
+        reboot -f
+    fi
+else
+    echo "Upgrade done, now you might want to reboot"
+fi
