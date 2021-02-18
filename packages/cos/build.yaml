@@ -33,9 +33,7 @@ steps:
 # In opensuse, /bin/sh is a symlink to /etc/alternatives/sh, which points to bash.
 # We don't supply etc/alternatives, so handle the symlink by ourselves
 - rm -rf /bin/sh && ln -s /usr/bin/bash /bin/sh
-# Default grub
-- mkdir -p /boot/grub2
-- cp -rfv grub.cfg /boot/grub2/grub.cfg
+
 unpack: true
 excludes:
 - ^/etc/shadow
