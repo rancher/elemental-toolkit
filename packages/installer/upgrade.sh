@@ -51,9 +51,20 @@ find_partitions() {
         TARGET_PARTITION=$ACTIVE
         NEW_ACTIVE=$ACTIVE
         NEW_PASSIVE=$PASSIVE
+    elif [ -z "$TARGET_PARTITION" ]; then
+        # We booted from an ISO or some else medium. We assume we want to fixup the current label
+        read -p "Could not determine current partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE. Otherwise assuming you want to overwrite COS_ACTIVE? [y/N] : " -n 1 -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]
+        then
+            [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+        fi
+        TARGET_PARTITION=$ACTIVE
+        NEW_ACTIVE=$ACTIVE
+        NEW_PASSIVE=$PASSIVE
     fi
+
     if [ -z "$TARGET_PARTITION" ]; then
-        echo "Could not determine target partition"
+        echo "Could not determine target partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE"
         exit 1
     fi
 
