@@ -185,11 +185,15 @@ insmod all_video
 insmod gfxterm
 
 menuentry "cOS" --id cos {
+  search.fs_label COS_ACTIVE root
+  set root=(\$root)
   linux /boot/vmlinuz-vanilla console=tty1 root=LABEL=COS_ACTIVE panic=5
   initrd /boot/initramfs
 }
 
 menuentry "cOS (fallback)" --id fallback {
+  search.fs_label COS_PASSIVE root
+  set root=(\$root)
   linux /boot/vmlinuz-vanilla console=tty1 root=LABEL=COS_PASSIVE panic=5
   initrd /boot/initramfs
 }
