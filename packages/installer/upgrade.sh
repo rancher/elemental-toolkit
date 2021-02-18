@@ -56,6 +56,11 @@ find_partitions() {
         echo "Could not determine target partition"
         exit 1
     fi
+
+    echo "-> Partition labeled COS_ACTIVE: $ACTIVE"
+    echo "-> Partition labeled COS_PASSIVE: $PASSIVE"
+    echo "-> Booting from: $CURRENT"
+    echo "-> Target upgrade partition: $TARGET_PARTITION"
 }
 
 # cos-upgrade-image: system/cos
@@ -83,7 +88,8 @@ mount_persistent() {
 upgrade() {
     mount_image
 
-    # XXX: Wipe old - until we have a persistent luet state - if we ever want that
+    # XXX: Wipe old, needed until we have a persistent luet state.
+    # TODO: at least cache downloads before wiping and we are sure we can perform the new install
     if [ -d "/tmp/empty" ]; then
         rm -rf /tmp/empty
     fi
@@ -101,7 +107,9 @@ upgrade() {
 }
 
 switch_active() {
+    echo "-> Flagging $NEW_ACTIVE as COS_ACTIVE"
     tune2fs -L COS_ACTIVE $NEW_ACTIVE
+    echo "-> Flagging $NEW_PASSIVE as COS_PASSIVE"
     tune2fs -L COS_PASSIVE $NEW_PASSIVE
 }
 
