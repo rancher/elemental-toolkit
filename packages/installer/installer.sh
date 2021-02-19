@@ -3,8 +3,8 @@ set -e
 
 PROG=$0
 PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install"
-DISTRO=/tmp/mnt/image
-ISOBOOT=/tmp/mnt/device/boot
+DISTRO=/run/rootfsbase
+ISOBOOT=/run/initramfs/live/boot
 TARGET=/run/cos/target
 
 if [ "$COS_DEBUG" = true ]; then
@@ -56,7 +56,6 @@ do_format()
         STATE=$(blkid -L COS_ACTIVE || true)
         PERSISTENT=$(blkid -L COS_PERSISTENT || true)
         PASSIVE=$(blkid -L COS_PASSIVE || true)
-        BOOT=$(blkid -L COS_GRUB || true)
         return 0
     fi
 
@@ -159,32 +158,10 @@ do_copy()
 {
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${TARGET}/oem/99_custom.yaml
+        OEM=${TARGET}/oem/02_config.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi
-    mkdir -p $TARGET/usr/local/cloud-config
-cat > $TARGET/usr/local/cloud-config/90_after_install.yaml <<EOF
-# Execute this stage in the boot phase:
-stages:
-   initramfs.after:
-     - name: "After install"
-       files:
-        - path: /etc/issue
-          content: |
-
-            Welcome to cOS!
-            Login with user: root, password: cos
-
-            To upgrade the system, run "cos-upgrade"
-            To change this message permantly on boot, see /usr/local/cloud-config/90_after_install.yaml
-
-          permissions: 0644
-          owner: 0
-          group: 0
-EOF
-    chmod 640 $TARGET/usr/local/cloud-config
-    chmod 640 $TARGET/usr/local/cloud-config/90_after_install.yaml
 }
 
 install_grub()
@@ -192,7 +169,31 @@ install_grub()
     if [ "$COS_INSTALL_DEBUG" ]; then
         GRUB_DEBUG="cos.debug"
     fi
- 
+
+    # FIXME: vmlinuz-vanilla needs to be a generic one. e.g. vmlinuz
+    mkdir -p ${TARGET}/boot/grub2
+    cat > ${TARGET}/boot/grub2/grub.cfg << EOF
+
+
+set timeout=10
+set default=cos
+
+set fallback=fallback
+set gfxmode=auto
+set gfxpayload=keep
+insmod all_video
+insmod gfxterm
+
+menuentry "cOS" --id cos {
+  linux /boot/vmlinuz-vanilla console=tty1 ro root=LABEL=COS_ACTIVE panic=5
+  initrd /boot/initrd
+}
+
+menuentry "cOS (fallback)" --id fallback {
+  linux /boot/vmlinuz-vanilla console=tty1 ro root=LABEL=COS_PASSIVE panic=5
+  initrd /boot/initrd
+}
+EOF
     if [ -z "${COS_INSTALL_TTY}" ]; then
         TTY=$(tty | sed 's!/dev/!!')
     else

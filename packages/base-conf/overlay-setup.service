@@ -1,0 +1,14 @@
+[Unit]
+Description=Create cOS overlayfs structure for rw ephemeral folders
+RequiresMountsFor=/data.overlay
+DefaultDependencies=no
+Before=etc.mount
+Before=var.mount
+Before=root.mount
+
+[Service]
+Type=oneshot
+ExecStart=mkdir -p /data.overlay/etc/upper /data.overlay/etc/work /data.overlay/var/upper /data.overlay/var/work /data.overlay/root/upper /data.overlay/root/work
+
+[Install]
+WantedBy=local-fs.target

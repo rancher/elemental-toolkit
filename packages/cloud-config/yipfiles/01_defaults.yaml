@@ -1,125 +1,69 @@
 # Default cOS OEM configuration file
 stages:
-   initramfs.after:
+    fs.after:
+     - name: "Setup Luet config file"
+       directories:
+       - path: "/etc/luet"
+         permissions: 0600
+         owner: 0
+         group: 0
+       files:
+       - path: /etc/luet/luet.yaml
+         content: |
+                  general:
+                     debug: false
+                  system:
+                    rootfs: /tmp/upgrade
+                    database_engine: "memory"
+                  repositories:
+                  - name: "cos"
+                    description: "cOS official"
+                    type: "docker"
+                    enable: true
+                    cached: true
+                    priority: 1
+                    urls:
+                    - "raccos/releases-amd64"
+         permissions: 0600
+         owner: 0
+         group: 0
+       - path: /etc/cos-upgrade-image
+         content: "system/cos"
+         permissions: 0600
+         owner: 0
+         group: 0
      - name: "Setup distro"
        commands:
-       - ln -s /usr/share/zoneinfo/UTC /etc/localtime
-       - /usr/bin/systemctl enable cos-setup-reconcile.timer
-       - /usr/bin/systemctl enable cos-setup-fs-after.service
-       - /usr/bin/systemctl enable cos-setup-boot.service
-       - /usr/bin/systemctl enable cos-setup-network.service
-       - /usr/bin/systemctl enable multi-user.target
-       - /usr/bin/systemctl set-default multi-user.target
-       - /usr/bin/systemctl mask purge-kernels
-       - /usr/bin/systemctl enable getty@tty1
+# commands always tries to expand vars (aka $..) so we can't pass a hashed passwd here
+#       - /bin/bash -c "/usr/sbin/usermod -p '$1$Oncxs0L7$U9/3Kuc2nP4oJowCNEquJ0' -g root root"
+       - /usr/bin/systemd-firstboot --keymap=us
+       - /usr/bin/systemd-firstboot --locale=en_US.UTF-8
+       - /usr/bin/systemd-firstboot --timezone=UTC
        files:
-        - path: /etc/locale.conf
-          content: "LANG=en_US.UTF-8"
+        - path: /etc/issue
+          content: |
+            .-----.
+            | .-. |
+            | |.| |
+            | `-' |
+            `-----'
+
+            Welcome to cOS!
+            Login with user: root, password: cos
+            Start the installer with "cos-installer <device>" to install it in the local system
           permissions: 0644
           owner: 0
           group: 0
-          permissions: 0644
+        - path: /etc/shadow
+          content: |
+            root:$1$Oncxs0L7$U9/3Kuc2nP4oJowCNEquJ0:18677::::::
+            sshd:!:18642::::::
+            nobody:!:18642::::::
+            messagebus:!:18642::::::
+            systemd-network:!*:18642::::::
+            systemd-resolve:!*:18642::::::
+            systemd-timesync:!*:18642::::::
+            systemd-coredump:!*:18642::::::
+          permissions: 0640
           owner: 0
           group: 0
-        - path: /etc/sysctl.conf
-          content: ""
-          permissions: 0644
-          owner: 0
-          group: 0
-       directories: 
-       - path: "/etc/profile.d"
-         permissions: 0755
-         owner: 0
-         group: 0
-       - path: "/etc/sysconfig"
-         permissions: 0755
-         owner: 0
-         group: 0
-       - path: "/etc/pam.d"
-         permissions: 0755
-         owner: 0
-         group: 0
-       - path: "/etc/security"
-         permissions: 0755
-         owner: 0
-         group: 0
-     - name: "Setup pam"
-       commands:
-       - pam-config --initialize
-       files:
-       - path: /etc/security/limits.conf
-         content: ""
-         permissions: 0644
-         owner: 0
-         group: 0
-       - path: /etc/security/pam_env.conf
-         content: ""
-         permissions: 0644
-         owner: 0
-         group: 0
-     - name: "Setup sysconfig"
-       files:
-       - path: "/etc/sysconfig/keyboard"
-         permissions: 0644
-         owner: 0
-         group: 0
-         content: |
-               ## Path:        Hardware/Keyboard
-               ## Description: Keyboard settings for the text console
-               ## ServiceRestart: kbdsettings
-               #
-
-               ## Type:        integer
-               ## Default:
-               #
-               # Keyboard delay time in ms (250, 500, 750, 1000)
-               KBD_DELAY=""
-
-               ## Type:	string(2.0,2.1,2.3,2.5,2.7,3.0,3.3,3.7,4.0,4.3,4.6,5.0,5.5,6.0,6.7,7.5,8.0,8.6,9.2,10.0,10.9,12.0,13.3,15.0,16.0,17.1,18.5,20.0,21.8,24.0,26.7,30.0)
-               ## Default:
-               #
-               # Keyboard repeat rate (2.0 - 30.0)
-               KBD_RATE=""
-
-               ## Type:        list(bios,yes,no)
-               ## Default:     bios
-               #
-               # NumLock on? ("yes" or "no" or "bios" for BIOS setting)
-               # This setting may interfere with GNOME /org/gnome/settings-daemon/peripherals/keyboard/remember-numlock-state DConf key.
-               KBD_NUMLOCK="bios"
-
-               ## Type:        yesno
-               ## Default:     no
-               #
-               # ScrollLock on? ("yes" or "no")
-               KBD_SCRLOCK="no"
-
-               ## Type:        yesno
-               ## Default:     no
-               #
-               # CapsLock on? ("yes" or "no")
-               KBD_CAPSLOCK="no"
-
-               ## Type:        yesno
-               ## Default:     no
-               #
-               # Disable CAPS LOCK and make it a normal Shift key?
-               # (Ctrl Caps Lock will still toggle Caps Lock functionality)
-               # Note that you need to tweak the xkb maps or use xmodmap
-               # if you want to do the same under X-Windows. In ~/.Xmodmap:
-               # keycode 0x42 = Shift_L Shift_L
-               #
-               KBD_DISABLE_CAPS_LOCK="no"
-
-               ## Type:        string
-               ## Default:
-               #
-               # ttys for the above settings 
-               # Example: "tty1 tty2"
-               # "" for tty's 1-6
-               #
-               KBD_TTY=""
-
-               # The YaST-internal identifier of the attached keyboard.
-               #
-               YAST_KEYBOARD="english-us,pc104"

@@ -1,0 +1,11 @@
+requires:
+- name: "cos"
+  category: "system"
+  version: ">=0"
+
+steps:
+- cp fstab /etc/fstab
+- mkdir -p /data.overlay
+- touch /data.overlay/.emptyfile
+- cp *.mount overlay-setup.service /etc/systemd/system/
+- systemctl enable overlay-setup.service

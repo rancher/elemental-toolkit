@@ -11,45 +11,31 @@ requires:
 - name: "vanilla"
   category: "kernel"
   version: ">=0"
-- name: "initramfs"
-  category: "system"
-  version: ">=0"
 - category: "system"
   name: "yip"
   version: ">=0"
-- name: cloud-config
-  category: system
+- name: "cloud-config"
+  category: "system"
   version: ">=0"
 
 steps:
-- zypper in -y {{.Values.packages}}
-# Removing packages that we don't need at the moment
-#- zypper rm -y dracut ncurses-utils
-- zypper rm -y ncurses-utils upx
+- zypper in -y --no-recommends {{.Values.packages}}
 # Cleans up cache
 - zypper cc
-- systemctl enable multi-user.target
-- systemctl set-default multi-user.target
 # In opensuse, /bin/sh is a symlink to /etc/alternatives/sh, which points to bash.
 # We don't supply etc/alternatives, so handle the symlink by ourselves
 - rm -rf /bin/sh && ln -s /usr/bin/bash /bin/sh
-# Grub
-- mkdir /boot/grub2/ || true
-- cp -rf grub.cfg /boot/grub2/
+- systemctl enable multi-user.target
+- systemctl set-default multi-user.target
+- systemctl enable cos-setup-reconcile.timer
+- systemctl enable cos-setup-fs-after.service
+- systemctl enable cos-setup-boot.service
+- systemctl enable cos-setup-network.service
+- systemctl mask purge-kernels.service
+
 unpack: true
 excludes:
-- ^/etc/shadow
-- ^/etc/gshadow
-- ^/etc/group
-- ^/etc/hostname
-- ^/etc/hosts
-- ^/etc/machine-id
-- ^/etc/fstab
-- ^/etc/passwd
-- ^/etc/machineid
-- ^/var/log
-- ^/sys
-- ^/proc
+- ^/var/cache/luet
 - ^/luetbuild
 - ^/srv
 - ^/root/.bash_history
@@ -125,9 +111,6 @@ excludes:
 - ^/usr/local/sbin
 - ^/usr/local/share
 - ^/usr/local/src
-- ^/root
-#- ^/etc
-- ^/etc/.+$
 
-# Not needed, we don't handle multiple kernels here
-#- ^/var/lib/systemd/migrated/purge-kernels
+# Some golang package leftovers
+- ^/root/.cache

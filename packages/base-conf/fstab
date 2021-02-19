@@ -1,0 +1,2 @@
+LABEL=COS_PERSISTENT    /usr/local  auto    nofail,x-systemd.device-timeout=1ms,x-systemd.requires-mounts-for=/etc,x-systemd.wanted-by=local-fs.target    0  2
+LABEL=COS_OEM           /oem        auto    nofail,x-systemd.device-timeout=1ms,x-systemd.requires-mounts-for=/etc,x-systemd.wanted-by=local-fs.target    0  2

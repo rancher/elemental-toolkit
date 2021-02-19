@@ -1,0 +1,16 @@
+requires:
+- name: "cos"
+  category: "system"
+  version: ">=0"
+- name: "vanilla"
+  category: "kernel"
+  version: ">=0"
+
+steps:
+- |
+    kerver=$(ls /lib/modules/ | \
+        sort -Vr | head -n1) && \
+        dracut --verbose --no-hostonly --no-hostonly-cmdline --xz \
+            -f /boot/initrd-$kerver --add " dmsquash-live " \
+            --include "/luetbuild/cos-config-launcher.sh" "/lib/dracut/hooks/pre-pivot/30cos-config.sh" $kerver && \
+        ln -s initrd-$kerver /boot/initrd

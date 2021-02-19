@@ -1,6 +1,8 @@
 packages:
   rootfs:
   - system/cos
+  - system/initrd
+  - system/base-conf
   uefi:
   - live/systemd-boot
   - live/boot
@@ -10,7 +12,7 @@ packages:
 
 initramfs:
   kernel_file: "vmlinuz-vanilla"
-  rootfs_file: "initramfs"
+  rootfs_file: "initrd"
 
 overlay: "true"
 image_prefix: "cOS-0."

@@ -1,0 +1,11 @@
+[Unit]
+Description=cOS overlayfs mount for /etc
+RequiresMountsFor=/data.overlay
+Requires=overlay-setup.service
+
+[Mount]
+Where=/etc
+What=overlay
+Type=overlay
+LazyUnmount=true
+Options=defaults,lowerdir=/etc,upperdir=/data.overlay/etc/upper,workdir=/data.overlay/etc/work
