@@ -1,4 +1,5 @@
-cOS is an Adaptable Linux Distribution based on openSUSE Tumbleweed.
+# cOS
+**cOS** is an Adaptable Linux Distribution based on SLES/openSUSE Tumbleweed.
 
 cOS is:
 - Immutable distribution
@@ -11,12 +12,12 @@ cOS is:
 
 cOS is an Immutable Linux Distro built from Docker containers, and completely hosted on Docker registries. The build process results in a single Docker image used to deliver regular upgrades in OTA approach.
 
-cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the Hub as well as are exactly the same images used during upgrades.
+cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well. 
+Those are exactly the same images used during upgrades.
 
 ## Installation
 
 Once booted, run `cos-installer <device>` to start the installation process. Run `cos-installer` to see the options.
-
 
 ## Upgrades / reset:
 
@@ -28,10 +29,9 @@ cOS during installation sets two partitions:
 
 Those are used by the upgrade mechanism to prepare and install a pristine `cOS` each time an upgrade is attempted.
 
-
 ## Recovery
 
-The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will attempt to reset the state of the active partition.
+The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to reset the state of the active partition.
 
 ## File system layout
 
@@ -43,8 +43,6 @@ The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD.
 # Cloud-init configuration
 
 By default cOS reads and executes cloud-init files present in `/usr/local/cloud-config` and `/oem`. It is also possible to run cloud-init file from boot cmdline by using  the `cos.setup=..` option. 
-
-This is the prefered way to make persistent changes into `cOS`.
 
 ## Persistent changes
 
@@ -64,7 +62,6 @@ stages:
             permissions: 0644
             owner: 0
             group: 0
-EOF
 ```
 
 ## OEM
@@ -80,3 +77,19 @@ See the [Releases](https://github.com/mudler/cOS/projects/1) GitHub project for 
 ## Links
 
 - [Development notes](/docs/dev.md)
+
+
+## License
+
+Copyright (c) 2020-2021 [SUSE LLC](http://suse.com)
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
