@@ -51,9 +51,20 @@ find_partitions() {
         TARGET_PARTITION=$ACTIVE
         NEW_ACTIVE=$ACTIVE
         NEW_PASSIVE=$PASSIVE
+    elif [ -z "$TARGET_PARTITION" ]; then
+        # We booted from an ISO or some else medium. We assume we want to fixup the current label
+        read -p "Could not determine current partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE. Otherwise assuming you want to overwrite COS_ACTIVE? [y/N] : " -n 1 -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]
+        then
+            [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+        fi
+        TARGET_PARTITION=$ACTIVE
+        NEW_ACTIVE=$ACTIVE
+        NEW_PASSIVE=$PASSIVE
     fi
+
     if [ -z "$TARGET_PARTITION" ]; then
-        echo "Could not determine target partition"
+        echo "Could not determine target partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE"
         exit 1
     fi
 
@@ -83,6 +94,11 @@ mount_persistent() {
     mount ${OEM} ${TARGET}/oem
     mkdir -p ${TARGET}/usr/local || true
     mount ${PERSISTENT} ${TARGET}/usr/local
+    GRUB=$(blkid -L COS_GRUB || true)
+    if [ -n "$GRUB" ]; then
+        mkdir -p ${TARGET}/boot/efi || true
+        mount ${GRUB} ${TARGET}/boot/efi
+    fi
 }
 
 upgrade() {
@@ -97,13 +113,14 @@ upgrade() {
     rsync -a --delete /tmp/empty/ /tmp/upgrade/
 
     mount_persistent
-
+    ensure_dir_structure
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     XDG_RUNTIME_DIR=/var/tmp TMPDIR=/var/tmp luet install -y $UPGRADE_IMAGE
     luet cleanup
+    rm -rf /tmp/upgrade/var/tmp/*
 }
 
 switch_active() {
@@ -113,10 +130,67 @@ switch_active() {
     tune2fs -L COS_PASSIVE $NEW_PASSIVE
 }
 
+ensure_dir_structure() {
+    mkdir ${TARGET}/proc || true
+    mkdir ${TARGET}/boot || true
+    mkdir ${TARGET}/dev || true
+    mkdir ${TARGET}/sys || true
+    mkdir ${TARGET}/tmp || true
+}
+
+update_grub() {
+    if [ -e "/sys/firmware/efi" ]; then
+        GRUB_TARGET="--target=x86_64-efi --efi-dir=${TARGET}/boot/efi"
+    fi
+    DEVICE=/dev/$(lsblk -no pkname ${TARGET_PARTITION})
+    grub2-install ${GRUB_TARGET} --removable ${DEVICE}
+}
+
+cleanup2()
+{
+    if [ -n "${TARGET}" ]; then
+        umount ${TARGET}/boot/efi || true
+        umount ${TARGET}/oem || true
+        umount ${TARGET}/usr/local || true
+        umount ${TARGET}/ || true
+    fi
+}
+
+cleanup()
+{
+    EXIT=$?
+    cleanup2 2>/dev/null || true
+    return $EXIT
+}
+
 find_partitions
 
 find_upgrade_channel
 
+trap cleanup exit
+
 upgrade
 
 switch_active
+
+# FIXME: We have to regenerate grub since now we don't have a partition for /boot/grub2. upgrades,
+# since don't have any state and wipe everything, will remove generated grub files during install
+# NOTE: If we have a persistent luetdb state, this wouldnt be required, because handled by upgrades
+# (no wipe needed).
+update_grub
+
+echo "Flush changes to disk"
+sync
+sync
+
+if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then
+    if grep -q 'cos.upgrade.power_off=true' /proc/cmdline; then
+        poweroff -f
+    else
+        echo " * Rebooting system in 5 seconds (CTRL+C to cancel)"
+        sleep 5
+        reboot -f
+    fi
+else
+    echo "Upgrade done, now you might want to reboot"
+fi
