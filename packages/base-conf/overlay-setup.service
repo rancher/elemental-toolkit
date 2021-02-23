@@ -8,7 +8,7 @@ Before=root.mount
 
 [Service]
 Type=oneshot
-ExecStart=mkdir -p /data.overlay/etc/upper /data.overlay/etc/work /data.overlay/var/upper /data.overlay/var/work /data.overlay/root/upper /data.overlay/root/work
+ExecStart=/usr/bin/mkdir -p /data.overlay/etc/upper /data.overlay/etc/work /data.overlay/var/upper /data.overlay/var/work /data.overlay/root/upper /data.overlay/root/work
 
 [Install]
 WantedBy=local-fs.target

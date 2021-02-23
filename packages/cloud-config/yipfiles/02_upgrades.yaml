@@ -1,6 +1,6 @@
 # Default cOS OEM configuration file - 
 stages:
-   initramfs.after:
+   fs.after:
      - name: "Setup Luet config file"
        directories: 
        - path: "/etc/luet"

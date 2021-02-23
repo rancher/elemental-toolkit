@@ -1,6 +1,6 @@
 # Default cOS OEM configuration file
 stages:
-   initramfs.after:
+   fs.after:
      - name: "Setup network"
        dns:
          path: /etc/resolv.conf

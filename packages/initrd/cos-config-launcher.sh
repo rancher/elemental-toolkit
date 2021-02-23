@@ -25,6 +25,6 @@ function chroot_umounts {
 
 if ismounted /sysroot; then
     chroot_mounts /sysroot
-    chroot /sysroot /usr/bin/cos-setup initramfs.after
+    #chroot /sysroot /usr/bin/cos-setup initramfs.after
     chroot_umounts /sysroot
 fi
