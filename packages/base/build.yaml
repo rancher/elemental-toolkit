@@ -1,1 +1,3 @@
 image: "{{.Values.image}}"
+prelude:
+- zypper in -y wget xz tar gzip git

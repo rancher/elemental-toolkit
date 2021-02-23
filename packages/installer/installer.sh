@@ -170,30 +170,6 @@ install_grub()
         GRUB_DEBUG="cos.debug"
     fi
 
-    # FIXME: vmlinuz-vanilla needs to be a generic one. e.g. vmlinuz
-    mkdir -p ${TARGET}/boot/grub2
-    cat > ${TARGET}/boot/grub2/grub.cfg << EOF
-
-
-set timeout=10
-set default=cos
-
-set fallback=fallback
-set gfxmode=auto
-set gfxpayload=keep
-insmod all_video
-insmod gfxterm
-
-menuentry "cOS" --id cos {
-  linux /boot/vmlinuz-vanilla console=tty1 ro root=LABEL=COS_ACTIVE panic=5
-  initrd /boot/initrd
-}
-
-menuentry "cOS (fallback)" --id fallback {
-  linux /boot/vmlinuz-vanilla console=tty1 ro root=LABEL=COS_PASSIVE panic=5
-  initrd /boot/initrd
-}
-EOF
     if [ -z "${COS_INSTALL_TTY}" ]; then
         TTY=$(tty | sed 's!/dev/!!')
     else

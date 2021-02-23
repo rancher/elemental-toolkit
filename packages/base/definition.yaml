@@ -1,6 +1,6 @@
 name: "base"
 category: "distro"
-version: "0.20210108"
+version: "0.20210223"
 
 hidden: true # No need to make it installable for now
-image: opensuse/tumbleweed
+image: opensuse/leap

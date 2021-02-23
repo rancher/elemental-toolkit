@@ -3,7 +3,7 @@ requires:
   category: "system"
   version: ">=0"
 - category: "kernel"
-  name: "vanilla"
+  name: "default"
   version: ">=0"
 env:
 - PATH=$PATH:/usr/local/go/bin

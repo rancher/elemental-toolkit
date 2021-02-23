@@ -8,7 +8,7 @@ requires:
 - name: "installer"
   category: "utils"
   version: ">=0"
-- name: "vanilla"
+- name: "default"
   category: "kernel"
   version: ">=0"
 - category: "system"
@@ -22,9 +22,6 @@ steps:
 - zypper in -y --no-recommends {{.Values.packages}}
 # Cleans up cache
 - zypper cc
-# In opensuse, /bin/sh is a symlink to /etc/alternatives/sh, which points to bash.
-# We don't supply etc/alternatives, so handle the symlink by ourselves
-- rm -rf /bin/sh && ln -s /usr/bin/bash /bin/sh
 - systemctl enable multi-user.target
 - systemctl set-default multi-user.target
 - systemctl enable cos-setup-reconcile.timer

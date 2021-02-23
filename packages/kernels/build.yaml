@@ -4,7 +4,7 @@ requires:
   version: ">=0"
 
 steps:
-- zypper in -y -f kernel-vanilla-{{.Values.version}}
+- zypper in -y -f kernel-{{.Values.name}}-{{.Values.version}}
 - depmod -a {{ .Values.kernel_id }}
 includes:
 # Kernel

@@ -2,7 +2,7 @@
 # TODO: verify checksum
 
 prelude:
-- zypper in -y wget tar
+- zypper in -y xz wget tar
 - wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_26-May-2018/systemd-boot_26-May-2018.tar.xz
 - mkdir -p /systemd-boot
 - tar -xvf systemd-boot_26-May-2018.tar.xz -C /systemd-boot
