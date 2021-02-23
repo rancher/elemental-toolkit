@@ -56,6 +56,7 @@ do_format()
         STATE=$(blkid -L COS_ACTIVE || true)
         PERSISTENT=$(blkid -L COS_PERSISTENT || true)
         PASSIVE=$(blkid -L COS_PASSIVE || true)
+        BOOT=$(blkid -L COS_GRUB || true)
         return 0
     fi
 
