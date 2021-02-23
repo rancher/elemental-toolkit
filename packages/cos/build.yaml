@@ -29,6 +29,7 @@ steps:
 - systemctl enable cos-setup-boot.service
 - systemctl enable cos-setup-network.service
 - systemctl mask purge-kernels.service
+- systemctl enable getty@tty1
 
 unpack: true
 excludes:

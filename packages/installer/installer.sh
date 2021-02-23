@@ -157,11 +157,30 @@ get_url()
 do_copy()
 {
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
-    if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${TARGET}/oem/02_config.yaml
+     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
+        OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi
+    mkdir -p $TARGET/usr/local/cloud-config
+cat > $TARGET/usr/local/cloud-config/90_after_install.yaml <<EOF
+# Execute this stage in the boot phase:
+stages:
+   initramfs.after:
+     - name: "After install"
+       files:
+        - path: /etc/issue
+          content: |
+            Welcome to cOS!
+            Login with user: root, password: cos
+            To upgrade the system, run "cos-upgrade"
+            To change this message permantly on boot, see /usr/local/cloud-config/90_after_install.yaml
+          permissions: 0644
+          owner: 0
+          group: 0
+EOF
+    chmod 640 $TARGET/usr/local/cloud-config
+    chmod 640 $TARGET/usr/local/cloud-config/90_after_install.yaml
 }
 
 install_grub()

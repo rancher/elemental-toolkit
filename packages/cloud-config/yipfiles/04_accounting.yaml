@@ -1,0 +1,20 @@
+# Default cOS OEM configuration file
+stages:
+   initramfs.after:
+     - name: "Setup users"
+       files:
+        - path: /etc/shadow
+          content: |
+               root:$6$g9DDJRDNRS8MEzhH$w6Cn6PNzFnUVnatwRbNoLk6etanvAbcxUzfYlQcj6y/JLGq3Yrl7wXi6SkMzp1/tEM3NheMr5fH8.92NdiaB/0:18640::::::
+               catchlog:!:14761:0:99999:7:::
+               alias:!:14761:0:99999:7:::
+               nobody:!:14314:0:99999:7:::
+               klog:!:14793::::::
+               kllog:!:14793::::::
+               syslog:!:14793::::::
+               sysllog:!:14793::::::
+               sysfdh:!:15041::::::
+               sshlog:!:14849::::::
+          permissions: 0640
+          owner: 0
+          group: 0

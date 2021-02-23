@@ -1,0 +1,25 @@
+# Default cOS OEM configuration file
+stages:
+   initramfs.after:
+     - name: "Branding"
+       files:
+        - path: /etc/issue
+          content: |
+            .-----.
+            | .-. |
+            | |.| |
+            | `-' |
+            `-----'
+
+            Welcome to cOS!
+            Login with user: root, password: cos
+            Start the installer with "cos-installer <device>" to install it in the local system
+          permissions: 0644
+          owner: 0
+          group: 0
+        - path: /etc/hostname
+          content: "cos"
+          permissions: 0644
+          owner: 0
+          group: 0
+

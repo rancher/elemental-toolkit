@@ -1,37 +1,6 @@
 # Default cOS OEM configuration file
 stages:
     fs.after:
-     - name: "Setup Luet config file"
-       directories:
-       - path: "/etc/luet"
-         permissions: 0600
-         owner: 0
-         group: 0
-       files:
-       - path: /etc/luet/luet.yaml
-         content: |
-                  general:
-                     debug: false
-                  system:
-                    rootfs: /tmp/upgrade
-                    database_engine: "memory"
-                  repositories:
-                  - name: "cos"
-                    description: "cOS official"
-                    type: "docker"
-                    enable: true
-                    cached: true
-                    priority: 1
-                    urls:
-                    - "raccos/releases-amd64"
-         permissions: 0600
-         owner: 0
-         group: 0
-       - path: /etc/cos-upgrade-image
-         content: "system/cos"
-         permissions: 0600
-         owner: 0
-         group: 0
      - name: "Setup distro"
        commands:
 # commands always tries to expand vars (aka $..) so we can't pass a hashed passwd here
@@ -39,31 +8,3 @@ stages:
        - /usr/bin/systemd-firstboot --keymap=us
        - /usr/bin/systemd-firstboot --locale=en_US.UTF-8
        - /usr/bin/systemd-firstboot --timezone=UTC
-       files:
-        - path: /etc/issue
-          content: |
-            .-----.
-            | .-. |
-            | |.| |
-            | `-' |
-            `-----'
-
-            Welcome to cOS!
-            Login with user: root, password: cos
-            Start the installer with "cos-installer <device>" to install it in the local system
-          permissions: 0644
-          owner: 0
-          group: 0
-        - path: /etc/shadow
-          content: |
-            root:$1$Oncxs0L7$U9/3Kuc2nP4oJowCNEquJ0:18677::::::
-            sshd:!:18642::::::
-            nobody:!:18642::::::
-            messagebus:!:18642::::::
-            systemd-network:!*:18642::::::
-            systemd-resolve:!*:18642::::::
-            systemd-timesync:!*:18642::::::
-            systemd-coredump:!*:18642::::::
-          permissions: 0640
-          owner: 0
-          group: 0
