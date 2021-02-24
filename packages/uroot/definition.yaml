@@ -1,8 +1,0 @@
-category: "system"
-name: "uroot"
-version: "6.0.99"
-labels:
-  github.repo: "u-root"
-  github.owner: "u-root"
-
-git_sha: e80e77438c627981b266734c03e23dcf8a60014e
