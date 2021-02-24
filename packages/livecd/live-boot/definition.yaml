@@ -1,5 +1,5 @@
 name: "boot"
 category: "live"
-version: "0.1+3"
+version: "0.1+4"
 
 hidden: true # No need to make it installable for now

@@ -167,7 +167,7 @@ do_copy()
 cat > $TARGET/usr/local/cloud-config/90_after_install.yaml <<EOF
 # Execute this stage in the boot phase:
 stages:
-   initramfs.after:
+   fs.after:
      - name: "After install"
        files:
         - path: /etc/issue

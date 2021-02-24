@@ -10,7 +10,7 @@ OnFailure=emergency.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/cos-setup fs.after
+ExecStart=/usr/bin/cos-setup fs
 
 [Install]
 WantedBy=sysinit.target

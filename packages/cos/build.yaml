@@ -25,11 +25,13 @@ steps:
 - systemctl enable multi-user.target
 - systemctl set-default multi-user.target
 - systemctl enable cos-setup-reconcile.timer
-- systemctl enable cos-setup-fs-after.service
+- systemctl enable cos-setup-fs.service
 - systemctl enable cos-setup-boot.service
 - systemctl enable cos-setup-network.service
 - systemctl mask purge-kernels.service
 - systemctl enable getty@tty1
+
+- cp grub.cfg /boot/grub2/grub.cfg
 
 unpack: true
 excludes:
