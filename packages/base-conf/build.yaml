@@ -7,5 +7,7 @@ steps:
 - cp fstab /etc/fstab
 - mkdir -p /data.overlay
 - touch /data.overlay/.emptyfile
+# Mount /tmp as tmpfs by default as set by systemd itself
+- cp /usr/share/systemd/tmp.mount /etc/systemd/system
 - cp *.mount overlay-setup.service /etc/systemd/system/
 - systemctl enable overlay-setup.service

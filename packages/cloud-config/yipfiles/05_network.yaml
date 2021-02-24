@@ -7,3 +7,11 @@ stages:
          nameservers:
          - 8.8.8.8
          - 1.1.1.1
+       files:
+       - path: /etc/sysconfig/network/ifcfg-eth0
+         content: |
+                  BOOTPROTO='dhcp'
+                  STARTMODE='onboot'
+         permissions: 0600
+         owner: 0
+         group: 0
