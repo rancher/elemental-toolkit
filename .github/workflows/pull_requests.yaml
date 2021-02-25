@@ -34,15 +34,13 @@ jobs:
 
     - name: Install deps
       run: |
-        curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
+        sudo -E make deps
 
     - name: Validate 🌳
       run: |
         make validate
 
     - name: Build packages 🔧
-      env:
-        SUDO: "sudo -E"
       run: |
-        make rebuild-full
+        sudo -E make build
         ls -liah $PWD/build
