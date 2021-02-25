@@ -18,6 +18,6 @@ prelude:
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   cd /luetbuild/go/src/github.com/mudler/yip && CGO_ENABLED=0 go build && upx --brute -1 yip && mv yip /usr/bin/yip
+   cd /luetbuild/go/src/github.com/mudler/yip && make build-small && mv yip /usr/bin/yip
 includes:
 - /usr/bin/yip
