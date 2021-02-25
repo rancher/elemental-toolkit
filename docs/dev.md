@@ -9,8 +9,8 @@
 ### Building ISO
 
 - Luet-devkit (If you manually installed luet add the [official luet-repo](https://github.com/Luet-lab/luet-repo) first. Install it with `luet install -y system/luet-devkit`)
-- squashfs/xorriso/dosfstools for building ISO
-- yq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq`)
+- squashfs/xorriso/dosfstools for building ISO ( from your OS )
+- yq and jq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq utils/yq`)
 
 ## Repository layout
 
@@ -22,12 +22,12 @@
 ## Build all packages locally
 
 ```
-make build-full
+make build
 ```
 
-To rebuild packages, and keep the previous runs, use `make rebuild-full` instead.
+To clean from previous runs, run `make clean`.
 
-You might want to build packages running as `root` or define `SUDO="sudo -E"` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
+You might want to build packages running as `root` or `sudo -E` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
 
 ## Build ISO
 
@@ -49,10 +49,10 @@ To test changes against a specific set of packages, you can for example:
 
 ```bash
 
-SUDO="sudo -E" PACKAGES="live/init" make rebuild local-iso
+make PACKAGES="live/init"  build local-iso
 
 ```
 
-SUDO is used because we want to keep permissions on the output packages (not really required for experimenting).
+root is required because we want to keep permissions on the output packages (not really required for experimenting).
 
 Note: Remind to bump `definition.yaml` files where necessary, otherwise it would generate packages from existing images

@@ -22,6 +22,11 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
 
+    - name: Install deps
+      run: |
+        sudo apt-get install -y xorriso squashfs-tools dosfstools
+        sudo -E make deps
+
     # We patch docker to use all the HD available in GH action free runners
     - name: Patch Docker Daemon data-root
       run: |
@@ -32,35 +37,22 @@ jobs:
         sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
         sudo systemctl restart docker
 
-    - name: Install deps
-      run: |
-        sudo apt-get install -y xorriso squashfs-tools dosfstools
-        curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
-        sudo luet install -y repository/mocaccino-extra-stable
-        sudo luet install -y system/luet-devkit utils/jq utils/yq
-
     - name: Validate 🌳
       run: |
         make validate
 
     - name: Build packages 🔧
-      env:
-        SUDO: "sudo -E"
       run: |
-        make rebuild-full
+        sudo -E make build
         ls -liah $PWD/build
     - name: Create repository 🔧
-      env:
-        SUDO: "sudo -E"
       run: |
-        make create-repo
+        sudo -E make create-repo
         ls -liah $PWD/build
 
     - name: Build ISO 🔧
-      env:
-        SUDO: "sudo -E"
       run: |
-        make local-iso
+        sudo -E make local-iso
     - uses: actions/upload-artifact@v2
       with:
         name: ISO
