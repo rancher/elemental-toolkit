@@ -1,6 +1,25 @@
 name: "base"
 category: "distro"
-version: "0.20210223"
+version: "15.2+1"
 
 hidden: true # No need to make it installable for now
-image: opensuse/leap
+image: opensuse/leap:15.2
+
+packages: >-
+      systemd
+      systemd-sysvinit
+      parted
+      e2fsprogs
+      coreutils
+      dosfstools
+      device-mapper
+      grub2
+      grub2-i386-pc
+      grub2-x86_64-efi
+      which
+      curl
+      iproute2
+      nano
+      gawk
+      squashfs
+      haveged

@@ -1,6 +1,6 @@
 requires:
-- name: "cos"
-  category: "system"
+- name: "base"
+  category: "distro"
   version: ">=0"
 
 steps:

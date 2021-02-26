@@ -3,8 +3,6 @@ stages:
     fs.after:
      - name: "Setup distro"
        commands:
-# commands always tries to expand vars (aka $..) so we can't pass a hashed passwd here
-#       - /bin/bash -c "/usr/sbin/usermod -p '$1$Oncxs0L7$U9/3Kuc2nP4oJowCNEquJ0' -g root root"
        - /usr/bin/systemd-firstboot --keymap=us
        - /usr/bin/systemd-firstboot --locale=en_US.UTF-8
        - /usr/bin/systemd-firstboot --timezone=UTC

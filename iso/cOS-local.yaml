@@ -1,8 +1,6 @@
 packages:
   rootfs:
   - system/cos
-  - system/initrd
-  - system/base-conf
   uefi:
   - live/systemd-boot
   - live/boot

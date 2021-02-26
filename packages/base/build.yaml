@@ -1,3 +1,6 @@
 image: "{{.Values.image}}"
-prelude:
-- zypper in -y wget xz tar gzip git
+
+steps:
+- zypper in -y --no-recommends {{.Values.packages}}
+# Cleans up cache
+- zypper cc

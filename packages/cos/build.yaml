@@ -17,11 +17,14 @@ requires:
 - name: "cloud-config"
   category: "system"
   version: ">=0"
+- name: "initrd"
+  category: "system"
+  version: ">=0"
+- name: "base-conf"
+  category: "system"
+  version: ">=0"
 
 steps:
-- zypper in -y --no-recommends {{.Values.packages}}
-# Cleans up cache
-- zypper cc
 - systemctl enable multi-user.target
 - systemctl set-default multi-user.target
 - systemctl enable cos-setup-reconcile.timer
