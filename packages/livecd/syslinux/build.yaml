@@ -1,6 +1,6 @@
 
 prelude:
-- zypper in -y wget tar
+- zypper in -y xz wget tar
 - wget http://kernel.org/pub/linux/utils/boot/syslinux/syslinux-{{.Values.version}}.tar.xz
 - mkdir -p /syslinux
 - tar -xvf syslinux-{{.Values.version}}.tar.xz -C /syslinux

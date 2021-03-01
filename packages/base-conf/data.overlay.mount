@@ -1,0 +1,8 @@
+[Unit]
+Description=cOS tmpfs mount for the ephemeral /data
+
+[Mount]
+Where=/data.overlay
+What=tmpfs
+Type=tmpfs
+Options=defaults,size=128M

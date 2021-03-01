@@ -1,6 +1,6 @@
 # Default cOS OEM configuration file
 stages:
-   initramfs.after:
+   fs.after:
      - name: "Setup users"
        files:
         - path: /etc/shadow
@@ -16,30 +16,5 @@ stages:
                sysfdh:!:15041::::::
                sshlog:!:14849::::::
           permissions: 0640
-          owner: 0
-          group: 0
-        - path: /etc/group
-          content: |
-                    root:x:0:
-                    catchlog:x:98:
-                    nogroup:x:65534:
-                    log:x:61:
-                    fdh:x:76:
-          permissions: 0644
-          owner: 0
-          group: 0
-        - path: /etc/passwd
-          content: |
-               root:x:0:0:root:/root:/bin/bash
-               catchlog:x:98:98:catchlog:/run/uncaught-logs:/nonexistent
-               alias:x:999:100:alias:/home/alias:/nonexistent
-               nobody:x:65534:65534:nobody:/:/nonexistent
-               klog:x:101:61:klog:/:/nonexistent
-               kllog:x:102:61:kllog:/:/nonexistent
-               syslog:x:103:61:syslog:/:/nonexistent
-               sysllog:x:104:61:sysllog:/:/nonexistent
-               sysfdh:x:137:76:sysfdh:/:/nonexistent
-               sshlog:x:138:61:sshlog:/var/log/sshd-4:/nonexistent
-          permissions: 0644
           owner: 0
           group: 0

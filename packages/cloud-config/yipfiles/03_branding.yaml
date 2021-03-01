@@ -1,33 +1,8 @@
 # Default cOS OEM configuration file
 stages:
-   initramfs.after:
+   fs.after:
      - name: "Branding"
        files:
-        - path: /etc/profile
-          content: |
-               # Begin /etc/profile
-               # Set the initial path
-               export PATH=/bin:/usr/bin
-
-               if [ "$(id -u)" = "0" ]; then
-                     export PATH=/sbin:/usr/sbin:$PATH
-                     unset HISTFILE
-               fi
-
-               # Setup some environment variables.
-               export HISTSIZE=1000
-               export HISTIGNORE="&:[bf]g:exit"
-               export PS1="[\u@\h \w]\\$ "
-               #export PS1='\u@\h:\w\$ '
-
-               for script in /etc/profile.d/*.sh ; do
-                     if [ -r $script ] ; then
-                              . $script
-                     fi
-               done
-          permissions: 0644
-          owner: 0
-          group: 0
         - path: /etc/issue
           content: |
             .-----.
@@ -42,3 +17,9 @@ stages:
           permissions: 0644
           owner: 0
           group: 0
+        - path: /etc/hostname
+          content: "cos"
+          permissions: 0644
+          owner: 0
+          group: 0
+

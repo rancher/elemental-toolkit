@@ -1,1 +1,6 @@
 image: "{{.Values.image}}"
+
+steps:
+- zypper in -y --no-recommends {{.Values.packages}}
+# Cleans up cache
+- zypper cc

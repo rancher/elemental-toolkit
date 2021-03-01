@@ -1,0 +1,11 @@
+[Unit]
+Description=cOS overlayfs mount for /root
+RequiresMountsFor=/data.overlay
+Requires=overlay-setup.service
+
+[Mount]
+Where=/root
+What=overlay
+Type=overlay
+LazyUnmount=true
+Options=defaults,lowerdir=/root,upperdir=/data.overlay/root/upper,workdir=/data.overlay/root/work
