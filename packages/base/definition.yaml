@@ -1,6 +1,6 @@
 name: "base"
 category: "distro"
-version: "15.2+1"
+version: "15.2+2"
 
 hidden: true # No need to make it installable for now
 image: opensuse/leap:15.2
@@ -23,3 +23,4 @@ packages: >-
       gawk
       squashfs
       haveged
+      tar

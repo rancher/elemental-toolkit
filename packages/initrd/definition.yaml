@@ -1,3 +1,5 @@
 name: "initrd"
 category: "system"
-version: "0.0.4"
+version: "0.0.5"
+
+kernel_id: "5.3.18-lp152.63-default"

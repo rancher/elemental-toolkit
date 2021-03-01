@@ -4,12 +4,12 @@ requires:
   version: ">=0"
 - name: "default"
   category: "kernel"
-  version: ">=0"
+  version: "5.3.18"
 
 steps:
 - |
-    kerver=$(ls /lib/modules/ sort -Vr | grep default | head -n1) && \
     dracut --verbose --no-hostonly --no-hostonly-cmdline --xz \
-        -f /boot/initrd-$kerver --add " dmsquash-live " \
-        --include "/luetbuild/cos-config-launcher.sh" "/lib/dracut/hooks/pre-pivot/30cos-config.sh" $kerver && \
-    ln -sf initrd-$kerver /boot/initrd
+        -f /boot/initrd-{{.Values.kernel_id}} --add " dmsquash-live " \
+        --include "/luetbuild/cos-config-launcher.sh" \
+        "/lib/dracut/hooks/pre-pivot/30cos-config.sh" {{.Values.kernel_id}} && \
+    ln -sf initrd-{{.Values.kernel_id}} /boot/initrd
