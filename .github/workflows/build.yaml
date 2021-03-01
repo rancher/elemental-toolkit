@@ -51,7 +51,5 @@ jobs:
 
     - name: Publish to DockerHub 🚀
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      env:
-        SUDO: "sudo -E"
       run: |
-        make publish-repo
+        sudo -E make publish-repo
