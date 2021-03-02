@@ -117,6 +117,7 @@ excludes:
 - ^/usr/local/sbin
 - ^/usr/local/share
 - ^/usr/local/src
+- ^/usr/local/games
 
 # Some golang package leftovers
 - ^/root/.cache
