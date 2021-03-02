@@ -1,0 +1,92 @@
+{                                   
+    "builders": [                                                                                     
+      {                                                             
+        "boot_wait": "{{user `sleep`}}",
+        "disk_size": "{{user `disk_size`}}",                                                                                                                                                                                                   
+        "guest_additions_mode": "disable",                   
+        "guest_os_type": "cOS",                        
+        "headless": true,                                                                                               
+        "iso_url": "{{user `iso`}}",
+        "iso_checksum": "none",
+        "shutdown_command": "shutdown -hP now",     
+        "ssh_password": "{{user `root_password`}}",  
+        "ssh_username": "{{user `root_username`}}",
+        
+        "ssh_timeout": "40s",
+        "type": "virtualbox-iso",
+        "vm_name": "cOS"
+      },
+      {
+        "boot_wait": "{{user `sleep`}}",
+        "disk_interface": "ide",
+        "disk_size": "{{user `disk_size`}}",
+        "format": "qcow2",
+        "accelerator": "{{user `accelerator`}}",
+        "headless": true,
+        "iso_url": "{{user `iso`}}",
+        "iso_checksum": "none",
+        "qemuargs": [
+          [
+            "-m",
+            "8192M"
+          ]
+        ],
+        "shutdown_command": "shutdown -hP now",
+        "ssh_password": "{{user `root_password`}}",
+        "ssh_timeout": "40s",
+        "ssh_username": "{{user `root_username`}}",
+        "type": "qemu",
+        "vm_name": "cOS"
+      }
+    ],
+    "description": "cOS",
+    "post-processors": [
+      {
+        "only": [
+          "virtualbox-iso"
+        ],
+        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}.box",
+        "type": "vagrant"
+      },
+      {
+        "only": [
+          "virtualbox-iso"
+        ],
+        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}-ovf.tar.gz",
+        "type": "compress"
+      },
+      {
+        "only": [
+          "qemu"
+        ],
+        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}-qemu.tar.gz",
+        "type": "compress"
+      }
+    ],
+    "provisioners": [
+      {
+        "destination": "/90_custom.yaml",
+        "source": "config.yaml",
+        "type": "file"
+      },
+     {
+        "inline": [
+          "INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda"
+        ],
+        "pause_after": "3m",
+        "type": "shell"
+      }
+    ],
+    "variables": {
+      "arch": "amd64",
+      "build": "dev",
+      "disk_size": "50000",
+      "flavor": "leap",
+      "root_password": "cos",
+      "root_username": "root",
+      "iso": "",
+      "sleep": "30s",
+      "accellerator": "kvm"
+    }
+  }
+      

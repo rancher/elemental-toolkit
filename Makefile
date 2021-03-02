@@ -22,6 +22,7 @@ HAS_LUET := $(shell command -v luet 2> /dev/null)
 QEMU?=qemu-kvm
 QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
+PACKER_ARGS?=
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
@@ -87,7 +88,10 @@ autobump:
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
 
-$(ROOT_DIR)/build/conf.yaml:
+$(ROOT_DIR)/build:
+	mkdir $(ROOT_DIR)/build
+
+$(ROOT_DIR)/build/conf.yaml: $(ROOT_DIR)/build
 	touch $(ROOT_DIR)/build/conf.yaml
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
@@ -118,3 +122,7 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	-chardev socket,path=$(ROOT_DIR)/.qemu/qga.sock,server,nowait,id=qga0 \
 	-device virtio-serial \
 	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)
+
+.PHONY: packer
+packer:
+	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json

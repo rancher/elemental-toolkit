@@ -1,11 +1,17 @@
-name: Build and publish
+name: Build cOS
 on:
   push:
     paths:
     - 'conf/**'
     - 'packages/**'
     - '.github/workflows/**'
-    branches: [ master ]
+    - 'Makefile'
+  pull_request:
+    paths:
+    - 'conf/**'
+    - 'packages/**'
+    - '.github/workflows/**'
+    - 'Makefile'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,3 +59,67 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: |
         sudo -E make publish-repo
+    - name: Upload results
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build
+  iso:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download result for build
+      uses: actions/download-artifact@v2
+      with:
+        name: build
+        path: build
+    - name: Install deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xorriso squashfs-tools dosfstools
+        sudo -E make deps
+    - name: Build ISO 🔧
+      run: |
+        sudo -E make local-iso
+        COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+        mv *.iso cOS-$COS_VERSION.iso
+        mv *.sha256 cOS-$COS_VERSION.iso.sha256
+    - uses: actions/upload-artifact@v2
+      with:
+        name: ISO
+        path: |
+          *.iso
+          *.sha256
+    - uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: build-log
+        path: isowork/*.log
+
+  qemu:
+      runs-on: ubuntu-latest
+      needs: iso
+      steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: ISO
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu
+          sudo -E make deps
+          sudo luet install -y utils/packer
+
+      - name: Build QEMU Image 🔧
+        run: |
+          COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+          ISO=$PWD/cOS-$COS_VERSION.iso PACKER_ARGS="-var='accellerator=none' -var='sleep=5m' -only qemu" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: QEMU
+          path: |
+            packer/*-qemu.tar.gz
