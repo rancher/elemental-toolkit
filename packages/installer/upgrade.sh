@@ -82,18 +82,17 @@ upgrade() {
     mount_persistent
     ensure_dir_structure
 
-    mkdir -p /run/tmp
+    mkdir -p /usr/local/tmp/upgrade
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    XDG_RUNTIME_DIR=/run/tmp TMPDIR=/run/tmp luet install -y $UPGRADE_IMAGE
+    XDG_RUNTIME_DIR=/usr/local/tmp/upgrade TMPDIR=/usr/local/tmp/upgrade luet install -y $UPGRADE_IMAGE
     luet cleanup
-    rm -rf /tmp/upgrade/var/tmp/*
-    rm -rf /run/tmp
-    umount $TARGET/oem || true
-    umount $TARGET/usr/local || true
-    umount $TARGET || true
+    rm -rf /usr/local/tmp/upgrade
+    umount $TARGET/oem
+    umount $TARGET/usr/local
+    umount $TARGET
 }
 
 switch_active() {
@@ -116,6 +115,7 @@ ensure_dir_structure() {
 
 cleanup2()
 {
+    rm -rf /usr/local/tmp/upgrade || true
     mount -o remount,ro ${STATE} ${STATEDIR} || true
     if [ -n "${TARGET}" ]; then
         umount ${TARGET}/boot/efi || true
