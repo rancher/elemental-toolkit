@@ -6,7 +6,7 @@ export LUET?=$(shell which luet)
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DESTINATION?=$(ROOT_DIR)/build
 COMPRESSION?=zstd
-ISO_SPEC?=$(ROOT_DIR)/iso/cOS-local.yaml
+ISO_SPEC?=$(ROOT_DIR)/iso/cOS.yaml
 CLEAN?=false
 export TREE?=$(ROOT_DIR)/packages
 
@@ -89,13 +89,18 @@ validate:
 
 $(ROOT_DIR)/build/conf.yaml:
 	touch $(ROOT_DIR)/build/conf.yaml
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'local'
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'disk'
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
 
 local-iso: create-repo $(ROOT_DIR)/build/conf.yaml
-	 $(LUET) geniso-isospec $(ISO_SPEC)
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'disk'
+	$(LUET) geniso-isospec $(ISO_SPEC)
+
+iso: $(ROOT_DIR)/build/conf.yaml
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'docker'
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) geniso-isospec $(ISO_SPEC)
 
 $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
