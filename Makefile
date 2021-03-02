@@ -19,6 +19,9 @@ FINAL_REPO?=raccos/releases-$(ARCH)
 
 PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
 HAS_LUET := $(shell command -v luet 2> /dev/null)
+QEMU?=qemu-kvm
+QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
+QEMU_MEMORY?=2048
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
@@ -39,7 +42,7 @@ endif
 endif
 
 clean:
-	 rm -rf build/
+	 rm -rf $(ROOT_DIR)/build/ $(ROOT_DIR)/.qemu
 
 .PHONY: build
 build:
@@ -93,3 +96,20 @@ $(ROOT_DIR)/build/conf.yaml:
 
 local-iso: create-repo $(ROOT_DIR)/build/conf.yaml
 	 $(LUET) geniso-isospec $(ISO_SPEC)
+
+$(ROOT_DIR)/.qemu:
+	mkdir -p $(ROOT_DIR)/.qemu
+
+$(ROOT_DIR)/.qemu/drive.img: $(ROOT_DIR)/.qemu
+	qemu-img create -f qcow2 $(ROOT_DIR)/.qemu/drive.img 16g
+
+run-qemu: .qemu/drive.img
+	$(QEMU) \
+	-m $(QEMU_MEMORY) \
+	-cdrom $(ISO) \
+	-nographic \
+	-serial mon:stdio \
+	-rtc base=utc,clock=rt \
+	-chardev socket,path=$(ROOT_DIR)/.qemu/qga.sock,server,nowait,id=qga0 \
+	-device virtio-serial \
+	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)

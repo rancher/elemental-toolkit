@@ -4,3 +4,4 @@ isowork/
 *.iso.sha256
 iso-meta.json
 iso-meta.yaml
+.qemu/
