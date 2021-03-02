@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
+
 # 1. Identify active/passive partition
 # 2. Install upgrade in passive partition
 # 3. Invert partition labels
-# 4. Reboot if requested by user (?)
 
 find_partitions() {
     STATE=$(blkid -L COS_STATE || true)
@@ -17,6 +17,7 @@ find_partitions() {
         echo "Persistent partition cannot be found"
         exit 1
     fi
+
     OEM=$(blkid -L COS_OEM || true)
     if [ -z "$OEM" ]; then
         echo "OEM partition cannot be found"
@@ -35,7 +36,7 @@ find_partitions() {
 
     if [ -z "$CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
-        read -p "Could not determine current partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE. Otherwise assuming you want to overwrite COS_ACTIVE? [y/N] : " -n 1 -r
+        read -p "Could not determine current partition. Do you want to overwrite your current active partition? [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
@@ -60,8 +61,6 @@ mount_image() {
     TARGET=/tmp/upgrade
 
     mkdir -p $TARGET || true
-    # mkdir -p $STATEDIR || true
-    # mount ${STATE} $STATEDIR
     mount -o remount,rw ${STATE} ${STATEDIR}
 
     mkdir -p ${STATEDIR}/cOS || true
