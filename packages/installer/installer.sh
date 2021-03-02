@@ -36,7 +36,7 @@ usage()
     echo ""
     echo "Example: $PROG /dev/vda"
     echo ""
-    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_ACTIVE partition (/dev/vda2)"
+    echo "DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
     echo ""
     echo "The parameters names refer to the same names used in the cmdline, refer to README.md for"
     echo "more info."
@@ -47,15 +47,13 @@ usage()
 do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
-        STATE=$(blkid -L COS_ACTIVE || true)
+        STATE=$(blkid -L COS_STATE || true)
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
-            tune2fs -L COS_ACTIVE $DEVICE
-            STATE=$(blkid -L COS_ACTIVE)
+            tune2fs -L COS_STATE $DEVICE
+            STATE=$(blkid -L COS_STATE)
         fi
         OEM=$(blkid -L COS_OEM || true)
-        STATE=$(blkid -L COS_ACTIVE || true)
-        PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-        PASSIVE=$(blkid -L COS_PASSIVE || true)
+        STATE=$(blkid -L COS_STATE || true)
         BOOT=$(blkid -L COS_GRUB || true)
         return 0
     fi
@@ -66,26 +64,24 @@ do_format()
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
-        PASSIVE_NUM=4
-        PERSISTENT_NUM=5
+        PERSISTENT_NUM=4
         parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
         parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 2100MB # active
-        parted -s ${DEVICE} mkpart primary ext4 2100MB 4100MB # passive
-        parted -s ${DEVICE} mkpart primary ext4 4100MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 100MB 10100MB # active
+        parted -s ${DEVICE} mkpart primary ext4 10100MB 100% # persistent
+        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+
     else
         BOOT_NUM=
         OEM_NUM=1
         STATE_NUM=2
-        PASSIVE_NUM=3
-        PERSISTENT_NUM=4
+        PERSISTENT_NUM=3
         parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 2050MB # active
-        parted -s ${DEVICE} mkpart primary ext4 2050MB 4050MB # passive
-        parted -s ${DEVICE} mkpart primary ext4 4050MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 50MB 10050MB # active
+        parted -s ${DEVICE} mkpart primary ext4 10050MB 100% # persistent
+        parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
-
-    parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+   
     partprobe ${DEVICE} 2>/dev/null || true
     sleep 2
 
@@ -105,9 +101,8 @@ do_format()
     STATE=${PREFIX}${STATE_NUM}
     OEM=${PREFIX}${OEM_NUM}
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
-    PASSIVE=${PREFIX}${PASSIVE_NUM}
 
-    mkfs.ext4 -F -L COS_ACTIVE ${STATE}
+    mkfs.ext4 -F -L COS_STATE ${STATE}
     if [ -n "${BOOT}" ]; then
         mkfs.vfat -F 32 ${BOOT}
         fatlabel ${BOOT} COS_GRUB
@@ -115,18 +110,30 @@ do_format()
 
     mkfs.ext4 -F -L COS_OEM ${OEM}
     mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
-    mkfs.ext4 -F -L COS_PASSIVE ${PASSIVE}
 }
 
 do_mount()
 {
     mkdir -p ${TARGET}
-    mount ${STATE} ${TARGET}
+
+    STATEDIR=/tmp/mnt/STATE
+    mkdir -p $STATEDIR || true
+    mount ${STATE} $STATEDIR
+
+    mkdir -p ${STATEDIR}/cOS
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
+    mkfs.ext4 ${STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    mount -t ext4 -o loop ${STATEDIR}/cOS/active.img $TARGET
+
     mkdir -p ${TARGET}/boot
     if [ -n "${BOOT}" ]; then
         mkdir -p ${TARGET}/boot/efi
         mount ${BOOT} ${TARGET}/boot/efi
     fi
+    mkdir -p ${TARGET}/boot/grub2
+    mount ${STATE} ${TARGET}/boot/grub2
+
     mkdir -p ${TARGET}/oem
     mount ${OEM} ${TARGET}/oem
     mkdir -p ${TARGET}/usr/local

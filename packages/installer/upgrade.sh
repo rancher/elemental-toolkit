@@ -1,77 +1,50 @@
 #!/bin/bash
 set -e
+
 # 1. Identify active/passive partition
 # 2. Install upgrade in passive partition
 # 3. Invert partition labels
-# 4. Update grub (?)
-# 5. Reboot if requested by user (?)
 
 find_partitions() {
-    ACTIVE=$(blkid -L COS_ACTIVE || true)
-    if [ -z "$ACTIVE" ]; then
-        echo "Active partition cannot be found"
+    STATE=$(blkid -L COS_STATE || true)
+    if [ -z "$STATE" ]; then
+        echo "State partition cannot be found"
         exit 1
     fi
-    PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -z "$ACTIVE" ]; then
-        echo "Active partition cannot be found"
-        exit 1
-    fi
+
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
+
     OEM=$(blkid -L COS_OEM || true)
     if [ -z "$OEM" ]; then
         echo "OEM partition cannot be found"
         exit 1
     fi
 
-    CURRENT=$(df $0 | tail -1 | gawk '{print $1}')
-    if [ -z "$CURRENT" ]; then
-        echo "Could not determine current partition"
-        exit 1
-    fi
-    if [ -z "$ACTIVE" ]; then
-        echo "Could not determine active partition"
-        exit 1
-    fi
-    if [ -z "$PASSIVE" ]; then
-        echo "Could not determine passive partition"
-        exit 1
+    COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+    if [ -n "$COS_ACTIVE" ]; then
+        CURRENT=active.img
     fi
 
-    if [[ $CURRENT == $ACTIVE ]]; then
-        TARGET_PARTITION=$PASSIVE
-        NEW_ACTIVE=$PASSIVE
-        NEW_PASSIVE=$ACTIVE
-    elif [[ $CURRENT == $PASSIVE ]]; then
-        # We booted from the fallback, and we are attempting to fixup the active one
-        TARGET_PARTITION=$ACTIVE
-        NEW_ACTIVE=$ACTIVE
-        NEW_PASSIVE=$PASSIVE
-    elif [ -z "$TARGET_PARTITION" ]; then
+    COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+    if [ -n "$COS_PASSIVE" ]; then
+        CURRENT=passive.img
+    fi
+
+    if [ -z "$CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
-        read -p "Could not determine current partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE. Otherwise assuming you want to overwrite COS_ACTIVE? [y/N] : " -n 1 -r
+        read -p "Could not determine current partition. Do you want to overwrite your current active partition? [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
         fi
-        TARGET_PARTITION=$ACTIVE
-        NEW_ACTIVE=$ACTIVE
-        NEW_PASSIVE=$PASSIVE
+        CURRENT=active.img
     fi
 
-    if [ -z "$TARGET_PARTITION" ]; then
-        echo "Could not determine target partition. Set TARGET_PARTITION, NEW_ACTIVE and NEW_PASSIVE"
-        exit 1
-    fi
-
-    echo "-> Partition labeled COS_ACTIVE: $ACTIVE"
-    echo "-> Partition labeled COS_PASSIVE: $PASSIVE"
     echo "-> Booting from: $CURRENT"
-    echo "-> Target upgrade partition: $TARGET_PARTITION"
 }
 
 # cos-upgrade-image: system/cos
@@ -84,9 +57,17 @@ find_upgrade_channel() {
 }
 
 mount_image() {
+    STATEDIR=/run/initramfs/isoscan
     TARGET=/tmp/upgrade
-    mkdir ${TARGET} || true
-    mount $TARGET_PARTITION ${TARGET}
+
+    mkdir -p $TARGET || true
+    mount -o remount,rw ${STATE} ${STATEDIR}
+
+    mkdir -p ${STATEDIR}/cOS || true
+    rm -rf ${STATEDIR}/cOS/transition.img || true
+    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
+    mkfs.ext4 ${STATEDIR}/cOS/transition.img
+    mount -t ext4 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
 
 mount_persistent() {
@@ -94,40 +75,34 @@ mount_persistent() {
     mount ${OEM} ${TARGET}/oem
     mkdir -p ${TARGET}/usr/local || true
     mount ${PERSISTENT} ${TARGET}/usr/local
-    GRUB=$(blkid -L COS_GRUB || true)
-    if [ -n "$GRUB" ]; then
-        mkdir -p ${TARGET}/boot/efi || true
-        mount ${GRUB} ${TARGET}/boot/efi
-    fi
 }
 
 upgrade() {
     mount_image
-
-    # XXX: Wipe old, needed until we have a persistent luet state.
-    # TODO: at least cache downloads before wiping and we are sure we can perform the new install
-    if [ -d "/tmp/empty" ]; then
-        rm -rf /tmp/empty
-    fi
-    mkdir /tmp/empty
-    rsync -a --delete /tmp/empty/ /tmp/upgrade/
-
     mount_persistent
     ensure_dir_structure
+
+    mkdir -p /usr/local/tmp/upgrade
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    XDG_RUNTIME_DIR=/var/tmp TMPDIR=/var/tmp luet install -y $UPGRADE_IMAGE
+    XDG_RUNTIME_DIR=/usr/local/tmp/upgrade TMPDIR=/usr/local/tmp/upgrade luet install -y $UPGRADE_IMAGE
     luet cleanup
-    rm -rf /tmp/upgrade/var/tmp/*
+    rm -rf /usr/local/tmp/upgrade
+    umount $TARGET/oem
+    umount $TARGET/usr/local
+    umount $TARGET
 }
 
 switch_active() {
-    echo "-> Flagging $NEW_ACTIVE as COS_ACTIVE"
-    tune2fs -L COS_ACTIVE $NEW_ACTIVE
-    echo "-> Flagging $NEW_PASSIVE as COS_PASSIVE"
-    tune2fs -L COS_PASSIVE $NEW_PASSIVE
+    if [[ "$CURRENT" == "active.img" ]]; then
+        mv -f ${STATEDIR}/cOS/$CURRENT ${STATEDIR}/cOS/passive.img
+        tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    fi
+
+    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
 }
 
 ensure_dir_structure() {
@@ -138,16 +113,10 @@ ensure_dir_structure() {
     mkdir ${TARGET}/tmp || true
 }
 
-update_grub() {
-    if [ -e "/sys/firmware/efi" ]; then
-        GRUB_TARGET="--target=x86_64-efi --efi-dir=${TARGET}/boot/efi"
-    fi
-    DEVICE=/dev/$(lsblk -no pkname ${TARGET_PARTITION})
-    grub2-install ${GRUB_TARGET} --removable ${DEVICE}
-}
-
 cleanup2()
 {
+    rm -rf /usr/local/tmp/upgrade || true
+    mount -o remount,ro ${STATE} ${STATEDIR} || true
     if [ -n "${TARGET}" ]; then
         umount ${TARGET}/boot/efi || true
         umount ${TARGET}/oem || true
@@ -172,12 +141,6 @@ trap cleanup exit
 upgrade
 
 switch_active
-
-# FIXME: We have to regenerate grub since now we don't have a partition for /boot/grub2. upgrades,
-# since don't have any state and wipe everything, will remove generated grub files during install
-# NOTE: If we have a persistent luetdb state, this wouldnt be required, because handled by upgrades
-# (no wipe needed).
-update_grub
 
 echo "Flush changes to disk"
 sync
