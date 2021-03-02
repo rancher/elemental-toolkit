@@ -103,7 +103,7 @@ $(ROOT_DIR)/.qemu:
 $(ROOT_DIR)/.qemu/drive.img: $(ROOT_DIR)/.qemu
 	qemu-img create -f qcow2 $(ROOT_DIR)/.qemu/drive.img 16g
 
-run-qemu: .qemu/drive.img
+run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	$(QEMU) \
 	-m $(QEMU_MEMORY) \
 	-cdrom $(ISO) \
