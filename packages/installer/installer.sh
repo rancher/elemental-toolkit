@@ -172,7 +172,9 @@ stages:
        files:
         - path: /etc/issue
           content: |
-            Welcome to cOS!
+            Welcome to \S !
+            IP address \4
+
             Login with user: root, password: cos
             To upgrade the system, run "cos-upgrade"
             To change this message permantly on boot, see /usr/local/cloud-config/90_after_install.yaml

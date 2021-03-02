@@ -1,20 +1,17 @@
 # Default cOS OEM configuration file
+#
+# This file is part of cOS and will get reset during upgrades.
+#
+# Before you change this file manually,
+# consider copying this file to /usr/local/cloud-config or
+# copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
+
 stages:
    fs.after:
      - name: "Setup users"
-       files:
-        - path: /etc/shadow
-          content: |
-               root:$6$g9DDJRDNRS8MEzhH$w6Cn6PNzFnUVnatwRbNoLk6etanvAbcxUzfYlQcj6y/JLGq3Yrl7wXi6SkMzp1/tEM3NheMr5fH8.92NdiaB/0:18640::::::
-               catchlog:!:14761:0:99999:7:::
-               alias:!:14761:0:99999:7:::
-               nobody:!:14314:0:99999:7:::
-               klog:!:14793::::::
-               kllog:!:14793::::::
-               syslog:!:14793::::::
-               sysllog:!:14793::::::
-               sysfdh:!:15041::::::
-               sshlog:!:14849::::::
-          permissions: 0640
-          owner: 0
-          group: 0
+       ensure_entities:
+       - path: /etc/shadow
+         entity: |
+            kind: "shadow"
+            username: "root"
+            password: "$6$g9DDJRDNRS8MEzhH$w6Cn6PNzFnUVnatwRbNoLk6etanvAbcxUzfYlQcj6y/JLGq3Yrl7wXi6SkMzp1/tEM3NheMr5fH8.92NdiaB/0"

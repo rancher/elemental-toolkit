@@ -35,6 +35,9 @@ steps:
 - systemctl enable getty@tty1
 
 - cp grub.cfg /boot/grub2/grub.cfg
+- cp -rfv os-release /etc/os-release
+- echo "VERSION=\"{{.Values.version}}\"" >> /etc/os-release
+- echo "PRETTY_NAME=\"{{.Values.brand_name}} v{{.Values.version}}\"" >> /etc/os-release
 
 unpack: true
 excludes:
