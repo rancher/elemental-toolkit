@@ -20,7 +20,8 @@ stages:
             | `-' |
             `-----'
 
-            Welcome to cOS!
+            Welcome to \S !
+            IP address \4
             Login with user: root, password: cos
             Start the installer with "cos-installer <device>" to install it in the local system
           permissions: 0644
