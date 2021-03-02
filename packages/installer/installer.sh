@@ -67,8 +67,8 @@ do_format()
         PERSISTENT_NUM=4
         parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
         parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 20100MB # active
-        parted -s ${DEVICE} mkpart primary ext4 20100MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 100MB 10100MB # active
+        parted -s ${DEVICE} mkpart primary ext4 10100MB 100% # persistent
         parted -s ${DEVICE} set 1 ${BOOTFLAG} on
 
     else
@@ -77,8 +77,8 @@ do_format()
         STATE_NUM=2
         PERSISTENT_NUM=3
         parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 20050MB # active
-        parted -s ${DEVICE} mkpart primary ext4 20050MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 50MB 10050MB # active
+        parted -s ${DEVICE} mkpart primary ext4 10050MB 100% # persistent
         parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
    
