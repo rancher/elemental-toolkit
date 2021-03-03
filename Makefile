@@ -6,7 +6,7 @@ export LUET?=$(shell which luet)
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DESTINATION?=$(ROOT_DIR)/build
 COMPRESSION?=zstd
-ISO_SPEC?=$(ROOT_DIR)/iso/cOS-local.yaml
+ISO_SPEC?=$(ROOT_DIR)/iso/cOS.yaml
 CLEAN?=false
 export TREE?=$(ROOT_DIR)/packages
 
@@ -22,6 +22,7 @@ HAS_LUET := $(shell command -v luet 2> /dev/null)
 QEMU?=qemu-kvm
 QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
+PACKER_ARGS?=
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
@@ -87,15 +88,23 @@ autobump:
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
 
-$(ROOT_DIR)/build/conf.yaml:
+$(ROOT_DIR)/build:
+	mkdir $(ROOT_DIR)/build
+
+$(ROOT_DIR)/build/conf.yaml: $(ROOT_DIR)/build
 	touch $(ROOT_DIR)/build/conf.yaml
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'local'
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'disk'
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
 
 local-iso: create-repo $(ROOT_DIR)/build/conf.yaml
-	 $(LUET) geniso-isospec $(ISO_SPEC)
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'disk'
+	$(LUET) geniso-isospec $(ISO_SPEC)
+
+iso: $(ROOT_DIR)/build/conf.yaml
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'docker'
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) geniso-isospec $(ISO_SPEC)
 
 $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
@@ -113,3 +122,7 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	-chardev socket,path=$(ROOT_DIR)/.qemu/qga.sock,server,nowait,id=qga0 \
 	-device virtio-serial \
 	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)
+
+.PHONY: packer
+packer:
+	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
