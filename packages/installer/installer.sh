@@ -18,9 +18,10 @@ cleanup2()
         umount ${TARGET}/dev || true
         umount ${TARGET}/sys || true
         umount ${TARGET}/boot/efi || true
+        umount ${TARGET}/boot/grub2 || true
         umount ${TARGET} || true
-
     fi
+    umount ${STATEDIR} || true
 }
 
 cleanup()
@@ -270,11 +271,6 @@ validate_device()
     fi
 }
 
-create_opt()
-{
-    mkdir -p "${TARGET}/cos/data/opt"
-}
-
 while [ "$#" -gt 0 ]; do
     case $1 in
         --no-format)
@@ -338,7 +334,6 @@ do_format
 do_mount
 do_copy
 install_grub
-create_opt
 
 if [ -n "$INTERACTIVE" ]; then
     exit 0
