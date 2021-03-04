@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e
 
-# FIXME: should have two ways for resetting
-# - easiest/reliable: copy 1:1 RECOVERY partition. 
-#   cOS just detecting if it's running by recovery partition should be able to behave differently
-# - less repro, but keeps things up-to-date: rerun installation steps into COS_STATE. 
-#   But what upgrades the recovery mechanism itself remains an open point. It should be run as part of cos-upgrade, maybe with a flag.
-# At the moment cos-reset is implementing the latter as we don't have a recovery partition (yet).
+check_recovery() {
+    SYSTEM=$(blkid -L COS_SYSTEM || true)
+    if [ -z "$SYSTEM" ]; then
+        echo "cos-reset can be run only from recovery"
+        exit 1
+    fi
+    RECOVERY=$(blkid -L COS_RECOVERY || true)
+    if [ -z "$RECOVERY" ]; then
+        echo "Can't find COS_RECOVERY partition"
+        exit 1
+    fi
+}
 
 find_partitions() {
     STATE=$(blkid -L COS_STATE || true)
@@ -21,8 +27,10 @@ find_partitions() {
 
 do_mount()
 {
-    STATEDIR=/run/initramfs/isoscan
-    mount -o remount,rw ${STATE} ${STATEDIR}
+    STATEDIR=/tmp/state
+    mkdir -p $STATEDIR || true
+    RECOVERYDIR=/run/initramfs/isoscan
+    #mount -o remount,rw ${STATE} ${STATEDIR}
 
     if [ -n "${BOOT}" ]; then
         mkdir -p /boot/efi || true
@@ -30,13 +38,13 @@ do_mount()
     fi
     mkdir -p /boot/grub2 || true
     mount ${STATE} /boot/grub2
+    mount ${STATE} $STATEDIR
 }
 
 cleanup2()
 {  
     umount /boot/efi || true
     umount /boot/grub2 || true
-    mount -o remount,ro ${STATE} ${STATEDIR} || true
 }
 
 cleanup()
@@ -48,7 +56,7 @@ cleanup()
 
 install_grub()
 {
-    mount -o remount,rw ${STATE} /boot/grub2
+    #mount -o remount,rw ${STATE} /boot/grub2
     grub2-install ${DEVICE}
 }
 
@@ -58,22 +66,24 @@ reset() {
 }
 
 copy_active() {
-    mount -o remount,rw ${STATE} ${STATEDIR}
-    cp -rf ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
+    cp -rf ${RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
     tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    cp -rf ${STATEDIR}/cOS/passive.img ${STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
 }
 
 trap cleanup exit
 
+check_recovery
+
 find_partitions
+
 do_mount
 
 if [ -n "$PERSISTENCE_RESET" ] && [ "$PERSISTENCE_RESET" == "true" ]; then
     reset
 fi
 
-CURRENT=passive.img cos-upgrade
+copy_active
 
 install_grub
-
-copy_active
