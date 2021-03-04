@@ -6,14 +6,17 @@ PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install"
 DISTRO=/run/rootfsbase
 ISOBOOT=/run/initramfs/live/boot
 TARGET=/run/cos/target
+RECOVERYDIR=/run/cos/recovery
 
 if [ "$COS_DEBUG" = true ]; then
     set -x
 fi
 
-cleanup2()
-{
+umount_target() {
+    sync
     if [ -n "${TARGET}" ]; then
+        umount ${TARGET}/oem || true
+        umount ${TARGET}/usr/local || true
         umount ${TARGET}/proc || true
         umount ${TARGET}/dev || true
         umount ${TARGET}/sys || true
@@ -21,7 +24,14 @@ cleanup2()
         umount ${TARGET}/boot/grub2 || true
         umount ${TARGET} || true
     fi
+}
+
+cleanup2()
+{
+    sync
+    umount_target
     umount ${STATEDIR} || true
+    umount ${RECOVERY} || true
 }
 
 cleanup()
@@ -45,8 +55,28 @@ usage()
     exit 1
 }
 
+prepare_recovery() {
+    echo "Preparing recovery.."
+
+    mkdir -p $RECOVERYDIR
+    mount $RECOVERY $RECOVERYDIR
+    mkdir -p $RECOVERYDIR/cOS
+    #rsync -aqz $STATEDIR/ ${RECOVERYDIR}
+    cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
+    tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+}
+
+prepare_passive() {
+    echo "Preparing passive boot.."
+
+    cp -a ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
+    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+}
+
 do_format()
 {
+    echo "Formatting drives.."
+
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
         STATE=$(blkid -L COS_STATE || true)
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
@@ -55,6 +85,7 @@ do_format()
         fi
         OEM=$(blkid -L COS_OEM || true)
         STATE=$(blkid -L COS_STATE || true)
+        RECOVERY=$(blkid -L COS_RECOVERY || true)
         BOOT=$(blkid -L COS_GRUB || true)
         return 0
     fi
@@ -65,21 +96,24 @@ do_format()
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
-        PERSISTENT_NUM=4
+        RECOVERY_NUM=4
+        PERSISTENT_NUM=5
         parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
         parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
         parted -s ${DEVICE} mkpart primary ext4 100MB 10100MB # active
-        parted -s ${DEVICE} mkpart primary ext4 10100MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 10100MB 18100MB # active
+        parted -s ${DEVICE} mkpart primary ext4 18100MB 100% # persistent
         parted -s ${DEVICE} set 1 ${BOOTFLAG} on
-
     else
         BOOT_NUM=
         OEM_NUM=1
         STATE_NUM=2
-        PERSISTENT_NUM=3
+        RECOVERY_NUM=3
+        PERSISTENT_NUM=4
         parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
         parted -s ${DEVICE} mkpart primary ext4 50MB 10050MB # active
-        parted -s ${DEVICE} mkpart primary ext4 10050MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 10050MB 18050MB # active
+        parted -s ${DEVICE} mkpart primary ext4 18050MB 100% # persistent
         parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
    
@@ -101,6 +135,7 @@ do_format()
     fi
     STATE=${PREFIX}${STATE_NUM}
     OEM=${PREFIX}${OEM_NUM}
+    RECOVERY=${PREFIX}${RECOVERY_NUM}
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
     mkfs.ext4 -F -L COS_STATE ${STATE}
@@ -109,12 +144,15 @@ do_format()
         fatlabel ${BOOT} COS_GRUB
     fi
 
+    mkfs.ext4 -F -L COS_RECOVERY ${RECOVERY}
     mkfs.ext4 -F -L COS_OEM ${OEM}
     mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
 }
 
 do_mount()
 {
+    echo "Mounting critical endpoints.."
+
     mkdir -p ${TARGET}
 
     STATEDIR=/tmp/mnt/STATE
@@ -165,6 +203,8 @@ get_url()
 
 do_copy()
 {
+    echo "Copying cOS.."
+
     rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
      if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
         OEM=${TARGET}/oem/99_custom.yaml
@@ -196,6 +236,8 @@ EOF
 
 install_grub()
 {
+    echo "Installing GRUB.."
+
     if [ "$COS_INSTALL_DEBUG" ]; then
         GRUB_DEBUG="cos.debug"
     fi
@@ -334,6 +376,11 @@ do_format
 do_mount
 do_copy
 install_grub
+
+umount_target 2>/dev/null
+
+prepare_recovery
+prepare_passive
 
 if [ -n "$INTERACTIVE" ]; then
     exit 0
