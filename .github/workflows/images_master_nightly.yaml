@@ -15,7 +15,7 @@ jobs:
     - name: Install deps
       run: |
         sudo apt-get update
-        sudo apt-get install -y xorriso squashfs-tools dosfstools qemu
+        sudo apt-get install -y xorriso squashfs-tools dosfstools qemu qemu-system qemu-kvm
         sudo -E make deps
         sudo luet install -y utils/packer
     - name: Build ISO 🔧
