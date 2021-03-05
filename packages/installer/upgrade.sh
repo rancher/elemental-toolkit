@@ -47,6 +47,14 @@ find_partitions() {
     echo "-> Booting from: $CURRENT"
 }
 
+find_recovery() {
+    RECOVERY=$(blkid -L COS_RECOVERY || true)
+    if [ -z "$RECOVERY" ]; then
+        echo "COS_RECOVERY partition cannot be found"
+        exit 1
+    fi
+}
+
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
     UPGRADE_IMAGE=$(cat /etc/cos-upgrade-image)
@@ -56,6 +64,14 @@ find_upgrade_channel() {
     fi
 }
 
+prepare_target() {
+    mkdir -p ${STATEDIR}/cOS || true
+    rm -rf ${STATEDIR}/cOS/transition.img || true
+    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
+    mkfs.ext4 ${STATEDIR}/cOS/transition.img
+    mount -t ext4 -o loop ${STATEDIR}/cOS/transition.img $TARGET
+}
+
 mount_image() {
     STATEDIR=/run/initramfs/isoscan
     TARGET=/tmp/upgrade
@@ -63,11 +79,18 @@ mount_image() {
     mkdir -p $TARGET || true
     mount -o remount,rw ${STATE} ${STATEDIR}
 
-    mkdir -p ${STATEDIR}/cOS || true
-    rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
-    mkfs.ext4 ${STATEDIR}/cOS/transition.img
-    mount -t ext4 -o loop ${STATEDIR}/cOS/transition.img $TARGET
+    prepare_target
+}
+
+mount_recovery() {
+    STATEDIR=/tmp/recovery
+    TARGET=/tmp/upgrade
+
+    mkdir -p $TARGET || true
+    mkdir -p $STATEDIR || true
+    mount $RECOVERY $STATEDIR
+
+    prepare_target
 }
 
 mount_persistent() {
@@ -78,7 +101,6 @@ mount_persistent() {
 }
 
 upgrade() {
-    mount_image
     mount_persistent
     ensure_dir_structure
 
@@ -103,6 +125,11 @@ switch_active() {
 
     mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/active.img
     tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+}
+
+switch_recovery() {
+    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
+    tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
 }
 
 ensure_dir_structure() {
@@ -132,15 +159,35 @@ cleanup()
     return $EXIT
 }
 
-find_partitions
-
-find_upgrade_channel
-
 trap cleanup exit
 
-upgrade
+if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
+    echo "Upgrading recovery partition.."
 
-switch_active
+    find_partitions
+
+    find_recovery
+
+    find_upgrade_channel
+
+    mount_recovery
+
+    upgrade
+
+    switch_recovery
+else
+    echo "Upgrading system.."
+
+    find_partitions
+
+    find_upgrade_channel
+
+    mount_image
+
+    upgrade
+
+    switch_active
+fi
 
 echo "Flush changes to disk"
 sync

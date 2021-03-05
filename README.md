@@ -32,7 +32,7 @@ Run `cos-installer <device>` to start the installation process. Remove the ISO a
 
 _Note_: `cos-installer` supports other options as well. Run `cos-installer --help` to see a complete help.
 
-## Upgrades / reset:
+## Upgrades:
 
 To upgrade the system, just run `cos-upgrade` and reboot.
 
@@ -42,9 +42,16 @@ cOS during installation sets two `.img` images files in the `COS_STATE` partitio
 
 Those are used by the upgrade mechanism to prepare and install a pristine `cOS` each time an upgrade is attempted.
 
-## Recovery
+## Reset state
 
-The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to reset the state of the active partition.
+### Recovery partition
+
+cOS can be recovered anytime from the `cOS recovery` partition by running `cos-reset`. This will regenerate the bootloader and the images in `COS_STATE` by using the recovery image created during installation.
+
+The recovery partition can also be upgraded by running `UPGRADE_RECOVERY=true cos-upgrade` in the standard partitions used for boot.
+
+### From ISO
+The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to upgrade the image of the active partition installed in the system.
 
 ## File system layout
 
