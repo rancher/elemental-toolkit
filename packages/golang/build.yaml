@@ -1,11 +1,14 @@
 requires:
-
 - name: "base"
   category: "distro"
   version: ">=0"
 
 prelude:
-- zypper in -y wget tar gzip git && zypper install -y -t pattern devel_basis
+{{if .Values.is_opensuse}}
+- zypper in -y wget && zypper install -y -t pattern devel_basis
+{{else if .Values.is_fedora}}
+- dnf install -y wget "@Development Tools"
+{{end}}
 - wget https://golang.org/dl/go{{.Values.version}}.linux-{{.Values.arch}}.tar.gz -O golang.tar.gz
 
 steps:

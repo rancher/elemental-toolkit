@@ -1,6 +1,6 @@
 [Unit]
 Description=cOS overlayfs mount for /var
-RequiresMountsFor=/data.overlay
+RequiresMountsFor=/run/overlay
 Requires=overlay-setup.service
 
 [Mount]
@@ -8,4 +8,4 @@ Where=/var
 What=overlay
 Type=overlay
 LazyUnmount=true
-Options=defaults,lowerdir=/var,upperdir=/data.overlay/var/upper,workdir=/data.overlay/var/work
+Options=defaults,lowerdir=/var,upperdir=/run/overlay/var/upper,workdir=/run/overlay/var/work

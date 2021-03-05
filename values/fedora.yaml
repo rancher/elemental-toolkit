@@ -1,0 +1,14 @@
+image: "fedora:33"
+is_fedora: true
+
+fedora_packages: >-
+    grub2-pc
+    grub2-efi-x64
+    grub2-efi-x64-modules
+    NetworkManager
+    squashfs-tools
+    dracut-live
+    efibootmgr
+
+kernel_package: kernel
+kernel_version: "5.10.19"
