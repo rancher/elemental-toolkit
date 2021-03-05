@@ -1,5 +1,7 @@
 name: Build cOS
 on:
+  schedule:
+    - cron:  '0 20 * * *'
   push:
     paths:
     - 'conf/**'
@@ -79,12 +81,23 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y xorriso squashfs-tools dosfstools
         sudo -E make deps
-    - name: Build ISO 🔧
+
+    - name: Build ISO from local build 🔧
+      if: ${{ github.event_name != 'schedule' }}
       run: |
         sudo -E make local-iso
         COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
         mv *.iso cOS-$COS_VERSION.iso
         mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
+    - name: Build ISO from remote repositories 🔧
+      if: ${{ github.event_name == 'schedule' }}
+      run: |
+        sudo -E make iso
+        COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+        mv *.iso cOS-$COS_VERSION.iso
+        mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
     - uses: actions/upload-artifact@v2
       with:
         name: ISO
@@ -120,6 +133,40 @@ jobs:
           ISO=$PWD/cOS-$COS_VERSION.iso PACKER_ARGS="-var='accellerator=none' -var='sleep=5m' -only qemu" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: QEMU
+          name: cOS.qcow
           path: |
-            packer/*-qemu.tar.gz
+            packer/*.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-QEMU.box
+          path: |
+            packer/*.box
+
+  vbox:
+      runs-on: macos-10.15
+      needs: iso
+      steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: ISO
+
+      - name: Install deps
+        run: |
+          brew tap hashicorp/tap
+          brew install hashicorp/tap/packer
+      - name: Build VBox Image 🔧
+        run: |
+          ISO=$(ls $PWD/*.iso) PACKER_ARGS="-var='sleep=5m' -only virtualbox-iso" make packer
+          ls packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS.ova
+          path: |
+            packer/*.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-vbox.box
+          path: |
+            packer/*.box

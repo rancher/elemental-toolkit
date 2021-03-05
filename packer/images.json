@@ -11,7 +11,7 @@
         "shutdown_command": "shutdown -hP now",     
         "ssh_password": "{{user `root_password`}}",  
         "ssh_username": "{{user `root_username`}}",
-        
+        "format": "ova",
         "ssh_timeout": "40s",
         "type": "virtualbox-iso",
         "vm_name": "cOS"
@@ -43,23 +43,18 @@
     "post-processors": [
       {
         "only": [
-          "virtualbox-iso"
+          "virtualbox-iso",
+          "qemu"
         ],
         "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}.box",
         "type": "vagrant"
       },
       {
         "only": [
-          "virtualbox-iso"
-        ],
-        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}-ovf.tar.gz",
-        "type": "compress"
-      },
-      {
-        "only": [
+          "virtualbox-iso",
           "qemu"
         ],
-        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}-qemu.tar.gz",
+        "output": "cOS_{{user `build`}}_{{user `arch`}}_{{user `flavor`}}.tar.gz",
         "type": "compress"
       }
     ],
