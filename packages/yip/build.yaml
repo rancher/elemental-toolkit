@@ -9,8 +9,11 @@ env:
 - CGO_ENABLED=0
 - LDFLAGS="-s -w"
 prelude:
+{{if .Values.is_opensuse}}
 - zypper in -y git upx
-
+{{else if .Values.is_fedora}}
+- dnf install -y git upx
+{{end}}
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
    mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \

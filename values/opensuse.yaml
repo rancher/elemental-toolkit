@@ -1,0 +1,12 @@
+image: opensuse/leap:15.2
+is_opensuse: true
+
+leap_packages: >-
+    systemd-sysvinit
+    grub2-i386-pc
+    grub2-x86_64-efi
+    iproute2
+    squashfs
+
+kernel_package: kernel-default
+kernel_version: "5.3.18"

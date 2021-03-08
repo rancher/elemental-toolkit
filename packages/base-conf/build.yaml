@@ -5,9 +5,11 @@ requires:
 
 steps:
 - cp fstab /etc/fstab
-- mkdir -p /data.overlay
-- touch /data.overlay/.emptyfile
+{{if .Values.is_opensuse}}
 # Mount /tmp as tmpfs by default as set by systemd itself
 - cp /usr/share/systemd/tmp.mount /etc/systemd/system
+{{end}}
 - cp *.mount overlay-setup.service /etc/systemd/system/
 - systemctl enable overlay-setup.service
+- echo "{{.Values.is_fedora}}"
+- echo "{{.Values.is_opensuse}}"

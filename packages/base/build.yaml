@@ -1,6 +1,15 @@
 image: "{{.Values.image}}"
 
 steps:
-- zypper in -y --no-recommends {{.Values.packages}}
-# Cleans up cache
+{{if .Values.is_opensuse}}
+- zypper in -y --no-recommends {{.Values.leap_packages}} {{.Values.common_packages}} {{.Values.kernel_package}}-{{.Values.kernel_version}}
 - zypper cc
+{{else if .Values.is_fedora}}
+- echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+- dnf install -y {{.Values.fedora_packages}} {{.Values.common_packages}} {{.Values.kernel_package}}-{{.Values.kernel_version}}
+- dnf clean all
+- |
+    kernel=$(ls /boot/vmlinuz* | grep {{.Values.kernel_version}} | head -n1) && \
+    ln -sf "${kernel#/boot/}" /boot/vmlinuz
+{{end}}
+- kernel=$(ls /lib/modules | grep {{.Values.kernel_version}} | head -n1) && depmod -a "${kernel}"

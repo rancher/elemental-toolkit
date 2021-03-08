@@ -4,7 +4,6 @@ CONCURRENCY?=1
 
 export LUET?=$(shell which luet)
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-DESTINATION?=$(ROOT_DIR)/build
 COMPRESSION?=zstd
 ISO_SPEC?=$(ROOT_DIR)/iso/cOS.yaml
 CLEAN?=false
@@ -13,9 +12,10 @@ export TREE?=$(ROOT_DIR)/packages
 BUILD_ARGS?=--pull --no-spinner --only-target-package
 
 VALIDATE_OPTIONS?=-s
-ARCH?=amd64
-REPO_CACHE?=raccos/$(ARCH)
-FINAL_REPO?=raccos/releases-$(ARCH)
+FLAVOR?=opensuse
+DESTINATION?=$(ROOT_DIR)/build
+REPO_CACHE?=raccos/$(FLAVOR)
+FINAL_REPO?=raccos/releases-$(FLAVOR)
 
 PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
 HAS_LUET := $(shell command -v luet 2> /dev/null)
@@ -43,23 +43,24 @@ endif
 endif
 
 clean:
-	 rm -rf $(ROOT_DIR)/build/ $(ROOT_DIR)/.qemu
+	 rm -rf $(DESTINATION) $(ROOT_DIR)/.qemu
 
 .PHONY: build
 build:
 	$(LUET) build $(BUILD_ARGS) \
-	--values $(ROOT_DIR)/values/$(ARCH).yaml \
+	--values $(ROOT_DIR)/values/$(FLAVOR).yaml \
 	--tree=$(TREE) $(PACKAGES) \
 	--backend $(BACKEND) \
 	--concurrency $(CONCURRENCY) \
-	--compression $(COMPRESSION)
+	--compression $(COMPRESSION) \
+	--destination $(DESTINATION)
 
 create-repo:
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
     --packages $(DESTINATION) \
     --name "cOS" \
-    --descr "cOS $(ARCH)" \
+    --descr "cOS $(FLAVOR)" \
     --urls "" \
     --tree-compression $(COMPRESSION) \
     --tree-filename tree.tar \
@@ -71,7 +72,7 @@ publish-repo:
     --output $(FINAL_REPO) \
     --packages $(DESTINATION) \
     --name "cOS" \
-    --descr "cOS $(ARCH)" \
+    --descr "cOS $(FLAVOR)" \
     --urls "" \
     --tree-compression $(COMPRESSION) \
     --tree-filename tree.tar \
@@ -80,7 +81,7 @@ publish-repo:
     --type docker
 
 serve-repo:
-	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(ROOT_DIR)/build
+	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(DESTINATION)
 
 autobump:
 	TREE_DIR=$(ROOT_DIR) $(LUET) autobump-github
@@ -88,22 +89,22 @@ autobump:
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
 
-$(ROOT_DIR)/build:
-	mkdir $(ROOT_DIR)/build
+$(DESTINATION):
+	mkdir $(DESTINATION)
 
-$(ROOT_DIR)/build/conf.yaml: $(ROOT_DIR)/build
+$(DESTINATION)/conf.yaml: $(DESTINATION)
 	touch $(ROOT_DIR)/build/conf.yaml
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
 	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
 
-local-iso: create-repo $(ROOT_DIR)/build/conf.yaml
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'disk'
+local-iso: create-repo $(DESTINATION)/conf.yaml
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'disk'
 	$(LUET) geniso-isospec $(ISO_SPEC)
 
-iso: $(ROOT_DIR)/build/conf.yaml
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].type' 'docker'
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
+iso: $(DESTINATION)/conf.yaml
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'docker'
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) geniso-isospec $(ISO_SPEC)
 
 $(ROOT_DIR)/.qemu:
