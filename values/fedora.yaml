@@ -9,6 +9,7 @@ fedora_packages: >-
     squashfs-tools
     dracut-live
     efibootmgr
+    audit
 
 kernel_package: kernel
 kernel_version: "5.10.19"
