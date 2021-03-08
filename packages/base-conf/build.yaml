@@ -11,5 +11,3 @@ steps:
 {{end}}
 - cp *.mount overlay-setup.service /etc/systemd/system/
 - systemctl enable overlay-setup.service
-- echo "{{.Values.is_fedora}}"
-- echo "{{.Values.is_opensuse}}"
