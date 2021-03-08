@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+local IMAGE=$1
+CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+
 # 1. Identify active/passive partition
 # 2. Install upgrade in passive partition
 # 3. Invert partition labels
@@ -57,10 +60,19 @@ find_recovery() {
 
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
-    UPGRADE_IMAGE=$(cat /etc/cos-upgrade-image)
-    if [ -z "$UPGRADE_IMAGE" ]; then
-        UPGRADE_IMAGE="system/cos"
-        echo "Upgrade image not found in /etc/cos-upgrade-image, using $UPGRADE_IMAGE"
+    if [ -n "$IMAGE" ]; then
+        UPGRADE_IMAGE=$IMAGE
+        echo "Upgrading to image $UPGRADE_IMAGE"
+    else
+        UPGRADE_IMAGE=$(cat /etc/cos-upgrade-image)
+        if [ -z "$UPGRADE_IMAGE" ]; then
+            UPGRADE_IMAGE="system/cos"
+            echo "Upgrade image not found in /etc/cos-upgrade-image, using $UPGRADE_IMAGE"
+        fi
+    fi
+
+    if [ -e "/etc/cos-versionpin" ]; then
+        CHANNEL_UPGRADES=false
     fi
 }
 
@@ -105,12 +117,23 @@ upgrade() {
     ensure_dir_structure
 
     mkdir -p /usr/local/tmp/upgrade
+
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    XDG_RUNTIME_DIR=/usr/local/tmp/upgrade TMPDIR=/usr/local/tmp/upgrade luet install -y $UPGRADE_IMAGE
-    luet cleanup
+    export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
+    export TMPDIR=/usr/local/tmp/upgrade
+    
+    if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
+        luet install -y $UPGRADE_IMAGE
+        luet cleanup
+    else 
+        unpackr $UPGRADE_IMAGE /usr/local/tmp/rootfs
+        rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rm -rf /usr/local/tmp/rootfs
+    fi
+
     rm -rf /usr/local/tmp/upgrade
     umount $TARGET/oem
     umount $TARGET/usr/local

@@ -2,8 +2,19 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
+- name: "golang"
+  category: "build"
+  version: ">=0"
 
+env:
+- PATH=$PATH:/usr/local/go/bin
+- GOPATH=/luetbuild/go
+- GO111MODULE=on
+- CGO_ENABLED=0
+- LDFLAGS="-s -w"
 steps:
+- cd unpackr && go build -o unpackr
+- mv unpackr/unpackr /usr/bin/unpackr
 - cp -rfv installer.sh /usr/sbin/cos-installer && chmod +x /usr/sbin/cos-installer
 - cp -rfv upgrade.sh /usr/sbin/cos-upgrade && chmod +x /usr/sbin/cos-upgrade
 - cp -rfv reset.sh /usr/sbin/cos-reset && chmod +x /usr/sbin/cos-reset
