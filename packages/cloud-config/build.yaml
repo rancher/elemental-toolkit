@@ -3,6 +3,6 @@ requires:
   category: "system"
   version: ">=0"
 steps:
-- mkdir -p /oem
-- cp -rfv yipfiles/*.yaml /oem
-- chmod -R 600 /oem
+- mkdir -p /system/oem
+- cp -rfv yipfiles/*.yaml /system/oem
+- chmod -R 600 /system/oem
