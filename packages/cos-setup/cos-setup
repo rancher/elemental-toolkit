@@ -4,7 +4,8 @@
 # it emit also "stage.before" and "stage.after" to able to hook
 # into different stages. E.g. if one depends on another for network setup
 STAGE="${1:-boot}"
-set -- $(cat /proc/cmdline)
+CMDLINE="$(cat /proc/cmdline)"
+set -- $CMDLINE
 for x in "$@"; do
     case "$x" in
         cos.setup=*)
@@ -27,4 +28,9 @@ for x in "$@"; do
         yip -s "$STAGE".after "${x#cos.setup=}"
         ;;
     esac
+done
+
+# Read cmdline from dotnotation and execute yip file:
+for s in "$STAGE".before "$STAGE" "$STAGE".after; do
+    echo $CMDLINE | yip -d -s "$s"
 done
