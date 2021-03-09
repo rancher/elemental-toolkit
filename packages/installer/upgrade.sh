@@ -70,7 +70,6 @@ find_upgrade_channel() {
 
     if [ -z "$UPGRADE_IMAGE" ]; then
         UPGRADE_IMAGE="system/cos"
-        echo "No image specified in /etc/cos-upgrade-image, default to $UPGRADE_IMAGE"
     fi
 }
 
@@ -182,7 +181,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: cos-upgrade [--docker-image] IMAGE"
+    echo "Usage: cos-upgrade [--recovery] [--docker-image] IMAGE"
     echo ""
     echo "Example: cos-upgrade"
     echo ""
@@ -192,11 +191,15 @@ usage()
     exit 1
 }
 
+find_upgrade_channel
+
 while [ "$#" -gt 0 ]; do
     case $1 in
         --docker-image)
-            shift 1
             CHANNEL_UPGRADES=false
+            ;;
+        --recovery)
+            UPGRADE_RECOVERY=true
             ;;
         -h)
             usage
@@ -209,7 +212,7 @@ while [ "$#" -gt 0 ]; do
                 usage
             fi
             INTERACTIVE=true
-            IMAGE=$1
+            UPGRADE_IMAGE=$1
             break
             ;;
     esac
@@ -225,8 +228,6 @@ if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
 
     find_recovery
 
-    find_upgrade_channel
-
     mount_recovery
 
     upgrade
@@ -236,8 +237,6 @@ else
     echo "Upgrading system.."
 
     find_partitions
-
-    find_upgrade_channel
 
     mount_image
 
