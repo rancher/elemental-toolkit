@@ -12,4 +12,4 @@ fedora_packages: >-
     audit
 
 kernel_package: kernel
-kernel_version: "5.10.19"
+kernel_version: "5.10.20"
