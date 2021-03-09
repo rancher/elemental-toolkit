@@ -32,5 +32,5 @@ done
 
 # Read cmdline from dotnotation and execute yip file:
 for s in "$STAGE".before "$STAGE" "$STAGE".after; do
-    echo $CMDLINE | yip -d -s "$s"
+    echo $CMDLINE | yip -d -s "$s" -
 done
