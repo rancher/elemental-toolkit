@@ -23,6 +23,7 @@ QEMU?=qemu-kvm
 QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
 PACKER_ARGS?=
+ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
@@ -43,7 +44,7 @@ endif
 endif
 
 clean:
-	 rm -rf $(DESTINATION) $(ROOT_DIR)/.qemu
+	 rm -rf $(DESTINATION) $(ROOT_DIR)/.qemu $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.sha256
 
 .PHONY: build
 build:
@@ -127,3 +128,4 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 .PHONY: packer
 packer:
 	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
+
