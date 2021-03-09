@@ -6,3 +6,8 @@ steps:
 - mkdir -p /system/oem
 - cp -rfv yipfiles/*.yaml /system/oem
 - chmod -R 600 /system/oem
+{{if .Values.is_opensuse}}
+- sed -i 's/:FLAVOR:/opensuse/g' /system/oem/02_upgrades.yaml
+{{else if .Values.is_fedora}}
+- sed -i 's/:FLAVOR:/fedora/g' /system/oem/02_upgrades.yaml
+{{end}}
