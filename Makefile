@@ -9,7 +9,7 @@ ISO_SPEC?=$(ROOT_DIR)/iso/cOS.yaml
 CLEAN?=false
 export TREE?=$(ROOT_DIR)/packages
 
-BUILD_ARGS?=--pull --no-spinner --only-target-package
+BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 VALIDATE_OPTIONS?=-s
 FLAVOR?=opensuse
