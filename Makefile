@@ -90,6 +90,8 @@ autobump:
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
 
+# ISO
+
 $(DESTINATION):
 	mkdir $(DESTINATION)
 
@@ -108,6 +110,8 @@ iso: $(DESTINATION)/conf.yaml
 	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) geniso-isospec $(ISO_SPEC)
 
+# QEMU
+
 $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
 
@@ -125,7 +129,24 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	-device virtio-serial \
 	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)
 
+# Packer
+
 .PHONY: packer
 packer:
 	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
 
+# Tests
+
+prepare-test:
+	vagrant box add cos packer/*.box
+	vagrant up || true
+
+Vagrantfile:
+	vagrant init cos
+
+test-clean:
+	vagrant destroy || true
+	vagrant box remove cos || true
+
+test: test-clean Vagrantfile prepare-test
+	cd $(ROOT_DIR)/tests && ginkgo -r ./
