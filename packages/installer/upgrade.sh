@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-local IMAGE=$1
 CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
 
 # 1. Identify active/passive partition
@@ -60,19 +59,18 @@ find_recovery() {
 
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
+    if [ -e "/etc/cos-upgrade-image" ]; then
+        source /etc/cos-upgrade-image
+    fi
+
     if [ -n "$IMAGE" ]; then
         UPGRADE_IMAGE=$IMAGE
         echo "Upgrading to image $UPGRADE_IMAGE"
-    else
-        UPGRADE_IMAGE=$(cat /etc/cos-upgrade-image)
-        if [ -z "$UPGRADE_IMAGE" ]; then
-            UPGRADE_IMAGE="system/cos"
-            echo "Upgrade image not found in /etc/cos-upgrade-image, using $UPGRADE_IMAGE"
-        fi
     fi
 
-    if [ -e "/etc/cos-versionpin" ]; then
-        CHANNEL_UPGRADES=false
+    if [ -z "$UPGRADE_IMAGE" ]; then
+        UPGRADE_IMAGE="system/cos"
+        echo "No image specified in /etc/cos-upgrade-image, default to $UPGRADE_IMAGE"
     fi
 }
 
@@ -126,10 +124,10 @@ upgrade() {
     export TMPDIR=/usr/local/tmp/upgrade
     
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
-        luet install -y $UPGRADE_IMAGE
+        luet install --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else 
-        unpackr $UPGRADE_IMAGE /usr/local/tmp/rootfs
+        luet util unpack $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
         rm -rf /usr/local/tmp/rootfs
     fi
@@ -181,6 +179,42 @@ cleanup()
     cleanup2 2>/dev/null || true
     return $EXIT
 }
+
+usage()
+{
+    echo "Usage: cos-upgrade [--docker-image] IMAGE"
+    echo ""
+    echo "Example: cos-upgrade"
+    echo ""
+    echo "IMAGE is optional, and upgrades the system to the given specified docker image."
+    echo ""
+    echo ""
+    exit 1
+}
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        --docker-image)
+            shift 1
+            CHANNEL_UPGRADES=false
+            ;;
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            if [ "$#" -gt 2 ]; then
+                usage
+            fi
+            INTERACTIVE=true
+            IMAGE=$1
+            break
+            ;;
+    esac
+    shift 1
+done
 
 trap cleanup exit
 
