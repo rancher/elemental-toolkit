@@ -130,7 +130,7 @@ jobs:
         matrix:
           include:
             - flavor: "opensuse"
-            - flavor: "fedora"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -162,7 +162,7 @@ jobs:
         matrix:
           include:
             - flavor: "opensuse"
-            - flavor: "fedora"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -193,7 +193,7 @@ jobs:
         matrix:
           include:
             - flavor: "opensuse"
-            - flavor: "fedora"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -222,7 +222,7 @@ jobs:
         matrix:
           include:
             - flavor: "opensuse"
-            - flavor: "fedora"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
