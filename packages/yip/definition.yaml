@@ -4,4 +4,4 @@ version: "0.7.3"
 labels:
   github.repo: "yip"
   github.owner: "mudler"
-  autobump.revdeps: "false"
+  autobump.revdeps: "true"
