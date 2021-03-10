@@ -17,6 +17,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - flavor: "opensuse"
+         - flavor: "fedora"
+    env:
+      FLAVOR: ${{ matrix.flavor }}
     steps:
     - uses: actions/checkout@v2
 
@@ -64,17 +71,22 @@ jobs:
     - name: Upload results
       uses: actions/upload-artifact@v2
       with:
-        name: build
+        name: build-${{ matrix.flavor }}
         path: build
   iso:
     runs-on: ubuntu-latest
     needs: build
+    strategy:
+      matrix:
+       include:
+         - flavor: "opensuse"
+         - flavor: "fedora"
     steps:
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
       with:
-        name: build
+        name: build-${{ matrix.flavor }}
         path: build
     - name: Install deps
       run: |
@@ -100,25 +112,31 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: ISO
+        name: cOS-${{ matrix.flavor }}.iso.zip
         path: |
           *.iso
           *.sha256
     - uses: actions/upload-artifact@v2
       if: always()
       with:
-        name: build-log
+        name: luet-build-${{ matrix.flavor }}.log
         path: isowork/*.log
 
   qemu:
       runs-on: ubuntu-latest
       needs: iso
+
+      strategy:
+        matrix:
+          include:
+            - flavor: "opensuse"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: ISO
+          name: cOS-${{ matrix.flavor }}.iso.zip
 
       - name: Install deps
         run: |
@@ -129,28 +147,59 @@ jobs:
 
       - name: Build QEMU Image 🔧
         run: |
-          COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
-          ISO=$PWD/cOS-$COS_VERSION.iso PACKER_ARGS="-var='accellerator=none' -var='sleep=5m' -only qemu" make packer
+          PACKER_ARGS="-var='accellerator=none' -var='sleep=8m' -only qemu" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS.qcow
+          name: cOS-${{ matrix.flavor }}.qcow
           path: |
             packer/*.tar.gz
+
+  qemu-vagrant:
+      runs-on: ubuntu-latest
+      needs: iso
+
+      strategy:
+        matrix:
+          include:
+            - flavor: "opensuse"
+#            - flavor: "fedora"
+      steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.iso.zip
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu qemu-system qemu-kvm
+          sudo -E make deps
+          sudo luet install -y utils/packer
+
+      - name: Build QEMU Image 🔧
+        run: |
+          PACKER_ARGS="-var='accellerator=none' -var='sleep=8m' -var='vagrant=true' -only qemu" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-QEMU.box
+          name: cOS-${{ matrix.flavor }}-QEMU.box
           path: |
             packer/*.box
 
   vbox:
       runs-on: macos-10.15
       needs: iso
+      strategy:
+        matrix:
+          include:
+            - flavor: "opensuse"
+#            - flavor: "fedora"
       steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: ISO
+          name: cOS-${{ matrix.flavor }}.iso.zip
 
       - name: Install deps
         run: |
@@ -158,15 +207,40 @@ jobs:
           brew install hashicorp/tap/packer
       - name: Build VBox Image 🔧
         run: |
-          ISO=$(ls $PWD/*.iso) PACKER_ARGS="-var='sleep=5m' -only virtualbox-iso" make packer
+          PACKER_ARGS="-var='sleep=8m' -only virtualbox-iso" make packer
           ls packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS.ova
+          name: cOS-${{ matrix.flavor }}.ova
           path: |
             packer/*.tar.gz
+
+  vbox-vagrant:
+      runs-on: macos-10.15
+      needs: iso
+      strategy:
+        matrix:
+          include:
+            - flavor: "opensuse"
+#            - flavor: "fedora"
+      steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.iso.zip
+
+      - name: Install deps
+        run: |
+          brew tap hashicorp/tap
+          brew install hashicorp/tap/packer
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='sleep=8m' -var='vagrant=true' -only virtualbox-iso" make packer
+          ls packer
+
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-vbox.box
+          name: cOS-${{ matrix.flavor }}-vbox.box
           path: |
             packer/*.box

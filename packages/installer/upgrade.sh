@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+
 # 1. Identify active/passive partition
 # 2. Install upgrade in passive partition
 # 3. Invert partition labels
@@ -57,10 +59,17 @@ find_recovery() {
 
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
-    UPGRADE_IMAGE=$(cat /etc/cos-upgrade-image)
+    if [ -e "/etc/cos-upgrade-image" ]; then
+        source /etc/cos-upgrade-image
+    fi
+
+    if [ -n "$IMAGE" ]; then
+        UPGRADE_IMAGE=$IMAGE
+        echo "Upgrading to image $UPGRADE_IMAGE"
+    fi
+
     if [ -z "$UPGRADE_IMAGE" ]; then
         UPGRADE_IMAGE="system/cos"
-        echo "Upgrade image not found in /etc/cos-upgrade-image, using $UPGRADE_IMAGE"
     fi
 }
 
@@ -105,12 +114,23 @@ upgrade() {
     ensure_dir_structure
 
     mkdir -p /usr/local/tmp/upgrade
+
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    XDG_RUNTIME_DIR=/usr/local/tmp/upgrade TMPDIR=/usr/local/tmp/upgrade luet install -y $UPGRADE_IMAGE
-    luet cleanup
+    export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
+    export TMPDIR=/usr/local/tmp/upgrade
+    
+    if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
+        luet install --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
+        luet cleanup
+    else 
+        luet util unpack $UPGRADE_IMAGE /usr/local/tmp/rootfs
+        rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rm -rf /usr/local/tmp/rootfs
+    fi
+
     rm -rf /usr/local/tmp/upgrade
     umount $TARGET/oem
     umount $TARGET/usr/local
@@ -159,6 +179,46 @@ cleanup()
     return $EXIT
 }
 
+usage()
+{
+    echo "Usage: cos-upgrade [--recovery] [--docker-image] IMAGE"
+    echo ""
+    echo "Example: cos-upgrade"
+    echo ""
+    echo "IMAGE is optional, and upgrades the system to the given specified docker image."
+    echo ""
+    echo ""
+    exit 1
+}
+
+find_upgrade_channel
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        --docker-image)
+            CHANNEL_UPGRADES=false
+            ;;
+        --recovery)
+            UPGRADE_RECOVERY=true
+            ;;
+        -h)
+            usage
+            ;;
+        --help)
+            usage
+            ;;
+        *)
+            if [ "$#" -gt 2 ]; then
+                usage
+            fi
+            INTERACTIVE=true
+            UPGRADE_IMAGE=$1
+            break
+            ;;
+    esac
+    shift 1
+done
+
 trap cleanup exit
 
 if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
@@ -167,8 +227,6 @@ if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
     find_partitions
 
     find_recovery
-
-    find_upgrade_channel
 
     mount_recovery
 
@@ -179,8 +237,6 @@ else
     echo "Upgrading system.."
 
     find_partitions
-
-    find_upgrade_channel
 
     mount_image
 

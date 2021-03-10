@@ -17,15 +17,14 @@ stages:
        files:
        - path: /etc/luet/luet.yaml
          content: |
+                  # For a full reference, see:
+                  # https://luet-lab.github.io/docs/docs/getting-started/#configuration
                   logging:
                     color: false
                     enable_emoji: false
                   general:
                      debug: false
                      spinner_charset: 9
-                  system:
-                    rootfs: /tmp/upgrade
-                    database_engine: "memory"
                   repositories:
                   - name: "cos"
                     description: "cOS official"
@@ -34,12 +33,14 @@ stages:
                     cached: true
                     priority: 1
                     urls:
-                    - "raccos/releases-amd64"
+                    - "raccos/releases-:FLAVOR:"
          permissions: 0600
          owner: 0
          group: 0
-       - path: /etc/cos-upgrade-image
-         content: "system/cos"
-         permissions: 0600
-         owner: 0
-         group: 0
+     - commands:
+       - touch /etc/cos-upgrade-image
+       - chmod 600 /etc/cos-upgrade-image
+     - environment_file: /etc/cos-upgrade-image
+       environment:
+         UPGRADE_IMAGE: system/cos
+         CHANNEL_UPGRADES: "true"

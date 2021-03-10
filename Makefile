@@ -9,7 +9,7 @@ ISO_SPEC?=$(ROOT_DIR)/iso/cOS.yaml
 CLEAN?=false
 export TREE?=$(ROOT_DIR)/packages
 
-BUILD_ARGS?=--pull --no-spinner --only-target-package
+BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 VALIDATE_OPTIONS?=-s
 FLAVOR?=opensuse
@@ -23,6 +23,7 @@ QEMU?=qemu-kvm
 QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
 PACKER_ARGS?=
+ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
@@ -43,7 +44,7 @@ endif
 endif
 
 clean:
-	 rm -rf $(DESTINATION) $(ROOT_DIR)/.qemu
+	 rm -rf $(DESTINATION) $(ROOT_DIR)/.qemu $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.sha256
 
 .PHONY: build
 build:
@@ -89,6 +90,8 @@ autobump:
 validate:
 	$(LUET) tree validate --tree $(TREE) $(VALIDATE_OPTIONS)
 
+# ISO
+
 $(DESTINATION):
 	mkdir $(DESTINATION)
 
@@ -107,6 +110,8 @@ iso: $(DESTINATION)/conf.yaml
 	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) geniso-isospec $(ISO_SPEC)
 
+# QEMU
+
 $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
 
@@ -124,6 +129,24 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	-device virtio-serial \
 	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)
 
+# Packer
+
 .PHONY: packer
 packer:
 	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
+
+# Tests
+
+prepare-test:
+	vagrant box add cos packer/*.box
+	vagrant up || true
+
+Vagrantfile:
+	vagrant init cos
+
+test-clean:
+	vagrant destroy || true
+	vagrant box remove cos || true
+
+test: test-clean Vagrantfile prepare-test
+	cd $(ROOT_DIR)/tests && ginkgo -r ./

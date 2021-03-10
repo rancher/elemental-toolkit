@@ -12,7 +12,8 @@
         "ssh_password": "{{user `root_password`}}",  
         "ssh_username": "{{user `root_username`}}",
         "format": "ova",
-        "ssh_timeout": "40s",
+        "ssh_timeout": "1m",
+        "ssh_handshake_attempts": "20",
         "type": "virtualbox-iso",
         "vm_name": "cOS"
       },
@@ -33,7 +34,8 @@
         ],
         "shutdown_command": "shutdown -hP now",
         "ssh_password": "{{user `root_password`}}",
-        "ssh_timeout": "40s",
+        "ssh_timeout": "1m",
+        "ssh_handshake_attempts": "20",
         "ssh_username": "{{user `root_username`}}",
         "type": "qemu",
         "vm_name": "cOS"
@@ -64,11 +66,17 @@
         "source": "config.yaml",
         "type": "file"
       },
+      {
+        "destination": "/vagrant.yaml",
+        "source": "vagrant.yaml",
+        "type": "file"
+      },
      {
         "inline": [
-          "INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda"
+          "INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda",
+          "if [ {{user `vagrant`}} == true ]; then partprobe; cp -rf /vagrant.yaml /oem/vagrant.yaml; fi"
         ],
-        "pause_after": "3m",
+        "pause_after": "30s",
         "type": "shell"
       }
     ],
@@ -81,7 +89,8 @@
       "root_username": "root",
       "iso": "",
       "sleep": "30s",
-      "accellerator": "kvm"
+      "accellerator": "kvm",
+      "vagrant": "false"
     }
   }
       
