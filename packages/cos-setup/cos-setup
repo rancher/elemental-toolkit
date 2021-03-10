@@ -31,6 +31,6 @@ for x in "$@"; do
 done
 
 # Read cmdline from dotnotation and execute yip file:
-for s in "$STAGE".before "$STAGE" "$STAGE".after; do
-    echo $CMDLINE | yip -d -s "$s" -
-done
+# for s in "$STAGE".before "$STAGE" "$STAGE".after; do
+#     echo $CMDLINE | yip -d -s "$s" -
+# done
