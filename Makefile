@@ -149,4 +149,4 @@ test-clean:
 	vagrant box remove cos || true
 
 test: test-clean Vagrantfile prepare-test
-	cd $(ROOT_DIR)/tests && ginkgo -r ./
+	cd $(ROOT_DIR)/tests && go test
