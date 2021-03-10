@@ -9,4 +9,3 @@ leap_packages: >-
     squashfs
 
 kernel_package: kernel-default
-kernel_version: "5.3.18"
