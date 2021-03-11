@@ -9,10 +9,10 @@ cOS is built from Docker containers, and completely hosted on Docker registries.
 cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well. 
 Those are exactly the same images used during upgrades.
 
-For example, if you want to see locally what's in cOS 0.4.16, you can:
+For example, if you want to see locally what's in cOS 0.4.30, you can:
 
 ```bash
-$ docker run -ti raccos/releases-amd64:cos-system-0.4.16
+$ docker run -ti --rm raccos/releases-opensuse:cos-system-0.4.30 /bin/bash
 ```
 
 ## Design goals:
@@ -20,7 +20,7 @@ $ docker run -ti raccos/releases-amd64:cos-system-0.4.16
 - Immutable distribution
 - Cloud-init driven
 - Based on systemd
-- Built and upgraded from containers - It is a [single image OS](https://hub.docker.com/r/raccos/releases-amd64/)!
+- Built and upgraded from containers - It is a [single image OS](https://hub.docker.com/r/raccos/releases-opensuse/)!
 - OTA updates
 - Easy to customize
 
@@ -42,13 +42,15 @@ cOS during installation sets two `.img` images files in the `COS_STATE` partitio
 
 Those are used by the upgrade mechanism to prepare and install a pristine `cOS` each time an upgrade is attempted.
 
+It's possible to specify with `--docker-image` a docker image used during the upgrade instead of the regular upgrade channels. 
+
 ## Reset state
 
 ### Recovery partition
 
 cOS can be recovered anytime from the `cOS recovery` partition by running `cos-reset`. This will regenerate the bootloader and the images in `COS_STATE` by using the recovery image created during installation.
 
-The recovery partition can also be upgraded by running `UPGRADE_RECOVERY=true cos-upgrade` in the standard partitions used for boot.
+The recovery partition can also be upgraded by running `cos-upgrade --recovery` in the standard partitions used for boot.
 
 ### From ISO
 The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to upgrade the image of the active partition installed in the system.
