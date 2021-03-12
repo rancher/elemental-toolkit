@@ -100,7 +100,7 @@ stages:
             group: 0
 ```
 
-For more examples, `/oem` contains files used to configure on boot a pristine `cOS`. Mind to not edit those directly, but copy them or apply local changes to `/usr/local/cloud-config`. See the OEM section below.
+For more examples, `/system/oem` contains files used to configure on boot a pristine `cOS`. Mind to not edit those directly, but copy them or apply local changes to `/usr/local/cloud-config`. See the OEM section below.
 
 ### Available stages
 
@@ -129,8 +129,6 @@ This stage is executed `5m` after boot and periodically each `60m`.
 ## OEM customizations
 
 It is possible to install a custom cloud-init file during install with `--config` to `cos-installer` or, it's possible to add more files manually to the `/oem` folder after installation.
-
-Inside the `/oem` folders there are also files being shipped by `cOS` during upgrades. If you wish to add persistent changes and write them to the OEM folder, be sure to not clash with `cOS` ones, by prefixing your files with numbers starting from `90` e.g. `90_custom.yaml`, `91_custom_after.yam` ...
 
 ## Configuration reference
 
