@@ -8,3 +8,7 @@ steps:
 - cp -rfv *.timer /lib/systemd/system
 - cp -rfv cos-setup /usr/bin/
 - chmod +x /usr/bin/cos-setup
+- systemctl enable cos-setup-reconcile.timer
+- systemctl enable cos-setup-fs.service
+- systemctl enable cos-setup-boot.service
+- systemctl enable cos-setup-network.service

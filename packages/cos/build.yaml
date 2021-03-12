@@ -22,19 +22,9 @@ requires:
   version: ">=0"
 
 steps:
-- systemctl enable multi-user.target
-- systemctl set-default multi-user.target
-- systemctl enable cos-setup-reconcile.timer
-- systemctl enable cos-setup-fs.service
-- systemctl enable cos-setup-boot.service
-- systemctl enable cos-setup-network.service
-- systemctl mask purge-kernels.service
-- systemctl enable getty@tty1
-
-- cp grub.cfg /boot/grub2/grub.cfg
-- cp -rfv os-release /etc/os-release
-- echo "VERSION=\"{{.Values.version}}\"" >> /etc/os-release
-- echo "PRETTY_NAME=\"{{.Values.brand_name}} v{{.Values.version}}\"" >> /etc/os-release
+- sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
+- sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
+- yip setup.yaml
 
 unpack: true
 excludes:

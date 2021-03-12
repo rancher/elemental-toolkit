@@ -4,8 +4,8 @@
 # it emit also "stage.before" and "stage.after" to able to hook
 # into different stages. E.g. if one depends on another for network setup
 STAGE="${1:-boot}"
-CMDLINE="$(cat /proc/cmdline)"
-set -- $CMDLINE
+
+set -- $(cat /proc/cmdline)
 for x in "$@"; do
     case "$x" in
         cos.setup=*)
@@ -31,6 +31,6 @@ for x in "$@"; do
 done
 
 # Read cmdline from dotnotation and execute yip file:
-# for s in "$STAGE".before "$STAGE" "$STAGE".after; do
-#     echo $CMDLINE | yip -d -s "$s" -
-# done
+for s in "$STAGE".before "$STAGE" "$STAGE".after; do
+    yip -d -s "$s" /proc/cmdline
+done

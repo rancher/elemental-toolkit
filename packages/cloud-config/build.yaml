@@ -3,8 +3,8 @@ requires:
   category: "system"
   version: ">=0"
 steps:
-- mkdir -p /system/oem
-- cp -rfv yipfiles/*.yaml /system/oem
+- mkdir -p /system
+- cp -rfv oem /system
 - chmod -R 600 /system/oem
 {{if .Values.is_opensuse}}
 - sed -i 's/:FLAVOR:/opensuse/g' /system/oem/02_upgrades.yaml

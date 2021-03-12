@@ -6,41 +6,53 @@ import (
 )
 
 var _ = Describe("cOS", func() {
+	var s *SUT
 	BeforeEach(func() {
-		eventuallyConnects()
+		s = NewSUT("", "", "")
+		s.EventuallyConnects()
 	})
 
 	Context("Settings", func() {
-		It("has proper settings", func() {
-			out, err := sshCommand("source /etc/cos-upgrade-image && echo $UPGRADE_IMAGE")
+		It("has correct defaults", func() {
+			out, err := s.Command("source /etc/cos-upgrade-image && echo $UPGRADE_IMAGE", false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(Equal("system/cos\n"))
+
+			out, err = s.Command("source /etc/os-release && echo $PRETTY_NAME", false)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("cOS"))
 		})
 	})
 
 	Context("After install", func() {
 		It("upgrades to latest available (master)", func() {
-			out, _ := sshCommand("cos-upgrade && reboot")
+			out, err := s.Command("cos-upgrade", false)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 			Expect(out).Should(ContainSubstring("Booting from: active.img"))
 
-			eventuallyConnects()
+			s.Reboot()
+
+			s.EventuallyConnects()
 		})
 
 		It("upgrades to a specific image", func() {
-			out, err := sshCommand("source /etc/os-release && echo $VERSION")
+			out, err := s.Command("source /etc/os-release && echo $VERSION", false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).ToNot(Equal(""))
 			version := out
 
-			out, _ = sshCommand("cos-upgrade --docker-image raccos/releases-amd64:cos-system-0.4.16 && reboot")
+			out, err = s.Command("cos-upgrade --docker-image raccos/releases-amd64:cos-system-0.4.16", false)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 			Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
 			Expect(out).Should(ContainSubstring("Booting from: active.img"))
 
-			eventuallyConnects()
+			s.Reboot()
 
-			out, err = sshCommand("source /etc/os-release && echo $VERSION")
+			s.EventuallyConnects()
+
+			out, err = s.Command("source /etc/os-release && echo $VERSION", false)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).ToNot(Equal(""))
 			Expect(out).ToNot(Equal(version))

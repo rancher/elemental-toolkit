@@ -6,7 +6,7 @@
 # Before you change this file manually,
 # consider copying this file to /usr/local/cloud-config or
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
-
+name: "Branding"
 stages:
    fs.after:
      - name: "Branding"
