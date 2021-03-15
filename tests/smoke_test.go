@@ -22,9 +22,34 @@ var _ = Describe("cOS", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("cOS"))
 		})
+
+		It("has default date in UTC format from cloud-init", func() {
+			out, err := s.Command("date", false)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("UTC"))
+		})
+
+		It("has default localectl configuration from cloud-init", func() {
+			out, err := s.Command("localectl status", false)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("LANG=en_US.UTF-8"))
+			Expect(out).Should(ContainSubstring("VC Keymap: us"))
+		})
 	})
 
 	Context("After install", func() {
+		It("is booting from COS_ACTIVE", func() {
+			out, err := s.Command("blkid -L COS_ACTIVE", false)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("/dev/loop0"))
+		})
+
+		It("fails running cos-reset from COS_ACTIVE", func() {
+			out, err := s.Command("cos-reset", false)
+			Expect(err).To(HaveOccurred())
+			Expect(out).Should(ContainSubstring("cos-reset can be run only from recovery"))
+		})
+
 		It("upgrades to latest available (master)", func() {
 			out, err := s.Command("cos-upgrade", false)
 			Expect(err).ToNot(HaveOccurred())
