@@ -20,6 +20,17 @@ Those are not required for building - you can disable image push (`--push`) from
 
 ## Building locally
 
+### With docker
+
+cOS has a docker image which can be used to build cOS locally.
+
+From your local checkout of cOS:
+
+```bash
+$> docker build -t cos-builder .
+$> docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/cOS cos-builder
+```
+
 ### Requirements
 
 - Luet installed locally (You can install it with `curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh` )
