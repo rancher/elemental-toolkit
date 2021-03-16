@@ -5,3 +5,8 @@ isowork/
 iso-meta.json
 iso-meta.yaml
 .qemu/
+.vagrant/
+Vagrantfile
+packer/*.box
+packer/*.tar.gz
+packer/packer_cache/
