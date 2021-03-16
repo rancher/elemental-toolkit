@@ -6,13 +6,21 @@
 
 cOS is built from Docker containers, and completely hosted on Docker registries. The build process results in a single Docker image used to deliver regular upgrades in OTA approach.
 
-cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well. 
+cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well.
 Those are exactly the same images used during upgrades.
 
 For example, if you want to see locally what's in cOS 0.4.30, you can:
 
 ```bash
 $ docker run -ti --rm raccos/releases-opensuse:cos-system-0.4.30 /bin/bash
+```
+
+cOS Images are signed, and during upgrades Docker Content Trust is enabled.
+
+You can inspect the images signatures for each version:
+
+```bash
+$ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
 ```
 
 ## Design goals:
@@ -23,6 +31,7 @@ $ docker run -ti --rm raccos/releases-opensuse:cos-system-0.4.30 /bin/bash
 - Built and upgraded from containers - It is a [single image OS](https://hub.docker.com/r/raccos/releases-opensuse/)!
 - OTA updates
 - Easy to customize
+- Cryptographically verified
 
 ## Quick start
 
@@ -42,7 +51,9 @@ cOS during installation sets two `.img` images files in the `COS_STATE` partitio
 
 Those are used by the upgrade mechanism to prepare and install a pristine `cOS` each time an upgrade is attempted.
 
-It's possible to specify with `--docker-image` a docker image used during the upgrade instead of the regular upgrade channels. 
+To specify a single docker image to upgrade to  instead of the regular upgrade channels, run `cos-upgrade --docker-image image`.
+
+_Note_ by default `cos-upgrade --docker-image` checks images to the notary registry server for valid signatures for the images tag. To disable image verification, run `cos-upgrade --no-verify --docker-image`.
 
 ## Reset state
 
@@ -67,11 +78,11 @@ As cOS is an immutable distribution, the file system layout is a core aspect. A 
 / immutable
 ```
 
-Any changes that are not specified by cloud-init are not persisting across reboots. 
+Any changes that are not specified by cloud-init are not persisting across reboots.
 
 ## Persistent changes
 
-By default cOS reads and executes cloud-init files in (lexicopgrahic) sequence present in `/usr/local/cloud-config` and `/oem` during boot. It is also possible to run cloud-init file in a different location from boot cmdline by using  the `cos.setup=..` option. 
+By default cOS reads and executes cloud-init files in (lexicopgrahic) sequence present in `/usr/local/cloud-config` and `/oem` during boot. It is also possible to run cloud-init file in a different location from boot cmdline by using  the `cos.setup=..` option.
 
 For example, if you want to change `/etc/issue` of the system persistently, you can create `/usr/local/cloud-config/90_after_install.yaml` with the following content:
 
@@ -234,7 +245,7 @@ A list of directories to be created on disk. Runs before `files`.
 stages:
    default:
      - name: "Setup folders"
-       directories: 
+       directories:
        - path: "/etc/foo"
          permissions: 0600
          owner: 0
@@ -249,7 +260,7 @@ A way to configure the `/etc/resolv.conf` file.
 stages:
    default:
      - name: "Setup dns"
-       dns: 
+       dns:
          nameservers:
          - 8.8.8.8
          - 1.1.1.1
@@ -283,7 +294,7 @@ stages:
 
 ### `stages.<stageID>.[<stepN>].authorized_keys`
 
-A list of SSH authorized keys that should be added for each user. 
+A list of SSH authorized keys that should be added for each user.
 SSH keys can be obtained from GitHub user accounts by using the format github:${USERNAME},  similarly for Gitlab with gitlab:${USERNAME}.
 
 ```yaml
@@ -315,7 +326,7 @@ A map of users and password to set. Passwords can be also encrypted.
 stages:
    default:
      - name: "Setup users"
-       users: 
+       users:
           bastion: "strongpassword"
 ```
 
@@ -423,7 +434,7 @@ stages:
        systemctl:
          enable:
          - systemd-timesyncd
-       timesyncd: 
+       timesyncd:
           NTP: "0.pool.org foo.pool.org"
           FallbackNTP: ""
           ...
@@ -445,6 +456,3 @@ stages:
 ## Issues
 
 See the [Releases](https://github.com/mudler/cOS/projects/1) GitHub project for a short-term Roadmap
-
-
-
