@@ -23,6 +23,7 @@ QEMU?=qemu-kvm
 QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
 PACKER_ARGS?=
+PUBLISH_ARGS?=
 ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
 export REPO_CACHE
@@ -69,7 +70,7 @@ create-repo:
     --type http
 
 publish-repo:
-	$(LUET) create-repo --tree "$(TREE)" \
+	$(LUET) create-repo $(PUBLISH_ARGS) --tree "$(TREE)" \
     --output $(FINAL_REPO) \
     --packages $(DESTINATION) \
     --name "cOS" \
