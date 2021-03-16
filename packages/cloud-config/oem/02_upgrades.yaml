@@ -9,7 +9,7 @@ name: "Upgrades settings"
 stages:
    fs.after:
      - name: "Setup Luet config file"
-       directories: 
+       directories:
        - path: "/etc/luet"
          permissions: 0600
          owner: 0
@@ -32,6 +32,7 @@ stages:
                     enable: true
                     cached: true
                     priority: 1
+                    verify: true
                     urls:
                     - "raccos/releases-:FLAVOR:"
          permissions: 0600
