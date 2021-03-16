@@ -130,6 +130,15 @@ This stage is executed `5m` after boot and periodically each `60m`.
 
 It is possible to install a custom cloud-init file during install with `--config` to `cos-installer` or, it's possible to add more files manually to the `/oem` folder after installation.
 
+## Build cOS Locally
+
+```bash
+$> source .envrc
+$> cos-build
+```
+
+The only requirement is docker installed, see [Development notes](/docs/dev.md) for more details.
+
 ## Configuration reference
 
 Below is a reference of all keys available in the cloud-init style files.
@@ -437,7 +446,5 @@ stages:
 
 See the [Releases](https://github.com/mudler/cOS/projects/1) GitHub project for a short-term Roadmap
 
-## Links
 
-- [Development notes](/docs/dev.md)
 

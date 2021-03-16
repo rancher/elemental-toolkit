@@ -6,8 +6,10 @@ The cOS Distribution is entirely built over GitHub. You can check the pipelines 
 
 - `packages`: contain packages definition for luet
 - `iso`: yaml spec files for development iso generation
-- `values`: interpolation files, needed only for multi-arch build
+- `values`: interpolation files, needed only for multi-arch and flavor-specific build
 - `assets`: static files needed by the iso generation process
+- `packer`: Packer templates
+- `tests`: cOS test suites
 
 ## Forking and test on your own
 
@@ -20,18 +22,25 @@ Those are not required for building - you can disable image push (`--push`) from
 
 ## Building locally
 
-### With docker
+### Build cOS With docker
 
-cOS has a docker image which can be used to build cOS locally.
+cOS has a docker image which can be used to build cOS locally in order to generate the cOS packages and the cOS iso from your checkout.
 
-From your local checkout of cOS:
+From your git folder:
 
 ```bash
 $> docker build -t cos-builder .
-$> docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/cOS cos-builder
+$> docker run --privileged=true --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/cOS cos-builder
 ```
 
-### Requirements
+or use the `.envrc` file:
+
+```bash
+$> source .envrc
+$> cos-build
+```
+
+### Requirements for local build
 
 - Luet installed locally (You can install it with `curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh` )
 
@@ -45,7 +54,7 @@ $> docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/cOS cos
 - squashfs/xorriso/dosfstools for building ISO ( from your OS )
 - yq and jq (`luet install -y repository/mocaccino-extra-stable && luet install -y utils/yq utils/yq`)
 
-### Build all packages locally
+#### Build all packages locally
 
 ```
 make build
@@ -55,7 +64,7 @@ To clean from previous runs, run `make clean`.
 
 You might want to build packages running as `root` or `sudo -E` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
 
-### Build ISO
+#### Build ISO
 
 If using opensuse, first install the required deps:
 
@@ -69,7 +78,7 @@ and then, simply run
 make local-iso
 ```
 
-### Testing ISO changes
+#### Testing ISO changes
 
 To test changes against a specific set of packages, you can for example:
 
