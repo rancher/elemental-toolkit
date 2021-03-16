@@ -1,6 +1,9 @@
 category: "system"
 name: "luet"
-version: "0.11.6"
+version: "0.11.7"
+
+branch: ""
+
 labels:
   github.repo: "luet"
   github.owner: "mudler"

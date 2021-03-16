@@ -15,7 +15,11 @@ prelude:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
    mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
+{{- if .Values.branch }}
+   git clone https://github.com/mudler/luet && cd luet && git fetch --all && git checkout {{.Values.branch}} && git show
+{{- else }}
    git clone https://github.com/mudler/luet && cd luet && git checkout "${PACKAGE_VERSION}" -b build
+{{- end }}
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
