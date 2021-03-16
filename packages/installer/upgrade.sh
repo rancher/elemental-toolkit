@@ -121,12 +121,17 @@ upgrade() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
     export TMPDIR=/usr/local/tmp/upgrade
-    
+    export HOME=/tmp # Docker Content Trust data is stored in $HOME/.docker. We don't need those to persist
+
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         luet install --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
-    else 
-        luet util unpack $UPGRADE_IMAGE /usr/local/tmp/rootfs
+    else
+        args="--verify"
+        if [ -n "$NO_VERIFY" ]; then
+          args=
+        fi
+        luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
         rm -rf /usr/local/tmp/rootfs
     fi
@@ -200,6 +205,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         --recovery)
             UPGRADE_RECOVERY=true
+            ;;
+        --no-verify)
+            NO_VERIFY=true
             ;;
         -h)
             usage
