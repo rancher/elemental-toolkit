@@ -80,10 +80,9 @@ jobs:
         sudo -E make build
         ls -liah $PWD/build
 
-    - name: Publish to DockerHub 🚀
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    - name: Create repo
       run: |
-        sudo -E make publish-repo
+        sudo -E make create-repo
     - name: Upload results
       uses: actions/upload-artifact@v2
       with:
@@ -290,3 +289,73 @@ jobs:
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test
+
+  publish:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: tests
+    strategy:
+      matrix:
+       include:
+         - flavor: "opensuse"
+         - flavor: "fedora"
+    env:
+      FLAVOR: ${{ matrix.flavor }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download result for build
+      uses: actions/download-artifact@v2
+      with:
+        name: build-${{ matrix.flavor }}
+        path: build
+    - run: |
+        git fetch --prune --unshallow
+
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@master
+
+    # We patch docker to use all the HD available in GH action free runners
+    - name: Patch Docker Daemon data-root
+      run: |
+        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
+        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+        sudo mkdir -p "${DOCKER_DATA_ROOT}"
+        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
+        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
+        sudo systemctl restart docker
+
+    - name: Login to DockerHub Registry
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+    - name: Load Docker Content Trust
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: |
+           sudo cp -rf .github/sign-images /usr/bin/sign-images
+           sudo chmod +x /usr/bin/sign-images
+           PATH_KEYS=$HOME/.docker/trust/private
+           USER_KEY=$PATH_KEYS/7b1922fb6fa9046a2c64c16e1e557c092699854c23dedf653fab6faac00390a5.key
+           mkdir -p $PATH_KEYS
+           echo "${{ secrets.DOCKER_CONTENT_TRUST_PRIVKEY }}" > $USER_KEY
+           chmod 600 $USER_KEY
+           export DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=${{ secrets.DOCKER_CONTENT_TRUST_USER_PASSPHRASE }}
+           echo "PATH_KEYS=$PATH_KEYS" >> $GITHUB_ENV
+           echo "DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE" >> $GITHUB_ENV
+           echo "PUBLISH_ARGS=--plugin sign-images" >> $GITHUB_ENV
+           docker trust key load $USER_KEY
+    - name: Set Push options
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: echo "BUILD_ARGS=--push --only-target-package --pull" >> $GITHUB_ENV
+
+    - name: Install deps
+      run: |
+        sudo -E make deps
+
+    - name: Publish to DockerHub 🚀
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: |
+        sudo -E make publish-repo
+    - name: Upload signing logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: sign-${{ matrix.flavor }}
+        path: /tmp/sign_images.log
