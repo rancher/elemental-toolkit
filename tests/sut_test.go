@@ -1,12 +1,23 @@
 package cos_test
 
 import (
+	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	ssh "golang.org/x/crypto/ssh"
+)
+
+const (
+	grubSwap    = "dev=$(blkid -L COS_STATE);	mount -o rw,remount $dev; mount $dev /boot/grub2; sed -i 's/set default=.*/set default=%s/' /boot/grub2/grub.cfg; mount -o ro,remount $dev"
+	Passive     = 0
+	Active      = iota
+	Recovery    = iota
+	UnknownBoot = iota
 )
 
 type SUT struct {
@@ -36,18 +47,81 @@ func NewSUT(Host, Username, Password string) *SUT {
 	}
 }
 
+func (s *SUT) ChangeBoot(b int) error {
+
+	var bootEntry string
+
+	switch b {
+	case Active:
+		bootEntry = "cos"
+	case Passive:
+		bootEntry = "fallback"
+	case Recovery:
+		bootEntry = "recovery"
+	}
+
+	_, err := s.command(fmt.Sprintf(grubSwap, bootEntry), false)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Reset runs reboots cOS into Recovery and runs cos-reset.
+// It will boot back the system from the Active partition afterwards
+func (s *SUT) Reset() {
+	err := s.ChangeBoot(Recovery)
+	Expect(err).ToNot(HaveOccurred())
+
+	s.Reboot()
+
+	Expect(s.BootFrom()).To(Equal(Recovery))
+	out, err := s.command("cos-reset", false)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(out).Should(ContainSubstring("Installing"))
+
+	err = s.ChangeBoot(Active)
+	Expect(err).ToNot(HaveOccurred())
+
+	s.Reboot()
+
+	ExpectWithOffset(1, s.BootFrom()).To(Equal(Active))
+}
+
+// BootFrom returns the booting partition of the SUT
+func (s *SUT) BootFrom() int {
+	out, err := s.command("cat /proc/cmdline", false)
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+
+	switch {
+	case strings.Contains(out, "COS_ACTIVE"):
+		return Active
+	case strings.Contains(out, "COS_PASSIVE"):
+		return Passive
+	case strings.Contains(out, "COS_SYSTEM"):
+		return Recovery
+	default:
+		return UnknownBoot
+	}
+}
+
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 360
+	dur := 500
 	if len(t) > 0 {
 		dur = t[0]
 	}
 	Eventually(func() string {
-		out, _ := s.Command("echo ping", true)
+		out, _ := s.command("echo ping", true)
 		return out
 	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(5*time.Second)).Should(Equal("ping\n"))
 }
 
-func (s *SUT) Command(cmd string, timeout bool) (string, error) {
+// Command sends a command to the SUIT and waits for reply
+func (s *SUT) Command(cmd string) (string, error) {
+	return s.command(cmd, false)
+}
+
+func (s *SUT) command(cmd string, timeout bool) (string, error) {
 	client, err := s.connectToHost(timeout)
 	if err != nil {
 		return "", err
@@ -61,15 +135,17 @@ func (s *SUT) Command(cmd string, timeout bool) (string, error) {
 
 	out, err := session.CombinedOutput(cmd)
 	if err != nil {
-		return string(out), err
+		return string(out), errors.Wrap(err, string(out))
 	}
 
 	return string(out), err
 }
 
+// Reboot reboots the system under test
 func (s *SUT) Reboot() {
-	s.Command("reboot", true)
-	time.Sleep(120 * time.Second)
+	s.command("reboot", true)
+	time.Sleep(10 * time.Second)
+	s.EventuallyConnects()
 }
 
 func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {
@@ -89,6 +165,7 @@ func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {
 	return client, nil
 }
 
+// DialWithDeadline Dials SSH with a deadline to avoid Read timeouts
 func DialWithDeadline(network string, addr string, config *ssh.ClientConfig, timeout bool) (*ssh.Client, error) {
 	conn, err := net.DialTimeout(network, addr, config.Timeout)
 	if err != nil {

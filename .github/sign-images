@@ -1,0 +1,16 @@
+#!/bin/bash
+
+exec >> /tmp/sign_images.log
+exec 2>&1
+
+event="$1"
+payload="$2"
+
+if [ "$event" == "image.post.build" ]; then
+  image=$(echo "$payload" | jq -r .data | jq -r .ImageName )
+  if docker trust sign $image; then
+    echo "$image signed"
+  else
+    echo "$image signing failed"
+  fi
+fi
