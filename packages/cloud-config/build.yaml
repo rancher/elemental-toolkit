@@ -3,7 +3,7 @@ requires:
   category: "system"
   version: ">=0"
 steps:
-- mkdir -p /system
+- mkdir -p /system /oem
 - cp -rfv oem /system
 - chmod -R 600 /system/oem
 {{if .Values.is_opensuse}}

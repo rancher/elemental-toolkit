@@ -14,10 +14,7 @@ requires:
 - name: "cloud-config"
   category: "system"
   version: ">=0"
-- name: "initrd"
-  category: "system"
-  version: ">=0"
-- name: "base-conf"
+- name: "immutable-rootfs"
   category: "system"
   version: ">=0"
 
@@ -30,7 +27,7 @@ unpack: true
 excludes:
 - ^/var/cache/luet
 - ^/luetbuild
-- ^/srv
+- ^/srv/.*
 - ^/root/.bash_history
 - ^/run/reboot-needed
 

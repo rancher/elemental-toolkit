@@ -7,7 +7,7 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "Upgrades settings"
 stages:
-   fs.after:
+   initramfs:
      - name: "Setup Luet config file"
        directories:
        - path: "/etc/luet"

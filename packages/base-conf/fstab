@@ -1,2 +1,0 @@
-LABEL=COS_PERSISTENT    /usr/local  auto    nofail,x-systemd.device-timeout=5s,x-systemd.wanted-by=local-fs.target,x-systemd.wanted-by=cos-setup-fs.service    0  2
-LABEL=COS_OEM           /oem        auto    nofail,x-systemd.device-timeout=5s,x-systemd.wanted-by=local-fs.target,x-systemd.wanted-by=cos-setup-fs.service    0  2
