@@ -4,7 +4,6 @@ DefaultDependencies=no
 After=local-fs.target
 Wants=local-fs.target
 Before=sysinit.target
-RequiresMountsFor=/etc
 
 OnFailure=emergency.target
 [Service]

@@ -8,7 +8,7 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "Branding"
 stages:
-   fs.after:
+   initramfs:
      - name: "Branding"
        hostname: "cos"
        files:

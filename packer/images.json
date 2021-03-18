@@ -74,7 +74,7 @@
      {
         "inline": [
           "INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda",
-          "if [ {{user `vagrant`}} == true ]; then partprobe; cp -rf /vagrant.yaml /oem/vagrant.yaml; fi"
+          "if [ {{user `vagrant`}} == true ]; then mount /dev/disk/by-label/COS_OEM /oem; cp -rf /vagrant.yaml /oem/vagrant.yaml; fi"
         ],
         "pause_after": "30s",
         "type": "shell"

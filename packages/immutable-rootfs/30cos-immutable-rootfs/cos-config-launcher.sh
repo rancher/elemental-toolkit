@@ -20,7 +20,7 @@ function chroot_umounts {
 }
 
 #======================================
-# Let's trigger cos-setup
+# Trigger pre-pivot config stage
 #--------------------------------------
 
 if ismounted /sysroot; then

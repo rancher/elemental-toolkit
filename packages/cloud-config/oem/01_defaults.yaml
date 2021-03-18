@@ -7,9 +7,9 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "General settings"
 stages:
-    fs.after:
-     - name: "Setup distro"
-       systemd_firstboot:
-         keymap: us
-         locale: en_US.UTF-8
-         timezone: UTC
+  initramfs:
+    - name: "Setup distro"
+      systemd_firstboot:
+        keymap: us
+        locale: en_US.UTF-8
+        timezone: UTC
