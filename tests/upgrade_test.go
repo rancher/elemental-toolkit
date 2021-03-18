@@ -10,6 +10,7 @@ var _ = Describe("cOS Upgrade tests", func() {
 	BeforeEach(func() {
 		s = NewSUT("", "", "")
 		s.EventuallyConnects()
+		s.Reset()
 	})
 
 	Context("After install", func() {
@@ -25,7 +26,6 @@ var _ = Describe("cOS Upgrade tests", func() {
 				out, err := s.Command("sed -i 's|raccos/releases-.*|raccos/releases-amd64\"|g' /etc/luet/luet.yaml && cos-upgrade")
 				Expect(out).Should(ContainSubstring("does not have trust data"))
 				Expect(err).To(HaveOccurred())
-				s.Reset()
 			})
 
 			It("upgrades if verify is disabled on an unsigned upgrade channel", func() {
@@ -81,8 +81,7 @@ var _ = Describe("cOS Upgrade tests", func() {
 				Expect(out).Should(ContainSubstring("Booting from: active.img"))
 
 				s.Reboot()
-
-				s.Reset()
+				Expect(s.BootFrom()).To(Equal(Active))
 			})
 
 			It("upgrades to a specific image and reset back to the installed version", func() {
@@ -105,8 +104,6 @@ var _ = Describe("cOS Upgrade tests", func() {
 				Expect(out).ToNot(Equal(""))
 				//	Expect(out).ToNot(Equal(version))
 				Expect(out).To(Equal("0.4.32\n"))
-
-				s.Reset()
 			})
 		})
 	})
