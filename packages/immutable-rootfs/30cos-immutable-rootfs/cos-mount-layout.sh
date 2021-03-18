@@ -1,5 +1,5 @@
 #!/bin/bash
-# cos_root_perm, cos_mounts and cos_overlay variables are already processed
+# cos_root_perm, cos_mounts and cos_overlay variables already processsed
 
 #======================================
 # Functions
@@ -57,38 +57,9 @@ function parseCOSMount {
     echo "${mount}"
 }
 
-function setupLayout {
-    local o_mnt=0
-    local so_mnt=0
-
-    if [ -e "/dev/disk/by-label/${oem_label}" ]; then
-        info "Mounting ${oem_mount}"
-        mkdir -p "${oem_mount}"
-        mount -t auto  "/dev/disk/by-label/${oem_label}" "${oem_mount}"
-        o_mnt=1
-    fi
-
-    if [ -d "/sysroot/system/oem" ]; then
-        ln -s /sysroot/system /system
-    fi
-
-    mkdir -p "${cos_layout%/*}"
-    cos-setup rootfs
-
-    [ "${o_mnt}" = 1 ] && umount "${oem_mount}"
-}
-
 function readCOSLayoutConfig {
     local mounts=()
-    local MERGE="true"
-    local VOLUMES
-    local OVERLAY
-    local DEBUG_RW
-
-    [ ! -f "${cos_layout}" ] && return
-
-    info "Loading ${cos_layout}"
-    . "${cos_layout}"
+    : "${MERGE:=true}"
 
     if [ "${DEBUG_RW}" = "true" ]; then
         cos_root_perm="rw"
@@ -101,8 +72,8 @@ function readCOSLayoutConfig {
     fi
 
     if [ "${MERGE}" = "true" ]; then
-        if [ ${#mounts[@]} -gt 0 ]; then
-            for mount in "${cos_mounts[@]}"; do
+        if [ -n "${cos_mounts}" ]; then
+            for mount in ${cos_mounts}; do
                 if ! hasMountpoint "${mount#*:}" "${mounts[@]}"; then
                     mounts+=("${mount}")
                 fi
@@ -169,10 +140,10 @@ function mountOverlay {
 function mountPersistent {
     local mount=$1
 
-    if [ -e "${mount#*:}" ]; then
+    if [ -e "${mount#*:}" ] && ! findmnt -rno SOURCE "${mount#*:}" > /dev/null; then
         mount -t auto "${mount#*:}" "/sysroot${mount%%:*}"
     else
-        warn "${mount#*:} not mounted, device not found"
+        echo "Warning: ${mount#*:} already mounted or device not found" >&2
     fi
     echo "${mount#*:} ${mount%%:*} auto defaults 0 0\n"
 }
@@ -181,36 +152,32 @@ function mountPersistent {
 # Mount the rootfs layout
 #--------------------------------------
 
-type info >/dev/null 2>&1 || . /lib/dracut-lib.sh
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 declare root=${root}
-declare cos_mounts=("${cos_mounts[@]}")
+declare cos_mounts=${cos_mounts}
 declare cos_overlay=${cos_overlay}
-declare oem_label="COS_OEM"
-declare oem_mount="/oem"
+declare cos_root_perm=${cos_root_perm}
+declare state_label="COS_STATE"
 declare overlay_base="/run/overlay"
 declare rw_paths=("/etc" "/root" "/home" "/opt" "/srv" "/usr/local" "/var")
 declare etc_conf="/sysroot/etc/systemd/system/etc.mount.d"
 declare cos_layout="/run/cos/cos-layout.env"
 declare fstab
 
-[ ! "${root%%:*}" = "cos" ] && return 0
-
-setupLayout
-
 readCOSLayoutConfig
 
-[ -z "${cos_overlay}" ] && return 0
+[ -z "${root}" ] && exit 0
+[ -z "${cos_overlay}" ] && exit 0
 
-fstab="${root#cos:} / auto ${cos_root_perm},suid,dev,exec,auto,nouser,async 0 0\n"
+fstab="/dev/disk/by-label/${state_label} /run/initramfs/cos-state auto ${cos_root_perm} 0 0\n"
+fstab+="${root} / auto ${cos_root_perm} 0 0\n"
 
 fstab+=$(mountOverlayBase)
 
 mountpoints=($(getCOSMounts))
 
 for mount in "${mountpoints[@]}"; do
-    info "Mounting ${mount%%:*}"
     if [ "${mount#*:}" = "overlay" ]; then
         fstab+=$(mountOverlay "${mount%%:*}")
     else
@@ -228,4 +195,4 @@ if [ ! -f "${etc_conf}/override.conf" ]; then
     } > "${etc_conf}/override.conf"
 fi
 
-return 0
+exit 0

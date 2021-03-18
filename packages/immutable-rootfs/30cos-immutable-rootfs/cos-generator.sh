@@ -2,12 +2,23 @@
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
+cos_unit="cos-immutable-rootfs.service"
+cos_layout="/run/cos/cos-layout.env"
+
+# Disable the service unless we override it
+mkdir -p "/run/systemd/system/${cos_unit}.d"
+
 [ -z "${root}" ] && root=$(getarg root=)
 
-root_perm="ro"
-if getargbool 0 rd.cos.debug.rw; then
-    root_perm="rw"
+cos_root_perm="ro"
+if getargbool 0 rd.cos.debugrw; then
+    cos_root_perm="rw"
 fi
+
+oem_timeout=$(getarg rd.cos.oemtimeout=)
+[ -z "${oem_timeout}" ] && oem_timeout="10"
+cos_overlay=$(getarg rd.cos.overlay=)
+[ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
 
 case "${root}" in
     LABEL=*) \
@@ -27,8 +38,7 @@ GENERATOR_DIR="$2"
 [ -z "$GENERATOR_DIR" ] && exit 1
 [ -d "$GENERATOR_DIR" ] || mkdir "$GENERATOR_DIR"
 
-dev="${root//-/\\x2d}"
-dev="${_dev//\//-}"
+dev=$(dev_unit_name "${root}")
 {
     echo "[Unit]"
     echo "Before=initrd-root-fs.target"
@@ -36,7 +46,7 @@ dev="${_dev//\//-}"
     echo "[Mount]"
     echo "Where=/sysroot"
     echo "What=${root}"
-    echo "Options=${root_perm},suid,dev,exec,auto,nouser,async"
+    echo "Options=${cos_root_perm},suid,dev,exec,auto,nouser,async"
 } > "$GENERATOR_DIR"/sysroot.mount
 
 if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/sysroot.mount" ]; then
@@ -48,6 +58,71 @@ fi
 mkdir -p "$GENERATOR_DIR/$dev.device.d"
 {
     echo "[Unit]"
-    echo "JobTimeoutSec=3000"
-    echo "JobRunningTimeoutSec=3000"
+    echo "JobTimeoutSec=300"
+    echo "JobRunningTimeoutSec=300"
 } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
+
+dev=$(dev_unit_name /dev/disk/by-label/COS_OEM)
+{
+    echo "[Unit]"
+    echo "DefaultDependencies=no"
+    echo "Before=cos-setup-rootfs.service"
+    echo "Conflicts=initrd-switch-root.target"
+    echo "[Mount]"
+    echo "Where=/oem"
+    echo "What=/dev/disk/by-label/COS_OEM"
+    echo "Options=rw,suid,dev,exec,noauto,nouser,async"
+} > "$GENERATOR_DIR"/oem.mount
+
+if [ ! -e "$GENERATOR_DIR/cos-setup-rootfs.service.wants/oem.mount" ]; then
+    mkdir -p "$GENERATOR_DIR"/cos-setup-rootfs.service.wants
+    ln -s "$GENERATOR_DIR"/oem.mount \
+        "$GENERATOR_DIR"/cos-setup-rootfs.service.wants/oem.mount
+fi
+
+mkdir -p "$GENERATOR_DIR/$dev.device.d"
+{
+    echo "[Unit]"
+    echo "Before=initrd-root-fs.target"
+    echo "JobRunningTimeoutSec=${oem_timeout}"
+} > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
+
+if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.wants/$dev.device" ]; then
+    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
+    ln -s "$GENERATOR_DIR"/"$dev".device \
+        "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
+fi
+
+case "${cos_overlay}" in
+    UUID=*) \
+        cos_overlay="block:/dev/disk/by-uuid/${cos_overlay#UUID=}"
+    ;;
+    LABEL=*) \
+        cos_overlay="block:/dev/disk/by-label/${cos_overlay#LABEL=}"
+    ;;
+esac
+
+cos_mounts=()
+for mount in $(getargs rd.cos.mount=); do
+    case "${mount}" in
+        UUID=*) \
+            mount="/dev/disk/by-uuid/${mount#UUID=}"
+        ;;
+        LABEL=*) \
+            mount="/dev/disk/by-label/${mount#LABEL=}"
+        ;;
+    esac
+    cos_mounts+=("${mount}")
+done
+
+mkdir -p "${cos_layout%/*}"
+#> "${cos_layout}"
+
+{
+    echo "[Service]"
+    echo "Environment=\"cos_mounts=${cos_mounts[@]}\""
+    echo "Environment=\"cos_overlay=${cos_overlay}\""
+    echo "Environment=\"cos_root_perm=${cos_root_perm}\""
+    echo "Environment=\"root=${root}\""
+    echo "EnvironmentFile=${cos_layout}"
+} > "/run/systemd/system/${cos_unit}.d/override.conf"
