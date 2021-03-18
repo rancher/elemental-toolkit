@@ -9,6 +9,21 @@ if getargbool 0 rd.cos.debug.rw; then
     root_perm="rw"
 fi
 
+oem_timeout=$(getarg rd.cos.oemtimeout=)
+[ -z "${oem_timeout}" ] && oem_timeout="10"
+
+GENERATOR_DIR="$2"
+[ -z "$GENERATOR_DIR" ] && exit 1
+[ -d "$GENERATOR_DIR" ] || mkdir "$GENERATOR_DIR"
+
+dev=$(dev_unit_name /dev/disk/by-label/COS_OEM)
+
+mkdir -p "$GENERATOR_DIR/$dev.device.d"
+{
+    echo "[Unit]"
+    echo "JobRunningTimeoutSec=${oem_timeout}"
+} > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
+
 case "${root}" in
     LABEL=*) \
         root="${root//\//\\x2f}"
@@ -23,12 +38,7 @@ esac
 
 [ "${rootok}" != "1" ] && exit 0
 
-GENERATOR_DIR="$2"
-[ -z "$GENERATOR_DIR" ] && exit 1
-[ -d "$GENERATOR_DIR" ] || mkdir "$GENERATOR_DIR"
-
-dev="${root//-/\\x2d}"
-dev="${_dev//\//-}"
+dev=$(dev_unit_name "${root}")
 {
     echo "[Unit]"
     echo "Before=initrd-root-fs.target"
@@ -48,6 +58,6 @@ fi
 mkdir -p "$GENERATOR_DIR/$dev.device.d"
 {
     echo "[Unit]"
-    echo "JobTimeoutSec=3000"
-    echo "JobRunningTimeoutSec=3000"
+    echo "JobTimeoutSec=300"
+    echo "JobRunningTimeoutSec=300"
 } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"

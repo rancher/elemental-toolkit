@@ -82,7 +82,7 @@ prepare_target() {
 }
 
 mount_image() {
-    STATEDIR=/run/initramfs/isoscan
+    STATEDIR=/run/initramfs/cos-state
     TARGET=/tmp/upgrade
 
     mkdir -p $TARGET || true

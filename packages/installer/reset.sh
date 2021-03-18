@@ -29,7 +29,7 @@ do_mount()
 {
     STATEDIR=/tmp/state
     mkdir -p $STATEDIR || true
-    RECOVERYDIR=/run/initramfs/isoscan
+    RECOVERYDIR=/run/initramfs/cos-state
     #mount -o remount,rw ${STATE} ${STATEDIR}
 
     if [ -n "${BOOT}" ]; then

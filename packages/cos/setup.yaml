@@ -42,7 +42,7 @@ stages:
               set img=/cOS/active.img
               loopback loop0 /$img
               set root=($root)
-              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_ACTIVE iso-scan/filename=/cOS/active.img panic=5
+              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_ACTIVE cos-img/filename=/cOS/active.img panic=5
               initrd (loop0)/boot/initrd
             }
 
@@ -51,7 +51,7 @@ stages:
               set img=/cOS/passive.img
               loopback loop0 /$img
               set root=($root)
-              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_PASSIVE iso-scan/filename=/cOS/passive.img panic=5
+              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_PASSIVE cos-img/filename=/cOS/passive.img panic=5
               initrd (loop0)/boot/initrd
             }
 
@@ -60,7 +60,7 @@ stages:
               set img=/cOS/recovery.img
               loopback loop0 /$img
               set root=($root)
-              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_SYSTEM iso-scan/filename=/cOS/recovery.img panic=5
+              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_SYSTEM cos-img/filename=/cOS/recovery.img panic=5
               initrd (loop0)/boot/initrd
             }
         permissions: 0600

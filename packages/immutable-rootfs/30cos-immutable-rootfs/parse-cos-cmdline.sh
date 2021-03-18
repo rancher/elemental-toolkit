@@ -5,15 +5,23 @@
 # rd.cos.overlay=tmpfs:<size>
 # rd.cos.overlay=LABEL=<vol_label>
 # rd.cos.overlay=UUID=<vol_uuid>
-# rd.cos.oemtimeout=4
+# rd.cos.oemtimeout=<seconds>
 # rd.cos.debugrw
+# cos-img/filename=/cOS/active.img
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
-[ -z "${cos_overlay}" ] && cos_overlay=$(getarg rd.cos.overlay=)
+cos_unit="cos-immutable-rootfs.service"
+cos_layout="/run/cos/cos-layout.env"
+
+# Disable the service unless we override it
+mkdir -p "/run/systemd/system/${cos_unit}.d"
+
+cos_img=$(getarg cos-img/filename=)
+[ -z "${cos_img}" ] && return 0
+cos_overlay=$(getarg rd.cos.overlay=)
+[ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
 [ -z "${root}" ] && root=$(getarg root=)
-cos_oem_timeout=$(getarg rd.cos.oemtimeout=)
-[ -z "$cos_oem_timeout" ] && cos_oem_timeout=4
 
 cos_root_perm="ro"
 if getargbool 0 rd.cos.debugrw; then
@@ -23,21 +31,22 @@ fi
 case "${root}" in
     LABEL=*) \
         root="${root//\//\\x2f}"
-        root="cos:/dev/disk/by-label/${root#LABEL=}"
+        root="/dev/disk/by-label/${root#LABEL=}"
         rootok=1 ;;
     UUID=*) \
         root="cos:/dev/disk/by-uuid/${root#UUID=}"
         rootok=1 ;;
     /dev/*) \
-        root="cos:${root}"
+        root="${root}"
         rootok=1 ;;
 esac
 
 [ "${rootok}" != "1" ] && return 0
 
-info "root device set to ${root}"
+info "root device set to root=${root}"
 
-wait_for_dev -n "${root#cos:}"
+wait_for_dev -n "${root}"
+/sbin/initqueue --settled --unique /sbin/cos-loop-img "${cos_img}"
 
 case "${cos_overlay}" in
     UUID=*) \
@@ -47,8 +56,6 @@ case "${cos_overlay}" in
         cos_overlay="block:/dev/disk/by-label/${cos_overlay#LABEL=}"
     ;;
 esac
-
-info "overlay device set to ${cos_overlay}"
 
 cos_mounts=()
 for mount in $(getargs rd.cos.mount=); do
@@ -63,4 +70,16 @@ for mount in $(getargs rd.cos.mount=); do
     cos_mounts+=("${mount}")
 done
 
-export cos_mounts cos_overlay cos_root_perm root cos_oem_timeout
+mkdir -p "${cos_layout%/*}"
+> "${cos_layout}"
+
+{
+    echo "[Service]"
+    echo "Environment=\"cos_mounts=${cos_mounts[@]}\""
+    echo "Environment=\"cos_overlay=${cos_overlay}\""
+    echo "Environment=\"cos_root_perm=${cos_root_perm}\""
+    echo "Environment=\"root=${root}\""
+    echo "EnvironmentFile=/run/cos/cos-layout.env"
+} > "/run/systemd/system/${cos_unit}.d/override.conf"
+
+return 0

@@ -1,0 +1,15 @@
+[Unit]
+Description=cOS system early rootfs setup
+DefaultDependencies=no
+After=initrd-root-fs.target dev-disk-by\x2dlabel-COS_OEM.device
+Wants=dev-disk-by\x2dlabel-COS_OEM.device
+Requires=initrd-root-fs.target
+Conflicts=initrd-switch-root.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/ln -s /sysroot/system/ /system
+ExecStartPre=/usr/bin/mkdir -p /oem
+ExecStartPre=-/usr/bin/mount -t auto /dev/disk/by-label/COS_OEM /oem
+ExecStart=/usr/bin/cos-setup rootfs
+ExecStartPost=-/usr/bin/umount /oem

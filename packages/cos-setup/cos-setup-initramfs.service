@@ -1,0 +1,16 @@
+[Unit]
+Description=cOS system early initramfs setup
+DefaultDependencies=no
+After=initrd-fs.target
+Requires=initrd-fs.target
+Before=initrd.target
+
+[Service]
+RootDirectory=/sysroot
+MountAPIVFS=true
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/cos-setup initramfs
+
+[Install]
+RequiredBy=initrd.target
