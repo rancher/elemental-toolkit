@@ -106,14 +106,17 @@ func (s *SUT) BootFrom() int {
 }
 
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 500
+	dur := 120
 	if len(t) > 0 {
 		dur = t[0]
 	}
-	Eventually(func() string {
-		out, _ := s.command("echo ping", true)
-		return out
-	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(5*time.Second)).Should(Equal("ping\n"))
+	Eventually(func() error {
+		out, err := s.command("echo ping", true)
+		if out == "ping\n" {
+			return nil
+		}
+		return err
+	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(5*time.Second)).ShouldNot(HaveOccurred())
 }
 
 // Command sends a command to the SUIT and waits for reply

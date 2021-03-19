@@ -1,0 +1,15 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "cos"
+
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "4098", "--cpus", "2"]
+  end
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.driver = "kvm"
+  end
+    
+end

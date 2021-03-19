@@ -7,7 +7,7 @@ on:
     - 'conf/**'
     - 'packages/**'
     - '.github/workflows/**'
-    - 'tests/'
+    - 'tests/**'
     - 'Makefile'
   pull_request:
     paths:
@@ -15,7 +15,7 @@ on:
     - 'packages/**'
     - '.github/workflows/**'
     - 'Makefile'
-    - 'tests/'
+    - 'tests/**'
   create:
     tags:
       - v*
@@ -289,8 +289,10 @@ jobs:
 
       - name: Run tests 🔧
         run: |
+          export GOPATH="/Users/runner/go"
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
           make test
 
   publish:

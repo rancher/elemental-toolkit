@@ -24,6 +24,7 @@ QEMU_ARGS?=-bios /usr/share/qemu/ovmf-x86_64.bin
 QEMU_MEMORY?=2048
 PACKER_ARGS?=
 PUBLISH_ARGS?=
+GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
 ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
 export REPO_CACHE
@@ -140,14 +141,14 @@ packer:
 
 prepare-test:
 	vagrant box add cos packer/*.box
-	vagrant up || true
+	cd $(ROOT_DIR)/tests && vagrant up || true
 
-Vagrantfile:
-	vagrant init cos
+tests/Vagrantfile:
+	cd $(ROOT_DIR)/tests && vagrant init cos
 
 test-clean:
-	vagrant destroy || true
+	cd $(ROOT_DIR)/tests && vagrant destroy || true
 	vagrant box remove cos || true
 
-test: test-clean Vagrantfile prepare-test
-	cd $(ROOT_DIR)/tests && go test -timeout 3h
+test: test-clean tests/Vagrantfile prepare-test
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./
