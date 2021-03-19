@@ -7,7 +7,7 @@ on:
     - 'conf/**'
     - 'packages/**'
     - '.github/workflows/**'
-    - 'tests/'
+    - 'tests/**'
     - 'Makefile'
   pull_request:
     paths:
@@ -15,7 +15,7 @@ on:
     - 'packages/**'
     - '.github/workflows/**'
     - 'Makefile'
-    - 'tests/'
+    - 'tests/**'
   create:
     tags:
       - v*

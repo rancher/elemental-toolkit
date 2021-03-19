@@ -18,11 +18,11 @@ umount_target() {
         umount ${TARGET}/oem || true
         umount ${TARGET}/usr/local || true
         umount ${TARGET}/proc || true
-        umount ${TARGET}/dev || true
-        umount ${TARGET}/sys || true
+        umount -R ${TARGET}/dev || true
+        umount -R ${TARGET}/sys || true
         umount ${TARGET}/boot/efi || true
         umount ${TARGET}/boot/grub2 || true
-        umount ${TARGET} || true
+        umount ${TARGET}
     fi
 }
 
@@ -31,7 +31,7 @@ cleanup2()
     sync
     umount_target
     umount ${STATEDIR} || true
-    umount ${RECOVERY} || true
+    umount ${RECOVERYDIR} || true
 }
 
 cleanup()
@@ -116,7 +116,7 @@ do_format()
         parted -s ${DEVICE} mkpart primary ext4 18050MB 100% # persistent
         parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
-   
+
     partprobe ${DEVICE} 2>/dev/null || true
     sleep 2
 
@@ -265,8 +265,12 @@ install_grub()
     mkdir ${TARGET}/sys || true
     mkdir ${TARGET}/tmp || true
     mount -t proc proc ${TARGET}/proc
+
     mount --rbind /dev ${TARGET}/dev
+    mount --make-rslave ${TARGET}/dev
+
     mount --rbind /sys ${TARGET}/sys
+    mount --make-rslave ${TARGET}/sys
 
     chroot ${TARGET} /bin/sh <<EOF
     grub2-install ${GRUB_TARGET} ${DEVICE}
