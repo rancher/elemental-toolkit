@@ -106,7 +106,7 @@ func (s *SUT) BootFrom() int {
 }
 
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 500
+	dur := 120
 	if len(t) > 0 {
 		dur = t[0]
 	}
