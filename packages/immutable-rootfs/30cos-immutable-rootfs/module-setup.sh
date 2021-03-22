@@ -21,7 +21,7 @@ install() {
     declare moddir=${moddir}
     declare systemdutildir=${systemdutildir}
     inst_multiple \
-        mount mountpoint yip cos-setup sort
+        mount mountpoint yip cos-setup sort rmdir
     inst_hook cmdline 30 "${moddir}/parse-cos-overlay.sh"
     inst_hook initqueue/finished 30 "${moddir}/cos-wait-oem.sh"
     inst_hook pre-pivot 10 "${moddir}/cos-mount-layout.sh"

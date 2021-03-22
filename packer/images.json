@@ -1,15 +1,15 @@
-{                                   
-    "builders": [                                                                                     
-      {                                                             
+{
+    "builders": [
+      {
         "boot_wait": "{{user `sleep`}}",
-        "disk_size": "{{user `disk_size`}}",                                                                                                                                                                                                   
-        "guest_additions_mode": "disable",                   
-        "guest_os_type": "cOS",                        
-        "headless": true,                                                                                               
+        "disk_size": "{{user `disk_size`}}",
+        "guest_additions_mode": "disable",
+        "guest_os_type": "cOS",
+        "headless": true,
         "iso_url": "{{user `iso`}}",
         "iso_checksum": "none",
-        "shutdown_command": "shutdown -hP now",     
-        "ssh_password": "{{user `root_password`}}",  
+        "shutdown_command": "shutdown -hP now",
+        "ssh_password": "{{user `root_password`}}",
         "ssh_username": "{{user `root_username`}}",
         "format": "ova",
         "ssh_timeout": "1m",
@@ -74,7 +74,7 @@
      {
         "inline": [
           "INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda",
-          "if [ {{user `vagrant`}} == true ]; then mount /dev/disk/by-label/COS_OEM /oem; cp -rf /vagrant.yaml /oem/vagrant.yaml; fi"
+          "if [ -n \"{{user `feature`}}\" ]; then mount /dev/disk/by-label/COS_OEM /oem; cos-feature enable {{user `feature`}}; fi"
         ],
         "pause_after": "30s",
         "type": "shell"
@@ -90,7 +90,6 @@
       "iso": "",
       "sleep": "30s",
       "accellerator": "kvm",
-      "vagrant": "false"
+      "feature": ""
     }
   }
-      

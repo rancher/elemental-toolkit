@@ -203,7 +203,7 @@ jobs:
 
       - name: Build QEMU Image 🔧
         run: |
-          PACKER_ARGS="-var='accellerator=none' -var='sleep=5m' -var='vagrant=true' -only qemu" make packer
+          PACKER_ARGS="-var='accellerator=none' -var='sleep=5m' -var='feature=vagrant' -only qemu" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-${{ matrix.flavor }}-QEMU.box
@@ -260,7 +260,7 @@ jobs:
           brew install hashicorp/tap/packer
       - name: Build VBox Image 🔧
         run: |
-          PACKER_ARGS="-var='sleep=5m' -var='vagrant=true' -only virtualbox-iso" make packer
+          PACKER_ARGS="-var='sleep=5m' -var='feature=vagrant' -only virtualbox-iso" make packer
           ls packer
 
       - uses: actions/upload-artifact@v2

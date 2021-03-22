@@ -1,6 +1,6 @@
 name: "base"
 category: "distro"
-version: "0.3.4"
+version: "0.3.5"
 
 hidden: true # No need to make it installable for now
 

@@ -120,6 +120,8 @@ do_format()
     partprobe ${DEVICE} 2>/dev/null || true
     sleep 2
 
+    dmsetup remove_all 2>/dev/null || true
+
     PREFIX=${DEVICE}
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
         PREFIX=${DEVICE}p

@@ -17,6 +17,9 @@ requires:
 - name: "immutable-rootfs"
   category: "system"
   version: ">=0"
+- name: cos-features
+  category: system
+  version: ">=0"
 
 steps:
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
@@ -82,8 +85,8 @@ excludes:
 - ^/var/lib/YaST2
 
 # Perl
-- ^/usr/bin/perl.*
-- ^/usr/lib/perl.*
+# - ^/usr/bin/perl.*
+# - ^/usr/lib/perl.*
 
 # Wget - we are only shipping curl
 - ^/etc/wgetrc

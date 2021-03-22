@@ -1,0 +1,9 @@
+requires:
+- name: "yip"
+  category: "system"
+  version: ">=0"
+steps:
+- mkdir -p /system/features
+- cp -rfv features/*.yaml /system/features
+- cp -rfv cos-feature.sh /usr/bin/cos-feature
+- chmod +x /usr/bin/cos-feature
