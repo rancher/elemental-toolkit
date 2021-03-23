@@ -5,7 +5,6 @@ After=local-fs.target
 Wants=local-fs.target
 Before=sysinit.target
 
-OnFailure=emergency.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
