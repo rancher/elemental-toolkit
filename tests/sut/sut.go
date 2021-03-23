@@ -1,4 +1,4 @@
-package cos_test
+package sut
 
 import (
 	"fmt"
@@ -26,18 +26,19 @@ type SUT struct {
 	Password string
 }
 
-func NewSUT(Host, Username, Password string) *SUT {
+func NewSUT() *SUT {
+
 	user := os.Getenv("COS_USER")
-	if Username == "" {
+	if user == "" {
 		user = "root"
 	}
 	pass := os.Getenv("COS_PASS")
-	if Password == "" {
+	if pass == "" {
 		pass = "cos"
 	}
 
 	host := os.Getenv("COS_HOST")
-	if Host == "" {
+	if host == "" {
 		host = "127.0.0.1:2222"
 	}
 	return &SUT{
@@ -148,7 +149,7 @@ func (s *SUT) command(cmd string, timeout bool) (string, error) {
 func (s *SUT) Reboot() {
 	s.command("reboot", true)
 	time.Sleep(10 * time.Second)
-	s.EventuallyConnects()
+	s.EventuallyConnects(180)
 }
 
 func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {

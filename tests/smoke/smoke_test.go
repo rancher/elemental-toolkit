@@ -3,25 +3,41 @@ package cos_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/cOS/tests/sut"
 )
 
 var _ = Describe("cOS Smoke tests", func() {
-	var s *SUT
+	var s *sut.SUT
 	BeforeEach(func() {
-		s = NewSUT("", "", "")
+		s = sut.NewSUT()
 		s.EventuallyConnects()
 	})
 
 	Context("After install", func() {
 		It("can boot into passive", func() {
-			s.ChangeBoot(Passive)
+			s.ChangeBoot(sut.Passive)
+			By("rebooting into passive")
 			s.Reboot()
 
-			Expect(s.BootFrom()).To(Equal(Passive))
+			Expect(s.BootFrom()).To(Equal(sut.Passive))
 
-			s.ChangeBoot(Active)
+			By("switching back to active")
+			s.ChangeBoot(sut.Active)
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(Active))
+			Expect(s.BootFrom()).To(Equal(sut.Active))
+		})
+
+		It("can boot into recovery", func() {
+			s.ChangeBoot(sut.Recovery)
+			By("rebooting into recovery")
+			s.Reboot()
+
+			Expect(s.BootFrom()).To(Equal(sut.Recovery))
+
+			By("switching back to active")
+			s.ChangeBoot(sut.Active)
+			s.Reboot()
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
 
 		It("is booting from COS_ACTIVE", func() {
@@ -62,7 +78,7 @@ var _ = Describe("cOS Smoke tests", func() {
 		})
 
 		It("is booting from active partition", func() {
-			Expect(s.BootFrom()).To(Equal(Active))
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
 	})
 })

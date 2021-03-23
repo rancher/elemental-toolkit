@@ -46,6 +46,10 @@ enable() {
     if [ ! -d "$OEMDIR/features" ]; then
       mkdir $OEMDIR/features
     fi
+    if [ -L "$OEMDIR/features/$i.yaml" ]; then
+      echo "Feature $i enabled already"
+      continue
+    fi
     ln -s $FEATURESDIR/$i.yaml $OEMDIR/features/$i.yaml
     echo "$i enabled"
   done
