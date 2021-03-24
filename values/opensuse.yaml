@@ -1,7 +1,7 @@
 image: opensuse/leap:15.3
 distribution: "opensuse"
 
-leap_packages: >-
+packages: >-
     systemd-sysvinit
     grub2-i386-pc
     grub2-x86_64-efi
@@ -20,4 +20,20 @@ leap_packages: >-
     python-azure-agent
     qemu-guest-agent
     rng-tools
+    systemd
+    parted
+    dracut
+    e2fsprogs
+    dosfstools
+    coreutils
+    device-mapper
+    grub2
+    which
+    curl
+    nano
+    gawk
+    haveged
+    tar
+    rsync
+
 kernel_package: kernel-default

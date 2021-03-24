@@ -2,11 +2,11 @@ image: "{{.Values.image}}"
 
 steps:
 {{if eq .Values.distribution "opensuse" }}
-- zypper in -y --no-recommends {{.Values.leap_packages}} {{.Values.common_packages}} {{.Values.kernel_package}}
+- zypper in -y --no-recommends {{.Values.packages}} {{.Values.kernel_package}}
 - zypper cc
 {{else if eq .Values.distribution "fedora" }}
 - echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-- dnf install -y {{.Values.fedora_packages}} {{.Values.common_packages}} {{.Values.kernel_package}}
+- dnf install -y {{.Values.packages}} {{.Values.kernel_package}}
 - dnf clean all
 - |
     kernel=$(ls /boot/vmlinuz-* | head -n1) && \

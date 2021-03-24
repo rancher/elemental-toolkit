@@ -5,19 +5,3 @@ version: "0.3.6"
 hidden: true # No need to make it installable for now
 labels:
   autobump.strategy: "snapshot"
-common_packages: >-
-    systemd
-    parted
-    dracut
-    e2fsprogs
-    dosfstools
-    coreutils
-    device-mapper
-    grub2
-    which
-    curl
-    nano
-    gawk
-    haveged
-    tar
-    rsync
