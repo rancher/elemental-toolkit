@@ -7,9 +7,9 @@ env:
 - GOPATH=/luetbuild/go
 - GO111MODULE=off
 prelude:
-{{if .Values.is_opensuse}}
+{{if eq .Values.distribution "opensuse" }}
 - zypper in -y git upx
-{{else if .Values.is_fedora}}
+{{else if eq .Values.distribution "fedora" }}
 - dnf install -y git upx
 {{end}}
 - |

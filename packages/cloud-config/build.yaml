@@ -6,8 +6,8 @@ steps:
 - mkdir -p /system /oem
 - cp -rfv oem /system
 - chmod -R 600 /system/oem
-{{if .Values.is_opensuse}}
+{{if eq .Values.distribution "opensuse" }}
 - sed -i 's/:FLAVOR:/opensuse/g' /system/oem/02_upgrades.yaml
-{{else if .Values.is_fedora}}
+{{else if eq .Values.distribution "fedora" }}
 - sed -i 's/:FLAVOR:/fedora/g' /system/oem/02_upgrades.yaml
 {{end}}

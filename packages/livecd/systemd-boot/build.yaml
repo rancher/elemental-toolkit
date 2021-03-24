@@ -6,9 +6,9 @@ requires:
   version: ">=0"
 
 prelude:
-{{if .Values.is_opensuse}}
+{{if eq .Values.distribution "opensuse" }}
 - zypper in -y wget
-{{else if .Values.is_fedora}}
+{{else if eq .Values.distribution "fedora" }}
 - dnf install -y wget
 {{end}}
 - wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
