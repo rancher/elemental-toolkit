@@ -7,7 +7,7 @@ requires:
   version: ">=0"
 
 steps:
-{{if .Values.is_opensuse}}
+{{if eq .Values.distribution "opensuse" }}
 # Mount /tmp as tmpfs by default as set by systemd itself
 - cp /usr/share/systemd/tmp.mount /etc/systemd/system
 {{end}}

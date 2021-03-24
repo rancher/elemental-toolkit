@@ -1,5 +1,5 @@
 image: opensuse/leap:15.3
-is_opensuse: true
+distribution: "opensuse"
 
 leap_packages: >-
     systemd-sysvinit

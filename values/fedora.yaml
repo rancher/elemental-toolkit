@@ -1,5 +1,5 @@
 image: "fedora:33"
-is_fedora: true
+distribution: "fedora"
 
 fedora_packages: >-
     grub2-pc
