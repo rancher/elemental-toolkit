@@ -7,9 +7,11 @@ requires:
   version: ">=0"
 
 steps:
+{{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 # Mount /tmp as tmpfs by default as set by systemd itself
 - cp /usr/share/systemd/tmp.mount /etc/systemd/system
+{{end}}
 {{end}}
 - cp -r 30cos-immutable-rootfs /usr/lib/dracut/modules.d
 - |
