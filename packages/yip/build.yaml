@@ -9,10 +9,14 @@ env:
 - CGO_ENABLED=0
 - LDFLAGS="-s -w"
 prelude:
+{{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y git upx
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y git upx
+{{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y git upx
+{{end}}
 {{end}}
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
