@@ -77,8 +77,8 @@ prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
     dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
-    mkfs.ext4 ${STATEDIR}/cOS/transition.img
-    mount -t ext4 -o loop ${STATEDIR}/cOS/transition.img $TARGET
+    mkfs.ext2 ${STATEDIR}/cOS/transition.img
+    mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
 
 mount_image() {

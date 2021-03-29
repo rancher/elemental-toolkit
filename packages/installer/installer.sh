@@ -14,24 +14,25 @@ fi
 
 umount_target() {
     sync
-    if [ -n "${TARGET}" ]; then
-        umount ${TARGET}/oem || true
-        umount ${TARGET}/usr/local || true
-        umount ${TARGET}/proc || true
-        umount -R ${TARGET}/dev || true
-        umount -R ${TARGET}/sys || true
-        umount ${TARGET}/boot/efi || true
-        umount ${TARGET}/boot/grub2 || true
-        umount ${TARGET}
+    umount ${TARGET}/oem
+    umount ${TARGET}/usr/local
+    umount ${TARGET}/proc
+    umount -R ${TARGET}/dev
+    umount -R ${TARGET}/sys
+    umount ${TARGET}/boot/efi || true
+    umount ${TARGET}/boot/grub2 || true
+    umount ${TARGET}
+    if [ -n "$LOOP" ]; then
+        losetup -d $LOOP
     fi
 }
 
 cleanup2()
 {
     sync
-    umount_target
-    umount ${STATEDIR} || true
-    umount ${RECOVERYDIR} || true
+    umount_target || true
+    umount ${STATEDIR}
+    umount ${RECOVERYDIR}
 }
 
 cleanup()
@@ -61,16 +62,18 @@ prepare_recovery() {
     mkdir -p $RECOVERYDIR
     mount $RECOVERY $RECOVERYDIR
     mkdir -p $RECOVERYDIR/cOS
-    #rsync -aqz $STATEDIR/ ${RECOVERYDIR}
     cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
+    sync
     tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+    sync
 }
 
 prepare_passive() {
     echo "Preparing passive boot.."
-
     cp -a ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
+    sync
     tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    sync
 }
 
 do_format()
@@ -100,9 +103,9 @@ do_format()
         PERSISTENT_NUM=5
         parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
         parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 10100MB # active
-        parted -s ${DEVICE} mkpart primary ext4 10100MB 18100MB # active
-        parted -s ${DEVICE} mkpart primary ext4 18100MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 100MB 15100MB # state
+        parted -s ${DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
+        parted -s ${DEVICE} mkpart primary ext4 23100MB 100% # persistent
         parted -s ${DEVICE} set 1 ${BOOTFLAG} on
     else
         BOOT_NUM=
@@ -111,9 +114,9 @@ do_format()
         RECOVERY_NUM=3
         PERSISTENT_NUM=4
         parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 10050MB # active
-        parted -s ${DEVICE} mkpart primary ext4 10050MB 18050MB # active
-        parted -s ${DEVICE} mkpart primary ext4 18050MB 100% # persistent
+        parted -s ${DEVICE} mkpart primary ext4 50MB 15050MB # state
+        parted -s ${DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
+        parted -s ${DEVICE} mkpart primary ext4 23050MB 100% # persistent
         parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
 
@@ -163,9 +166,11 @@ do_mount()
 
     mkdir -p ${STATEDIR}/cOS
     dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
-    mkfs.ext4 ${STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
-    mount -t ext4 -o loop ${STATEDIR}/cOS/active.img $TARGET
+    mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
+    #tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    sync
+    LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
+    mount -t ext2 $LOOP $TARGET
 
     mkdir -p ${TARGET}/boot
     if [ -n "${BOOT}" ]; then
@@ -262,7 +267,6 @@ install_grub()
     fi
 
     mkdir ${TARGET}/proc || true
-    mkdir ${TARGET}/boot || true
     mkdir ${TARGET}/dev || true
     mkdir ${TARGET}/sys || true
     mkdir ${TARGET}/tmp || true
