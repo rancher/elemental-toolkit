@@ -175,6 +175,9 @@ cleanup2()
         umount ${TARGET}/usr/local || true
         umount ${TARGET}/ || true
     fi
+    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
+	umount ${STATEDIR} || true
+    fi
 }
 
 cleanup()
