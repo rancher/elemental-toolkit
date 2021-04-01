@@ -225,10 +225,10 @@ jobs:
         with:
           name: cOS-${{ matrix.flavor }}.iso.zip
 
-      - name: Install deps
-        run: |
-          brew tap hashicorp/tap
-          brew install hashicorp/tap/packer
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
       - name: Build VBox Image 🔧
         run: |
           PACKER_ARGS="-var='sleep=5m' -only virtualbox-iso" make packer
@@ -254,10 +254,10 @@ jobs:
         with:
           name: cOS-${{ matrix.flavor }}.iso.zip
 
-      - name: Install deps
-        run: |
-          brew tap hashicorp/tap
-          brew install hashicorp/tap/packer
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
       - name: Build VBox Image 🔧
         run: |
           PACKER_ARGS="-var='sleep=5m' -var='feature=vagrant' -only virtualbox-iso" make packer
