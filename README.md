@@ -1,13 +1,62 @@
-# cOS
+# containerOS toolkit
 
-**cOS** is an Immutable Adaptable Linux Distribution designed to reduce the maintenance surface exposed to the user. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
+containerOS (**cOS**) is a toolkit to build, ship and maintain cloud-init driven Linux derivatives based on container images. 
+
+It is designed to reduce the maintenance surface, with a flexible approach to provide upgrades from container registries. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
+
+<!-- TOC -->
+
+- [containerOS toolkit](#containeros-toolkit)
+    - [In a nutshell](#in-a-nutshell)
+    - [Design goals](#design-goals)
+    - [Quick start](#quick-start)
+    - [Build cOS Locally](#build-cos-locally)
+        - [Login](#login)
+        - [Install](#install)
+        - [Upgrades](#upgrades)
+        - [Reset state](#reset-state)
+            - [Recovery partition](#recovery-partition)
+            - [From ISO](#from-iso)
+    - [File system layout](#file-system-layout)
+    - [Persistent changes](#persistent-changes)
+        - [Available stages](#available-stages)
+            - [initramfs](#initramfs)
+            - [boot](#boot)
+            - [fs](#fs)
+            - [network](#network)
+            - [reconcile](#reconcile)
+    - [cOS runtime features](#cos-runtime-features)
+    - [OEM customizations](#oem-customizations)
+        - [Default OEM](#default-oem)
+    - [Configuration reference](#configuration-reference)
+        - [stages.<stageID>.[<stepN>].name](#stagesstageidstepnname)
+        - [stages.<stageID>.[<stepN>].files](#stagesstageidstepnfiles)
+        - [stages.<stageID>.[<stepN>].directories](#stagesstageidstepndirectories)
+        - [stages.<stageID>.[<stepN>].dns](#stagesstageidstepndns)
+        - [stages.<stageID>.[<stepN>].hostname](#stagesstageidstepnhostname)
+        - [stages.<stageID>.[<stepN>].sysctl](#stagesstageidstepnsysctl)
+        - [stages.<stageID>.[<stepN>].authorized_keys](#stagesstageidstepnauthorized_keys)
+        - [stages.<stageID>.[<stepN>].node](#stagesstageidstepnnode)
+        - [stages.<stageID>.[<stepN>].users](#stagesstageidstepnusers)
+        - [stages.<stageID>.[<stepN>].ensure_entities](#stagesstageidstepnensure_entities)
+        - [stages.<stageID>.[<stepN>].delete_entities](#stagesstageidstepndelete_entities)
+        - [stages.<stageID>.[<stepN>].modules](#stagesstageidstepnmodules)
+        - [stages.<stageID>.[<stepN>].systemctl](#stagesstageidstepnsystemctl)
+        - [stages.<stageID>.[<stepN>].environment](#stagesstageidstepnenvironment)
+        - [stages.<stageID>.[<stepN>].environment_file](#stagesstageidstepnenvironment_file)
+        - [stages.<stageID>.[<stepN>].timesyncd](#stagesstageidstepntimesyncd)
+        - [stages.<stageID>.[<stepN>].commands](#stagesstageidstepncommands)
+    - [Issues](#issues)
+
+<!-- /TOC -->
 
 ## In a nutshell
 
-cOS is built from Docker containers, and completely hosted on Docker registries. The build process results in a single Docker image used to deliver regular upgrades in OTA approach.
+cOS is built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach.
 
-cOS supports different release channels, all the final images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well.
-Those are exactly the same images used during upgrades.
+cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well.
+
+Those are exactly the same images used during upgrades, and used to build Linux derivatives from cOS.
 
 For example, if you want to see locally what's in cOS 0.4.30, you can:
 
@@ -23,9 +72,10 @@ You can inspect the images signatures for each version:
 $ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
 ```
 
-## Design goals:
+## Design goals
 
-- Immutable distribution
+- A Manifest for container-based OS. It contains just the common bits to make a container image bootable and to be upgraded from, with few customization on top
+- Immutable-first, but with a flexible layout
 - Cloud-init driven
 - Based on systemd
 - Built and upgraded from containers - It is a [single image OS](https://hub.docker.com/r/raccos/releases-opensuse/)!
@@ -35,13 +85,32 @@ $ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
 
 ## Quick start
 
-Download the ISO from the latest [release]() and run it in your virtualization hypervisor of choice (baremetal, too). You can login with the user `root` and `cos`. That's a live ISO and no changes will be persisted.
+cOS releases consist on container images that can be used to build derived against. 
+cOS is a manifest which assembles an OS from containers, so if you want to make substantial changes to the layout you can also fork directly cOS.
 
-Run `cos-installer <device>` to start the installation process. Remove the ISO and reboot.
+The cOS CI generates ISO and images artifacts used for testing, so you can also try out cOS by downloading the 
+ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build.yaml), to the commit you are interested into.
+
+## Build cOS Locally
+
+```bash
+$> source .envrc
+$> cos-build
+```
+
+The only requirement is docker installed, see [Development notes](/docs/dev.md) for more details.
+
+### Login
+
+You can login with the user `root` and `cos`. That's a live ISO and no changes will be persisted.
+
+### Install
+
+To install run `cos-installer <device>` to start the installation process. Remove the ISO and reboot.
 
 _Note_: `cos-installer` supports other options as well. Run `cos-installer --help` to see a complete help.
 
-## Upgrades:
+### Upgrades
 
 To upgrade the system, just run `cos-upgrade` and reboot.
 
@@ -55,15 +124,15 @@ To specify a single docker image to upgrade to  instead of the regular upgrade c
 
 _Note_ by default `cos-upgrade --docker-image` checks images to the notary registry server for valid signatures for the images tag. To disable image verification, run `cos-upgrade --no-verify --docker-image`.
 
-## Reset state
+### Reset state
 
-### Recovery partition
+#### Recovery partition
 
 cOS can be recovered anytime from the `cOS recovery` partition by running `cos-reset`. This will regenerate the bootloader and the images in `COS_STATE` by using the recovery image created during installation.
 
 The recovery partition can also be upgraded by running `cos-upgrade --recovery` in the standard partitions used for boot.
 
-### From ISO
+#### From ISO
 The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to upgrade the image of the active partition installed in the system.
 
 ## File system layout
@@ -169,14 +238,23 @@ You are encouraged to copy them over to `/usr/local/cloud-config` or `/oem` and 
 
 It is possible to install a custom cloud-init file during install with `--config` to `cos-installer` or, it's possible to add more files manually to the `/oem` folder after installation.
 
-## Build cOS Locally
+### Default OEM
 
-```bash
-$> source .envrc
-$> cos-build
+By default, `cOS` ships a set of default configurations which can be found under `/system/oem`. This is to setup e.g. the default root password and the upgrade channel. 
+
+```
+/system/oem/00_rootfs.yaml - defines the rootfs mountpoint layout setting
+/system/oem/01_defaults.yaml - systemd defaults (keyboard layout, timezone)
+/system/oem/02_upgrades.yaml - Settings for channel upgrades
+/system/oem/03_branding.yaml - Branding setting, Derivative name, /etc/issue content
+/system/oem/04_accounting.yaml - Default user/pass
+/system/oem/05_network.yaml - Default network setup
+/system/oem/06_recovery.yaml - Executes additional commands when booting in recovery mode
 ```
 
-The only requirement is docker installed, see [Development notes](/docs/dev.md) for more details.
+If you are building a cOS derivative, and plan to release upgrades, you must override (or create a new file under `/system/oem`) the `/system/oem/02_upgrades.yaml` pointing to the docker registry used to deliver upgrades.
+
+
 
 ## Configuration reference
 
