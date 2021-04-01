@@ -6,10 +6,6 @@ stages:
          permissions: 0755
          owner: 0
          group: 0
-       - path: "/run/harvester"
-         permissions: 0755
-         owner: 0
-         group: 0
        commands:
        - |
             curl -sfL https://get.k3s.io | \
@@ -32,6 +28,11 @@ stages:
             curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
           fi
      - name: "Harvester"
+       directories:
+       - path: "/run/harvester"
+         permissions: 0755
+         owner: 0
+         group: 0
        commands:
        - |
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
