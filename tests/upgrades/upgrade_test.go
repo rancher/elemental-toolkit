@@ -3,16 +3,20 @@ package cos_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/cOS/tests/sut"
 )
 
 var _ = Describe("cOS Upgrade tests", func() {
-	var s *SUT
+	var s *sut.SUT
+
 	BeforeEach(func() {
-		s = NewSUT("", "", "")
-		s.EventuallyConnects()
-		s.Reset()
+		s = sut.NewSUT()
+		s.EventuallyConnects(360)
 	})
 
+	AfterEach(func() {
+		s.Reset()
+	})
 	Context("After install", func() {
 
 		When("images are not signed", func() {
@@ -29,9 +33,13 @@ var _ = Describe("cOS Upgrade tests", func() {
 			})
 
 			It("upgrades if verify is disabled on an unsigned upgrade channel", func() {
+
+				By("turning off verification, and pointing to an old release branch")
 				out, err := s.Command("sed -i 's|raccos/releases-.*|raccos/releases-amd64\"|g' /etc/luet/luet.yaml && sed -i 's/verify: true/verify: false/g' /etc/luet/luet.yaml && cos-upgrade")
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(err).ToNot(HaveOccurred())
+
+				By("rollbacking state")
 				s.Reset()
 
 				// That version is very old and incompatible. It ships oem files inside /oem, that overrides configuration now shipped in
@@ -49,12 +57,14 @@ var _ = Describe("cOS Upgrade tests", func() {
 
 				version := out
 
+				By("running cos-upgrade with --no-verify and an unsigned image")
 				out, err = s.Command("cos-upgrade --no-verify --docker-image raccos/releases-opensuse:cos-system-0.4.31")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
 				Expect(out).Should(ContainSubstring("Booting from: active.img"))
 
+				By("rebooting and checking out the version")
 				s.Reboot()
 
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
@@ -63,6 +73,7 @@ var _ = Describe("cOS Upgrade tests", func() {
 				Expect(out).ToNot(Equal(version))
 				Expect(out).To(Equal("0.4.31\n"))
 
+				By("rollbacking state")
 				s.Reset()
 
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
@@ -79,30 +90,31 @@ var _ = Describe("cOS Upgrade tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Booting from: active.img"))
-
+				By("rebooting")
 				s.Reboot()
-				Expect(s.BootFrom()).To(Equal(Active))
+				Expect(s.BootFrom()).To(Equal(sut.Active))
 			})
 
 			It("upgrades to a specific image and reset back to the installed version", func() {
-				// out, err := s.Command("source /etc/os-release && echo $VERSION", false)
-				// Expect(err).ToNot(HaveOccurred())
-				// Expect(out).ToNot(Equal(""))
+				out, err := s.Command("source /etc/os-release && echo $VERSION")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(out).ToNot(Equal(""))
 
-				//	version := out
-
-				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.4.32")
+				version := out
+				By("upgrading to an old signed image")
+				out, err = s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.4.32")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
 				Expect(out).Should(ContainSubstring("Booting from: active.img"))
 
+				By("rebooting and checking out the version")
 				s.Reboot()
 
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				//	Expect(out).ToNot(Equal(version))
+				Expect(out).ToNot(Equal(version))
 				Expect(out).To(Equal("0.4.32\n"))
 			})
 		})

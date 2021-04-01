@@ -137,6 +137,34 @@ This stage is executed when network is available
 
 This stage is executed `5m` after boot and periodically each `60m`.
 
+## cOS runtime features
+
+cOS ships default cloud-init configurations files that are available under `/system/features` for example purposes, and to quickly enable testing features.
+
+Features can be enabled/disabled with `cos-feature`. For example, after install, to enable `k3s` it's sufficient to type `cos-feature enable k3s` and reboot.
+
+See `cos-feature list` for the available features.
+
+
+```
+$> cos-feature list
+
+====================
+cOS features list
+
+To enable, run: cos-feature enable <feature>
+To disable, run: cos-feature disable <feature>
+====================
+
+- carrier
+- harvester
+- k3s
+- vagrant (enabled)
+...
+```
+
+You are encouraged to copy them over to `/usr/local/cloud-config` or `/oem` and customize them as you see fit.
+
 ## OEM customizations
 
 It is possible to install a custom cloud-init file during install with `--config` to `cos-installer` or, it's possible to add more files manually to the `/oem` folder after installation.

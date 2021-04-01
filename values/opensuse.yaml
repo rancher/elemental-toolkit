@@ -7,5 +7,17 @@ leap_packages: >-
     grub2-x86_64-efi
     iproute2
     squashfs
-
+    conntrack-tools
+    findutils
+    haveged
+    lsscsi
+    lvm2
+    mdadm
+    multipath-tools
+    nfs-utils
+    open-iscsi
+    open-vm-tools
+    python-azure-agent
+    qemu-guest-agent
+    rng-tools
 kernel_package: kernel-default

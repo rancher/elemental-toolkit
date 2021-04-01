@@ -1,4 +1,4 @@
-module github.com/mudler/cOS/tests
+module github.com/rancher-sandbox/cOS/tests
 
 go 1.14
 
