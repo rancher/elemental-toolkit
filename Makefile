@@ -150,6 +150,19 @@ test-clean:
 	cd $(ROOT_DIR)/tests && vagrant destroy || true
 	vagrant box remove cos || true
 
-test: test-clean tests/Vagrantfile prepare-test
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke ./upgrades ./features
+test-fallback:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
+
+test-features:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
+
+test-upgrades:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades
+
+test-smoke:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke
+
+test-recovery:
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./recovery
+
+test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades test-features test-fallback test-recovery
