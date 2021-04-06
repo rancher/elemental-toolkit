@@ -30,9 +30,9 @@ stages:
       - path: /boot/grub2/grub.cfg
         content: |
             set timeout=10
-            set default=cos
+            set default="${saved_entry}"
 
-            set fallback=fallback
+            set fallback="0 1 2"
             set gfxmode=auto
             set gfxpayload=keep
             insmod all_video
