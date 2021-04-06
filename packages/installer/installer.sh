@@ -16,11 +16,7 @@ umount_target() {
     sync
     umount ${TARGET}/oem
     umount ${TARGET}/usr/local
-    umount ${TARGET}/proc
-    umount -R ${TARGET}/dev
-    umount -R ${TARGET}/sys
     umount ${TARGET}/boot/efi || true
-    umount ${TARGET}/boot/grub2 || true
     umount ${TARGET}
     if [ -n "$LOOP" ]; then
         losetup -d $LOOP
@@ -167,7 +163,6 @@ do_mount()
     mkdir -p ${STATEDIR}/cOS
     dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
-    #tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
     sync
     LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
     mount -t ext2 $LOOP $TARGET
@@ -177,8 +172,6 @@ do_mount()
         mkdir -p ${TARGET}/boot/efi
         mount ${BOOT} ${TARGET}/boot/efi
     fi
-    mkdir -p ${TARGET}/boot/grub2
-    mount ${STATE} ${TARGET}/boot/grub2
 
     mkdir -p ${TARGET}/oem
     mount ${OEM} ${TARGET}/oem
@@ -254,36 +247,34 @@ install_grub()
     else
         TTY=$COS_INSTALL_TTY
     fi
-    if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
-        sed -i "s!console=tty1!console=tty1 console=${TTY}!g" ${TARGET}/boot/grub2/grub.cfg
-    fi
 
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
         return 0
     fi
 
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ]; then
-        GRUB_TARGET="--target=x86_64-efi"
+    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+        GRUB_TARGET="--target=x86_64-efi --efi-directory=${TARGET}/boot/efi"
     fi
 
     mkdir ${TARGET}/proc || true
     mkdir ${TARGET}/dev || true
     mkdir ${TARGET}/sys || true
     mkdir ${TARGET}/tmp || true
-    mount -t proc proc ${TARGET}/proc
 
-    mount --rbind /dev ${TARGET}/dev
-    mount --make-rslave ${TARGET}/dev
+    grub2-install ${GRUB_TARGET} --root-directory=${TARGET}  --boot-directory=${STATEDIR} --removable ${DEVICE}
 
-    mount --rbind /sys ${TARGET}/sys
-    mount --make-rslave ${TARGET}/sys
+    GRUBDIR=
+    if [ -d "${STATEDIR}/grub" ]; then
+        GRUBDIR="${STATEDIR}/grub"
+    elif [ -d "${STATEDIR}/grub2" ]; then
+        GRUBDIR="${STATEDIR}/grub2"
+    fi
 
-    chroot ${TARGET} /bin/sh <<EOF
-    grub2-install ${GRUB_TARGET} ${DEVICE}
-EOF
+    cp -rfv /etc/cos/grub.cfg $GRUBDIR/grub.cfg
 
-    # XXX: This fails, while it shouldnt?
-    # grub2-install ${GRUB_TARGET} --boot-directory=${TARGET}/boot --debug --removable ${DEVICE}
+    if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
+        sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
+    fi
 }
 
 setup_style()
