@@ -36,8 +36,7 @@ do_mount()
         mkdir -p /boot/efi || true
         mount ${BOOT} /boot/efi
     fi
-    mkdir -p /boot/grub2 || true
-    mount ${STATE} /boot/grub2
+
     mount ${STATE} $STATEDIR
 }
 
@@ -56,8 +55,20 @@ cleanup()
 
 install_grub()
 {
+    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+        GRUB_TARGET="--target=x86_64-efi --efi-directory=${TARGET}/boot/efi"
+    fi
     #mount -o remount,rw ${STATE} /boot/grub2
-    grub2-install ${DEVICE}
+    grub2-install ${GRUB_TARGET} --boot-directory=${STATEDIR} --removable ${DEVICE}
+
+    GRUBDIR=
+    if [ -d "${STATEDIR}/grub" ]; then
+        GRUBDIR="${STATEDIR}/grub"
+    elif [ -d "${STATEDIR}/grub2" ]; then
+        GRUBDIR="${STATEDIR}/grub2"
+    fi
+
+    cp -rfv /etc/cos/grub.cfg $GRUBDIR/grub.cfg
 }
 
 reset() {
