@@ -35,5 +35,6 @@ packages: >-
     haveged
     tar
     rsync
+    timezone
 
 kernel_package: kernel-default
