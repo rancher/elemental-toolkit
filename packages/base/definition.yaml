@@ -3,7 +3,8 @@ category: "distro"
 version: "0.3.5"
 
 hidden: true # No need to make it installable for now
-
+labels:
+  autobump.strategy: "snapshot"
 common_packages: >-
     systemd
     parted
