@@ -4,4 +4,15 @@ version: "1.15.6"
 
 hidden: true # No need to make it installable for now
 
+labels:
+  autobump.revdeps: "true"
+  autobump.string_replace: '{ "prefix": "" }'
+  autobump.strategy: "custom"
+  autobump.prefix: "prefix"
+  autobump.hook: |
+    curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
+  autobump.version_hook: |
+    curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
+  package.version: "1.15.6"
+
 arch: "amd64"
