@@ -1,0 +1,70 @@
+#
+# cOS-toolkit Makefile.build
+#
+#
+
+
+#
+# Arguments for luet build
+#
+
+_BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
+
+_VALIDATE_OPTIONS?=-s
+_FINAL_REPO?=raccos/releases-$(FLAVOR)
+
+PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
+
+export TREE?=$(ROOT_DIR)/packages
+
+PACKER_ARGS?=
+PUBLISH_ARGS?=
+
+.PHONY: build
+build: luet
+	@echo "PACKAGES >$(PACKAGES)<"
+	$(LUET) build $(_BUILD_ARGS) \
+	--values $(ROOT_DIR)/values/$(FLAVOR).yaml \
+	--tree=$(TREE) \
+	--backend $(BACKEND) \
+	--concurrency $(CONCURRENCY) \
+	--compression $(COMPRESSION) \
+	--destination $(DESTINATION) \
+        $(PACKAGES)
+
+create-repo: luet
+	$(LUET) create-repo --tree "$(TREE)" \
+    --output $(DESTINATION) \
+    --packages $(DESTINATION) \
+    --name "cOS" \
+    --descr "cOS $(FLAVOR)" \
+    --urls "" \
+    --tree-compression $(COMPRESSION) \
+    --tree-filename tree.tar \
+    --meta-compression $(COMPRESSION) \
+    --type http
+
+publish-repo: luet
+	$(LUET) create-repo $(PUBLISH_ARGS) --tree "$(TREE)" \
+    --output $(_FINAL_REPO) \
+    --packages $(DESTINATION) \
+    --name "cOS" \
+    --descr "cOS $(FLAVOR)" \
+    --urls "" \
+    --tree-compression $(COMPRESSION) \
+    --tree-filename tree.tar \
+    --meta-compression $(COMPRESSION) \
+    --push-images \
+    --type docker
+
+serve-repo: luet
+	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(DESTINATION)
+
+autobump: luet
+	TREE_DIR=$(ROOT_DIR) $(LUET) autobump-github
+
+validate: luet
+	$(LUET) tree validate --tree $(TREE) $(_VALIDATE_OPTIONS)
+
+clean_build:
+	rm -rf $(DESTINATION)

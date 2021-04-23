@@ -1,0 +1,53 @@
+#
+# cOS-toolkit Makefile.test
+#
+#
+
+GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
+
+HAVE_VAGRANT := $(shell command -v vagrant 2> /dev/null)
+
+HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
+
+test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades test-features test-fallback test-recovery
+
+clean_test: test-clean
+
+prepare-test: vagrant
+	vagrant box add cos packer/*.box
+	cd $(ROOT_DIR)/tests && vagrant up || true
+
+tests/Vagrantfile: vagrant
+	cd $(ROOT_DIR)/tests && vagrant init cos
+
+test-clean: vagrant
+	cd $(ROOT_DIR)/tests && vagrant destroy || true
+	vagrant box remove cos || true
+
+vagrant:
+ifndef HAVE_VAGRANT
+	@echo "'vagrant' not found."
+	exit 1
+endif
+
+
+test-fallback: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
+
+test-features: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
+
+test-upgrades: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades
+
+test-smoke: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke
+
+test-recovery: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./recovery
+
+ginkgo:
+ifndef HAVE_GINKGO
+	@echo "'ginkgo' not found."
+	exit 1
+endif
