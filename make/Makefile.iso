@@ -1,0 +1,40 @@
+#
+# cOS-toolkit Makefile.iso
+#
+#
+
+
+VALIDATE_OPTIONS?=-s
+REPO_CACHE?=raccos/$(FLAVOR)
+
+PACKER_ARGS?=
+PUBLISH_ARGS?=
+GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
+ISO?=$(ROOT_DIR)/$(shell ls *.iso)
+
+export REPO_CACHE
+ifneq ($(strip $(REPO_CACHE)),)
+	BUILD_ARGS+=--image-repository $(REPO_CACHE)
+endif
+
+
+clean_iso:
+	 rm -rf $(ROOT_DIR)/*.iso
+
+$(DESTINATION):
+	mkdir $(DESTINATION)
+
+$(DESTINATION)/conf.yaml: $(DESTINATION)
+	touch $(ROOT_DIR)/build/conf.yaml
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
+	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
+
+local-iso: create-repo $(DESTINATION)/conf.yaml
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'disk'
+	$(LUET) geniso-isospec $(ISO_SPEC)
+
+iso: $(DESTINATION)/conf.yaml
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'docker'
+	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) geniso-isospec $(ISO_SPEC)
