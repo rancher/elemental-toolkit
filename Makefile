@@ -156,8 +156,11 @@ test-fallback:
 test-features:
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
 
-test-upgrades:
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades
+test-upgrades-images-signed:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
+
+test-upgrades-images-unsigned:
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
 
 test-smoke:
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke
@@ -165,4 +168,4 @@ test-smoke:
 test-recovery:
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./recovery
 
-test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades test-features test-fallback test-recovery
+test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-fallback test-recovery
