@@ -1,4 +1,4 @@
-image: opensuse/leap:15.2
+image: opensuse/leap:15.3
 is_opensuse: true
 
 leap_packages: >-

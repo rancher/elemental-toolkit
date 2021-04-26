@@ -1,3 +1,4 @@
 category: "live"
 name: "systemd-boot"
 version: "26"
+package_version: "26-May-2018"

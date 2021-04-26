@@ -11,9 +11,9 @@ prelude:
 {{else if .Values.is_fedora}}
 - dnf install -y wget
 {{end}}
-- wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_26-May-2018/systemd-boot_26-May-2018.tar.xz
+- wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
 - mkdir -p /systemd-boot
-- tar -xvf systemd-boot_26-May-2018.tar.xz -C /systemd-boot
+- tar -xvf systemd-boot_{{.Values.package_version}}.tar.xz -C /systemd-boot
 steps:
 - mkdir -p /EFI/BOOT
 - cp /systemd-boot/systemd-boot*/uefi_root/EFI/BOOT/BOOTx64.EFI /EFI/BOOT
