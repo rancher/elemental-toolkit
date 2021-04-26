@@ -81,7 +81,8 @@ jobs:
         path: /tmp/sign_images.log
 
   iso:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test')
     needs: build
     strategy:
       matrix:
@@ -130,7 +131,8 @@ jobs:
         path: isowork/*.log
 
   qemu:
-      runs-on: ubuntu-latest
+      runs-on: self-hosted
+      if: contains(github.event.pull_request.labels.*.name, 'safe to test')
       needs: iso
 
       strategy:
@@ -162,7 +164,8 @@ jobs:
             packer/*.tar.gz
 
   qemu-vagrant:
-      runs-on: ubuntu-latest
+      runs-on: self-hosted
+      if: contains(github.event.pull_request.labels.*.name, 'safe to test')
       needs: iso
 
       strategy:
