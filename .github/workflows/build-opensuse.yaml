@@ -1,4 +1,4 @@
-name: Build cOS
+name: Build cOS opensuse
 on:
   schedule:
     - cron:  '0 20 * * *'
