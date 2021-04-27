@@ -12,7 +12,7 @@
         "ssh_password": "{{user `root_password`}}",
         "ssh_username": "{{user `root_username`}}",
         "format": "ova",
-        "ssh_timeout": "1m",
+        "ssh_timeout": "5m",
         "ssh_handshake_attempts": "20",
         "type": "virtualbox-iso",
         "vm_name": "cOS"
@@ -34,7 +34,7 @@
         ],
         "shutdown_command": "shutdown -hP now",
         "ssh_password": "{{user `root_password`}}",
-        "ssh_timeout": "1m",
+        "ssh_timeout": "5m",
         "ssh_handshake_attempts": "20",
         "ssh_username": "{{user `root_username`}}",
         "type": "qemu",
