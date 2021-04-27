@@ -26,16 +26,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    # We patch docker to use all the HD available in GH action free runners
-    - name: Patch Docker Daemon data-root
-      run: |
-        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-        sudo mkdir -p "${DOCKER_DATA_ROOT}"
-        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-        sudo systemctl restart docker
-
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
@@ -306,19 +296,6 @@ jobs:
         path: build
     - run: |
         git fetch --prune --unshallow
-
-    - name: setup-docker
-      uses: docker-practice/actions-setup-docker@master
-
-    # We patch docker to use all the HD available in GH action free runners
-    - name: Patch Docker Daemon data-root
-      run: |
-        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-        sudo mkdir -p "${DOCKER_DATA_ROOT}"
-        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-        sudo systemctl restart docker
 
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
