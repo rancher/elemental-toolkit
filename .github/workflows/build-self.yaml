@@ -16,6 +16,10 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf cOS-toolkit
+
     - uses: actions/checkout@v2
 
     - run: |
@@ -85,6 +89,9 @@ jobs:
          - flavor: "opensuse"
 #         - flavor: "fedora"
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf cOS-toolkit
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -136,6 +143,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf cOS-toolkit
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -169,6 +179,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf cOS-toolkit
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -200,6 +213,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf cOS-toolkit
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -229,6 +245,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf cOS-toolkit
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -288,6 +307,9 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf cOS-toolkit
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -343,6 +365,9 @@ jobs:
            - flavor: "opensuse"
            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf cOS-toolkit
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
