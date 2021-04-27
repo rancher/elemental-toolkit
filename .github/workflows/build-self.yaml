@@ -18,7 +18,7 @@ jobs:
     steps:
     - name: Cleanup
       run: |
-        sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
 
     - uses: actions/checkout@v2
 
@@ -91,7 +91,7 @@ jobs:
     steps:
     - name: Cleanup
       run: |
-        sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -145,7 +145,7 @@ jobs:
       steps:
       - name: Cleanup
         run: |
-          sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -181,7 +181,7 @@ jobs:
       steps:
       - name: Cleanup
         run: |
-          sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -215,7 +215,7 @@ jobs:
       steps:
       - name: Cleanup
         run: |
-          sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -247,7 +247,7 @@ jobs:
       steps:
       - name: Cleanup
         run: |
-          sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -309,7 +309,7 @@ jobs:
     steps:
     - name: Cleanup
       run: |
-        sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -367,7 +367,7 @@ jobs:
       steps:
       - name: Cleanup
         run: |
-          sudo rm -rf $HOME/actions-runner/_work/cOS-toolkit
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
