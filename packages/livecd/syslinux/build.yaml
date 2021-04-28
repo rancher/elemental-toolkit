@@ -1,17 +1,10 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
-
+image: alpine
+# TODO: verify checksum
 prelude:
-{{if .Values.is_opensuse}}
-- zypper in -y wget
-{{else if .Values.is_fedora}}
-- dnf install -y wget
-{{end}}
+- apk add wget
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   wget http://kernel.org/pub/linux/utils/boot/syslinux/syslinux-$PACKAGE_VERSION.tar.xz && \
+   wget https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-{{.Values.version}}.tar.xz && \
    mkdir -p /syslinux && \
    tar -xvf syslinux-{{.Values.version}}.tar.xz -C /syslinux
 steps:
@@ -22,8 +15,3 @@ steps:
    mv /syslinux/syslinux-$PACKAGE_VERSION/bios/com32/elflink/ldlinux/ldlinux.c32 /output/boot/syslinux && \
    mv /syslinux/syslinux-$PACKAGE_VERSION/bios/mbr/isohdpfx.bin /output/boot/syslinux
 package_dir: /output
-
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"

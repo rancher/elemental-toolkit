@@ -26,8 +26,13 @@ stages:
         VERSION: ":VERSION:"
         PRETTY_NAME: ":PRETTY_NAME:"
     - name: "Grub"
+      directories:
+      - path: /etc/cos
+        permissions: 0755
+        owner: 0
+        group: 0
       files:
-      - path: /boot/grub2/grub.cfg
+      - path: /etc/cos/grub.cfg
         content: |
             set timeout=10
             set default="${saved_entry}"

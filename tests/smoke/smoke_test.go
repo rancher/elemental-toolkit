@@ -15,7 +15,9 @@ var _ = Describe("cOS Smoke tests", func() {
 
 	Context("After install", func() {
 		It("can boot into passive", func() {
-			s.ChangeBoot(sut.Passive)
+			err := s.ChangeBoot(sut.Passive)
+			Expect(err).ToNot(HaveOccurred())
+
 			By("rebooting into passive")
 			s.Reboot()
 

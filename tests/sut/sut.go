@@ -13,7 +13,18 @@ import (
 )
 
 const (
-	grubSwap    = "dev=$(blkid -L COS_STATE);	mount -o rw,remount $dev; mount $dev /boot/grub2; sed -i 's/set default=.*/set default=%s/' /boot/grub2/grub.cfg; mount -o ro,remount $dev"
+	grubSwap = `dev=$(blkid -L COS_STATE); \
+mount -o rw,remount $dev && \
+mount $dev /boot/grub2 && \
+sed -i 's/set default=.*/set default=%s/' /boot/grub2/grub2/grub.cfg && \
+mount -o ro,remount $dev`
+
+	grubSwapRecovery = `
+dev=$(blkid -L COS_STATE); mkdir /run/state; \
+mount $dev /run/state && \
+sed -i 's/set default=.*/set default=%s/' /run/state/grub2/grub.cfg
+`
+
 	Passive     = 0
 	Active      = iota
 	Recovery    = iota
@@ -61,10 +72,14 @@ func (s *SUT) ChangeBoot(b int) error {
 		bootEntry = "recovery"
 	}
 
-	_, err := s.command(fmt.Sprintf(grubSwap, bootEntry), false)
-	if err != nil {
-		return err
+	if s.BootFrom() == Recovery {
+		_, err := s.command(fmt.Sprintf(grubSwapRecovery, bootEntry), false)
+		Expect(err).ToNot(HaveOccurred())
+	} else {
+		_, err := s.command(fmt.Sprintf(grubSwap, bootEntry), false)
+		Expect(err).ToNot(HaveOccurred())
 	}
+
 	return nil
 }
 

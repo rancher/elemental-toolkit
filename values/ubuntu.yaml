@@ -1,0 +1,27 @@
+image: ubuntu:20.10
+distribution: "ubuntu"
+
+packages: >-
+    systemd
+    grub-pc-bin
+    grub-efi-amd64-bin
+    grub2
+    grub2-common
+    iproute2
+    squashfs-tools
+    parted
+    dracut
+    dracut-live
+    e2fsprogs
+    dosfstools
+    coreutils
+    multipath-tools
+    debianutils
+    curl
+    nano
+    gawk
+    haveged
+    tar
+    rsync
+
+kernel_package: linux-image-generic

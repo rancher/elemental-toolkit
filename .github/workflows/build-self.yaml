@@ -16,20 +16,19 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
+
     - uses: actions/checkout@v2
 
     - run: |
         git fetch --prune --unshallow
 
-    # We patch docker to use all the HD available in GH action free runners
-    - name: Patch Docker Daemon data-root
+    - name: Install deps
       run: |
-        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-        sudo mkdir -p "${DOCKER_DATA_ROOT}"
-        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-        sudo systemctl restart docker
+        sudo apt-get update
+        sudo apt-get install -y jq make
 
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -90,6 +89,9 @@ jobs:
          - flavor: "opensuse"
 #         - flavor: "fedora"
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -141,6 +143,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -174,6 +179,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -205,6 +213,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -234,6 +245,9 @@ jobs:
             - flavor: "opensuse"
 #            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
@@ -282,7 +296,7 @@ jobs:
           make test
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
     needs: tests
     strategy:
@@ -293,6 +307,9 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
+    - name: Cleanup
+      run: |
+        sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
     - uses: actions/checkout@v2
     - name: Download result for build
       uses: actions/download-artifact@v2
@@ -301,19 +318,6 @@ jobs:
         path: build
     - run: |
         git fetch --prune --unshallow
-
-    - name: setup-docker
-      uses: docker-practice/actions-setup-docker@master
-
-    # We patch docker to use all the HD available in GH action free runners
-    - name: Patch Docker Daemon data-root
-      run: |
-        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-        sudo mkdir -p "${DOCKER_DATA_ROOT}"
-        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-        sudo systemctl restart docker
 
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -353,7 +357,7 @@ jobs:
 
   github-release:
       if: startsWith(github.ref, 'refs/tags/')
-      runs-on: ubuntu-latest
+      runs-on: self-hosted
       needs: tests
       strategy:
         matrix:
@@ -361,6 +365,9 @@ jobs:
            - flavor: "opensuse"
            - flavor: "fedora"
       steps:
+      - name: Cleanup
+        run: |
+          sudo rm -rf /home/cos/actions-runner/_work/cOS-toolkit/cOS-toolkit/build
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2

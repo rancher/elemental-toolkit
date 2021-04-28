@@ -27,6 +27,7 @@ jobs:
        include:
          - flavor: "opensuse"
          - flavor: "fedora"
+         - flavor: "ubuntu"
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
@@ -105,6 +106,7 @@ jobs:
        include:
          - flavor: "opensuse"
 #         - flavor: "fedora"
+#         - flavor: "ubuntu"
     steps:
     - uses: actions/checkout@v2
     - name: Download result for build
