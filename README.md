@@ -319,6 +319,11 @@ stages:
                   info: "Foo!"
                   homedir: "/home/foo"
                   shell: "/bin/bash"
+       datasource:
+         providers:
+         - "aws"
+         - "digitalocean"
+         path: "/etc/cloud-data"
 ```
 
 
@@ -558,6 +563,23 @@ stages:
          - echo 1 > /bar
 ```
 
+### `stages.<stageID>.[<stepN>].datasource`
+
+Sets to fetch user data from the specified cloud providers. It populates
+provider specific data into `/run/config` folder and the custom user data
+is stored into the provided path.
+
+
+```yaml
+stages:
+   default:
+     - name: "Fetch cloud provider's user data"
+       datasource:
+         providers:
+         - "aws"
+         - "digitalocean"
+         path: "/etc/cloud-data"
+```
 
 ## Issues
 
