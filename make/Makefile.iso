@@ -7,6 +7,8 @@ REPO_CACHE?=raccos/$(FLAVOR)
 
 ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
+PACKER_ARGS?=
+
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
@@ -34,3 +36,9 @@ iso: $(DESTINATION)/conf.yaml
 	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'docker'
 	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) geniso-isospec $(ISO_SPEC)
+
+# Packer
+
+.PHONY: packer
+packer:
+	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
