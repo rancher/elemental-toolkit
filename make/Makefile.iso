@@ -3,13 +3,8 @@
 #
 #
 
-
-VALIDATE_OPTIONS?=-s
 REPO_CACHE?=raccos/$(FLAVOR)
 
-PACKER_ARGS?=
-PUBLISH_ARGS?=
-GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
 ISO?=$(ROOT_DIR)/$(shell ls *.iso)
 
 export REPO_CACHE
@@ -19,7 +14,8 @@ endif
 
 
 clean_iso:
-	 rm -rf $(ROOT_DIR)/*.iso
+	rm -rf $(ROOT_DIR)/*.iso
+	sudo rm -rf isowork
 
 $(DESTINATION):
 	mkdir $(DESTINATION)

@@ -9,7 +9,7 @@ HAVE_VAGRANT := $(shell command -v vagrant 2> /dev/null)
 
 HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
 
-test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades test-features test-fallback test-recovery
+test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
 
 clean_test: test-clean
 
@@ -20,9 +20,9 @@ prepare-test: vagrant
 tests/Vagrantfile: vagrant
 	cd $(ROOT_DIR)/tests && vagrant init cos
 
-test-clean: vagrant
-	cd $(ROOT_DIR)/tests && vagrant destroy || true
-	vagrant box remove cos || true
+test-clean:
+	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
+	(vagrant box remove cos) 2> /dev/null || true
 
 vagrant:
 ifndef HAVE_VAGRANT
@@ -37,8 +37,11 @@ test-fallback: ginkgo
 test-features: ginkgo
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
 
-test-upgrades: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades
+test-upgrades-images-signed: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
+
+test-upgrades-images-unsigned: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
 
 test-smoke: ginkgo
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke

@@ -3,6 +3,22 @@
 #
 #
 
+#
+# Backend to use for "luet build"
+# Values "docker" or "podman"
+#
+BACKEND?=docker
+
+#
+# Concurrent downloads in luet
+#
+CONCURRENCY?=1
+
+#
+# Compression scheme for build artefacts
+#
+COMPRESSION?=zstd
+
 
 #
 # Arguments for luet build
@@ -17,7 +33,6 @@ PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
 
 export TREE?=$(ROOT_DIR)/packages
 
-PACKER_ARGS?=
 PUBLISH_ARGS?=
 
 .PHONY: build
