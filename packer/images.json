@@ -89,7 +89,7 @@
       "root_username": "root",
       "iso": "",
       "sleep": "30s",
-      "accellerator": "kvm",
+      "accelerator": "kvm",
       "feature": ""
     }
   }
