@@ -9,7 +9,7 @@ HAVE_VAGRANT := $(shell command -v vagrant 2> /dev/null)
 
 HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
 
-test: test-clean tests/Vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
 
 clean_test: test-clean
 
@@ -17,13 +17,14 @@ prepare-test: vagrant
 	vagrant box add cos packer/*.box
 	cd $(ROOT_DIR)/tests && vagrant up || true
 
-tests/Vagrantfile: vagrant
+vagrantfile: tests/Vagrantfile vagrant
 	cd $(ROOT_DIR)/tests && vagrant init cos
 
 test-clean:
 	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
 	(vagrant box remove cos) 2> /dev/null || true
 
+.PHONY: vagrant
 vagrant:
 ifndef HAVE_VAGRANT
 	@echo "'vagrant' not found."
