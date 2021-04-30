@@ -5,32 +5,30 @@
 
 GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
 
-HAVE_VAGRANT := $(shell command -v vagrant 2> /dev/null)
-
 HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
+
+VAGRANT=$(shell which vagrant)
 
 test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
 
 clean_test: test-clean
 
-prepare-test: vagrant
+prepare-test: $(VAGRANT)
 	vagrant box add cos packer/*.box
 	cd $(ROOT_DIR)/tests && vagrant up || true
 
-vagrantfile: tests/Vagrantfile vagrant
+vagrantfile: $(ROOT_DIR)/tests/Vagrantfile $(VAGRANT)
+
+$(ROOT_DIR)/tests/Vagrantfile: $(VAGRANT)
 	cd $(ROOT_DIR)/tests && vagrant init cos
 
 test-clean:
 	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
 	(vagrant box remove cos) 2> /dev/null || true
 
-.PHONY: vagrant
-vagrant:
-ifndef HAVE_VAGRANT
+$(VAGRANT):
 	@echo "'vagrant' not found."
 	exit 1
-endif
-
 
 test-fallback: ginkgo
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
