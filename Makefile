@@ -42,7 +42,7 @@ ifneq ($(shell id -u), 0)
 endif
 	curl https://get.mocaccino.org/luet/get_luet_root.sh |  sh
 	luet install -y repository/mocaccino-extra-stable
-	luet install -y utils/jq utils/yq system/luet-devkit
+	luet install -y utils/jq utils/yq extension/makeiso
 endif
 
 clean:
@@ -97,20 +97,16 @@ validate:
 $(DESTINATION):
 	mkdir $(DESTINATION)
 
-$(DESTINATION)/conf.yaml: $(DESTINATION)
-	touch $(ROOT_DIR)/build/conf.yaml
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].name' 'cOS'
-	yq w -i $(ROOT_DIR)/build/conf.yaml 'repositories[0].enable' true
+local-iso: create-repo
+	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
 
-local-iso: create-repo $(DESTINATION)/conf.yaml
-	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(DESTINATION)
-	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'disk'
-	$(LUET) geniso-isospec $(ISO_SPEC)
-
-iso: $(DESTINATION)/conf.yaml
-	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].type' 'docker'
-	yq w -i $(DESTINATION)/conf.yaml 'repositories[0].urls[0]' $(FINAL_REPO)
-	$(LUET) geniso-isospec $(ISO_SPEC)
+iso:
+	cp -rf $(ISO_SPEC) $(ISO_SPEC).remote
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].name' 'cOS'
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].enable' true
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].type' 'docker'
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) makeiso $(ISO_SPEC).remote
 
 # QEMU
 
