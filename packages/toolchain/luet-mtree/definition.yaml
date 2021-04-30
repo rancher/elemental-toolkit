@@ -1,0 +1,7 @@
+name: "luet-mtree"
+category: "toolchain"
+version: "0.0.2"
+labels:
+  github.repo: "luet-mtree"
+  github.owner: "itxaka"
+  autobump.revdeps: "true"
