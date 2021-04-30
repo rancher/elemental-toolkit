@@ -150,7 +150,7 @@ jobs:
       with:
         name: luet-build-${{ matrix.flavor }}.log
         path: isowork/*.log
-        if-no-files-found: error
+        if-no-files-found: warn
 
   qemu:
       runs-on: ubuntu-latest
