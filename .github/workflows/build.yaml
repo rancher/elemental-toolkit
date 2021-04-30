@@ -20,6 +20,41 @@ on:
     tags:
       - v*
 jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - flavor: "opensuse"
+         - flavor: "fedora"
+         - flavor: "ubuntu"
+    env:
+      FLAVOR: ${{ matrix.flavor }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - run: |
+        git fetch --prune --unshallow
+
+    - name: setup-docker
+      uses: docker-practice/actions-setup-docker@master
+
+    # We patch docker to use all the HD available in GH action free runners
+    - name: Patch Docker Daemon data-root
+      run: |
+        DOCKER_DATA_ROOT='/mnt/var/lib/docker'
+        DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
+        sudo mkdir -p "${DOCKER_DATA_ROOT}"
+        jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
+        sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
+        sudo systemctl restart docker
+
+    - name: Build  🔧
+      shell: 'script -q -e -c "bash {0}"'
+      run: |
+        source .envrc
+        cos-build $FLAVOR
+
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -119,7 +154,7 @@ jobs:
     - name: Install deps
       run: |
         sudo apt-get update
-        sudo apt-get install -y xorriso squashfs-tools dosfstools
+        sudo apt-get install -y xorriso squashfs-tools
         sudo -E make deps
 
     - name: Build ISO from local build 🔧
@@ -145,12 +180,6 @@ jobs:
           *.iso
           *.sha256
         if-no-files-found: error
-    - uses: actions/upload-artifact@v2
-      if: always()
-      with:
-        name: luet-build-${{ matrix.flavor }}.log
-        path: isowork/*.log
-        if-no-files-found: warn
 
   qemu:
       runs-on: ubuntu-latest
