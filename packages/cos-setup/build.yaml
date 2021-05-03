@@ -1,6 +1,6 @@
 requires:
 - name: "yip"
-  category: "system"
+  category: "toolchain"
   version: ">=0"
 steps:
 - mkdir -p /lib/systemd/system

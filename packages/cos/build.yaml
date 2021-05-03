@@ -1,6 +1,6 @@
 requires:
 - name: "luet"
-  category: "system"
+  category: "toolchain"
   version: ">=0"
 - name: "cos-setup"
   category: "system"
@@ -8,7 +8,7 @@ requires:
 - name: "installer"
   category: "utils"
   version: ">=0"
-- category: "system"
+- category: "toolchain"
   name: "yip"
   version: ">=0"
 - name: "cloud-config"
