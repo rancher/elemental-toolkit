@@ -1,0 +1,55 @@
+#
+# cOS-toolkit Makefile.test
+#
+#
+
+GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
+
+HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
+
+VAGRANT=$(shell which vagrant)
+
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
+
+clean_test: test-clean
+
+prepare-test: $(VAGRANT)
+	vagrant box add cos packer/*.box
+	cd $(ROOT_DIR)/tests && vagrant up || true
+
+vagrantfile: $(ROOT_DIR)/tests/Vagrantfile $(VAGRANT)
+
+$(ROOT_DIR)/tests/Vagrantfile: $(VAGRANT)
+	cd $(ROOT_DIR)/tests && vagrant init cos
+
+test-clean:
+	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
+	(vagrant box remove cos) 2> /dev/null || true
+
+$(VAGRANT):
+	@echo "'vagrant' not found."
+	exit 1
+
+test-fallback: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
+
+test-features: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
+
+test-upgrades-images-signed: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
+
+test-upgrades-images-unsigned: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
+
+test-smoke: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke
+
+test-recovery: ginkgo
+	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./recovery
+
+ginkgo:
+ifndef HAVE_GINKGO
+	@echo "'ginkgo' not found."
+	exit 1
+endif

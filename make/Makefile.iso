@@ -1,0 +1,40 @@
+#
+# cOS-toolkit Makefile.iso
+#
+#
+
+REPO_CACHE?=raccos/$(FLAVOR)
+
+ISO?=$(ROOT_DIR)/$(shell ls *.iso)
+
+PACKER_ARGS?=
+
+export REPO_CACHE
+ifneq ($(strip $(REPO_CACHE)),)
+	BUILD_ARGS+=--image-repository $(REPO_CACHE)
+endif
+
+
+clean_iso:
+	rm -rf $(ROOT_DIR)/*.iso
+	sudo rm -rf isowork
+
+$(DESTINATION):
+	mkdir $(DESTINATION)
+
+local-iso: create-repo
+	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
+
+iso:
+	cp -rf $(ISO_SPEC) $(ISO_SPEC).remote
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].name' 'cOS'
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].enable' true
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].type' 'docker'
+	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) makeiso $(ISO_SPEC).remote
+
+# Packer
+
+.PHONY: packer
+packer:
+	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
