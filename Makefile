@@ -56,7 +56,7 @@ ifneq ($(shell id -u), 0)
 endif
 	curl https://get.mocaccino.org/luet/get_luet_root.sh |  sh
 	luet install -y repository/mocaccino-extra-stable
-	luet install -y utils/jq utils/yq system/luet-devkit
+	luet install -y utils/jq utils/yq extension/makeiso
 endif
 
 clean: clean_build clean_iso clean_run clean_test
