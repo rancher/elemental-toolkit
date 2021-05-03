@@ -24,7 +24,7 @@ COMPRESSION?=zstd
 # Arguments for luet build
 #
 
-_BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
+BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 _VALIDATE_OPTIONS?=-s
 _FINAL_REPO?=raccos/releases-$(FLAVOR)
@@ -38,7 +38,7 @@ PUBLISH_ARGS?=
 .PHONY: build
 build: luet
 	@echo "PACKAGES >$(PACKAGES)<"
-	$(LUET) build $(_BUILD_ARGS) \
+	$(LUET) build $(BUILD_ARGS) \
 	--values $(ROOT_DIR)/values/$(FLAVOR).yaml \
 	--tree=$(TREE) \
 	--backend $(BACKEND) \
