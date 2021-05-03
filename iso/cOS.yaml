@@ -12,9 +12,7 @@ initramfs:
   kernel_file: "vmlinuz"
   rootfs_file: "initrd"
 
-overlay: "true"
+overlay: true
 image_prefix: "cOS-0."
-image_date: "true"
+image_date: true
 label: "COS_LIVE"
-luet:
-  config: build/conf.yaml
