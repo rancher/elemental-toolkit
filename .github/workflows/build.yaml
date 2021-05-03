@@ -8,11 +8,13 @@ on:
     - 'packages/**'
     - '.github/workflows/**'
     - 'tests/**'
+    - 'make/**'
     - 'Makefile'
   pull_request:
     paths:
     - 'conf/**'
     - 'packages/**'
+    - 'make/**'
     - '.github/workflows/**'
     - 'Makefile'
     - 'tests/**'
