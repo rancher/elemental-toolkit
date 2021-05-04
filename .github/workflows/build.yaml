@@ -106,7 +106,7 @@ jobs:
            docker trust key load $USER_KEY
     - name: Set Push options
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: echo "BUILD_ARGS=--push --only-target-package --pull" >> $GITHUB_ENV
+      run: echo "BUILD_ARGS=--push --no-spinner --live-output --only-target-package --pull" >> $GITHUB_ENV
 
     - name: Install deps
       run: |

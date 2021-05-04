@@ -37,6 +37,10 @@ PUBLISH_ARGS?=
 
 .PHONY: build
 build: luet
+ifneq ($(shell id -u), 0)
+	@echo "Please run 'make build' as root"
+	exit 1
+endif
 	@echo "PACKAGES >$(PACKAGES)<"
 	$(LUET) build $(BUILD_ARGS) \
 	--values $(ROOT_DIR)/values/$(FLAVOR).yaml \
