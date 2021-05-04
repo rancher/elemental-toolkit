@@ -7,8 +7,10 @@
 #
 # Path to luet binary
 #
-export LUET?=$(shell which luet)
-HAS_LUET := $(shell command -v luet 2> /dev/null)
+export LUET?=$(shell which luet 2> /dev/null)
+ifeq ("$(LUET)","")
+LUET="/usr/bin/luet"
+endif
 
 #
 # Directory of Makefile
@@ -46,14 +48,13 @@ include make/Makefile.test
 
 #----------------------- targets -----------------------
 
-deps: luet
+deps: $(LUET)
 
-luet:
-ifndef HAS_LUET
+$(LUET):
 ifneq ($(shell id -u), 0)
 	@echo "'luet' is missing ($(LUET)) and you must be root to install it."
-	exit 1
-endif
+	@exit 1
+else
 	curl https://get.mocaccino.org/luet/get_luet_root.sh |  sh
 	luet install -y repository/mocaccino-extra-stable
 	luet install -y utils/jq utils/yq extension/makeiso

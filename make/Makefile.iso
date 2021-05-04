@@ -14,6 +14,11 @@ ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
 endif
 
+MKSQUASHFS?=$(shell which mksquashfs 2> /dev/null)
+ifeq ("$(MKSQUASHFS)","")
+MKSQUASHFS="/usr/bin/mksquashfs"
+endif
+
 #
 # remove iso artifacts
 #
@@ -29,10 +34,27 @@ $(DESTINATION):
 # build ISO from repository
 #
 
-local-iso: create-repo
+$(MKSQUASHFS):
+	@echo "'mksquashfs' not found, install 'squashfs' package."
+	@exit 1
+
+create-repo: luet
+	@echo ">$(MKSQUASHFS)<"
+	$(LUET) create-repo --tree "$(TREE)" \
+    --output $(DESTINATION) \
+    --packages $(DESTINATION) \
+    --name "cOS" \
+    --descr "cOS $(FLAVOR)" \
+    --urls "" \
+    --tree-compression $(COMPRESSION) \
+    --tree-filename tree.tar \
+    --meta-compression $(COMPRESSION) \
+    --type http
+
+local-iso: $(MKSQUASHFS) create-repo
 	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
 
-iso:
+iso: $(MKSQUASHFS)
 	cp -rf $(ISO_SPEC) $(ISO_SPEC).remote
 	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].name' 'cOS'
 	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].enable' true

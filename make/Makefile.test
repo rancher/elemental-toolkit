@@ -5,9 +5,15 @@
 
 GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
 
-HAVE_GINKGO := $(shell command -v ginkgo 2> /dev/null)
+GINKGO?=$(shell which ginkgo 2> /dev/null)
+ifeq ("$()","")
+GINKGO="/usr/bin/ginkgo"
+endif
 
-VAGRANT=$(shell which vagrant)
+VAGRANT?=$(shell which vagrant 2> /dev/null)
+ifeq ("$(VAGRANT)","")
+VAGRANT="/usr/bin/vagrant"
+endif
 
 test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
 
@@ -34,26 +40,24 @@ $(VAGRANT):
 	@echo "'vagrant' not found."
 	@exit 1
 
-test-fallback: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
+test-fallback: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./fallback
 
-test-features: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./features
+test-features: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./features
 
-test-upgrades-images-signed: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
+test-upgrades-images-signed: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-signed
 
-test-upgrades-images-unsigned: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
+test-upgrades-images-unsigned: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-unsigned
 
-test-smoke: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./smoke
+test-smoke: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./smoke
 
-test-recovery: ginkgo
-	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./recovery
+test-recovery: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery
 
-ginkgo:
-ifndef HAVE_GINKGO
+$(GINKGO):
 	@echo "'ginkgo' not found."
 	@exit 1
-endif
