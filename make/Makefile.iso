@@ -38,7 +38,7 @@ $(MKSQUASHFS):
 	@echo "'mksquashfs' not found, install 'squashfs' package."
 	@exit 1
 
-create-repo: luet
+create-repo: $(LUET)
 	@echo ">$(MKSQUASHFS)<"
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
@@ -54,7 +54,7 @@ create-repo: luet
 local-iso: $(MKSQUASHFS) create-repo
 	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
 
-iso: $(MKSQUASHFS)
+iso: $(MKSQUASHFS) $(LUET)
 	cp -rf $(ISO_SPEC) $(ISO_SPEC).remote
 	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].name' 'cOS'
 	yq w -i $(ISO_SPEC).remote 'luet.repositories[0].enable' true
