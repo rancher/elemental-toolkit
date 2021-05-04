@@ -6,7 +6,7 @@
 GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
 
 GINKGO?=$(shell which ginkgo 2> /dev/null)
-ifeq ("$()","")
+ifeq ("$(GINKGO)","")
 GINKGO="/usr/bin/ginkgo"
 endif
 
