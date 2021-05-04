@@ -11,6 +11,10 @@ VAGRANT=$(shell which vagrant)
 
 test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
 
+#
+# remove test artifacts
+#
+
 clean_test: test-clean
 
 prepare-test: $(VAGRANT)
@@ -28,7 +32,7 @@ test-clean:
 
 $(VAGRANT):
 	@echo "'vagrant' not found."
-	exit 1
+	@exit 1
 
 test-fallback: ginkgo
 	cd $(ROOT_DIR)/tests && ginkgo $(GINKGO_ARGS) ./fallback
@@ -51,5 +55,5 @@ test-recovery: ginkgo
 ginkgo:
 ifndef HAVE_GINKGO
 	@echo "'ginkgo' not found."
-	exit 1
+	@exit 1
 endif

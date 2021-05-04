@@ -29,6 +29,9 @@ BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 _VALIDATE_OPTIONS?=-s
 _FINAL_REPO?=raccos/releases-$(FLAVOR)
 
+#
+# extract packages from yaml spec
+#
 PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
 
 export TREE?=$(ROOT_DIR)/packages
@@ -38,8 +41,8 @@ PUBLISH_ARGS?=
 .PHONY: build
 build: luet
 ifneq ($(shell id -u), 0)
-	@echo "Please run 'make build' as root"
-	exit 1
+	@echo "Please run 'make $@' as root"
+	@exit 1
 endif
 	@echo "PACKAGES >$(PACKAGES)<"
 	$(LUET) build $(BUILD_ARGS) \
@@ -63,7 +66,16 @@ create-repo: luet
     --meta-compression $(COMPRESSION) \
     --type http
 
+#
+# Push to Docker registry
+# 
+#
+
 publish-repo: luet
+ifneq ($(shell id -u), 0)
+	@echo "Please run 'make $@' as root"
+	@exit 1
+endif
 	$(LUET) create-repo $(PUBLISH_ARGS) --tree "$(TREE)" \
     --output $(_FINAL_REPO) \
     --packages $(DESTINATION) \
@@ -76,6 +88,10 @@ publish-repo: luet
     --push-images \
     --type docker
 
+#
+# Start local server at port 8000
+#
+
 serve-repo: luet
 	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(DESTINATION)
 
@@ -84,6 +100,10 @@ autobump: luet
 
 validate: luet
 	$(LUET) tree validate --tree $(TREE) $(_VALIDATE_OPTIONS)
+
+#
+# remove build artifacts
+#
 
 clean_build:
 	rm -rf $(DESTINATION)
