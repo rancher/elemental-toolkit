@@ -14,6 +14,9 @@ ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
 endif
 
+#
+# remove iso artifacts
+#
 
 clean_iso:
 	rm -rf $(ROOT_DIR)/*.iso
@@ -21,6 +24,10 @@ clean_iso:
 
 $(DESTINATION):
 	mkdir $(DESTINATION)
+
+#
+# build ISO from repository
+#
 
 local-iso: create-repo
 	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
