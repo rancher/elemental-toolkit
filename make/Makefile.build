@@ -39,7 +39,7 @@ export TREE?=$(ROOT_DIR)/packages
 PUBLISH_ARGS?=
 
 .PHONY: build
-build: luet
+build: $(LUET)
 ifneq ($(shell id -u), 0)
 	@echo "Please run 'make $@' as root"
 	@exit 1
@@ -54,24 +54,13 @@ endif
 	--destination $(DESTINATION) \
         $(PACKAGES)
 
-create-repo: luet
-	$(LUET) create-repo --tree "$(TREE)" \
-    --output $(DESTINATION) \
-    --packages $(DESTINATION) \
-    --name "cOS" \
-    --descr "cOS $(FLAVOR)" \
-    --urls "" \
-    --tree-compression $(COMPRESSION) \
-    --tree-filename tree.tar \
-    --meta-compression $(COMPRESSION) \
-    --type http
 
 #
 # Push to Docker registry
 # 
 #
 
-publish-repo: luet
+publish-repo: $(LUET)
 ifneq ($(shell id -u), 0)
 	@echo "Please run 'make $@' as root"
 	@exit 1
@@ -92,13 +81,13 @@ endif
 # Start local server at port 8000
 #
 
-serve-repo: luet
+serve-repo: $(LUET)
 	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(DESTINATION)
 
-autobump: luet
+autobump: $(LUET)
 	TREE_DIR=$(ROOT_DIR) $(LUET) autobump-github
 
-validate: luet
+validate: $(LUET)
 	$(LUET) tree validate --tree $(TREE) $(_VALIDATE_OPTIONS)
 
 #
