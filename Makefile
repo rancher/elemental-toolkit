@@ -13,6 +13,30 @@ LUET="/usr/bin/luet"
 endif
 
 #
+# Path to jq binary
+#
+export JQ?=$(shell which jq 2> /dev/null)
+ifeq ("$(JQ)","")
+JQ="/usr/bin/jq"
+endif
+
+#
+# Path to yq binary
+#
+export YQ?=$(shell which yq 2> /dev/null)
+ifeq ("$(YQ)","")
+YQ="/usr/bin/yq"
+endif
+
+#
+# Path to luet-makeiso binary
+#
+export MAKEISO?=$(shell which luet-makeiso 2> /dev/null)
+ifeq ("$(MAKEISO)","")
+MAKEISO="/usr/bin/luet-makeiso"
+endif
+
+#
 # Directory of Makefile
 #
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -48,16 +72,39 @@ include make/Makefile.test
 
 #----------------------- targets -----------------------
 
-deps: $(LUET)
+deps: $(LUET) $(YQ) $(JQ) $(MAKEISO)
 
 $(LUET):
 ifneq ($(shell id -u), 0)
-	@echo "'luet' is missing ($(LUET)) and you must be root to install it."
+	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
 	curl https://get.mocaccino.org/luet/get_luet_root.sh |  sh
 	luet install -y repository/mocaccino-extra-stable
-	luet install -y utils/jq utils/yq extension/makeiso
+endif
+
+$(YQ):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y utils/yq
+endif
+
+$(JQ):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y utils/jq
+endif
+
+$(MAKEISO):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y extension/makeiso
 endif
 
 clean: clean_build clean_iso clean_run clean_test
