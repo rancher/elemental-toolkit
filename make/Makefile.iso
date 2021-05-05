@@ -38,7 +38,9 @@ $(MKSQUASHFS):
 	@echo "'mksquashfs' not found, install 'squashfs' package."
 	@exit 1
 
-create-repo: $(LUET) $(DESTINATION)
+create-repo: $(LUET) $(DESTINATION) $(DESTINATION)/tree.tar.zst
+
+$(DESTINATION)/tree.tar.zst:
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
     --packages $(DESTINATION) \
