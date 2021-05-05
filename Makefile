@@ -42,6 +42,11 @@ endif
 FINAL_REPO?=raccos/releases-$(FLAVOR)
 
 #
+# Location of package tree
+#
+TREE?=$(ROOT_DIR)/packages
+
+#
 # Directory of Makefile
 #
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
