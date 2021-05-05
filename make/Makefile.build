@@ -33,8 +33,6 @@ _VALIDATE_OPTIONS?=-s
 #
 PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
 
-export TREE?=$(ROOT_DIR)/packages
-
 PUBLISH_ARGS?=
 
 .PHONY: build
