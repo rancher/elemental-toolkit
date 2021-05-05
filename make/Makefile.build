@@ -27,7 +27,6 @@ COMPRESSION?=zstd
 BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 _VALIDATE_OPTIONS?=-s
-_FINAL_REPO?=raccos/releases-$(FLAVOR)
 
 #
 # extract packages from yaml spec
@@ -66,7 +65,7 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 endif
 	$(LUET) create-repo $(PUBLISH_ARGS) --tree "$(TREE)" \
-    --output $(_FINAL_REPO) \
+    --output $(FINAL_REPO) \
     --packages $(DESTINATION) \
     --name "cOS" \
     --descr "cOS $(FLAVOR)" \
