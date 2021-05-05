@@ -405,14 +405,32 @@ stages:
 
 ### `stages.<stageID>.[<stepN>].users`
 
-A map of users and password to set. Passwords can be also encrypted.
+A map of users and user info to set. Passwords can be also encrypted.
+
+The `users` parameter adds or modifies the specified list of users. Each user is an object which consists of the following fields. Each field is optional and of type string unless otherwise noted.
+In case the user is already existing, the password only will be overwritten.
+
+- **name**: Required. Login name of user
+- **gecos**: GECOS comment of user
+- **passwd**: Hash of the password to use for this user. Unencrypted strings supported too.
+- **homedir**: User's home directory. Defaults to /home/*name*
+- **no-create-home**: Boolean. Skip home directory creation.
+- **primary-group**: Default group for the user. Defaults to a new group created named after the user.
+- **groups**: Add user to these additional groups
+- **no-user-group**: Boolean. Skip default group creation.
+- **ssh-authorized-keys**: List of public SSH keys to authorize for this user
+- **system**: Create the user as a system user. No home directory will be created.
+- **no-log-init**: Boolean. Skip initialization of lastlog and faillog databases.
+- **shell**: User's login shell.
 
 ```yaml
 stages:
    default:
      - name: "Setup users"
-       users:
-          bastion: "strongpassword"
+       users: 
+          bastion: 
+            passwd: "strongpassword"
+            homedir: "/home/foo
 ```
 
 ### `stages.<stageID>.[<stepN>].ensure_entities`
