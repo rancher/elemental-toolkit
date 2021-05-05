@@ -37,6 +37,11 @@ MAKEISO="/usr/bin/luet-makeiso"
 endif
 
 #
+# Output for "make publish-repo" and base for "make iso"
+#
+FINAL_REPO?=raccos/releases-$(FLAVOR)
+
+#
 # Directory of Makefile
 #
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
