@@ -5,8 +5,6 @@
 
 ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
 
-PACKER_ARGS?=
-
 MKSQUASHFS?=$(shell which mksquashfs 2> /dev/null)
 ifeq ("$(MKSQUASHFS)","")
 MKSQUASHFS="/usr/bin/mksquashfs"
@@ -68,13 +66,3 @@ else
 	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) makeiso $(MANIFEST).remote
 endif
-
-# Packer
-
-.PHONY: packer
-packer:
-ifeq ("$(ISO)","")
-	@echo "Please run 'make iso' or 'make local-iso' first"
-	@exit 1
-endif
-	cd $(ROOT_DIR)/packer && packer build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
