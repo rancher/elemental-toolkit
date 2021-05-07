@@ -1,0 +1,33 @@
+requires:
+  - name: "luet"
+    category: "toolchain"
+    version: ">=0"
+  - name: "golang"
+    category: "build"
+    version: ">=0"
+env:
+  - PATH=$PATH:/usr/local/go/bin
+  - GOPATH=/luetbuild/go
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  - LDFLAGS="-s -w"
+prelude:
+  {{ if .Values.distribution }}
+  {{if eq .Values.distribution "opensuse" }}
+- zypper in -y git
+  {{else if eq .Values.distribution "fedora" }}
+- dnf install -y git
+  {{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y git
+  {{end}}
+  {{end}}
+- |
+  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+  mkdir -p /luetbuild/go/src/github.com/itxaka && cd /luetbuild/go/src/github.com/itxaka && \
+  git clone https://github.com/itxaka/luet-mtree && cd luet-mtree && git checkout "v${PACKAGE_VERSION}" -b build
+steps:
+  - |
+    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+    cd /luetbuild/go/src/github.com/itxaka/luet-mtree && make build && mv bin/luet-mtree /usr/bin/luet-mtree
+includes:
+  - /usr/bin/luet-mtree
