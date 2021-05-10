@@ -24,7 +24,8 @@ endif
 #
 
 clean_iso:
-	rm -rf $(ROOT_DIR)/*.iso
+	rm -rf $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.iso.sha256
+	rm -rf $(DESTINATION)/tree.tar.zst
 	sudo rm -rf isowork
 
 $(DESTINATION):
@@ -38,9 +39,8 @@ $(MKSQUASHFS):
 	@echo "'mksquashfs' not found, install 'squashfs' package."
 	@exit 1
 
-create-repo: $(LUET) $(DESTINATION) $(DESTINATION)/tree.tar.zst
-
-$(DESTINATION)/tree.tar.zst:
+.PHONY: create-repo
+create-repo: $(LUET) $(DESTINATION)
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
     --packages $(DESTINATION) \
@@ -52,8 +52,11 @@ $(DESTINATION)/tree.tar.zst:
     --meta-compression $(COMPRESSION) \
     --type http
 
+$(DESTINATION)/tree.tar.zst:
+	make create-repo
+
 .PHONY: local-iso
-local-iso: $(LUET) $(MAKEISO) $(DESTINATION) $(MKSQUASHFS) create-repo
+local-iso: $(LUET) $(MAKEISO) $(DESTINATION) $(MKSQUASHFS) $(DESTINATION)/tree.tar.zst
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
