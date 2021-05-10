@@ -88,6 +88,7 @@ This command will build a container image which contains the required dependenci
 - [Github project](https://github.com/mudler/cOS/projects/1) for a short-term Roadmap
 - [Development notes](/docs/dev.md)
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
+- [EpinioOS sample repository](https://github.com/rancher-sandbox/epinio-appliance-demo-sample)
 - [Derivatives featureset](/docs/derivatives_featureset.md)
 
 ## License
