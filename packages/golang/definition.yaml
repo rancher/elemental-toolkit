@@ -1,6 +1,6 @@
 name: "golang"
 category: "build"
-version: 1.16.3+3
+version: "1.16.4"
 hidden: true # No need to make it installable for now
 labels:
   autobump.revdeps: "true"
@@ -11,5 +11,5 @@ labels:
     curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
   autobump.version_hook: |
     curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
-  package.version: "1.16.3"
+  package.version: "1.16.4"
 arch: "amd64"
