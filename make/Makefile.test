@@ -15,8 +15,6 @@ ifeq ("$(VAGRANT)","")
 VAGRANT="/usr/bin/vagrant"
 endif
 
-_PACKER_ARGS?=
-
 #
 # Find correct (hashicorp/packer) binary
 #
@@ -70,7 +68,7 @@ ifeq ("$(ISO)","")
 	@echo "Please run 'make iso' or 'make local-iso' first"
 	@exit 1
 endif
-	cd $(ROOT_DIR)/packer && $(PACKER) build -var "iso=$(ISO)" $(_PACKER_ARGS) images.json
+	cd $(ROOT_DIR)/packer && $(PACKER) build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
 
 #
 # ------------ actual test targets ------------
