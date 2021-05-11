@@ -66,6 +66,11 @@ DESTINATION?=$(ROOT_DIR)/build
 #
 export MANIFEST?=$(ROOT_DIR)/manifest.yaml
 
+#
+# Arguments to packer for creating the ISO
+#
+PACKER_ARGS?=
+
 #----------------------- end global variables -----------------------
 
 
