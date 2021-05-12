@@ -1,3 +1,5 @@
+# Refer to https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#build-specs
+# for the syntax format
 requires:
 - name: "luet"
   category: "toolchain"
@@ -27,12 +29,18 @@ requires:
   category: "system"
   version: ">=0"
 
+# Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
 - sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
 - yip setup.yaml
 
+# See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
 unpack: true
+
+# Files to exclude from the final 
+# artifact 
+# See also: https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#excludingincluding-files-explictly
 excludes:
 - ^/var/cache/luet
 - ^/luetbuild
@@ -62,8 +70,10 @@ excludes:
 - ^/var/lib/rpm
 
 # Build deps that got thrown-in by zypper
-# XXX: To keep until https://github.com/mudler/luet/issues/173 is delivered,
+# XXX: To keep until https://github.com/mudler/luet/issues/190 is solved out
 # or we either create another luet repository for runtime deps
+# When we can copy from tree packages single file, there is no need
+# to depend directly on golang
 - ^/usr/share/bison
 - ^/usr/share/automake
 - ^/usr/share/autoconf

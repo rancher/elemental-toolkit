@@ -8,11 +8,13 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
 
 - [containerOS toolkit](#containeros-toolkit)
     - [In a nutshell](#in-a-nutshell)
+    - [Releases](#releases)
     - [Design goals](#design-goals)
-    - [Quick start](#quick-start)
         - [Build cOS Locally](#build-cos-locally)
     - [First steps](#first-steps)
     - [References](#references)
+        - [Derivatives](#derivatives)
+        - [cOS development](#cos-development)
     - [License](#license)
 
 <!-- /TOC -->
@@ -39,6 +41,17 @@ You can inspect the images signatures for each version:
 $ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
 ```
 
+## Releases
+
+cOS-toolkit releases consist on container images that can be used to build derived against and the cos source tree itself.
+ 
+cOS is a manifest which assembles an OS from containers, so if you want to make substantial changes to the layout you can also fork directly cOS.
+
+Currently, the toolkit supports creating derivatives from [OpenSUSE, Fedora and Ubuntu](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values), although it's rather simple to add support for other OS families and architecures.
+
+The cOS CI generates ISO and images artifacts used for testing, so you can also try out cOS by downloading the 
+ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build.yaml), to the commit you are interested into.
+
 ## Design goals
 
 - A Manifest for container-based OS. It contains just the common bits to make a container image bootable and to be upgraded from, with few customization on top
@@ -49,16 +62,6 @@ $ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
 - OTA updates
 - Easy to customize
 - Cryptographically verified
-
-## Quick start
-
-cOS releases consist on container images that can be used to build derived against. 
-cOS is a manifest which assembles an OS from containers, so if you want to make substantial changes to the layout you can also fork directly cOS.
-
-Currently, the toolkit supports creating derivatives from [OpenSUSE, Fedora and Ubuntu](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values), although it's rather simple to add support for other OS families and architecures.
-
-The cOS CI generates ISO and images artifacts used for testing, so you can also try out cOS by downloading the 
-ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build.yaml), to the commit you are interested into.
 
 ### Build cOS Locally
 
@@ -81,15 +84,20 @@ $ cos-build
 
 This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice. 
 
+See [Creating derivatives](/docs/creating_derivatives.md) for more details about the process.
 
 ## References
 
-- [High Level architecture](/docs/high_level_architecture.md)
-- [Github project](https://github.com/mudler/cOS/projects/1) for a short-term Roadmap
-- [Development notes](/docs/dev.md)
+### Derivatives
+- [Creating derivatives](/docs/creating_derivatives.md)
+- [Derivatives featureset](/docs/derivatives_featureset.md)
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
 - [EpinioOS sample repository](https://github.com/rancher-sandbox/epinio-appliance-demo-sample)
-- [Derivatives featureset](/docs/derivatives_featureset.md)
+
+### cOS development
+- [Development notes](/docs/dev.md)
+- [High Level architecture](/docs/high_level_architecture.md)
+- [Github project](https://github.com/mudler/cOS/projects/1) for a short-term Roadmap
 
 ## License
 

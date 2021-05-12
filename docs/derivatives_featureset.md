@@ -123,6 +123,8 @@ The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD.
 
 ## File system layout
 
+![Partitioning layout](https://docs.google.com/drawings/d/e/2PACX-1vR-I5ZwwB5EjpsymUfcNADRTTKXrNMnlZHgD8RjDpzYhyYiz_JrWJwvpcfMcwfYet1oWCZVWH22aj1k/pub?w=533&h=443)
+
 By default, `cos` derivative will inherit an immutable setup.
 A running system will look like as follows:
 
