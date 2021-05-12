@@ -122,15 +122,20 @@ jobs:
         run: |
           sudo -E make build
           ls -liah $PWD/build
-
-      - name: Create repo
-        run: |
-          sudo -E make create-repo
       - name: Generate manifests
         run: |
           for f in build/*tar*; do
             sudo -E luet mtree -- generate $f -o "$f.mtree"
           done
+      - name: Append manifests to metadata
+        run: |
+          for f in build/*mtree; do
+            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
+            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
+          done
+      - name: Create repo
+        run: |
+          sudo -E make create-repo
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
