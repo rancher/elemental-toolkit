@@ -36,5 +36,6 @@ packages: >-
     tar
     rsync
     timezone
+    jq
 
 kernel_package: kernel-default
