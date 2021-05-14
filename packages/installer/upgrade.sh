@@ -132,14 +132,23 @@ upgrade() {
           args=
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
-        rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
         rm -rf /usr/local/tmp/rootfs
     fi
+
+    SELinux_relabel
 
     rm -rf /usr/local/tmp/upgrade
     umount $TARGET/oem
     umount $TARGET/usr/local
     umount $TARGET
+}
+
+SELinux_relabel()
+{
+    if which setfiles > /dev/null && [ -e ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
+        setfiles -r ${TARGET} ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${TARGET}
+    fi
 }
 
 switch_active() {

@@ -47,7 +47,7 @@ stages:
               set img=/cOS/active.img
               loopback loop0 /$img
               set root=($root)
-              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_ACTIVE iso-scan/filename=/cOS/active.img panic=5
+              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_ACTIVE iso-scan/filename=/cOS/active.img panic=5 security=selinux selinux=1
               initrd (loop0)/boot/initrd
             }
 
@@ -56,7 +56,7 @@ stages:
               set img=/cOS/passive.img
               loopback loop0 /$img
               set root=($root)
-              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_PASSIVE iso-scan/filename=/cOS/passive.img panic=5
+              linux (loop0)/boot/vmlinuz console=tty1 ro root=LABEL=COS_PASSIVE iso-scan/filename=/cOS/passive.img panic=5 security=selinux selinux=1
               initrd (loop0)/boot/initrd
             }
 

@@ -1,0 +1,29 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+steps:
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+- zypper ar https://download.opensuse.org/repositories/security:/SELinux/openSUSE_Leap_15.3/security:SELinux.repo
+- zypper --gpg-auto-import-keys in -y --allow-vendor-change --allow-downgrade selinux-policy audit selinux-tools python3-policycoreutils policycoreutils-python-utils container-selinux -libsemanage1
+- zypper cc
+{{else if eq .Values.distribution "fedora" }}
+- dnf install -y container-selinux selinux-policy-targeted checkpolicy
+- dnf clean all
+- systemctl mask selinux-autorelabel.service && systemctl mask selinux-autorelabel-mark.service
+{{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y selinux-policy-default selinux-utils
+- apt-get clean
+{{end}}
+{{end}}
+- sed -i "s|^SELINUX=.*|SELINUX=permissive|g" /etc/selinux/config
+- rm -rf /.autorelabel
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+# Install cOS custom policy
+- checkmodule -M -m -o cOS.mod cOS.te && semodule_package -o cOS.pp -m cOS.mod
+- semodule -i cOS.pp
+{{end}}
+{{end}}

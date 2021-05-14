@@ -23,6 +23,9 @@ requires:
 - name: cos-features
   category: system
   version: ">=0"
+- name: "selinux-policies"
+  category: "system"
+  version: ">=0"
 
 steps:
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml

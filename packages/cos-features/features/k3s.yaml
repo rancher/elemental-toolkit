@@ -11,6 +11,7 @@ stages:
             curl -sfL https://get.k3s.io | \
             INSTALL_K3S_VERSION="v1.20.4+k3s1" \
             INSTALL_K3S_EXEC="--data-dir /usr/local/rancher/k3s" \
+            INSTALL_K3S_SELINUX_WARN="true" \
             sh -
      - name: "Setup Longhorn"
        commands:

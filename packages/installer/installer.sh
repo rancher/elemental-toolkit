@@ -205,7 +205,7 @@ do_copy()
 {
     echo "Copying cOS.."
 
-    rsync -aqz --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
+    rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
      if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
         OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
@@ -232,6 +232,13 @@ stages:
 EOF
     chmod 640 $TARGET/usr/local/cloud-config
     chmod 640 $TARGET/usr/local/cloud-config/90_after_install.yaml
+}
+
+SELinux_relabel()
+{
+    if which setfiles > /dev/null && [ -e ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
+        setfiles -r ${TARGET} ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${TARGET}
+    fi
 }
 
 install_grub()
@@ -377,6 +384,8 @@ do_format
 do_mount
 do_copy
 install_grub
+
+SELinux_relabel
 
 umount_target 2>/dev/null
 
