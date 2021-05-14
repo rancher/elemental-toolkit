@@ -27,6 +27,7 @@ Every derivative share a common configuration layer, along few packages by defau
     - [Runtime features](#runtime-features)
     - [OEM customizations](#oem-customizations)
         - [Default OEM](#default-oem)
+    - [SELinux policy](#selinux-policy)
     - [Configuration reference](#configuration-reference)
         - [Compatibility with Cloud Init format](#compatibility-with-cloud-init-format)
         - [stages.STAGE_ID.STEP_NAME.name](#stagesstage_idstep_namename)
@@ -244,6 +245,17 @@ If you are building a cOS derivative, and plan to release upgrades, you must ove
 
 [See also the example appliance](https://github.com/rancher-sandbox/epinio-appliance-demo-sample#images)
 
+## SELinux policy
+
+By default, derivatives have `SELinux` enabled in permissive mode. You can use the [cos-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/selinux-policies) default policy as a kickstart to customize on top. 
+
+Copy the package (create a new folder with `build.yaml`, `definition.yaml` and `cOS.te`) into the derivative tree and customize to suit your needs, and add it as a build requirement to your OS package.
+
+_Note_: the [cOS.te](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/packages/selinux-policies/cOS.te) sample policy was created using the utility `audit2allow` after running some
+basic operations in permissive mode using system default policies. `allow2audit`
+translates audit messages into allow/dontaudit SELinux policies which can be later
+compiled as a SELinux module. This is the approach used in this illustration
+example and mostly follows `audit2allow` [man pages](https://linux.die.net/man/1/audit2allow).
 
 ## Configuration reference
 
