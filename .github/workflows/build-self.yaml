@@ -33,21 +33,6 @@ jobs:
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-    - name: Load Docker Content Trust
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: |
-           sudo cp -rf .github/sign-images /usr/bin/sign-images
-           sudo chmod +x /usr/bin/sign-images
-           PATH_KEYS=$HOME/.docker/trust/private
-           USER_KEY=$PATH_KEYS/7b1922fb6fa9046a2c64c16e1e557c092699854c23dedf653fab6faac00390a5.key
-           mkdir -p $PATH_KEYS
-           echo "${{ secrets.DOCKER_CONTENT_TRUST_PRIVKEY }}" > $USER_KEY
-           chmod 600 $USER_KEY
-           export DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=${{ secrets.DOCKER_CONTENT_TRUST_USER_PASSPHRASE }}
-           echo "PATH_KEYS=$PATH_KEYS" >> $GITHUB_ENV
-           echo "DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE" >> $GITHUB_ENV
-           echo "PUBLISH_ARGS=--plugin sign-images" >> $GITHUB_ENV
-           docker trust key load $USER_KEY
     - name: Set Push options
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: echo "BUILD_ARGS=--push --only-target-package --pull" >> $GITHUB_ENV
@@ -73,11 +58,6 @@ jobs:
       with:
         name: build-${{ matrix.flavor }}
         path: build
-    - name: Upload signing logs
-      uses: actions/upload-artifact@v2
-      with:
-        name: sign-${{ matrix.flavor }}
-        path: /tmp/sign_images.log
 
   iso:
     runs-on: self-hosted
@@ -322,21 +302,6 @@ jobs:
     - name: Login to DockerHub Registry
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-    - name: Load Docker Content Trust
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: |
-           sudo cp -rf .github/sign-images /usr/bin/sign-images
-           sudo chmod +x /usr/bin/sign-images
-           PATH_KEYS=$HOME/.docker/trust/private
-           USER_KEY=$PATH_KEYS/7b1922fb6fa9046a2c64c16e1e557c092699854c23dedf653fab6faac00390a5.key
-           mkdir -p $PATH_KEYS
-           echo "${{ secrets.DOCKER_CONTENT_TRUST_PRIVKEY }}" > $USER_KEY
-           chmod 600 $USER_KEY
-           export DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=${{ secrets.DOCKER_CONTENT_TRUST_USER_PASSPHRASE }}
-           echo "PATH_KEYS=$PATH_KEYS" >> $GITHUB_ENV
-           echo "DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE" >> $GITHUB_ENV
-           echo "PUBLISH_ARGS=--plugin sign-images" >> $GITHUB_ENV
-           docker trust key load $USER_KEY
     - name: Set Push options
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: echo "BUILD_ARGS=--push --only-target-package --pull" >> $GITHUB_ENV
@@ -349,11 +314,6 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: |
         sudo -E make publish-repo
-    - name: Upload signing logs
-      uses: actions/upload-artifact@v2
-      with:
-        name: sign-${{ matrix.flavor }}
-        path: /tmp/sign_images.log
 
   github-release:
       if: startsWith(github.ref, 'refs/tags/')
