@@ -23,8 +23,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				By("upgrading to raccos/releases-opensuse:cos-system-0.4.35-1")
-				out, err = s.Command("cos-upgrade --recovery --docker-image raccos/releases-opensuse:cos-system-0.4.35-1")
+				By("upgrading to raccos/releases-opensuse:cos-system-0.5.0")
+				out, err = s.Command("cos-upgrade --recovery --docker-image raccos/releases-opensuse:cos-system-0.5.0")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -39,7 +39,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.4.35+1\n"))
+				Expect(out).To(Equal("0.5.0\n"))
 
 				By("setting back to active and rebooting")
 				err = s.ChangeBoot(sut.Active)
@@ -66,7 +66,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.4.35+1\n"))
+				Expect(out).ToNot(Equal("0.5.0\n"))
 
 				By("switch back to active and reboot")
 				err = s.ChangeBoot(sut.Active)

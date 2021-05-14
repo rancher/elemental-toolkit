@@ -22,8 +22,11 @@ requires:
 - name: "immutable-rootfs"
   category: "system"
   version: ">=0"
-- name: cos-features
-  category: system
+- name: "cos-features"
+  category: "system"
+  version: ">=0"
+- name: "grub-config"
+  category: "system"
   version: ">=0"
 - name: "selinux-policies"
   category: "system"

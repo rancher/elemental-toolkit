@@ -36,7 +36,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 				version := out
 				By("upgrading to an old signed image")
-				out, err = s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.4.32")
+				out, err = s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
@@ -49,7 +49,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.4.32\n"))
+				Expect(out).To(Equal("0.5.0\n"))
 			})
 		})
 	})
