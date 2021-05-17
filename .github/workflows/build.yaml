@@ -6,7 +6,7 @@ on:
     paths:
       - 'conf/**'
       - 'packages/**'
-      - '.github/workflows/**'
+      - '.github/**'
       - 'tests/**'
       - 'make/**'
       - 'Makefile'
@@ -15,7 +15,7 @@ on:
       - 'conf/**'
       - 'packages/**'
       - 'make/**'
-      - '.github/workflows/**'
+      - '.github/**'
       - 'Makefile'
       - 'tests/**'
   create:
