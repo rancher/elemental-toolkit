@@ -15,8 +15,7 @@ def main():
         yaml_file = yaml.safe_load(stream)
 
     with open(sys.argv[2], "r") as mtree:
-        yaml_file[sys.argv[3]] = mtree.readlines()
-
+        yaml_file[sys.argv[3]] = mtree.read()
     with open(sys.argv[1], "w") as outfile:
         outfile.write(yaml.dump(yaml_file))
 
