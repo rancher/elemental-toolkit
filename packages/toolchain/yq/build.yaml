@@ -1,0 +1,5 @@
+steps:
+  - |
+    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+    curl -L https://github.com/mikefarah/${PACKAGE_NAME}/releases/download/${PACKAGE_VERSION}/yq_linux_{{.Values.arch}} -o /usr/bin/${PACKAGE_NAME} && \
+    chmod +x /usr/bin/${PACKAGE_NAME}

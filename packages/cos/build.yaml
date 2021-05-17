@@ -22,6 +22,9 @@ requires:
 - name: "selinux-policies"
   category: "system"
   version: ">=0"
+- name: "yq"
+  category: "toolchain"
+  version: ">=3.4.1"
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:

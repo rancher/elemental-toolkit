@@ -20,10 +20,7 @@ if [ "$event" == "package.install" ]; then
   echo "Getting $image metadata"
 
   luet util unpack "$image" "$tmpdir"
-  # This is terrible, if this works we need to move to a golang binary FAST
-  curl https://github.com/mikefarah/yq/releases/download/v3.4.1/yq_linux_amd64 -L --silent --output /tmp/yq && chmod +x /tmp/yq
-  /tmp/yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
-  rm /tmp/yq
+  yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
   luet mtree -- check /tmp/upgrade "$mtree_output"
   rm "$mtree_output"
   rm  -Rf "$tmpdir"
