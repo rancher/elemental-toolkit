@@ -21,7 +21,14 @@ cos-toolkit is also a manifest, which includes package definitions of how the un
  
 ![High level overview](https://docs.google.com/drawings/d/e/2PACX-1vQQJOaISPbMxMYU44UT-M3ou9uGYOrzbXCRXMLPU8m7_ie3ke_08xCsyRLkFZJRB4VnzIeobPciEoQv/pub?w=942&h=532)
 
-The developer of the derivative applies a customization layer, which is an augmentation layer in the same form of `cos-toolkit` itself. [An example repository is provided](https://github.com/rancher-sandbox/cos-toolkit-sample-repo) that shows how to build a customOS that can be maintained with a container image registry.
+The fundamental phases can be summarized in the following steps:
+
+- Build packages from container images (and optionally keep build caches)
+- Extract artefacts from containers
+- Add metadata(s) and create a repository
+- (optionally) publish the repository and the artefacts
+
+The developer of the derivative applies a customization layer during build, which is an augmentation layer in the same form of `cos-toolkit` itself. [An example repository is provided](https://github.com/rancher-sandbox/cos-toolkit-sample-repo) that shows how to build a customOS that can be maintained with a container image registry.
 
 ## Distribution
 

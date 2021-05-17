@@ -1,15 +1,20 @@
 # Derivatives featureset
 
-Derivatives that inherit directly `system/cos` have the following defaults
+This document describes the shared featureset between derivatives that directly depend on `system/cos`.
+
+Every derivative share a common configuration layer, along few packages by default in the stack.
 
 <!-- TOC -->
 
 - [Derivatives featureset](#derivatives-featureset)
+    - [Package stack](#package-stack)
     - [Login](#login)
+        - [Examples](#examples)
     - [Install](#install)
     - [Upgrades](#upgrades)
     - [Reset state](#reset-state)
         - [Recovery partition](#recovery-partition)
+        - [Upgrading the recovery partition](#upgrading-the-recovery-partition)
         - [From ISO](#from-iso)
     - [File system layout](#file-system-layout)
     - [Persistent changes](#persistent-changes)
@@ -19,35 +24,52 @@ Derivatives that inherit directly `system/cos` have the following defaults
             - [fs](#fs)
             - [network](#network)
             - [reconcile](#reconcile)
-    - [cOS runtime features](#cos-runtime-features)
+    - [Runtime features](#runtime-features)
     - [OEM customizations](#oem-customizations)
         - [Default OEM](#default-oem)
+    - [SELinux policy](#selinux-policy)
     - [Configuration reference](#configuration-reference)
         - [Compatibility with Cloud Init format](#compatibility-with-cloud-init-format)
-        - [stages.<stageID>.[<stepN>].name](#stagesstageidstepnname)
-        - [stages.<stageID>.[<stepN>].files](#stagesstageidstepnfiles)
-        - [stages.<stageID>.[<stepN>].directories](#stagesstageidstepndirectories)
-        - [stages.<stageID>.[<stepN>].dns](#stagesstageidstepndns)
-        - [stages.<stageID>.[<stepN>].hostname](#stagesstageidstepnhostname)
-        - [stages.<stageID>.[<stepN>].sysctl](#stagesstageidstepnsysctl)
-        - [stages.<stageID>.[<stepN>].authorized_keys](#stagesstageidstepnauthorized_keys)
-        - [stages.<stageID>.[<stepN>].node](#stagesstageidstepnnode)
-        - [stages.<stageID>.[<stepN>].users](#stagesstageidstepnusers)
-        - [stages.<stageID>.[<stepN>].ensure_entities](#stagesstageidstepnensure_entities)
-        - [stages.<stageID>.[<stepN>].delete_entities](#stagesstageidstepndelete_entities)
-        - [stages.<stageID>.[<stepN>].modules](#stagesstageidstepnmodules)
-        - [stages.<stageID>.[<stepN>].systemctl](#stagesstageidstepnsystemctl)
-        - [stages.<stageID>.[<stepN>].environment](#stagesstageidstepnenvironment)
-        - [stages.<stageID>.[<stepN>].environment_file](#stagesstageidstepnenvironment_file)
-        - [stages.<stageID>.[<stepN>].timesyncd](#stagesstageidstepntimesyncd)
-        - [stages.<stageID>.[<stepN>].commands](#stagesstageidstepncommands)
-        - [stages.<stageID>.[<stepN>].datasource](#stagesstageidstepndatasource)
+        - [stages.STAGE_ID.STEP_NAME.name](#stagesstage_idstep_namename)
+        - [stages.STAGE_ID.STEP_NAME.files](#stagesstage_idstep_namefiles)
+        - [stages.STAGE_ID.STEP_NAME.directories](#stagesstage_idstep_namedirectories)
+        - [stages.STAGE_ID.STEP_NAME.dns](#stagesstage_idstep_namedns)
+        - [stages.STAGE_ID.STEP_NAME.hostname](#stagesstage_idstep_namehostname)
+        - [stages.STAGE_ID.STEP_NAME.sysctl](#stagesstage_idstep_namesysctl)
+        - [stages.STAGE_ID.STEP_NAME.authorized_keys](#stagesstage_idstep_nameauthorized_keys)
+        - [stages.STAGE_ID.STEP_NAME.node](#stagesstage_idstep_namenode)
+        - [stages.STAGE_ID.STEP_NAME.users](#stagesstage_idstep_nameusers)
+        - [stages.STAGE_ID.STEP_NAME.ensure_entities](#stagesstage_idstep_nameensure_entities)
+        - [stages.STAGE_ID.STEP_NAME.delete_entities](#stagesstage_idstep_namedelete_entities)
+        - [stages.STAGE_ID.STEP_NAME.modules](#stagesstage_idstep_namemodules)
+        - [stages.STAGE_ID.STEP_NAME.systemctl](#stagesstage_idstep_namesystemctl)
+        - [stages.STAGE_ID.STEP_NAME.environment](#stagesstage_idstep_nameenvironment)
+        - [stages.STAGE_ID.STEP_NAME.environment_file](#stagesstage_idstep_nameenvironment_file)
+        - [stages.STAGE_ID.STEP_NAME.timesyncd](#stagesstage_idstep_nametimesyncd)
+        - [stages.STAGE_ID.STEP_NAME.commands](#stagesstage_idstep_namecommands)
+        - [stages.STAGE_ID.STEP_NAME.datasource](#stagesstage_idstep_namedatasource)
 
 <!-- /TOC -->
 
+## Package stack
+
+When building a `cos-toolkit` derivative, a common set of packages are provided already with a common default configuration. Some of the most notably are:
+
+- systemd as init system
+- grub for boot loader
+- dracut for initramfs
+
+Each `cos-toolkit` flavor (opensuse, ubuntu, fedora) ships their own set of base packages depending on the distribution they are based against. You can find the list of packages in the `packages` keyword in the corresponding [values file for each flavor](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values)
+
 ## Login
 
-You can login with the user `root` and `cos`. That's a live ISO and no changes will be persisted. You can change this by overriding `/system/oem/04_accounting.yaml` in the derivative spec file. ([Example](https://github.com/rancher-sandbox/cos-toolkit-sample-repo/blob/00c0b4abf8225224c1c177f5b3bd818c7b091eaf/packages/sampleOS/build.yaml#L13))
+By default you can login with the user `root` and `cos`.
+
+You can change this by overriding `/system/oem/04_accounting.yaml` in the derivative spec file.
+
+### Examples
+- [Changing root password](https://github.com/rancher-sandbox/cos-toolkit-sample-repo/blob/00c0b4abf8225224c1c177f5b3bd818c7b091eaf/packages/sampleOS/build.yaml#L13)
+- [Example accounting file](https://github.com/rancher-sandbox/epinio-appliance-demo-sample/blob/master/packages/epinioOS/04_accounting.yaml)
 
 ## Install
 
@@ -57,7 +79,7 @@ _Note_: `cos-installer` supports other options as well. Run `cos-installer --hel
 
 ## Upgrades
 
-To upgrade the system, just run `cos-upgrade` and reboot.
+To upgrade an installed system, just run `cos-upgrade` and reboot.
 
 cOS during installation sets two `.img` images files in the `COS_STATE` partition:
 - `/cOS/active.img` labeled `COS_ACTIVE`: Where `cOS` typically boots from
@@ -69,22 +91,43 @@ To specify a single docker image to upgrade to  instead of the regular upgrade c
 
 _Note_ by default `cos-upgrade --docker-image` checks images to the notary registry server for valid signatures for the images tag. To disable image verification, run `cos-upgrade --no-verify --docker-image`.
 
-See the [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo#system-upgrades) readme on how to tweak the upgrade channels for the derivative.
+See the [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo#system-upgrades) readme on how to tweak the upgrade channels for the derivative and [a further description is available here](https://github.com/rancher-sandbox/epinio-appliance-demo-sample#images)
 
 ## Reset state
 
+cOS derivatives have a recovery mechanism built-in which can be leveraged to restore the system to a known point. At installation time, the recovery partition is created from the installation medium.
+
 ### Recovery partition
 
-cOS can be recovered anytime from the `cOS recovery` partition by running `cos-reset`. This will regenerate the bootloader and the images in `COS_STATE` by using the recovery image created during installation.
+A derivative can be recovered anytime by booting into the ` recovery` partition and by running `cos-reset` from it. 
 
-The recovery partition can also be upgraded by running `cos-upgrade --recovery` in the standard partitions used for boot.
+This command will regenerate the bootloader and the images in the `COS_STATE` partition by using the recovery image.
+
+### Upgrading the recovery partition
+
+The recovery partition can also be upgraded by running 
+
+```bash
+cos-upgrade --recovery
+``` 
+
+It also supports to specify docker images directly:
+
+```bash
+cos-upgrade --recovery --docker-image <image>
+```
+
+*Note*: the command has to be run in the standard partitions used for boot (Active or Fallback).
 
 ### From ISO
 The ISO can be also used as a recovery medium: type `cos-upgrade` from a LiveCD. It will then try to upgrade the image of the active partition installed in the system.
 
 ## File system layout
 
-As cOS is an immutable distribution, the file system layout is a core aspect. A running `cOS` derivative will look as follows:
+![Partitioning layout](https://docs.google.com/drawings/d/e/2PACX-1vR-I5ZwwB5EjpsymUfcNADRTTKXrNMnlZHgD8RjDpzYhyYiz_JrWJwvpcfMcwfYet1oWCZVWH22aj1k/pub?w=533&h=443)
+
+By default, `cos` derivative will inherit an immutable setup.
+A running system will look like as follows:
 
 ```
 /usr/local - persistent (COS_PERSISTENT)
@@ -98,7 +141,7 @@ Any changes that are not specified by cloud-init are not persisting across reboo
 
 ## Persistent changes
 
-By default cOS reads and executes cloud-init files in (lexicopgrahic) sequence present in `/usr/local/cloud-config` and `/oem` during boot. It is also possible to run cloud-init file in a different location from boot cmdline by using  the `cos.setup=..` option.
+By default a derivative reads and executes cloud-init files in (lexicopgrahic) sequence present in `/system/oem`, `/usr/local/cloud-config` and `/oem` during boot. It is also possible to run cloud-init file in a different location from boot cmdline by using  the `cos.setup=..` option.
 
 For example, if you want to change `/etc/issue` of the system persistently, you can create `/usr/local/cloud-config/90_after_install.yaml` with the following content:
 
@@ -127,7 +170,7 @@ stages:
             group: 0
 ```
 
-For more examples, `/system/oem` contains files used to configure on boot a pristine `cOS`. Mind to not edit those directly, but copy them or apply local changes to `/usr/local/cloud-config`. See the OEM section below.
+For more examples, `/system/oem` contains files used to configure on boot a pristine `cOS`. Mind to not edit those directly, but copy them or apply local changes to `/usr/local/cloud-config` or `/oem` in case of system-wide persistent changes. See the OEM section below.
 
 ### Available stages
 
@@ -153,11 +196,11 @@ This stage is executed when network is available
 
 This stage is executed `5m` after boot and periodically each `60m`.
 
-## cOS runtime features
+## Runtime features
 
-cOS ships default cloud-init configurations files that are available under `/system/features` for example purposes, and to quickly enable testing features.
+There are present default cloud-init configurations files  available under `/system/features` for example purposes, and to quickly enable testing features.
 
-Features can be enabled/disabled with `cos-feature`. For example, after install, to enable `k3s` it's sufficient to type `cos-feature enable k3s` and reboot.
+Features are simply cloud-config yaml files in the above folder and can be enabled/disabled with `cos-feature`. For example, after install, to enable `k3s` it's sufficient to type `cos-feature enable k3s` and reboot. Similarly, by adding a yaml file in the above folder will make it available for listing/enable/disable.
 
 See `cos-feature list` for the available features.
 
@@ -179,15 +222,14 @@ To disable, run: cos-feature disable <feature>
 ...
 ```
 
-You are encouraged to copy them over to `/usr/local/cloud-config` or `/oem` and customize them as you see fit.
-
 ## OEM customizations
 
 It is possible to install a custom cloud-init file during install with `--config` to `cos-installer` or, it's possible to add more files manually to the `/oem` folder after installation.
 
 ### Default OEM
 
-By default, `cOS` ships a set of default configurations which can be found under `/system/oem`. This is to setup e.g. the default root password and the upgrade channel. 
+The default cloud-init configuration files can be found under `/system/oem`. This is to setup e.g. the default root password and the upgrade channel. 
+
 
 ```
 /system/oem/00_rootfs.yaml - defines the rootfs mountpoint layout setting
@@ -201,7 +243,19 @@ By default, `cOS` ships a set of default configurations which can be found under
 
 If you are building a cOS derivative, and plan to release upgrades, you must override (or create a new file under `/system/oem`) the `/system/oem/02_upgrades.yaml` pointing to the docker registry used to deliver upgrades.
 
+[See also the example appliance](https://github.com/rancher-sandbox/epinio-appliance-demo-sample#images)
 
+## SELinux policy
+
+By default, derivatives have `SELinux` enabled in permissive mode. You can use the [cos-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/selinux-policies) default policy as a kickstart to customize on top. 
+
+Copy the package (create a new folder with `build.yaml`, `definition.yaml` and `cOS.te`) into the derivative tree and customize to suit your needs, and add it as a build requirement to your OS package.
+
+_Note_: the [cOS.te](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/packages/selinux-policies/cOS.te) sample policy was created using the utility `audit2allow` after running some
+basic operations in permissive mode using system default policies. `allow2audit`
+translates audit messages into allow/dontaudit SELinux policies which can be later
+compiled as a SELinux module. This is the approach used in this illustration
+example and mostly follows `audit2allow` [man pages](https://linux.die.net/man/1/audit2allow).
 
 ## Configuration reference
 
@@ -209,9 +263,14 @@ Below is a reference of all keys available in the cloud-init style files.
 
 ```yaml
 stages:
-   # "network" is the stage
+   # "network" is the stage where network is expected to be up
+   # It is called internally when network is available from 
+   # the cos-setup-network unit.
    network:
-     - files:
+     # Here there are a list of 
+     # steps to be run in the network stage
+     - name: "Some setup happening"
+       files:
         - path: /tmp/foo
           content: |
                     test
@@ -273,12 +332,17 @@ stages:
          path: "/etc/cloud-data"
 ```
 
+The default cloud-config format is split into *stages* (*initramfs*, *boot*, *network*, *initramfs*, *reconcile*, called generically **STAGE_ID** below) that are emitted internally during the various phases by calling `cos-setup STAGE_ID` and *steps* (**STEP_NAME** below) defined for each stage that are executed in order.
+
+Each cloud-config file is loaded and executed only at the apprioriate stage.
+
+This allows further components to emit their own stages at the desired time.
 
 ### Compatibility with Cloud Init format
 
-A subset of the official [cloud-config spec](http://cloudinit.readthedocs.org/en/latest/topics/format.html#cloud-config-data) is implemented by yip. 
+A subset of the official [cloud-config spec](http://cloudinit.readthedocs.org/en/latest/topics/format.html#cloud-config-data) is implemented. 
 
-If a yaml file starts with `#cloud-config` it is parsed as a standard cloud-init, associated it to the yip `boot` stage. For example:
+If a yaml file starts with `#cloud-config` it is parsed as a standard cloud-init and automatically associated it to the `boot` stage. For example:
 
 ```yaml
 #cloud-config
@@ -301,11 +365,13 @@ write_files:
   owner: "bar"
 ```
 
-### `stages.<stageID>.[<stepN>].name`
+Is executed at boot, by using the standard `cloud-config` format.
+
+### `stages.STAGE_ID.STEP_NAME.name`
 
 A description of the stage step. Used only when printing output to console.
 
-### `stages.<stageID>.[<stepN>].files`
+### `stages.STAGE_ID.STEP_NAME.files`
 
 A list of files to write to disk.
 
@@ -322,7 +388,7 @@ stages:
           group: 100
 ```
 
-### `stages.<stageID>.[<stepN>].directories`
+### `stages.STAGE_ID.STEP_NAME.directories`
 
 A list of directories to be created on disk. Runs before `files`.
 
@@ -337,7 +403,7 @@ stages:
          group: 0
 ```
 
-### `stages.<stageID>.[<stepN>].dns`
+### `stages.STAGE_ID.STEP_NAME.dns`
 
 A way to configure the `/etc/resolv.conf` file.
 
@@ -355,7 +421,7 @@ stages:
          - ..
          path: "/etc/resolv.conf.bak"
 ```
-### `stages.<stageID>.[<stepN>].hostname`
+### `stages.STAGE_ID.STEP_NAME.hostname`
 
 A string representing the machine hostname. It sets it in the running system, updates `/etc/hostname` and adds the new hostname to `/etc/hosts`.
 
@@ -365,7 +431,7 @@ stages:
      - name: "Setup hostname"
        hostname: "foo"
 ```
-### `stages.<stageID>.[<stepN>].sysctl`
+### `stages.STAGE_ID.STEP_NAME.sysctl`
 
 Kernel configuration. It sets `/proc/sys/<key>` accordingly, similarly to `sysctl`.
 
@@ -377,7 +443,7 @@ stages:
          debug.exception-trace: "0"
 ```
 
-### `stages.<stageID>.[<stepN>].authorized_keys`
+### `stages.STAGE_ID.STEP_NAME.authorized_keys`
 
 A list of SSH authorized keys that should be added for each user.
 SSH keys can be obtained from GitHub user accounts by using the format github:${USERNAME},  similarly for Gitlab with gitlab:${USERNAME}.
@@ -392,7 +458,7 @@ stages:
          - ssh-rsa: ...
 ```
 
-### `stages.<stageID>.[<stepN>].node`
+### `stages.STAGE_ID.STEP_NAME.node`
 
 If defined, the node hostname where this stage has to run, otherwise it skips the execution. The node can be also a regexp in the Golang format.
 
@@ -403,16 +469,16 @@ stages:
        node: "bastion"
 ```
 
-### `stages.<stageID>.[<stepN>].users`
+### `stages.STAGE_ID.STEP_NAME.users`
 
 A map of users and user info to set. Passwords can be also encrypted.
 
 The `users` parameter adds or modifies the specified list of users. Each user is an object which consists of the following fields. Each field is optional and of type string unless otherwise noted.
-In case the user is already existing, the password only will be overwritten.
+In case the user is already existing, the entry is ignored.
 
 - **name**: Required. Login name of user
 - **gecos**: GECOS comment of user
-- **passwd**: Hash of the password to use for this user. Unencrypted strings supported too.
+- **passwd**: Hash of the password to use for this user. Unencrypted strings are supported too.
 - **homedir**: User's home directory. Defaults to /home/*name*
 - **no-create-home**: Boolean. Skip home directory creation.
 - **primary-group**: Default group for the user. Defaults to a new group created named after the user.
@@ -433,7 +499,7 @@ stages:
             homedir: "/home/foo
 ```
 
-### `stages.<stageID>.[<stepN>].ensure_entities`
+### `stages.STAGE_ID.STEP_NAME.ensure_entities`
 
 A `user` or a `group` in the [entity](https://github.com/mudler/entities) format to be configured in the system
 
@@ -453,7 +519,7 @@ stages:
                   homedir: "/home/foo"
                   shell: "/bin/bash"
 ```
-### `stages.<stageID>.[<stepN>].delete_entities`
+### `stages.STAGE_ID.STEP_NAME.delete_entities`
 
 A `user` or a `group` in the [entity](https://github.com/mudler/entities) format to be pruned from the system
 
@@ -473,7 +539,7 @@ stages:
                   homedir: "/home/foo"
                   shell: "/bin/bash"
 ```
-### `stages.<stageID>.[<stepN>].modules`
+### `stages.STAGE_ID.STEP_NAME.modules`
 
 A list of kernel modules to load.
 
@@ -484,7 +550,7 @@ stages:
        modules:
        - nvidia
 ```
-### `stages.<stageID>.[<stepN>].systemctl`
+### `stages.STAGE_ID.STEP_NAME.systemctl`
 
 A list of systemd services to `enable`, `disable`, `mask` or `start`.
 
@@ -503,7 +569,7 @@ stages:
          start:
           - cronie
 ```
-### `stages.<stageID>.[<stepN>].environment`
+### `stages.STAGE_ID.STEP_NAME.environment`
 
 A map of variables to write in `/etc/environment`, or otherwise specified in `environment_file`
 
@@ -514,7 +580,7 @@ stages:
        environment:
          FOO: "bar"
 ```
-### `stages.<stageID>.[<stepN>].environment_file`
+### `stages.STAGE_ID.STEP_NAME.environment_file`
 
 A string to specify where to set the environment file
 
@@ -526,7 +592,7 @@ stages:
        environment:
          FOO: "bar"
 ```
-### `stages.<stageID>.[<stepN>].timesyncd`
+### `stages.STAGE_ID.STEP_NAME.timesyncd`
 
 Sets the `systemd-timesyncd` daemon file (`/etc/system/timesyncd.conf`) file accordingly. The documentation for `timesyncd` and all the options can be found [here](https://www.freedesktop.org/software/systemd/man/timesyncd.conf.html).
 
@@ -543,7 +609,7 @@ stages:
           ...
 ```
 
-### `stages.<stageID>.[<stepN>].commands`
+### `stages.STAGE_ID.STEP_NAME.commands`
 
 A list of arbitrary commands to run after file writes and directory creation.
 
@@ -555,7 +621,7 @@ stages:
          - echo 1 > /bar
 ```
 
-### `stages.<stageID>.[<stepN>].datasource`
+### `stages.STAGE_ID.STEP_NAME.datasource`
 
 Sets to fetch user data from the specified cloud providers. It populates
 provider specific data into `/run/config` folder and the custom user data
