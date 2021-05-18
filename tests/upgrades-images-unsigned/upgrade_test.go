@@ -19,22 +19,19 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	})
 	Context("After install", func() {
 		When("images are not signed", func() {
-			It("fails to upgrade to a version which is not signed", func() {
-				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
-				Expect(err).To(HaveOccurred())
-				Expect(out).Should(ContainSubstring("No valid trust data"))
+			It("upgrades to latest available (master) and reset", func() {
+				out, err := s.Command("cos-upgrade")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+				Expect(out).Should(ContainSubstring("Booting from: active.img"))
+				By("rebooting")
+				s.Reboot()
+				Expect(s.BootFrom()).To(Equal(sut.Active))
 			})
+			It("upgrades on an unsigned upgrade channel", func() {
 
-			It("fails to upgrade if verify is enabled on an unsigned upgrade channel", func() {
+				By("pointing to an old release branch")
 				out, err := s.Command("sed -i 's|raccos/releases-.*|raccos/releases-amd64\"|g' /etc/luet/luet.yaml && cos-upgrade")
-				Expect(out).Should(ContainSubstring("does not have trust data"))
-				Expect(err).To(HaveOccurred())
-			})
-
-			It("upgrades if verify is disabled on an unsigned upgrade channel", func() {
-
-				By("turning off verification, and pointing to an old release branch")
-				out, err := s.Command("sed -i 's|raccos/releases-.*|raccos/releases-amd64\"|g' /etc/luet/luet.yaml && sed -i 's/verify: true/verify: false/g' /etc/luet/luet.yaml && cos-upgrade")
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(err).ToNot(HaveOccurred())
 
@@ -44,39 +41,6 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).Should(ContainSubstring("removed"))
 				Expect(err).ToNot(HaveOccurred())
 
-			})
-
-			It("upgrades to an unsigned image with --no-verify and can reset back to the installed state", func() {
-				out, err := s.Command("source /etc/os-release && echo $VERSION")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).ToNot(Equal(""))
-
-				version := out
-
-				By("running cos-upgrade with --no-verify and an unsigned image")
-				out, err = s.Command("cos-upgrade --no-verify --docker-image raccos/releases-opensuse:cos-system-0.5.0")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
-				Expect(out).Should(ContainSubstring("Booting from: active.img"))
-
-				By("rebooting and checking out the version")
-				s.Reboot()
-
-				out, err = s.Command("source /etc/os-release && echo $VERSION")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.0\n"))
-
-				By("rollbacking state")
-				s.Reset()
-
-				out, err = s.Command("source /etc/os-release && echo $VERSION")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.5.0\n"))
-				Expect(out).To(Equal(version))
 			})
 		})
 	})
