@@ -267,7 +267,9 @@ jobs:
     strategy:
       matrix:
         flavor: ["opensuse"]
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
+        # Temporarily disable signed images test, since is tied to DCT and we are considering dropping it.
+        #test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-upgrades-images-unsigned"]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

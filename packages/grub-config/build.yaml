@@ -1,0 +1,8 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+steps:
+- mkdir /etc/cos
+- cp config/grub.cfg config/bootargs.cfg /etc/cos

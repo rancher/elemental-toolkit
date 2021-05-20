@@ -20,7 +20,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	Context("After install", func() {
 		When("images are not signed", func() {
 			It("fails to upgrade to a version which is not signed", func() {
-				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.4.31")
+				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
 				Expect(err).To(HaveOccurred())
 				Expect(out).Should(ContainSubstring("No valid trust data"))
 			})
@@ -38,15 +38,12 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(err).ToNot(HaveOccurred())
 
-				By("rollbacking state")
-				s.Reset()
-
 				// That version is very old and incompatible. It ships oem files inside /oem, that overrides configuration now shipped in
 				// /system/cos. Mainly, they override the /etc/cos-upgrade-image file to an incompatible format
 				out, err = s.Command("rm -rfv /oem/*_*.yaml")
 				Expect(out).Should(ContainSubstring("removed"))
 				Expect(err).ToNot(HaveOccurred())
-				s.Reboot()
+
 			})
 
 			It("upgrades to an unsigned image with --no-verify and can reset back to the installed state", func() {
@@ -57,7 +54,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				version := out
 
 				By("running cos-upgrade with --no-verify and an unsigned image")
-				out, err = s.Command("cos-upgrade --no-verify --docker-image raccos/releases-opensuse:cos-system-0.4.31")
+				out, err = s.Command("cos-upgrade --no-verify --docker-image raccos/releases-opensuse:cos-system-0.5.0")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
@@ -70,7 +67,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.4.31\n"))
+				Expect(out).To(Equal("0.5.0\n"))
 
 				By("rollbacking state")
 				s.Reset()
@@ -78,7 +75,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.4.31\n"))
+				Expect(out).ToNot(Equal("0.5.0\n"))
 				Expect(out).To(Equal(version))
 			})
 		})
