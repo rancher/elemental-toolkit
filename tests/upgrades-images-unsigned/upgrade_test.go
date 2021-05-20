@@ -22,29 +22,15 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 		When("images are not signed", func() {
 			It("upgrades to latest available (master) and reset", func() {
 				out, err := s.Command("cos-upgrade")
-				fmt.Fprintf(GinkgoWriter, "Output from cos-upgrade: %v\n", out)
-				fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
+				if err != nil{
+					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
+				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Booting from: active.img"))
 				By("rebooting")
 				s.Reboot()
-				fmt.Fprintf(GinkgoWriter, "Bootfrom is: %v\n", s.BootFrom())
 				Expect(s.BootFrom()).To(Equal(sut.Active))
-			})
-			It("upgrades on an unsigned upgrade channel", func() {
-
-				By("pointing to an old release branch")
-				out, err := s.Command("sed -i 's|raccos/releases-.*|raccos/releases-amd64\"|g' /etc/luet/luet.yaml && cos-upgrade")
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(err).ToNot(HaveOccurred())
-
-				// That version is very old and incompatible. It ships oem files inside /oem, that overrides configuration now shipped in
-				// /system/cos. Mainly, they override the /etc/cos-upgrade-image file to an incompatible format
-				out, err = s.Command("rm -rfv /oem/*_*.yaml")
-				Expect(out).Should(ContainSubstring("removed"))
-				Expect(err).ToNot(HaveOccurred())
-
 			})
 		})
 	})
