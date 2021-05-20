@@ -3,7 +3,7 @@
 #
 #
 
-GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 3 -r
+GINKGO_ARGS?=-progress -v --failFast -flakeAttempts 2 -r
 
 GINKGO?=$(shell which ginkgo 2> /dev/null)
 ifeq ("$(GINKGO)","")

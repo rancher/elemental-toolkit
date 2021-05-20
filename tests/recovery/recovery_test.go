@@ -23,8 +23,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				By("upgrading to raccos/releases-opensuse:cos-system-0.5.0")
-				out, err = s.Command("cos-upgrade --recovery --docker-image raccos/releases-opensuse:cos-system-0.5.0")
+				By("upgrading to quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+				out, err = s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -34,25 +34,27 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				s.Reboot()
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.0\n"))
+				Expect(out).To(Equal("0.5.1\n"))
 
 				By("setting back to active and rebooting")
 				err = s.ChangeBoot(sut.Active)
 				Expect(err).ToNot(HaveOccurred())
 
 				s.Reboot()
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 		})
 
 		When("upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery and reboot")
-				out, err := s.Command("cos-upgrade --recovery")
+				out, err := s.Command("cos-upgrade --no-verify --recovery")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -66,13 +68,14 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.5.0\n"))
+				Expect(out).ToNot(Equal("0.5.1\n"))
 
 				By("switch back to active and reboot")
 				err = s.ChangeBoot(sut.Active)
 				Expect(err).ToNot(HaveOccurred())
 
 				s.Reboot()
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 		})
 
