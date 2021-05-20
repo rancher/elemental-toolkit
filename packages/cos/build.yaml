@@ -1,20 +1,11 @@
 # Refer to https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#build-specs
 # for the syntax format
 requires:
-- name: "luet"
-  category: "toolchain"
-  version: ">=0"
-- name: "luet-mtree"
-  category: "toolchain"
-  version: ">=0"
 - name: "cos-setup"
   category: "system"
   version: ">=0"
 - name: "installer"
   category: "utils"
-  version: ">=0"
-- category: "toolchain"
-  name: "yip"
   version: ">=0"
 - name: "cloud-config"
   category: "system"
@@ -31,6 +22,27 @@ requires:
 - name: "selinux-policies"
   category: "system"
   version: ">=0"
+
+# https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
+copy:
+- package: 
+    category: "toolchain"
+    name: "yip"
+    version: ">=0"
+  source: "/usr/bin/yip"
+  destination: "/usr/bin/yip"
+- package: 
+    category: "toolchain"
+    name: "luet"
+    version: ">=0"
+  source: "/usr/bin/luet"
+  destination: "/usr/bin/luet"
+- package: 
+    category: "toolchain"
+    name: "luet-mtree"
+    version: ">=0"
+  source: "/usr/bin/luet-mtree"
+  destination: "/usr/bin/luet-mtree"
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
@@ -71,46 +83,13 @@ excludes:
 - ^/etc/zypp
 - ^/usr/bin/rpm.*
 - ^/var/lib/rpm
-
-# Build deps that got thrown-in by zypper
-# XXX: To keep until https://github.com/mudler/luet/issues/190 is solved out
-# or we either create another luet repository for runtime deps
-# When we can copy from tree packages single file, there is no need
-# to depend directly on golang
-- ^/usr/share/bison
-- ^/usr/share/automake
-- ^/usr/share/autoconf
-- ^/usr/share/aclocal
-- ^/usr/share/texinfo
-- ^/usr/share/libtool
-
-- texinfo.mo
-- git.mo
-- flex.mo
-- ^/usr/libexec/git
-- ^/usr/lib64/pkgconfig
-- ^/usr/lib64/ldscripts
-- ^/usr/lib64/gcc
-- ^/usr/bin/git.*
-- ^/usr/bin/gcc.*
-- ^/usr/bin/flex.*
-- ^/usr/bin/autom.*
-- ^/usr/bin/autoconf.*
-- ^/usr/bin/bison.*
-- ^/usr/bin/libtool.*
-- ^/usr/x86_64-suse-linux
-- ^/usr/lib64/rpm-plugins
+- ^/usr/lib64/rpm-plugins 
 # Yast
 - ^/var/lib/YaST2
 
 # Perl
 # - ^/usr/bin/perl.*
 # - ^/usr/lib/perl.*
-
-# Wget - we are only shipping curl
-- ^/etc/wgetrc
-- ^/usr/share/licenses/wget/COPYING
-- ^/usr/bin/wget
 
 # General
 - ^/usr/include
@@ -124,6 +103,3 @@ excludes:
 - ^/usr/local/share
 - ^/usr/local/src
 - ^/usr/local/games
-
-# Some golang package leftovers
-- ^/root/.cache
