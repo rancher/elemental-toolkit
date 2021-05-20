@@ -127,9 +127,9 @@ upgrade() {
         luet install --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
-        args="--verify"
-        if [ -n "$NO_VERIFY" ]; then
-          args=
+        args=""
+        if [ -n "$VERIFY" ]; then
+          args="--verify"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
@@ -198,7 +198,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: cos-upgrade [--recovery] [--docker-image] IMAGE"
+    echo "Usage: cos-upgrade [--verify] [--recovery] [--docker-image] IMAGE"
     echo ""
     echo "Example: cos-upgrade"
     echo ""
@@ -218,8 +218,8 @@ while [ "$#" -gt 0 ]; do
         --recovery)
             UPGRADE_RECOVERY=true
             ;;
-        --no-verify)
-            NO_VERIFY=true
+        --verify)
+            VERIFY=true
             ;;
         -h)
             usage

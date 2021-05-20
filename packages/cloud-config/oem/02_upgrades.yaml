@@ -32,7 +32,7 @@ stages:
                     enable: true
                     cached: true
                     priority: 1
-                    verify: true
+                    verify: false
                     urls:
                     - "raccos/releases-:FLAVOR:"
          permissions: 0600
