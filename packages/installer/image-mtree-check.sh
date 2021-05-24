@@ -24,10 +24,25 @@ if [ "$event" == "package.install" ]; then
 
   luet util unpack "$image" "$tmpdir"
   yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
-  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output" -f json)
+  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output")
   rm "$mtree_output"
   rm  -Rf "$tmpdir"
-  echo "$luet_result" | tee /dev/fd/3
+  if [[ $luet_result == "" ]]; then
+    # empty output means no errors
+    jq --arg key0 "state" --arg value0 "All checks succeeded" \
+       --arg key1 "data"  --arg value1 "" \
+       --arg key2 "error" --arg value2 "" \
+       '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2' \
+    <<<'{}' | tee /dev/fd/3
+  else
+    echo "$luet_result" > /tmp/luet_mtree_failures.log
+    error_message="Failure data too big, see /tmp/luet_mtree_failures.log for the full failures log"
+    jq --arg key0 "state" --arg value0 "Checks failed" \
+       --arg key1 "data"  --arg value1 "" \
+       --arg key2 "error" --arg value2 "$error_message" \
+       '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2' \
+    <<<'{}' | tee /dev/fd/3
+  fi
 else
   echo "{}" | tee /dev/fd/3
 fi
