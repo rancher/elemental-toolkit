@@ -41,8 +41,9 @@ ifneq ($(shell id -u), 0)
 	@echo "Please run 'make $@' as root"
 	@exit 1
 endif
+	# Buildkit is necessary due to https://github.com/moby/moby/issues/37965
 	@echo "PACKAGES >$(PACKAGES)<"
-	$(LUET) build $(BUILD_ARGS) \
+	DOCKER_BUILDKIT=1 $(LUET) build $(BUILD_ARGS) \
 	--values $(ROOT_DIR)/values/$(FLAVOR).yaml \
 	--tree=$(TREE) \
 	--backend $(BACKEND) \

@@ -1,6 +1,6 @@
 requires:
-- name: "yip"
-  category: "toolchain"
+- name: "base"
+  category: "distro"
   version: ">=0"
 steps:
 - mkdir -p /system/features
