@@ -39,7 +39,7 @@ endif
 #
 # Output for "make publish-repo" and base for "make iso"
 #
-FINAL_REPO?=raccos/releases-$(FLAVOR)
+FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
 
 #
 # Location of package tree

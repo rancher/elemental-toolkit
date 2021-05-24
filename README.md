@@ -23,22 +23,14 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
 
 cOS derivatives are built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach. Each derivative built with `cos-toolkit` inherits by default the [following featuresets](/docs/derivatives_featureset.md).
 
-cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to DockerHub](https://hub.docker.com/r/raccos/releases-amd64/) and can be pulled for inspection from the registry as well.
+cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Github Container Registry](https://quay.io/repository/costoolkit/releases-opensuse) and can be pulled for inspection from the registry as well.
 
 Those are exactly the same images used during upgrades, and can also be used to build Linux derivatives from cOS.
 
-For example, if you want to see locally what's in cOS 0.4.30, you can:
+For example, if you want to see locally what's in a openSUSE cOS version , you can:
 
 ```bash
-$ docker run -ti --rm raccos/releases-opensuse:cos-system-0.4.30 /bin/bash
-```
-
-cOS Images are signed, and during upgrades Docker Content Trust is enabled.
-
-You can inspect the images signatures for each version:
-
-```bash
-$ docker trust inspect raccos/releases-opensuse:cos-system-0.4.32
+$ docker run -ti --rm quay.io/costoolkit/releases-opensuse:cos-system-... /bin/bash
 ```
 
 ## Releases
@@ -58,7 +50,7 @@ ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolki
 - Immutable-first, but with a flexible layout
 - Cloud-init driven
 - Based on systemd
-- Built and upgraded from containers - It is a [single image OS](https://hub.docker.com/r/raccos/releases-opensuse/)!
+- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-opensuse)!
 - OTA updates
 - Easy to customize
 - Cryptographically verified

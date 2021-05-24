@@ -3,16 +3,9 @@
 #
 #
 
-REPO_CACHE?=raccos/$(FLAVOR)
-
 ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
 
 PACKER_ARGS?=
-
-export REPO_CACHE
-ifneq ($(strip $(REPO_CACHE)),)
-	BUILD_ARGS+=--image-repository $(REPO_CACHE)
-endif
 
 MKSQUASHFS?=$(shell which mksquashfs 2> /dev/null)
 ifeq ("$(MKSQUASHFS)","")
