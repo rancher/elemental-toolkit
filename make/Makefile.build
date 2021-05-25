@@ -26,6 +26,14 @@ COMPRESSION?=zstd
 
 BUILD_ARGS?=--pull --no-spinner --live-output
 
+REPO_CACHE?=quay.io/costoolkit/build-cache
+
+export REPO_CACHE
+ifneq ($(strip $(REPO_CACHE)),)
+	BUILD_ARGS+=--image-repository $(REPO_CACHE)
+endif
+
+
 _VALIDATE_OPTIONS?=-s
 
 #
