@@ -23,7 +23,7 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
 
 cOS derivatives are built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach. Each derivative built with `cos-toolkit` inherits by default the [following featuresets](/docs/derivatives_featureset.md).
 
-cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Github Container Registry](https://quay.io/repository/costoolkit/releases-opensuse) and can be pulled for inspection from the registry as well.
+cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Quay Container Registry](https://quay.io/repository/costoolkit/releases-opensuse) and can be pulled for inspection from the registry as well.
 
 Those are exactly the same images used during upgrades, and can also be used to build Linux derivatives from cOS.
 
