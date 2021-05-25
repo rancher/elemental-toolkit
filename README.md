@@ -30,7 +30,7 @@ Those are exactly the same images used during upgrades, and can also be used to 
 For example, if you want to see locally what's in a openSUSE cOS version , you can:
 
 ```bash
-$ docker run -ti --rm quay.io/costoolkit/releases-opensuse:cos-system-... /bin/bash
+$ docker run -ti --rm quay.io/costoolkit/releases-opensuse:cos-system-$VERSION /bin/bash
 ```
 
 ## Releases
