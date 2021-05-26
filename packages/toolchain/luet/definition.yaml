@@ -6,3 +6,4 @@ labels:
   github.repo: "luet"
   github.owner: "mudler"
   autobump.revdeps: "true"
+  autobump.revbump_related: "system/cos"
