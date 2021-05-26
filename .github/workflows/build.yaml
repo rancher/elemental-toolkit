@@ -93,6 +93,14 @@ jobs:
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: echo "BUILD_ARGS=--push --no-spinner --live-output --pull" >> $GITHUB_ENV
 
+      - name: "Set PR options"
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "BUILD_ARGS=--no-spinner --only-target-package --live-output --pull" >> $GITHUB_ENV
+
+      - name: "Set Branches options"
+        if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/master' }}
+        run: echo "BUILD_ARGS=--no-spinner --only-target-package --live-output --pull" >> $GITHUB_ENV
+
       - name: Install deps
         run: |
           sudo -E make deps
