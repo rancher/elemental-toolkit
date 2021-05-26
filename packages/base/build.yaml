@@ -29,3 +29,7 @@ steps:
 {{end}}
 {{end}}
 - kernel=$(ls /lib/modules | head -n1) && depmod -a "${kernel}"
+- | 
+    echo "uninitialized" > /etc/machine-id && \
+    rm /var/lib/dbus/machine-id && \
+    ln -sf /etc/machine-id /var/lib/dbus/machine-id

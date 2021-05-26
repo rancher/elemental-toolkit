@@ -158,11 +158,18 @@ jobs:
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
           sudo -E make local-iso
+          COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
 
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
           sudo -E make iso
+          COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-${{ matrix.flavor }}.iso.zip
@@ -362,6 +369,39 @@ jobs:
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+raw-img:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    needs: build
+
+    steps:
+      - name: Install deps
+        run: |
+          zypper in -y curl e2fsprogs dosfstools mtools squashfs gptfdisk make grub2-x86_64-efi tar gzip xz
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-opensuse
+          path: build
+      - name: Build Image
+        run: |
+          # Since sime time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
+          rm -rf /var/lock
+          mkdir -p /var/lock
+          make deps
+          rm /etc/luet/repos.conf.d/*
+          ./images/img-builder.sh
+          COS_VERSION=$(yq r packages/cos/definition.yaml 'version')
+          mv disk.raw cOS_${COS_VERSION}.raw
+          #qemu-img convert -f raw -O qcow2 disk.raw cOS-$COS_VERSION.qcow2
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-opensuse
+          path: |
+            *.raw
+          if-no-files-found: error
 
 # Non-squashfs tests
 
