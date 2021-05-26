@@ -24,7 +24,7 @@ if [ "$event" == "package.install" ]; then
 
   luet util unpack "$image" "$tmpdir"
   yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
-  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output" -x "var/cache/luet" -x "usr/local/tmp" -x "oem/" -x "usr/local/cloud-config")
+  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output" -x "var/cache/luet" -x "usr/local/tmp" -x "oem/" -x "usr/local/cloud-config" -x "usr/local/lost+found" -x "lost+found")
   rm "$mtree_output"
   rm  -Rf "$tmpdir"
   if [[ $luet_result == "" ]]; then
