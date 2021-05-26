@@ -24,7 +24,7 @@ if [ "$event" == "package.install" ]; then
 
   luet util unpack "$image" "$tmpdir"
   yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
-  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output")
+  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output" -x "var/cache/luet" -x "usr/local/tmp" -x "oem/" -x "usr/local/cloud-config")
   rm "$mtree_output"
   rm  -Rf "$tmpdir"
   if [[ $luet_result == "" ]]; then
@@ -36,7 +36,7 @@ if [ "$event" == "package.install" ]; then
     <<<'{}' | tee /dev/fd/3
   else
     echo "$luet_result" > /tmp/luet_mtree_failures.log
-    error_message="Failure data too big, see /tmp/luet_mtree_failures.log for the full failures log"
+    error_message="Error while checking, see /tmp/luet_mtree_failures.log for the full failures log"
     jq --arg key0 "state" --arg value0 "Checks failed" \
        --arg key1 "data"  --arg value1 "" \
        --arg key2 "error" --arg value2 "$error_message" \
