@@ -87,12 +87,6 @@ excludes:
 # Yast
 - ^/var/lib/YaST2
 
-# Perl
-# - ^/usr/bin/perl.*
-# - ^/usr/lib/perl.*
-
-# General
-- ^/usr/include
 #- ^/usr/local
 - ^/usr/local/bin
 - ^/usr/local/go
