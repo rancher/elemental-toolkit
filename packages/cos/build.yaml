@@ -22,9 +22,6 @@ requires:
 - name: "selinux-policies"
   category: "system"
   version: ">=0"
-- name: "yq"
-  category: "toolchain"
-  version: ">=3.4.1"
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
@@ -40,12 +37,18 @@ copy:
     version: ">=0"
   source: "/usr/bin/luet"
   destination: "/usr/bin/luet"
-- package: 
+- package:
     category: "toolchain"
     name: "luet-mtree"
     version: ">=0"
   source: "/usr/bin/luet-mtree"
   destination: "/usr/bin/luet-mtree"
+- package:
+    category: "toolchain"
+    name: "yq"
+    version: ">=3.4.1"
+  source: "/usr/bin/yq"
+  destination: "/usr/bin/yq"
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
