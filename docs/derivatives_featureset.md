@@ -89,7 +89,7 @@ Those are used by the upgrade mechanism to prepare and install a pristine `cOS` 
 
 To specify a single docker image to upgrade to  instead of the regular upgrade channels, run `cos-upgrade --docker-image image`.
 
-_Note_ by default `cos-upgrade --docker-image` does not checks images against the notary registry server for valid signatures for the images tag. To enable image verification, run `cos-upgrade --verify --docker-image`.
+_Note_ by default `cos-upgrade --docker-image` checks images against the notary registry server for valid signatures for the images tag. To disable image verification, run `cos-upgrade --no-verify --docker-image`.
 
 See the [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo#system-upgrades) readme on how to tweak the upgrade channels for the derivative and [a further description is available here](https://github.com/rancher-sandbox/epinio-appliance-demo-sample#images)
 
