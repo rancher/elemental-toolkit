@@ -127,7 +127,7 @@ upgrade() {
         if [ -z "$VERIFY" ]; then
           args="--plugin image-mtree-check"
         fi
-        luet install "$args" --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
+        luet install $args --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
         args=""
