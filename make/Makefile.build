@@ -24,7 +24,7 @@ COMPRESSION?=zstd
 # Arguments for luet build
 #
 
-BUILD_ARGS?=--pull --no-spinner --live-output
+BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 REPO_CACHE?=quay.io/costoolkit/build-cache
 
