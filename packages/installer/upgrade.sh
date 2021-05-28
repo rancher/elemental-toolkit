@@ -124,11 +124,14 @@ upgrade() {
     export HOME=/tmp # Docker Content Trust data is stored in $HOME/.docker. We don't need those to persist
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
-        luet install --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
+        if [ -z "$VERIFY" ]; then
+          args="--plugin image-mtree-check"
+        fi
+        luet install $args --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
         args=""
-        if [ -n "$VERIFY" ]; then
+        if [ -z "$VERIFY" ]; then
           args="--verify"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
@@ -218,8 +221,8 @@ while [ "$#" -gt 0 ]; do
         --recovery)
             UPGRADE_RECOVERY=true
             ;;
-        --verify)
-            VERIFY=true
+        --no-verify)
+            VERIFY=false
             ;;
         -h)
             usage
