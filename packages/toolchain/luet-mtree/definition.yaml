@@ -5,3 +5,4 @@ labels:
   github.repo: "luet-mtree"
   github.owner: "itxaka"
   autobump.revdeps: "true"
+  autobump.revbump_related: "system/cos"
