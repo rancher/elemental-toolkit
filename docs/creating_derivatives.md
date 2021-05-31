@@ -97,7 +97,7 @@ In the sample repository [we have defined `system/sampleOS`](https://github.com/
 Packages in luet have `runtime` and `buildtime` specifications into `definition.yaml` and `build.yaml` respectively, and in the buildtime we set:
 
 ```yaml
-requires:
+join:
 - category: "system"
   name: "cos"
   version: ">=0"
@@ -106,7 +106,7 @@ requires:
   version: ">=0"
 ```
 
-This instruct `luet` to compose a new image from the two compile specifications without any version constraints.
+This instruct `luet` to compose a new image from the results of the compilation of the specified packages, without any version constraints, and use it to run any `steps` and `prelude` on top of it.
 
 We later run arbitrary steps to tweak the image:
 
@@ -129,6 +129,23 @@ We exclude then a bunch of file that we don't want to be in the final package (r
 excludes:
 - ..
 ```
+
+__Note__: In the [EpinioOS sample](https://github.com/rancher-sandbox/epinio-appliance-demo-sample/blob/19c530ea53ad577e60adbae1d419781fcea808f5/packages/epinioOS/build.yaml#L1), we use `requires` instead of `join`:
+
+```yaml
+requires:
+- category: "system"
+  name: "cos"
+  version: ">=0"
+- name: "k3s"
+  category: "app"
+  version: ">=0"
+- name: "policy"
+  category: "selinux"
+  version: ">=0"
+```
+
+The difference is that with `requires` we use the _building_ container that was used to build the packages instead of creating a new image from their results: we are not consuming their artifacts in this case, but the environment used to build them. See also [the luet docs](https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-source-image) for more details. 
 
 ### Building
 
