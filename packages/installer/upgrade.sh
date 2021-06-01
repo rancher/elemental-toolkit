@@ -71,6 +71,10 @@ find_upgrade_channel() {
     if [ -z "$UPGRADE_IMAGE" ]; then
         UPGRADE_IMAGE="system/cos"
     fi
+
+    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
+        UPGRADE_IMAGE=$RECOVERY_IMAGE
+    fi
 }
 
 prepare_target() {
