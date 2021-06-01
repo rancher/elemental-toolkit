@@ -5,6 +5,7 @@ image: alpine
 prelude:
 - apk add wget
 - wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
+- echo "{{ ( index .Values.labels "package.checksum" ) }}  systemd-boot_{{.Values.package_version}}.tar.xz" | sha256sum -c
 - mkdir -p /systemd-boot
 - tar -xvf systemd-boot_{{.Values.package_version}}.tar.xz -C /systemd-boot
 steps:

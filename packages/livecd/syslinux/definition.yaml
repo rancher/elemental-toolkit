@@ -2,4 +2,4 @@ category: "live"
 name: "syslinux"
 version: "6.03"
 labels:
-  package.checksum: "250b9bd90945d361596a7a69943d0bdc5fc0c0917aa562609f8d3058a2c36b3a"
+  package.checksum: "26d3986d2bea109d5dc0e4f8c4822a459276cf021125e8c9f23c3cca5d8c850e"
