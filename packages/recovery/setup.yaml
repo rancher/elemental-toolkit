@@ -1,0 +1,27 @@
+stages:
+  default:
+    - name: "Default systemd config"
+      systemd:
+        enable:
+        - multi-user.target
+        - getty@tty1
+        mask:
+        - purge-kernels
+      commands:
+      - systemctl set-default multi-user.target
+    - name: "Setup os-release"
+      files:
+      - path: /etc/os-release
+        permissions: 0644
+        owner: 0
+        group: 0
+      environment_file: /etc/os-release
+      environment:
+        NAME: "cOS recovery"
+        ID: "cOS recovery"
+        ANSI_COLOR: "0;32"
+        BUG_REPORT_URL: "https://github.com/mudler/cOS/issues"
+        HOME_URL: "https://github.com/mudler/cOS"
+        DOCUMENTATION_URL: "https://github.com/mudler/cOS"
+        VERSION: ":VERSION:"
+        PRETTY_NAME: ":PRETTY_NAME:"

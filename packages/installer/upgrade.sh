@@ -38,7 +38,7 @@ find_partitions() {
 
     if [ -z "$CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
-        read -p "Could not determine current partition. Do you want to overwrite your current active partition? [y/N] : " -n 1 -r
+        read -p "Could not determine current partition. Do you want to overwrite your current active partition? (CURRENT=active.img) [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
@@ -77,6 +77,14 @@ find_upgrade_channel() {
     fi
 }
 
+is_squashfs() {
+    if [ -e "${STATEDIR}/cOS/recovery.squashfs" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
@@ -85,12 +93,25 @@ prepare_target() {
     mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
 
+prepare_squashfs_target() {
+    rm -rf $TARGET
+    TARGET=/usr/local/tmp/target
+    mkdir -p $TARGET
+}
+
 mount_image() {
     STATEDIR=/run/initramfs/isoscan
     TARGET=/tmp/upgrade
 
     mkdir -p $TARGET || true
-    mount -o remount,rw ${STATE} ${STATEDIR}
+
+    if [ -d "$STATEDIR" ]; then 
+        mount -o remount,rw ${STATE} ${STATEDIR}
+    else
+        STATEDIR=/run/initramfs/state
+        mkdir -p $STATEDIR
+        mount ${STATE} ${STATEDIR}
+    fi
 
     prepare_target
 }
@@ -102,8 +123,13 @@ mount_recovery() {
     mkdir -p $TARGET || true
     mkdir -p $STATEDIR || true
     mount $RECOVERY $STATEDIR
-
-    prepare_target
+    if is_squashfs; then
+        echo "Preparing squashfs target"
+        prepare_squashfs_target
+    else
+        echo "Preparing image target"
+        prepare_target
+    fi
 }
 
 mount_persistent() {
@@ -125,13 +151,12 @@ upgrade() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
     export TMPDIR=/usr/local/tmp/upgrade
-    export HOME=/tmp # Docker Content Trust data is stored in $HOME/.docker. We don't need those to persist
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         if [ -z "$VERIFY" ]; then
           args="--plugin image-mtree-check"
         fi
-        luet install $args --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
+        luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
         args=""
@@ -139,7 +164,7 @@ upgrade() {
           args="--plugin image-mtree-check"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
-        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET
         rm -rf /usr/local/tmp/rootfs
     fi
 
@@ -169,8 +194,12 @@ switch_active() {
 }
 
 switch_recovery() {
-    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
-    tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+    if is_squashfs; then
+        mksquashfs $TARGET ${STATEDIR}/cOS/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+    else
+        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
+        tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+    fi
 }
 
 ensure_dir_structure() {
@@ -190,9 +219,10 @@ cleanup2()
         umount ${TARGET}/oem || true
         umount ${TARGET}/usr/local || true
         umount ${TARGET}/ || true
+        rm -rf ${TARGET}
     fi
     if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
-	umount ${STATEDIR} || true
+	    umount ${STATEDIR} || true
     fi
 }
 

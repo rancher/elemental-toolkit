@@ -7,6 +7,7 @@ DISTRO=/run/rootfsbase
 ISOBOOT=/run/initramfs/live/boot
 TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
+RECOVERYSQUASHFS=/run/initramfs/live/recovery.squashfs
 
 if [ "$COS_DEBUG" = true ]; then
     set -x
@@ -54,13 +55,20 @@ usage()
 
 prepare_recovery() {
     echo "Preparing recovery.."
-
     mkdir -p $RECOVERYDIR
     mount $RECOVERY $RECOVERYDIR
     mkdir -p $RECOVERYDIR/cOS
-    cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
-    sync
-    tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+
+    if [ -e "$RECOVERYSQUASHFS" ]; then
+        echo "Copying squashfs.."
+        cp -a $RECOVERYSQUASHFS $RECOVERYDIR/cOS/recovery.squashfs
+    else
+        echo "Copying image file.."
+        cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
+        sync
+        tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+    fi
+
     sync
 }
 
@@ -91,6 +99,8 @@ do_format()
 
     dd if=/dev/zero of=${DEVICE} bs=1M count=1
     parted -s ${DEVICE} mklabel ${PARTTABLE}
+
+    # TODO: Size should be tweakable
     if [ "$PARTTABLE" = "gpt" ]; then
         BOOT_NUM=1
         OEM_NUM=2
@@ -161,6 +171,7 @@ do_mount()
     mount ${STATE} $STATEDIR
 
     mkdir -p ${STATEDIR}/cOS
+    # TODO: Size should be tweakable
     dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
     sync

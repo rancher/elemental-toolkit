@@ -19,10 +19,6 @@ requires:
 - name: "grub-config"
   category: "system"
   version: ">=0"
-# XXX: Temp disable
-# - name: "selinux-policies"
-#   category: "system"
-#   version: ">=0"
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
