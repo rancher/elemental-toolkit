@@ -4,9 +4,10 @@ prelude:
 - apk add wget
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   wget https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-{{.Values.version}}.tar.xz && \
-   mkdir -p /syslinux && \
-   tar -xvf syslinux-{{.Values.version}}.tar.xz -C /syslinux
+   wget https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-{{.Values.version}}.tar.xz
+- echo "{{ ( index .Values.labels "package.checksum" ) }}  syslinux-{{.Values.version}}.tar.xz" | sha256sum -c
+- mkdir -p /syslinux
+- tar -xvf syslinux-{{.Values.version}}.tar.xz -C /syslinux
 steps:
 - |
    mkdir -p /output/boot/syslinux && \
