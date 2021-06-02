@@ -6,25 +6,38 @@ exec 3>&1 1>>/tmp/image-mtree-check.log 2>&1
 
 event="$1"
 
-if [ "$event" == "package.install" ]; then
+if [ "$event" == "package.install" ] || [ "$event" == "image.post.unpack" ]; then
   payload="$2"
-  file=$(echo "$payload" | jq -r .file)
 
-  version=$(jq -r .Package.version < "$file")
-  repo=$(jq -r .Repository.urls[0] < "$file")
-  name=$(jq -r .Package.name < "$file")
-  category=$(jq -r .Package.category < "$file")
-  download_version=$(echo "$version"|tr "+" "-")
-
-  image="$repo":"$name"-"$category"-"$download_version".metadata.yaml
-  tmpdir=/tmp/"$name"-"$category"-"$download_version"-metadata
-  mtree_output=/tmp/"$name"-"$category"-"$download_version".mtree
+  if [ "$event" == "package.install" ]; then
+    # Extract all data from the payload
+    file=$(echo "$payload" | jq -r .file)
+    version=$(jq -r .Package.version < "$file")
+    repo=$(jq -r .Repository.urls[0] < "$file")
+    name=$(jq -r .Package.name < "$file")
+    category=$(jq -r .Package.category < "$file")
+    download_version=$(echo "$version"|tr "+" "-")
+    image="$repo":"$name"-"$category"-"$download_version".metadata.yaml
+    mtree_output=/tmp/"$name"-"$category"-"$download_version".mtree
+    tmpdir=/tmp/"$name"-"$category"-"$download_version"-metadata
+    destination=/tmp/upgrade
+  else
+    # Use the image name as base for everything
+    fullimage=$(echo "$2" | jq -r .data | jq -r .Image )
+    destination=$(echo "$2" | jq -r .data | jq -r .Dest)
+    image="$fullimage.metadata.yaml"
+    tmpdir=/tmp/"$fullimage"-metadata
+    mtree_output=/tmp/"$fullimage".mtree
+  fi
 
   echo "Getting $image metadata"
 
   luet util unpack "$image" "$tmpdir"
-  yq read "$tmpdir"/"$name"-"$category"-"$version".metadata.yaml mtree > "$mtree_output"
-  luet_result=$(luet mtree -- check /tmp/upgrade "$mtree_output" -x "var/cache/luet" -x "usr/local/tmp" -x "oem/" -x "usr/local/cloud-config" -x "usr/local/lost+found" -x "lost+found")
+
+  metadata=$(find "$tmpdir" -name "*.metadata.yaml")
+
+  yq read "$metadata" mtree > "$mtree_output"
+  luet_result=$(luet mtree -- check "$destination" "$mtree_output" -x "var/cache/luet" -x "usr/local/tmp" -x "oem/" -x "usr/local/cloud-config" -x "usr/local/lost+found" -x "lost+found" -x "tmp" -x "mnt")
   rm "$mtree_output"
   rm  -Rf "$tmpdir"
   if [[ $luet_result == "" ]]; then
