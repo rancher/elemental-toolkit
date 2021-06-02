@@ -136,9 +136,14 @@ upgrade() {
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rm -rf /usr/local/tmp/rootfs
         # Call image-mtree-check directly with the data until luet supports sending events on unpack
         image-mtree-check "image.post.unpack" "{\"data\": {\"Image\": \"$UPGRADE_IMAGE\", \"Dest\": \"/tmp/upgrade\"}}"
-        rm -rf /usr/local/tmp/rootfs
+        mtree_status=$?
+        if [ $mtree_status -ne 0 ]; then
+          echo "Error checking mtree checksums of upgrade image"
+          exit $mtree_status
+        fi
     fi
 
     SELinux_relabel
