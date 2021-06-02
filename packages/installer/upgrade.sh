@@ -203,7 +203,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: cos-upgrade [--verify] [--recovery] [--docker-image] IMAGE"
+    echo "Usage: cos-upgrade [--no-verify] [--recovery] [--docker-image] IMAGE"
     echo ""
     echo "Example: cos-upgrade"
     echo ""
