@@ -10,3 +10,4 @@ iso-meta.yaml
 packer/*.box
 packer/*.tar.gz
 packer/packer_cache/
+tests/**/logs
