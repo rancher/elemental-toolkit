@@ -123,10 +123,10 @@ copy_active() {
         
         TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/passive.img bs=1M count=3240
-        mkfs.ext2 ${STATEDIR}/cOS/passive.img -L COS_ACTIVE
+        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
+        mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
-        LOOP=$(losetup --show -f ${STATEDIR}/cOS/passive.img)
+        LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
         mount -t ext2 $LOOP $TARGET
         rsync -aqzAX --exclude='mnt' \
         --exclude='proc' --exclude='sys' \
@@ -142,6 +142,8 @@ copy_active() {
         umount $TARGET
         rm -rf $TARGET
 
+        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
+        sync
         copy_passive
     else
         cp -rf ${RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img

@@ -117,7 +117,7 @@ func (s *SUT) BootFrom() int {
 		return Active
 	case strings.Contains(out, "COS_PASSIVE"):
 		return Passive
-	case strings.Contains(out, "COS_SYSTEM"):
+	case strings.Contains(out, "COS_RECOVERY"), strings.Contains(out, "COS_SYSTEM"):
 		return Recovery
 	default:
 		return UnknownBoot

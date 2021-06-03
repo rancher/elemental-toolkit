@@ -1,4 +1,3 @@
 name: "grub-config"
 category: "system"
 version: "0.0.5"
-recovery_type: "squashfs"

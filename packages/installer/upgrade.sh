@@ -94,8 +94,8 @@ prepare_target() {
 }
 
 prepare_squashfs_target() {
-    rm -rf $TARGET
-    TARGET=/usr/local/tmp/target
+    rm -rf $TARGET || true
+    TARGET=${STATEDIR}/tmp/target
     mkdir -p $TARGET
 }
 
@@ -143,14 +143,16 @@ upgrade() {
     mount_persistent
     ensure_dir_structure
 
-    mkdir -p /usr/local/tmp/upgrade
+    temp_upgrade=$STATEDIR/tmp/upgrade
+    rm -rf $temp_upgrade || true
+    mkdir -p $temp_upgrade
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
-    export TMPDIR=/usr/local/tmp/upgrade
+    export XDG_RUNTIME_DIR=$temp_upgrade
+    export TMPDIR=$temp_upgrade
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         if [ -z "$VERIFY" ]; then
@@ -170,10 +172,10 @@ upgrade() {
 
     SELinux_relabel
 
-    rm -rf /usr/local/tmp/upgrade
-    umount $TARGET/oem
-    umount $TARGET/usr/local
-    umount $TARGET
+    rm -rf $temp_upgrade
+    umount $TARGET/oem || true
+    umount $TARGET/usr/local || true
+    umount $TARGET || true
 }
 
 SELinux_relabel()
@@ -196,6 +198,7 @@ switch_active() {
 switch_recovery() {
     if is_squashfs; then
         mksquashfs $TARGET ${STATEDIR}/cOS/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+        rm -rf $TARGET
     else
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
         tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
