@@ -12,6 +12,8 @@ Vagrant.configure("2") do |config|
     config.vm.guest = :linux
     config.vm.synced_folder ".", "/vagrant", disabled: true
     libvirt.driver = "kvm"
+    libvirt.memory = 4096
+    libvirt.cpus = 2
     config.vm.network "forwarded_port", guest: 22, host: 2222
   end
     
