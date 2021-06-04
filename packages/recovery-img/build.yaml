@@ -17,7 +17,6 @@ copy:
 package_dir: "/output"
 steps:
 - mkdir /output
-- cp -rf bootargs.cfg /recovery/etc/cos/
 - rm -rf /recovery/luetbuild /recovery/usr/local/*
 - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
 
