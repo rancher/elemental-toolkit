@@ -9,7 +9,7 @@ requires:
 copy:
 - package: 
     category: "recovery"
-    name: "cos"
+    name: "cos-squash"
     version: ">=0"
   source: "/."
   destination: "/recovery"
@@ -17,6 +17,5 @@ copy:
 package_dir: "/output"
 steps:
 - mkdir /output
-- rm -rf /recovery/luetbuild /recovery/usr/local/*
 - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
 

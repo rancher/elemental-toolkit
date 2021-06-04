@@ -133,7 +133,7 @@ func (s *SUT) GetOSRelease(ss string) string {
 }
 
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 120
+	dur := 180
 	if len(t) > 0 {
 		dur = t[0]
 	}

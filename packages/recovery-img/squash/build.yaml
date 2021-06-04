@@ -1,0 +1,6 @@
+join:
+- category: "recovery"
+  name: "cos"
+  version: ">=0"
+
+unpack: true
