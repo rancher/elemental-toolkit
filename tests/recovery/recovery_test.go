@@ -45,11 +45,16 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		})
 
 		It("upgrades to a specific image", func() {
+			err := s.ChangeBoot(sut.Active)
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			currentVersion := s.GetOSRelease("VERSION")
 			currentName := s.GetOSRelease("NAME")
 
 			By("booting into recovery to check the OS version")
-			err := s.ChangeBoot(sut.Recovery)
+			err = s.ChangeBoot(sut.Recovery)
 			Expect(err).ToNot(HaveOccurred())
 
 			s.Reboot()
