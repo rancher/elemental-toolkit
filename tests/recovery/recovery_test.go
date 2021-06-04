@@ -14,17 +14,77 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		s.EventuallyConnects()
 	})
 
+	Context("upgrading COS_ACTIVE from the recovery partition", func() {
+		AfterEach(func() {
+			s.Reset()
+		})
+
+		It("upgrades to the latest", func() {
+			currentName := s.GetOSRelease("NAME")
+
+			By("booting into recovery to check the OS version")
+			err := s.ChangeBoot(sut.Recovery)
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
+
+			recoveryName := s.GetOSRelease("NAME")
+			Expect(currentName).ToNot(Equal(recoveryName))
+
+			out, err := s.Command("CURRENT=active.img cos-upgrade")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+			Expect(out).Should(ContainSubstring("Upgrading system"))
+
+			err = s.ChangeBoot(sut.Active)
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+		})
+
+		It("upgrades to a specific image", func() {
+			currentVersion := s.GetOSRelease("VERSION")
+			currentName := s.GetOSRelease("NAME")
+
+			By("booting into recovery to check the OS version")
+			err := s.ChangeBoot(sut.Recovery)
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
+
+			recoveryName := s.GetOSRelease("NAME")
+			Expect(currentName).ToNot(Equal(recoveryName))
+
+			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+			Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
+
+			err = s.ChangeBoot(sut.Active)
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+
+			upgradedVersion := s.GetOSRelease("VERSION")
+			Expect(upgradedVersion).ToNot(Equal(currentVersion))
+			Expect(upgradedVersion).To(Equal("0.5.1\n"))
+		})
+	})
+
 	Context("upgrading recovery", func() {
+		AfterEach(func() {
+			s.Reset()
+		})
 
-		When("specific images", func() {
+		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
-				out, err := s.Command("source /etc/os-release && echo $VERSION")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).ToNot(Equal(""))
-
-				version := out
+				version := s.GetOSRelease("VERSION")
 				By("upgrading to quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
-				out, err = s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+				out, err := s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -51,7 +111,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			})
 		})
 
-		When("upgrade channel", func() {
+		When("using upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery and reboot")
 				out, err := s.Command("cos-upgrade --no-verify --recovery")

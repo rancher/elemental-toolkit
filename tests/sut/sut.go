@@ -124,6 +124,14 @@ func (s *SUT) BootFrom() int {
 	}
 }
 
+func (s *SUT) GetOSRelease(ss string) string {
+	out, err := s.Command(fmt.Sprintf("source /etc/os-release && echo $%s", ss))
+	Expect(err).ToNot(HaveOccurred())
+	Expect(out).ToNot(Equal(""))
+
+	return out
+}
+
 func (s *SUT) EventuallyConnects(t ...int) {
 	dur := 120
 	if len(t) > 0 {

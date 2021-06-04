@@ -227,6 +227,10 @@ cleanup2()
     if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
 	    umount ${STATEDIR} || true
     fi
+    if [ "$STATEDIR" == "/run/initramfs/state" ]; then
+        umount ${STATEDIR}
+        rm -rf $STATEDIR
+    fi
 }
 
 cleanup()

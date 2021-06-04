@@ -19,3 +19,9 @@ stages:
             echo "You are booting from recovery mode. Run 'cos-reset' to reset the system to $VERSION" >> /etc/issue
             echo " or CURRENT=active.img cos-upgrade to upgrade the active partition" >> /etc/issue
             echo >> /etc/issue
+       files:
+       - path: /run/cos/recovery_mode
+         content: "1"
+         permissions: 0600
+         owner: 0
+         group: 0
