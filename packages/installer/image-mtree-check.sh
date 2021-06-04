@@ -24,6 +24,12 @@ if [ "$event" == "package.install" ] || [ "$event" == "image.post.unpack" ]; the
   else
     # Use the image name as base for everything
     fullimage=$(echo "$2" | jq -r .data | jq -r .Image )
+    imagetype=$(echo "$fullimage" |cut -d ":" -f 2)
+    # We should skip when unpacking the repository and tree images as they do not contain mtree values
+    if [[ $imagetype == *"repository.yaml"* ]] || [[ $imagetype == *"tree.tar"* ]] || [[ $imagetype == *"repository.meta.yaml.tar"* ]] || [[ $imagetype == *"compilertree.tar"* ]]; then
+      echo "{}" | tee /dev/fd/3
+      exit 0
+    fi
     destination=$(echo "$2" | jq -r .data | jq -r .Dest)
     image="$fullimage.metadata.yaml"
     tmpdir=/tmp/"$fullimage"-metadata
