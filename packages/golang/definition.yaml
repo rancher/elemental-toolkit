@@ -1,6 +1,6 @@
 name: "golang"
 category: "build"
-version: 1.16.4+4
+version: "1.16.5"
 hidden: true # No need to make it installable for now
 labels:
   autobump.revdeps: "true"
@@ -11,7 +11,7 @@ labels:
     curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
   autobump.version_hook: |
     curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
-  package.version: "1.16.4"
+  package.version: "1.16.5"
   autobump.checksum_hook: "curl -q -L https://storage.googleapis.com/golang/go{{.Values.labels.package.version}}.linux-{{.Values.arch}}.tar.gz.sha256"
-  package.checksum: "7154e88f5a8047aad4b80ebace58a059e36e7e2e4eb3b383127a28c711b4ff59"
+  package.checksum: "b12c23023b68de22f74c0524f10b753e7b08b1504cb7e417eccebdd3fae49061"
 arch: "amd64"
