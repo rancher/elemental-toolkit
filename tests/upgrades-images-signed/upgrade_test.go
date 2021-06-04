@@ -15,10 +15,12 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	})
 
 	AfterEach(func() {
-		// Try to gather mtree logs
-		s.GatherLog("/tmp/image-mtree-check.log")
-		s.GatherLog("/tmp/luet_mtree_failures.log")
-		s.GatherLog("/tmp/luet_mtree.log")
+		// Try to gather mtree logs on failure
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherLog("/tmp/image-mtree-check.log")
+			s.GatherLog("/tmp/luet_mtree_failures.log")
+			s.GatherLog("/tmp/luet_mtree.log")
+		}
 		s.Reset()
 	})
 	Context("After install", func() {
