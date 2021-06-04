@@ -275,6 +275,12 @@ jobs:
           make vagrantfile
           make prepare-test
           make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure() && contains(matrix.test, 'upgrade')
+        with:
+          name: cOS-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
 
   publish:
     runs-on: ubuntu-latest

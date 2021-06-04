@@ -132,7 +132,7 @@ upgrade() {
     else
         args=""
         if [ -z "$VERIFY" ]; then
-          args="--verify"
+          args="--plugin image-mtree-check"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
@@ -201,7 +201,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: cos-upgrade [--verify] [--recovery] [--docker-image] IMAGE"
+    echo "Usage: cos-upgrade [--no-verify] [--recovery] [--docker-image] IMAGE"
     echo ""
     echo "Example: cos-upgrade"
     echo ""
