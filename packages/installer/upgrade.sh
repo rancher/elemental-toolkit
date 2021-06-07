@@ -197,7 +197,8 @@ switch_active() {
 
 switch_recovery() {
     if is_squashfs; then
-        mksquashfs $TARGET ${STATEDIR}/cOS/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj x86
+        mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
         rm -rf $TARGET
     else
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img

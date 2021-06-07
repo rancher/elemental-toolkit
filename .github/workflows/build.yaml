@@ -104,6 +104,7 @@ jobs:
         run: |
           sudo -E make build
           ls -liah $PWD/build
+          sudo chmod -R 777 $PWD/build
       - name: Generate manifests
         run: |
           for f in build/*tar*; do
