@@ -3,6 +3,6 @@ category: "toolchain"
 version: 0.0.4+7
 labels:
   github.repo: "luet-mtree"
-  github.owner: "itxaka"
+  github.owner: "rancher-sandbox"
   autobump.revdeps: "true"
   autobump.revbump_related: "system/cos"
