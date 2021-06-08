@@ -104,8 +104,7 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          wget -qO- https://github.com/Itxaka/luet-mtree/releases/download/v0.0.4/luet-mtree-v0.0.4-Linux-x86_64.tar.gz | tar xvz --
-          sudo cp luet-mtree /usr/bin/luet-mtree
+          sudo -E luet install -y --config .github/.luet.yaml toolchain/luet-mtree
 
       - name: Validate 🌳
         run: |
