@@ -53,7 +53,7 @@ local-iso: $(LUET) $(MAKEISO) $(DESTINATION) $(MKSQUASHFS) $(DESTINATION)/tree.t
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	$(LUET) makeiso -- $(ISO_SPEC) --local $(DESTINATION)
+	$(LUET) makeiso -- $(MANIFEST) --local $(DESTINATION)
 endif
 
 .PHONY: iso
@@ -61,12 +61,12 @@ iso: $(LUET) $(YQ) $(MAKEISO) $(MKSQUASHFS)
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	cp -rf $(ISO_SPEC) $(ISO_SPEC).remote
-	$(YQ) w -i $(ISO_SPEC).remote 'luet.repositories[0].name' 'cOS'
-	$(YQ) w -i $(ISO_SPEC).remote 'luet.repositories[0].enable' true
-	$(YQ) w -i $(ISO_SPEC).remote 'luet.repositories[0].type' 'docker'
-	$(YQ) w -i $(ISO_SPEC).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
-	$(LUET) makeiso $(ISO_SPEC).remote
+	cp -rf $(MANIFEST) $(MANIFEST).remote
+	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].name' 'cOS'
+	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].enable' true
+	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].type' 'docker'
+	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
+	$(LUET) makeiso $(MANIFEST).remote
 endif
 
 # Packer
