@@ -20,11 +20,11 @@ prelude:
   {{end}}
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-  mkdir -p /luetbuild/go/src/github.com/itxaka && cd /luetbuild/go/src/github.com/itxaka && \
-  git clone https://github.com/itxaka/luet-mtree && cd luet-mtree && git checkout "v${PACKAGE_VERSION}" -b build
+  mkdir -p /luetbuild/go/src/github.com/rancher-sandbox && cd /luetbuild/go/src/github.com/rancher-sandbox && \
+  git clone https://github.com/rancher-sandbox/luet-mtree && cd luet-mtree && git checkout "v${PACKAGE_VERSION}" -b build
 steps:
   - |
     PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-    cd /luetbuild/go/src/github.com/itxaka/luet-mtree && make build && mv bin/luet-mtree /usr/bin/luet-mtree
+    cd /luetbuild/go/src/github.com/rancher-sandbox/luet-mtree && make build && mv bin/luet-mtree /usr/bin/luet-mtree
 includes:
   - /usr/bin/luet-mtree
