@@ -40,7 +40,7 @@ var _ = Describe("cOS Smoke tests", func() {
 
 			out, err := s.Command("cat /run/cos/recovery_mode")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(Equal("1\n"))
+			Expect(out).To(Equal("1"))
 
 			By("switching back to active")
 			s.ChangeBoot(sut.Active)

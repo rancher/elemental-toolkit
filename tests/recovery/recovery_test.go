@@ -84,8 +84,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
-				By("upgrading to quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
-				out, err := s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+				By("upgrading to quay.io/costoolkit/test-images:squashfs-recovery-image (0.5.3..) ")
+				out, err := s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/test-images:squashfs-recovery-image")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -97,11 +97,10 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-				out, err = s.Command("source /etc/os-release && echo $VERSION")
-				Expect(err).ToNot(HaveOccurred())
+				out = s.GetOSRelease("VERSION")
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.1\n"))
+				Expect(out).To(Equal("0.5.3\n"))
 
 				By("setting back to active and rebooting")
 				err = s.ChangeBoot(sut.Active)
@@ -113,7 +112,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		})
 
 		When("using upgrade channel", func() {
-			It("upgrades to latest image", func() {
+			// TODO: This test cannot be enabled until we have in master a published version of cOS >=0.5.3
+			PIt("upgrades to latest image", func() {
 				By("upgrading recovery and reboot")
 				out, err := s.Command("cos-upgrade --no-verify --recovery")
 				Expect(err).ToNot(HaveOccurred())
