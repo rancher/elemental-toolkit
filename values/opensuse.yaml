@@ -21,11 +21,21 @@ packages: >-
     qemu-guest-agent
     rng-tools
     systemd
+    vim
     parted
     dracut
     e2fsprogs
     dosfstools
+    kernel-firmware-bnx2
+    kernel-firmware-i915
+    kernel-firmware-intel
+    kernel-firmware-iwlwifi
+    kernel-firmware-mellanox
+    kernel-firmware-network
+    kernel-firmware-platform
+    kernel-firmware-realtek
     coreutils
+    less
     device-mapper
     grub2
     which
