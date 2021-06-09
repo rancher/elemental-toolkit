@@ -39,7 +39,7 @@ _VALIDATE_OPTIONS?=-s
 #
 # extract packages from yaml spec
 #
-PACKAGES?=$(shell yq r -j $(ISO_SPEC) 'packages.[*]' | jq -r '.[]' | sort -u)
+PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
 
 PUBLISH_ARGS?=
 

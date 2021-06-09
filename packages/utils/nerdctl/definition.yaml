@@ -1,0 +1,12 @@
+name: "nerdctl"
+category: "utils"
+version: "0.8.3"
+
+arch: amd64
+platform: linux
+labels:
+  github.repo: "nerdctl"
+  github.owner: "containerd"
+  autobump.revdeps: "true"
+  autobump.checksum_hook: "curl -L -s https://github.com/containerd/nerdctl/releases/download/v{{.Values.labels.package.version}}/SHA256SUMS | grep {{.Values.name}}-{{.Values.labels.package.version}}-{{.Values.platform}}-{{.Values.arch}} | awk '{ print $1 }'"
+  package.checksum: "b28df28b6f814d2b7c87f4be472c30605be93dd99e41670218387b7f7b94d592"

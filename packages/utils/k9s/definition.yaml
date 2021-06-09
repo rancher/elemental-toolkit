@@ -1,0 +1,12 @@
+name: "k9s"
+category: "utils"
+version: "0.24.10"
+
+arch: x86_64
+platform: Linux
+labels:
+  github.repo: "k9s"
+  github.owner: "derailed"
+  autobump.revdeps: "true"
+  autobump.checksum_hook: "curl -L -s https://github.com/containerd/nerdctl/releases/download/v{{.Values.labels.package.version}}/checksums.txt | grep {{.Values.name}}-{{.Values.labels.package.version}}-{{.Values.platform}}-{{.Values.arch}} | awk '{ print $1 }'"
+  package.checksum: "bf1fbcf145b8e021b675bae009183e7028afbce52fc44c37f6a0dd2982152c21"

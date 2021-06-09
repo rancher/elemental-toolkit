@@ -1,0 +1,16 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+prelude:
+- |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   curl -L https://github.com/containerd/nerdctl/releases/download/v$PACKAGE_VERSION/{{.Values.name}}-$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz -o {{.Values.name}}-$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz && \
+   echo "{{ ( index .Values.labels "package.checksum" ) }}  {{.Values.name}}-$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz" | sha256sum -c
+
+steps:
+- |
+  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+  tar xvzf {{.Values.name}}-$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz -C /usr/bin nerdctl
+- chmod +x /usr/bin/nerdctl
