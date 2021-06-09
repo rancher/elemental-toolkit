@@ -1,0 +1,16 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+prelude:
+- |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   curl -L https://github.com/derailed/k9s/releases/download/v$PACKAGE_VERSION/{{.Values.name}}_v${PACKAGE_VERSION}_{{.Values.platform}}_{{.Values.arch}}.tar.gz -o {{.Values.name}}_v$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz && \
+   echo "{{ ( index .Values.labels "package.checksum" ) }}  {{.Values.name}}_v$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz" | sha256sum -c
+
+steps:
+- |
+   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   tar xvzf {{.Values.name}}_v$PACKAGE_VERSION-{{.Values.platform}}-{{.Values.arch}}.tar.gz -C /usr/bin k9s
+- chmod +x /usr/bin/k9s
