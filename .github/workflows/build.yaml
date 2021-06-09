@@ -41,15 +41,10 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@master
 
-      # We patch docker to use all the HD available in GH action free runners
-      - name: Patch Docker Daemon data-root
+      - name: Release space from worker
         run: |
-          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-          sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
 
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -76,15 +71,10 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@master
 
-      # We patch docker to use all the HD available in GH action free runners
-      - name: Patch Docker Daemon data-root
+      - name: Release space from worker
         run: |
-          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-          sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
 
       - name: Login to Quay Registry
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
