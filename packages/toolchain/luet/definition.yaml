@@ -1,6 +1,6 @@
 category: "toolchain"
 name: "luet"
-version: 0.16.5+1
+version: 0.16.5+2
 branch: ""
 labels:
   github.repo: "luet"
