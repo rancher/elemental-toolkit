@@ -44,6 +44,9 @@ ifeq ("$(VBOXMANAGE)","")
 VBOXMANAGE="/usr/bin/VBoxManage"
 endif
 
+#
+# VBoxManage is used to run a headless VirtualBox instance
+#
 $(VBOXMANAGE):
 ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
@@ -58,7 +61,16 @@ ifeq ("$(BOXFILE)","")
 BOXFILE="$(ROOT_DIR)/packer/cOS.box"
 endif
 
-$(BOXFILE): $(PACKER) $(VBOXMANAGE)
+.PHONY: packer
+#
+# target 'packer' creates a compressed tarball with an 'ova' file
+#
+packer: $(BOXFILE)
+
+packer-clean:
+	rm -rf $(BOXFILE)
+
+$(BOXFILE): $(PACKER)
 ifeq ("$(PACKER)","/usr/sbin/packer")
 	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
 	@echo "Please set PACKER to the correct binary before calling make"
@@ -80,7 +92,7 @@ test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-u
 # remove test artifacts
 #
 
-clean_test: test-clean
+clean_test: test-clean packer-clean
 
 
 prepare-test: $(VAGRANT) $(BOXFILE)
