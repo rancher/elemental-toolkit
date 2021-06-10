@@ -58,6 +58,9 @@ ifeq ("$(BOXFILE)","")
 BOXFILE="$(ROOT_DIR)/packer/cOS.box"
 endif
 
+.PHONY: packer
+packer: $(BOXFILE)
+
 $(BOXFILE): $(PACKER) $(VBOXMANAGE)
 ifeq ("$(PACKER)","/usr/sbin/packer")
 	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
