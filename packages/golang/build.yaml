@@ -10,6 +10,7 @@ prelude:
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y wget "@Development Tools"
 {{else if eq .Values.distribution "ubuntu" }}
+- apt-get update
 - apt-get install -y build-essential wget
 {{end}}
 {{end}}
