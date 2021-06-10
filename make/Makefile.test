@@ -70,7 +70,7 @@ packer: $(BOXFILE)
 packer-clean:
 	rm -rf $(BOXFILE)
 
-$(BOXFILE): $(PACKER) $(VBOXMANAGE)
+$(BOXFILE): $(PACKER)
 ifeq ("$(PACKER)","/usr/sbin/packer")
 	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
 	@echo "Please set PACKER to the correct binary before calling make"
