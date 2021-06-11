@@ -13,3 +13,15 @@ stages:
         VOLUMES: "LABEL=COS_OEM:/oem LABEL=COS_PERSISTENT:/usr/local"
         OVERLAY: "tmpfs:25%"
 #       DEBUG_RW: "true"
+  initramfs:
+    - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
+      name: "Persist /etc/machine-id"
+      commands:
+      - |
+        # persist machine-id
+        if [ -s /usr/local/etc/machine-id ]; then
+          cat /usr/local/etc/machine-id > /etc/machine-id
+        else
+          mkdir -p /usr/local/etc
+          cp /etc/machine-id /usr/local/etc
+        fi
