@@ -1,0 +1,21 @@
+# Refer to https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#build-specs
+# for the syntax format
+requires:
+- category: "recovery"
+  name: "cos"
+  version: ">=0"
+
+# https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
+copy:
+- package: 
+    category: "recovery"
+    name: "cos-squash"
+    version: ">=0"
+  source: "/."
+  destination: "/recovery"
+
+package_dir: "/output"
+steps:
+- mkdir /output
+- mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+

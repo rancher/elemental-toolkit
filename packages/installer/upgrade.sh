@@ -38,15 +38,16 @@ find_partitions() {
 
     if [ -z "$CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
-        read -p "Could not determine current partition. Do you want to overwrite your current active partition? [y/N] : " -n 1 -r
+        read -p "Could not determine current partition. Do you want to overwrite your current active partition? (CURRENT=active.img) [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
         fi
         CURRENT=active.img
+        echo
     fi
 
-    echo "-> Booting from: $CURRENT"
+    echo "-> Upgrade target: $CURRENT"
 }
 
 find_recovery() {
@@ -71,6 +72,27 @@ find_upgrade_channel() {
     if [ -z "$UPGRADE_IMAGE" ]; then
         UPGRADE_IMAGE="system/cos"
     fi
+
+    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
+        UPGRADE_IMAGE=$RECOVERY_IMAGE
+    fi
+}
+
+is_squashfs() {
+    if [ -e "${STATEDIR}/cOS/recovery.squashfs" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+recovery_boot() {
+    cmdline="$(cat /proc/cmdline)"
+    if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 prepare_target() {
@@ -81,12 +103,33 @@ prepare_target() {
     mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
 
+prepare_squashfs_target() {
+    rm -rf $TARGET || true
+    TARGET=${STATEDIR}/tmp/target
+    mkdir -p $TARGET
+}
+
+mount_state() {
+    STATEDIR=/run/initramfs/state
+    mkdir -p $STATEDIR
+    mount ${STATE} ${STATEDIR}
+}
+
 mount_image() {
     STATEDIR=/run/initramfs/isoscan
     TARGET=/tmp/upgrade
 
     mkdir -p $TARGET || true
-    mount -o remount,rw ${STATE} ${STATEDIR}
+
+    if [ -d "$STATEDIR" ]; then
+        if recovery_boot; then
+            mount_state
+        else
+            mount -o remount,rw ${STATE} ${STATEDIR}
+        fi
+    else
+        mount_state
+    fi
 
     prepare_target
 }
@@ -98,8 +141,13 @@ mount_recovery() {
     mkdir -p $TARGET || true
     mkdir -p $STATEDIR || true
     mount $RECOVERY $STATEDIR
-
-    prepare_target
+    if is_squashfs; then
+        echo "Preparing squashfs target"
+        prepare_squashfs_target
+    else
+        echo "Preparing image target"
+        prepare_target
+    fi
 }
 
 mount_persistent() {
@@ -113,21 +161,22 @@ upgrade() {
     mount_persistent
     ensure_dir_structure
 
-    mkdir -p /usr/local/tmp/upgrade
+    temp_upgrade=$STATEDIR/tmp/upgrade
+    rm -rf $temp_upgrade || true
+    mkdir -p $temp_upgrade
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
-    export XDG_RUNTIME_DIR=/usr/local/tmp/upgrade
-    export TMPDIR=/usr/local/tmp/upgrade
-    export HOME=/tmp # Docker Content Trust data is stored in $HOME/.docker. We don't need those to persist
+    export XDG_RUNTIME_DIR=$temp_upgrade
+    export TMPDIR=$temp_upgrade
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         if [ -z "$VERIFY" ]; then
           args="--plugin image-mtree-check"
         fi
-        luet install $args --system-target /tmp/upgrade --system-engine memory -y $UPGRADE_IMAGE
+        luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
         args=""
@@ -135,16 +184,16 @@ upgrade() {
           args="--plugin image-mtree-check"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
-        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET
         rm -rf /usr/local/tmp/rootfs
     fi
 
     SELinux_relabel
 
-    rm -rf /usr/local/tmp/upgrade
-    umount $TARGET/oem
-    umount $TARGET/usr/local
-    umount $TARGET
+    rm -rf $temp_upgrade
+    umount $TARGET/oem || true
+    umount $TARGET/usr/local || true
+    umount $TARGET || true
 }
 
 SELinux_relabel()
@@ -165,8 +214,14 @@ switch_active() {
 }
 
 switch_recovery() {
-    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
-    tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+    if is_squashfs; then
+        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj x86
+        mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
+        rm -rf $TARGET
+    else
+        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
+        tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+    fi
 }
 
 ensure_dir_structure() {
@@ -186,9 +241,14 @@ cleanup2()
         umount ${TARGET}/oem || true
         umount ${TARGET}/usr/local || true
         umount ${TARGET}/ || true
+        rm -rf ${TARGET}
     fi
     if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
-	umount ${STATEDIR} || true
+	    umount ${STATEDIR} || true
+    fi
+    if [ "$STATEDIR" == "/run/initramfs/state" ]; then
+        umount ${STATEDIR}
+        rm -rf $STATEDIR
     fi
 }
 

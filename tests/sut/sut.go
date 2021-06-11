@@ -117,15 +117,31 @@ func (s *SUT) BootFrom() int {
 		return Active
 	case strings.Contains(out, "COS_PASSIVE"):
 		return Passive
-	case strings.Contains(out, "COS_SYSTEM"):
+	case strings.Contains(out, "COS_RECOVERY"), strings.Contains(out, "COS_SYSTEM"):
 		return Recovery
 	default:
 		return UnknownBoot
 	}
 }
 
+// SquashFSRecovery returns true if we are in recovery mode and booting from squashfs
+func (s *SUT) SquashFSRecovery() bool {
+	out, err := s.command("cat /proc/cmdline", false)
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+
+	return strings.Contains(out,"rd.live.squashimg")
+}
+
+func (s *SUT) GetOSRelease(ss string) string {
+	out, err := s.Command(fmt.Sprintf("source /etc/os-release && echo $%s", ss))
+	Expect(err).ToNot(HaveOccurred())
+	Expect(out).ToNot(Equal(""))
+
+	return out
+}
+
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 120
+	dur := 180
 	if len(t) > 0 {
 		dur = t[0]
 	}
