@@ -17,8 +17,8 @@ stages:
         group: 0
       environment_file: /etc/os-release
       environment:
-        NAME: "cOS"
-        ID: "cOS"
+        NAME: ":BRANDING:"
+        ID: ":BRANDING:"
         ANSI_COLOR: "0;32"
         BUG_REPORT_URL: "https://github.com/mudler/cOS/issues"
         HOME_URL: "https://github.com/mudler/cOS"

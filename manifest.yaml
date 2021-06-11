@@ -7,6 +7,7 @@ packages:
   isoimage:
   - live/syslinux
   - live/boot
+  - recovery/cos-img
 
 initramfs:
   kernel_file: "vmlinuz"

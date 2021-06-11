@@ -19,9 +19,16 @@ requires:
 - name: "grub-config"
   category: "system"
   version: ">=0"
+
+# Skip selinux policies for recovery
+{{if ne .Values.category "recovery" }}
+
 - name: "selinux-policies"
   category: "system"
   version: ">=0"
+
+{{end}}
+
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
@@ -52,6 +59,7 @@ copy:
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
+- sed -i 's/:BRANDING:/{{.Values.brand_name}}/g' setup.yaml
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
 - sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
 - yip setup.yaml

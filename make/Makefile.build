@@ -41,6 +41,10 @@ _VALIDATE_OPTIONS?=-s
 #
 PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
 
+ifeq ("$(PACKAGES)","")
+	BUILD_ARGS+=--all
+endif
+
 PUBLISH_ARGS?=
 
 .PHONY: build

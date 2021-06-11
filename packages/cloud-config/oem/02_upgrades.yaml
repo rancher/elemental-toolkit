@@ -48,3 +48,4 @@ stages:
        environment:
          UPGRADE_IMAGE: system/cos
          CHANNEL_UPGRADES: "true"
+         RECOVERY_IMAGE: recovery/cos
