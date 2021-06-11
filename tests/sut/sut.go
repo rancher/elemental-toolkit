@@ -124,6 +124,14 @@ func (s *SUT) BootFrom() int {
 	}
 }
 
+// SquashFSRecovery returns true if we are in recovery mode and booting from squashfs
+func (s *SUT) SquashFSRecovery() bool {
+	out, err := s.command("cat /proc/cmdline", false)
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+
+	return strings.Contains(out,"rd.live.squashimg")
+}
+
 func (s *SUT) GetOSRelease(ss string) string {
 	out, err := s.Command(fmt.Sprintf("source /etc/os-release && echo $%s", ss))
 	Expect(err).ToNot(HaveOccurred())
