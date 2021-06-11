@@ -212,6 +212,48 @@ In this way the cloud-config mechanism works also as an emitter event pattern - 
 
 For an extensive list of the default OEM files that can be reused or replaced [see here](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/docs/derivatives_featureset.md#oem-customizations).
 
+## Customizing GRUB boot cmdline
+
+Each bootable image have a default boot arguments which are defined in `/etc/cos/bootargs.cfg`. This file is used by GRUB to parse the cmdline used to boot the image. 
+
+For example:
+```
+set kernel=/boot/vmlinuz
+if [ -n "$recoverylabel" ]; then
+    # Boot arguments when the image is used as recovery
+    set kernelcmd="console=tty1 root=live:CDLABEL=$recoverylabel rd.live.dir=/ rd.live.squashimg=$img panic=5"
+else
+    # Boot arguments when the image is used as active/passive
+    set kernelcmd="console=tty1 root=LABEL=$label iso-scan/filename=$img panic=5 security=selinux selinux=1"
+fi
+
+set initramfs=/boot/initrd
+```
+
+You can tweak that file to suit your needs if you need to specify persistent boot arguments.
+
+## Separate image recovery
+
+A separate image recovery can be used during upgrades. 
+
+To set a default recovery image or a package, set `RECOVERY_IMAGE` into /etc/cos-upgrade-image. It allows to override the default image/package used during upgrades.
+
+To make an ISO with a separate recovery image as squashfs, you can either use the default from `cOS`, by adding it in the iso yaml file:
+
+
+```yaml
+packages:
+  rootfs:
+  ..
+  uefi:
+  ..
+  isoimage:
+  ...
+  - recovery/cos-img
+```
+
+The installer will detect the squashfs file in the iso, and will use it when installing the system. You can customize the recovery image as well by providing your own: see the `recovery/cos-img` package definition as a reference.
+
 ## Building ISOs, Vagrant Boxes, OVA
 
 In order to build an iso at the moment of writing, we first rely on [luet-makeiso](https://github.com/mudler/luet-makeiso). It accepts a YAML file denoting the packages to bundle in an ISO and a list of luet repositories where to download the packages from.
