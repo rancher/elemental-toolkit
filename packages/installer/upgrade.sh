@@ -44,9 +44,10 @@ find_partitions() {
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
         fi
         CURRENT=active.img
+        echo
     fi
 
-    echo "-> Booting from: $CURRENT"
+    echo "-> Upgrade target: $CURRENT"
 }
 
 find_recovery() {
@@ -85,6 +86,15 @@ is_squashfs() {
     fi
 }
 
+recovery_boot() {
+    cmdline="$(cat /proc/cmdline)"
+    if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
@@ -99,18 +109,26 @@ prepare_squashfs_target() {
     mkdir -p $TARGET
 }
 
+mount_state() {
+    STATEDIR=/run/initramfs/state
+    mkdir -p $STATEDIR
+    mount ${STATE} ${STATEDIR}
+}
+
 mount_image() {
     STATEDIR=/run/initramfs/isoscan
     TARGET=/tmp/upgrade
 
     mkdir -p $TARGET || true
 
-    if [ -d "$STATEDIR" ]; then 
-        mount -o remount,rw ${STATE} ${STATEDIR}
+    if [ -d "$STATEDIR" ]; then
+        if recovery_boot; then
+            mount_state
+        else
+            mount -o remount,rw ${STATE} ${STATEDIR}
+        fi
     else
-        STATEDIR=/run/initramfs/state
-        mkdir -p $STATEDIR
-        mount ${STATE} ${STATEDIR}
+        mount_state
     fi
 
     prepare_target
