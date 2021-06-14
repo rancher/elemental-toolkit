@@ -124,6 +124,9 @@ test-upgrades-images-signed: $(GINKGO)
 test-upgrades-images-unsigned: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-unsigned
 
+test-upgrades-local: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-local
+	
 test-smoke: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./smoke
 
