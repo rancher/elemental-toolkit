@@ -249,6 +249,9 @@ jobs:
             packer/*.box
           if-no-files-found: error
   tests:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
     concurrency: 
       group: ci-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
       cancel-in-progress: true
