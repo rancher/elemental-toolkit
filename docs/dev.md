@@ -5,11 +5,11 @@ The cOS Distribution is entirely built over GitHub. You can check the pipelines 
 ## Repository layout
 
 - `packages`: contain packages definition for luet
-- `iso`: yaml spec files for development iso generation
 - `values`: interpolation files, needed only for multi-arch and flavor-specific build
 - `assets`: static files needed by the iso generation process
 - `packer`: Packer templates
 - `tests`: cOS test suites
+- `manifest.yaml`: Is the manifest needed used to generate the ISO and additional packages to build
 
 ## Forking and test on your own
 
