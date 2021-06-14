@@ -22,3 +22,5 @@ label: "COS_LIVE"
 build:
  - utils/nerdctl
  - utils/k9s
+ - selinux/rancher
+ - selinux/k3s
