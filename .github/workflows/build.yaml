@@ -445,6 +445,7 @@ jobs:
     runs-on: macos-10.15
     needs: vbox-nosquashfs
     strategy:
+      max-parallel: 1
       matrix:
         flavor: ["opensuse"]
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
