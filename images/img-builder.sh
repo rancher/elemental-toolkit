@@ -24,6 +24,7 @@ mkdir -p root/grub2/x86_64-efi
 mkdir -p root/cOS
 cp recovery/usr/share/grub2/x86_64-efi/*.mod root/grub2/x86_64-efi
 cp recovery/etc/cos/grub.cfg root/grub2
+sed -i 's/${saved_entry}/recovery/g' root/grub2/grub.cfg
 luet install --system-target root/cOS -y recovery/cos-img
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
