@@ -9,6 +9,8 @@
         "iso_url": "{{user `iso`}}",
         "iso_checksum": "none",
         "shutdown_command": "shutdown -hP now",
+        "cpus": "{{ user `cpus` }}",
+        "memory": "{{ user `memory` }}",
         "ssh_password": "{{user `root_password`}}",
         "ssh_username": "{{user `root_username`}}",
         "format": "ova",
@@ -25,11 +27,12 @@
         "accelerator": "{{user `accelerator`}}",
         "headless": true,
         "iso_url": "{{user `iso`}}",
+        "cpus": "{{ user `cpus` }}",
         "iso_checksum": "none",
         "qemuargs": [
           [
             "-m",
-            "8192M"
+            "{{ user `memory` }}M"
           ]
         ],
         "shutdown_command": "shutdown -hP now",
@@ -84,6 +87,8 @@
       "arch": "amd64",
       "build": "dev",
       "disk_size": "50000",
+      "cpus": "3",
+      "memory": "8192",
       "flavor": "leap",
       "root_password": "cos",
       "root_username": "root",
