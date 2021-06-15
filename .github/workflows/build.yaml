@@ -30,6 +30,7 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
         include:
           - flavor: "opensuse"
