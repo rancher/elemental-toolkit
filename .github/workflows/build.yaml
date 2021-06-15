@@ -22,13 +22,12 @@ on:
     tags:
       - v*
 
+concurrency: 
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
 
 jobs:
   docker-build:
-    concurrency: 
-      group: ci-docker-build-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -59,9 +58,6 @@ jobs:
           cos-build $FLAVOR
 
   build:
-    concurrency: 
-      group: ci-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -136,8 +132,6 @@ jobs:
           if-no-files-found: error
 
   iso:
-    concurrency: 
-      group: ci-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
     runs-on: ubuntu-latest
     needs: build
     strategy:
@@ -176,9 +170,6 @@ jobs:
             *.sha256
           if-no-files-found: error
   qemu:
-    concurrency: 
-      group: ci-dismissable-qemu-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: macos-10.15
     needs: iso
 
@@ -212,9 +203,6 @@ jobs:
             packer/*.box
           if-no-files-found: error
   vbox:
-    concurrency: 
-      group: ci-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: macos-10.15
     needs: iso
     strategy:
@@ -249,9 +237,6 @@ jobs:
             packer/*.box
           if-no-files-found: error
   tests:
-    concurrency: 
-      group: ci-dismissable-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: macos-10.15
     needs: vbox
     strategy:
@@ -286,8 +271,6 @@ jobs:
           if-no-files-found: warn
 
   publish:
-    concurrency: 
-      group: ci-publish-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
     needs: tests
@@ -338,8 +321,6 @@ jobs:
           sudo -E make publish-repo
 
   github-release:
-    concurrency: 
-      group: ci-publish-release-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs: tests
@@ -381,9 +362,6 @@ jobs:
 # Non-squashfs tests
 
   iso-nosquashfs:
-    concurrency: 
-      group: ci-dismissable-nosquashfs-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     needs: build
     strategy:
@@ -427,9 +405,6 @@ jobs:
           if-no-files-found: error
   
   vbox-nosquashfs:
-    concurrency: 
-      group: ci-dismissable-nosquashfs-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: macos-10.15
     needs: iso-nosquashfs
     strategy:
@@ -464,9 +439,6 @@ jobs:
             packer/*.box
           if-no-files-found: error
   tests-nosquashfs:
-    concurrency: 
-      group: ci-dismissable-nosquashfs-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ matrix.flavor }}
-      cancel-in-progress: true
     runs-on: macos-10.15
     needs: vbox-nosquashfs
     strategy:
