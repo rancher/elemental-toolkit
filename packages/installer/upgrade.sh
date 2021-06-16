@@ -20,12 +20,6 @@ find_partitions() {
         exit 1
     fi
 
-    OEM=$(blkid -L COS_OEM || true)
-    if [ -z "$OEM" ]; then
-        echo "OEM partition cannot be found"
-        exit 1
-    fi
-
     COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
     if [ -n "$COS_ACTIVE" ]; then
         CURRENT=active.img
@@ -150,15 +144,7 @@ mount_recovery() {
     fi
 }
 
-mount_persistent() {
-    mkdir -p ${TARGET}/oem || true
-    mount ${OEM} ${TARGET}/oem
-    mkdir -p ${TARGET}/usr/local || true
-    mount ${PERSISTENT} ${TARGET}/usr/local
-}
-
 upgrade() {
-    mount_persistent
     ensure_dir_structure
 
     temp_upgrade=$STATEDIR/tmp/upgrade
@@ -191,8 +177,6 @@ upgrade() {
     SELinux_relabel
 
     rm -rf $temp_upgrade
-    umount $TARGET/oem || true
-    umount $TARGET/usr/local || true
     umount $TARGET || true
 }
 
@@ -230,6 +214,8 @@ ensure_dir_structure() {
     mkdir ${TARGET}/dev || true
     mkdir ${TARGET}/sys || true
     mkdir ${TARGET}/tmp || true
+    mkdir ${TARGET}/usr/local || true
+    mkdir ${TARGET}/oem || true
 }
 
 cleanup2()
@@ -238,8 +224,6 @@ cleanup2()
     mount -o remount,ro ${STATE} ${STATEDIR} || true
     if [ -n "${TARGET}" ]; then
         umount ${TARGET}/boot/efi || true
-        umount ${TARGET}/oem || true
-        umount ${TARGET}/usr/local || true
         umount ${TARGET}/ || true
         rm -rf ${TARGET}
     fi
