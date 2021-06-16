@@ -9,12 +9,34 @@ import (
 
 var _ = Describe("cOS booting fallback tests", func() {
 	var s *sut.SUT
+	var isVagrant bool
+
+	BeforeSuite(func() {
+		isVagrant = sut.IsVagrantTest()
+		if isVagrant {
+			sut.SnapshotVagrant()
+		}
+	})
+
+	AfterSuite(func() {
+		if isVagrant {
+			sut.SnapshotVagrantDelete()
+		}
+	})
+
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
 	})
 	AfterEach(func() {
-		s.Reset()
+		if CurrentGinkgoTestDescription().Failed == false {
+			if isVagrant {
+				sut.ResetWithVagrant()
+			} else {
+				s.Reset()
+			}
+
+		}
 	})
 	Context("GRUB cannot mount image", func() {
 		When("COS_ACTIVE image was corrupted", func() {

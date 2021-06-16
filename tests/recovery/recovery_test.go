@@ -9,16 +9,38 @@ import (
 
 var _ = Describe("cOS Recovery upgrade tests", func() {
 	var s *sut.SUT
+	var isVagrant bool
+
+	BeforeSuite(func() {
+		isVagrant = sut.IsVagrantTest()
+		if isVagrant {
+			sut.SnapshotVagrant()
+		}
+	})
+
+	AfterSuite(func() {
+		if isVagrant {
+			sut.SnapshotVagrantDelete()
+		}
+	})
+
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
 	})
 
-	Context("upgrading COS_ACTIVE from the recovery partition", func() {
-		AfterEach(func() {
-			s.Reset()
-		})
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed == false {
+			if isVagrant {
+				sut.ResetWithVagrant()
+			} else {
+				s.Reset()
+			}
 
+		}
+	})
+
+	Context("upgrading COS_ACTIVE from the recovery partition", func() {
 		It("upgrades to the latest", func() {
 			currentName := s.GetOSRelease("NAME")
 

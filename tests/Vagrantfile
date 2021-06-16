@@ -3,15 +3,24 @@
 
 Vagrant.configure("2") do |config|
   config.vm.box = "cos"
+  config.ssh.username = "root"
+  config.ssh.password = "cos"
+  config.ssh.insert_key = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
 
   config.vm.provider :virtualbox do |vb|
+    vb.check_guest_additions = false
     vb.memory = ENV['VAGRANT_MEMORY'] || "4096"
     vb.cpus = ENV['VAGRANT_CPU'] || "2"
+    # This 2 below are so virtualbox uses the host dns resolution
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+
   end
 
   config.vm.provider :libvirt do |libvirt|
     config.vm.guest = :linux
-    config.vm.synced_folder ".", "/vagrant", disabled: true
     libvirt.driver = "kvm"
     libvirt.memory = ENV['VAGRANT_MEMORY'] || "4096"
     libvirt.cpus = ENV['VAGRANT_CPU'] || "2"
