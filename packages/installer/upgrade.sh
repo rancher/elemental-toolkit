@@ -165,16 +165,22 @@ upgrade() {
         luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
-        args=""
-        if [ -z "$VERIFY" ]; then
-          args="--plugin image-mtree-check"
+        if [ "$DIRECTORY" != true ]; then
+          args=""
+          if [ -z "$VERIFY" ]; then
+            args="--plugin image-mtree-check"
+          fi
+          rm -rf /usr/local/tmp/rootfs
+          luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
+          rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ /tmp/upgrade
+        else
+          rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ /tmp/upgrade
         fi
-        luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
-        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET
         rm -rf /usr/local/tmp/rootfs
     fi
 
     SELinux_relabel
+    chmod 755 /tmp/upgrade
 
     rm -rf $temp_upgrade
     umount $TARGET || true
@@ -261,6 +267,10 @@ while [ "$#" -gt 0 ]; do
     case $1 in
         --docker-image)
             CHANNEL_UPGRADES=false
+            ;;
+        --directory)
+            CHANNEL_UPGRADES=false
+            DIRECTORY=true
             ;;
         --recovery)
             UPGRADE_RECOVERY=true
