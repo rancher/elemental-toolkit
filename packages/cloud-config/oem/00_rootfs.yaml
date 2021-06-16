@@ -25,3 +25,23 @@ stages:
           mkdir -p /usr/local/etc
           cp /etc/machine-id /usr/local/etc
         fi
+    - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
+      name: "Persist ssh fingerprint"
+      commands:
+      - |
+        # persist ssh fingerprint
+        if [ -d /usr/local/etc/ssh ]; then
+          mkdir /etc/ssh || true
+          for i in /usr/local/etc/ssh/*.pub; do cp -rf $i /etc/ssh; done
+        fi
+  network:
+    - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
+      name: "Load persisted ssh fingerprint"
+      commands:
+      - |
+        # load ssh fingerprint
+        if [ ! -d /usr/local/etc/ssh ]; then
+          systemctl start sshd
+          mkdir /usr/local/etc/ssh || true
+          for i in /etc/ssh/*.pub; do cp -rf $i /usr/local/etc/ssh; done
+        fi
