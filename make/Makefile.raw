@@ -1,0 +1,55 @@
+#
+# cOS-toolkit Makefile.raw
+#
+#
+
+RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
+
+MTOOLS?=$(shell which mcopy 2> /dev/null)
+ifeq ("$(MTOOLS)","")
+MTOOLS="/usr/bin/mcopy"
+endif
+
+$(MTOOLS):
+	@echo "'mcopy' not found, install 'mtools' package"
+	@exit 1
+
+DOSTOOLS?=$(shell which mkfs.fat 2> /dev/null)
+ifeq ("$(DOSTOOLS)","")
+DOSTOOLS="/usr/sbin/mkfs.fat"
+endif
+
+$(DOSTOOLS):
+	@echo "'mkfs.fat' not found, install 'dosfstools' package"
+	@exit 1
+
+ETOOLS?=$(shell which mkfs.ext2 2> /dev/null)
+ifeq ("$(ETOOLS)","")
+ETOOLS="/usr/sbin/mkfs.ext2"
+endif
+
+$(ETOOLS):
+	@echo "'mkfs.ext2' not found, install 'efsprogs' package"
+	@exit 1
+
+GPTTOOLS?=$(shell which sgdisk 2> /dev/null)
+ifeq ("$(GPTTOOLS)","")
+GPTTOOLS="/usr/sbin/sgdisk"
+endif
+
+$(GPTTOOLS):
+	@echo "'sgdisk' not found, install 'gptfdisk' package"
+	@exit 1
+
+as_root:
+ifneq ($(shell id -u), 0)
+	@echo "Please run 'make $@' as root"
+	@exit 1
+endif
+
+.PHONY: raw_disk
+raw_disk: as_root $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS)
+ifneq ("$(RAW)","")
+	@echo "'$(RAW)' exists, it will be overwritten"
+endif
+	$(ROOT_DIR)/images/img-builder.sh
