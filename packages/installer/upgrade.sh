@@ -157,6 +157,7 @@ upgrade() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
+    export LUET_PRIVILEGED_EXTRACT=true
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         if [ -z "$VERIFY" ]; then
