@@ -1,0 +1,6 @@
+category: "toolchain"
+name: "nerdctl"
+version: 0.8.3+1
+labels:
+  github.repo: "nerdctl"
+  github.owner: "containerd"
