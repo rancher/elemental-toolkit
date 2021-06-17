@@ -1,0 +1,76 @@
+name: packer
+on:
+  workflow_dispatch: # for triggering it manually
+  workflow_run:
+    workflows: [ "iso" ]
+    types:
+      - completed
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  qemu:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #            - flavor: "fedora"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: iso.yml
+          name: cOS-${{ matrix.flavor }}.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+      - name: Build QEMU Image 🔧
+        run: |
+          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #            - flavor: "fedora"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: iso.yml
+          name: cOS-${{ matrix.flavor }}.iso.zip
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}-vbox.box
+          path: |
+            packer/*.box
+          if-no-files-found: error

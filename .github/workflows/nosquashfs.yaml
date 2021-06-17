@@ -1,0 +1,121 @@
+name: Build cOS - nosquashfs
+on:
+  workflow_dispatch: # for triggering it manually
+  workflow_run:
+    workflows: [ "build" ]
+    types:
+      - completed
+
+jobs:
+  iso-nosquashfs:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #         - flavor: "fedora"
+    #         - flavor: "ubuntu"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          name: build-${{ matrix.flavor }}
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+          sudo -E make deps
+
+      - name: Tweak manifest and drop squashfs recovery
+        run: |
+          yq d -i manifest.yaml 'packages.isoimage(.==recovery/cos-img)'
+
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make local-iso
+
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+
+  vbox-nosquashfs:
+    runs-on: macos-10.15
+    needs: iso-nosquashfs
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #            - flavor: "fedora"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
+
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  tests-nosquashfs:
+    runs-on: macos-10.15
+    needs: vbox-nosquashfs
+    strategy:
+      max-parallel: 1
+      matrix:
+        flavor: ["opensuse"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
+          path: packer
+
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make vagrantfile
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure() && contains(matrix.test, 'upgrade')
+        with:
+          name: cOS-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn

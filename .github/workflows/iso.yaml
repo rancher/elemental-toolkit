@@ -1,0 +1,53 @@
+name: iso
+on:
+  workflow_dispatch: # for triggering it manually
+  workflow_run:
+    workflows: [ "build" ]
+    types:
+      - completed
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  iso:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #         - flavor: "fedora"
+    #         - flavor: "ubuntu"
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          name: build-${{ matrix.flavor }}
+          path: build
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+          sudo -E make deps
+
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make local-iso
+
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
