@@ -1,0 +1,6 @@
+category: "toolchain"
+name: "k9s"
+version: 0.24.10+1
+labels:
+  github.repo: "k9s"
+  github.owner: "derailed"
