@@ -43,7 +43,7 @@ $> cos-build
 Building locally has a [set of dependencies](dependencies.md) that
 should be satisfied.
 
-Then you can
+Then you can run
 ```
 # make build
 ```
@@ -52,7 +52,7 @@ as root
 
 To clean from previous runs, run `make clean`.
 
-_Note_: The makefile uses `yq` and `jq` to retrieve the packages to build from the iso specfile. If you don't have `jq` and `yq` installed, you must pass by the packages manually with `PACKAGES` (e.g. `PACKAGES="system/cos live/systemd-boot live/boot live/syslinux`).
+_Note_: The makefile uses [`yq` and `jq`](dev.md#yq-and-jq) to retrieve the packages to build from the iso specfile. If you don't have `jq` and `yq` installed, you must pass by the packages manually with `PACKAGES` (e.g. `PACKAGES="system/cos live/systemd-boot live/boot live/syslinux`).
 
 You might want to build packages running as `root` or `sudo -E` if you intend to preserve file permissions in the resulting packages (mainly for `xattrs`, and so on).
 
