@@ -48,7 +48,7 @@ endif
 PUBLISH_ARGS?=
 
 .PHONY: build
-build: $(LUET)
+build: $(LUET) $(DESTINATION)
 ifneq ($(shell id -u), 0)
 	@echo "Please run 'make $@' as root"
 	@exit 1
@@ -105,4 +105,4 @@ validate: $(LUET)
 #
 
 clean_build:
-	rm -rf $(DESTINATION)
+	sudo rm -rf $(DESTINATION)
