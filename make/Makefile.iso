@@ -17,6 +17,7 @@ endif
 clean_iso:
 	rm -rf $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.iso.sha256
 	rm -rf $(DESTINATION)/tree.tar.zst
+	rm -rf $(MANIFEST).remote
 	sudo rm -rf isowork
 
 $(DESTINATION):
