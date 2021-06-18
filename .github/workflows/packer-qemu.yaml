@@ -1,0 +1,50 @@
+name: packer-qemu
+on:
+  workflow_dispatch: # for triggering it manually
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  qemu:
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    #            - flavor: "fedora"
+    steps:
+      - name: Set pending
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.workflow }}
+          description: 'Build the qemu box'
+          state: 'pending'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: iso.yaml
+          commit: ${{ github.sha }}
+          name: cOS-${{ matrix.flavor }}.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+      - name: Build QEMU Image 🔧
+        run: |
+          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-${{ matrix.flavor }}-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
