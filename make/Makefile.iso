@@ -20,7 +20,7 @@ clean_iso:
 	sudo rm -rf isowork
 
 $(DESTINATION):
-	mkdir $(DESTINATION)
+	mkdir -m 755 $(DESTINATION)
 
 #
 # build ISO from repository
