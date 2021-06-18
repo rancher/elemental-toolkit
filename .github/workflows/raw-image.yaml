@@ -1,0 +1,69 @@
+name: raw-image
+on:
+  workflow_dispatch: # for triggering it manually
+
+jobs:
+  raw-img:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+
+    steps:
+      - name: Set pending
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.workflow }}
+          description: 'Build the raw image'
+          state: 'pending'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - name: Install OS deps
+        run: |
+          zypper in -y curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+      - uses: actions/checkout@v2
+      - name: Download build artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yaml
+          commit: ${{ github.sha }}
+          name: build-${{ matrix.flavor }}
+          path: build
+      - name: Install toolchain
+        run: |
+          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
+          rm -rf /var/lock
+          mkdir -p /var/lock
+          make deps
+      - name: Build Image
+        run: |
+          # Apparently having other repositories enabled causes luet to hang
+          rm /etc/luet/repos.conf.d/* -v
+          make raw_disk
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          mv disk.raw cOS_${COS_VERSION}.raw
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-opensuse
+          path: |
+            *.raw
+          if-no-files-found: error
+      - name: Set success
+        if: success()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.workflow }}
+          description: 'Build the raw image'
+          state: 'success'
+      - name: Set failure
+        if: failure()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.workflow }}
+          description: 'Build the raw image'
+          state: 'failure'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
