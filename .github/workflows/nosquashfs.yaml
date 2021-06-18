@@ -1,0 +1,185 @@
+name: nosquashfs
+on:
+  workflow_dispatch: # for triggering it manually
+
+jobs:
+  iso-nosquashfs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    steps:
+      - name: Set pending
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the iso - nosquashfs'
+          state: 'pending'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yaml
+          commit: ${{ github.sha }}
+          name: build-${{ matrix.flavor }}
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+          sudo -E make deps
+
+      - name: Tweak manifest and drop squashfs recovery
+        run: |
+          yq d -i manifest.yaml 'packages.isoimage(.==recovery/cos-img)'
+
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make local-iso
+      # TODO: Extract this into its own? Rework this so we pass the schedule event?
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+      - name: Set success
+        if: success()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the iso - nosquashfs'
+          state: 'success'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - name: Set failure
+        if: failure()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the iso - nosquashfs'
+          state: 'failure'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+  vbox-nosquashfs:
+    runs-on: macos-10.15
+    needs: iso-nosquashfs
+    strategy:
+      matrix:
+        include:
+          - flavor: "opensuse"
+    steps:
+      - name: Set pending
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the vbox box'
+          state: 'pending'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+      - name: Set success
+        if: success()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the vbox box'
+          state: 'success'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - name: Set failuire
+        if: failure()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'Build the vbox box'
+          state: 'failure'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+  tests-nosquashfs:
+    runs-on: macos-10.15
+    needs: vbox-nosquashfs
+    strategy:
+      max-parallel: 1
+      matrix:
+        flavor: ["opensuse"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
+    steps:
+      - name: Set pending
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'test'
+          state: 'pending'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - name: Install Go
+        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
+          path: packer
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make vagrantfile
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure() && contains(matrix.test, 'upgrade')
+        with:
+          name: cOS-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - name: Set success
+        if: success()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'test'
+          state: 'success'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+      - name: Set failure
+        if: failure()
+        uses: Sibz/github-status-action@v1
+        with:
+          authToken: ${{secrets.GITHUB_TOKEN}}
+          context: ${{ github.job }}
+          description: 'test'
+          state: 'failure'
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}

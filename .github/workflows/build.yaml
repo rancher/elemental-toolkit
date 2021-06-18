@@ -1,15 +1,11 @@
-name: Build cOS
+name: build
 on:
+  workflow_dispatch: # for triggering it manually
   schedule:
     - cron:  '0 20 * * *'
   push:
-    paths:
-      - 'conf/**'
-      - 'packages/**'
-      - '.github/**'
-      - 'tests/**'
-      - 'make/**'
-      - 'Makefile'
+    branches:
+      - master
   pull_request:
     paths:
       - 'conf/**'
@@ -23,41 +19,10 @@ on:
       - v*
 
 concurrency: 
-  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}-${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
-  docker-build:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
-      matrix:
-        include:
-          - flavor: "opensuse"
-          - flavor: "fedora"
-          - flavor: "ubuntu"
-    env:
-      FLAVOR: ${{ matrix.flavor }}
-    steps:
-      - uses: actions/checkout@v2
-
-      - run: |
-          git fetch --prune --unshallow
-
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
-
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
-      - name: Build  🔧
-        shell: 'script -q -e -c "bash {0}"'
-        run: |
-          source .envrc
-          cos-build $FLAVOR
-
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -77,14 +42,10 @@ jobs:
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@master
 
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Login to Quay Registry
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+
       - name: Set Push options
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: echo "BUILD_ARGS=--push --no-spinner --live-output --pull" >> $GITHUB_ENV
@@ -100,7 +61,7 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo -E luet install -y --config .github/.luet.yaml toolchain/luet-mtree
+          sudo -E luet install --no-spinner -y --config .github/.luet.yaml toolchain/luet-mtree
 
       - name: Validate 🌳
         run: |
@@ -132,388 +93,25 @@ jobs:
           path: build
           if-no-files-found: error
 
-  iso:
-    runs-on: ubuntu-latest
-    needs: build
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-    #         - flavor: "fedora"
-    #         - flavor: "ubuntu"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download result for build
-        uses: actions/download-artifact@v2
+      - name: Run iso workflow
+        uses: benc-uk/workflow-dispatch@v1
         with:
-          name: build-${{ matrix.flavor }}
-          path: build
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools
-          sudo -E make deps
-
-      - name: Build ISO from local build 🔧
-        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          sudo -E make local-iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
-          mv *.iso cOS-$COS_VERSION.iso
-          mv *.sha256 cOS-$COS_VERSION.iso.sha256
-
-      - name: Build ISO from remote repositories 🔧
-        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          sudo -E make iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
-          mv *.iso cOS-$COS_VERSION.iso
-          mv *.sha256 cOS-$COS_VERSION.iso.sha256
-
-      - uses: actions/upload-artifact@v2
+          workflow: iso
+          # We need a personal access token for triggering workflow with workflow_dispatch see: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          # This allows workflows chained to use the original PR ref for all their actions
+          # Otherwise if no ref is passed, the MASTER head ref is passed, which wrongly runs everything from master
+          # We also fallback to github.ref in case we are calling this from master
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+      - name: Run iso-nosquashfs workflow
+        uses: benc-uk/workflow-dispatch@v1
         with:
-          name: cOS-${{ matrix.flavor }}.iso.zip
-          path: |
-            *.iso
-            *.sha256
-          if-no-files-found: error
-  qemu:
-    runs-on: macos-10.15
-    needs: iso
-
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-    #            - flavor: "fedora"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
+          workflow: nosquashfs
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+      - name: Run raw-image workflow
+        uses: benc-uk/workflow-dispatch@v1
         with:
-          name: cOS-${{ matrix.flavor }}.iso.zip
-      - name: Install deps
-        run: |
-          brew install qemu
-      - name: Build QEMU Image 🔧
-        run: |
-          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu" make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.qcow
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}-QEMU.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-  vbox:
-    runs-on: macos-10.15
-    needs: iso
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-    #            - flavor: "fedora"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.iso.zip
-
-      # - name: Install deps
-      #   run: |
-      #     brew tap hashicorp/tap
-      #     brew install hashicorp/tap/packer
-      - name: Build VBox Image 🔧
-        run: |
-          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.ova
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}-vbox.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-  tests:
-    env:
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-    runs-on: macos-10.15
-    needs: vbox
-    strategy:
-      matrix:
-        flavor: ["opensuse"]
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-      - uses: actions/checkout@v2
-      - name: Download vagrant box
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}-vbox.box
-          path: packer
-
-      - name: Run tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          go get -u github.com/onsi/ginkgo/ginkgo
-          go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
-          make test-clean
-          make vagrantfile
-          make prepare-test
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure() && contains(matrix.test, 'upgrade')
-        with:
-          name: cOS-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-
-  publish:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
-    needs: tests
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-          - flavor: "fedora"
-    env:
-      FLAVOR: ${{ matrix.flavor }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-${{ matrix.flavor }}
-          path: build
-      - run: |
-          git fetch --prune --unshallow
-
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
-
-      # We patch docker to use all the HD available in GH action free runners
-      - name: Patch Docker Daemon data-root
-        run: |
-          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-          sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
-
-      - name: Login to Quay Registry
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-      - name: Set Push options
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        run: echo "BUILD_ARGS=--push --only-target-package --pull" >> $GITHUB_ENV
-
-      - name: Install deps
-        run: |
-          sudo -E make deps
-
-      - name: Publish to DockerHub 🚀
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        run: |
-          sudo -E make publish-repo
-
-  github-release:
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    needs: tests
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-          - flavor: "fedora"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.iso.zip
-          path: release
-      - name: Download vagrant box
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}-vbox.box
-          path: release
-      - name: Download OVA image
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.ova
-          path: release
-      - name: Download QCOW image
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-${{ matrix.flavor }}.qcow
-          path: release
-      - name: Release
-        uses: fnkr/github-action-ghr@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GHR_PATH: release/
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  raw-img:
-    runs-on: ubuntu-latest
-    container: opensuse/leap:15.3
-    needs: build
-
-    steps:
-      - name: Install OS deps
-        run: |
-          zypper in -y curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
-      - uses: actions/checkout@v2
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-opensuse
-          path: build
-      - name: Install toolchain
-        run: |
-          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
-          rm -rf /var/lock
-          mkdir -p /var/lock
-          make deps
-      - name: Build Image
-        run: |
-          # Apparently having other repositories enabled causes luet to hang
-          rm /etc/luet/repos.conf.d/* -v
-          make raw_disk
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
-          mv disk.raw cOS_${COS_VERSION}.raw
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-opensuse
-          path: |
-            *.raw
-          if-no-files-found: error
-
-# Non-squashfs tests
-
-  iso-nosquashfs:
-    runs-on: ubuntu-latest
-    needs: build
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-    #         - flavor: "fedora"
-    #         - flavor: "ubuntu"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-${{ matrix.flavor }}
-          path: build
-      - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools
-          sudo -E make deps
-
-      - name: Tweak manifest and drop squashfs recovery
-        run: |
-          yq d -i manifest.yaml 'packages.isoimage(.==recovery/cos-img)'
-
-      - name: Build ISO from local build 🔧
-        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          sudo -E make local-iso
-
-      - name: Build ISO from remote repositories 🔧
-        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          sudo -E make iso
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
-          path: |
-            *.iso
-            *.sha256
-          if-no-files-found: error
-  
-  vbox-nosquashfs:
-    runs-on: macos-10.15
-    needs: iso-nosquashfs
-    strategy:
-      matrix:
-        include:
-          - flavor: "opensuse"
-    #            - flavor: "fedora"
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nosquashfs-${{ matrix.flavor }}.iso.zip
-
-      # - name: Install deps
-      #   run: |
-      #     brew tap hashicorp/tap
-      #     brew install hashicorp/tap/packer
-      - name: Build VBox Image 🔧
-        run: |
-          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-nosquashfs-${{ matrix.flavor }}.ova
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-  tests-nosquashfs:
-    runs-on: macos-10.15
-    needs: vbox-nosquashfs
-    strategy:
-      max-parallel: 1
-      matrix:
-        flavor: ["opensuse"]
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-      - uses: actions/checkout@v2
-      - name: Download vagrant box
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nosquashfs-${{ matrix.flavor }}-vbox.box
-          path: packer
-
-      - name: Run tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          go get -u github.com/onsi/ginkgo/ginkgo
-          go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
-          make test-clean
-          make vagrantfile
-          make prepare-test
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure() && contains(matrix.test, 'upgrade')
-        with:
-          name: cOS-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
+          workflow: raw-image
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
