@@ -1,0 +1,11 @@
+name: jq
+category: utils
+version: "1.6"
+labels:
+  github.repo: "jq"
+  github.owner: "stedolan"
+  autobump.string_replace: '{ "jq-": "" }'
+
+uri:
+- http://stedolan.github.com/jq
+license: "MIT CC-BY-3.0"

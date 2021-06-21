@@ -2,7 +2,7 @@ FROM opensuse/leap
 
 ENV LUET_NOLOCK=true
 
-RUN zypper in -y docker curl squashfs xorriso make which
+RUN zypper in -y docker curl squashfs xorriso make which mtools dosfstools jq gptfdisk
 
 COPY . /cOS
 WORKDIR /cOS
