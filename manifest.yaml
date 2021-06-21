@@ -22,4 +22,5 @@ label: "COS_LIVE"
 build:
  - utils/nerdctl
  - utils/k9s
+ - utils/jq
  - recovery/cos
