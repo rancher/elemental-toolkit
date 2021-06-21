@@ -47,5 +47,6 @@ packages: >-
     rsync
     timezone
     jq
+    gptfdisk
 
 kernel_package: kernel-default

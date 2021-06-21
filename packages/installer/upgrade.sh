@@ -157,17 +157,18 @@ upgrade() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
+    export LUET_PRIVILEGED_EXTRACT=true
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         if [ -z "$VERIFY" ]; then
-          args="--plugin image-mtree-check"
+          args="--enable-logfile --logfile /tmp/luet.log --plugin luet-mtree"
         fi
         luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
     else
         args=""
         if [ -z "$VERIFY" ]; then
-          args="--plugin image-mtree-check"
+          args="--enable-logfile --logfile /tmp/luet.log --plugin luet-mtree"
         fi
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET

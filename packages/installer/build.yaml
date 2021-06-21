@@ -7,4 +7,3 @@ steps:
 - cp -rfv installer.sh /usr/sbin/cos-installer && chmod +x /usr/sbin/cos-installer
 - cp -rfv upgrade.sh /usr/sbin/cos-upgrade && chmod +x /usr/sbin/cos-upgrade
 - cp -rfv reset.sh /usr/sbin/cos-reset && chmod +x /usr/sbin/cos-reset
-- cp -rfv image-mtree-check.sh /usr/sbin/image-mtree-check && chmod +x /usr/sbin/image-mtree-check

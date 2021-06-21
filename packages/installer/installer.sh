@@ -216,7 +216,7 @@ do_copy()
 {
     echo "Copying cOS.."
 
-    rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
+    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
      if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
         OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
