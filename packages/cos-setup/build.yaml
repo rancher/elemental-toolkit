@@ -5,7 +5,7 @@ requires:
 steps:
 - mkdir -p /lib/systemd/system
 - mkdir -p /etc/dracut.conf.d
-- cp 02cos-setup-initramfs.conf /etc/dracut.conf.d
+- cp 02-cos-setup-initramfs.conf /etc/dracut.conf.d
 - cp -rfv *.service /lib/systemd/system
 - cp -rfv *.timer /lib/systemd/system
 - cp -rfv cos-setup /usr/bin/
