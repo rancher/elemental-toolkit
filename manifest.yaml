@@ -23,4 +23,5 @@ build:
  - utils/nerdctl
  - utils/k9s
  - utils/jq
- - recovery/cos
+ - selinux/rancher
+ - selinux/k3s
