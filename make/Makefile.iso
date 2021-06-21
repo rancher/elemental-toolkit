@@ -17,6 +17,7 @@ endif
 clean_iso:
 	rm -rf $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.iso.sha256
 	rm -rf $(DESTINATION)/tree.tar.zst
+	rm -rf $(MANIFEST).remote
 	sudo rm -rf isowork
 
 $(DESTINATION):
@@ -32,6 +33,10 @@ $(MKSQUASHFS):
 
 .PHONY: create-repo
 create-repo: $(LUET) $(DESTINATION)
+ifneq ($(shell id -u), 0)
+	@echo "*** Must be root"
+	@exit 1
+endif
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
     --packages $(DESTINATION) \
@@ -48,6 +53,10 @@ $(DESTINATION)/tree.tar.zst:
 
 .PHONY: local-iso
 local-iso: $(LUET) $(MAKEISO) $(DESTINATION) $(MKSQUASHFS) $(DESTINATION)/tree.tar.zst
+ifneq ($(shell id -u), 0)
+	@echo "*** Please run 'make $@' as root"
+	@exit 1
+endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
@@ -56,6 +65,10 @@ endif
 
 .PHONY: iso
 iso: $(LUET) $(YQ) $(MAKEISO) $(MKSQUASHFS)
+ifneq ($(shell id -u), 0)
+	@echo "*** Please run 'make $@' as root"
+	@exit 1
+endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
