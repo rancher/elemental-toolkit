@@ -1,0 +1,143 @@
+#cloud-config
+disable_root: False
+
+# set locale
+locale: en_GB.UTF-8
+
+# set timezone
+timezone: Etc/UTC
+
+ntp:
+  enabled: true
+  servers:
+    - ntp1.suse.de
+    - ntp2.suse.de
+    - ntp3.suse.de
+
+users:
+  - name: cos
+    groups: users, admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC9o/73JbGL5T8cReRy6y5U7qep4bcX4hMX2kxkJitm1rrY1zhOZ5xYkVlSqHwYrFyvP4nO64VD3zICHIXDidNzylqbVdLBjeTO8ZvGw4loMH6QZonTViBhsYxO/yvR1n5ZTA9c7xrZeCFMdZA6a3PFmTcedhDPZ39VrNf8GHKizRIJuzvpN1NmdGpzejDCOQ10eWNCNa6HRz04Lid+B6SvIUlAeX1e3NJfQtvsOGrZzf8N/TvFCh1AXKn6mHMUZpoRS5OWZFAnXKfc9MvGUWHbsYnFepBaVOeqg6XLy2jpmXD8FZxOk00FgoGO0BTf/kMo6tiWktD2qJ0iV29rdmyKOEoQJjiLYLFD6UMz/0UOBUY7XTZWjlpeLEE+XOa3XyDa0Gi4wU+3FYwn8TIuD0FGv1Rbe2v9YwoTr5R5z9KqiJpz32LoB0kP4ZnCCRCS53GuEkyAHzhNIgRRuBHCBt6nKHzzqbeye0gLDmqytHVBpYN08/Ak+hZVtQraVmkpKpU=
+
+write_files:
+  - path: /etc/sysconfig/network/config
+    content: |
+      # this is different in sles compared to the default value provided by the package
+      NETCONFIG_MODULES_ORDER="dns-resolver dns-bind dns-dnsmasq nis ntp-runtime"
+      # disable merging static and dynamic DNS (i.e. provided by dhcp)
+      NETCONFIG_DNS_POLICY=STATIC
+      # static dns servers
+      NETCONFIG_DNS_STATIC_SERVERS="10.160.0.1 10.160.2.88 10.100.2.10"
+      # static dns search
+      NETCONFIG_DNS_STATIC_SEARCHLIST="suse.de"
+  - path: /etc/sysconfig/network/ifroute-eth0
+    content: |
+      10.164.80.0/20 172.28.0.254 - eth0
+      10.17.0.0/22 172.28.0.254 - eth0
+  - path: /etc/systemd/system/static-routes.service
+    content: |
+      [Unit]
+      Description=Add static routes to NUE VMs
+      After=network.target
+      AssertPathExists=/etc/sysconfig/network/ifroute-eth0
+
+      [Service]
+      ExecStart= /usr/sbin/ifup eth0
+      Restart=on-failure
+      RestartSec=5min
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=static-routes
+
+      [Install]
+      WantedBy=multi-user.target
+  - path: /etc/systemd/system/runner.service
+    content: |
+      [Unit]
+      Description=github runner
+      After=network.target
+      AssertPathExists=/home/cos/action-runner
+
+      [Service]
+      ExecStartPre=/home/cos/action-runner/config.sh --url $github_url --token $token --labels $labels --unattended
+      ExecStart=/home/cos/action-runner/bin/runsvc.sh
+      User=cos
+      WorkingDirectory=/home/cos/action-runner/
+      Restart=on-failure
+      RestartSec=5min
+      StandardOutput=journal
+      StandardError=journal
+      SyslogIdentifier=runner
+
+      [Install]
+      WantedBy=multi-user.target
+
+zypper:
+  config:
+    solver.onlyRequires: "true"
+    download.use_deltarpm: "true"
+  repos:
+    - id: SUSE:SLE-15:GA
+      name: SUSE:SLE-15:GA
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15:/GA/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+    - id: SUSE:SLE-15:Update
+      name: SUSE:SLE-15:Update
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15:/Update/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+    - id: SUSE:SLE-15-SP1:GA
+      name: SUSE:SLE-15-SP1:GA
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15-SP1:/GA/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+    - id: SUSE:SLE-15-SP1:Update
+      name: SUSE:SLE-15-SP1:Update
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15-SP1:/Update/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+    - id: SUSE:SLE-15-SP2:GA
+      name: SUSE:SLE-15-SP2:GA
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15-SP2:/GA/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+    - id: SUSE:SLE-15-SP2:Update
+      name: SUSE:SLE-15-SP2:Update
+      baseurl: http://download.suse.de/ibs/SUSE:/SLE-15-SP2:/Update/standard/
+      enabled: 1
+      autorefresh: 1
+      gpgcheck: 0
+
+
+packages:
+  # Below, used by github runner
+  - git-core
+  - docker
+  - lttng-ust
+  - libopenssl1_1
+  - krb5
+  - zlib
+  - libicu60_2
+  - make
+
+
+runcmd:
+  - ip link set dev eth0 mtu 1400
+  - systemctl enable static-routes --now
+  # Update resolv.conf manually once to overwrite dhcp-obtained values
+  - sudo netconfig update -f
+  - systemctl enable docker --now
+  - sudo usermod -G docker -a cos
+  - mkdir -p /home/cos/action-runner
+  - cd /home/cos/action-runner && curl -O -L https://github.com/actions/runner/releases/download/v2.278.0/actions-runner-linux-x64-2.278.0.tar.gz
+  - cd /home/cos/action-runner && tar xvf actions-runner-linux-x64-2.278.0.tar.gz
+  - sudo chown -R cos:users /home/cos/action-runner
+  - systemctl enable runner --now

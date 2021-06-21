@@ -1,0 +1,83 @@
+heat_template_version: 2017-09-01
+description: Template to create a github self-runner worker for  tests
+
+parameters:
+  worker_name:
+    type: string
+    description: Name of the worker
+  worker_flavor:
+    type: string
+    description: Flavor of the worker
+    constraints:
+      - custom_constraint: nova.flavor
+    default: m1.medium
+  keypair:
+    type: string
+    description: Nova key value pair
+    constraints:
+      - custom_constraint: nova.keypair
+    default: cos-runners
+  image:
+    type: string
+    description: Name of image to use for the worker
+    constraints:
+      - custom_constraint: glance.image
+    default: SLES15-SP2-JeOS.x86_64-15.2-OpenStack-Cloud-GM
+  internal_network:
+    type: string
+    description: Internal network
+    constraints:
+      - custom_constraint: neutron.network
+    default: cos-network
+  external_network:
+    type: string
+    description: External network
+    constraints:
+      - custom_constraint: neutron.network
+    default: floating
+  token:
+    type: string
+    description: Name of the worker
+  github_url:
+    type: string
+    description: Name of the worker
+  labels:
+    type: comma_delimited_list
+    description: labels to be added to the worker
+    default: [ ]
+
+resources:
+  worker_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: internal_network }
+
+  worker_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: external_network }
+      port_id: { get_resource: worker_port }
+
+  worker_floating_ip_association:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: worker_floating_ip }
+      port_id: { get_resource: worker_port }
+
+  jenkins_worker:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: worker_name }
+      image: { get_param: image }
+      key_name: { get_param: keypair }
+      flavor: { get_param: worker_flavor }
+      networks:
+        - port: { get_resource: worker_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: { get_file: user-data-github-runner }
+          params:
+            $token: { get_param: token }
+            $github_url: { get_param: github_url }
+            $labels: { list_join: [ ',', { get_param: labels } ] }
