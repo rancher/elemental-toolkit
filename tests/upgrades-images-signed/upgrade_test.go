@@ -34,6 +34,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 			s.GatherLog("/tmp/image-mtree-check.log")
 			s.GatherLog("/tmp/luet_mtree_failures.log")
 			s.GatherLog("/tmp/luet_mtree.log")
+			s.GatherLog("/tmp/luet.log")
 		}
 		if CurrentGinkgoTestDescription().Failed == false {
 			if isVagrant {
