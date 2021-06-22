@@ -41,12 +41,6 @@ $(GPTTOOLS):
 	@echo "'sgdisk' not found, install 'gptfdisk' package"
 	@exit 1
 
-as_root:
-ifneq ($(shell id -u), 0)
-	@echo "Please run 'make $@' as root"
-	@exit 1
-endif
-
 .PHONY: raw_disk
 raw_disk: as_root $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS)
 ifneq ("$(RAW)","")
