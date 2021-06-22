@@ -40,7 +40,7 @@ endif
 # ------------ actual test targets ------------
 #
 
-test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-upgrades-unsigned test-features test-fallback test-recovery
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-fallback test-recovery test-deploys-images
 
 #
 # remove test artifacts
@@ -86,6 +86,9 @@ test-smoke: $(GINKGO)
 
 test-recovery: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery
+
+test-deploys-images: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./deploys-images
 
 $(GINKGO):
 	@echo "'ginkgo' not found."

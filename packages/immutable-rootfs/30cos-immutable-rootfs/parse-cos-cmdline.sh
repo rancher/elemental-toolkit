@@ -7,14 +7,17 @@
 # rd.cos.overlay=UUID=<vol_uuid>
 # rd.cos.oemtimeout=<seconds>
 # rd.cos.debugrw
+# rd.cos.disable
 # cos-img/filename=/cOS/active.img
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
+if getargbool 0 rd.cos.disable; then
+    return 0
+fi
+
 cos_img=$(getarg cos-img/filename=)
 [ -z "${cos_img}" ] && return 0
-cos_overlay=$(getarg rd.cos.overlay=)
-[ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
 [ -z "${root}" ] && root=$(getarg root=)
 
 cos_root_perm="ro"
