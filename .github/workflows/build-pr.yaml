@@ -1,18 +1,13 @@
-name: Build cOS
+name: Build cOS from PR
 on:
-  schedule:
-    - cron:  '0 20 * * *'
-  push:
+  pull_request:
     paths:
       - 'conf/**'
       - 'packages/**'
-      - '.github/**'
-      - 'tests/**'
       - 'make/**'
+      - '.github/**'
       - 'Makefile'
-  create:
-    tags:
-      - v*
+      - 'tests/**'
 
 concurrency: 
   group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
@@ -20,8 +15,7 @@ concurrency:
 
 jobs:
   docker-build:
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxchaka", kkaempf", "cos-cibot"], "${{ github.actor }}")
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
       matrix:
@@ -32,13 +26,18 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
       - uses: actions/checkout@v2
 
       - run: |
           git fetch --prune --unshallow
+
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@master
+
+      - name: Release space from worker
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
 
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -47,8 +46,7 @@ jobs:
           cos-build $FLAVOR
 
   build:
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxchaka", kkaempf", "cos-cibot"], "${{ github.actor }}")
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
@@ -58,12 +56,18 @@ jobs:
     env:
       FLAVOR: ${{ matrix.flavor }}
     steps:
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
       - uses: actions/checkout@v2
+
       - run: |
           git fetch --prune --unshallow
+
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@master
+
+      - name: Release space from worker
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
 
       - name: Login to Quay Registry
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -82,8 +86,6 @@ jobs:
 
       - name: Install deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y make
           sudo -E make deps
 
       - name: Validate 🌳
@@ -117,8 +119,7 @@ jobs:
           if-no-files-found: error
 
   iso:
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxchaka", kkaempf", "cos-cibot"], "${{ github.actor }}")
+    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
