@@ -1,14 +1,14 @@
 packages:
   - name: "cos"
     category: "system"
-    version: 0.5.3+3
+    version: 0.5.3+5
     brand_name: "cOS"
     labels:
       autobump.revdeps: "true"
       autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - name: "cos"
     category: "recovery"
-    version: 0.5.3+3
+    version: 0.5.3+5
     brand_name: "cOS recovery"
     labels:
       autobump.revdeps: "true"

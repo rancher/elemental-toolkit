@@ -43,7 +43,7 @@ do_mount()
     if is_booting_from_squashfs; then
         RECOVERYDIR=/run/initramfs/live
     else
-        RECOVERYDIR=/run/initramfs/isoscan
+        RECOVERYDIR=/run/initramfs/cos-state
     fi
 
     #mount -o remount,rw ${STATE} ${STATEDIR}
