@@ -25,3 +25,4 @@ build:
  - utils/jq
  - selinux/rancher
  - selinux/k3s
+ - recovery/cos

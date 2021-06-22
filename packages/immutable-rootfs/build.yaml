@@ -25,9 +25,4 @@ steps:
 {{end}}
 {{end}}
 - cp -r 30cos-immutable-rootfs /usr/lib/dracut/modules.d
-- |
-    kernel=$(ls /lib/modules | head -n1) && \
-    dracut --verbose --no-hostonly --omit multipath --no-hostonly-cmdline --xz \
-        -f "/boot/initrd-${kernel}" --add " dmsquash-live cos-immutable-rootfs " \
-        "${kernel}" && \
-    ln -sf "initrd-${kernel}" /boot/initrd
+- cp 02-cos-immutable-rootfs.conf /etc/dracut.conf.d

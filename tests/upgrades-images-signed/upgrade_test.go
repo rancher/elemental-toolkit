@@ -60,12 +60,8 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 			It("fails if verify is enabled on an unsigned/malformed version", func() {
 				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
 				Expect(err).To(HaveOccurred())
-				Expect(out).Should(ContainSubstring("image-mtree-check"))
+				Expect(out).Should(ContainSubstring("luet-mtree"))
 				Expect(out).Should(ContainSubstring("error while executing plugin"))
-				out, err = s.Command("cat /tmp/image-mtree-check.log")
-				Expect(out).Should(ContainSubstring("Got cos-system-0.5.0, continue..."))
-				Expect(out).Should(ContainSubstring("Finished all checks with errors"))
-
 			})
 		})
 	})
