@@ -100,7 +100,6 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo -E luet install -y --config .github/.luet.yaml toolchain/luet-mtree
 
       - name: Validate 🌳
         run: |
@@ -392,8 +391,6 @@ jobs:
           make deps
       - name: Build Image
         run: |
-          # Apparently having other repositories enabled causes luet to hang
-          rm /etc/luet/repos.conf.d/* -v
           make raw_disk
           COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
           mv disk.raw cOS_${COS_VERSION}.raw

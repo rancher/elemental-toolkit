@@ -37,6 +37,14 @@ MAKEISO="/usr/bin/luet-makeiso"
 endif
 
 #
+# Path to luet-mtree binary
+#
+export MTREE?=$(shell which luet-mtree 2> /dev/null)
+ifeq ("$(MTREE)","")
+MTREE="/usr/bin/luet-mtree"
+endif
+
+#
 # Output for "make publish-repo" and base for "make iso"
 #
 FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
@@ -88,15 +96,14 @@ include make/Makefile.raw
 
 #----------------------- targets -----------------------
 
-deps: $(LUET) $(YQ) $(JQ) $(MAKEISO)
+deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE)
 
 $(LUET):
 ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	curl https://get.mocaccino.org/luet/get_luet_root.sh |  sh
-	luet install -y repository/mocaccino-extra-stable
+	$(ROOT_DIR)/scripts/get_luet.sh
 endif
 
 $(YQ):
@@ -104,7 +111,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y utils/yq
+	$(LUET) install -y toolchain/yq
 endif
 
 $(JQ):
@@ -121,6 +128,14 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 else
 	$(LUET) install -y extension/makeiso
+endif
+
+$(MTREE):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y toolchain/luet-mtree
 endif
 
 clean: clean_build clean_iso clean_run clean_test
