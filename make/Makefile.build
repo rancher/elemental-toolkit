@@ -19,6 +19,7 @@ CONCURRENCY?=1
 #
 COMPRESSION?=zstd
 
+PUSH_CACHE?=false
 
 #
 # Arguments for luet build
@@ -33,7 +34,6 @@ ifneq ($(strip $(REPO_CACHE)),)
 	BUILD_ARGS+=--image-repository $(REPO_CACHE)
 endif
 
-
 _VALIDATE_OPTIONS?=-s
 
 #
@@ -43,6 +43,10 @@ PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort 
 
 ifeq ("$(PACKAGES)","")
 	BUILD_ARGS+=--all
+endif
+
+ifeq ("$(PUSH_CACHE)","true")
+	BUILD_ARGS+=--push
 endif
 
 PUBLISH_ARGS?=
