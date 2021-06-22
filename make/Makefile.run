@@ -29,3 +29,8 @@ run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	-chardev socket,path=$(ROOT_DIR)/.qemu/qga.sock,server,nowait,id=qga0 \
 	-device virtio-serial \
 	-hda $(ROOT_DIR)/.qemu/drive.img $(QEMU_ARGS)
+
+run-raw_disk:
+	$(QEMU) \
+	-m $(QEMU_MEMORY) \
+	-hda disk.raw -bios /usr/share/qemu/ovmf-x86_64.bin
