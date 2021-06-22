@@ -1,0 +1,7 @@
+name: "Cloud providers metadata"
+stages:
+   network:
+     - name: "Cloud providers datasources"
+       datasource:
+         providers: ["aws"]
+         path: "/system/oem"

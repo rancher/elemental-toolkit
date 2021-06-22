@@ -1,0 +1,23 @@
+name: "Partitioning"
+stages:
+   setup:
+     - name: "Repart disk"
+       layout:
+         # It will partition a device including the given filesystem label
+         # or partition label (filesystem label matches first)
+         device:
+           label: COS_RECOVERY
+         # Only last partition can be expanded and it happens before any other
+         # partition is added. size: 0 or unset means all available free space
+         expand_partition:
+           size: 0
+         add_partitions:
+           - fsLabel: COS_STATE
+             size: 50192
+             filesystem: ext4
+             # No partition label is applied if omitted
+             pLabel: state
+           - fsLabel: COS_PERSISTENT
+             # default filesystem is ext2 if omitted
+             pLabel: persistence
+             filesystem: ext4

@@ -1,0 +1,63 @@
+{
+  "builders": [
+    {
+      "access_key": "{{user `aws_access_key`}}",
+      "ami_name": "rancher-cOS-{{user `cos_version`}}-amd64-{{isotime `200601020304`}}",
+      "instance_type": "t3.small",
+      "region": "{{user `region`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "source_ami_filter": {
+        "filters": {
+          "name": "{{user `IMAGE_NAME`}}",
+          "root-device-type": "ebs",
+          "virtualization-type": "hvm"
+        },
+        "most_recent": true,
+        "owners": [
+          "099720109477"
+        ]
+      },
+      "ssh_username": "root",
+      "ssh_password": "cos",
+      "tags": {
+        "Name": "cOS",
+        "Version": "{{user `cos_version`}}"
+      },
+      "type": "amazon-ebs"
+    }
+  ],
+  "provisioners": [
+    {
+      "destination": "/tmp/config.yaml",
+      "source": "./config.yaml",
+      "type": "file"
+    },
+    {
+      "destination": "/tmp/setup.yaml",
+      "source": "./setup.yaml",
+      "type": "file"
+    },
+    {
+      "inline": [
+        "cp -rfv /tmp/config.yaml /oem/01_config.yaml",
+        "yip -s setup /tmp/setup.yaml",
+        "cos-upgrade --docker-image --no-verify {{user `image_name`}}"
+      ],
+      "type": "shell"
+    },
+    {
+      "inline": [
+        "set -x; sudo systemd-run --on-active=3 --timer-property=AccuracySec=100ms sudo systemctl reboot --force --force; sync; echo Rebooting"
+      ],
+      "pause_after": "3m",
+      "type": "shell"
+    }
+  ],
+  "variables": {
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "cos_version": "v0.11.0",
+    "region": "{{env `AWS_DEFAULT_REGION`}}",
+    "image_name": "{{env `IMAGE_NAME`}}"
+  }
+}
