@@ -8,6 +8,20 @@ import (
 
 var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	var s *sut.SUT
+	var isVagrant bool
+
+	BeforeSuite(func() {
+		isVagrant = sut.IsVagrantTest()
+		if isVagrant {
+			sut.SnapshotVagrant()
+		}
+	})
+
+	AfterSuite(func() {
+		if isVagrant {
+			sut.SnapshotVagrantDelete()
+		}
+	})
 
 	BeforeEach(func() {
 		s = sut.NewSUT()
@@ -22,7 +36,14 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 			s.GatherLog("/tmp/luet_mtree.log")
 			s.GatherLog("/tmp/luet.log")
 		}
-		s.Reset()
+		if CurrentGinkgoTestDescription().Failed == false {
+			if isVagrant {
+				sut.ResetWithVagrant()
+			} else {
+				s.Reset()
+			}
+
+		}
 	})
 	Context("After install", func() {
 		When("upgrading", func() {
