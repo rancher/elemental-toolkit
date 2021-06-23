@@ -1,0 +1,13 @@
+name: "Default deployment"
+stages:
+  rootfs.after:
+    - name: "Repart image"
+      layout:
+        device:
+          label: COS_RECOVERY
+        add_partitions:
+          - fsLabel: COS_STATE
+            size: 9192
+            pLabel: state
+          - fsLabel: COS_PERSISTENT
+            pLabel: persistent
