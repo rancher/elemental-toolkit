@@ -142,7 +142,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 		When("using upgrade channel", func() {
 			// TODO: This test cannot be enabled until we have in master a published version of cOS >=0.5.3
-			PIt("upgrades to latest image", func() {
+			It("upgrades to latest image", func() {
 				By("upgrading recovery and reboot")
 				out, err := s.Command("cos-upgrade --no-verify --recovery")
 				Expect(err).ToNot(HaveOccurred())
