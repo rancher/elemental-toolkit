@@ -47,6 +47,12 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	})
 	Context("After install", func() {
 		When("upgrading", func() {
+			It("fails if verify is enabled on an unsigned/malformed version", func() {
+				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
+				Expect(out).Should(ContainSubstring("luet-mtree"))
+				Expect(out).Should(ContainSubstring("error while executing plugin"))
+				Expect(err).To(HaveOccurred())
+			})
 			It("upgrades to latest available (master) and reset", func() {
 				out, err := s.Command("cos-upgrade")
 				Expect(err).ToNot(HaveOccurred())
@@ -77,12 +83,6 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
 				Expect(out).To(Equal("0.5.1\n"))
-			})
-			It("fails if verify is enabled on an unsigned/malformed version", func() {
-				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
-				Expect(err).To(HaveOccurred())
-				Expect(out).Should(ContainSubstring("luet-mtree"))
-				Expect(out).Should(ContainSubstring("error while executing plugin"))
 			})
 		})
 	})
