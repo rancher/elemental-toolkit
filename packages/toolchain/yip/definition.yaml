@@ -5,4 +5,4 @@ labels:
   github.repo: "yip"
   github.owner: "mudler"
   autobump.revdeps: "true"
-  autobump.revbump_related: "system/cos"
+  autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"

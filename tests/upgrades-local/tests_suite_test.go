@@ -9,5 +9,5 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS Upgrate test Suite - Images unsigned")
+	RunSpecs(t, "cOS Upgrate test Suite - local upgrades")
 }

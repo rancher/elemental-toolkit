@@ -272,7 +272,7 @@ jobs:
     needs: vbox-{{{$subset}}}-{{{ $flavor }}}
     strategy:
       matrix:
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
