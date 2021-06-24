@@ -1,0 +1,16 @@
+---
+
+
+local_runner: false
+push_cache: false
+pipeline: "nightly"
+publishing_pipeline: false
+repository: "releases"
+skip_tests: false
+flavors: ["opensuse", "fedora", "ubuntu"]
+skip_tests_flavor: ["fedora","ubuntu"]
+skip_images_flavor: ["fedora","ubuntu"]
+
+on: 
+  schedule:
+    - cron:  '0 20 * * *'

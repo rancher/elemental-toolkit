@@ -1,0 +1,21 @@
+---
+
+local_runner: false
+pipeline: "Pull requests"
+push_cache: false
+publishing_pipeline: false
+repository: "releases" # releases for prod
+skip_tests: false
+skip_tests_flavor: ["fedora","ubuntu"]
+skip_images_flavor: ["fedora","ubuntu"]
+
+flavors: ["opensuse", "fedora", "ubuntu"]
+on: 
+  pull_request:
+    paths:
+      - 'conf/**'
+      - 'packages/**'
+      - 'make/**'
+      - '.github/**'
+      - 'Makefile'
+      - 'tests/**'

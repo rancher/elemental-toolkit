@@ -1,6 +1,7 @@
 #!/bin/bash 
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
+FINAL_REPO="${FINAL_REPO:-quay.io/costoolkit/releases-opensuse}"
 
 rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml
 
@@ -14,6 +15,13 @@ repositories:
     urls:
       - build
     type: disk
+    priority: 0
+  - name: cOS
+    enable: true
+    urls:
+      - $FINAL_REPO
+    type: docker
+    priority: 90
 EOF
 
 # Create root-tree for COS_RECOVERY

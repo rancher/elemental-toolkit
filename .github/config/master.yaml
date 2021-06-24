@@ -1,0 +1,26 @@
+---
+
+
+local_runner: false
+push_cache: true
+pipeline: "master"
+publishing_pipeline: true
+repository: "releases"
+skip_tests: false
+flavors: ["opensuse", "fedora", "ubuntu"]
+skip_tests_flavor: ["fedora","ubuntu"]
+skip_images_flavor: ["fedora","ubuntu"]
+
+on: 
+  push: 
+    branches: ["master"]
+    paths:
+      - 'conf/**'
+      - 'packages/**'
+      - '.github/**'
+      - 'tests/**'
+      - 'make/**'
+      - 'Makefile'
+  create:
+    tags:
+      - v*
