@@ -93,10 +93,18 @@ include make/Makefile.iso
 include make/Makefile.run
 include make/Makefile.test
 include make/Makefile.raw
+include make/Makefile.images
 
 #----------------------- targets -----------------------
 
 deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE)
+
+as_root:
+ifneq ($(shell id -u), 0)
+	@echo "Please run 'make $@' as root"
+	@exit 1
+endif
+
 
 $(LUET):
 ifneq ($(shell id -u), 0)

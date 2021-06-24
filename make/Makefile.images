@@ -1,0 +1,20 @@
+#
+# cOS-toolkit Makefile.images
+#
+#
+
+RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
+
+QEMUIMG?=$(shell which qemu-img 2> /dev/null)
+
+$(QEMUIMG):
+	@echo "'qemu-img' not found"
+	@exit 1
+
+.PHONY: azure_disk
+azure_disk: as_root $(QEMUIMG)
+ifeq ("$(RAW)","")
+	@echo "Raw image does not exists, please run make_raw first"
+	@exit 1
+endif
+	@$(ROOT_DIR)/images/azure-image.sh $(RAW)
