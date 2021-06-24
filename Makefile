@@ -79,6 +79,12 @@ export MANIFEST?=$(ROOT_DIR)/manifest.yaml
 #
 PACKER_ARGS?=
 
+#
+# Used by .iso, .test, and .run
+#
+ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
+
+
 #----------------------- end global variables -----------------------
 
 

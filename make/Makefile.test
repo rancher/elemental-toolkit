@@ -16,26 +16,6 @@ VAGRANT="/usr/bin/vagrant"
 endif
 
 #
-# Find correct (hashicorp/packer) binary
-#
-
-# if PACKER is pre-set, leave it alone
-ifeq ("$(PACKER)","")
-PACKER=$(shell which packer 2> /dev/null)
-ifeq ("$(PACKER)","")
-PACKER="/usr/bin/packer"
-endif
-endif
-
-$(PACKER):
-ifneq ($(shell id -u), 0)
-	@echo "'$@' is missing and you must be root to install it."
-	@exit 1
-else
-	$(LUET) install -y utils/packer
-endif
-
-#
 # VirtualBox
 #
 
@@ -56,32 +36,6 @@ else
 	@exit 1
 endif
 
-BOXFILE=$(shell ls $(ROOT_DIR)/packer/*.box 2> /dev/null)
-ifeq ("$(BOXFILE)","")
-BOXFILE="$(ROOT_DIR)/packer/cOS.box"
-endif
-
-.PHONY: packer
-#
-# target 'packer' creates a compressed tarball with an 'ova' file
-#
-packer: $(BOXFILE)
-
-packer-clean:
-	rm -rf $(BOXFILE)
-
-$(BOXFILE): $(PACKER)
-ifeq ("$(PACKER)","/usr/sbin/packer")
-	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
-	@echo "Please set PACKER to the correct binary before calling make"
-	@exit 1
-endif
-ifeq ("$(ISO)","")
-	@echo "Please run 'make iso' or 'make local-iso' first"
-	@exit 1
-endif
-	cd $(ROOT_DIR)/packer && $(PACKER) build -var "iso=$(ISO)" $(PACKER_ARGS) images.json
-
 #
 # ------------ actual test targets ------------
 #
@@ -92,7 +46,7 @@ test: test-clean vagrantfile prepare-test test-smoke test-upgrades-signed test-u
 # remove test artifacts
 #
 
-clean_test: test-clean packer-clean
+clean_test: test-clean
 
 
 prepare-test: $(VAGRANT) $(BOXFILE)
