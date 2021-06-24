@@ -160,19 +160,24 @@ upgrade() {
     export LUET_PRIVILEGED_EXTRACT=true
 
     args=""
-    if [ -z "$VERIFY" ]; then
-        args="--enable-logfile --logfile /tmp/luet.log --plugin image-mtree-check"
+    if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
+        args="--enable-logfile --logfile /tmp/luet.log --plugin luet-mtree"
     fi
+
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
+        set -x
         luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
+        set +x
     elif [ "$DIRECTORY" == true ]; then
         echo "Upgrading from local folder: $UPGRADE_IMAGE"
         rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ $TARGET
     else
         echo "Upgrading from container image: $UPGRADE_IMAGE"
+        set -x
         luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
+        set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET
         rm -rf /usr/local/tmp/rootfs
     fi
