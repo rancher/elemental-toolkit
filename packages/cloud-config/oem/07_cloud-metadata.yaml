@@ -10,5 +10,5 @@ stages:
    network:
      - name: "Cloud providers datasources"
        datasource:
-         providers: ["aws", "gcp"]
+         providers: ["aws", "gcp", "cdrom"]
          path: "/system/oem"
