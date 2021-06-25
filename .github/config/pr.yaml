@@ -9,7 +9,7 @@ skip_tests: false
 skip_tests_flavor: ["fedora","ubuntu"]
 skip_images_flavor: ["fedora","ubuntu"]
 
-flavors: ["opensuse", "fedora", "ubuntu"]
+flavors: ["sle", "opensuse", "fedora", "ubuntu"]
 on: 
   pull_request:
     paths:

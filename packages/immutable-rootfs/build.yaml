@@ -19,7 +19,7 @@ copy:
 
 steps:
 {{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{if eq .Values.distribution_like "opensuse" }}
 # Mount /tmp as tmpfs by default as set by systemd itself
 - cp /usr/share/systemd/tmp.mount /etc/systemd/system
 {{end}}

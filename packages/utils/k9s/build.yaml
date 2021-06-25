@@ -6,7 +6,7 @@ env:
 - PATH=$PATH:/usr/local/go/bin
 prelude:
 {{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{if eq .Values.distribution_like "opensuse" }}
 - zypper in -y git
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y git

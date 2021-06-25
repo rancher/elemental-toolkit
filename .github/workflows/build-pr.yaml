@@ -20,6 +20,474 @@ jobs:
 
 
   
+  docker-build-sle:
+  
+    runs-on: ubuntu-latest
+  
+    env:
+      FLAVOR: sle
+
+    steps:
+  
+      - uses: actions/checkout@v2
+
+      - run: |
+          git fetch --prune --unshallow
+  
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@master
+      - name: Release space from worker
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+  
+      - name: Build  🔧
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          source .envrc
+          cos-build $FLAVOR
+
+
+  build-sle:
+  
+    runs-on: ubuntu-latest
+  
+    env:
+      FLAVOR: sle
+      FINAL_REPO: quay.io/costoolkit/releases-sle
+      DOWNLOAD_METADATA: false
+      PUSH_CACHE: false
+    steps:
+  
+
+  
+      - name: Install Go
+        uses: actions/setup-go@v2
+  
+
+      - uses: actions/checkout@v2
+
+      - run: |
+          git fetch --prune --unshallow
+
+  
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@master
+      - name: Release space from worker
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+  
+
+  
+
+      - name: Install deps
+        run: |
+          sudo -E make deps
+
+      - name: Validate 🌳
+        run: |
+          make validate
+
+      - name: Build packages 🔧
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          mkdir build || true
+          pushd ./.github
+          go build -o build
+          popd
+          ./.github/build
+          ls -liah $PWD/build
+          sudo chmod -R 777 $PWD/build
+  
+      - name: Create repo
+        run: |
+          sudo -E make create-repo
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-sle
+          path: build
+          if-no-files-found: error
+
+
+
+  
+  
+  
+
+  iso-squashfs-sle:
+  
+    runs-on: ubuntu-latest
+  
+    needs: build-sle
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-sle
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+          sudo -E make deps
+  
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          MANIFEST=manifest.yaml
+          cp -rf $MANIFEST $MANIFEST.remote
+          yq w -i $MANIFEST.remote 'luet.repositories[0].name' 'cOS'
+          yq w -i $MANIFEST.remote 'luet.repositories[0].enable' true
+          yq w -i $MANIFEST.remote 'luet.repositories[0].priority' 90
+          yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
+          yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
+          sudo -E MANIFEST=$MANIFEST.remote make local-iso
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make iso
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-sle.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  qemu-squashfs-sle:
+    runs-on: macos-10.15
+    needs: iso-squashfs-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-sle.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+      - name: Build QEMU Image 🔧
+        run: |
+          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-sle.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-sle-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-squashfs-sle:
+    runs-on: macos-10.15
+    needs: iso-squashfs-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-sle.iso.zip
+
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-sle.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-sle-vbox.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  
+  
+  tests-squashfs-sle:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+    runs-on: macos-10.15
+    needs: vbox-squashfs-sle
+    strategy:
+      matrix:
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-sle-vbox.box
+          path: packer
+
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make vagrantfile
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure() && contains(matrix.test, 'upgrade')
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+
+  
+ 
+  
+  
+
+  iso-nonsquashfs-sle:
+  
+    runs-on: ubuntu-latest
+  
+    needs: build-sle
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-sle
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+          sudo -E make deps
+  
+      - name: Tweak manifest and drop squashfs recovery
+        run: |
+          yq d -i manifest.yaml 'packages.isoimage(.==recovery/cos-img)'
+  
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          MANIFEST=manifest.yaml
+          cp -rf $MANIFEST $MANIFEST.remote
+          yq w -i $MANIFEST.remote 'luet.repositories[0].name' 'cOS'
+          yq w -i $MANIFEST.remote 'luet.repositories[0].enable' true
+          yq w -i $MANIFEST.remote 'luet.repositories[0].priority' 90
+          yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
+          yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
+          sudo -E MANIFEST=$MANIFEST.remote make local-iso
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E make iso
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          mv *.iso cOS-$COS_VERSION.iso
+          mv *.sha256 cOS-$COS_VERSION.iso.sha256
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  qemu-nonsquashfs-sle:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+      - name: Build QEMU Image 🔧
+        run: |
+          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-nonsquashfs-sle:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-sle
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle.iso.zip
+
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
+      - name: Build VBox Image 🔧
+        run: |
+          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle-vbox.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  
+  
+  tests-nonsquashfs-sle:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+    runs-on: macos-10.15
+    needs: vbox-nonsquashfs-sle
+    strategy:
+      matrix:
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-sle-vbox.box
+          path: packer
+
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make vagrantfile
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure() && contains(matrix.test, 'upgrade')
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+
+  
+ 
+
+  
+
+  
+
+  raw-img-sle:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    needs: build-sle
+
+    steps:
+      - name: Install OS deps
+        run: |
+          zypper in -y curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-sle
+          path: build
+      - name: Install toolchain
+        run: |
+          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
+          rm -rf /var/lock
+          mkdir -p /var/lock
+          make deps
+      - name: Build Image
+        run: |
+          make raw_disk
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+          mv disk.raw cOS_${COS_VERSION}.raw
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-raw-img-sle
+          path: |
+            *.raw
+          if-no-files-found: error
+
+  azure-img-sle:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    needs: raw-img-sle
+
+    steps:
+      - name: Install OS deps
+        run: |
+          zypper in -y qemu-tools make tar gzip xz which curl
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-raw-img-sle
+          path: .
+      - name: Install toolchain
+        run: |
+          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the container
+          rm -rf /var/lock
+          mkdir -p /var/lock
+          make deps
+      - name: Build Image
+        run: |
+          make azure_disk
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+          mv disk.vhd cOS_${COS_VERSION}.vhd
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-azure-img-sle
+          path: |
+            *.vhd
+          if-no-files-found: error
+  
+
+  
   docker-build-opensuse:
   
     runs-on: ubuntu-latest

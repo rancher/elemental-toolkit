@@ -10,7 +10,7 @@ env:
 - LDFLAGS="-s -w"
 prelude:
 {{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{if eq .Values.distribution_like "opensuse" }}
 - zypper in -y git upx
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y git upx

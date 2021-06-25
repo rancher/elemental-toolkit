@@ -1,5 +1,5 @@
-image: opensuse/leap:15.3
-distribution: "opensuse"
+image: registry.suse.com/suse/sle15:15.3
+distribution: "sle"
 distribution_like: "opensuse"
 
 packages: >-

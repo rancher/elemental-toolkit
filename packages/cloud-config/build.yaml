@@ -9,6 +9,8 @@ steps:
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 - sed -i 's/:FLAVOR:/opensuse/g' /system/oem/02_upgrades.yaml
+{{else if eq .Values.distribution "sle" }}
+- sed -i 's/:FLAVOR:/sle/g' /system/oem/02_upgrades.yaml
 {{else if eq .Values.distribution "fedora" }}
 - sed -i 's/:FLAVOR:/fedora/g' /system/oem/02_upgrades.yaml
 {{else if eq .Values.distribution "ubuntu" }}

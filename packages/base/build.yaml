@@ -11,6 +11,14 @@ steps:
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y --no-recommends {{.Values.packages}} {{.Values.kernel_package}}
 - zypper cc
+{{else if eq .Values.distribution "sle" }}
+- zypper rm -y container-suseconnect
+- zypper ar --priority=200 http://download.opensuse.org/distribution/leap/15.3/repo/oss repo-oss
+# We don't want to import the opensuse gpg key for the repo. We don't need to trust the repo
+# itself because all rpms will later be validated
+- zypper --no-gpg-checks ref
+- zypper in -y --no-recommends {{.Values.packages}} {{.Values.kernel_package}}
+- zypper cc
 {{else if eq .Values.distribution "fedora" }}
 - echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
 - dnf install -y {{.Values.packages}} {{.Values.kernel_package}}

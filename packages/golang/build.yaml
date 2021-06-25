@@ -5,7 +5,7 @@ requires:
 
 prelude:
 {{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{if eq .Values.distribution_like "opensuse" }}
 - zypper in -y wget && zypper install -y -t pattern devel_basis
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y wget "@Development Tools"

@@ -7,7 +7,7 @@ env:
 - GITHUB_REPO={{ ( index .Values.labels "github.repo" ) }}
 
 {{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{if eq .Values.distribution_like "opensuse" }}
 prelude:
 - zypper ar https://download.opensuse.org/repositories/security:/SELinux/openSUSE_Leap_15.3/security:SELinux.repo
 - zypper --gpg-auto-import-keys in -y --allow-vendor-change --allow-downgrade container-selinux -libsemanage1
