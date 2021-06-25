@@ -14,13 +14,6 @@ skip_images_flavor: ["fedora","ubuntu"]
 on: 
   push: 
     branches: ["master"]
-    paths:
-      - 'conf/**'
-      - 'packages/**'
-      - '.github/**'
-      - 'tests/**'
-      - 'make/**'
-      - 'Makefile'
   create:
     tags:
       - v*
