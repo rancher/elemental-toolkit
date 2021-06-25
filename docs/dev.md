@@ -145,6 +145,26 @@ $> QEMU=qemu-system-x86_64 make run-qemu
 
 ```
 
+This will create a disk image at `.qemu/drive.img` and boot from the ISO.
+
+> If the image already exists, it will NOT be overwritten.
+> You need to run an explicit `make clean_run` to wipe the image and
+> start over.
+
+#### Installing
+
+With a fresh `drive.img`, `make run-qemu` will boot from ISO. You can then log in as `root` with password `cos` and install cOS on
+the disk image with:
+
+```bash
+# cos-installer /dev/sda
+```
+
+A subsequent reboot (resp. running `make run-qemu` with an installed
+`drive.img`) will boot the installed cOS operating system.
+
+
+
 ### Run tests
 
 Requires: Virtualbox or libvirt, vagrant, packer
