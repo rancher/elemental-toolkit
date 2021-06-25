@@ -17,7 +17,7 @@ $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
 
 $(ROOT_DIR)/.qemu/drive.img: $(ROOT_DIR)/.qemu
-	qemu-img create -f qcow2 $(ROOT_DIR)/.qemu/drive.img 16g
+	qemu-img create -f qcow2 $(ROOT_DIR)/.qemu/drive.img 24g
 
 run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	$(QEMU) \
