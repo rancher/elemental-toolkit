@@ -7,7 +7,7 @@ Conflicts=initrd-switch-root.target
 
 [Service]
 Type=oneshot
-ExecStartPre=/usr/bin/ln -s /sysroot/system /system
+ExecStartPre=/usr/bin/ln -sf -t / /sysroot/system
 ExecStart=/usr/bin/cos-setup rootfs
 
 [Install]
