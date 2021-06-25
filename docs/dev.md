@@ -147,9 +147,12 @@ $> QEMU=qemu-system-x86_64 make run-qemu
 
 This will create a disk image at `.qemu/drive.img` and boot from the ISO.
 
+>
 > If the image already exists, it will NOT be overwritten.
+>
 > You need to run an explicit `make clean_run` to wipe the image and
 > start over.
+>
 
 #### Installing
 
