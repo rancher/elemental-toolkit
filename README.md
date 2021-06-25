@@ -57,9 +57,9 @@ ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolki
 
 ### Build cOS Locally
 
-The starting point to use cos-toolkit is to see it in action with our [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo).
+The starting point to use cos-toolkit is to see it in action with our [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo) or check out our `examples` folder, see also [creating bootable images](/docs/creating_bootable_images.md).
 
-The only requirement to build derivatives is docker installed, see [Development notes](/docs/dev.md) for more details on how to build `cos` instead.
+The only requirement to build derivatives with `cos-toolkit` is docker installed, see [Development notes](/docs/dev.md) for more details on how to build `cos` instead.
 
 ## First steps
 
@@ -74,14 +74,15 @@ $ source .envrc
 $ cos-build
 ```
 
-This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice. 
+This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice.  See [Creating derivatives](/docs/creating_derivatives.md) for more details about the process.
 
-See [Creating derivatives](/docs/creating_derivatives.md) for more details about the process.
+If you are looking after only generating a container image that can be used for upgrades from our vanilla images, see [creating bootable images](/docs/creating_bootable_images.md).
 
 ## References
 
 ### Derivatives
 - [Creating derivatives](/docs/creating_derivatives.md)
+- [Creating bootable images](/docs/creating_bootable_images.md)
 - [Derivatives featureset](/docs/derivatives_featureset.md)
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
 - [EpinioOS sample repository](https://github.com/rancher-sandbox/epinio-appliance-demo-sample)
