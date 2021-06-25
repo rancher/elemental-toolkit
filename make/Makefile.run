@@ -23,6 +23,7 @@ else
 	@echo "Using $@"
 endif
 
+.PHONY: run-qemu
 run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	$(QEMU) \
 	-m $(QEMU_MEMORY) \
