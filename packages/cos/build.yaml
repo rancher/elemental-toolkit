@@ -20,16 +20,6 @@ requires:
   category: "system"
   version: ">=0"
 
-# Skip selinux policies for recovery
-{{if ne .Values.category "recovery" }}
-
-- name: "selinux-policies"
-  category: "system"
-  version: ">=0"
-
-{{end}}
-
-
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
 - package: 
