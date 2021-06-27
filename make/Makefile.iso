@@ -3,18 +3,34 @@
 #
 #
 
-ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
-
 MKSQUASHFS?=$(shell which mksquashfs 2> /dev/null)
 ifeq ("$(MKSQUASHFS)","")
 MKSQUASHFS="/usr/bin/mksquashfs"
 endif
 
 #
+# Find correct (hashicorp/packer) binary
+#
+
+# if PACKER is pre-set, leave it alone
+PACKER?=$(shell which packer 2> /dev/null)
+ifeq ("$(PACKER)","")
+PACKER="/usr/bin/packer"
+endif
+
+$(PACKER):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y utils/packer
+endif
+
+#
 # remove iso artifacts
 #
 
-clean_iso:
+clean_iso: packer-clean
 	rm -rf $(ROOT_DIR)/*.iso $(ROOT_DIR)/*.iso.sha256
 	rm -rf $(DESTINATION)/tree.tar.zst
 	rm -rf $(MANIFEST).remote
@@ -79,3 +95,34 @@ else
 	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
 	$(LUET) makeiso $(MANIFEST).remote
 endif
+
+
+BOXFILE=$(shell ls $(ROOT_DIR)/packer/*.box 2> /dev/null)
+ifeq ("$(BOXFILE)","")
+BOXFILE="$(ROOT_DIR)/packer/cOS.box"
+endif
+
+#
+#
+#
+
+.PHONY: packer
+#
+# target 'packer' creates a compressed tarball with an 'ova' file
+#
+packer: $(BOXFILE)
+
+packer-clean:
+	rm -rf $(BOXFILE)
+
+$(BOXFILE): $(PACKER)
+ifeq ("$(PACKER)","/usr/sbin/packer")
+	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
+	@echo "Please set PACKER to the correct binary before calling make"
+	@exit 1
+endif
+ifeq ("$(ISO)","")
+	@echo "Please run 'make iso' or 'make local-iso' first"
+	@exit 1
+endif
+	cd $(ROOT_DIR)/packer && $(PACKER) build -var "iso=$(ISO)" $(PACKER_ARGS) images.json

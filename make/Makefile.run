@@ -17,8 +17,13 @@ $(ROOT_DIR)/.qemu:
 	mkdir -p $(ROOT_DIR)/.qemu
 
 $(ROOT_DIR)/.qemu/drive.img: $(ROOT_DIR)/.qemu
+ifeq (,$(wildcard $(ROOT_DIR)/.qemu/drive.img))
 	qemu-img create -f qcow2 $(ROOT_DIR)/.qemu/drive.img 24g
+else
+	@echo "Using $@"
+endif
 
+.PHONY: run-qemu
 run-qemu: $(ROOT_DIR)/.qemu/drive.img
 	$(QEMU) \
 	-m $(QEMU_MEMORY) \
