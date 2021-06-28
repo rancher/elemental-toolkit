@@ -14,8 +14,8 @@ or you need:
   - `zypper in squashfs` on SLES or openSUSE
 - [`xorriso`](https://dev.lovelyhq.com/libburnia/web/wiki/Xorriso)
   - `zypper in xorriso` on SLES or openSUSE
-- `yq` ([version `3.x`](https://github.com/mikefarah/yq/releases/tag/3.4.1))  (optional)
-- [`jq`](https://stedolan.github.io/jq) (optional)
+- `yq` ([version `3.x`](https://github.com/mikefarah/yq/releases/tag/3.4.1)), installed via [packages/toolchain/yq](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/yq) (optional)
+- [`jq`](https://stedolan.github.io/jq), installed via [packages/utils/jq](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/utils/jq) (optional)
 
 _Note_: Running `make` deps will install only `luet`, `luet-makeiso`, `yq` and `jq`. `squashfs-tools` and `xorriso` needs to be provided by the OS.
 
@@ -34,22 +34,21 @@ The Luet official repository that are being installed by the script above are:
 
 #### luet-makeiso
 
-Available in the [official Luet repository](https://github.com/Luet-lab/luet-repo). After installing `luet` with the curl command above, is sufficient to:
+Available in the [official Luet
+repository](https://github.com/Luet-lab/luet-repo). After installing
+`luet` with the curl command above, it's sufficient to:
 
 ```bash
 $> luet install -y extension/makeiso
 ```
 
-to install it locally, otherwise grab the binary from [luet-makeiso](https://github.com/mudler/luet-makeiso) releases.
+to install it locally; otherwise grab the binary from [luet-makeiso](https://github.com/mudler/luet-makeiso) releases.
 
 #### yq and jq
-`yq` (version `3.x`) and `jq` are used to retrieve the list of packages to build in order to produce the final ISOs. Those are not strictly required, see the Note above. 
+`yq` (version `3.x`) and `jq` are used to retrieve the list of
+packages to build in order to produce the final ISOs. Those are not
+strictly required, see the Note below. 
 
-Install the `mocaccino-extra` repository:
-
-```bash
-$> luet install -y repository/mocaccino-extra-stable
-```
 
 They are installable with:
 
