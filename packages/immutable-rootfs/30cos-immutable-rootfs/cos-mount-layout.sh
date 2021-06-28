@@ -154,32 +154,40 @@ function mountPersistent {
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
-declare root=${root}
 declare cos_mounts=${cos_mounts}
 declare cos_overlay=${cos_overlay}
 declare cos_root_perm=${cos_root_perm}
-declare state_label="COS_STATE"
 declare overlay_base="/run/overlay"
 declare rw_paths=("/etc" "/root" "/home" "/opt" "/srv" "/usr/local" "/var")
 declare etc_conf="/sysroot/etc/systemd/system/etc.mount.d"
 declare cos_layout="/run/cos/cos-layout.env"
+declare root_fstype=$(findmnt -rno FSTYPE /sysroot)
+declare root=$(findmnt -rno SOURCE /sysroot)
 declare fstab
+declare state_label
 
 readCOSLayoutConfig
 
-[ -z "${root}" ] && exit 0
 [ -z "${cos_overlay}" ] && exit 0
 
-fstab="/dev/disk/by-label/${state_label} /run/initramfs/cos-state auto ${cos_root_perm} 0 0\n"
-fstab+="${root} / auto ${cos_root_perm} 0 0\n"
-
-fstab+=$(mountOverlayBase)
+# If sysroot is already an overlay do not prepare the rw overlay
+if [ "${root_fstype}" != "overlay" ]; then
+    state_label=$(ls /tmp/cosloop-*)
+    state_label="${state_label##/tmp/cosloop-}"
+    if [ -f "/dev/disk/by-label/${state_label}" ]; then
+        fstab="/dev/disk/by-label/${state_label} /run/initramfs/cos-state auto ${cos_root_perm} 0 0\n"
+    fi
+    fstab+="${root} / auto ${cos_root_perm} 0 0\n"
+    fstab+=$(mountOverlayBase)
+fi
 
 mountpoints=($(getCOSMounts))
 
 for mount in "${mountpoints[@]}"; do
     if [ "${mount#*:}" = "overlay" ]; then
-        fstab+=$(mountOverlay "${mount%%:*}")
+        if [ "${root_fstype}" != "overlay" ]; then
+            fstab+=$(mountOverlay "${mount%%:*}")
+        fi
     else
         fstab+=$(mountPersistent "${mount}")
     fi

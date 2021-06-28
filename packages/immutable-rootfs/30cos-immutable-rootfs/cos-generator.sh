@@ -5,8 +5,10 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 cos_unit="cos-immutable-rootfs.service"
 cos_layout="/run/cos/cos-layout.env"
 
-# Disable the service unless we override it
-mkdir -p "/run/systemd/system/${cos_unit}.d"
+# Omit any immutable roofs module logic if disabled
+if getargbool 0 rd.cos.disable; then
+    exit 0
+fi
 
 [ -z "${root}" ] && root=$(getarg root=)
 
@@ -55,6 +57,37 @@ if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.wants/$dev.device" ]; then
         "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
 fi
 
+case "${cos_overlay}" in
+    UUID=*) \
+        cos_overlay="block:/dev/disk/by-uuid/${cos_overlay#UUID=}"
+    ;;
+    LABEL=*) \
+        cos_overlay="block:/dev/disk/by-label/${cos_overlay#LABEL=}"
+    ;;
+esac
+
+cos_mounts=()
+for mount in $(getargs rd.cos.mount=); do
+    case "${mount}" in
+        UUID=*) \
+            mount="/dev/disk/by-uuid/${mount#UUID=}"
+        ;;
+        LABEL=*) \
+            mount="/dev/disk/by-label/${mount#LABEL=}"
+        ;;
+    esac
+    cos_mounts+=("${mount}")
+done
+
+mkdir -p "/run/systemd/system/${cos_unit}.d"
+{
+    echo "[Service]"
+    echo "Environment=\"cos_mounts=${cos_mounts[@]}\""
+    echo "Environment=\"cos_overlay=${cos_overlay}\""
+    echo "Environment=\"cos_root_perm=${cos_root_perm}\""
+    echo "EnvironmentFile=${cos_layout}"
+} > "/run/systemd/system/${cos_unit}.d/override.conf"
+
 case "${root}" in
     LABEL=*) \
         root="${root//\//\\x2f}"
@@ -92,37 +125,3 @@ mkdir -p "$GENERATOR_DIR/$dev.device.d"
     echo "JobTimeoutSec=300"
     echo "JobRunningTimeoutSec=300"
 } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
-
-case "${cos_overlay}" in
-    UUID=*) \
-        cos_overlay="block:/dev/disk/by-uuid/${cos_overlay#UUID=}"
-    ;;
-    LABEL=*) \
-        cos_overlay="block:/dev/disk/by-label/${cos_overlay#LABEL=}"
-    ;;
-esac
-
-cos_mounts=()
-for mount in $(getargs rd.cos.mount=); do
-    case "${mount}" in
-        UUID=*) \
-            mount="/dev/disk/by-uuid/${mount#UUID=}"
-        ;;
-        LABEL=*) \
-            mount="/dev/disk/by-label/${mount#LABEL=}"
-        ;;
-    esac
-    cos_mounts+=("${mount}")
-done
-
-mkdir -p "${cos_layout%/*}"
-#> "${cos_layout}"
-
-{
-    echo "[Service]"
-    echo "Environment=\"cos_mounts=${cos_mounts[@]}\""
-    echo "Environment=\"cos_overlay=${cos_overlay}\""
-    echo "Environment=\"cos_root_perm=${cos_root_perm}\""
-    echo "Environment=\"root=${root}\""
-    echo "EnvironmentFile=${cos_layout}"
-} > "/run/systemd/system/${cos_unit}.d/override.conf"

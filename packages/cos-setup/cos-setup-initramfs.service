@@ -7,7 +7,7 @@ Before=initrd.target
 
 [Service]
 RootDirectory=/sysroot
-MountAPIVFS=true
+BindPaths=/proc /sys /dev /run
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/cos-setup initramfs

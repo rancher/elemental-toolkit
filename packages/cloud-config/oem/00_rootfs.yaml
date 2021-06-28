@@ -7,12 +7,18 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "Rootfs Layout Settings"
 stages:
-  rootfs:
-    - environment_file: /run/cos/cos-layout.env
+  rootfs.before:
+    - name: "Layout configuration"
+      environment_file: /run/cos/cos-layout.env
       environment:
         VOLUMES: "LABEL=COS_OEM:/oem LABEL=COS_PERSISTENT:/usr/local"
         OVERLAY: "tmpfs:25%"
 #       DEBUG_RW: "true"
+    - name: "Pull data from provider"
+      datasource:
+        providers: ["aws", "cdrom"]
+        path: "/oem"
+
   initramfs:
     - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
       name: "Persist /etc/machine-id"
