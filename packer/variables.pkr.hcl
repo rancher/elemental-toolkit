@@ -62,13 +62,6 @@ variable "aws_source_ami_filter_virtualization-type" {
   description = "Type of virtualization type to filter the search for the base AMI"
 }
 
-
-variable "aws_cos_install_args" {
-  type = string
-  default = "cos-deploy"
-  description = "Arguments to execute while provisioning the aws ami with packer. This will use the shell provisioner"
-}
-
 variable "aws_launch_volume_name" {
   type = string
   default = "/dev/sda1"
@@ -83,8 +76,74 @@ variable "aws_launch_volume_size" {
 
 variable "aws_user_data_file" {
   type = string
-  default = "aws/setup-disk.yaml"
+  default = "user-data/aws.yaml"
   description = "Path to the user-data file to boot the base AMI with"
+}
+
+variable "azure_client_id" {
+  type = string
+  default = env("AZURE_CLIENT_ID")
+}
+
+variable "azure_tenant_id" {
+  type = string
+  default = env("AZURE_TENANT_ID")
+}
+
+variable "azure_client_secret" {
+  type = string
+  default = env("AZURE_CLIENT_SECRET")
+}
+
+variable "azure_subscription_id" {
+  type = string
+  default = env("AZURE_SUBSCRIPTION_ID")
+}
+
+variable "azure_custom_managed_image_resource_group_name" {
+  type = string
+  default = "cos-testing"
+}
+
+variable "azure_custom_managed_image_name" {
+  type = string
+  default = "cos_0.5.7-recovery"
+}
+
+variable "azure_managed_image_resource_group_name" {
+  type = string
+  default = "cos-testing"
+}
+
+variable "azure_location" {
+  type = string
+  default = "westeurope"
+}
+
+variable "azure_os_disk_size_gb" {
+  type = number
+  default = 16
+}
+
+variable "azure_vm_size" {
+  type = string
+  default = "Standard_B2s"
+}
+
+variable "azure_user_data_file" {
+  type = string
+  default = "user-data/azure.yaml"
+  description = "Path to the user-data file to boot the base Image with"
+}
+
+variable "azure_cos_deploy_args" {
+  default = "sudo /usr/sbin/cos-deploy"
+}
+
+variable "aws_cos_deploy_args" {
+  type = string
+  default = "cos-deploy"
+  description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
 }
 
 variable "cos_version" {
