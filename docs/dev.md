@@ -77,7 +77,7 @@ and then, simply run
 
 To test changes against a specific set of packages, you can for example:
 
-```bash
+```
 # make PACKAGES="toolchain/yq"  build local-iso
 ```
 
@@ -87,7 +87,7 @@ root is required because we want to keep permissions on the output packages (not
 
 After you have the iso locally, run
 
-```bash
+```
 
 $> QEMU=qemu-system-x86_64 make run-qemu
 
@@ -107,7 +107,7 @@ This will create a disk image at `.qemu/drive.img` and boot from the ISO.
 With a fresh `drive.img`, `make run-qemu` will boot from ISO. You can then log in as `root` with password `cos` and install cOS on
 the disk image with:
 
-```bash
+```
 # cos-installer /dev/sda
 ```
 
@@ -124,7 +124,7 @@ We have a test suite which runs over SSH.
 
 To create the vagrant image:
 
-```bash
+```
 
 $> PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
 
@@ -132,7 +132,7 @@ $> PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso" make packer
 
 To run the tests:
 
-```bash
+```
 
 $> make test
 
