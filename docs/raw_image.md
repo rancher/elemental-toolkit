@@ -31,17 +31,37 @@ aws ec2 import-snapshot --description "cOS PoC" --disk-container file://containe
 
 5. Launch instance with this simple userdata:
 ```
-name: "Default ec2 user"
+name: "Default deployment"
 stages:
-   network.after:
-     - name: "Setup user"
-       users:
-         ec2user:
-           name: "ec2user"
-           passwd: "$6$M5bXBW/.7pspU1n7$d3Un967.AG8yf9YK2qlUFJt/3EQR57Vrlhtil866FglGY9dI2/arcBCcbSk7/faSq8pkwf1dkD.tDX7iXLOuG1"
-           primary_group: "users"
-           shell: "/bin/bash"
-           homedir: "/home/ec2user"
+   rootfs.after:
+     - name: "Repart image"
+       layout:
+         # It will partition a device including the given filesystem label or part label (filesystem label matches first)
+         device:
+           label: COS_RECOVERY
+         # Only last partition can be expanded
+         # expand_partition:
+         #   size: 4096
+         add_partitions:
+           - fsLabel: COS_STATE
+             size: 8192
+             pLabel: state
+           - fsLabel: COS_PERSISTENT
+             # unset size or 0 size means all available space
+             # size: 0 
+             # default filesystem is ext2 when omitted
+             # filesystem: ext4
+             pLabel: persistent
+   network:
+     - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
+       name: "Deploy cos-system"
+       commands:                                                                 
+         - |
+             cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.3-3 && \
+             shutdown -r +1
+
 ```
+
+You can login with default username/password: `root/cos`.
 
 See also https://github.com/rancher-sandbox/cOS-toolkit/pull/235#issuecomment-853762476
