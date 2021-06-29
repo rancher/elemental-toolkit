@@ -523,6 +523,24 @@ jobs:
         env:
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ami-publish-opensuse:
+    runs-on: ubuntu-latest
+    needs: publish-opensuse
+    env:
+      AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build AMI for opensuse
+        run: |
+            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
+            export PKR_VAR_flavor: opensuse
+            make packer-aws
+
   
 
   
@@ -806,6 +824,24 @@ jobs:
         env:
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ami-publish-fedora:
+    runs-on: ubuntu-latest
+    needs: publish-fedora
+    env:
+      AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build AMI for fedora
+        run: |
+            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-fedora:cos-system-${COS_VERSION}"
+            export PKR_VAR_flavor: fedora
+            make packer-aws
+
   
 
   
@@ -1022,6 +1058,24 @@ jobs:
         env:
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  ami-publish-ubuntu:
+    runs-on: ubuntu-latest
+    needs: publish-ubuntu
+    env:
+      AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build AMI for ubuntu
+        run: |
+            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-ubuntu:cos-system-${COS_VERSION}"
+            export PKR_VAR_flavor: ubuntu
+            make packer-aws
+
   
 
   

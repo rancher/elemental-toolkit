@@ -1,31 +1,32 @@
 source "amazon-ebs" "cos" {
-  access_key    = var.aws_access_key
-  ami_name      = "cos-${var.cos_version}-${formatdate("DDMMYYYY", timestamp())}"
-  ami_description = "cos-${var.cos_version}-${formatdate("DDMMYYYY", timestamp())}"
-  instance_type = "t3.small"
-  region       = var.aws_region
-  secret_key   = var.aws_secret_key
-  ssh_password = "cos"
-  ssh_username = "root"
+  access_key      = var.aws_access_key
+  ami_name        = "${var.name}-${var.cos_version}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
+  ami_description = "${var.name}-${var.cos_version}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
+  ami_groups      = var.aws_ami_groups
+  instance_type   = var.aws_instance_type
+  region          = var.aws_region
+  secret_key      = var.aws_secret_key
+  ssh_password    = var.root_password
+  ssh_username    = var.root_username
   source_ami_filter {
     filters = {
-      name                = "*cos*recovery*"
-      root-device-type    = "ebs"
-      virtualization-type = "hvm"
+      name                = var.aws_source_ami_filter_name
+      root-device-type    = var.aws_source_ami_filter_root-device-type
+      virtualization-type = var.aws_source_ami_filter_virtualization-type
     }
     most_recent = true
-    owners      = ["self"]
+    owners      = var.aws_source_ami_filter_owners
   }
   launch_block_device_mappings {
-    device_name = "/dev/sda1"
-    volume_size = 15
+    device_name = var.aws_launch_volume_name
+    volume_size = var.aws_launch_volume_size
   }
-  user_data_file = "aws/setup-disk.yaml"
+  user_data_file = var.aws_user_data_file
   tags = {
-    Name    = "cOS"
-    Version = var.cos_version
-    Base_AMI_ID = "{{ .SourceAMI }}"
-    Base_AMI_Name = "{{ .SourceAMIName }}"
+    Name          = var.name
+    Version       = var.cos_version
+    Base_AMI_ID   = "{{ .SourceAMI }}"  # This info comes from the build process directly
+    Base_AMI_Name = "{{ .SourceAMIName }}"  # This info comes from the build process directly
   }
 }
 
@@ -67,9 +68,6 @@ source "virtualbox-iso" "cos" {
   vm_name                = "cOS"
 }
 
-# a build block invokes sources and runs provisioning steps on them. The
-# documentation for build blocks can be found here:
-# https://www.packer.io/docs/templates/hcl_templates/blocks/build
 build {
   description = "cOS"
 
