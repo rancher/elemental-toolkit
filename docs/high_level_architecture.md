@@ -5,8 +5,8 @@ This page tries to encompass the [`cos-toolkit`](https://github.com/rancher-sand
 
 ## Design goals
 
-- Blueprints to build immutable linux derivatives from container images
-- A Manifest that manipulates base images with a common abstraction layer. Currently Opensuse 15.3, Fedora and Ubuntu are supported
+- Blueprints to build immutable Linux derivatives from container images
+- A manifest that manipulates base images with a common abstraction layer. Currently openSUSE 15.3, Fedora and Ubuntu are supported
 - A workflow to maintain, support and deliver custom-OS and upgrades to end systems
 - Derivatives have the same “foundation” manifest - easy to customize on top, add packages: systemd, dracut and grub as a foundation stack.
 - Upgrades delivered with container registry images ( also workflow with `docker run` && `docker commit` supported! )
@@ -15,9 +15,9 @@ This page tries to encompass the [`cos-toolkit`](https://github.com/rancher-sand
 
 ## High level overview
 
-Cos-toolkit encompasses several components required for building and distributing OS images. [This issue](https://github.com/rancher-sandbox/cOS-toolkit/issues/108) summarize the current state, and how we plan to integrate them in a single CLI to improve the user experience.
+cOS-Toolkit encompasses several components required for building and distributing OS images. [This issue](https://github.com/rancher-sandbox/cOS-toolkit/issues/108) summarize the current state, and how we plan to integrate them in a single CLI to improve the user experience.
 
-cos-toolkit is also a manifest, which includes package definitions of how the underlying OS is composed. It forms an abstraction layer, which is then translated to Dockerfiles and built by our CI (optionally) for re-usal. A derivative can be built by parts of the manifest, or reusing it entirely, container images included.
+cOS-Toolkit is also a manifest, which includes package definitions of how the underlying OS is composed. It forms an abstraction layer, which is then translated to Dockerfiles and built by our CI (optionally) for re-usal. A derivative can be built by parts of the manifest, or reusing it entirely, container images included.
  
 ![High level overview](https://docs.google.com/drawings/d/e/2PACX-1vQQJOaISPbMxMYU44UT-M3ou9uGYOrzbXCRXMLPU8m7_ie3ke_08xCsyRLkFZJRB4VnzIeobPciEoQv/pub?w=942&h=532)
 
