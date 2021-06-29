@@ -6,23 +6,18 @@ stages:
          # It will partition a device including the given filesystem label or part label (filesystem label matches first)
          device:
            label: COS_RECOVERY
-         # Only last partition can be expanded
-         # expand_partition:
-         #   size: 4096
          add_partitions:
            - fsLabel: COS_STATE
-             size: 8192
+             # 15Gb for COS_STATE, so the disk should be bigger than 17Gb
+             size: 15360
              pLabel: state
            - fsLabel: COS_PERSISTENT
              # unset size or 0 size means all available space
-             # size: 0 
-             # default filesystem is ext2 when omitted
-             # filesystem: ext4
              pLabel: persistent
    network:
-     - if: '[ -z "$(blkid -L COS_SYSTEM || true)" ]'
+     - if: '[ -f "/run/cos/recovery_mode" ]'
        name: "Deploy cos-system"
-       commands:                                                                 
+       commands:
          - |
-             cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.3-3 && \
+             cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5 && \
              shutdown -r +1
