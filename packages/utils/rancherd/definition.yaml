@@ -1,0 +1,9 @@
+name: "rancherd"
+category: "utils"
+version: "0.0.1-alpha03"
+arch: amd64
+platform: linux
+labels:
+  github.repo: "rancherd"
+  github.owner: "rancher"
+  autobump.revdeps: "true"

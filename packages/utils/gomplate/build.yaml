@@ -1,0 +1,33 @@
+requires:
+- name: "golang"
+  category: "build"
+  version: ">=0"
+
+package_dir: /{{.Values.name}}
+
+env:
+- PATH=$PATH:/usr/local/go/bin
+prelude:
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+- zypper in -y git
+{{else if eq .Values.distribution "fedora" }}
+- dnf install -y git
+{{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y git
+{{end}}
+{{end}}
+- |
+   PACKAGE_VERSION=v${PACKAGE_VERSION%\+*} && \
+   git clone --depth=1 --branch ${PACKAGE_VERSION} https://github.com/{{ ( index .Values.labels "github.owner" ) }}/{{ ( index .Values.labels "github.repo" ) }}.git
+steps:
+- |
+   cd {{.Values.name}} && \
+   make build && \
+   cp -rfv bin/* /usr/bin/ && \
+   mkdir -p /{{.Values.name}}/usr/bin && \
+   mv bin/* /{{.Values.name}}/usr/bin
+includes:
+- ^/usr$
+- ^/usr/bin$
+- ^/usr/bin/{{.Values.name}}$

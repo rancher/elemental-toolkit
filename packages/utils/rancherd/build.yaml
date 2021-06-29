@@ -1,0 +1,27 @@
+requires:
+- name: "golang"
+  category: "build"
+  version: ">=0"
+env:
+- PATH=$PATH:/usr/local/go/bin
+prelude:
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+- zypper in -y git upx
+{{else if eq .Values.distribution "fedora" }}
+- dnf install -y git upx
+{{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y git upx
+{{end}}
+{{end}}
+- |
+   PACKAGE_VERSION=v${PACKAGE_VERSION%\+*} && \
+   git clone --depth=1 --branch ${PACKAGE_VERSION}  https://github.com/rancher/rancherd
+steps:
+- |
+    cd ./rancherd && \
+    ./scripts/build && \
+    upx bin/rancherd && \
+    cp bin/rancherd /usr/bin/
+includes:
+- /usr/bin/rancherd
