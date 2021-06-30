@@ -52,7 +52,7 @@ strictly required, see the Note below.
 They are installable with:
 
 ```bash
-$> luet install -y utils/jq utils/yq
+$> luet install -y utils/jq toolchain/yq
 ```
 
 _Note_: `yq` and `jq` are just used to generate the list of packages to build, and you don't need to have them installed if you manually specify the packages to be compiled.
