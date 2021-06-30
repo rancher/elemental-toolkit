@@ -6,9 +6,8 @@ This page tries to encompass the [`cos-toolkit`](https://github.com/rancher-sand
 ## Design goals
 
 - Blueprints to build immutable Linux derivatives from container images
-- A manifest that manipulates base images with a common abstraction layer. Currently openSUSE 15.3, Fedora and Ubuntu are supported
 - A workflow to maintain, support and deliver custom-OS and upgrades to end systems
-- Derivatives have the same “foundation” manifest - easy to customize on top, add packages: systemd, dracut and grub as a foundation stack.
+- Derivatives have the same “foundation” manifest - easy to customize on top, add packages: `systemd`, `dracut` and `grub` as a foundation stack.
 - Upgrades delivered with container registry images ( also workflow with `docker run` && `docker commit` supported! )
 <br/>The content of the container image is the system which is booted.
 
