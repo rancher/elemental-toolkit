@@ -114,9 +114,16 @@ the disk image with:
 # cos-installer /dev/sda
 ```
 
-A subsequent reboot (resp. running `make run-qemu` with an installed
-`drive.img`) will boot the installed cOS operating system.
+#### Running
 
+After a successful installation of cOS on `drive.img`, you can boot
+the resulting sytem with
+
+```
+
+$> QEMU_ARGS="-boot c" make run-qemu
+
+```
 
 
 ### Run tests
