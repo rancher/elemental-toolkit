@@ -1,6 +1,8 @@
+# cOS-Toolkit Developer Documentation
+
 Welcome!
 
-The cOS Distribution is entirely built over GitHub. You can check the pipelines in the `.github` folder to see how the process looks like.
+The cOS (containerized OS) distribution is entirely built over GitHub. You can check the pipelines in the `.github` folder to see how the process looks like.
 
 ## Repository layout
 
@@ -13,7 +15,8 @@ The cOS Distribution is entirely built over GitHub. You can check the pipelines 
 
 ## Forking and test on your own
 
-By forking the `cOS` repository, you already have the Github Action workflow configured to start building and pushing your own `cOS` fork.
+By forking the `cOS-toolkit` repository, you already have the Github Action workflow configured to start building and pushing your own `cOS` fork.
+
 The only changes required to keep in mind for pushing images:
 - set `DOCKER_PASSWORD` and `DOCKER_USERNAME` as Github secrets, which are needed to push the resulting docker images from the pipeline. 
 - Tweak or set the `Makefile`'s `REPO_CACHE` and `FINAL_REPO` accordingly. Those are used respectively for an image used for cache, and for the final image reference.
