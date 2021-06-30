@@ -23,13 +23,12 @@ _Note_: Running `make` deps will install only `luet`, `luet-makeiso`, `yq` and `
 
 To install luet locally, you can also run as root:
 ```bash
-$> curl https://get.mocaccino.org/luet/get_luet_root.sh | sh
+$> curl https://raw.githubusercontent.com/rancher-sandbox/cOS-toolkit/master/scripts/get_luet.sh | sh
 ```
 or either build from source (see [luet](https://github.com/mudler/luet)).
 
 The Luet official repository that are being installed by the script above are:
 - [official Luet repository](https://github.com/Luet-lab/luet-repo)
-- [mocaccino-extra repository](https://github.com/mocaccinoOS/mocaccino-extra) (installable afterwards also with `luet install -y repository/mocaccino-extra-stable`) that contains the `yq` and `jq` versions that are used by the CI. 
 
 
 #### luet-makeiso
@@ -39,7 +38,7 @@ repository](https://github.com/Luet-lab/luet-repo). After installing
 `luet` with the curl command above, it's sufficient to:
 
 ```bash
-$> luet install -y extension/makeiso
+$> luet install -y toolchain/luet-makeiso
 ```
 
 to install it locally; otherwise grab the binary from [luet-makeiso](https://github.com/mudler/luet-makeiso) releases.
