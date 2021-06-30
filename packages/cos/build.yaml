@@ -111,3 +111,4 @@ excludes:
 
 - ^/etc/hostname
 - ^/etc/machine-id
+- ^/etc/hosts
