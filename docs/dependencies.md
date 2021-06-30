@@ -33,15 +33,15 @@ The Luet official repository that are being installed by the script above are:
 
 #### luet-makeiso
 
-Available in the [official Luet
-repository](https://github.com/Luet-lab/luet-repo). After installing
-`luet` with the curl command above, it's sufficient to:
+Comes [with cOS-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/luet-makeiso)
+and can be installed with `luet` locally:
 
 ```bash
 $> luet install -y toolchain/luet-makeiso
 ```
 
-to install it locally; otherwise grab the binary from [luet-makeiso](https://github.com/mudler/luet-makeiso) releases.
+You can also grab the binary from [luet-makeiso](https://github.com/mudler/luet-makeiso) releases.
+
 
 #### yq and jq
 `yq` (version `3.x`) and `jq` are used to retrieve the list of
