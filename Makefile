@@ -141,7 +141,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y extension/makeiso
+	$(LUET) install -y toolchain/luet-makeiso
 endif
 
 $(MTREE):
