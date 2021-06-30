@@ -18,14 +18,14 @@ The cOS (containerized OS) distribution is entirely built over GitHub. You can c
 By forking the `cOS-toolkit` repository, you already have the Github Action workflow configured to start building and pushing your own `cOS` fork.
 
 The only changes required to keep in mind for pushing images:
-- set `DOCKER_PASSWORD` and `DOCKER_USERNAME` as Github secrets, which are needed to push the resulting docker images from the pipeline. 
+- set `DOCKER_PASSWORD` and `DOCKER_USERNAME` as Github secrets, which are needed to push the resulting container images from the pipeline. 
 - Tweak or set the `Makefile`'s `REPO_CACHE` and `FINAL_REPO` accordingly. Those are used respectively for an image used for cache, and for the final image reference.
 
 Those are not required for building - you can disable image push (`--push`) from the `Makefile` or just by specifying e.g. `BUILD_ARGS=--pull` when calling the `make` targets.
 
 ## Building locally
 
-cOS has a Docker image which can be used to build cOS locally in order to generate the cOS packages and the cOS iso from your checkout.
+cOS has a container image which can be used to build cOS locally in order to generate the cOS packages and the cOS iso from your checkout.
 
 From your git folder:
 
