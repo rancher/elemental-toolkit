@@ -34,12 +34,6 @@ general:
    debug: false
    spinner_charset: 9
 repositories:
-- name: "luet"
-  type: "http"
-  enable: true
-  priority: 1
-  urls:
-  - "https://raw.githubusercontent.com/Luet-lab/luet-repo/gh-pages"
 - name: "cos"
   description: "cOS official"
   type: "docker"
