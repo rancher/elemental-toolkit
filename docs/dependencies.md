@@ -23,17 +23,16 @@ _Note_: Running `make` deps will install only `luet`, `luet-makeiso`, `yq` and `
 
 To install luet locally, you can also run as root:
 ```bash
-$> curl https://raw.githubusercontent.com/rancher-sandbox/cOS-toolkit/master/scripts/get_luet.sh | sh
+# curl https://raw.githubusercontent.com/rancher-sandbox/cOS-toolkit/master/scripts/get_luet.sh | sh
 ```
-or either build from source (see [luet](https://github.com/mudler/luet)).
+or build [luet from source](https://github.com/mudler/luet)).
 
-The Luet official repository that are being installed by the script above are:
-- [official Luet repository](https://github.com/Luet-lab/luet-repo)
+You can find more luet components in the official [Luet repository](https://github.com/Luet-lab/luet-repo).
 
 
 #### luet-makeiso
 
-Comes [with cOS-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/luet-makeiso)
+`luet-makeiso` comes [with cOS-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/luet-makeiso)
 and can be installed with `luet` locally:
 
 ```bash
