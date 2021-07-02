@@ -24,15 +24,15 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				version := out
 
-				out, err = s.Command("mkdir /run/update && luet util unpack quay.io/costoolkit/releases-opensuse:cos-system-0.5.1 /run/update")
-				if err != nil{
+				out, err = s.Command("mkdir /run/update && luet util unpack quay.io/costoolkit/releases-opensuse:cos-system-0.5.7 /run/update")
+				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from luet util unpack: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
 				out, err = s.Command("cos-upgrade --no-verify --directory /run/update")
-				if err != nil{
+				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
@@ -46,7 +46,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.1\n"))
+				Expect(out).To(Equal("0.5.7\n"))
 
 				By("rollbacking state")
 				s.Reset()
@@ -54,7 +54,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.5.1\n"))
+				Expect(out).ToNot(Equal("0.5.7\n"))
 				Expect(out).To(Equal(version))
 			})
 		})

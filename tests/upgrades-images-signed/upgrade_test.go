@@ -47,12 +47,6 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	})
 	Context("After install", func() {
 		When("upgrading", func() {
-			It("fails if verify is enabled on an unsigned/malformed version", func() {
-				out, err := s.Command("cos-upgrade --docker-image raccos/releases-opensuse:cos-system-0.5.0")
-				Expect(out).Should(ContainSubstring("luet-mtree"))
-				Expect(out).Should(ContainSubstring("error while executing plugin"))
-				Expect(err).To(HaveOccurred())
-			})
 			It("upgrades to latest available (master) and reset", func() {
 				out, err := s.Command("cos-upgrade")
 				Expect(err).ToNot(HaveOccurred())
@@ -69,7 +63,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 				version := out
 				By("upgrading to an old image")
-				out, err = s.Command("cos-upgrade --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+				out, err = s.Command("cos-upgrade --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
@@ -82,7 +76,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.1\n"))
+				Expect(out).To(Equal("0.5.7\n"))
 			})
 		})
 	})

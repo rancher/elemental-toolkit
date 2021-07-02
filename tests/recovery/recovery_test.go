@@ -52,7 +52,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
 			recoveryName := s.GetOSRelease("NAME")
-			
+
 			// In these tests, if we are booting into squashfs we are booting into recovery. And the recovery image
 			// is shipping a different os-release name (cOS recovery) instead of the standard one (cOS)
 			if s.SquashFSRecovery() {
@@ -88,9 +88,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 
 			err = s.ChangeBoot(sut.Active)
@@ -101,7 +100,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			upgradedVersion := s.GetOSRelease("VERSION")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
-			Expect(upgradedVersion).To(Equal("0.5.1\n"))
+			Expect(upgradedVersion).To(Equal("0.5.7\n"))
 		})
 	})
 

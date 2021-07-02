@@ -42,13 +42,13 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	})
 	Context("After install", func() {
 		When("images are not signed", func() {
-			It("upgrades to latest available (master) with --no-verify", func() {
+			It("upgrades to v0.5.7 with --no-verify", func() {
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				out, err = s.Command("cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.1")
+				out, err = s.Command("cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}
@@ -63,7 +63,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.1\n"))
+				Expect(out).To(Equal("0.5.7\n"))
 
 				By("rollbacking state")
 				s.Reset()
@@ -71,7 +71,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.5.1\n"))
+				Expect(out).ToNot(Equal("0.5.7\n"))
 				Expect(out).To(Equal(version))
 			})
 		})
