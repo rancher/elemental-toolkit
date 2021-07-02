@@ -129,4 +129,4 @@ endif
 
 
 packer-aws:
-	cd $(ROOT_DIR)/packer && $(PACKER) build -only amazon-ebs.cos .
+	cd $(ROOT_DIR)/packer && $(PACKER) build $(PACKER_ARGS) -only amazon-ebs.cos .

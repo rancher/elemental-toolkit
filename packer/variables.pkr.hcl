@@ -20,9 +20,71 @@ variable "aws_secret_key" {
   sensitive = true
 }
 
-variable "build" {
+variable "aws_region" {
   type    = string
-  default = "dev"
+  default = env("AWS_DEFAULT_REGION")
+}
+
+variable "aws_ami_groups" {
+  type = list(string)
+  default = ["all"]
+  sensitive = true
+  description = "A list of groups that have access to launch the resulting AMI(s). By default no groups have permission to launch the AMI. all will make the AMI publicly accessible."
+}
+
+variable "aws_instance_type" {
+  type = string
+  default = "t3.small"
+  description = "Instance type to build the AMI on"
+}
+
+variable "aws_source_ami_filter_name" {
+  type = string
+  default = "*cos*recovery*"
+  description = "Name to search for a base ami to build upon the new AMI. Accepts regex and will default to the latest AMI found with that name"
+}
+
+variable "aws_source_ami_filter_owners" {
+  type = list(string)
+  default = ["self"]
+  description = "Filters the AMIs by their owner. You may specify one or more AWS account IDs or 'self' (which will use the account whose credentials you are using to run Packer)"
+}
+
+variable "aws_source_ami_filter_root-device-type" {
+  type = string
+  default = "ebs"
+  description = "Type of root device type to filter the search for the base AMI"
+}
+
+variable "aws_source_ami_filter_virtualization-type" {
+  type = string
+  default = "hvm"
+  description = "Type of virtualization type to filter the search for the base AMI"
+}
+
+
+variable "aws_cos_install_args" {
+  type = string
+  default = "cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5"
+  description = "Arguments to execute while provisioning the aws ami with packer. This will use the shell provisioner"
+}
+
+variable "aws_launch_volume_name" {
+  type = string
+  default = "/dev/sda1"
+  description = "Launch block device number to configure. Usually /dev/sda1. Check https://www.packer.io/docs/builders/amazon/ebs#block-devices-configuration for full details"
+}
+
+variable "aws_launch_volume_size" {
+  type = number
+  default = 15
+  description = "Size for the launch block device. This has be be at least 2Gb (recovery) + the size of COS_STATE partition set in the user data"
+}
+
+variable "aws_user_data_file" {
+  type = string
+  default = "aws/setup-disk.yaml"
+  description = "Path to the user-data file to boot the base AMI with"
 }
 
 variable "cos_version" {
@@ -30,9 +92,9 @@ variable "cos_version" {
   default = "0.5.5"
 }
 
-variable "aws_cos_install_args" {
-  type = string
-  default = "cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5"
+variable "build" {
+  type    = string
+  default = "dev"
 }
 
 variable "cpus" {
@@ -52,7 +114,7 @@ variable "feature" {
 
 variable "flavor" {
   type    = string
-  default = "leap"
+  default = "opensuse"
 }
 
 variable "iso" {
@@ -63,12 +125,6 @@ variable "iso" {
 variable "memory" {
   type    = string
   default = "8192"
-}
-
-variable "aws_region" {
-  type    = string
-  default = env("AWS_DEFAULT_REGION")
-  sensitive = true
 }
 
 variable "root_password" {
@@ -84,4 +140,10 @@ variable "root_username" {
 variable "sleep" {
   type    = string
   default = "30s"
+}
+
+variable "name" {
+  type = string
+  default = "cOS"
+  description = "Name of the product being built. Only used for naming artifacts."
 }
