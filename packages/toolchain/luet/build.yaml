@@ -6,14 +6,15 @@ env:
 - PATH=$PATH:/usr/local/go/bin
 - GOPATH=/luetbuild/go
 - GO111MODULE=off
+- LDFLAGS="-s -w"
 prelude:
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
-- zypper in -y git upx
+- zypper in -y git {{- if .Values.upx -}} upx {{- end }}
 {{else if eq .Values.distribution "fedora" }}
-- dnf install -y git upx
+- dnf install -y git {{- if .Values.upx -}} upx {{- end }}
 {{else if eq .Values.distribution "ubuntu" }}
-- apt-get install -y git upx
+- apt-get install -y git {{- if .Values.upx -}} upx {{- end }}
 {{end}}
 {{end}}
 - |
@@ -27,6 +28,6 @@ prelude:
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   cd /luetbuild/go/src/github.com/mudler/luet && make build-small && mv luet /usr/bin/luet
+   cd /luetbuild/go/src/github.com/mudler/luet && make build {{- if .Values.upx -}} && upx luet {{- end }} && mv luet /usr/bin/luet
 includes:
 - /usr/bin/luet
