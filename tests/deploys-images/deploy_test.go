@@ -49,11 +49,11 @@ var _ = Describe("cOS Deploy tests", func() {
 		When("deploying again", func() {
 			It("deploys only if --force flag is provided", func() {
 				By("deploying without --force")
-				out, err := s.Command("cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5")
+				out, err := s.Command("cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				Expect(out).Should(ContainSubstring("There is already an active deployment"))
 				Expect(err).To(HaveOccurred())
 				By("deploying with --force")
-				out, err = s.Command("cos-deploy --force --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5")
+				out, err = s.Command("cos-deploy --force --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				Expect(out).Should(ContainSubstring("Forcing overwrite"))
 				Expect(out).Should(ContainSubstring("now you might want to reboot"))
 				Expect(err).NotTo(HaveOccurred())
@@ -64,7 +64,7 @@ var _ = Describe("cOS Deploy tests", func() {
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 				By("deploying with --force")
-				out, err := s.Command("cos-deploy --force --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5")
+				out, err := s.Command("cos-deploy --force --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				Expect(out).Should(ContainSubstring("now you might want to reboot"))
 				Expect(err).NotTo(HaveOccurred())
 			})
