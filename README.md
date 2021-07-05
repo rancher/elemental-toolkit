@@ -14,6 +14,7 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
     - [First steps](#first-steps)
     - [References](#references)
         - [Derivatives](#derivatives)
+        - [Samples](#samples)
         - [cOS development](#cos-development)
     - [License](#license)
 
@@ -76,7 +77,7 @@ $ cos-build
 
 This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice.  See [Creating derivatives](/docs/creating_derivatives.md) for more details about the process.
 
-If you are looking after only generating a container image that can be used for upgrades from our vanilla images, see [creating bootable images](/docs/creating_bootable_images.md).
+If you are looking after only generating a container image that can be used for upgrades from the cOS vanilla images, see [creating bootable images](/docs/creating_bootable_images.md) and see also [how to drive upgrades with Fleet](https://github.com/rancher-sandbox/cos-fleet-upgrades-sample).
 
 ## References
 
@@ -84,8 +85,11 @@ If you are looking after only generating a container image that can be used for 
 - [Creating derivatives](/docs/creating_derivatives.md)
 - [Creating bootable images](/docs/creating_bootable_images.md)
 - [Derivatives featureset](/docs/derivatives_featureset.md)
+
+### Samples
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
 - [EpinioOS sample repository](https://github.com/rancher-sandbox/epinio-appliance-demo-sample)
+- [Use Fleet to upgrade a cOS derivative](https://github.com/rancher-sandbox/cos-fleet-upgrades-sample)
 
 ### cOS development
 - [Development notes](/docs/dev.md)
