@@ -1,6 +1,6 @@
 name: "golang"
 category: "build"
-version: 1.16.5+6
+version: 1.16.5+7
 hidden: true # No need to make it installable for now
 labels:
   autobump.revdeps: "true"
