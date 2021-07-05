@@ -109,6 +109,9 @@ excludes:
 - ^/usr/local/src
 - ^/usr/local/games
 
+# excluding the followings makes the package installable in a container from scratch
 - ^/etc/hostname
 - ^/etc/machine-id
 - ^/etc/hosts
+- ^/sys
+- ^/proc
