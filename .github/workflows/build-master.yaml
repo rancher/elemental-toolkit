@@ -539,7 +539,8 @@ jobs:
       - name: Build AMI for opensuse
         run: |
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-            export PKR_VAR_cos_version="${COS_VERSION/+/-}"
+            export COS_VERSION="${COS_VERSION/+/-}""
+            export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=opensuse
             make packer-aws
@@ -843,7 +844,8 @@ jobs:
       - name: Build AMI for fedora
         run: |
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-            export PKR_VAR_cos_version="${COS_VERSION/+/-}"
+            export COS_VERSION="${COS_VERSION/+/-}""
+            export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-fedora:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=fedora
             make packer-aws
@@ -1080,7 +1082,8 @@ jobs:
       - name: Build AMI for ubuntu
         run: |
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-            export PKR_VAR_cos_version="${COS_VERSION/+/-}"
+            export COS_VERSION="${COS_VERSION/+/-}""
+            export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-ubuntu:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=ubuntu
             make packer-aws
