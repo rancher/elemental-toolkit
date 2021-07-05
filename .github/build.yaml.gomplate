@@ -422,7 +422,7 @@ jobs:
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
             export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor: {{{ $flavor }}}
+            export PKR_VAR_flavor={{{ $flavor }}}
             make packer-aws
 
   {{{ end }}}

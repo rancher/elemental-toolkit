@@ -541,7 +541,7 @@ jobs:
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
             export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor: opensuse
+            export PKR_VAR_flavor=opensuse
             make packer-aws
 
   
@@ -845,7 +845,7 @@ jobs:
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
             export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-fedora:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor: fedora
+            export PKR_VAR_flavor=fedora
             make packer-aws
 
   
@@ -1082,7 +1082,7 @@ jobs:
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
             export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-ubuntu:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor: ubuntu
+            export PKR_VAR_flavor=ubuntu
             make packer-aws
 
   
