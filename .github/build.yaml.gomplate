@@ -414,6 +414,9 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
     steps:
       - uses: actions/checkout@v2
+      - name: Install deps
+        run: |
+          sudo -E make deps
       - name: Build AMI for {{{ $flavor }}}
         run: |
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
