@@ -1,6 +1,6 @@
 name: "base"
 category: "distro"
-version: "0.20210704"
+version: "0.20210705"
 hidden: true # No need to make it installable for now
 labels:
   autobump.strategy: "snapshot"
