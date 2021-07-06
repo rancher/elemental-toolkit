@@ -1,6 +1,6 @@
 category: "toolchain"
 name: "luet"
-version: 0.16.7+7
+version: 0.16.7+8
 branch: ""
 upx: false
 labels:

@@ -8,7 +8,7 @@ packages:
       autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - name: "cos"
     category: "recovery"
-    version: 0.5.7+4
+    version: 0.5.7+5
     brand_name: "cOS recovery"
     labels:
       autobump.revdeps: "true"

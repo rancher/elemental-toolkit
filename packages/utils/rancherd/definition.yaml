@@ -1,6 +1,6 @@
 name: "rancherd"
 category: "utils"
-version: 0.0.1-alpha05+2
+version: 0.0.1-alpha05+3
 arch: amd64
 platform: linux
 labels:

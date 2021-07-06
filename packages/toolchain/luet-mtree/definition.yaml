@@ -1,6 +1,6 @@
 name: "luet-mtree"
 category: "toolchain"
-version: 0.0.7+5
+version: 0.0.7+6
 labels:
   github.repo: "luet-mtree"
   github.owner: "rancher-sandbox"
