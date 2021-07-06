@@ -90,6 +90,7 @@ If you are looking after only generating a container image that can be used for 
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
 - [EpinioOS sample repository](https://github.com/rancher-sandbox/epinio-appliance-demo-sample)
 - [Use Fleet to upgrade a cOS derivative](https://github.com/rancher-sandbox/cos-fleet-upgrades-sample)
+- [Deploy Fleet on a cOS vanilla image](https://github.com/rancher-sandbox/cOS-toolkit/wiki/K3s-and-Fleet-on-top-of-cOS-Vanilla-image)
 
 ### cOS development
 - [Development notes](/docs/dev.md)
