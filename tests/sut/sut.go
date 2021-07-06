@@ -6,7 +6,6 @@ import (
 	"github.com/bramvdbogaerde/go-scp/auth"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -271,53 +270,4 @@ func DialWithDeadline(network string, addr string, config *ssh.ClientConfig, tim
 		}
 	}()
 	return ssh.NewClient(c, chans, reqs), nil
-}
-
-
-// IsVagrantTest checks to see if in the tests dir which we currently are, the vagrant instance is up and running
-// so we can use that to trigger vagrant snapshots or just do a normal reset
-// vagrant output is timestamp,target,type,data...
-func IsVagrantTest() bool {
-	out, err := exec.Command("vagrant", "status", "--machine-readable").Output()
-	Expect(err).ToNot(HaveOccurred())
-	outString := string(out)
-	for _, str := range strings.Split(outString, "\n") {
-		split := strings.Split(str, ",")
-		// In case we get bad data?
-		if len(split) < 4 {
-			return false
-		}
-		lineType := split[2]
-		lineData := split[3]
-		if lineType == "state" && lineData == "running" {
-			return true
-		}
-	}
-	return false
-}
-
-
-func SnapshotVagrant()  {
-	out, err := exec.Command("vagrant", "snapshot", "save", "snap").Output()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(out).Should(ContainSubstring("Snapshotting the machine as 'snap'"))
-	Expect(out).Should(ContainSubstring("Snapshot saved!"))
-}
-
-func SnapshotVagrantDelete()  {
-	out, err := exec.Command("vagrant", "snapshot", "delete", "snap").Output()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(out).Should(ContainSubstring("Deleting the snapshot 'snap'"))
-	Expect(out).Should(ContainSubstring("Snapshot deleted!"))
-}
-
-func ResetWithVagrant()  {
-	out, err := exec.Command("vagrant", "snapshot", "restore", "snap").Output()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(out).Should(ContainSubstring("Forcing shutdown of VM"))
-	Expect(out).Should(ContainSubstring("Restoring the snapshot 'snap'"))
-	Expect(out).Should(ContainSubstring("Resuming suspended VM"))
-	Expect(out).Should(ContainSubstring("Booting VM"))
-	Expect(out).Should(ContainSubstring("Waiting for machine to boot"))
-	Expect(out).Should(ContainSubstring("Machine booted and ready!"))
 }

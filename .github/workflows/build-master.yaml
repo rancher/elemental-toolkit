@@ -274,6 +274,12 @@ jobs:
           name: cOS-squashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.serial.zip
+          path: tests/serial_port1
+          if-no-files-found: warn
 
   
  
@@ -426,6 +432,12 @@ jobs:
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
+          path: tests/serial_port1
           if-no-files-found: warn
 
   
