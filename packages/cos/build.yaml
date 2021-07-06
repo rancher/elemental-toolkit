@@ -111,4 +111,21 @@ excludes:
 
 - ^/etc/hostname
 - ^/etc/machine-id
+
+{{ if eq .Values.name "cos-container" }}
+
 - ^/etc/hosts
+- ^/proc
+- ^/sys
+- ^/dev
+- ^/tmp
+- ^/run
+
+{{ else }}
+
+- ^/tmp/.*
+- ^/proc/.*
+- ^/sys/.*
+- ^/run/.*
+
+{{ end }}
