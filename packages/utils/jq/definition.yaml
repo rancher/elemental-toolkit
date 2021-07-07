@@ -1,6 +1,6 @@
 name: jq
 category: utils
-version: 1.6+6
+version: 1.6+7
 labels:
   github.repo: "jq"
   github.owner: "stedolan"
