@@ -95,7 +95,7 @@ ENV USER=root
 
 SHELL ["/usr/bin/luet", "install", "-y", "-d"]
 
-RUN system/cos
+RUN system/cos-container
 
 SHELL ["/bin/sh", "-c"]
 RUN rm -rf /var/cache/luet/packages/ /var/cache/luet/repos/
