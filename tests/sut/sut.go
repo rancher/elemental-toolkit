@@ -10,23 +10,15 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	ssh "golang.org/x/crypto/ssh"
 )
 
 const (
-	grubSwap = `dev=$(blkid -L COS_STATE); \
-mount -o rw,remount $dev && \
-mount $dev /boot/grub2 && \
-sed -i 's/set default=.*/set default=%s/' /boot/grub2/grub2/grub.cfg && \
-sync`
-
-	grubSwapRecovery = `
-dev=$(blkid -L COS_STATE); mkdir /run/state; \
-mount $dev /run/state && \
-sed -i 's/set default=.*/set default=%s/' /run/state/grub2/grub.cfg
-`
+	grubSwapOnce = "grub2-editenv /oem/grubenv set next_entry=%s"
+	grubSwap     = "grub2-editenv /oem/grubenv set saved_entry=%s"
 
 	Passive     = 0
 	Active      = iota
@@ -75,13 +67,27 @@ func (s *SUT) ChangeBoot(b int) error {
 		bootEntry = "recovery"
 	}
 
-	if s.BootFrom() == Recovery {
-		_, err := s.command(fmt.Sprintf(grubSwapRecovery, bootEntry), false)
-		Expect(err).ToNot(HaveOccurred())
-	} else {
-		_, err := s.command(fmt.Sprintf(grubSwap, bootEntry), false)
-		Expect(err).ToNot(HaveOccurred())
+	_, err := s.command(fmt.Sprintf(grubSwap, bootEntry), false)
+	Expect(err).ToNot(HaveOccurred())
+
+	return nil
+}
+
+func (s *SUT) ChangeBootOnce(b int) error {
+
+	var bootEntry string
+
+	switch b {
+	case Active:
+		bootEntry = "cos"
+	case Passive:
+		bootEntry = "fallback"
+	case Recovery:
+		bootEntry = "recovery"
 	}
+
+	_, err := s.command(fmt.Sprintf(grubSwapOnce, bootEntry), false)
+	Expect(err).ToNot(HaveOccurred())
 
 	return nil
 }
@@ -89,21 +95,21 @@ func (s *SUT) ChangeBoot(b int) error {
 // Reset runs reboots cOS into Recovery and runs cos-reset.
 // It will boot back the system from the Active partition afterwards
 func (s *SUT) Reset() {
-	err := s.ChangeBoot(Recovery)
-	Expect(err).ToNot(HaveOccurred())
+	if s.BootFrom() != Recovery {
+		By("Reboot to recovery before reset")
+		err := s.ChangeBootOnce(Recovery)
+		Expect(err).ToNot(HaveOccurred())
+		s.Reboot()
+		Expect(s.BootFrom()).To(Equal(Recovery))
+	}
 
-	s.Reboot()
-
-	Expect(s.BootFrom()).To(Equal(Recovery))
+	By("Running cos-reset")
 	out, err := s.command("cos-reset", false)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(out).Should(ContainSubstring("Installing"))
 
-	err = s.ChangeBoot(Active)
-	Expect(err).ToNot(HaveOccurred())
-
+	By("Reboot to active after cos-reset")
 	s.Reboot()
-
 	ExpectWithOffset(1, s.BootFrom()).To(Equal(Active))
 }
 
@@ -129,7 +135,7 @@ func (s *SUT) SquashFSRecovery() bool {
 	out, err := s.command("cat /proc/cmdline", false)
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
-	return strings.Contains(out,"rd.live.squashimg")
+	return strings.Contains(out, "rd.live.squashimg")
 }
 
 func (s *SUT) GetOSRelease(ss string) string {
@@ -204,10 +210,10 @@ func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {
 }
 
 // GatherLog will try to scp the given log from the machine to a local file
-func (s SUT) GatherLog(logPath string)  {
+func (s SUT) GatherLog(logPath string) {
 	fmt.Printf("Trying to get file: %s\n", logPath)
 	clientConfig, _ := auth.PasswordKey(s.Username, s.Password, ssh.InsecureIgnoreHostKey())
-	scpClient := scp.NewClientWithTimeout(s.Host, &clientConfig, 10 * time.Second)
+	scpClient := scp.NewClientWithTimeout(s.Host, &clientConfig, 10*time.Second)
 
 	err := scpClient.Connect()
 	if err != nil {
@@ -226,7 +232,6 @@ func (s SUT) GatherLog(logPath string)  {
 	defer scpClient.Close()
 	defer f.Close()
 
-
 	err = scpClient.CopyFromRemote(f, logPath)
 
 	if err != nil {
@@ -236,7 +241,6 @@ func (s SUT) GatherLog(logPath string)  {
 	// Change perms so its world readable
 	_ = os.Chmod(fmt.Sprintf("logs/%s", baseName), 0666)
 	fmt.Printf("File %s copied!\n", baseName)
-
 
 }
 
