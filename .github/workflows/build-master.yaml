@@ -2,9 +2,6 @@
 name: Build cOS master
 
 on: 
- create:
-   tags:
-     - v*
  push:
    branches:
      - master
