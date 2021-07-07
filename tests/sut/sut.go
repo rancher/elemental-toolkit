@@ -20,7 +20,7 @@ const (
 mount -o rw,remount $dev && \
 mount $dev /boot/grub2 && \
 sed -i 's/set default=.*/set default=%s/' /boot/grub2/grub2/grub.cfg && \
-mount -o ro,remount $dev`
+sync`
 
 	grubSwapRecovery = `
 dev=$(blkid -L COS_STATE); mkdir /run/state; \
