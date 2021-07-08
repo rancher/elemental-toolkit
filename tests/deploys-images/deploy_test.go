@@ -40,7 +40,7 @@ var _ = Describe("cOS Deploy tests", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("force deploys from recovery", func() {
-				err := s.ChangeBoot(sut.Recovery)
+				err := s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))

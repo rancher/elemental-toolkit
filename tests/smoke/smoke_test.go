@@ -15,7 +15,7 @@ var _ = Describe("cOS Smoke tests", func() {
 
 	Context("After install", func() {
 		It("can boot into passive", func() {
-			err := s.ChangeBoot(sut.Passive)
+			err := s.ChangeBootOnce(sut.Passive)
 			Expect(err).ToNot(HaveOccurred())
 
 			By("rebooting into passive")
@@ -25,8 +25,7 @@ var _ = Describe("cOS Smoke tests", func() {
 			_, err = s.Command("cat /run/cos/recovery_mode")
 			Expect(err).To(HaveOccurred())
 
-			By("switching back to active")
-			s.ChangeBoot(sut.Active)
+			By("reboot back to active")
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
