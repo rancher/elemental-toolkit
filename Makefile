@@ -98,7 +98,6 @@ include make/Makefile.build
 include make/Makefile.iso
 include make/Makefile.run
 include make/Makefile.test
-include make/Makefile.raw
 include make/Makefile.images
 
 #----------------------- targets -----------------------

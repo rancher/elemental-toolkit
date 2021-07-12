@@ -11,6 +11,66 @@ $(QEMUIMG):
 	@echo "'qemu-img' not found"
 	@exit 1
 
+MTOOLS?=$(shell which mcopy 2> /dev/null)
+ifeq ("$(MTOOLS)","")
+MTOOLS="/usr/bin/mcopy"
+endif
+
+$(MTOOLS):
+	@echo "'mcopy' not found, install 'mtools' package"
+	@exit 1
+
+DOSTOOLS?=$(shell which mkfs.fat 2> /dev/null)
+ifeq ("$(DOSTOOLS)","")
+DOSTOOLS="/usr/sbin/mkfs.fat"
+endif
+
+$(DOSTOOLS):
+	@echo "'mkfs.fat' not found, install 'dosfstools' package"
+	@exit 1
+
+ETOOLS?=$(shell which mkfs.ext2 2> /dev/null)
+ifeq ("$(ETOOLS)","")
+ETOOLS="/usr/sbin/mkfs.ext2"
+endif
+
+$(ETOOLS):
+	@echo "'mkfs.ext2' not found, install 'efsprogs' package"
+	@exit 1
+
+GPTTOOLS?=$(shell which sgdisk 2> /dev/null)
+ifeq ("$(GPTTOOLS)","")
+GPTTOOLS="/usr/sbin/sgdisk"
+endif
+
+$(GPTTOOLS):
+	@echo "'sgdisk' not found, install 'gptfdisk' package"
+	@exit 1
+
+AWSCLI?=$(shell which aws 2> /dev/null)
+ifeq ("$(AWSCLI)","")
+AWSCLI="/usr/bin/aws"
+endif
+
+$(AWSCLI):
+	@echo "'aws' not found, install 'awscli' package"
+	@exit 1
+
+.PHONY: raw_disk
+raw_disk: as_root $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS)
+ifneq ("$(RAW)","")
+	@echo "'$(RAW)' exists, it will be overwritten"
+endif
+	$(ROOT_DIR)/images/img-builder.sh
+
+.PHONY: aws_vanilla_ami
+aws_vanilla_ami: $(AWSCLI) $(JQ)
+ifeq ("$(RAW)","")
+	@echo "Raw image does not exists, please run make_raw first"
+	@exit 1
+endif
+	$(ROOT_DIR)/images/aws_upload.sh $(RAW)
+
 .PHONY: azure_disk
 azure_disk: as_root $(QEMUIMG)
 ifeq ("$(RAW)","")

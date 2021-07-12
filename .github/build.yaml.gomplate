@@ -187,7 +187,7 @@ jobs:
           yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
           yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
           sudo -E MANIFEST=$MANIFEST.remote make local-iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
           mv *.iso cOS-$COS_VERSION.iso
           mv *.sha256 cOS-$COS_VERSION.iso.sha256
 
@@ -410,28 +410,6 @@ jobs:
         env:
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  ami-publish-{{{ $flavor }}}:
-    runs-on: ubuntu-latest
-    needs: publish-{{{ $flavor }}}
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install deps
-        run: |
-          sudo -E make deps
-      - name: Build AMI for {{{ $flavor }}}
-        run: |
-            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-            export COS_VERSION="${COS_VERSION/+/-}"
-            export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_aws_cos_install_args="cos-deploy {{{ if (ne $flavor "opensuse") }}}--no-verify {{{ end }}}--docker-image quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor={{{ $flavor }}}
-            make packer-aws
-
   {{{ end }}}
 
   {{{ if not (has $config.skip_images_flavor $flavor) }}}
@@ -461,7 +439,7 @@ jobs:
         run: |
           make raw_disk
           COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-          mv disk.raw cOS_${COS_VERSION}.raw
+          mv disk.raw cOS-Vanilla-${COS_VERSION}.raw
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-raw-img-{{{ $flavor }}}
@@ -501,5 +479,55 @@ jobs:
           path: |
             *.vhd
           if-no-files-found: error
+
+    {{{ if $config.publishing_pipeline }}}
+
+  ami-publish-{{{ $flavor }}}:
+    runs-on: ubuntu-latest
+    needs: publish-vanilla-ami
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: |
+          sudo -E make deps
+      - name: Build AMI for {{{ $flavor }}}
+        run: |
+            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
+            export COS_VERSION="${COS_VERSION/+/-}"
+            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_aws_cos_install_args="cos-deploy {{{ if (ne $flavor "opensuse") }}}--no-verify {{{ end }}}--docker-image quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
+            export PKR_VAR_flavor={{{ $flavor }}}
+            make packer-aws
+    {{{ end }}}
   {{{ end }}}
+{{{ end }}}
+
+{{{ if eq $config.pipeline "master" }}}
+  # We need only a single vanilla image for any OS
+  # Vanilla image is always based on openSUSE
+  publish-vanilla-ami:
+    runs-on: ubuntu-latest
+    needs: [raw-img-opensuse, tests-squashfs-opensuse]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-raw-img-opensuse
+          path: .
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Upload and publish vanilla image
+        run: |
+          export github_sha="${GITHUB_SHA}"
+          make aws_vanilla_ami
 {{{ end }}}
