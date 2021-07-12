@@ -1,6 +1,7 @@
-join:
+requires:
 - category: "recovery"
   name: "cos"
   version: ">=0"
 
+requires_final_images: true
 unpack: true
