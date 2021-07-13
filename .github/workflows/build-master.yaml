@@ -623,6 +623,7 @@ jobs:
             export PKR_VAR_cos_version="${COS_VERSION}"
             export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=opensuse
+            export PKR_VAR_git_sha="${GITHUB_SHA}"
             make packer-aws
     
   
@@ -1082,6 +1083,6 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Upload and publish vanilla image
         run: |
-          export github_sha="${GITHUB_SHA}"
+          export git_sha="${GITHUB_SHA}"
           make aws_vanilla_ami
 
