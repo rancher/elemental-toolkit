@@ -85,6 +85,7 @@ If you are looking after only generating a container image that can be used for 
 - [Creating derivatives](/docs/creating_derivatives.md)
 - [Creating bootable images](/docs/creating_bootable_images.md)
 - [Derivatives featureset](/docs/derivatives_featureset.md)
+- [Building AMI machines in AWS](/docs/building_aws_ami.md)
 
 ### Samples
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
