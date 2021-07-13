@@ -480,6 +480,37 @@ jobs:
             *.vhd
           if-no-files-found: error
 
+  gce-img-{{{ $flavor }}}:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    needs: raw-img-{{{ $flavor }}}
+
+    steps:
+      - name: Install OS deps
+        run: |
+          zypper in -y qemu-tools make tar gzip xz which curl
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-raw-img-{{{ $flavor }}}
+          path: .
+      - name: Install toolchain
+        run: |
+          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the container
+          rm -rf /var/lock
+          mkdir -p /var/lock
+          make deps
+      - name: Build Image
+        run: |
+          make gce_disk
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-gce-img-{{{ $flavor }}}
+          path: |
+            cOS-Vanilla-*.tar.gz
+          if-no-files-found: error
+
     {{{ if $config.publishing_pipeline }}}
 
   ami-publish-{{{ $flavor }}}:

@@ -66,7 +66,7 @@ endif
 .PHONY: aws_vanilla_ami
 aws_vanilla_ami: $(AWSCLI) $(JQ)
 ifeq ("$(RAW)","")
-	@echo "Raw image does not exists, please run make_raw first"
+	@echo "Raw image does not exists, please run make raw_disk first"
 	@exit 1
 endif
 	$(ROOT_DIR)/images/aws_upload.sh $(RAW)
@@ -74,7 +74,15 @@ endif
 .PHONY: azure_disk
 azure_disk: as_root $(QEMUIMG)
 ifeq ("$(RAW)","")
-	@echo "Raw image does not exists, please run make_raw first"
+	@echo "Raw image does not exists, please run make raw_disk first"
 	@exit 1
 endif
 	@$(ROOT_DIR)/images/azure-image.sh $(RAW)
+
+.PHONY: gce_disk
+gce_disk: as_root $(QEMUIMG)
+ifeq ("$(RAW)","")
+	@echo "Raw image does not exists, please run make raw_disk first"
+	@exit 1
+endif
+	@$(ROOT_DIR)/images/gce-image.sh $(RAW)
