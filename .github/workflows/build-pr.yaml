@@ -147,7 +147,7 @@ jobs:
           yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
           yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
           sudo -E MANIFEST=$MANIFEST.remote make local-iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
           mv *.iso cOS-$COS_VERSION.iso
           mv *.sha256 cOS-$COS_VERSION.iso.sha256
 
@@ -306,7 +306,7 @@ jobs:
           yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
           yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
           sudo -E MANIFEST=$MANIFEST.remote make local-iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
+          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
           mv *.iso cOS-$COS_VERSION.iso
           mv *.sha256 cOS-$COS_VERSION.iso.sha256
 
@@ -457,7 +457,7 @@ jobs:
         run: |
           make raw_disk
           COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-          mv disk.raw cOS_${COS_VERSION}.raw
+          mv disk.raw cOS-Vanilla-${COS_VERSION}.raw
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-raw-img-opensuse
@@ -497,6 +497,8 @@ jobs:
           path: |
             *.vhd
           if-no-files-found: error
+
+    
   
 
   
@@ -712,4 +714,6 @@ jobs:
   
 
   
+
+
 

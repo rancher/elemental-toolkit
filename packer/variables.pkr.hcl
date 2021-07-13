@@ -40,7 +40,7 @@ variable "aws_instance_type" {
 
 variable "aws_source_ami_filter_name" {
   type = string
-  default = "*cos*recovery*"
+  default = "*cOS*Vanilla*"
   description = "Name to search for a base ami to build upon the new AMI. Accepts regex and will default to the latest AMI found with that name"
 }
 
@@ -65,7 +65,7 @@ variable "aws_source_ami_filter_virtualization-type" {
 
 variable "aws_cos_install_args" {
   type = string
-  default = "cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5"
+  default = "cos-deploy"
   description = "Arguments to execute while provisioning the aws ami with packer. This will use the shell provisioner"
 }
 
@@ -89,7 +89,7 @@ variable "aws_user_data_file" {
 
 variable "cos_version" {
   type    = string
-  default = "0.5.5"
+  default = "latest"
 }
 
 variable "build" {
