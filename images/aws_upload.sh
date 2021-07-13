@@ -6,6 +6,7 @@ disk="$1"
 s3_bucket="cos-images"
 disk_name="cOS-Vanilla"
 disk_desc="cOS Vanilla Image"
+: "${github_sha:=none}"
 
 [ -f "${disk}" ] || exit 1
 
@@ -38,7 +39,8 @@ snap_id=$(aws ec2 describe-import-snapshot-tasks \
     | jq -r '.ImportSnapshotTasks[0].SnapshotTaskDetail.SnapshotId')
 
 echo "Tagging Snapshot"
-aws ec2 create-tags --resources "${snap_id}" --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS
+aws ec2 create-tags --resources "${snap_id}" \
+    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
 
 echo "Register AMI from snapshot"
 ami_id=$(aws ec2 register-image \
@@ -53,6 +55,7 @@ ami_id=$(aws ec2 register-image \
    | jq -r '.ImageId')
 
 echo "Tagging AMI"
-aws ec2 create-tags --resources "${ami_id}" --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS
+aws ec2 create-tags --resources "${ami_id}" --tags \
+   --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
 
 echo "AMI Created: ${ami_id}"
