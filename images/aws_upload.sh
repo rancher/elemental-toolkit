@@ -58,4 +58,7 @@ echo "Tagging AMI"
 aws ec2 create-tags --resources "${ami_id}" --tags \
    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
 
+echo "Making AMI public"
+aws ec2 modify-image-attribute --image-id "${ami_id}" --launch-permission "Add=[{Group=all}]"
+
 echo "AMI Created: ${ami_id}"
