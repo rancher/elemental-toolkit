@@ -11,7 +11,7 @@ Requirements:
 
 The suggested approach is based on using Packer templates to customize the
 deployment and automate the upload and publish to AWS. For all the details
-and possibilties of Packer check the official documentation.
+and possibilties of Packer check the [official documentation](https://www.packer.io/guides/hcl).
 
 ## Run the build with Packer
 
