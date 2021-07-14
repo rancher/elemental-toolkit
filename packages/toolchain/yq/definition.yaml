@@ -1,6 +1,6 @@
 name: "yq"
 category: "toolchain"
-version: 3.4.1+13
+version: 3.4.1+14
 arch: "amd64"
 uri:
   - https://github.com/mikefarah/yq
