@@ -6,7 +6,9 @@ disk="$1"
 s3_bucket="cos-images"
 disk_name="cOS-Vanilla"
 disk_desc="cOS Vanilla Image"
+disk_build_date=$(date +"%m%d%Y_%H%M%S")
 : "${github_sha:=none}"
+: "${COPY_AMI_ALL_REGIONS:=false}"
 
 [ -f "${disk}" ] || exit 1
 
@@ -44,7 +46,7 @@ aws ec2 create-tags --resources "${snap_id}" \
 
 echo "Register AMI from snapshot"
 ami_id=$(aws ec2 register-image \
-   --name "${disk_name}-$(date +"%m%d%Y_%H%M%S")" \
+   --name "${disk_name}-${disk_build_date}" \
    --description "${disk_desc}" \
    --architecture x86_64 \
    --virtualization-type hvm \
@@ -62,3 +64,36 @@ echo "Making AMI public"
 aws ec2 modify-image-attribute --image-id "${ami_id}" --launch-permission "Add=[{Group=all}]"
 
 echo "AMI Created: ${ami_id}"
+
+
+if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
+ then
+  echo "Copying AMI ${ami_id} to all regions"
+
+  regions=( "$(aws ec2 describe-regions|jq '.Regions[].RegionName')" )
+
+  for reg in "${regions[@]}"; do
+    # If the current region is the same as the region we are trying to copy, just ignore, the AMI is already there
+    if [[ "${AWS_DEFAULT_REGION}" == "${reg}" ]]
+      then
+        continue
+    fi
+    ami_copy_id=$(aws ec2 copy-image \
+      --name "${disk_name}-${disk_build_date}" \
+      --description "${disk_desc}" \
+      --source-image-id "${ami_id}" \
+      --source-region "${AWS_DEFAULT_REGION}" \
+      --region "${reg}" \
+      | jq -r '.ImageId'
+    )
+
+    echo "Tagging Copied AMI ${ami_copy_id}"
+    aws ec2 create-tags --resources "${ami_copy_id}" --tags \
+      --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
+
+    echo "Making AMI ${ami_copy_id} public"
+    aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --launch-permission "Add=[{Group=all}]"
+
+    echo "AMI Copied: ${ami_copy_id}"
+  done
+fi

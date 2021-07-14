@@ -529,5 +529,6 @@ jobs:
       - name: Upload and publish vanilla image
         run: |
           export github_sha="${GITHUB_SHA}"
+          export COPY_AMI_ALL_REGIONS="true"
           make aws_vanilla_ami
 {{{ end }}}
