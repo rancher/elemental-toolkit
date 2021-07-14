@@ -503,7 +503,7 @@ jobs:
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:
     runs-on: ubuntu-latest
-    needs: [raw-img-opensuse, tests-squashfs-opensuse]
+    needs: [raw-images-opensuse, tests-squashfs-opensuse]
 
     steps:
       - uses: actions/checkout@v2
