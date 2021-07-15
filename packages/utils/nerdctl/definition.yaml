@@ -1,6 +1,6 @@
 name: "nerdctl"
 category: "utils"
-version: 0.10.0+8
+version: 0.10.0+9
 arch: amd64
 platform: linux
 labels:
