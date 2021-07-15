@@ -526,6 +526,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Upload and publish vanilla image
         run: |
-          export git_sha="${GITHUB_SHA}"
+          export github_sha="${GITHUB_SHA}"
+          export COPY_AMI_ALL_REGIONS="true"
           make aws_vanilla_ami
 {{{ end }}}
