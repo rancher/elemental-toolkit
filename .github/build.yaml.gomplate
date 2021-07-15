@@ -507,10 +507,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Export cos version
+        run: |
+          echo "COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')" >> $GITHUB_ENV
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: cOS-raw-img-opensuse
+          name: cOS-Vanilla-RAW-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}
           path: .
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
