@@ -4,6 +4,8 @@ containerOS (**cOS**) is a toolkit to build, ship and maintain cloud-init driven
 
 It is designed to reduce the maintenance surface, with a flexible approach to provide upgrades from container registries. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
 
+[Documentation is available at https://rancher-sandbox.github.io/cos-toolkit-docs/docs](https://rancher-sandbox.github.io/cos-toolkit-docs/docs)
+
 <!-- TOC -->
 
 - [containerOS toolkit](#containeros-toolkit)
@@ -12,8 +14,6 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
     - [Design goals](#design-goals)
         - [Build cOS Locally](#build-cos-locally)
     - [First steps](#first-steps)
-    - [References](#references)
-        - [Derivatives](#derivatives)
         - [Samples](#samples)
         - [cOS development](#cos-development)
     - [License](#license)
@@ -22,7 +22,7 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
 
 ## In a nutshell
 
-cOS derivatives are built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach. Each derivative built with `cos-toolkit` inherits by default the [following featuresets](/docs/derivatives_featureset.md).
+cOS derivatives are built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach. Each derivative built with `cos-toolkit` inherits a default featureset.
 
 cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Quay Container Registry](https://quay.io/repository/costoolkit/releases-opensuse) and can be pulled for inspection from the registry as well.
 
@@ -58,9 +58,9 @@ ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolki
 
 ### Build cOS Locally
 
-The starting point to use cos-toolkit is to see it in action with our [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo) or check out our `examples` folder, see also [creating bootable images](/docs/creating_bootable_images.md).
+The starting point to use cos-toolkit is to see it in action with our [sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo) or check out our `examples` folder, see also [creating bootable images](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/creating-derivatives/creating_bootable_images/).
 
-The only requirement to build derivatives with `cos-toolkit` is docker installed, see [Development notes](/docs/dev.md) for more details on how to build `cos` instead.
+The only requirement to build derivatives with `cos-toolkit` is docker installed, see [Development notes](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/development/) for more details on how to build `cos` instead.
 
 ## First steps
 
@@ -75,17 +75,10 @@ $ source .envrc
 $ cos-build
 ```
 
-This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice.  See [Creating derivatives](/docs/creating_derivatives.md) for more details about the process.
+This command will build a container image which contains the required dependencies to build the custom OS, and will later be used to build the OS itself. The result will be a set of container images and an ISO which you can boot with your environment of choice.  See [Creating derivatives](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/creating-derivatives/creating_derivatives/) for more details about the process.
 
-If you are looking after only generating a container image that can be used for upgrades from the cOS vanilla images, see [creating bootable images](/docs/creating_bootable_images.md) and see also [how to drive upgrades with Fleet](https://github.com/rancher-sandbox/cos-fleet-upgrades-sample).
+If you are looking after only generating a container image that can be used for upgrades from the cOS vanilla images, see [creating bootable images](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/creating-derivatives/creating_bootable_images/) and see also [how to drive upgrades with Fleet](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/tutorials/trigger_upgrades_with_fleet/).
 
-## References
-
-### Derivatives
-- [Creating derivatives](/docs/creating_derivatives.md)
-- [Creating bootable images](/docs/creating_bootable_images.md)
-- [Derivatives featureset](/docs/derivatives_featureset.md)
-- [Building AMI machines in AWS](/docs/building_aws_ami.md)
 
 ### Samples
 - [Sample repository](https://github.com/rancher-sandbox/cos-toolkit-sample-repo)
@@ -94,13 +87,7 @@ If you are looking after only generating a container image that can be used for 
 - [Deploy Fleet on a cOS vanilla image](/docs/k3s_and_fleet_on_vanilla_image_example.md)
 
 ### cOS development
-- [Development notes](/docs/dev.md)
-- [High Level architecture](/docs/high_level_architecture.md)
 - [Github project](https://github.com/mudler/cOS/projects/1) for a short-term Roadmap
-
-### Usage hints
-
-- [Grub2 default boot entry setup](/docs/configure_grub.md)
 
 ## License
 
