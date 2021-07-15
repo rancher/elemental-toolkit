@@ -42,7 +42,7 @@ snap_id=$(aws ec2 describe-import-snapshot-tasks \
 
 echo "Tagging Snapshot"
 aws ec2 create-tags --resources "${snap_id}" \
-    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
+    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$git_sha Key=Flavor,Value=cos-vanilla
 
 echo "Register AMI from snapshot"
 ami_id=$(aws ec2 register-image \
@@ -58,7 +58,7 @@ ami_id=$(aws ec2 register-image \
 
 echo "Tagging AMI"
 aws ec2 create-tags --resources "${ami_id}" --tags \
-   --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
+   --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$git_sha Key=Flavor,Value=cos-vanilla
 
 echo "Making AMI public"
 aws ec2 modify-image-attribute --image-id "${ami_id}" --launch-permission "Add=[{Group=all}]"
@@ -89,7 +89,7 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
 
     echo "Tagging Copied AMI ${ami_copy_id}"
     aws ec2 create-tags --resources "${ami_copy_id}" --tags \
-      --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha
+      --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
     echo "Making AMI ${ami_copy_id} public"
     aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --launch-permission "Add=[{Group=all}]"

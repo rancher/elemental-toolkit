@@ -426,7 +426,7 @@ jobs:
 
   
 
-  raw-img-opensuse:
+  raw-images-opensuse:
     runs-on: ubuntu-latest
     container: opensuse/leap:15.3
     needs: build-opensuse
@@ -434,7 +434,7 @@ jobs:
     steps:
       - name: Install OS deps
         run: |
-          zypper in -y curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+          zypper in -y bc qemu-tools curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2
@@ -447,49 +447,40 @@ jobs:
           rm -rf /var/lock
           mkdir -p /var/lock
           make deps
-      - name: Build Image
+      - name: Export cos version
+        run: |
+          echo "COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')" >> $GITHUB_ENV
+      - name: Build raw image
         run: |
           make raw_disk
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-          mv disk.raw cOS-Vanilla-${COS_VERSION}.raw
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-raw-img-opensuse
-          path: |
-            *.raw
-          if-no-files-found: error
-
-  azure-img-opensuse:
-    runs-on: ubuntu-latest
-    container: opensuse/leap:15.3
-    needs: raw-img-opensuse
-
-    steps:
-      - name: Install OS deps
-        run: |
-          zypper in -y qemu-tools make tar gzip xz which curl
-      - uses: actions/checkout@v2
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-raw-img-opensuse
-          path: .
-      - name: Install toolchain
-        run: |
-          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the container
-          rm -rf /var/lock
-          mkdir -p /var/lock
-          make deps
-      - name: Build Image
+      - name: Build Azure image
         run: |
           make azure_disk
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-          mv disk.vhd cOS_${COS_VERSION}.vhd
+      - name: Build GCE image
+        run: |
+          make gce_disk
+      - name: Rename images
+        run: |
+          mv disk.raw cOS-Vanilla-RAW-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.raw
+          mv disk.vhd cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.tar.gz
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-azure-img-opensuse
+          name: cOS-Vanilla-RAW-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}
           path: |
-            *.vhd
+            cOS-Vanilla-RAW-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.raw
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}
+          path: |
+            cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.vhd
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Vanilla-GCE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}
+          path: |
+            cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}.tar.gz
           if-no-files-found: error
 
     

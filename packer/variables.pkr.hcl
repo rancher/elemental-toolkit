@@ -147,3 +147,9 @@ variable "name" {
   default = "cOS"
   description = "Name of the product being built. Only used for naming artifacts."
 }
+
+variable "git_sha" {
+  type = string
+  default ="none"
+  description = "Git sha of the current build, defaults to none."
+}

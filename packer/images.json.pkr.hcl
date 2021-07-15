@@ -1,7 +1,7 @@
 source "amazon-ebs" "cos" {
   access_key      = var.aws_access_key
-  ami_name        = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
-  ami_description = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
+  ami_name        = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
+  ami_description = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
   ami_groups      = var.aws_ami_groups
   instance_type   = var.aws_instance_type
   region          = var.aws_region
@@ -25,6 +25,8 @@ source "amazon-ebs" "cos" {
   tags = {
     Name          = var.name
     Version       = var.cos_version
+    Flavor        = var.flavor
+    Git_SHA       = var.git_sha  # use full sha here
     Base_AMI_ID   = "{{ .SourceAMI }}"  # This info comes from the build process directly
     Base_AMI_Name = "{{ .SourceAMIName }}"  # This info comes from the build process directly
   }
