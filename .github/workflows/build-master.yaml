@@ -612,7 +612,7 @@ jobs:
             COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
             export COS_VERSION="${COS_VERSION/+/-}"
             export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_aws_cos_install_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
+            export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=opensuse
             export PKR_VAR_git_sha="${GITHUB_SHA}"
             make packer-aws
