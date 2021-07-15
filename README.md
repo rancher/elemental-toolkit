@@ -100,7 +100,7 @@ If you are looking after only generating a container image that can be used for 
 
 ### Usage hints
 
-- [Grub2 default boot entry setup](/docs/configure_grub.md)
+- [Grub2 configuration](/docs/configure_grub.md)
 
 ## License
 
