@@ -8,16 +8,25 @@ stages:
            label: COS_RECOVERY
          add_partitions:
            - fsLabel: COS_STATE
-             # 15Gb for COS_STATE, so the disk should be bigger than 17Gb
-             size: 15360
+             # 10Gb for COS_STATE, so the disk should have at least 16Gb
+             size: 10240
              pLabel: state
            - fsLabel: COS_PERSISTENT
              # unset size or 0 size means all available space
              pLabel: persistent
+   initramfs:
+     - if: '[ -f "/run/cos/recovery_mode" ]'
+       name: "Set sshd to wait for deployment"
+       files:
+       - path: "/etc/systemd/system/sshd.service.d/override.conf"
+         content: |
+             [Unit]
+             After=cos-setup-network.service
    network:
      - if: '[ -f "/run/cos/recovery_mode" ]'
        name: "Deploy cos-system"
        commands:
          - |
-             cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.5 && \
-             shutdown -r +1
+             # Use `cos-deploy --docker-image <img-ref>` to deploy a custom image
+             # By default latest cOS gets deployed
+             cos-deploy && shutdown -r now
