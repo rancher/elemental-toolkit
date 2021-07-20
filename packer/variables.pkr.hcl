@@ -100,19 +100,37 @@ variable "azure_subscription_id" {
   default = env("AZURE_SUBSCRIPTION_ID")
 }
 
-variable "azure_custom_managed_image_resource_group_name" {
-  type = string
-  default = "cos-testing"
-}
-
-variable "azure_custom_managed_image_name" {
-  type = string
-  default = "cos_0.5.7-recovery"
-}
-
 variable "azure_managed_image_resource_group_name" {
   type = string
   default = "cos-testing"
+}
+
+# shared_image_gallery options configure the shared image gallery where to pick
+# the base image from. The defaults point to cOS shared image gallery, if you plan on using a
+# vanilla image different that ours, change all the options to point to your shared image gallery
+variable "azure_shared_image_gallery_subscription" {
+  type = string
+  default = "c011786b-59d7-4817-880c-7cd8a6ca4b19"
+}
+
+variable "azure_shared_image_gallery_resource_group" {
+  type = string
+  default = "cos-testing"
+}
+
+variable "azure_shared_image_gallery_gallery_name" {
+  type = string
+  default = "cos"
+}
+
+variable "azure_shared_image_gallery_image_name" {
+  type = string
+  default = "cos-vanilla"
+}
+
+variable "azure_shared_image_gallery_image_version" {
+  type = string
+  default = "latest"
 }
 
 variable "azure_location" {
