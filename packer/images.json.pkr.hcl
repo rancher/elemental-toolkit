@@ -178,10 +178,10 @@ build {
 
   post-processor "vagrant" {
     only   = ["virtualbox-iso.cos", "qemu.cos"]
-    output = "cOS_${var.build}_${var.arch}_${var.flavor}.box"
+    output = "cOS_${var.flavor}_${var.build}_${var.arch}.box"
   }
   post-processor "compress" {
     only   = ["virtualbox-iso.cos", "qemu.cos"]
-    output = "cOS_${var.build}_${var.arch}_${var.flavor}.tar.gz"
+    output = "cOS_${var.flavor}_${var.build}_${var.arch}.tar.gz"
   }
 }

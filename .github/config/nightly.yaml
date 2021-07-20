@@ -3,14 +3,19 @@
 
 local_runner: false
 push_cache: false
+skip_build: false
+
 pipeline: "nightly"
 publishing_pipeline: false
+publish_cloud: false
 repository: "releases"
+cache_repository: "build"
+organization: "quay.io/costoolkit"
 skip_tests: false
 flavors: ["opensuse", "fedora", "ubuntu"]
 skip_tests_flavor: ["fedora","ubuntu"]
 skip_images_flavor: ["fedora","ubuntu"]
-
+release_flavor: ["opensuse"]
 on: 
   schedule:
     - cron:  '0 20 * * *'

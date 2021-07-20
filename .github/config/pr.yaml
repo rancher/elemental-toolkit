@@ -4,10 +4,15 @@ local_runner: false
 pipeline: "Pull requests"
 push_cache: false
 publishing_pipeline: false
+publish_cloud: false
+skip_build: false
 repository: "releases" # releases for prod
+cache_repository: "build"
+organization: "quay.io/costoolkit"
 skip_tests: false
 skip_tests_flavor: ["fedora","ubuntu"]
 skip_images_flavor: ["fedora","ubuntu"]
+release_flavor: ["opensuse"]
 
 flavors: ["opensuse", "fedora", "ubuntu"]
 on: 
