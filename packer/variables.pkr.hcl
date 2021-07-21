@@ -164,6 +164,53 @@ variable "aws_cos_deploy_args" {
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
 }
 
+variable "gcp_source_image" {
+  type = string
+  default = "cos-vanilla"
+  description = "Image family to use as source. The lastest of the given family is used"
+}
+
+variable "gcp_location" {
+  type = string
+  default = "europe-west3-a"
+  description = "Zone used for the build process"
+}
+
+variable "gcp_image_storage_location" {
+  type = string
+  default = "eu"
+  description = "Location for the resulting image"
+}
+
+variable "gcp_disk_size" {
+  type = number
+  default = 16
+  description = "Size in of the disk in GB"
+}
+
+variable "gcp_machine_type" {
+  type = string
+  default = "n1-standard-1"
+  description = "Instance type to use"
+}
+
+variable "gcp_user_data_file" {
+  type = string
+  default = "user-data/gcp.yaml"
+  description = "Path to the user-data file to boot the base instance with"
+}
+
+variable "gcp_cos_deploy_args" {
+  type = string
+  default = "cos-deploy"
+  description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
+}
+
+variable "gcp_project_id" {
+  type = string
+  description = "Project to look for the image family"
+}
+
 variable "cos_version" {
   type    = string
   default = "latest"

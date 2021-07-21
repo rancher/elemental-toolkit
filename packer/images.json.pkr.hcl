@@ -63,6 +63,29 @@ source "azure-arm" "cos" {
   }
 }
 
+source "googlecompute" "cos" {
+  project_id                = var.gcp_project_id
+  source_image_family       = var.gcp_source_image
+  ssh_password              = var.root_password
+  ssh_username              = var.root_username
+  zone                      = var.gcp_location
+  disk_size                 = var.gcp_disk_size
+  enable_secure_boot        = false
+  image_name                = "${lower(var.name)}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
+  image_description         = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
+  image_labels = {
+    name          = "${lower(var.name)}"
+    version       = var.cos_version
+    flavor        = var.flavor
+    git_sha       = var.git_sha  # use full sha here
+  }
+  image_storage_locations   = [var.gcp_image_storage_location]
+  machine_type              = var.gcp_machine_type
+  metadata_files = {
+    user-data = var.gcp_user_data_file
+  }
+}
+
 source "qemu" "cos" {
   accelerator            = "${var.accelerator}"
   boot_wait              = "${var.sleep}"
@@ -104,22 +127,22 @@ source "virtualbox-iso" "cos" {
 build {
   description = "cOS"
 
-  sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.virtualbox-iso.cos", "source.azure-arm.cos"]
+  sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
 
   provisioner "file" {
-    except = ["amazon-ebs.cos", "azure-arm.cos"]
+    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
     destination = "/90_custom.yaml"
     source      = "config.yaml"
   }
 
   provisioner "file" {
-    except = ["amazon-ebs.cos", "azure-arm.cos"]
+    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
     destination = "/vagrant.yaml"
     source      = "vagrant.yaml"
   }
 
   provisioner "shell" {
-    except = ["amazon-ebs.cos", "azure-arm.cos"]
+    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
     inline = ["INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda",
       "if [ -n \"${var.feature}\" ]; then mount /dev/disk/by-label/COS_OEM /oem; cos-feature enable ${var.feature}; fi"
     ]
@@ -130,6 +153,15 @@ build {
     only = ["amazon-ebs.cos"]
     inline = [
       "${var.aws_cos_deploy_args}",
+      "sync"
+    ]
+    pause_after = "30s"
+  }
+
+  provisioner "shell" {
+    only = ["googlecompute.cos"]
+    inline = [
+      "${var.gcp_cos_deploy_args}",
       "sync"
     ]
     pause_after = "30s"
