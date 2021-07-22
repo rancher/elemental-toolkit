@@ -209,6 +209,7 @@ variable "gcp_cos_deploy_args" {
 variable "gcp_project_id" {
   type = string
   description = "Project to look for the image family"
+  default = env("GCP_PROJECT_ID")
 }
 
 variable "cos_version" {
