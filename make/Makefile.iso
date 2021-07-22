@@ -3,6 +3,7 @@
 #
 #
 
+MAKEISO_ARGS?=
 MKSQUASHFS?=$(shell which mksquashfs 2> /dev/null)
 ifeq ("$(MKSQUASHFS)","")
 MKSQUASHFS="/usr/bin/mksquashfs"
@@ -76,7 +77,7 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	$(LUET) makeiso -- $(MANIFEST) --local $(DESTINATION)
+	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST) --local $(DESTINATION)
 endif
 
 .PHONY: iso
@@ -93,7 +94,7 @@ else
 	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].enable' true
 	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].type' 'docker'
 	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
-	$(LUET) makeiso $(MANIFEST).remote
+	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST).remote
 endif
 
 

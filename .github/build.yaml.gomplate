@@ -1,113 +1,115 @@
 {{{ $config := (datasource "config") }}}
-name: Build cOS {{{$config.pipeline}}}
 
-on: 
-{{{$config.on | toYAML | indent 1 }}}
+{{{define "cos_version" }}}
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+{{{ end }}}
 
-concurrency:
-  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
-  cancel-in-progress: true
 
-jobs:
-
-{{{ range $config.flavors }}}
-  {{{$flavor:=.}}}
-  docker-build-{{{ $flavor }}}:
-  {{{ if $config.local_runner }}}
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
-  {{{ else }}}
-    runs-on: ubuntu-latest
-  {{{ end }}}
-    env:
-      FLAVOR: {{{ $flavor }}}
-
-    steps:
-  {{{ if $config.local_runner }}}
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-  {{{ end }}}
+{{{define "prepare_worker" }}}
+  {{{ $config := (datasource "config") }}}
       - uses: actions/checkout@v2
-
       - run: |
           git fetch --prune --unshallow
-  {{{ if not $config.local_runner }}}
+  {{{- if not $config.local_runner }}}
       - name: setup-docker
         uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-  {{{end}}}
+  {{{- end }}}
+{{{ end }}}
+
+{{{define "prepare_build" }}}
+  {{{ $config := (datasource "config") }}}
+  {{{- if $config.local_runner }}}
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+  {{{- end }}}
+
+  {{{- if $config.local_runner }}}
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-amd64.tar.gz -o go1.16.5.linux-amd64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-amd64.tar.gz
+  {{{- else }}}
+      - name: Install Go
+        uses: actions/setup-go@v2
+  {{{- end }}}
+  {{{- if $config.local_runner }}}
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+  {{{- end }}}
+{{{ end }}}
+
+{{{define "make"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $target := . }}}
+      - name: Run make {{{ $target }}}
+        run: |
+          sudo -E make {{{ $target }}}
+  {{{- if eq $target "deps" }}}
+          sudo luet install -y toolchain/yq
+  {{{- end }}}
+{{{end}}}
+
+{{{define "runner"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{- if $config.local_runner }}}
+    runs-on: self-hosted
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+  {{{- else }}}
+    runs-on: ubuntu-latest
+  {{{ end }}}
+{{{end}}}
+
+{{{define "docker_build_packages"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
+  docker-build-{{{ $flavor }}}:
+    {{{ tmpl.Exec "runner" }}}
+    env:
+      FLAVOR: {{{ $flavor }}}
+    steps:
+  {{{- if $config.local_runner }}}
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+  {{{- end }}}
+      {{{ tmpl.Exec "prepare_worker" }}}
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
           source .envrc
           cos-build $FLAVOR
+{{{end}}}
 
-
+{{{define "build_packages"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
   build-{{{ $flavor }}}:
-  {{{ if $config.local_runner }}}
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}")
-  {{{ else }}}
-    runs-on: ubuntu-latest
-  {{{ end }}}
+    {{{ tmpl.Exec "runner" }}}
     env:
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
+      REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache
     steps:
-  {{{ if $config.local_runner }}}
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-  {{{ end }}}
-
-  {{{ if $config.local_runner }}}
-      - name: Install Go
-        run: |
-          curl -L https://golang.org/dl/go1.16.5.linux-amd64.tar.gz -o go1.16.5.linux-amd64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-amd64.tar.gz
-  {{{ else }}}
-      - name: Install Go
-        uses: actions/setup-go@v2
-  {{{ end }}}
-
-      - uses: actions/checkout@v2
-
-      - run: |
-          git fetch --prune --unshallow
-
-  {{{ if $config.local_runner }}}
-      - name: Install make
-        run: |
-            sudo apt-get update
-            sudo apt-get install -y make
-  {{{ else }}}
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-  {{{ end }}}
-
-  {{{ if or $config.publishing_pipeline $config.push_cache }}}
+      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "prepare_worker" }}}
+  {{{- if or $config.publishing_pipeline $config.push_cache }}}
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-  {{{ end }}}
-
-      - name: Install deps
-        run: |
-          sudo -E make deps
-
-      - name: Validate 🌳
-        run: |
-          make validate
-
+  {{{- end }}}
+      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "validate" }}}
       - name: Build packages 🔧
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -118,7 +120,7 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-  {{{ if $config.publishing_pipeline }}}
+  {{{- if $config.publishing_pipeline }}}
       - name: Generate manifests
         run: |
           for f in build/*tar*; do
@@ -132,35 +134,29 @@ jobs:
             BASE_NAME=`basename -s .package.tar.zst.mtree $f`
             sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
           done
-  {{{ end }}}
-      - name: Create repo
-        run: |
-          sudo -E make create-repo
+  {{{- end }}}
+      {{{ tmpl.Exec "make" "create-repo" }}}
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
           name: build-{{{ $flavor }}}
           path: build
           if-no-files-found: error
+{{{end}}}
 
-
-
-  {{{ range slice "squashfs" "nonsquashfs" }}}
-  {{{$subset:=.}}}
-  {{{ if not (has $config.skip_images_flavor $flavor) }}}
-
+{{{define "build_iso"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := index . "flavor" }}}
+  {{{ $subset := index . "subset" }}}
   iso-{{{$subset}}}-{{{ $flavor }}}:
-  {{{ if $config.local_runner }}}
-    runs-on: self-hosted
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
-  {{{ else }}}
-    runs-on: ubuntu-latest
-  {{{ end }}}
+    {{{ tmpl.Exec "runner" }}}
+    {{{- if not $config.skip_build }}}
     needs: build-{{{ $flavor }}}
+    {{{- end }}}
     env:
-      FINAL_REPO: quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
     steps:
-      - uses: actions/checkout@v2
+      {{{ tmpl.Exec "prepare_worker" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -170,35 +166,24 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools
-          sudo -E make deps
-  {{{ if eq $subset "nonsquashfs" }}}
+      {{{ tmpl.Exec "make" "deps" }}}
+  {{{- if eq $subset "nonsquashfs" }}}
       - name: Tweak manifest and drop squashfs recovery
         run: |
-          yq d -i manifest.yaml 'packages.isoimage(.==recovery/cos-img)'
-  {{{ end }}}
+          source .github/helpers.sh
+          drop_recovery manifest.yaml
+  {{{- end }}}
+      {{{ tmpl.Exec "cos_version" }}}
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          MANIFEST=manifest.yaml
-          cp -rf $MANIFEST $MANIFEST.remote
-          yq w -i $MANIFEST.remote 'luet.repositories[0].name' 'cOS'
-          yq w -i $MANIFEST.remote 'luet.repositories[0].enable' true
-          yq w -i $MANIFEST.remote 'luet.repositories[0].priority' 90
-          yq w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
-          yq w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
-          sudo -E MANIFEST=$MANIFEST.remote make local-iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-          mv *.iso cOS-$COS_VERSION.iso
-          mv *.sha256 cOS-$COS_VERSION.iso.sha256
-
+          source .github/helpers.sh
+          create_remote_manifest manifest.yaml
+          sudo -E MAKEISO_ARGS="--output cOS-{{{ $flavor }}}-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E make iso
-          COS_VERSION=$(yq r packages/cos/collection.yaml 'version')
-          mv *.iso cOS-$COS_VERSION.iso
-          mv *.sha256 cOS-$COS_VERSION.iso.sha256
-
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-{{{ $flavor }}}-${{ env.COS_VERSION }}" make iso
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}.iso.zip
@@ -206,6 +191,13 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+{{{ end }}}
+
+
+{{{define "build_qemu"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := index . "flavor" }}}
+  {{{ $subset := index . "subset" }}}
   qemu-{{{$subset}}}-{{{ $flavor }}}:
     runs-on: macos-10.15
     needs: iso-{{{$subset}}}-{{{ $flavor }}}
@@ -218,9 +210,13 @@ jobs:
       - name: Install deps
         run: |
           brew install qemu
+          brew install yq@3
       - name: Build QEMU Image 🔧
         run: |
-          PACKER_ARGS="-var='accelerator=hvf' -var='feature=vagrant' -only qemu.cos" make packer
+          export YQ=/usr/local/opt/yq@3/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor={{{ $flavor }}}' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}.qcow
@@ -233,6 +229,12 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+{{{ end }}}
+
+{{{define "build_vbox"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := index . "flavor" }}}
+  {{{ $subset := index . "subset" }}}
   vbox-{{{$subset}}}-{{{ $flavor }}}:
     runs-on: macos-10.15
     needs: iso-{{{$subset}}}-{{{ $flavor }}}
@@ -247,9 +249,15 @@ jobs:
       #   run: |
       #     brew tap hashicorp/tap
       #     brew install hashicorp/tap/packer
+      - name: Install deps
+        run: |
+            brew install yq@3
       - name: Build VBox Image 🔧
         run: |
-          PACKER_ARGS="-var='feature=vagrant' -only virtualbox-iso.cos" make packer
+          export YQ=/usr/local/opt/yq@3/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor={{{ $flavor }}}' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}.ova
@@ -262,8 +270,12 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-  {{{ end }}}
-  {{{ if not (or $config.skip_tests (has $config.skip_tests_flavor $flavor)) }}}
+{{{ end }}}
+
+{{{define "test"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := index . "flavor" }}}
+  {{{ $subset := index . "subset" }}}
   tests-{{{$subset}}}-{{{ $flavor }}}:
     env:
       VAGRANT_CPU: 3
@@ -305,63 +317,50 @@ jobs:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
           path: tests/serial_port1
           if-no-files-found: warn
+{{{ end }}}
 
-  {{{end}}}
- {{{end}}}
-
-  {{{ if $config.publishing_pipeline }}}
+{{{define "publish_packages"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
   publish-{{{ $flavor }}}:
     runs-on: ubuntu-latest
-    {{{ if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
-    needs: build-{{{ $flavor }}}
-    {{{ else }}}
+    {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
+    needs: 
+    {{{- if not $config.skip_build }}}
+    - build-{{{ $flavor }}}
+    {{{- end }}}
+    {{{- if not ( has $config.skip_images_flavor $flavor ) }}}
+    - iso-squashfs-{{{ $flavor }}}
+    {{{- end }}}
+    {{{- else }}}
     needs: tests-squashfs-{{{ $flavor }}}
-    {{{ end }}}
+    {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
-      - uses: actions/checkout@v2
+      {{{ tmpl.Exec "prepare_worker" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
           name: build-{{{ $flavor }}}
           path: build
-      - run: |
-          git fetch --prune --unshallow
-
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
-
-      # We patch docker to use all the HD available in GH action free runners
-      - name: Patch Docker Daemon data-root
-        run: |
-          DOCKER_DATA_ROOT='/mnt/var/lib/docker'
-          DOCKER_DAEMON_JSON='/etc/docker/daemon.json'
-          sudo mkdir -p "${DOCKER_DATA_ROOT}"
-          jq --arg dataroot "${DOCKER_DATA_ROOT}" '. + {"data-root": $dataroot}' "${DOCKER_DAEMON_JSON}" > "/tmp/docker.json.tmp"
-          sudo mv "/tmp/docker.json.tmp" "${DOCKER_DAEMON_JSON}"
-          sudo systemctl restart docker
-
-    {{{ if or $config.publishing_pipeline $config.push_cache }}}
+    {{{- if or $config.publishing_pipeline $config.push_cache }}}
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-    {{{ end }}}
-
-      - name: Install deps
-        run: |
-          sudo -E make deps
-    {{{ if $config.local_runner }}}
+    {{{- end }}}
+      {{{ tmpl.Exec "make" "deps" }}}
+    {{{- if $config.local_runner }}}
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-amd64.tar.gz -o go1.16.5.linux-amd64.tar.gz
           sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-amd64.tar.gz
-    {{{ else }}}
+    {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v2
-    {{{ end }}}
+    {{{- end }}}
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -373,56 +372,100 @@ jobs:
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
+{{{ end }}}
+
+
+
+{{{define "github_release"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
 
   github-release-{{{ $flavor }}}:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    {{{ if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
-    needs: build-{{{ $flavor }}}
-    {{{ else }}}
-    needs: tests-squashfs-{{{ $flavor }}}
-    {{{ end }}}
+    needs: 
+    {{{- if not $config.skip_build }}}
+    - build-{{{ $flavor }}}
+    {{{- end }}}
+    - raw-images-{{{ $flavor }}}
+    - vbox-nonsquashfs-{{{ $flavor }}}
+    - qemu-nonsquashfs-{{{ $flavor }}}
+    - iso-nonsquashfs-{{{ $flavor }}}
+    - image-link-{{{ $flavor }}}
+    {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
+    {{{- else }}}
+    - tests-nonsquashfs-{{{ $flavor }}}
+    - tests-squashfs-{{{ $flavor }}}
+    {{{- end }}}
     steps:
       - uses: actions/checkout@v2
+      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "cos_version" }}}
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{ $flavor }}}.iso.zip
+          name: cOS-nonsquashfs-{{{ $flavor }}}.iso.zip
           path: release
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{ $flavor }}}-vbox.box
+          name: cOS-nonsquashfs-{{{ $flavor }}}-vbox.box
           path: release
       - name: Download OVA image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{ $flavor }}}.ova
+          name: cOS-nonsquashfs-{{{ $flavor }}}.ova
           path: release
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{ $flavor }}}.qcow
+          name: cOS-nonsquashfs-{{{ $flavor }}}.qcow
+          path: release
+      - name: Download GCE RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}
+          path: release
+      - name: Download AZURE RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}
+          path: release
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}
+          path: release
+      - name: Download Image links
+        uses: actions/download-artifact@v2
+        with:
+          name: images-{{{ $flavor }}}.txt
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1
         if: startsWith(github.ref, 'refs/tags/')
         env:
+          GHR_COMPRESS: xz
           GHR_PATH: release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  {{{ end }}}
+{{{ end }}}
 
-  {{{ if not (has $config.skip_images_flavor $flavor) }}}
-
+{{{define "raw_image"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
   raw-images-{{{ $flavor }}}:
     runs-on: ubuntu-latest
     container: opensuse/leap:15.3
-    needs: build-{{{ $flavor }}}
+
+    {{{- if not $config.skip_build }}}
+    needs:
+    - build-{{{ $flavor }}}
+    {{{- end }}}
 
     steps:
       - name: Install OS deps
         run: |
-          zypper in -y bc qemu-tools curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+          zypper in -y bc qemu-tools sudo curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2
@@ -434,45 +477,39 @@ jobs:
           # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
           rm -rf /var/lock
           mkdir -p /var/lock
-          make deps
-      - name: Export cos version
-        run: |
-          echo "COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')" >> $GITHUB_ENV
-      - name: Build raw image
-        run: |
-          make raw_disk
-      - name: Build Azure image
-        run: |
-          make azure_disk
-      - name: Build GCE image
-        run: |
-          make gce_disk
+      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "cos_version" }}}
+      {{{ tmpl.Exec "make" "raw_disk" }}}
+      {{{ tmpl.Exec "make" "azure_disk" }}}
+      {{{ tmpl.Exec "make" "gce_disk" }}}
       - name: Rename images
         run: |
-          mv disk.raw cOS-Vanilla-RAW-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.raw
-          mv disk.vhd cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.tar.gz
+          mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}.raw
+          mv disk.vhd cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}.tar.gz
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}
+          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-RAW-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.raw
+            cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}.raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}
+          name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.vhd
+            cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}.vhd
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}
+          name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-AZURE-${{ env.COS_VERSION }}-{{{ $flavor }}}-${{ github.sha }}.tar.gz
+            cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}.tar.gz
           if-no-files-found: error
+{{{ end }}}
 
-    {{{ if $config.publishing_pipeline }}}
-
+{{{define "ami_publish"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
   ami-publish-{{{ $flavor }}}:
     runs-on: ubuntu-latest
     needs: publish-vanilla-ami
@@ -482,37 +519,58 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install deps
-        run: |
-          sudo -E make deps
+      {{{ tmpl.Exec "make" "deps" }}}
       - name: Build AMI for {{{ $flavor }}}
         run: |
-            COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')
-            export COS_VERSION="${COS_VERSION/+/-}"
+            source .github/helpers.sh
+            PACKAGE_VERSION=$(cos_package_version)
+            export COS_VERSION="${PACKAGE_VERSION/+/-}"
             export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "opensuse") }}}--no-verify {{{ end }}}--docker-image quay.io/costoolkit/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
+            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "opensuse") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor={{{ $flavor }}}
             export PKR_VAR_git_sha="${GITHUB_SHA}"
             make packer-aws
-    {{{ end }}}
-  {{{ end }}}
 {{{ end }}}
 
-{{{ if eq $config.pipeline "master" }}}
+{{{define "image_link"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
+  image-link-{{{ $flavor }}}:
+    runs-on: ubuntu-latest
+    needs: publish-{{{$flavor}}}
+    steps:
+      - uses: actions/checkout@v2
+      {{{ tmpl.Exec "make" "deps" }}}
+      - name: Generate link for {{{ $flavor }}}
+        run: |
+            source .github/helpers.sh
+            PACKAGE_VERSION=$(cos_package_version)
+            export COS_VERSION="${PACKAGE_VERSION/+/-}"
+            echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}.txt
+      - uses: actions/upload-artifact@v2
+        with:
+          name: images-{{{ $flavor }}}.txt
+          path: |
+            images-{{{ $flavor }}}.txt
+{{{ end }}}
+
+{{{define "publish_vanilla"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := "opensuse" }}}
   # We need only a single vanilla image for any OS
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:
     runs-on: ubuntu-latest
-    needs: [raw-images-opensuse, tests-squashfs-opensuse]
+    {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
+    needs: raw-images-{{{ $flavor }}}
+    {{{- else }}}
+    needs: [raw-images-{{{ $flavor }}}, tests-squashfs-{{{ $flavor }}}]
+    {{{- end }}}
 
     steps:
       - uses: actions/checkout@v2
-      - name: Install deps
-        run: |
-          sudo -E make deps
-      - name: Export cOS version
-        run: |
-          echo "COS_VERSION=$(yq r packages/cos/collection.yaml 'packages.[0].version')" >> $GITHUB_ENV
+      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "cos_version" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -530,3 +588,60 @@ jobs:
           export COPY_AMI_ALL_REGIONS="true"
           make aws_vanilla_ami
 {{{ end }}}
+
+name: Build cOS {{{$config.pipeline}}}
+
+on: 
+{{{$config.on | toYAML | indent 1 }}}
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+
+{{{- range $config.flavors }}}
+  {{{$flavor:=.}}}
+
+  {{{- if not $config.skip_build }}}
+  {{{tmpl.Exec "docker_build_packages" $flavor}}}
+  {{{tmpl.Exec "build_packages" $flavor}}}
+  {{{- end }}}
+
+  {{{- range slice "squashfs" "nonsquashfs" }}}
+
+    {{{- $subset:=. }}}
+    {{{ $context := coll.Dict "flavor" $flavor "subset" $subset }}}
+
+    {{{- if not (has $config.skip_images_flavor $flavor) }}}
+  {{{ tmpl.Exec "build_iso" $context }}}
+  {{{ tmpl.Exec "build_qemu" $context }}}
+  {{{ tmpl.Exec "build_vbox" $context }}}
+    {{{- end }}}
+
+    {{{- if not (or $config.skip_tests (has $config.skip_tests_flavor $flavor)) }}}
+  {{{ tmpl.Exec "test" $context }}}
+    {{{- end}}}
+
+  {{{- end}}}
+
+  {{{- if $config.publishing_pipeline }}}
+  {{{tmpl.Exec "image_link" $flavor}}}
+  {{{tmpl.Exec "publish_packages" $flavor}}}
+  {{{- if has $config.release_flavor $flavor }}}
+  {{{tmpl.Exec "github_release" $flavor}}}
+  {{{- end }}}
+  {{{- end }}}
+
+    {{{- if not (has $config.skip_images_flavor $flavor) }}}
+  {{{tmpl.Exec "raw_image" $flavor}}}
+
+      {{{- if $config.publish_cloud }}}
+  {{{tmpl.Exec "ami_publish" $flavor}}}
+      {{{- end }}}
+    {{{- end }}}
+{{{- end }}}
+
+{{{- if $config.publish_cloud }}}
+{{{tmpl.Exec "publish_vanilla"}}}
+{{{- end }}}
