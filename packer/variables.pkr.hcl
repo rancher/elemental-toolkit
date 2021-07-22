@@ -239,7 +239,7 @@ variable "feature" {
 
 variable "flavor" {
   type    = string
-  default = "opensuse"
+  default = "green"
 }
 
 variable "iso" {

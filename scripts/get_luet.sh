@@ -42,7 +42,7 @@ repositories:
   priority: 1
   verify: false
   urls:
-  - "quay.io/costoolkit/releases-opensuse"
+  - "quay.io/costoolkit/releases-green"
 EOF
 
 ./luet install -y $LUET_PACKAGE

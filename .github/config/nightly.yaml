@@ -12,10 +12,11 @@ repository: "releases"
 cache_repository: "build"
 organization: "quay.io/costoolkit"
 skip_tests: false
-flavors: ["opensuse", "fedora", "ubuntu"]
-skip_tests_flavor: ["fedora","ubuntu"]
-skip_images_flavor: ["fedora","ubuntu"]
-release_flavor: ["opensuse"]
+flavors: ["green", "blue", "orange"]
+skip_tests_flavor: ["blue","orange"]
+skip_images_flavor: ["blue","orange"]
+release_flavor: ["green"]
+
 on: 
   schedule:
     - cron:  '0 20 * * *'

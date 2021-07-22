@@ -24,14 +24,14 @@ It is designed to reduce the maintenance surface, with a flexible approach to pr
 
 cOS derivatives are built from containers, and completely hosted on image registries. The build process results in a single container image used to deliver regular upgrades in OTA approach. Each derivative built with `cos-toolkit` inherits a default featureset.
 
-cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Quay Container Registry](https://quay.io/repository/costoolkit/releases-opensuse) and can be pulled for inspection from the registry as well.
+cOS supports different release channels, all the final and cache images used are tagged and pushed regularly [to Quay Container Registry](https://quay.io/repository/costoolkit/releases-green) and can be pulled for inspection from the registry as well.
 
 Those are exactly the same images used during upgrades, and can also be used to build Linux derivatives from cOS.
 
 For example, if you want to see locally what's in a openSUSE cOS version , you can:
 
 ```bash
-$ docker run -ti --rm quay.io/costoolkit/releases-opensuse:cos-system-$VERSION /bin/bash
+$ docker run -ti --rm quay.io/costoolkit/releases-green:cos-system-$VERSION /bin/bash
 ```
 
 ## Releases
@@ -40,7 +40,7 @@ cOS-toolkit releases consist on container images that can be used to build deriv
  
 cOS is a manifest which assembles an OS from containers, so if you want to make substantial changes to the layout you can also fork directly cOS.
 
-Currently, the toolkit supports creating derivatives from [OpenSUSE, Fedora and Ubuntu](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values), although it's rather simple to add support for other OS families and architecures.
+Currently, the toolkit supports creating derivatives from [OpenSUSE (green), Fedora (blue) and Ubuntu (orange)](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values), although it's rather simple to add support for other OS families and architecures.
 
 The cOS CI generates ISO and images artifacts used for testing, so you can also try out cOS by downloading the 
 ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build.yaml), to the commit you are interested into.
@@ -51,7 +51,7 @@ ISO [from the Github Actions page](https://github.com/rancher-sandbox/cOS-toolki
 - Immutable-first, but with a flexible layout
 - Cloud-init driven
 - Based on systemd
-- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-opensuse)!
+- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-green)!
 - OTA updates
 - Easy to customize
 - Cryptographically verified
