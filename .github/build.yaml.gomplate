@@ -574,7 +574,7 @@
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-${{ env.COS_VERSION }}-opensuse-${{ github.sha }}
+          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}
           path: .
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
