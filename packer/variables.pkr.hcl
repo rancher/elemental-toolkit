@@ -164,7 +164,7 @@ variable "aws_cos_deploy_args" {
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
 }
 
-variable "gcp_source_image" {
+variable "gcp_source_image_family" {
   type = string
   default = "cos-vanilla"
   description = "Image family to use as source. The lastest of the given family is used"

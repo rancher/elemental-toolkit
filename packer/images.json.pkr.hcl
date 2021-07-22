@@ -65,7 +65,7 @@ source "azure-arm" "cos" {
 
 source "googlecompute" "cos" {
   project_id                = var.gcp_project_id
-  source_image_family       = var.gcp_source_image
+  source_image_family       = var.gcp_source_image_family
   ssh_password              = var.root_password
   ssh_username              = var.root_username
   zone                      = var.gcp_location
