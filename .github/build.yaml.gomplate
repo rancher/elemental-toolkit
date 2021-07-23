@@ -179,7 +179,7 @@
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-{{{ $flavor }}}-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
