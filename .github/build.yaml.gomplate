@@ -179,7 +179,7 @@
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-{{{ $flavor }}}-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
@@ -526,7 +526,7 @@
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
             export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "opensuse") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
+            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor={{{ $flavor }}}
             export PKR_VAR_git_sha="${GITHUB_SHA}"
             make packer-aws
@@ -556,7 +556,7 @@
 
 {{{define "publish_vanilla"}}}
   {{{ $config := (datasource "config") }}}
-  {{{ $flavor := "opensuse" }}}
+  {{{ $flavor := "green" }}}
   # We need only a single vanilla image for any OS
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:

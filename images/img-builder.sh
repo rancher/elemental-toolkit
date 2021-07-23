@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
-FINAL_REPO="${FINAL_REPO:-quay.io/costoolkit/releases-opensuse}"
+FINAL_REPO="${FINAL_REPO:-quay.io/costoolkit/releases-green}"
 
 rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml
 

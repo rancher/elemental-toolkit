@@ -57,14 +57,14 @@ jobs:
   
   
   
-  docker-build-opensuse:
+  docker-build-green:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: opensuse
+      FLAVOR: green
     steps:
       
   
@@ -87,18 +87,18 @@ jobs:
   
   
   
-  build-opensuse:
+  build-green:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: opensuse
-      FINAL_REPO: quay.io/costoolkit/releases-opensuse
+      FLAVOR: green
+      FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-opensuse-cache
+      REPO_CACHE: quay.io/costoolkit/build-green-cache
     steps:
       
   
@@ -167,7 +167,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-opensuse
+          name: build-green
           path: build
           if-no-files-found: error
 
@@ -176,15 +176,15 @@ jobs:
   
   
   
-  iso-squashfs-opensuse:
+  iso-squashfs-green:
     
   
     runs-on: ubuntu-latest
   
 
-    needs: build-opensuse
+    needs: build-green
     env:
-      FINAL_REPO: quay.io/costoolkit/releases-opensuse
+      FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
       
   
@@ -201,7 +201,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-opensuse
+          name: build-green
           path: build
       - name: Install deps
         run: |
@@ -226,14 +226,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-opensuse-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-opensuse-${{ env.COS_VERSION }}" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-green-${{ env.COS_VERSION }}" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-opensuse.iso.zip
+          name: cOS-squashfs-green.iso.zip
           path: |
             *.iso
             *.sha256
@@ -243,15 +243,15 @@ jobs:
   
   
   
-  qemu-squashfs-opensuse:
+  qemu-squashfs-green:
     runs-on: macos-10.15
-    needs: iso-squashfs-opensuse
+    needs: iso-squashfs-green
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-opensuse.iso.zip
+          name: cOS-squashfs-green.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -261,16 +261,16 @@ jobs:
           export YQ=/usr/local/opt/yq@3/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=opensuse' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-opensuse.qcow
+          name: cOS-squashfs-green.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-opensuse-QEMU.box
+          name: cOS-squashfs-green-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -279,15 +279,15 @@ jobs:
   
   
   
-  vbox-squashfs-opensuse:
+  vbox-squashfs-green:
     runs-on: macos-10.15
-    needs: iso-squashfs-opensuse
+    needs: iso-squashfs-green
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-opensuse.iso.zip
+          name: cOS-squashfs-green.iso.zip
 
       # - name: Install deps
       #   run: |
@@ -301,16 +301,16 @@ jobs:
           export YQ=/usr/local/opt/yq@3/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=opensuse' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-opensuse.ova
+          name: cOS-squashfs-green.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-opensuse-vbox.box
+          name: cOS-squashfs-green-vbox.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -319,12 +319,12 @@ jobs:
   
   
   
-  tests-squashfs-opensuse:
+  tests-squashfs-green:
     env:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
     runs-on: macos-10.15
-    needs: vbox-squashfs-opensuse
+    needs: vbox-squashfs-green
     strategy:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
@@ -335,7 +335,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-opensuse-vbox.box
+          name: cOS-squashfs-green-vbox.box
           path: packer
 
       - name: Run tests 🔧
@@ -366,15 +366,15 @@ jobs:
   
   
   
-  iso-nonsquashfs-opensuse:
+  iso-nonsquashfs-green:
     
   
     runs-on: ubuntu-latest
   
 
-    needs: build-opensuse
+    needs: build-green
     env:
-      FINAL_REPO: quay.io/costoolkit/releases-opensuse
+      FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
       
   
@@ -391,7 +391,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-opensuse
+          name: build-green
           path: build
       - name: Install deps
         run: |
@@ -420,14 +420,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-opensuse-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-opensuse-${{ env.COS_VERSION }}" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-green-${{ env.COS_VERSION }}" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.iso.zip
+          name: cOS-nonsquashfs-green.iso.zip
           path: |
             *.iso
             *.sha256
@@ -437,15 +437,15 @@ jobs:
   
   
   
-  qemu-nonsquashfs-opensuse:
+  qemu-nonsquashfs-green:
     runs-on: macos-10.15
-    needs: iso-nonsquashfs-opensuse
+    needs: iso-nonsquashfs-green
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.iso.zip
+          name: cOS-nonsquashfs-green.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -455,16 +455,16 @@ jobs:
           export YQ=/usr/local/opt/yq@3/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=opensuse' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.qcow
+          name: cOS-nonsquashfs-green.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse-QEMU.box
+          name: cOS-nonsquashfs-green-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -473,15 +473,15 @@ jobs:
   
   
   
-  vbox-nonsquashfs-opensuse:
+  vbox-nonsquashfs-green:
     runs-on: macos-10.15
-    needs: iso-nonsquashfs-opensuse
+    needs: iso-nonsquashfs-green
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.iso.zip
+          name: cOS-nonsquashfs-green.iso.zip
 
       # - name: Install deps
       #   run: |
@@ -495,16 +495,16 @@ jobs:
           export YQ=/usr/local/opt/yq@3/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=opensuse' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.ova
+          name: cOS-nonsquashfs-green.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse-vbox.box
+          name: cOS-nonsquashfs-green-vbox.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -513,12 +513,12 @@ jobs:
   
   
   
-  tests-nonsquashfs-opensuse:
+  tests-nonsquashfs-green:
     env:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
     runs-on: macos-10.15
-    needs: vbox-nonsquashfs-opensuse
+    needs: vbox-nonsquashfs-green
     strategy:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
@@ -529,7 +529,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse-vbox.box
+          name: cOS-nonsquashfs-green-vbox.box
           path: packer
 
       - name: Run tests 🔧
@@ -558,9 +558,9 @@ jobs:
   
   
   
-  image-link-opensuse:
+  image-link-green:
     runs-on: ubuntu-latest
-    needs: publish-opensuse
+    needs: publish-green
     steps:
       - uses: actions/checkout@v2
       
@@ -571,27 +571,27 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
-      - name: Generate link for opensuse
+      - name: Generate link for green
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}" > images-opensuse.txt
+            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-opensuse.txt
+          name: images-green.txt
           path: |
-            images-opensuse.txt
+            images-green.txt
 
   
   
   
-  publish-opensuse:
+  publish-green:
     runs-on: ubuntu-latest
-    needs: tests-squashfs-opensuse
+    needs: tests-squashfs-green
     env:
-      FLAVOR: opensuse
-      FINAL_REPO: quay.io/costoolkit/releases-opensuse
+      FLAVOR: green
+      FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
@@ -610,7 +610,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-opensuse
+          name: build-green
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -640,18 +640,18 @@ jobs:
   
   
 
-  github-release-opensuse:
+  github-release-green:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs:
-    - build-opensuse
-    - raw-images-opensuse
-    - vbox-nonsquashfs-opensuse
-    - qemu-nonsquashfs-opensuse
-    - iso-nonsquashfs-opensuse
-    - image-link-opensuse
-    - tests-nonsquashfs-opensuse
-    - tests-squashfs-opensuse
+    - build-green
+    - raw-images-green
+    - vbox-nonsquashfs-green
+    - qemu-nonsquashfs-green
+    - iso-nonsquashfs-green
+    - image-link-green
+    - tests-nonsquashfs-green
+    - tests-squashfs-green
     steps:
       - uses: actions/checkout@v2
       
@@ -671,42 +671,42 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.iso.zip
+          name: cOS-nonsquashfs-green.iso.zip
           path: release
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse-vbox.box
+          name: cOS-nonsquashfs-green-vbox.box
           path: release
       - name: Download OVA image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.ova
+          name: cOS-nonsquashfs-green.ova
           path: release
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-opensuse.qcow
+          name: cOS-nonsquashfs-green.qcow
           path: release
       - name: Download GCE RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}
           path: release
       - name: Download AZURE RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}
           path: release
       - name: Download RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}
           path: release
       - name: Download Image links
         uses: actions/download-artifact@v2
         with:
-          name: images-opensuse.txt
+          name: images-green.txt
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1
@@ -719,11 +719,11 @@ jobs:
   
   
   
-  raw-images-opensuse:
+  raw-images-green:
     runs-on: ubuntu-latest
     container: opensuse/leap:15.3
     needs:
-    - build-opensuse
+    - build-green
 
     steps:
       - name: Install OS deps
@@ -733,7 +733,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-opensuse
+          name: build-green
           path: build
       - name: Install toolchain
         run: |
@@ -777,32 +777,32 @@ jobs:
 
       - name: Rename images
         run: |
-          mv disk.raw cOS-Vanilla-RAW-opensuse-${{ env.COS_VERSION }}.raw
-          mv disk.vhd cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}.tar.gz
+          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}.raw
+          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}.tar.gz
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-RAW-opensuse-${{ env.COS_VERSION }}.raw
+            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}.raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}.vhd
+            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}.vhd
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}
           path: |
-            cOS-Vanilla-AZURE-opensuse-${{ env.COS_VERSION }}.tar.gz
+            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}.tar.gz
           if-no-files-found: error
 
   
   
   
-  ami-publish-opensuse:
+  ami-publish-green:
     runs-on: ubuntu-latest
     needs: publish-vanilla-ami
     env:
@@ -819,14 +819,14 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
-      - name: Build AMI for opensuse
+      - name: Build AMI for green
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
             export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-opensuse:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor=opensuse
+            export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}"
+            export PKR_VAR_flavor=green
             export PKR_VAR_git_sha="${GITHUB_SHA}"
             make packer-aws
 
@@ -834,14 +834,14 @@ jobs:
   
   
   
-  docker-build-fedora:
+  docker-build-blue:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: fedora
+      FLAVOR: blue
     steps:
       
   
@@ -864,18 +864,18 @@ jobs:
   
   
   
-  build-fedora:
+  build-blue:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: fedora
-      FINAL_REPO: quay.io/costoolkit/releases-fedora
+      FLAVOR: blue
+      FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-fedora-cache
+      REPO_CACHE: quay.io/costoolkit/build-blue-cache
     steps:
       
   
@@ -944,7 +944,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-fedora
+          name: build-blue
           path: build
           if-no-files-found: error
 
@@ -953,9 +953,9 @@ jobs:
   
   
   
-  image-link-fedora:
+  image-link-blue:
     runs-on: ubuntu-latest
-    needs: publish-fedora
+    needs: publish-blue
     steps:
       - uses: actions/checkout@v2
       
@@ -966,28 +966,28 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
-      - name: Generate link for fedora
+      - name: Generate link for blue
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-fedora:cos-system-${COS_VERSION}" > images-fedora.txt
+            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-fedora.txt
+          name: images-blue.txt
           path: |
-            images-fedora.txt
+            images-blue.txt
 
   
   
   
-  publish-fedora:
+  publish-blue:
     runs-on: ubuntu-latest
     needs:
-    - build-fedora
+    - build-blue
     env:
-      FLAVOR: fedora
-      FINAL_REPO: quay.io/costoolkit/releases-fedora
+      FLAVOR: blue
+      FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
@@ -1006,7 +1006,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-fedora
+          name: build-blue
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -1036,14 +1036,14 @@ jobs:
   
   
   
-  docker-build-ubuntu:
+  docker-build-orange:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: ubuntu
+      FLAVOR: orange
     steps:
       
   
@@ -1066,18 +1066,18 @@ jobs:
   
   
   
-  build-ubuntu:
+  build-orange:
     
   
     runs-on: ubuntu-latest
   
 
     env:
-      FLAVOR: ubuntu
-      FINAL_REPO: quay.io/costoolkit/releases-ubuntu
+      FLAVOR: orange
+      FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-ubuntu-cache
+      REPO_CACHE: quay.io/costoolkit/build-orange-cache
     steps:
       
   
@@ -1146,7 +1146,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-ubuntu
+          name: build-orange
           path: build
           if-no-files-found: error
 
@@ -1155,9 +1155,9 @@ jobs:
   
   
   
-  image-link-ubuntu:
+  image-link-orange:
     runs-on: ubuntu-latest
-    needs: publish-ubuntu
+    needs: publish-orange
     steps:
       - uses: actions/checkout@v2
       
@@ -1168,28 +1168,28 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
-      - name: Generate link for ubuntu
+      - name: Generate link for orange
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-ubuntu:cos-system-${COS_VERSION}" > images-ubuntu.txt
+            echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-ubuntu.txt
+          name: images-orange.txt
           path: |
-            images-ubuntu.txt
+            images-orange.txt
 
   
   
   
-  publish-ubuntu:
+  publish-orange:
     runs-on: ubuntu-latest
     needs:
-    - build-ubuntu
+    - build-orange
     env:
-      FLAVOR: ubuntu
-      FINAL_REPO: quay.io/costoolkit/releases-ubuntu
+      FLAVOR: orange
+      FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
@@ -1208,7 +1208,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-ubuntu
+          name: build-orange
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -1241,7 +1241,7 @@ jobs:
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:
     runs-on: ubuntu-latest
-    needs: [raw-images-opensuse, tests-squashfs-opensuse]
+    needs: [raw-images-green, tests-squashfs-green]
 
     steps:
       - uses: actions/checkout@v2
@@ -1262,7 +1262,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-opensuse-${{ env.COS_VERSION }}
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}
           path: .
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
