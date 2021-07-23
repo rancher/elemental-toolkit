@@ -58,17 +58,22 @@ find_upgrade_channel() {
         source /etc/cos-upgrade-image
     fi
 
+    if [ -n "$NO_CHANNEL" ] && [ $NO_CHANNEL == true ]; then
+        CHANNEL_UPGRADES=false
+    fi
+
     if [ -n "$IMAGE" ]; then
         UPGRADE_IMAGE=$IMAGE
         echo "Upgrading to image $UPGRADE_IMAGE"
-    fi
+    else
 
-    if [ -z "$UPGRADE_IMAGE" ]; then
-        UPGRADE_IMAGE="system/cos"
-    fi
+        if [ -z "$UPGRADE_IMAGE" ]; then
+            UPGRADE_IMAGE="system/cos"
+        fi
 
-    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
-        UPGRADE_IMAGE=$RECOVERY_IMAGE
+        if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
+            UPGRADE_IMAGE=$RECOVERY_IMAGE
+        fi
     fi
 }
 
@@ -264,15 +269,13 @@ usage()
     exit 1
 }
 
-find_upgrade_channel
-
 while [ "$#" -gt 0 ]; do
     case $1 in
         --docker-image)
-            CHANNEL_UPGRADES=false
+            NO_CHANNEL=true
             ;;
         --directory)
-            CHANNEL_UPGRADES=false
+            NO_CHANNEL=true
             DIRECTORY=true
             ;;
         --recovery)
@@ -292,12 +295,14 @@ while [ "$#" -gt 0 ]; do
                 usage
             fi
             INTERACTIVE=true
-            UPGRADE_IMAGE=$1
+            IMAGE=$1
             break
             ;;
     esac
     shift 1
 done
+
+find_upgrade_channel
 
 trap cleanup exit
 
@@ -326,7 +331,6 @@ else
 fi
 
 echo "Flush changes to disk"
-sync
 sync
 
 if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then

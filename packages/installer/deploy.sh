@@ -40,6 +40,10 @@ find_upgrade_channel() {
         source /etc/cos-upgrade-image
     fi
 
+    if [ -n "$NO_CHANNEL" ] && [ $NO_CHANNEL == true ]; then
+        CHANNEL_UPGRADES=false
+    fi
+
     if [ -n "$IMAGE" ]; then
         UPGRADE_IMAGE=$IMAGE
         echo "Upgrading to image $UPGRADE_IMAGE"
@@ -184,12 +188,10 @@ usage()
     exit 1
 }
 
-find_upgrade_channel
-
 while [ "$#" -gt 0 ]; do
     case $1 in
         --docker-image)
-            CHANNEL_UPGRADES=false
+            NO_CHANNEL=true
             ;;
         --no-verify)
             VERIFY=false
@@ -207,12 +209,14 @@ while [ "$#" -gt 0 ]; do
             if [ "$#" -gt 2 ]; then
                 usage
             fi
-            UPGRADE_IMAGE=$1
+            IMAGE=$1
             break
             ;;
     esac
     shift 1
 done
+
+find_upgrade_channel
 
 trap cleanup exit
 
