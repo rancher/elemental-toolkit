@@ -70,7 +70,7 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
  then
   echo "Copying AMI ${ami_id} to all regions"
 
-  regions=( "$(aws ec2 describe-regions|jq '.Regions[].RegionName')" )
+  regions=( $( aws ec2 describe-regions | jq '.Regions[].RegionName' -r ) )
 
   for reg in "${regions[@]}"; do
     # If the current region is the same as the region we are trying to copy, just ignore, the AMI is already there
