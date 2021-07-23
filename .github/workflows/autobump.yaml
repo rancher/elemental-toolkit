@@ -34,6 +34,7 @@ jobs:
           RESET_BRANCH: ${{ matrix.upstream_branch }}
         name: Autobump ${{matrix.name}}
         run: |
+                sudo rm -rf /usr/local/bin/yq
                 curl https://get.mocaccino.org/luet/get_luet_root.sh | sudo sh
                 sudo luet install -y repository/mocaccino-extra
                 sudo luet install -y system/luet-extensions system/luet-devkit utils/jq utils/yq vcs/hub
