@@ -57,7 +57,7 @@ ami_id=$(aws ec2 register-image \
    | jq -r '.ImageId')
 
 echo "Tagging AMI"
-aws ec2 create-tags --resources "${ami_id}" --tags \
+aws ec2 create-tags --resources "${ami_id}" \
    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$git_sha Key=Flavor,Value=cos-vanilla
 
 echo "Making AMI public"
@@ -88,7 +88,7 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
     )
 
     echo "Tagging Copied AMI ${ami_copy_id}"
-    aws ec2 create-tags --resources "${ami_copy_id}" --tags \
+    aws ec2 create-tags --resources "${ami_copy_id}" --region "${reg}" \
       --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
     echo "Making AMI ${ami_copy_id} public"
