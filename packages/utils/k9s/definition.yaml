@@ -1,6 +1,6 @@
 name: "k9s"
 category: "utils"
-version: 0.24.14+6
+version: 0.24.14+7
 arch: x86_64
 platform: Linux
 labels:
