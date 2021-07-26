@@ -1,6 +1,6 @@
 name: cos-features
 category: system
-version: 0.3.1+29
+version: 0.3.1+30
 requires:
   - name: "yip"
     category: "toolchain"
