@@ -91,6 +91,17 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
     aws ec2 create-tags --resources "${ami_copy_id}" --region "${reg}" \
       --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
+    # 10min timeout to import snapshot
+    counter=0
+    task_status=''
+    while [ ! "${task_status}" = "available" ] && [ $counter -lt 60  ]; do
+        echo "Waiting for create-task task to finalize. $((counter*10))s"
+        sleep 10
+        task_status=$(aws ec2 describe-images --image-id ${ami_copy_id} --region ${reg} | jq '.Images[0].State' -r)
+        counter=$((counter + 1))
+    done
+    [ ! "${task_status}" = "completed" ] && exit 1
+
     echo "Making AMI ${ami_copy_id} public"
     aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --region "${reg}" --launch-permission "Add=[{Group=all}]"
 
