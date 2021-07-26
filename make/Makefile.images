@@ -4,6 +4,8 @@
 #
 
 RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
+AWS_DISK_NAME?=cOS-Vanilla
+AWS_DISK_DESC?=cOS Vanilla Image
 
 QEMUIMG?=$(shell which qemu-img 2> /dev/null)
 

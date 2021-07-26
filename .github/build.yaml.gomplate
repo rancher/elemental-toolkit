@@ -586,6 +586,7 @@
         run: |
           export github_sha="${GITHUB_SHA}"
           export COPY_AMI_ALL_REGIONS="true"
+          export AWS_DISK_NAME="cOS-Vanilla-${{ env.COS_VERSION }}
           make aws_vanilla_ami
 {{{ end }}}
 
