@@ -3,9 +3,9 @@
 set -e
 
 disk="$1"
-s3_bucket="cos-images"
-disk_name="cOS-Vanilla"
-disk_desc="cOS Vanilla Image"
+s3_bucket="${BUCKET:-cos-images}"
+disk_name="${AWS_DISK_NAME:-cOS-Vanilla}"
+disk_desc="${AWS_DISK_DESC:-cOS Vanilla Image}"
 disk_build_date=$(date +"%m%d%Y_%H%M%S")
 : "${github_sha:=none}"
 : "${COPY_AMI_ALL_REGIONS:=false}"
@@ -42,7 +42,7 @@ snap_id=$(aws ec2 describe-import-snapshot-tasks \
 
 echo "Tagging Snapshot"
 aws ec2 create-tags --resources "${snap_id}" \
-    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$git_sha Key=Flavor,Value=cos-vanilla
+    --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
 echo "Register AMI from snapshot"
 ami_id=$(aws ec2 register-image \
@@ -58,7 +58,7 @@ ami_id=$(aws ec2 register-image \
 
 echo "Tagging AMI"
 aws ec2 create-tags --resources "${ami_id}" \
-   --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$git_sha Key=Flavor,Value=cos-vanilla
+   --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=Git_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
 echo "Making AMI public"
 aws ec2 modify-image-attribute --image-id "${ami_id}" --launch-permission "Add=[{Group=all}]"
@@ -92,7 +92,7 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
       --tags Key=Name,Value=${disk_name} Key=Project,Value=cOS Key=GITHUB_SHA,Value=$github_sha Key=Flavor,Value=cos-vanilla
 
     echo "Making AMI ${ami_copy_id} public"
-    aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --launch-permission "Add=[{Group=all}]"
+    aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --region "${reg}" --launch-permission "Add=[{Group=all}]"
 
     echo "AMI Copied: ${ami_copy_id}"
   done
