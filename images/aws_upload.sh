@@ -100,7 +100,7 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
         task_status=$(aws ec2 describe-images --image-id ${ami_copy_id} --region ${reg} | jq '.Images[0].State' -r)
         counter=$((counter + 1))
     done
-    [ ! "${task_status}" = "completed" ] && exit 1
+    [ ! "${task_status}" = "available" ] && exit 1
 
     echo "Making AMI ${ami_copy_id} public"
     aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --region "${reg}" --launch-permission "Add=[{Group=all}]"
