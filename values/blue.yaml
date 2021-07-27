@@ -1,5 +1,6 @@
 image: "fedora:33"
 distribution: "fedora"
+codename: "blue"
 
 packages: >-
     grub2-pc

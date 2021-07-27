@@ -1,5 +1,6 @@
 image: ubuntu:20.10
 distribution: "ubuntu"
+codename: "orange"
 
 packages: >-
     systemd
