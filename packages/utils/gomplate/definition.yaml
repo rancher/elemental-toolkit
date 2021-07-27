@@ -1,6 +1,6 @@
 name: gomplate
 category: utils
-version: 3.9.0+10
+version: 3.9.0+11
 labels:
   github.repo: "gomplate"
   github.owner: "hairyhenderson"

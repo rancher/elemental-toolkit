@@ -1,6 +1,6 @@
 category: "toolchain"
 name: "yip"
-version: 0.9.7+1
+version: 0.9.7+2
 labels:
   github.repo: "yip"
   github.owner: "mudler"
