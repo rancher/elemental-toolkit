@@ -1,5 +1,6 @@
 image: opensuse/leap:15.3
 distribution: "opensuse"
+codename: "green"
 
 packages: >-
     systemd-sysvinit
