@@ -46,7 +46,7 @@ on:
 
 
 concurrency:
-  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-nightly-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:

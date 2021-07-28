@@ -5,9 +5,9 @@ local_runner: false
 push_cache: true
 skip_build: false
 
-pipeline: "master"
+pipeline: "releases"
 publishing_pipeline: true
-publish_cloud: false
+publish_cloud: true
 
 repository: "releases"
 cache_repository: "build"
@@ -20,4 +20,5 @@ release_flavor: ["green"]
 
 on: 
   push: 
-    branches: ["master"]
+    tags:
+      - "v*"

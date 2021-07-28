@@ -597,7 +597,7 @@ on:
 {{{$config.on | toYAML | indent 1 }}}
 
 concurrency:
-  group: ci-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-{{{$config.pipeline}}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
