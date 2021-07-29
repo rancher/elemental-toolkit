@@ -16,7 +16,7 @@ skip_tests: false
 flavors: ["green", "blue", "orange"]
 skip_tests_flavor: ["blue","orange"]
 skip_images_flavor: ["blue","orange"]
-release_flavor: ["green"]
+release_flavor: []
 
 on: 
   push: 
