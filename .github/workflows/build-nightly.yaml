@@ -68,8 +68,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -107,8 +105,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -177,8 +173,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -371,8 +365,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -654,8 +646,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -693,8 +683,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -763,8 +751,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -802,8 +788,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@master
       - name: Release space from worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
