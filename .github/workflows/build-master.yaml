@@ -123,7 +123,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       
   
@@ -211,7 +215,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       
       - name: Export cos version
@@ -253,10 +261,10 @@ jobs:
       - name: Install deps
         run: |
           brew install qemu
-          brew install yq@3
+          brew install yq
       - name: Build QEMU Image 🔧
         run: |
-          export YQ=/usr/local/opt/yq@3/bin/yq
+          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
           PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
@@ -293,10 +301,10 @@ jobs:
       #     brew install hashicorp/tap/packer
       - name: Install deps
         run: |
-            brew install yq@3
+            brew install yq
       - name: Build VBox Image 🔧
         run: |
-          export YQ=/usr/local/opt/yq@3/bin/yq
+          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
           PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
@@ -401,7 +409,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Tweak manifest and drop squashfs recovery
         run: |
@@ -447,10 +459,10 @@ jobs:
       - name: Install deps
         run: |
           brew install qemu
-          brew install yq@3
+          brew install yq
       - name: Build QEMU Image 🔧
         run: |
-          export YQ=/usr/local/opt/yq@3/bin/yq
+          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
           PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
@@ -487,10 +499,10 @@ jobs:
       #     brew install hashicorp/tap/packer
       - name: Install deps
         run: |
-            brew install yq@3
+            brew install yq
       - name: Build VBox Image 🔧
         run: |
-          export YQ=/usr/local/opt/yq@3/bin/yq
+          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
           PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
@@ -567,7 +579,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Generate link for green
         run: |
@@ -618,7 +634,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -664,7 +684,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       
       - name: Export cos version
@@ -789,7 +813,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       
   
@@ -851,7 +879,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Generate link for blue
         run: |
@@ -903,7 +935,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -991,7 +1027,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       
   
@@ -1053,7 +1093,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Generate link for orange
         run: |
@@ -1105,7 +1149,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          # sudo luet install -y toolchain/yq
+          # Until we have yq4 in our repos:
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
+          sudo mv yq_linux_amd64 /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
       - name: Install Go
         uses: actions/setup-go@v2

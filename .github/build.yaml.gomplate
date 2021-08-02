@@ -57,7 +57,7 @@
   {{{- if eq $target "deps" }}}
           # sudo luet install -y toolchain/yq
           # Until we have yq4 in our repos:
-          wget https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64
+          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
           sudo mv yq_linux_amd64 /usr/bin/yq
           sudo chmod +x /usr/bin/yq
   {{{- end }}}
