@@ -4,7 +4,7 @@ set -e
 YQ="${YQ:-/usr/bin/yq}"
 
 cos_package_version() {
-    echo $($YQ r packages/cos/collection.yaml 'packages.[0].version')
+    echo $($YQ e '.packages.[0].version' packages/cos/collection.yaml)
 }
 
 cos_version() {
@@ -15,14 +15,14 @@ cos_version() {
 create_remote_manifest() {
     MANIFEST=$1
     cp -rf $MANIFEST $MANIFEST.remote
-    $YQ w -i $MANIFEST.remote 'luet.repositories[0].name' 'cOS'
-    $YQ w -i $MANIFEST.remote 'luet.repositories[0].enable' true
-    $YQ w -i $MANIFEST.remote 'luet.repositories[0].priority' 90
-    $YQ w -i $MANIFEST.remote 'luet.repositories[0].type' 'docker'
-    $YQ w -i $MANIFEST.remote 'luet.repositories[0].urls[0]' $FINAL_REPO
+    $YQ e -i '.luet.repositories[0].name="cOS"' $MANIFEST.remote
+    $YQ e -i '.luet.repositories[0].enable=true' $MANIFEST.remote 
+    $YQ e -i '.luet.repositories[0].priority=90' $MANIFEST.remote 
+    $YQ e -i '.luet.repositories[0].type="docker"' $MANIFEST.remote 
+    $YQ e -i ".luet.repositories[0].urls[0]=\"$FINAL_REPO\"" $MANIFEST.remote 
 }
 
 drop_recovery() {
     MANIFEST=$1
-    $YQ d -i $MANIFEST 'packages.isoimage(.==recovery/cos-img)'
+    $YQ e -i 'del( .packages.isoimage[] | select(.=="recovery/cos-img") )' $MANIFEST 
 }
