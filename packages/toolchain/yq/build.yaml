@@ -21,7 +21,7 @@ prelude:
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
   mkdir -p /luetbuild/go/src/github.com/mikefarah && cd /luetbuild/go/src/github.com/mikefarah && \
-  git clone https://github.com/mikefarah/yq && cd yq && git checkout "${PACKAGE_VERSION}" -b build
+  git clone https://github.com/mikefarah/yq && cd yq && git checkout "v${PACKAGE_VERSION}" -b build
 steps:
   - |
     PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \

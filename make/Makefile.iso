@@ -90,10 +90,11 @@ ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
 	cp -rf $(MANIFEST) $(MANIFEST).remote
-	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].name' 'cOS'
-	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].enable' true
-	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].type' 'docker'
-	$(YQ) w -i $(MANIFEST).remote 'luet.repositories[0].urls[0]' $(FINAL_REPO)
+	$(YQ) e -i '.luet.repositories[0].name="cOS"' $(MANIFEST).remote
+	$(YQ) e -i '.luet.repositories[0].enable=true' $(MANIFEST).remote
+	$(YQ) e -i '.luet.repositories[0].priority=90' $(MANIFEST).remote
+	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
+	$(YQ) e -i ".luet.repositories[0].urls[0]=\"$(FINAL_REPO)\"" $(MANIFEST).remote
 	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST).remote
 endif
 
