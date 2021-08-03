@@ -37,18 +37,11 @@ source "azure-arm" "cos" {
   tenant_id = var.azure_tenant_id
   client_secret = var.azure_client_secret
   subscription_id = var.azure_subscription_id
-  shared_image_gallery {
-    subscription = var.azure_shared_image_gallery_subscription
-    resource_group = var.azure_shared_image_gallery_resource_group
-    gallery_name = var.azure_shared_image_gallery_gallery_name
-    image_name = var.azure_shared_image_gallery_image_name
-    image_version = var.azure_shared_image_gallery_image_version
-  }
+  custom_managed_image_resource_group_name = var.azure_custom_managed_image_resource_group_name
+  custom_managed_image_name = var.azure_custom_managed_image_name
   managed_image_name = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
   managed_image_resource_group_name = var.azure_managed_image_resource_group_name
-  # User data not supported in the current released version of packer azure plugin
-  # also, no user-data -> no deployment
-  //user_data_file = var.azure_user_data_file
+  user_data_file = var.azure_user_data_file
   location = var.azure_location
   os_type = "Linux"
   os_disk_size_gb = var.azure_os_disk_size_gb
