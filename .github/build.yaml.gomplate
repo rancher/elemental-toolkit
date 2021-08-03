@@ -518,6 +518,9 @@
     steps:
       - uses: actions/checkout@v2
       {{{ tmpl.Exec "make" "deps" }}}
+      - name: Public IP
+        id: ip
+        uses: haythem/public-ip@v1.2
       - name: Build AMI for {{{ $flavor }}}
         run: |
             source .github/helpers.sh
@@ -527,6 +530,7 @@
             export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor={{{ $flavor }}}
             export PKR_VAR_git_sha="${GITHUB_SHA}"
+            export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             make packer-aws
 {{{ end }}}
 
