@@ -1,6 +1,8 @@
 image: ubuntu:20.10
 distribution: "ubuntu"
 codename: "orange"
+arch: "x86_64"
+golang_arch: "amd64"
 
 packages: >-
     systemd
