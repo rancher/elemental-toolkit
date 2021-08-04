@@ -119,11 +119,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
   
@@ -209,11 +205,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
       - name: Export cos version
@@ -401,11 +393,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Tweak manifest and drop squashfs recovery
         run: |
@@ -571,11 +559,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Generate link for green
         run: |
@@ -624,11 +608,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -668,11 +648,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
       - name: Export cos version
@@ -758,11 +734,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
       - name: Export cos version
@@ -833,12 +805,11 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
+      - name: Public IP
+        id: ip
+        uses: haythem/public-ip@v1.2
       - name: Build AMI for green
         run: |
             source .github/helpers.sh
@@ -848,6 +819,7 @@ jobs:
             export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}"
             export PKR_VAR_flavor=green
             export PKR_VAR_git_sha="${GITHUB_SHA}"
+            export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             make packer-aws
 
   
@@ -918,11 +890,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
   
@@ -984,11 +952,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Generate link for blue
         run: |
@@ -1038,11 +1002,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -1126,11 +1086,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
   
@@ -1192,11 +1148,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Generate link for orange
         run: |
@@ -1246,11 +1198,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       - name: Install Go
         uses: actions/setup-go@v2
@@ -1283,11 +1231,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          # sudo luet install -y toolchain/yq
-          # Until we have yq4 in our repos:
-          curl -L https://github.com/mikefarah/yq/releases/download/v4.11.2/yq_linux_amd64 -o yq_linux_amd64
-          sudo mv yq_linux_amd64 /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo luet install -y toolchain/yq
 
       
       - name: Export cos version

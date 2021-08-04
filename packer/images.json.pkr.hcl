@@ -8,6 +8,7 @@ source "amazon-ebs" "cos" {
   secret_key      = var.aws_secret_key
   ssh_password    = var.root_password
   ssh_username    = var.root_username
+  temporary_security_group_source_cidrs = [var.aws_temporary_security_group_source_cidr ]
   source_ami_filter {
     filters = {
       name                = var.aws_source_ami_filter_name

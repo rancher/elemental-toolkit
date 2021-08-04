@@ -80,6 +80,12 @@ variable "aws_user_data_file" {
   description = "Path to the user-data file to boot the base AMI with"
 }
 
+variable "aws_temporary_security_group_source_cidr" {
+  type = string
+  default = "0.0.0.0/0"
+  description = "A IPv4 CIDR to be authorized access to the instance, when packer is creating a temporary security group."
+}
+
 variable "azure_client_id" {
   type = string
   default = env("AZURE_CLIENT_ID")
