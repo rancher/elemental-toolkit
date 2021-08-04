@@ -47,7 +47,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				out, err = s.Command("cos-upgrade --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(out).Should(ContainSubstring("to /usr/local/tmp/rootfs"))
+				Expect(out).Should(ContainSubstring("to /usr/local/.cos-upgrade/tmp/rootfs"))
 				Expect(out).Should(ContainSubstring("Upgrade target: active.img"))
 
 				By("rebooting and checking out the version")

@@ -152,8 +152,9 @@ mount_recovery() {
 upgrade() {
     ensure_dir_structure
 
-    temp_upgrade=$STATEDIR/tmp/upgrade
-    rm -rf $temp_upgrade || true
+    upgrade_state_dir="/usr/local/.cos-upgrade"
+    temp_upgrade=$upgrade_state_dir/tmp/upgrade
+    rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
@@ -181,16 +182,16 @@ upgrade() {
     else
         echo "Upgrading from container image: $UPGRADE_IMAGE"
         set -x
-        luet util unpack $args $UPGRADE_IMAGE /usr/local/tmp/rootfs
+        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
-        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' /usr/local/tmp/rootfs/ $TARGET
-        rm -rf /usr/local/tmp/rootfs
+        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $TARGET
+        rm -rf $upgrade_state_dir/tmp/rootfs
     fi
 
     chmod 755 $TARGET
     SELinux_relabel
 
-    rm -rf $temp_upgrade
+    rm -rf $upgrade_state_dir
     umount $TARGET || true
 }
 
