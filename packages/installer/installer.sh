@@ -222,27 +222,6 @@ do_copy()
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi
-    mkdir -p $TARGET/usr/local/cloud-config
-cat > $TARGET/usr/local/cloud-config/90_after_install.yaml <<EOF
-# Execute this stage in the boot phase:
-stages:
-   fs.after:
-     - name: "After install"
-       files:
-        - path: /etc/issue
-          content: |
-            Welcome to \S !
-            IP address \4
-
-            Login with user: root, password: cos
-            To upgrade the system, run "cos-upgrade"
-            To change this message permantly on boot, see /usr/local/cloud-config/90_after_install.yaml
-          permissions: 0644
-          owner: 0
-          group: 0
-EOF
-    chmod 640 $TARGET/usr/local/cloud-config
-    chmod 640 $TARGET/usr/local/cloud-config/90_after_install.yaml
 }
 
 SELinux_relabel()
