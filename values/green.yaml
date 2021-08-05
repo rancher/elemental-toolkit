@@ -1,6 +1,8 @@
 image: opensuse/leap:15.3
 distribution: "opensuse"
 codename: "green"
+arch: "x86_64"
+golang_arch: "amd64"
 
 packages: >-
     systemd-sysvinit

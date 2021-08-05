@@ -12,6 +12,5 @@ labels:
   autobump.version_hook: |
     curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
   package.version: "1.16.6"
-  autobump.checksum_hook: "curl -q -L https://storage.googleapis.com/golang/go{{.Values.labels.package.version}}.linux-{{.Values.arch}}.tar.gz.sha256"
+  autobump.checksum_hook: "curl -q -L https://storage.googleapis.com/golang/go{{.Values.labels.package.version}}.linux-{{.Values.golang_arch}}.tar.gz.sha256"
   package.checksum: "be333ef18b3016e9d7cb7b1ff1fdb0cac800ca0be4cf2290fe613b3d069dfe0d"
-arch: "amd64"

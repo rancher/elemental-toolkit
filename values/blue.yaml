@@ -1,6 +1,8 @@
 image: "fedora:33"
 distribution: "fedora"
 codename: "blue"
+arch: "x86_64"
+golang_arch: "amd64"
 
 packages: >-
     grub2-pc
