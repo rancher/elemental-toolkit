@@ -159,6 +159,8 @@ find_partitions
 
 do_mount
 
+cos-setup before-reset > /dev/null || true
+
 if [ -n "$PERSISTENCE_RESET" ] && [ "$PERSISTENCE_RESET" == "true" ]; then
     reset
 fi
@@ -166,3 +168,5 @@ fi
 copy_active
 
 install_grub
+
+cos-setup after-reset > /dev/null || true
