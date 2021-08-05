@@ -369,6 +369,8 @@ validate_device
 
 trap cleanup exit
 
+cos-setup before-install > /dev/null || true
+
 setup_style
 do_format
 do_mount
@@ -381,6 +383,8 @@ umount_target 2>/dev/null
 
 prepare_recovery
 prepare_passive
+
+cos-setup after-install > /dev/null || true
 
 if [ -n "$INTERACTIVE" ]; then
     exit 0

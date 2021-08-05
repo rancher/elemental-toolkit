@@ -157,6 +157,8 @@ upgrade() {
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
+    cos-setup before-upgrade > /dev/null || true
+
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
     # for the state
@@ -190,6 +192,8 @@ upgrade() {
 
     chmod 755 $TARGET
     SELinux_relabel
+
+    cos-setup after-upgrade > /dev/null || true
 
     rm -rf $upgrade_state_dir
     umount $TARGET || true
