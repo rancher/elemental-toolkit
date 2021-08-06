@@ -22,6 +22,12 @@ requires:
 - name: "base-dracut-modules"
   category: "system"
   version: ">=0"
+- name: "kernel"
+  category: "system"
+  version: ">=0"
+- name: "dracut-initrd"
+  category: "system"
+  version: ">=0"
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
@@ -56,12 +62,6 @@ steps:
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
 - sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
 - yip setup.yaml
-
-# Create initrd
-- |
-    kernel=$(ls /lib/modules | head -n1) && \
-    dracut -f "/boot/initrd-${kernel}" "${kernel}" && \
-    ln -sf "initrd-${kernel}" /boot/initrd
 
 # See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
 unpack: true
