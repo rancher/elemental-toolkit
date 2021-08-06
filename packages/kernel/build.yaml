@@ -1,0 +1,26 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+steps:
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+- zypper in -y --no-recommends {{.Values.kernel_package}}
+- zypper cc
+{{else if eq .Values.distribution "fedora" }}
+- dnf install -y {{.Values.kernel_package}}
+- dnf clean all
+- |
+    kernel=$(ls /boot/vmlinuz-* | head -n1) && \
+    ln -sf "${kernel#/boot/}" /boot/vmlinuz
+{{else if eq .Values.distribution "ubuntu" }}
+# Note for future issues with grub: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1879558 https://github.com/rancher-sandbox/cOS-toolkit/pull/101#discussion_r621929109
+- apt-get update && apt-get install -y {{.Values.kernel_package}}
+- apt-get clean
+- |
+    kernel=$(ls /boot/vmlinuz-* | head -n1) && \
+    ln -sf "${kernel#/boot/}" /boot/vmlinuz
+{{end}}
+{{end}}
+- kernel=$(ls /lib/modules | head -n1) && depmod -a "${kernel}"
