@@ -1,7 +1,7 @@
 packages:
 - category: "meta"
   name: "cos-minimal"
-  version: "0.6.1"
+  version: "0.6.1+1"
   requires:
   - category: toolchain
     name: yip
@@ -23,4 +23,7 @@ packages:
     version: ">=0"
   - category: toolchain
     name: luet
+    version: ">=0"
+  - name: "base-dracut-modules"
+    category: "system"
     version: ">=0"

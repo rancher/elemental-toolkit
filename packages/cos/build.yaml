@@ -19,6 +19,9 @@ requires:
 - name: "grub-config"
   category: "system"
   version: ">=0"
+- name: "base-dracut-modules"
+  category: "system"
+  version: ">=0"
 
 # https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
 copy:
@@ -56,7 +59,6 @@ steps:
 
 # Create initrd
 - |
-    cp 50-cos-initrd.conf /etc/dracut.conf.d && \
     kernel=$(ls /lib/modules | head -n1) && \
     dracut -f "/boot/initrd-${kernel}" "${kernel}" && \
     ln -sf "initrd-${kernel}" /boot/initrd
