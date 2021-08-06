@@ -8,23 +8,9 @@ env:
 - GO111MODULE=off
 - LDFLAGS="-s -w"
 prelude:
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
-- zypper in -y git {{- if .Values.upx -}} upx {{- end }}
-{{else if eq .Values.distribution "fedora" }}
-- dnf install -y git {{- if .Values.upx -}} upx {{- end }}
-{{else if eq .Values.distribution "ubuntu" }}
-- apt-get install -y git {{- if .Values.upx -}} upx {{- end }}
-{{end}}
-{{end}}
-- |
-   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
-{{- if .Values.branch }}
-   git clone https://github.com/mudler/luet && cd luet && git fetch --all && git checkout {{.Values.branch}} && git show
-{{- else }}
-   git clone https://github.com/mudler/luet && cd luet && git checkout "${PACKAGE_VERSION}" -b build
-{{- end }}
+{{ template "golang_deps" .}}
+{{ $opts:= dict "version" .Values.version "org" ( index .Values.labels "github.owner" ) "repo" ( index .Values.labels "github.repo" ) }}
+{{ template "golang_download_package" $opts}}
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
