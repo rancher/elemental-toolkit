@@ -7,7 +7,7 @@ requires:
   version: ">=0"
 - name: "immutable-rootfs"
   category: "system"
-  version: 0.1.1+11
+  version: ">=0"
 
 steps:
 # Create initrd
