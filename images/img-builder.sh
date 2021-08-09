@@ -25,13 +25,8 @@ repositories:
 EOF
 
 # Create root-tree for COS_RECOVERY
-mkdir -p recovery
-# `luet install` is the only step requiring root
-luet install --system-target recovery -y recovery/cos
-mkdir -p root/grub2/x86_64-efi
-mkdir -p root/cOS
-cp recovery/usr/share/grub2/x86_64-efi/*.mod root/grub2/x86_64-efi
-cp recovery/etc/cos/grub.cfg root/grub2
+luet install --system-target root -y system/grub-config
+luet install --system-target root/grub2 -y system/grub-artifacts
 luet install --system-target root/cOS -y recovery/cos-img
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
@@ -44,14 +39,14 @@ truncate -s $((20*1024*1024)) efi.part
 mkfs.fat -F16 -n EFI efi.part
 mmd -i efi.part ::EFI
 mmd -i efi.part ::EFI/BOOT
-mcopy -i efi.part recovery/usr/share/grub2/x86_64-efi/grub.efi ::EFI/BOOT/bootx64.efi
+mcopy -i efi.part root/grub2/x86_64-efi/grub.efi ::EFI/BOOT/bootx64.efi
 
-# Creat the EFI grub.cfg pointing the configs in COS_RECOVERY volume
+# Creat the EFI grub.cfg pointing the configs in COS_RECOVERY volume from the grub-config package
 cat << 'EOF' > grub_efi.cfg
 search.fs_label COS_RECOVERY root
 set root=($root)
 set prefix=($root)/grub2
-configfile ($root)/grub2/grub.cfg
+configfile ($root)/etc/cos/grub.cfg
 EOF
 
 # Copy grub.cfg in EFI partition
@@ -78,7 +73,7 @@ sgdisk -n 2:0:+20M -c 2:UEFI -t 2:EF00 disk.raw
 sgdisk -n 3:0:+64M -c 3:oem -t 3:8300 disk.raw
 sgdisk -n 4:0:+2048M -c 4:root -t 4:8300 disk.raw
 
-rm -rf ./*.part grub_efi.cfg recovery root .luet.yaml
+rm -rf ./*.part grub_efi.cfg root .luet.yaml
 
 # TODO hybrid boot. I did not fully figure out how to avoid grub2-install. Rough steps are:
 #   1-> add MBR pointing to sector 2048 (first block of legacy partition) (this is the tricky part grub2-install patches the MBR binary)
