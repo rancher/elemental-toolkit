@@ -505,6 +505,40 @@
           if-no-files-found: error
 {{{ end }}}
 
+{{{define "raw_image_test"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := . }}}
+  raw-image-test-{{{ $flavor }}}:
+    runs-on: macos-10.15
+    needs: raw-images-{{{ $flavor }}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install yq
+        run: brew install yq
+      - name: Export cos version
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}
+      {{{ tmpl.Exec "make" "raw_disk_test" }}}
+      - name: Change serial log ownership
+        if: always()
+        run: |
+          USER_ID=$(id -u)
+          GROUP_ID=$(id -g)
+          sudo chown $USER_ID:$GROUP_ID serial_port1.log
+          sudo chmod 777 serial_port1.log
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: serial_output_raw_image_test
+          path: serial_port1.log
+          if-no-files-found: warn
+{{{ end }}}
 {{{define "ami_publish"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := . }}}
@@ -639,6 +673,7 @@ jobs:
 
     {{{- if not (has $config.skip_images_flavor $flavor) }}}
   {{{tmpl.Exec "raw_image" $flavor}}}
+  {{{tmpl.Exec "raw_image_test" $flavor}}}
 
       {{{- if $config.publish_cloud }}}
   {{{tmpl.Exec "ami_publish" $flavor}}}

@@ -93,3 +93,41 @@ test-deploys-images: $(GINKGO)
 $(GINKGO):
 	@echo "'ginkgo' not found."
 	@exit 1
+
+
+#
+# ------------ test for raw images  ------------
+#
+
+RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
+
+raw_disk_test: as_root $(VBOXMANAGE)
+ifeq ("$(RAW)","")
+	@echo "Raw image does not exists, please run make raw_disk first"
+	@exit 1
+else
+	# transform the raw image
+	VBoxManage convertdd $(RAW) sda.vdi --format VDI
+	# create vm
+	VBoxManage createvm --name "test" --register
+	# increase memory, otherwise grub fails to boot
+	VBoxManage modifyvm "test" --memory 2048
+	# config vm options, i.e. efi boot, nat, serial to file, etc...
+	VBoxManage modifyvm "test" --firmware efi --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --natpf1 "guestssh,tcp,,2222,,22"
+	# add sata controller
+	VBoxManage storagectl "test" --name "sata controller" --add sata
+	# attach the disk to the machine
+	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
+	# startvm and detach
+	VBoxManage startvm "test" --type headless
+	# sleep for a bit to let the recovery boot
+	sleep 300
+	# search for the welcome message, use .* between in front of "cOS" to avoid failing due to control characters (cOS recovery is in green color)
+	grep -q "Welcome to.*cOS recovery" $(ROOT_DIR)/serial_port1.log
+endif
+
+clean_raw_disk_test: as_root
+	VBoxManage controlvm "test" poweroff &>/dev/null || true
+	VBoxManage unregistervm "test" --delete &>/dev/null || true
+	rm $(ROOT_DIR)/sda.vdi &>/dev/null || true
+	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
