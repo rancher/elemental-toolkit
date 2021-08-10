@@ -395,6 +395,9 @@
     - tests-nonsquashfs-{{{ $flavor }}}
     - tests-squashfs-{{{ $flavor }}}
     {{{- end }}}
+    {{{- if $config.publish_cloud }}}
+    - publish-vanilla-ami
+    {{{- end }}}
     steps:
       - uses: actions/checkout@v2
       {{{ tmpl.Exec "make" "deps" }}}
@@ -439,6 +442,12 @@
         with:
           name: images-{{{ $flavor }}}.txt
           path: release
+      {{{- if $config.publish_cloud }}}
+      - uses: actions/download-artifact@v2
+        with:
+          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
+          path: release
+      {{{- end }}}
       - name: Release
         uses: fnkr/github-action-ghr@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -625,6 +634,11 @@
           export COS_VERSION="${COS_VERSION/+/-}"
           export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION"
           make aws_vanilla_ami
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
+          path: |
+            ami_id.txt
 {{{ end }}}
 
 name: Build cOS {{{$config.pipeline}}}
