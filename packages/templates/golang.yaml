@@ -1,0 +1,23 @@
+{{ define "golang_deps" }}
+{{ if .Values.distribution }}
+{{if eq .Values.distribution "opensuse" }}
+- zypper in -y git {{- if .Values.upx -}} upx {{- end }}
+{{else if eq .Values.distribution "fedora" }}
+- dnf install -y git {{- if .Values.upx -}} upx {{- end }}
+{{else if eq .Values.distribution "ubuntu" }}
+- apt-get install -y git {{- if .Values.upx -}} upx {{- end }}
+{{end}}
+{{end}}
+{{end}}
+
+{{ define "golang_download_package" }}
+{{ $version:= get . "version" }}
+{{ $org:= get . "org" }}
+{{ $repo:= get . "repo" }}
+{{ $host:= get . "host" | default "github.com" }}
+- |
+  PV="{{$version}}" && \
+  PACKAGE_VERSION=${PV%\+*} && \
+  mkdir -p /luetbuild/go/src/{{$host}}/{{$org}} && cd /luetbuild/go/src/{{$host}}/{{$org}} && \
+  git clone https://{{$host}}/{{$org}}/{{$repo}} && cd {{$repo}} && git checkout "$PACKAGE_VERSION" -b build
+{{end}}

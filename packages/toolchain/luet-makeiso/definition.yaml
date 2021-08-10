@@ -1,6 +1,6 @@
 name: "luet-makeiso"
 category: "toolchain"
-version: "0.3.4"
+version: "0.3.4+1"
 labels:
   github.repo: "luet-makeiso"
   github.owner: "mudler"

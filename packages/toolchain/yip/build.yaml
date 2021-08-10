@@ -9,19 +9,9 @@ env:
 - CGO_ENABLED=0
 - LDFLAGS="-s -w"
 prelude:
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
-- zypper in -y git upx
-{{else if eq .Values.distribution "fedora" }}
-- dnf install -y git upx
-{{else if eq .Values.distribution "ubuntu" }}
-- apt-get install -y git upx
-{{end}}
-{{end}}
-- |
-   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
-   mkdir -p /luetbuild/go/src/github.com/mudler && cd /luetbuild/go/src/github.com/mudler && \
-   git clone https://github.com/mudler/yip && cd yip && git checkout "${PACKAGE_VERSION}" -b build
+{{ template "golang_deps" .}}
+{{ $opts:= dict "version" .Values.version "org" ( index .Values.labels "github.owner" ) "repo" ( index .Values.labels "github.repo" ) }}
+{{ template "golang_download_package" $opts}}
 steps:
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
