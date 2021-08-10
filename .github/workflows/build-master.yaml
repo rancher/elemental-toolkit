@@ -320,7 +320,7 @@ jobs:
     needs: vbox-squashfs-green
     strategy:
       matrix:
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images", "test-upgrades-local", "test-deploys-images"]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -512,7 +512,7 @@ jobs:
     needs: vbox-nonsquashfs-green
     strategy:
       matrix:
-        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+        test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images", "test-upgrades-local", "test-deploys-images"]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

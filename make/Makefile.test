@@ -40,7 +40,7 @@ endif
 # ------------ actual test targets ------------
 #
 
-test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-fallback test-recovery test-deploys-images
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images test-features test-fallback test-recovery test-deploys-images
 
 #
 # remove test artifacts
@@ -72,12 +72,8 @@ test-fallback: $(GINKGO)
 test-features: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./features
 
-test-upgrades-images-signed: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-signed
-
-test-upgrades-images-unsigned: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-unsigned
-
+test-upgrades-images: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images
 test-upgrades-local: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-local
 	
