@@ -641,6 +641,7 @@ jobs:
     - image-link-green
     - tests-nonsquashfs-green
     - tests-squashfs-green
+    - publish-vanilla-ami
     steps:
       - uses: actions/checkout@v2
       
@@ -696,6 +697,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: images-green.txt
+          path: release
+      - uses: actions/download-artifact@v2
+        with:
+          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1
@@ -1298,4 +1303,9 @@ jobs:
           export COS_VERSION="${COS_VERSION/+/-}"
           export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION"
           make aws_vanilla_ami
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
+          path: |
+            ami_id.txt
 

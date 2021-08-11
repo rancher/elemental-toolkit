@@ -64,6 +64,7 @@ echo "Making AMI public"
 aws ec2 modify-image-attribute --image-id "${ami_id}" --launch-permission "Add=[{Group=all}]"
 
 echo "AMI Created: ${ami_id}"
+echo "${ami_id},${AWS_DEFAULT_REGION}" >> ami_id.txt
 
 
 if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
@@ -106,5 +107,6 @@ if [[ "${COPY_AMI_ALL_REGIONS}" == "true" ]]
     aws ec2 modify-image-attribute --image-id "${ami_copy_id}" --region "${reg}" --launch-permission "Add=[{Group=all}]"
 
     echo "AMI Copied: ${ami_copy_id}"
+    echo "${ami_copy_id},${reg}" >> ami_id.txt
   done
 fi
