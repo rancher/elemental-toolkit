@@ -3,10 +3,10 @@
 
 Vagrant.configure("2") do |config|
   config.vm.box = "cos"
-  config.ssh.username = "root"
-  config.ssh.password = "cos"
   config.ssh.insert_key = false
   config.vm.synced_folder ".", "/vagrant", disabled: true
+  # cos-features injects the insecure vagrant public key so we need to set the private key
+  config.ssh.private_key_path = ['~/.vagrant.d/insecure_private_key']
 
 
   config.vm.provider :virtualbox do |vb|

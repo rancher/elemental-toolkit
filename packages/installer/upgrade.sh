@@ -165,7 +165,6 @@ upgrade() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
-    export LUET_PRIVILEGED_EXTRACT=true
 
     args=""
     if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
@@ -184,6 +183,8 @@ upgrade() {
     else
         echo "Upgrading from container image: $UPGRADE_IMAGE"
         set -x
+        # unpack doesnt like when you try to unpack to a non existing dir
+        mkdir -p $upgrade_state_dir/tmp/rootfs || true
         luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $TARGET
