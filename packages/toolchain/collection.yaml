@@ -1,0 +1,61 @@
+packages:
+  - category: "toolchain"
+    name: "luet"
+    version: "0.17.6+1"
+    branch: ""
+    upx: false
+    fips: false
+    labels:
+      github.repo: "luet"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+      autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"
+  - category: "toolchain-fips"
+    name: "luet"
+    version: "0.17.6+1"
+    branch: ""
+    upx: false
+    fips: true
+    labels:
+      github.repo: "luet"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+      autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"
+  - name: "luet-makeiso"
+    category: "toolchain"
+    version: "0.3.4+1"
+    upx: false
+    fips: false
+    labels:
+      github.repo: "luet-makeiso"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+  - name: "luet-makeiso"
+    category: "toolchain-fips"
+    version: "0.3.4+1"
+    upx: false
+    fips: true
+    labels:
+      github.repo: "luet-makeiso"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+  - category: "toolchain-fips"
+    name: "yip"
+    upx: false
+    fips: true
+    version: "0.9.8+1"
+    labels:
+      github.repo: "yip"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+      autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"
+  - category: "toolchain"
+    name: "yip"
+    upx: false
+    fips: false
+    version: "0.9.8+1"
+    labels:
+      github.repo: "yip"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+      autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"

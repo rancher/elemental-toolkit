@@ -27,3 +27,31 @@ packages:
   - name: "base-dracut-modules"
     category: "system"
     version: ">=0"
+- category: "meta"
+  name: "cos-minimal-fips"
+  version: "0.6.1+1"
+  requires:
+  - category: toolchain-fips
+    name: yip
+    version: ">=0"
+  - category: utils
+    name: installer
+    version: ">=0"
+  - category: system
+    name: cos-setup
+    version: ">=0"
+  - category: system
+    name: immutable-rootfs
+    version: ">=0"
+  - category: system
+    name: grub-config
+    version: ">=0"
+  - category: system
+    name: cloud-config
+    version: ">=0"
+  - category: toolchain-fips
+    name: luet
+    version: ">=0"
+  - name: "base-dracut-modules"
+    category: "system"
+    version: ">=0"
