@@ -99,7 +99,7 @@ serve-repo: $(LUET)
 	LUET_NOLOCK=true $(LUET) serve-repo --port 8000 --dir $(DESTINATION)
 
 autobump: $(LUET)
-	TREE_DIR=$(ROOT_DIR) $(LUET) autobump-github
+	TREE_DIR=$(ROOT_DIR)/packages $(LUET) autobump-github
 
 validate: $(LUET)
 	$(LUET) tree validate --tree $(TREE) $(_VALIDATE_OPTIONS)
