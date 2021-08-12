@@ -39,6 +39,7 @@
 
 
 
+
 name: Build cOS nightly
 
 on: 
@@ -616,13 +617,15 @@ jobs:
   
   
   
-  raw-image-test-green:
+  tests-raw-disk-deploy-green:
     runs-on: macos-10.15
     needs: raw-images-green
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
       - uses: actions/checkout@v2
-      - name: Install yq
-        run: brew install yq
+      - name: Install deps
+        run: brew install yq cdrtools
       - name: Export cos version
         run: |
           export YQ=/usr/local/bin/yq
@@ -632,24 +635,24 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}
-      
-  
-  
-      - name: Run make raw_disk_test
+      - name: Run tests 🔧
         run: |
-          sudo -E make raw_disk_test
-
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          sudo -E make raw_disk_test_deploy
       - name: Change serial log ownership
-        if: always()
+        if: failure()
         run: |
           USER_ID=$(id -u)
           GROUP_ID=$(id -g)
           sudo chown $USER_ID:$GROUP_ID serial_port1.log
           sudo chmod 777 serial_port1.log
       - uses: actions/upload-artifact@v2
-        if: always()
+        if: failure()
         with:
-          name: serial_output_raw_image_test
+          name: cOS-raw_disk_test_deploy-green.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
 

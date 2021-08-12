@@ -96,18 +96,27 @@ $(GINKGO):
 
 
 #
-# ------------ test for raw images  ------------
+# ------------ test for raw image  ------------
 #
 
 RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
 
-raw_disk_test: as_root $(VBOXMANAGE)
+raw_disk_test_deploy: create_vm_from_raw_image $(GINKGO)
+	# run tests
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery-raw-disk
+
+create_vm_from_raw_image: as_root $(VBOXMANAGE)
 ifeq ("$(RAW)","")
 	@echo "Raw image does not exists, please run make raw_disk first"
 	@exit 1
 else
 	# transform the raw image
 	VBoxManage convertdd $(RAW) sda.vdi --format VDI
+	# increase disk size to 15Gb
+	VBoxManage modifymedium disk sda.vdi --compact --resize 16000
+	# creatre user-data iso (NoCloud)
+	cp packer/user-data/aws.yaml user-data
+	mkisofs -o cidata.iso -V CIDATA -J -r user-data
 	# create vm
 	VBoxManage createvm --name "test" --register
 	# increase memory, otherwise grub fails to boot
@@ -118,16 +127,16 @@ else
 	VBoxManage storagectl "test" --name "sata controller" --add sata
 	# attach the disk to the machine
 	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
+	# attach the user-data iso
+	VBoxManage storageattach "test" --storagectl "sata controller" --port 1 --device 0 --type dvddrive --medium $(ROOT_DIR)/cidata.iso
 	# startvm and detach
 	VBoxManage startvm "test" --type headless
-	# sleep for a bit to let the recovery boot
-	sleep 300
-	# search for the welcome message, use .* between in front of "cOS" to avoid failing due to control characters (cOS recovery is in green color)
-	grep -q "Welcome to.*cOS recovery" $(ROOT_DIR)/serial_port1.log
 endif
 
 clean_raw_disk_test: as_root
 	VBoxManage controlvm "test" poweroff &>/dev/null || true
 	VBoxManage unregistervm "test" --delete &>/dev/null || true
 	rm $(ROOT_DIR)/sda.vdi &>/dev/null || true
+	rm $(ROOT_DIR)/user-data &>/dev/null || true
+	rm $(ROOT_DIR)/cidata.iso &>/dev/null || true
 	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
