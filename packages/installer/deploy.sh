@@ -73,6 +73,10 @@ mount_state() {
     mount ${STATE} ${STATEDIR}
 }
 
+is_mounted() {
+    mountpoint -q "$1"
+}
+
 mount_image() {
     STATEDIR=/run/initramfs/cos-state
     TARGET=/tmp/upgrade
@@ -88,6 +92,8 @@ mount_image() {
     else
         mount_state
     fi
+
+    is_mounted /usr/local || mount ${PERSISTENT} /usr/local
 
     prepare_target
 }
