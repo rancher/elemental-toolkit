@@ -159,7 +159,15 @@ find_partitions
 
 do_mount
 
-cos-setup before-reset > /dev/null || true
+if [ -e /etc/cos/config ]; then
+    source /etc/cos/config
+fi
+
+if [ "$STRICT_MODE" = "true" ]; then
+  cos-setup before-reset
+else 
+  cos-setup before-reset || true
+fi
 
 if [ -n "$PERSISTENCE_RESET" ] && [ "$PERSISTENCE_RESET" == "true" ]; then
     reset
@@ -169,4 +177,8 @@ copy_active
 
 install_grub
 
-cos-setup after-reset > /dev/null || true
+if [ "$STRICT_MODE" = "true" ]; then
+  cos-setup after-reset
+else 
+  cos-setup after-reset || true
+fi

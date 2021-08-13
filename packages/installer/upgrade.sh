@@ -157,7 +157,12 @@ upgrade() {
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
-    cos-setup before-upgrade > /dev/null || true
+
+    if [ "$STRICT_MODE" = "true" ]; then
+      cos-setup before-upgrade
+    else 
+      cos-setup before-upgrade || true
+    fi
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
@@ -194,7 +199,11 @@ upgrade() {
     chmod 755 $TARGET
     SELinux_relabel
 
-    cos-setup after-upgrade > /dev/null || true
+    if [ "$STRICT_MODE" = "true" ]; then
+      cos-setup after-upgrade
+    else 
+      cos-setup after-upgrade || true
+    fi
 
     rm -rf $upgrade_state_dir
     umount $TARGET || true
@@ -284,6 +293,9 @@ while [ "$#" -gt 0 ]; do
             NO_CHANNEL=true
             DIRECTORY=true
             ;;
+        --strict)
+            STRICT_MODE=true
+            ;;
         --recovery)
             UPGRADE_RECOVERY=true
             ;;
@@ -311,6 +323,10 @@ done
 find_upgrade_channel
 
 trap cleanup exit
+
+if [ -e /etc/cos/config ]; then
+    source /etc/cos/config
+fi
 
 if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
     echo "Upgrading recovery partition.."
