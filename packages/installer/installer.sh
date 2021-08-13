@@ -395,13 +395,13 @@ umount_target 2>/dev/null
 prepare_recovery
 prepare_passive
 
+cos-rebrand
+
 if [ "$STRICT_MODE" = "true" ]; then
   cos-setup after-install
 else 
   cos-setup after-install || true
 fi
-
-cos-rebrand
 
 if [ -n "$INTERACTIVE" ]; then
     exit 0

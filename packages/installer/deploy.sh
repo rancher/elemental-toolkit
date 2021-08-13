@@ -143,7 +143,7 @@ upgrade() {
     else 
       cos-setup after-deploy || true
     fi
-    
+
     rm -rf $upgrade_state_dir
     umount $TARGET || true
 }
@@ -256,6 +256,8 @@ mount_image
 upgrade
 
 set_active_passive
+
+cos-rebrand
 
 echo "Flush changes to disk"
 sync

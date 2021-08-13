@@ -177,6 +177,8 @@ copy_active
 
 install_grub
 
+cos-rebrand
+
 if [ "$STRICT_MODE" = "true" ]; then
   cos-setup after-reset
 else 
