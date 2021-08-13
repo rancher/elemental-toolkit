@@ -322,6 +322,9 @@ while [ "$#" -gt 0 ]; do
         --poweroff)
             COS_INSTALL_POWER_OFF=true
             ;;
+        --strict)
+            STRICT_MODE=true
+            ;;
         --debug)
             set -x
             COS_INSTALL_DEBUG=true
@@ -360,6 +363,10 @@ if [ -e /etc/os-release ]; then
     source /etc/os-release
 fi
 
+if [ -e /etc/cos/config ]; then
+    source /etc/cos/config
+fi
+
 if [ -z "$COS_INSTALL_DEVICE" ]; then
     usage
 fi
@@ -369,7 +376,11 @@ validate_device
 
 trap cleanup exit
 
-cos-setup before-install > /dev/null || true
+if [ "$STRICT_MODE" = "true" ]; then
+  cos-setup before-install
+else 
+  cos-setup before-install || true
+fi
 
 setup_style
 do_format
@@ -384,7 +395,13 @@ umount_target 2>/dev/null
 prepare_recovery
 prepare_passive
 
-cos-setup after-install > /dev/null || true
+cos-rebrand
+
+if [ "$STRICT_MODE" = "true" ]; then
+  cos-setup after-install
+else 
+  cos-setup after-install || true
+fi
 
 if [ -n "$INTERACTIVE" ]; then
     exit 0

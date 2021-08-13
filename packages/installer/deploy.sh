@@ -106,7 +106,11 @@ upgrade() {
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
-    cos-setup before-deploy > /dev/null || true
+    if [ "$STRICT_MODE" = "true" ]; then
+      cos-setup before-deploy
+    else 
+      cos-setup before-deploy || true
+    fi
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
     # which might not be sufficient to unpack images. Use /usr/local/tmp until we get a separate partition
@@ -134,7 +138,11 @@ upgrade() {
 
     SELinux_relabel
 
-    cos-setup after-deploy > /dev/null || true
+    if [ "$STRICT_MODE" = "true" ]; then
+      cos-setup after-deploy
+    else 
+      cos-setup after-deploy || true
+    fi
 
     rm -rf $upgrade_state_dir
     umount $TARGET || true
@@ -207,6 +215,9 @@ while [ "$#" -gt 0 ]; do
         --no-verify)
             VERIFY=false
             ;;
+        --strict)
+            STRICT_MODE=true
+            ;;
         --force)
             FORCE=true
             ;;
@@ -227,6 +238,10 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
+if [ -e /etc/cos/config ]; then
+    source /etc/cos/config
+fi
+
 find_upgrade_channel
 
 trap cleanup exit
@@ -241,6 +256,8 @@ mount_image
 upgrade
 
 set_active_passive
+
+cos-rebrand
 
 echo "Flush changes to disk"
 sync
