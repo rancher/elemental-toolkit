@@ -21,3 +21,9 @@
   mkdir -p /luetbuild/go/src/{{$host}}/{{$org}} && cd /luetbuild/go/src/{{$host}}/{{$org}} && \
   git clone https://{{$host}}/{{$org}}/{{$repo}} && cd {{$repo}} && git checkout "$PACKAGE_VERSION" -b build
 {{end}}
+
+{{ define "golang_env" }}
+- PATH=$PATH:/usr/local/go/bin
+- GOPATH=/luetbuild/go
+- GO111MODULE=on
+{{end}}
