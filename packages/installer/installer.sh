@@ -4,10 +4,11 @@ set -e
 PROG=$0
 PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install"
 DISTRO=/run/rootfsbase
-ISOBOOT=/run/initramfs/live/boot
+ISOMNT=/run/initramfs/live
+ISOBOOT=${ISOMNT}/boot
 TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
-RECOVERYSQUASHFS=/run/initramfs/live/recovery.squashfs
+RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 
 if [ "$COS_DEBUG" = true ]; then
     set -x
@@ -30,6 +31,7 @@ cleanup2()
     umount_target || true
     umount ${STATEDIR}
     umount ${RECOVERYDIR}
+    [ -n "$COS_INSTALL_ISO_URL" ] && umount ${ISOMNT} || true
 }
 
 cleanup()
@@ -41,7 +43,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: $PROG [--force-efi] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
+    echo "Usage: $PROG [--force-efi] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "Example: $PROG /dev/vda"
     echo ""
@@ -212,6 +214,17 @@ get_url()
     esac
 }
 
+get_iso()
+{
+    if [ -n "$COS_INSTALL_ISO_URL" ]; then
+        ISOMNT=$(mktemp -d -p /tmp cos.XXXXXXXX.isomnt)
+        TEMP_FILE=$(mktemp -p /tmp cos.XXXXXXXX.iso)
+        get_url ${COS_INSTALL_ISO_URL} ${TEMP_FILE}
+        ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
+        mount -o ro ${ISO_DEVICE} ${ISOMNT}
+    fi
+}
+
 do_copy()
 {
     echo "Copying cOS.."
@@ -333,6 +346,10 @@ while [ "$#" -gt 0 ]; do
             shift 1
             COS_INSTALL_CONFIG_URL=$1
             ;;
+        --iso)
+            shift 1
+            COS_INSTALL_ISO_URL=$1
+            ;;
         --tty)
             shift 1
             COS_INSTALL_TTY=$1
@@ -382,6 +399,7 @@ else
   cos-setup before-install || true
 fi
 
+get_iso
 setup_style
 do_format
 do_mount
