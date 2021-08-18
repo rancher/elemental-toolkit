@@ -12,9 +12,10 @@ rebrand_grub_menu() {
 	STATEDIR=$(blkid -L COS_STATE)
 	mkdir -p /run/boot
 	
-	if ! is_mounted; then
+	if ! is_mounted /run/boot; then
 	   mount $STATEDIR /run/boot
 	fi
+
 	local grub_file=/run/boot/grub2/grub.cfg
 
 	if [ ! -e "$grub_file" ]; then
