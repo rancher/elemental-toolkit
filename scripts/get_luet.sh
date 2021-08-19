@@ -1,4 +1,16 @@
 #!/bin/bash
+
+function get_arch() {
+    un=$(uname -i)
+    if [ "$un" == "aarch64" ]; then
+        echo "arm64"
+    elif [ "$un" == "x86_64" ]; then
+        echo "amd64"
+    else
+        echo $un
+     fi
+}
+
 if [ $(id -u) -ne 0 ]
   then echo "Please run the installer with sudo/as root"
   exit
@@ -14,7 +26,7 @@ LUET_DATABASE_ENGINE=${LUET_DATABASE_ENGINE:-boltdb}
 LUET_CONFIG_PROTECT=${LUET_CONFIG_PROTECT:-1}
 LUET_PACKAGE="${LUET_PACKAGE:-toolchain/luet}"
 
-curl -L https://github.com/mudler/luet/releases/download/${LUET_VERSION}/luet-${LUET_VERSION}-linux-amd64 --output luet
+curl -L https://github.com/mudler/luet/releases/download/${LUET_VERSION}/luet-${LUET_VERSION}-linux-$(get_arch) --output luet
 chmod +x luet
 
 mkdir -p /etc/luet/repos.conf.d || true
