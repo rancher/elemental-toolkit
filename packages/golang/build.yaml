@@ -17,6 +17,10 @@ prelude:
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
   wget {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -O golang.tar.gz
-- echo "{{ ( index .Values.labels "package.checksum" ) }}  golang.tar.gz" | sha256sum -c
+{{ if eq (default "amd64" .Values.golang_arch) "arm64" }}
+- echo "{{ ( index .Values.labels "package.checksum.arm64" ) }}  golang.tar.gz" | sha256sum -c
+{{else}}
+- echo "{{ ( index .Values.labels "package.checksum.amd64" ) }}  golang.tar.gz" | sha256sum -c
+{{end}}
 steps:
 - tar -C /usr/local -xzf golang.tar.gz
