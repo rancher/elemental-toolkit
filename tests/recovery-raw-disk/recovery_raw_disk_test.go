@@ -21,7 +21,7 @@ var _ = Describe("cOS Recovery deploy tests", func() {
 
 			out, err := s.Command("cos-deploy")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+			Expect(out).Should(ContainSubstring("Deployment done, now you might want to reboot"))
 
 			err = s.ChangeBoot(sut.Active)
 			Expect(err).ToNot(HaveOccurred())

@@ -18,8 +18,13 @@ rebrand_grub_menu() {
 
 	local grub_file=/run/boot/grub2/grub.cfg
 
+	# https://github.com/rancher-sandbox/cOS-toolkit/issues/537
 	if [ ! -e "$grub_file" ]; then
 	   grub_file="/run/boot/grub/grub.cfg"
+	fi
+
+	if [ ! -e "$grub_file" ]; then
+	   grub_file="/etc/cos/grub.cfg"
 	fi
 
 	if [ ! -e "$grub_file" ]; then
