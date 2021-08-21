@@ -1,7 +1,7 @@
 packages:
   - name: "golang"
     category: "build"
-    version: 1.16.6+6
+    version: 1.16.6+7
     base_url: https://golang.org/dl
     hidden: true # No need to make it installable for now
     labels:
