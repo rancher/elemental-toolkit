@@ -16,6 +16,18 @@ function getOverlayMountpoints {
     echo "${mountpoints}"
 }
 
+function getStateMountpoints {
+    local mountpoints=$1
+    local state_mounts
+
+    for path in "${state_paths[@]}"; do
+        if ! hasMountpoint "${path}" "${mountpoints}"; then
+            state_mounts+="${path} "
+        fi
+    done
+    echo "${state_mounts}"
+}
+
 function hasMountpoint {
     local path=$1
     shift
@@ -89,6 +101,17 @@ function readCOSLayoutConfig {
     else
         cos_mounts=()
     fi
+
+    state_paths=()
+    state_bind="${PERSISTENT_STATE_BIND:-false}"
+    state_target="${PERSISTENT_STATE_TARGET:-/usr/local/.state}"
+
+    if [ -n "${RW_PATHS}" ]; then
+        rw_paths=(${RW_PATHS})
+    fi
+    if [ -n "${PERSISTENT_STATE_PATHS}" ]; then
+        state_paths=(${PERSISTENT_STATE_PATHS})
+    fi
 }
 
 function getCOSMounts {
@@ -119,6 +142,7 @@ function mountOverlayBase {
 
 function mountOverlay {
     local mount=$1
+    local base=${2:-$overlay_base}
     local merged
     local upperdir
     local workdir
@@ -126,13 +150,43 @@ function mountOverlay {
 
     mount="${mount#/}"
     merged="/sysroot/${mount}"
-    if [ -d "${merged}" ] && ! mountpoint -q "${merged}"; then
-        upperdir="${overlay_base}/${mount//\//-}.overlay/upper"
-        workdir="${overlay_base}/${mount//\//-}.overlay/work"
+    if [ "${base##/run}" == "${base}"  ]; then
+        base="/sysroot${base}"
+    fi
+    mkdir -p "${merged}"
+    if ! mountpoint -q "${merged}"; then
+        upperdir="${base}/${mount//\//-}.overlay/upper"
+        workdir="${base}/${mount//\//-}.overlay/work"
         mkdir -p "${upperdir}" "${workdir}"
         mount -t overlay overlay -o "defaults,lowerdir=${merged},upperdir=${upperdir},workdir=${workdir}" "${merged}"
-        fstab_line="overlay /${mount} overlay defaults,lowerdir=/${mount},upperdir=${upperdir},"
-        fstab_line+="workdir=${workdir},x-systemd.requires-mounts-for=${overlay_base}\n"
+        fstab_line="overlay /${mount} overlay defaults,lowerdir=/${mount},upperdir=${upperdir##/sysroot},workdir=${workdir##/sysroot}"
+        required_mount=$(findmnt -fno TARGET --target "${base}")
+        if [ -n "${required_mount}" ] && [ "${required_mount}" != "/" ]; then
+            fstab_line+=",x-systemd.requires-mounts-for=${required_mount##/sysroot}"
+        fi
+        fstab_line+="\n"
+    fi
+    echo "${fstab_line}"
+}
+
+function mountState {
+    local mount=$1
+    local base
+    local fstab_line
+    local state_dir
+
+    if [ "${state_bind}" = "true" ]; then
+        mount="${mount#/}"
+        base="/sysroot/${mount}"
+        state_dir="/sysroot${state_target}/${mount//\//-}.bind"
+        if ! mountpoint -q "${base}"; then
+            mkdir -p "${base}" "${state_dir}"
+            rsync -aqAX "${base}/" "${state_dir}/"
+            mount -o defaults,bind "${state_dir}" "${base}"
+            fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
+        fi
+    else
+        fstab_line=$(mountOverlay "${mount}" "${state_target}")
     fi
     echo "${fstab_line}"
 }
@@ -165,6 +219,9 @@ declare root_fstype=$(findmnt -rno FSTYPE /sysroot)
 declare root=$(findmnt -rno SOURCE /sysroot)
 declare fstab
 declare state_label
+declare state_paths
+declare state_bind
+declare state_target
 
 readCOSLayoutConfig
 
@@ -191,6 +248,10 @@ for mount in "${mountpoints[@]}"; do
     else
         fstab+=$(mountPersistent "${mount}")
     fi
+done
+
+for mount in $(getStateMountpoints "${mountpoints[@]}"); do
+    fstab+=$(mountState "${mount}")
 done
 
 echo -e "${fstab}" > /sysroot/etc/fstab
