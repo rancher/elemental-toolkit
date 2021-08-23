@@ -54,8 +54,21 @@ find_recovery() {
 
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
+
+    if [ -e "/etc/environment" ]; then
+        source /etc/environment
+    fi
+
+    if [ -e "/etc/os-release" ]; then
+        source /etc/os-release
+    fi
+
     if [ -e "/etc/cos-upgrade-image" ]; then
         source /etc/cos-upgrade-image
+    fi
+
+    if [ -e "/etc/cos/config" ]; then
+        source /etc/cos/config
     fi
 
     if [ -n "$NO_CHANNEL" ] && [ $NO_CHANNEL == true ]; then
@@ -323,10 +336,6 @@ done
 find_upgrade_channel
 
 trap cleanup exit
-
-if [ -e /etc/cos/config ]; then
-    source /etc/cos/config
-fi
 
 if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
     echo "Upgrading recovery partition.."

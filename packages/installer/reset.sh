@@ -159,6 +159,14 @@ find_partitions
 
 do_mount
 
+if [ -e /etc/environment ]; then
+    source /etc/environment
+fi
+
+if [ -e /etc/os-release ]; then
+    source /etc/os-release
+fi
+
 if [ -e /etc/cos/config ]; then
     source /etc/cos/config
 fi
