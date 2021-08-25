@@ -1,49 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 name: Build cOS Pull requests
-
 on: 
  pull_request:
    paths:
@@ -53,28 +8,15 @@ on:
      - .github/**
      - Makefile
      - tests/**
-
-
 concurrency:
   group: ci-Pull requests-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
-
 jobs:
-  
-  
-  
-  
   docker-build-green:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: green
     steps:
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -82,22 +24,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
           source .envrc
           cos-build $FLAVOR
-
-  
-  
-  
   build-green:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: green
       FINAL_REPO: quay.io/costoolkit/releases-green
@@ -105,15 +38,10 @@ jobs:
       PUSH_CACHE: false
       REPO_CACHE: quay.io/costoolkit/build-green-cache
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -121,22 +49,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
-      
-  
-  
       - name: Run make validate
         run: |
           sudo -E make validate
-
       - name: Build packages 🔧
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -147,37 +66,21 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-      
-  
-  
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
-
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
           name: build-green
           path: build
           if-no-files-found: error
-
-    
-  
-  
-  
-  
   iso-squashfs-green:
-    
-  
     runs-on: ubuntu-latest
-  
-
     needs: build-green
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -185,7 +88,6 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -195,20 +97,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
-      
       - name: Export cos version
         run: |
              source .github/helpers.sh
              echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
-
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
@@ -226,11 +122,6 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
-
-  
-  
-  
-  
   qemu-squashfs-green:
     runs-on: macos-10.15
     needs: iso-squashfs-green
@@ -262,11 +153,6 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-
-  
-  
-  
-  
   vbox-squashfs-green:
     runs-on: macos-10.15
     needs: iso-squashfs-green
@@ -276,7 +162,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: cOS-squashfs-green.iso.zip
-
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -302,11 +187,6 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-
-  
-  
-  
-  
   tests-squashfs-green:
     env:
       VAGRANT_CPU: 3
@@ -317,20 +197,16 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
           name: cOS-squashfs-green-vbox.box
           path: packer
-
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
@@ -353,24 +229,12 @@ jobs:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
           path: tests/serial_port1
           if-no-files-found: warn
-
-    
-  
-  
-  
-  
   iso-nonsquashfs-green:
-    
-  
     runs-on: ubuntu-latest
-  
-
     needs: build-green
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -378,7 +242,6 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -388,24 +251,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
           drop_recovery manifest.yaml
-      
       - name: Export cos version
         run: |
              source .github/helpers.sh
              echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
-
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
@@ -423,11 +280,6 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
-
-  
-  
-  
-  
   qemu-nonsquashfs-green:
     runs-on: macos-10.15
     needs: iso-nonsquashfs-green
@@ -459,11 +311,6 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-
-  
-  
-  
-  
   vbox-nonsquashfs-green:
     runs-on: macos-10.15
     needs: iso-nonsquashfs-green
@@ -473,7 +320,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: cOS-nonsquashfs-green.iso.zip
-
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -499,11 +345,6 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-
-  
-  
-  
-  
   tests-nonsquashfs-green:
     env:
       VAGRANT_CPU: 3
@@ -514,20 +355,16 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
           name: cOS-nonsquashfs-green-vbox.box
           path: packer
-
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
@@ -550,16 +387,11 @@ jobs:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
           path: tests/serial_port1
           if-no-files-found: warn
-
-  
-  
-  
   raw-images-green:
     runs-on: ubuntu-latest
     container: opensuse/leap:15.3
     needs:
     - build-green
-
     steps:
       - name: Install OS deps
         run: |
@@ -575,41 +407,23 @@ jobs:
           # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
           rm -rf /var/lock
           mkdir -p /var/lock
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
-      
       - name: Export cos version
         run: |
              source .github/helpers.sh
              echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
-
-      
-  
-  
       - name: Run make raw_disk
         run: |
           sudo -E make raw_disk
-
-      
-  
-  
       - name: Run make azure_disk
         run: |
           sudo -E make azure_disk
-
-      
-  
-  
       - name: Run make gce_disk
         run: |
           sudo -E make gce_disk
-
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}.raw
@@ -633,21 +447,14 @@ jobs:
           path: |
             cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}.tar.gz
           if-no-files-found: error
-
-  
-  
-  
   tests-raw-disk-deploy-green:
     runs-on: macos-10.15
     needs: raw-images-green
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -680,22 +487,11 @@ jobs:
           name: cOS-raw_disk_test_deploy-green.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
-
-  
-  
-  
-  
   docker-build-blue:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: blue
     steps:
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -703,22 +499,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
           source .envrc
           cos-build $FLAVOR
-
-  
-  
-  
   build-blue:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: blue
       FINAL_REPO: quay.io/costoolkit/releases-blue
@@ -726,15 +513,10 @@ jobs:
       PUSH_CACHE: false
       REPO_CACHE: quay.io/costoolkit/build-blue-cache
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -742,22 +524,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
-      
-  
-  
       - name: Run make validate
         run: |
           sudo -E make validate
-
       - name: Build packages 🔧
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -768,37 +541,20 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-      
-  
-  
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
-
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
           name: build-blue
           path: build
           if-no-files-found: error
-
-    
-    
-  
-  
-  
-  
   docker-build-orange:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: orange
     steps:
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -806,22 +562,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
           source .envrc
           cos-build $FLAVOR
-
-  
-  
-  
   build-orange:
-    
-  
     runs-on: ubuntu-latest
-  
-
     env:
       FLAVOR: orange
       FINAL_REPO: quay.io/costoolkit/releases-orange
@@ -829,15 +576,10 @@ jobs:
       PUSH_CACHE: false
       REPO_CACHE: quay.io/costoolkit/build-orange-cache
     steps:
-      
-  
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-
-      
-  
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -845,22 +587,13 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-
-      
-  
-  
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install -y toolchain/yq
-
-      
-  
-  
       - name: Run make validate
         run: |
           sudo -E make validate
-
       - name: Build packages 🔧
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -871,19 +604,12 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-      
-  
-  
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
-
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
           name: build-orange
           path: build
           if-no-files-found: error
-
-    
-    
