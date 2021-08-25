@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function get_arch() {
-    un=$(uname -n)
+    un=$(uname -p)
     if [ "$un" == "aarch64" ]; then
         echo "arm64"
     elif [ "$un" == "x86_64" ]; then
