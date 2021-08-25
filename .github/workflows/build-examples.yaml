@@ -30,7 +30,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Build cos-official 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -53,7 +53,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Build scratch 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -76,7 +76,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Build standard 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |

@@ -52,7 +52,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -100,7 +100,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -254,7 +254,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
@@ -410,7 +410,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -527,7 +527,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -590,7 +590,7 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install -y toolchain/yq
+          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
