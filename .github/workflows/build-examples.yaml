@@ -35,7 +35,16 @@ jobs:
         shell: 'script -q -e -c "bash {0}"'
         run: |
           cd examples/cos-official
-          docker build . -t cos-official
+          docker build . -t cos-official:latest
+      - name: Dump cos-official image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save cos-official:latest -o cos-official.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cos-official.tar
+          path: |
+            cos-official.tar
   docker-build-example-scratch:
     runs-on: ubuntu-latest
     steps:
@@ -58,7 +67,16 @@ jobs:
         shell: 'script -q -e -c "bash {0}"'
         run: |
           cd examples/scratch
-          docker build . -t scratch
+          docker build . -t scratch:latest
+      - name: Dump scratch image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save scratch:latest -o scratch.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: scratch.tar
+          path: |
+            scratch.tar
   docker-build-example-standard:
     runs-on: ubuntu-latest
     steps:
@@ -81,4 +99,13 @@ jobs:
         shell: 'script -q -e -c "bash {0}"'
         run: |
           cd examples/standard
-          docker build . -t standard
+          docker build . -t standard:latest
+      - name: Dump standard image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save standard:latest -o standard.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: standard.tar
+          path: |
+            standard.tar
