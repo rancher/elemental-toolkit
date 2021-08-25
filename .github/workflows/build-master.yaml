@@ -102,6 +102,8 @@ jobs:
   
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
 
       
   
@@ -323,8 +325,13 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
+      
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -515,8 +522,13 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
+      
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -612,8 +624,13 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
+    
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -716,8 +733,13 @@ jobs:
     runs-on: macos-10.15
     needs: raw-images-green
     steps:
+      
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -800,6 +822,8 @@ jobs:
   
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
 
       
   
@@ -933,8 +957,13 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
+    
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -996,6 +1025,8 @@ jobs:
   
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
 
       
   
@@ -1129,8 +1160,13 @@ jobs:
           sudo -E make deps
           sudo luet install -y toolchain/yq
 
+    
+  
       - name: Install Go
         uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
