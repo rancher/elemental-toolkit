@@ -1,6 +1,6 @@
 name: cos-setup
 category: system
-version: 0.3.0+13
+version: "0.4"
 requires:
   - name: "yip"
     category: "toolchain"

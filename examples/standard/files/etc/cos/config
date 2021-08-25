@@ -15,3 +15,7 @@ RECOVERY_IMAGE="quay.io/mudler/cos-test:cos-standard"
 
 # GRUB entry to display on boot. ( defaults: cOS )
 GRUB_ENTRY_NAME="example"
+
+# Space separated list of additional paths that are used to
+# source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )
+CLOUD_INIT_PATHS=""
