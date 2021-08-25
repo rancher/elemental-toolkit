@@ -642,6 +642,27 @@
             ami_id.txt
 {{{ end }}}
 
+{{{define "build_example_dir"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $dir := . }}}
+  docker-build-example-{{{ $dir }}}:
+    {{{ tmpl.Exec "runner" }}}
+    steps:
+  {{{- if $config.local_runner }}}
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+  {{{- end }}}
+      {{{ tmpl.Exec "prepare_worker" }}}
+      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "make" "deps" }}}
+      - name: Build {{{ $dir }}} 🔧
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          cd examples/{{{ $dir }}}
+          docker build . -t {{{ $dir }}}
+{{{end}}}
+
 name: Build cOS {{{$config.pipeline}}}
 
 on: 
@@ -652,7 +673,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
+{{{- if (has $config "build_examples_dir") }}}
+  {{{- range $config.build_examples_dir }}}
+    {{{$dir:=.}}}
+    {{{tmpl.Exec "build_example_dir" $dir}}}
+  {{{- end }}}
+{{{- end}}}
 {{{- range $config.flavors }}}
   {{{$flavor:=.}}}
 
