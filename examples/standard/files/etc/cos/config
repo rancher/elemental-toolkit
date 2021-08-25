@@ -10,8 +10,13 @@ CHANNEL_UPGRADES=false
 # Default container image used for upgrades. ( defaults to system/cos with channel CHANNEL_UPGRADES enabled )
 UPGRADE_IMAGE="quay.io/mudler/cos-test:cos-standard"
 
-# Default recovery image to use when upgrading the recovery partition.  ( defaults to system/cos with channel CHANNEL_UPGRADES enabled )
+# Default recovery image to use when upgrading the recovery partition
+# ( defaults to recovery/cos in vanilla cOS images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).
 RECOVERY_IMAGE="quay.io/mudler/cos-test:cos-standard"
 
 # GRUB entry to display on boot. ( defaults: cOS )
 GRUB_ENTRY_NAME="example"
+
+# Space separated list of additional paths that are used to
+# source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )
+CLOUD_INIT_PATHS=""

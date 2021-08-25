@@ -1,5 +1,21 @@
 #!/bin/sh
 
+# Load any configuration file if present
+if [ -e /etc/environment ]; then
+    source /etc/environment
+fi
+
+if [ -e /etc/os-release ]; then
+    source /etc/os-release
+fi
+
+if [ -e /etc/cos/config ]; then
+  source /etc/cos/config
+fi
+
+# Default paths wether to search for cloud config file
+declare cloud_init_paths=("/system/oem" "/oem/" "/usr/local/cloud-config/")
+
 # Runs a supplied stage from cmdline args and local folders
 # it emit also "stage.before" and "stage.after" to able to hook
 # into different stages. E.g. if one depends on another for network setup
@@ -14,7 +30,11 @@ for x in "$@"; do
     esac
 done
 
-for dir in "/system/oem" "/oem/" "/usr/local/cloud-config/"; do
+if [ -n "${CLOUD_INIT_PATHS}" ]; then
+    cloud_init_paths+=(${CLOUD_INIT_PATHS})
+fi
+
+for dir in "${cloud_init_paths[@]}"; do
     if [ -d "$dir" ]; then
         yip -s "$STAGE".before "$dir"
         yip -s "$STAGE" "$dir"
