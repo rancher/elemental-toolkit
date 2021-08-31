@@ -17,6 +17,24 @@ var _ = Describe("cOS Feature tests", func() {
 
 	Context("After install", func() {
 		It("can enable a persistent k3s install", func() {
+
+			_, err := s.Command("mkdir /usr/local/cloud-config/")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = s.SendFile("../assets/features-config.yaml", "/usr/local/cloud-config/features-config.yaml", "0770")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = s.Command("mkdir /usr/local/features")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = s.Command("cp -rf /system/features/vagrant.yaml /usr/local/features")
+			Expect(err).ToNot(HaveOccurred())
+
+			err = s.SendFile("../assets/k3s.yaml", "/usr/local/features/k3s.yaml", "0770")
+			Expect(err).ToNot(HaveOccurred())
+
+			s.Reboot()
+
 			out, err := s.Command("cos-feature enable k3s")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("k3s enabled"))
@@ -33,7 +51,7 @@ var _ = Describe("cOS Feature tests", func() {
 
 			}, time.Duration(time.Duration(400)*time.Second), time.Duration(5*time.Second)).Should(ContainSubstring("local-path-provisioner"))
 
-			out, err = s.Command("k3s --data-dir /usr/local/rancher/k3s/ kubectl create deployment test-sut-deployment --image nginx")
+			_, err = s.Command("k3s --data-dir /usr/local/rancher/k3s/ kubectl create deployment test-sut-deployment --image nginx")
 			Expect(err).ToNot(HaveOccurred())
 
 			s.Reboot()
