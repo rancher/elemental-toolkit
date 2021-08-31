@@ -12,7 +12,7 @@ var _ = Describe("cOS Recovery deploy tests", func() {
 
 	BeforeEach(func() {
 		s = sut.NewSUT()
-		s.EventuallyConnects()
+		s.EventuallyConnects(sut.TimeoutRawDiskTest)
 	})
 
 	Context("after running recovery from the raw_disk image", func() {

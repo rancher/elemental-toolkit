@@ -23,6 +23,8 @@ const (
 	Active      = iota
 	Recovery    = iota
 	UnknownBoot = iota
+
+	TimeoutRawDiskTest = 600  // Timeout to connect for recovery_raw_disk_test
 )
 
 type SUT struct {
