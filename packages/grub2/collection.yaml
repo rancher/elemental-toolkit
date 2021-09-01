@@ -5,4 +5,4 @@ packages:
 
 - name: "grub2-config"
   category: "system"
-  version: "0.0.10"
+  version: "0.0.11"

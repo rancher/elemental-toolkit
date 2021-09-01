@@ -6,7 +6,14 @@ requires:
 steps:
 {{if eq .Values.name "grub2-config"}}
 - mkdir /etc/cos
-- cp config/grub.cfg config/bootargs.cfg /etc/cos
+- cp config/grub.cfg config/bootargs.cfg config/grub_efi.cfg /etc/cos
+  {{if .Values.distribution}}
+    {{if eq .Values.distribution "ubuntu"}}
+- grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
+    {{else}}
+- grub2-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
+    {{end}}
+  {{end}}
 {{end}}
 
 {{if eq .Values.name "grub2-artifacts"}}
