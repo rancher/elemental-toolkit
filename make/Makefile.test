@@ -131,6 +131,10 @@ else
 	VBoxManage storageattach "test" --storagectl "sata controller" --port 1 --device 0 --type dvddrive --medium $(ROOT_DIR)/cidata.iso
 	# startvm and detach
 	VBoxManage startvm "test" --type headless
+	# sleep for a bit to let the recovery boot
+	sleep 300
+	# search for the welcome message, use .* between in front of "cOS" to avoid failing due to control characters (cOS recovery is in green color)
+	grep -q "Welcome to.*cOS recovery" $(ROOT_DIR)/serial_port1.log
 endif
 
 clean_raw_disk_test: as_root
