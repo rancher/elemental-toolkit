@@ -124,7 +124,7 @@ else
 	# config vm options, i.e. efi boot, nat, serial to file, etc...
 	VBoxManage modifyvm "test" --firmware efi --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --natpf1 "guestssh,tcp,,2222,,22"
 	# add sata controller
-	VBoxManage storagectl "test" --name "sata controller" --add sata
+	VBoxManage storagectl "test" --name "sata controller" --add sata --portcount 2
 	# attach the disk to the machine
 	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
 	# attach the user-data iso
