@@ -20,3 +20,7 @@ GRUB_ENTRY_NAME="example"
 # Space separated list of additional paths that are used to
 # source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )
 CLOUD_INIT_PATHS=""
+
+# This is the directory that can be used to store cloud-init files that can be enabled/disabled in runtime
+# by cos-features. ( defaults to /system/features )
+COS_FEATURESDIR="/system/features"
