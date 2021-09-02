@@ -1,4 +1,4 @@
-# [![Build cOS master](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build-master.yaml/badge.svg)](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build-master.yaml) containerOS toolkit
+# [![Packages](https://cos-toolkit.herokuapp.com/badge/cos-toolkit-green "List of packages")](https://cos-toolkit.herokuapp.com/cos-toolkit-green) [![Build cOS master](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build-master.yaml/badge.svg)](https://github.com/rancher-sandbox/cOS-toolkit/actions/workflows/build-master.yaml) containerOS toolkit
 
 containerOS (**cOS**) is a toolkit to build, ship and maintain cloud-init driven Linux derivatives based on container images with a common featureset - allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
 
