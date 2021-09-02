@@ -12,11 +12,11 @@ packages:
       autobump.strategy: "github_tag"
   - name: "rancher"
     category: "selinux"
-    version: 0.2.rc1-1+16
+    version: "0.1.1"
     labels:
       github.repo: "rancher-selinux"
       github.owner: "rancher"
-      github.tag: "0.2-rc1.testing.1"
+      github.tag: "v0.1.production.1"
       package.checksum: "1b0537f5c372b3b965c91bd7dffdec3c377e6de27cb15c26659c65114a89a64f"
       autobump.version_contains: "production"
       autobump.string_replace: '{ "\\.production": "" }'
