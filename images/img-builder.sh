@@ -3,7 +3,7 @@
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
 FINAL_REPO="${FINAL_REPO:-quay.io/costoolkit/releases-green}"
 
-rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml
+rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml oem
 
 set -e
 
@@ -25,8 +25,8 @@ repositories:
 EOF
 
 # Create root-tree for COS_RECOVERY
-luet install --system-target root -y system/grub-config
-luet install --system-target root/grub2 -y system/grub-artifacts
+luet install --system-target root -y system/grub2-config
+luet install --system-target root/grub2 -y system/grub2-artifacts
 luet install --system-target root/cOS -y recovery/cos-img
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
@@ -41,20 +41,16 @@ mmd -i efi.part ::EFI
 mmd -i efi.part ::EFI/BOOT
 mcopy -i efi.part root/grub2/x86_64-efi/grub.efi ::EFI/BOOT/bootx64.efi
 
-# Creat the EFI grub.cfg pointing the configs in COS_RECOVERY volume from the grub-config package
-cat << 'EOF' > grub_efi.cfg
-search.fs_label COS_RECOVERY root
-set root=($root)
-set prefix=($root)/grub2
-configfile ($root)/etc/cos/grub.cfg
-EOF
-
 # Copy grub.cfg in EFI partition
-mcopy -i efi.part grub_efi.cfg ::EFI/BOOT/grub.cfg
+mcopy -i efi.part root/etc/cos/grub_efi.cfg ::EFI/BOOT/grub.cfg
+
+# Create the grubenv forcing first boot to be on recovery system
+mkdir -p oem
+cp root/etc/cos/grubenv_firstboot oem/grubenv
 
 # Create a 64MB filesystem for COS_OEM volume
 truncate -s $((64*1024*1024)) oem.part
-mkfs.ext2 -L COS_OEM oem.part
+mkfs.ext2 -L COS_OEM -d oem oem.part
 
 # Create disk image, add 3MB of initial free space to disk, 1MB is for proper alignement, 2MB are for the hybrid legacy boot.
 truncate -s $((3*1024*1024)) disk.raw
@@ -73,7 +69,7 @@ sgdisk -n 2:0:+20M -c 2:UEFI -t 2:EF00 disk.raw
 sgdisk -n 3:0:+64M -c 3:oem -t 3:8300 disk.raw
 sgdisk -n 4:0:+2048M -c 4:root -t 4:8300 disk.raw
 
-rm -rf ./*.part grub_efi.cfg root .luet.yaml
+rm -rf ./*.part grub_efi.cfg root .luet.yaml oem
 
 # TODO hybrid boot. I did not fully figure out how to avoid grub2-install. Rough steps are:
 #   1-> add MBR pointing to sector 2048 (first block of legacy partition) (this is the tricky part grub2-install patches the MBR binary)

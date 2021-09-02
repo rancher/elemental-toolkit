@@ -23,9 +23,6 @@ var _ = Describe("cOS Recovery deploy tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Deployment done, now you might want to reboot"))
 
-			err = s.ChangeBoot(sut.Active)
-			Expect(err).ToNot(HaveOccurred())
-
 			s.Reboot(sut.TimeoutRawDiskTest)
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 		})
