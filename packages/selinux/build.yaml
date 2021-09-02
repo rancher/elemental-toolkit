@@ -15,9 +15,11 @@ prelude:
 steps:
 - |
     PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+    # the last value in the github tag(semver minor) is translated to the rpm release format for some reason so we need to transform it here (¬_¬)
+    PACKAGE_VERSION="${PACKAGE_VERSION%.*}-${PACKAGE_VERSION##*.}" && \
     mkdir /tmp/rpm && \
     cd /tmp/rpm && \
-    curl -L -O https://github.com/${GITHUB_ORG}/${GITHUB_REPO}/releases/download/v{{ ( index .Values.labels "github.tag" ) }}/{{.Values.name}}-{{.Values.category}}-${PACKAGE_VERSION}.el7.noarch.rpm && \
+    curl -L -O https://github.com/${GITHUB_ORG}/${GITHUB_REPO}/releases/download/{{ ( index .Values.labels "github.tag" ) }}/{{.Values.name}}-{{.Values.category}}-${PACKAGE_VERSION}.el7.noarch.rpm && \
     echo "{{ ( index .Values.labels "package.checksum" ) }}  {{.Values.name}}-{{.Values.category}}-${PACKAGE_VERSION}.el7.noarch.rpm" | sha256sum -c && \
     rpm -ivh --nodeps *.rpm && \
     cd / && \
