@@ -1,23 +1,27 @@
 packages:
   - name: "k3s"
     category: "selinux"
-    version: 0.3-0+2
+    version: "0.3.0"
     labels:
       github.repo: "k3s-selinux"
       github.owner: "k3s-io"
-      github.tag: "0.3.testing.0"
-      package.checksum: "6c6a23a146dfecf8fd834689e11da3e3841be3ce624fd5044811c9f95c5fcd17"
+      github.tag: "v0.3.stable.0"
+      package.checksum: "a767f89d96c1ed290e7d2e8d1ebf351c8e86ab4d2ff6098bf30532ff10e17ef9"
       autobump.version_contains: "stable"
       autobump.string_replace: '{ "\\.stable": "" }'
       autobump.strategy: "github_tag"
+      autobump.checksum_hook: |
+        curl -s -L "https://github.com/{{.Values.labels.github.owner}}/{{.Values.labels.github.repo}}/releases/download/{{.Values.labels.github.tag}}/sha256sum-centos7-noarch.txt" | grep "noarch" | cut -d" " -f 1
   - name: "rancher"
     category: "selinux"
-    version: 0.2.rc1-1+16
+    version: "0.1.1"
     labels:
       github.repo: "rancher-selinux"
       github.owner: "rancher"
-      github.tag: "0.2-rc1.testing.1"
-      package.checksum: "1b0537f5c372b3b965c91bd7dffdec3c377e6de27cb15c26659c65114a89a64f"
+      github.tag: "v0.1.production.1"
+      package.checksum: "e7ec513877b9803af75da33c8012f4e0d2694778419bac8438c0d3a713cd1745"
       autobump.version_contains: "production"
       autobump.string_replace: '{ "\\.production": "" }'
       autobump.strategy: "github_tag"
+      autobump.checksum_hook: |
+        curl -s -L "https://github.com/{{.Values.labels.github.owner}}/{{.Values.labels.github.repo}}/releases/download/{{.Values.labels.github.tag}}/sha256sum-centos7-noarch.txt" | grep "noarch" | cut -d" " -f 1
