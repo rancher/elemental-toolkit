@@ -187,10 +187,10 @@ func (s *SUT) command(cmd string, timeout bool) (string, error) {
 }
 
 // Reboot reboots the system under test
-func (s *SUT) Reboot() {
+func (s *SUT) Reboot(t ...int) {
 	s.command("reboot", true)
 	time.Sleep(10 * time.Second)
-	s.EventuallyConnects(180)
+	s.EventuallyConnects(t...)
 }
 
 func (s *SUT) clientConfig() *ssh.ClientConfig {
