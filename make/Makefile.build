@@ -39,7 +39,12 @@ _VALIDATE_OPTIONS?=-s
 #
 # extract packages from yaml spec
 #
-PACKAGES?=$(shell yq e -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
+YQ_VERSION=$(shell yq -V | cut -d " " -f 3 | cut -d "." -f 1)
+ifeq ("$(YQ_VERSION)", "3")
+	PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
+else
+	PACKAGES?=$(shell yq e -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
+endif
 
 ifeq ("$(PACKAGES)","")
 	BUILD_ARGS+=--all
