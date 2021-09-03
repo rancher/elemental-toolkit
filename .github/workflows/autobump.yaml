@@ -13,6 +13,7 @@ jobs:
       GIT_COMMITTER_EMAIL: cOScibot@gmail.com
       WORK_BRANCH: bumps
       AUTO_GIT: true
+      GIT_SIGNOFF: true
       LUET_NOLOCK: true
       LUET_YES: true
       TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
