@@ -1,7 +1,7 @@
 # GHRUNNER
 
 This is a small Dockerfile providing a github runner.
-The images can be found `ghcr.io/dragonchaser/ghrunner:latest`. 
+The images can be found `quay.io/costoolkit/ghrunner:latest`. 
 Supported arches are:
   - aarch64
   - amd64
