@@ -1,0 +1,42 @@
+name: Build the github runner image and push to quay.io
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_REGISTRY: quay.io
+      DOCKER_IMAGE: costoolkit/ghrunner
+      DOCKER_TARGET_PLATFORM: "linux/arm64,linux/amd64"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: crazy-max/ghaction-docker-buildx@v1
+      with:
+        version: latest
+
+    - name: Prepare
+      if: success()
+      id: prepare
+      run: |
+        echo ::set-output name=docker_platform::${DOCKER_TARGET_PLATFORM}        
+        echo ::set-output name=docker_image::${DOCKER_REGISTRY}/${DOCKER_IMAGE}        
+        echo ::set-output name=version::latest
+
+    - name: Login to Quay Registry
+      run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      
+    - name: Run Buildx
+      if: success()
+      run: |
+        cd .github/docker/ghrunner
+        docker buildx build --platform ${{ steps.prepare.outputs.docker_platform }} --tag ${{ steps.prepare.outputs.docker_image }}:${{steps.prepare.outputs.version }} --file ./Dockerfile --output type=image,push=true .
