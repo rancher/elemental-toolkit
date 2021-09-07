@@ -1,7 +1,7 @@
 source "amazon-ebs" "cos" {
   access_key      = var.aws_access_key
-  ami_name        = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
-  ami_description = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
+  ami_name        = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
+  ami_description = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
   ami_groups      = var.aws_ami_groups
   instance_type   = var.aws_instance_type
   region          = var.aws_region
@@ -40,7 +40,7 @@ source "azure-arm" "cos" {
   subscription_id = var.azure_subscription_id
   custom_managed_image_resource_group_name = var.azure_custom_managed_image_resource_group_name
   custom_managed_image_name = var.azure_custom_managed_image_name
-  managed_image_name = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}"
+  managed_image_name = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}-${var.arch}"
   managed_image_resource_group_name = var.azure_managed_image_resource_group_name
   user_data_file = var.azure_user_data_file
   location = var.azure_location
@@ -65,8 +65,8 @@ source "googlecompute" "cos" {
   zone                      = var.gcp_location
   disk_size                 = var.gcp_disk_size
   enable_secure_boot        = false
-  image_name                = "${lower(var.name)}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
-  image_description         = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}"
+  image_name                = "${lower(var.name)}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
+  image_description         = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
   image_labels = {
     name          = "${lower(var.name)}"
     version       = var.cos_version

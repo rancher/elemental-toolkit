@@ -1,49 +1,67 @@
-name: Build cOS nightly
+name: Build cOS Pull requests - arm64
 on: 
- schedule:
-   - cron: 0 20 * * *
+ pull_request:
+   types:
+     - labeled
+     - synchronize
 concurrency:
-  group: ci-nightly-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-Pull requests - arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
-  docker-build-green:
+  check-labels:
     runs-on: ubuntu-latest
+    steps:
+      - uses: mheap/github-action-required-labels@v1
+        with:
+          mode: exactly
+          count: 1
+          labels: "arm64"
+  docker-build-green:
+    runs-on: [self-hosted, arm64]
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    needs:
+      - check-labels
     env:
       FLAVOR: green
     steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
           source .envrc
           cos-build $FLAVOR
   build-green:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arm64]
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    needs:
+      - check-labels
     env:
-      LUET_ARCH: amd64
+      LUET_ARCH: arm64
       FLAVOR: green
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: false
       PUSH_CACHE: false
       REPO_CACHE: quay.io/costoolkit/build-green-cache
     steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Run make deps
         run: |
           sudo -E make deps
@@ -67,11 +85,12 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-arm64
           path: build
           if-no-files-found: error
   iso-squashfs-green:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arm64]
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
     needs: build-green
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
@@ -79,14 +98,10 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-arm64
           path: build
       - name: Install deps
         run: |
@@ -105,14 +120,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-arm64.iso.zip
           path: |
             *.iso
             *.sha256
@@ -125,7 +140,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-arm64.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -135,16 +150,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.qcow
+          name: cOS-squashfs-green-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64-QEMU.box
+          name: cOS-squashfs-green-arm64-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -156,7 +171,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-arm64.iso.zip
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -169,16 +184,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.ova
+          name: cOS-squashfs-green-arm64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-amd64.box
+          name: cOS-squashfs-green-vbox-arm64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -192,15 +207,22 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-amd64.box
+          name: cOS-squashfs-green-vbox-arm64.box
           path: packer
       - name: Run tests 🔧
         run: |
@@ -225,7 +247,8 @@ jobs:
           path: tests/serial_port1
           if-no-files-found: warn
   iso-nonsquashfs-green:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, arm64]
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
     needs: build-green
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
@@ -233,14 +256,10 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-arm64
           path: build
       - name: Install deps
         run: |
@@ -263,14 +282,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-arm64.iso.zip
           path: |
             *.iso
             *.sha256
@@ -283,7 +302,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-arm64.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -293,16 +312,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.qcow
+          name: cOS-nonsquashfs-green-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64-QEMU.box
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -314,7 +333,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-arm64.iso.zip
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -327,16 +346,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.ova
+          name: cOS-nonsquashfs-green-arm64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-amd64.box
+          name: cOS-nonsquashfs-green-vbox-arm64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -350,15 +369,22 @@ jobs:
       matrix:
         test: ["test-features", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
     steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-amd64.box
+          name: cOS-nonsquashfs-green-vbox-arm64.box
           path: packer
       - name: Run tests 🔧
         run: |
@@ -395,7 +421,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-arm64
           path: build
       - name: Install toolchain
         run: |
@@ -421,35 +447,42 @@ jobs:
           sudo -E make gce_disk
       - name: Rename images
         run: |
-          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64.raw
-          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64.tar.gz
+          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64.raw
+          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64
           path: |
-            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64.raw
+            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64.raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64
           path: |
-            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64.vhd
+            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64.vhd
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64
           path: |
-            cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64.tar.gz
+            cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
           if-no-files-found: error
   tests-raw-disk-deploy-green:
     runs-on: macos-10.15
     needs: raw-images-green
     steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -461,7 +494,7 @@ jobs:
       - name: Download RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
@@ -482,131 +515,3 @@ jobs:
           name: cOS-raw_disk_test_deploy-green.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
-  docker-build-blue:
-    runs-on: ubuntu-latest
-    env:
-      FLAVOR: blue
-    steps:
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Build  🔧
-        shell: 'script -q -e -c "bash {0}"'
-        run: |
-          source .envrc
-          cos-build $FLAVOR
-  build-blue:
-    runs-on: ubuntu-latest
-    env:
-      LUET_ARCH: amd64
-      FLAVOR: blue
-      FINAL_REPO: quay.io/costoolkit/releases-blue
-      DOWNLOAD_METADATA: false
-      PUSH_CACHE: false
-      REPO_CACHE: quay.io/costoolkit/build-blue-cache
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Run make deps
-        run: |
-          sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
-      - name: Run make validate
-        run: |
-          sudo -E make validate
-      - name: Build packages 🔧
-        run: |
-          export PATH=$PATH:/usr/local/go/bin
-          mkdir build || true
-          pushd ./.github
-          go build -o build
-          popd
-          ./.github/build
-          ls -liah $PWD/build
-          sudo chmod -R 777 $PWD/build
-      - name: Run make create-repo
-        run: |
-          sudo -E make create-repo
-      - name: Upload results
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-blue-amd64
-          path: build
-          if-no-files-found: error
-  docker-build-orange:
-    runs-on: ubuntu-latest
-    env:
-      FLAVOR: orange
-    steps:
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Build  🔧
-        shell: 'script -q -e -c "bash {0}"'
-        run: |
-          source .envrc
-          cos-build $FLAVOR
-  build-orange:
-    runs-on: ubuntu-latest
-    env:
-      LUET_ARCH: amd64
-      FLAVOR: orange
-      FINAL_REPO: quay.io/costoolkit/releases-orange
-      DOWNLOAD_METADATA: false
-      PUSH_CACHE: false
-      REPO_CACHE: quay.io/costoolkit/build-orange-cache
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '^1.16'
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Run make deps
-        run: |
-          sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
-      - name: Run make validate
-        run: |
-          sudo -E make validate
-      - name: Build packages 🔧
-        run: |
-          export PATH=$PATH:/usr/local/go/bin
-          mkdir build || true
-          pushd ./.github
-          go build -o build
-          popd
-          ./.github/build
-          ls -liah $PWD/build
-          sudo chmod -R 777 $PWD/build
-      - name: Run make create-repo
-        run: |
-          sudo -E make create-repo
-      - name: Upload results
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-orange-amd64
-          path: build
-          if-no-files-found: error

@@ -1,7 +1,8 @@
 ---
 
-local_runner: false
-pipeline: "Pull requests"
+local_runner: true
+runs_on: ["self-hosted", "arm64"]
+pipeline: "Pull requests - arm64"
 push_cache: false
 publishing_pipeline: false
 publish_cloud: false
@@ -10,17 +11,14 @@ repository: "releases" # releases for prod
 cache_repository: "build"
 organization: "quay.io/costoolkit"
 skip_tests: false
-flavors: ["green", "blue", "orange"]
+flavors: ["green"]
 skip_tests_flavor: ["blue","orange"]
 skip_images_flavor: ["blue","orange"]
 release_flavor: ["green"]
-arch: "amd64"
-on: 
+arch: "arm64"
+# list of labels to check in order to run jobs in this workflow
+labels: ["arm64"]
+
+on:
   pull_request:
-    paths:
-      - 'conf/**'
-      - 'packages/**'
-      - 'make/**'
-      - '.github/**'
-      - 'Makefile'
-      - 'tests/**'
+   types: ["labeled", "synchronize"]  # synchronize means when the PR is updated
