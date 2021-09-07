@@ -3,8 +3,8 @@ name: Build the github runner image and push to quay.io
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    paths:
+      - .github/docker/ghrunner/**
 
 jobs:
 
