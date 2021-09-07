@@ -1,6 +1,6 @@
 name: "k9s"
 category: "utils"
-version: 0.24.15+6
+version: 0.24.15+7
 platform: Linux
 labels:
   github.repo: "k9s"
