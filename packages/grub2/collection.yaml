@@ -1,10 +1,10 @@
 packages:
   - name: "grub2-artifacts"
     category: "system"
-    version: 0.0.2+1
+    version: 0.0.2+2
   - name: "grub2-config"
     category: "system"
-    version: 0.0.11+2
+    version: 0.0.11+3
     provides:
-    - name: "grub-config"
-      category: "system"
+      - name: "grub-config"
+        category: "system"
