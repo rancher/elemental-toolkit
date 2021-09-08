@@ -123,7 +123,7 @@
       {{{- end }}}
       {{{- if ne $config.arch "x86_64"}}}
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
-      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/grub2-efi-image"
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/grub2-efi-image live/syslinux live/systemd-boot"
       {{{- end }}}
     steps:
       {{{ tmpl.Exec "prepare_build" }}}
