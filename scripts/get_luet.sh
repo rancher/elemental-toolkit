@@ -14,6 +14,7 @@ LUET_DATABASE_ENGINE=${LUET_DATABASE_ENGINE:-boltdb}
 LUET_CONFIG_PROTECT=${LUET_CONFIG_PROTECT:-1}
 LUET_PACKAGE="${LUET_PACKAGE:-toolchain/luet}"
 LUET_ARCH="${LUET_ARCH:-amd64}"
+LUET_INSTALL_FROM_COS_REPO="${LUET_INSTALL_FROM_COS_REPO:-true}"
 
 curl -L https://github.com/mudler/luet/releases/download/${LUET_VERSION}/luet-${LUET_VERSION}-linux-${LUET_ARCH} --output luet
 chmod +x luet
@@ -21,6 +22,12 @@ chmod +x luet
 mkdir -p /etc/luet/repos.conf.d || true
 mkdir -p $LUET_DATABASE_PATH || true
 mkdir -p /var/tmp/luet || true
+
+if [[ "$LUET_ARCH" != "amd64" ]]; then
+  REPO_URL="quay.io/costoolkit/releases-green-$LUET_ARCH"
+else
+  REPO_URL="quay.io/costoolkit/releases-green"
+fi
 
 cat > /etc/luet/luet.yaml <<EOF
 general:
@@ -43,9 +50,12 @@ repositories:
   priority: 1
   verify: false
   urls:
-  - "quay.io/costoolkit/releases-green"
+  - ${REPO_URL}
 EOF
 
-./luet install -y $LUET_PACKAGE
-
-rm -rf luet
+if [[ "$LUET_INSTALL_FROM_COS_REPO" == "true" ]]; then
+  ./luet install -y $LUET_PACKAGE
+  rm -rf luet
+else
+  move ./luet /usr/bin/luet
+fi
