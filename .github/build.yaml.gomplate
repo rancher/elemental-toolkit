@@ -409,6 +409,8 @@
       - uses: actions/checkout@v2
       {{{ tmpl.Exec "make" "deps" }}}
       {{{ tmpl.Exec "cos_version" }}}
+      {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
+      {{{- else }}}
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
@@ -444,10 +446,11 @@
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: release
+      {{{- end}}}
       - name: Download Image links
         uses: actions/download-artifact@v2
         with:
-          name: images-{{{ $flavor }}}.txt
+          name: images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
           path: release
       {{{- if $config.publish_cloud }}}
       - uses: actions/download-artifact@v2
@@ -606,12 +609,12 @@
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}.txt
+            echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-{{{ $flavor }}}.txt
+          name: images-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}.txt
           path: |
-            images-{{{ $flavor }}}.txt
+            images-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}.txt
 {{{ end }}}
 
 {{{define "publish_vanilla"}}}

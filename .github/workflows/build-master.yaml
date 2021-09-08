@@ -412,7 +412,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green.txt
+            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green-amd64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-green.txt
@@ -653,7 +653,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue.txt
+            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-amd64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-blue.txt
@@ -795,7 +795,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange.txt
+            echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange-amd64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-orange.txt
