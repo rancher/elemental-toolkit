@@ -22,6 +22,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
@@ -121,6 +125,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
@@ -155,6 +163,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
@@ -254,6 +266,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
@@ -288,6 +304,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
@@ -387,6 +407,10 @@ jobs:
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz

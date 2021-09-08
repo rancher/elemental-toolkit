@@ -27,6 +27,10 @@
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
   {{{- end }}}
 
   {{{- if $config.local_runner }}}
