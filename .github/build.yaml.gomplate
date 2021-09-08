@@ -112,6 +112,9 @@
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
       REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
+      {{{- if has $config "luet_install_from_cos_repo" }}}
+      LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
+      {{{- end }}}
     steps:
       {{{ tmpl.Exec "prepare_build" }}}
       {{{ tmpl.Exec "prepare_worker" }}}

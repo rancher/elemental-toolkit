@@ -20,6 +20,7 @@ skip_tests_flavor: ["green","blue","orange"]
 skip_images_flavor: ["green", "blue","orange"]
 release_flavor: []
 arch: "arm64"
+luet_install_from_cos_repo: false
 
 on: 
   push: 

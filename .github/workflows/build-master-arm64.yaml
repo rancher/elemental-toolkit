@@ -17,6 +17,7 @@ jobs:
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
       REPO_CACHE: quay.io/costoolkit/build-green-cache-arm64
+      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - run: |
           sudo rm -rf build || true
@@ -149,6 +150,7 @@ jobs:
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
       REPO_CACHE: quay.io/costoolkit/build-blue-cache-arm64
+      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - run: |
           sudo rm -rf build || true
@@ -281,6 +283,7 @@ jobs:
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
       REPO_CACHE: quay.io/costoolkit/build-orange-cache-arm64
+      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - run: |
           sudo rm -rf build || true
