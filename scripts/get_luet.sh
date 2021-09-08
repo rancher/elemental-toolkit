@@ -57,5 +57,5 @@ if [[ "$LUET_INSTALL_FROM_COS_REPO" == "true" ]]; then
   ./luet install -y $LUET_PACKAGE
   rm -rf luet
 else
-  move ./luet /usr/bin/luet
+  mv ./luet /usr/bin/luet
 fi
