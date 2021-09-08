@@ -389,10 +389,13 @@
     {{{- if not $config.skip_build }}}
     - build-{{{ $flavor }}}
     {{{- end }}}
+    {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
+    {{{- else }}}
     - raw-images-{{{ $flavor }}}
     - vbox-nonsquashfs-{{{ $flavor }}}
     - qemu-nonsquashfs-{{{ $flavor }}}
     - iso-nonsquashfs-{{{ $flavor }}}
+    {{{- end }}}
     - image-link-{{{ $flavor }}}
     {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
     {{{- else }}}
