@@ -6,6 +6,7 @@ push_cache: false
 publishing_pipeline: false
 publish_cloud: false
 skip_build: false
+skip_docker_build: false
 repository: "releases" # releases for prod
 cache_repository: "build"
 organization: "quay.io/costoolkit"

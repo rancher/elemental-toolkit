@@ -717,8 +717,11 @@ jobs:
 {{{- range $config.flavors }}}
   {{{$flavor:=.}}}
 
-  {{{- if not $config.skip_build }}}
+  {{{- if not $config.skip_docker_build }}}
   {{{tmpl.Exec "docker_build_packages" $flavor}}}
+  {{{- end }}}
+
+  {{{- if not $config.skip_build }}}
   {{{tmpl.Exec "build_packages" $flavor}}}
   {{{- end }}}
 

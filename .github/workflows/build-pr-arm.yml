@@ -16,25 +16,6 @@ jobs:
           mode: exactly
           count: 1
           labels: "arm64"
-  docker-build-green:
-    runs-on: [self-hosted, arm64]
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
-    needs:
-      - check-labels
-    env:
-      FLAVOR: green
-    steps:
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Build  🔧
-        shell: 'script -q -e -c "bash {0}"'
-        run: |
-          source .envrc
-          cos-build $FLAVOR
   build-green:
     runs-on: [self-hosted, arm64]
     if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')

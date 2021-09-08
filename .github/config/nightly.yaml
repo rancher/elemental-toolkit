@@ -4,6 +4,7 @@
 local_runner: false
 push_cache: false
 skip_build: false
+skip_docker_build: false
 
 pipeline: "nightly"
 publishing_pipeline: false
