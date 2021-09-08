@@ -1,6 +1,6 @@
 #!/bin/bash
 ARCH=${ARCH:-x64}
-VERSION=${VERSION:-2.280.3}
+VERSION=${VERSION:-2.281.1}
 CHECKSUM=${CHECKSUM:-69dc323312e3c5547ba1e1cc46c127e2ca8ee7d7037e17ee6965ef6dac3c142b}
 ORG=${ORG:-dragonchaser}
 REPO=${REPO:-dockerhub-autobuild}
