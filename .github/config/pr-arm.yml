@@ -13,8 +13,8 @@ cache_repository: "build"
 organization: "quay.io/costoolkit"
 skip_tests: false
 flavors: ["green"]
-skip_tests_flavor: ["blue","orange"]
-skip_images_flavor: ["blue","orange"]
+skip_tests_flavor: ["green","blue","orange"]
+skip_images_flavor: ["green","blue","orange"]
 release_flavor: ["green"]
 arch: "arm64"
 # list of labels to check in order to run jobs in this workflow
