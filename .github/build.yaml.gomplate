@@ -108,10 +108,10 @@
     env:
       LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
-      REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache
+      REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
     steps:
       {{{ tmpl.Exec "prepare_build" }}}
       {{{ tmpl.Exec "prepare_worker" }}}
@@ -165,7 +165,7 @@
     needs: build-{{{ $flavor }}}
     {{{- end }}}
     env:
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
       - name: Download result for build
@@ -347,7 +347,7 @@
     {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:

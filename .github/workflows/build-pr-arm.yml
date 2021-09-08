@@ -24,10 +24,10 @@ jobs:
     env:
       LUET_ARCH: arm64
       FLAVOR: green
-      FINAL_REPO: quay.io/costoolkit/releases-green
+      FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: false
-      REPO_CACHE: quay.io/costoolkit/build-green-cache
+      REPO_CACHE: quay.io/costoolkit/build-green-cache-arm64
     steps:
       - run: |
           sudo rm -rf build || true
