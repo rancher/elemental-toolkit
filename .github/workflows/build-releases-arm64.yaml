@@ -13,6 +13,7 @@ jobs:
     env:
       LUET_ARCH: arm64
       FLAVOR: green
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -104,6 +105,7 @@ jobs:
     - build-green
     env:
       FLAVOR: green
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true

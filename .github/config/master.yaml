@@ -18,7 +18,7 @@ flavors: ["green", "blue", "orange"]
 skip_tests_flavor: ["blue","orange"]
 skip_images_flavor: ["blue","orange"]
 release_flavor: []
-arch: "amd64"
+arch: "x86_64"
 
 on: 
   push: 

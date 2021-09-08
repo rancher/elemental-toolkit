@@ -89,6 +89,7 @@
     {{{ tmpl.Exec "needs" }}}
     env:
       FLAVOR: {{{ $flavor }}}
+      ARCH: {{{ $config.arch }}}
     steps:
   {{{- if $config.local_runner }}}
       - run: |
@@ -112,10 +113,11 @@
     env:
       LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
+      ARCH: {{{ $config.arch }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
-      REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
+      REPO_CACHE: {{{$config.organization}}}/{{{$config.cache_repository}}}-{{{ $flavor }}}-cache{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       {{{- if has $config "luet_install_from_cos_repo" }}}
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
       {{{- end }}}
@@ -172,7 +174,7 @@
     needs: build-{{{ $flavor }}}
     {{{- end }}}
     env:
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
       - name: Download result for build
@@ -354,7 +356,8 @@
     {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
-      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}
+      ARCH: {{{ $config.arch }}}
+      FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
@@ -616,12 +619,12 @@
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
+            echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}.txt
+          name: images-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}.txt
           path: |
-            images-{{{ $flavor }}}{{{- if ne $config.arch "amd64"}}}-{{{$config.arch}}}{{{end}}}.txt
+            images-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}.txt
 {{{ end }}}
 
 {{{define "publish_vanilla"}}}

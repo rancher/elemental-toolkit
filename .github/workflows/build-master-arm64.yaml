@@ -13,6 +13,7 @@ jobs:
     env:
       LUET_ARCH: arm64
       FLAVOR: green
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -104,6 +105,7 @@ jobs:
     - build-green
     env:
       FLAVOR: green
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
@@ -154,6 +156,7 @@ jobs:
     env:
       LUET_ARCH: arm64
       FLAVOR: blue
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-blue-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -245,6 +248,7 @@ jobs:
     - build-blue
     env:
       FLAVOR: blue
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-blue-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
@@ -295,6 +299,7 @@ jobs:
     env:
       LUET_ARCH: arm64
       FLAVOR: orange
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-orange-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -386,6 +391,7 @@ jobs:
     - build-orange
     env:
       FLAVOR: orange
+      ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-orange-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true

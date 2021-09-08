@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLAVOR: green
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -27,8 +28,9 @@ jobs:
   build-green:
     runs-on: ubuntu-latest
     env:
-      LUET_ARCH: amd64
+      LUET_ARCH: x86_64
       FLAVOR: green
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -83,7 +85,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-x86_64
           path: build
           if-no-files-found: error
   iso-squashfs-green:
@@ -102,7 +104,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-x86_64
           path: build
       - name: Install deps
         run: |
@@ -121,14 +123,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-x86_64" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-x86_64" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-x86_64.iso.zip
           path: |
             *.iso
             *.sha256
@@ -141,7 +143,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-x86_64.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -151,16 +153,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.qcow
+          name: cOS-squashfs-green-x86_64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64-QEMU.box
+          name: cOS-squashfs-green-x86_64-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -172,7 +174,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.iso.zip
+          name: cOS-squashfs-green-x86_64.iso.zip
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -185,16 +187,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-amd64.ova
+          name: cOS-squashfs-green-x86_64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-amd64.box
+          name: cOS-squashfs-green-vbox-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -216,7 +218,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-amd64.box
+          name: cOS-squashfs-green-vbox-x86_64.box
           path: packer
       - name: Run tests 🔧
         run: |
@@ -256,7 +258,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-x86_64
           path: build
       - name: Install deps
         run: |
@@ -279,14 +281,14 @@ jobs:
         run: |
           source .github/helpers.sh
           create_remote_manifest manifest.yaml
-          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" MANIFEST=manifest.yaml.remote make local-iso
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-x86_64" MANIFEST=manifest.yaml.remote make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-amd64" make iso
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-x86_64" make iso
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
           path: |
             *.iso
             *.sha256
@@ -299,7 +301,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
       - name: Install deps
         run: |
           brew install qemu
@@ -309,16 +311,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.qcow
+          name: cOS-nonsquashfs-green-x86_64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64-QEMU.box
+          name: cOS-nonsquashfs-green-x86_64-QEMU.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -330,7 +332,7 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
       # - name: Install deps
       #   run: |
       #     brew tap hashicorp/tap
@@ -343,16 +345,16 @@ jobs:
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=amd64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.ova
+          name: cOS-nonsquashfs-green-x86_64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-amd64.box
+          name: cOS-nonsquashfs-green-vbox-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -374,7 +376,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-amd64.box
+          name: cOS-nonsquashfs-green-vbox-x86_64.box
           path: packer
       - name: Run tests 🔧
         run: |
@@ -412,7 +414,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green-amd64.txt
+            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-green.txt
@@ -423,6 +425,7 @@ jobs:
     needs: tests-squashfs-green
     env:
       FLAVOR: green
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
@@ -437,7 +440,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-x86_64
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -486,42 +489,42 @@ jobs:
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.iso.zip
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
           path: release
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-amd64.box
+          name: cOS-nonsquashfs-green-vbox-x86_64.box
           path: release
       - name: Download OVA image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.ova
+          name: cOS-nonsquashfs-green-x86_64.ova
           path: release
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-amd64.qcow
+          name: cOS-nonsquashfs-green-x86_64.qcow
           path: release
       - name: Download GCE RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-x86_64
           path: release
       - name: Download AZURE RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-x86_64
           path: release
       - name: Download RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64
           path: release
       - name: Download Image links
         uses: actions/download-artifact@v2
         with:
-          name: images-green-amd64.txt
+          name: images-green-x86_64.txt
           path: release
       - uses: actions/download-artifact@v2
         with:
@@ -547,7 +550,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-amd64
+          name: build-green-x86_64
           path: build
       - name: Install toolchain
         run: |
@@ -573,26 +576,26 @@ jobs:
           sudo -E make gce_disk
       - name: Rename images
         run: |
-          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64.raw
-          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64.tar.gz
+          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64.raw
+          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-x86_64.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-x86_64.tar.gz
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64
           path: |
-            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64.raw
+            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64.raw
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-x86_64
           path: |
-            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-amd64.vhd
+            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-x86_64.vhd
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-x86_64
           path: |
-            cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-amd64.tar.gz
+            cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-x86_64.tar.gz
           if-no-files-found: error
   tests-raw-disk-deploy-green:
     runs-on: macos-10.15
@@ -613,7 +616,7 @@ jobs:
       - name: Download RAW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
@@ -665,6 +668,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLAVOR: blue
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -681,8 +685,9 @@ jobs:
   build-blue:
     runs-on: ubuntu-latest
     env:
-      LUET_ARCH: amd64
+      LUET_ARCH: x86_64
       FLAVOR: blue
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -737,7 +742,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-blue-amd64
+          name: build-blue-x86_64
           path: build
           if-no-files-found: error
   image-link-blue:
@@ -754,7 +759,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-amd64.txt
+            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-blue.txt
@@ -766,6 +771,7 @@ jobs:
     - build-blue
     env:
       FLAVOR: blue
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
@@ -780,7 +786,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-blue-amd64
+          name: build-blue-x86_64
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -807,6 +813,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLAVOR: orange
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -823,8 +830,9 @@ jobs:
   build-orange:
     runs-on: ubuntu-latest
     env:
-      LUET_ARCH: amd64
+      LUET_ARCH: x86_64
       FLAVOR: orange
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -879,7 +887,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-orange-amd64
+          name: build-orange-x86_64
           path: build
           if-no-files-found: error
   image-link-orange:
@@ -896,7 +904,7 @@ jobs:
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange-amd64.txt
+            echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
           name: images-orange.txt
@@ -908,6 +916,7 @@ jobs:
     - build-orange
     env:
       FLAVOR: orange
+      ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
@@ -922,7 +931,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-orange-amd64
+          name: build-orange-x86_64
           path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -963,7 +972,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-amd64
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64
           path: .
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -976,7 +985,7 @@ jobs:
           export github_sha="${GITHUB_SHA}"
           export COPY_AMI_ALL_REGIONS="true"
           export COS_VERSION="${COS_VERSION/+/-}"
-          export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION-amd64"
+          export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION-x86_64"
           make aws_vanilla_ami
       - uses: actions/upload-artifact@v2
         with:

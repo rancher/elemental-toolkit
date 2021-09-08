@@ -16,7 +16,7 @@ skip_tests_flavor: ["green","blue","orange"]
 skip_images_flavor: ["green", "blue","orange"]
 release_flavor: []
 build_examples_dir: ["cos-official", "scratch", "standard"]
-arch: "amd64"
+arch: "x86_64"
 
 on:
   pull_request:
