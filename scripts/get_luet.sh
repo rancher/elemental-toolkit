@@ -23,37 +23,39 @@ mkdir -p /etc/luet/repos.conf.d || true
 mkdir -p $LUET_DATABASE_PATH || true
 mkdir -p /var/tmp/luet || true
 
-if [[ "$LUET_ARCH" != "amd64" ]]; then
-  REPO_URL="quay.io/costoolkit/releases-green-$LUET_ARCH"
-else
-  REPO_URL="quay.io/costoolkit/releases-green"
-fi
-
 cat > /etc/luet/luet.yaml <<EOF
-general:
-  debug: false
-  enable_emoji: false
-system:
-  rootfs: ${LUET_ROOTFS}
-  database_path: "${LUET_DATABASE_PATH}"
-  database_engine: "${LUET_DATABASE_ENGINE}"
-  tmpdir_base: "/var/tmp/luet"
-general:
-   debug: false
-   spinner_charset: 9
-repositories:
-- name: "cos"
-  description: "cOS official"
-  type: "docker"
-  enable: true
-  cached: true
-  priority: 1
-  verify: false
-  urls:
-  - ${REPO_URL}
+  general:
+    debug: false
+    enable_emoji: false
+  system:
+    rootfs: ${LUET_ROOTFS}
+    database_path: "${LUET_DATABASE_PATH}"
+    database_engine: "${LUET_DATABASE_ENGINE}"
+    tmpdir_base: "/var/tmp/luet"
+  general:
+     debug: false
+     spinner_charset: 9
 EOF
 
 if [[ "$LUET_INSTALL_FROM_COS_REPO" == "true" ]]; then
+  if [[ "$LUET_ARCH" != "amd64" ]]; then
+    REPO_URL="quay.io/costoolkit/releases-green-$LUET_ARCH"
+  else
+    REPO_URL="quay.io/costoolkit/releases-green"
+  fi
+
+  cat >> /etc/luet/luet.yaml <<EOF
+  repositories:
+  - name: "cos"
+    description: "cOS official"
+    type: "docker"
+    enable: true
+    cached: true
+    priority: 1
+    verify: false
+    urls:
+    - ${REPO_URL}
+EOF
   ./luet install -y $LUET_PACKAGE
   rm -rf luet
 else
