@@ -20,7 +20,7 @@ jobs:
       REPO_CACHE: quay.io/costoolkit/build-green-cache-arm64
       LUET_INSTALL_FROM_COS_REPO: false
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
-      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/grub2-efi-image live/syslinux live/systemd-boot"
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/syslinux live/systemd-boot live/boot"
     steps:
       - run: |
           sudo rm -rf build || true
@@ -165,7 +165,7 @@ jobs:
       REPO_CACHE: quay.io/costoolkit/build-blue-cache-arm64
       LUET_INSTALL_FROM_COS_REPO: false
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
-      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/grub2-efi-image live/syslinux live/systemd-boot"
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/syslinux live/systemd-boot live/boot"
     steps:
       - run: |
           sudo rm -rf build || true
@@ -310,7 +310,7 @@ jobs:
       REPO_CACHE: quay.io/costoolkit/build-orange-cache-arm64
       LUET_INSTALL_FROM_COS_REPO: false
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
-      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/grub2-efi-image live/syslinux live/systemd-boot"
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/syslinux live/systemd-boot live/boot"
     steps:
       - run: |
           sudo rm -rf build || true
