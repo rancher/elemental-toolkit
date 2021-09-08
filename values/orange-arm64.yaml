@@ -3,6 +3,7 @@ distribution: "ubuntu"
 codename: "orange"
 arch: "aarch64"
 golang_arch: "arm64"
+skip_checksum: ["golang", "golang-fips"]
 
 packages: >-
     systemd
