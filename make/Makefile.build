@@ -27,7 +27,11 @@ PUSH_CACHE?=false
 
 BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
-REPO_CACHE?=quay.io/costoolkit/build-$(FLAVOR)-cache
+ifneq ($(strip $(ARCH)), x86_64)
+	REPO_CACHE?=quay.io/costoolkit/build-$(FLAVOR)-cache-$(ARCH)
+else
+	REPO_CACHE?=quay.io/costoolkit/build-$(FLAVOR)-cache
+endif
 
 export REPO_CACHE
 ifneq ($(strip $(REPO_CACHE)),)
