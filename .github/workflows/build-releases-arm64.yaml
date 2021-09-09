@@ -59,19 +59,6 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-      - name: Generate manifests
-        run: |
-          for f in build/*tar*; do
-            [ -e "$f" ] || continue
-            sudo -E luet mtree -- generate $f -o "$f.mtree"
-          done
-      - name: Append manifests to metadata
-        run: |
-          for f in build/*mtree; do
-            [ -e "$f" ] || continue
-            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
-            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
-          done
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
