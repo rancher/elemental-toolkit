@@ -7,7 +7,7 @@ env:
 prelude:
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
-- zypper in -y git
+- zypper in -y git binutils
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y git
 {{else if eq .Values.distribution "ubuntu" }}
