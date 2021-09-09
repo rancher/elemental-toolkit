@@ -6,6 +6,7 @@ push_cache: false
 publishing_pipeline: false
 publish_cloud: false
 skip_build: true
+skip_docker_build: true
 repository: "releases" # releases for prod
 cache_repository: "build"
 organization: "quay.io/costoolkit"
@@ -15,6 +16,7 @@ skip_tests_flavor: ["green","blue","orange"]
 skip_images_flavor: ["green", "blue","orange"]
 release_flavor: []
 build_examples_dir: ["cos-official", "scratch", "standard"]
+arch: "x86_64"
 
 on:
   pull_request:

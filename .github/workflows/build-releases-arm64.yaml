@@ -1,0 +1,182 @@
+name: Build cOS releases - arm64
+on: 
+ push:
+   tags:
+     - v*
+concurrency:
+  group: ci-releases - arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
+jobs:
+  build-green:
+    runs-on: [self-hosted, arm64]
+    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    env:
+      LUET_ARCH: arm64
+      FLAVOR: green
+      ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+      DOWNLOAD_METADATA: false
+      PUSH_CACHE: true
+      REPO_CACHE: quay.io/costoolkit/build-green-cache-arm64
+      LUET_INSTALL_FROM_COS_REPO: false
+      # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/syslinux live/systemd-boot live/boot"
+    steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Run make validate
+        run: |
+          sudo -E make validate
+      - name: Build packages 🔧
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          mkdir build || true
+          pushd ./.github
+          go build -o build
+          popd
+          ./.github/build
+          ls -liah $PWD/build
+          sudo chmod -R 777 $PWD/build
+      - name: Generate manifests
+        run: |
+          for f in build/*tar*; do
+            [ -e "$f" ] || continue
+            sudo -E luet mtree -- generate $f -o "$f.mtree"
+          done
+      - name: Append manifests to metadata
+        run: |
+          for f in build/*mtree; do
+            [ -e "$f" ] || continue
+            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
+            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
+          done
+      - name: Run make create-repo
+        run: |
+          sudo -E make create-repo
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
+          if-no-files-found: error
+  image-link-green:
+    runs-on: ubuntu-latest
+    needs: publish-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Generate link for green
+        run: |
+            source .github/helpers.sh
+            PACKAGE_VERSION=$(cos_package_version)
+            export COS_VERSION="${PACKAGE_VERSION/+/-}"
+            echo "quay.io/costoolkit/releases-green-arm64:cos-system-${COS_VERSION}" > images-green-arm64.txt
+      - uses: actions/upload-artifact@v2
+        with:
+          name: images-green-arm64.txt
+          path: |
+            images-green-arm64.txt
+  publish-green:
+    runs-on: ubuntu-latest
+    needs:
+    - build-green
+    env:
+      FLAVOR: green
+      ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+      DOWNLOAD_METADATA: true
+      DOWNLOAD_ONLY: true
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - name: Grab metadata from remotes
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          pushd ./.github
+          go build -o build
+          popd
+          sudo -E ./.github/build
+          ls -liah $PWD/build
+      - name: Publish to DockerHub 🚀
+        run: |
+          sudo -E make publish-repo
+  github-release-green:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+    - build-green
+    - image-link-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download Image links
+        uses: actions/download-artifact@v2
+        with:
+          name: images-green-arm64.txt
+          path: release
+      - name: Release
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_COMPRESS: xz
+          GHR_PATH: release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

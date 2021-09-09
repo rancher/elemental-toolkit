@@ -118,6 +118,21 @@ func main() {
 		fmt.Println("-", m.String())
 	}
 
+	if os.Getenv("SKIP_PACKAGES") != "" {
+		for _,skip := range strings.Split(os.Getenv("SKIP_PACKAGES"), " ") {
+			for index, pkg := range missingPackages {
+				name := fmt.Sprintf("%s/%s", pkg.Category, pkg.Name)
+				if name == skip {
+					fmt.Println("- Skipping build of package due to SKIP_PACKAGES: ", pkg.String())
+					// how absurd is this just to pop one element from a slice ¬_¬
+					missingPackages[index] = missingPackages[len(missingPackages)-1] // Copy last element to index i.
+					missingPackages[len(missingPackages)-1] = Package{}   // Erase last element (write empty value).
+					missingPackages = missingPackages[:len(missingPackages)-1]   // Truncate slice.
+				}
+			}
+		}
+	}
+
 	if os.Getenv("DOWNLOAD_ONLY") != "true" {
 		for _, m := range missingPackages {
 			fmt.Println("Building", m.String())

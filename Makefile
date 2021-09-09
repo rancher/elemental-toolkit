@@ -65,6 +65,12 @@ export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 FLAVOR?=green
 
 #
+# Arch to build for
+#
+
+ARCH?=x86_64
+
+#
 # folder for build artefacts
 #
 DESTINATION?=$(ROOT_DIR)/build

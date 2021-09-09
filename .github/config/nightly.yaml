@@ -4,6 +4,7 @@
 local_runner: false
 push_cache: false
 skip_build: false
+skip_docker_build: false
 
 pipeline: "nightly"
 publishing_pipeline: false
@@ -16,6 +17,7 @@ flavors: ["green", "blue", "orange"]
 skip_tests_flavor: ["blue","orange"]
 skip_images_flavor: ["blue","orange"]
 release_flavor: ["green"]
+arch: "x86_64"
 
 on: 
   schedule:
