@@ -29,7 +29,7 @@ steps:
 - mkdir -p /EFI/BOOT && cp /usr/share/grub2/x86_64-efi/grub.efi /EFI/BOOT/bootx64.efi
     {{end}}
     {{if eq .Values.arch "aarch64"}}
-- mkdir -p /EFI/BOOT && cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootAA64.efi
+- mkdir -p /EFI/BOOT && cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootaa64.efi
     {{end}}
   {{end}}
 - cp config/grub_live_efi.cfg /EFI/BOOT/grub.cfg

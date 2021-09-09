@@ -26,7 +26,7 @@ steps:
 - cp /usr/share/grub2/x86_64-efi/grub.efi /EFI/BOOT/bootx64.efi
     {{end}}
     {{if eq .Values.arch "aarch64"}}
-- cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootAA64.efi
+- cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootaa64.efi
     {{end}}
   {{end}}
   {{else if eq .Values.distribution "fedora"}}
