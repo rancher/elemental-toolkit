@@ -476,6 +476,9 @@ jobs:
     - tests-nonsquashfs-green
     - tests-squashfs-green
     - publish-vanilla-ami
+    env:
+      FLAVOR: green
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
       - name: Run make deps
