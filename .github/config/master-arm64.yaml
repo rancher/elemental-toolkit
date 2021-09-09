@@ -15,7 +15,7 @@ repository: "releases"
 cache_repository: "build"
 organization: "quay.io/costoolkit"
 skip_tests: true
-flavors: ["green", "blue", "orange"]
+flavors: ["green"]
 skip_tests_flavor: ["green","blue","orange"]
 skip_images_flavor: ["green", "blue","orange"]
 release_flavor: []
