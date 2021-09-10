@@ -360,6 +360,7 @@
     {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
+      LUET_ARCH: {{{ $config.arch }}}
       ARCH: {{{ $config.arch }}}
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: true
@@ -368,18 +369,18 @@
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
       {{{- end }}}
     steps:
+      {{{ tmpl.Exec "prepare_build" }}}
       {{{ tmpl.Exec "prepare_worker" }}}
+      {{{- if or $config.publishing_pipeline $config.push_cache }}}
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      {{{- end }}}
+      {{{ tmpl.Exec "make" "deps" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
-    {{{- if or $config.publishing_pipeline $config.push_cache }}}
-      - name: Login to Quay Registry
-        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-    {{{- end }}}
-      {{{ tmpl.Exec "make" "deps" }}}
-    {{{ tmpl.Exec "prepare_build" }}}
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -424,6 +425,7 @@
     {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
+      LUET_ARCH: {{{ $config.arch }}}
       ARCH: {{{ $config.arch }}}
     {{{- if has $config "luet_install_from_cos_repo" }}}
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}

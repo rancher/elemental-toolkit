@@ -425,11 +425,16 @@ jobs:
     needs: tests-squashfs-green
     env:
       FLAVOR: green
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -437,21 +442,17 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-green-x86_64
-          path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install --no-spinner -y toolchain/yq
-      - name: Install Go
-        uses: actions/setup-go@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
         with:
-            go-version: '^1.16'
+          name: build-green-x86_64
+          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -478,6 +479,7 @@ jobs:
     - publish-vanilla-ami
     env:
       FLAVOR: green
+      LUET_ARCH: x86_64
       ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
@@ -774,11 +776,16 @@ jobs:
     - build-blue
     env:
       FLAVOR: blue
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -786,21 +793,17 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-blue-x86_64
-          path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install --no-spinner -y toolchain/yq
-      - name: Install Go
-        uses: actions/setup-go@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
         with:
-            go-version: '^1.16'
+          name: build-blue-x86_64
+          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -919,11 +922,16 @@ jobs:
     - build-orange
     env:
       FLAVOR: orange
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
     steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -931,21 +939,17 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-orange-x86_64
-          path: build
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
         run: |
           sudo -E make deps
           sudo luet install --no-spinner -y toolchain/yq
-      - name: Install Go
-        uses: actions/setup-go@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
         with:
-            go-version: '^1.16'
+          name: build-orange-x86_64
+          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin

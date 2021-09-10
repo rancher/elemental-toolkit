@@ -94,26 +94,13 @@ jobs:
     - build-green
     env:
       FLAVOR: green
+      LUET_ARCH: arm64
       ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
       LUET_INSTALL_FROM_COS_REPO: false
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-green-arm64
-          path: build
-      - name: Login to Quay Registry
-        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-      - name: Run make deps
-        run: |
-          sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
@@ -129,6 +116,20 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -148,6 +149,7 @@ jobs:
     - image-link-green
     env:
       FLAVOR: green
+      LUET_ARCH: arm64
       ARCH: arm64
       LUET_INSTALL_FROM_COS_REPO: false
     steps:
