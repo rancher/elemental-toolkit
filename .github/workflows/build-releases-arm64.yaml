@@ -18,7 +18,6 @@ jobs:
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
       REPO_CACHE: quay.io/costoolkit/build-green-cache-arm64
-      LUET_INSTALL_FROM_COS_REPO: false
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
       SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/grub2 live/syslinux live/systemd-boot live/boot"
     steps:
@@ -59,6 +58,19 @@ jobs:
           ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
+      - name: Generate manifests
+        run: |
+          for f in build/*tar*; do
+            [ -e "$f" ] || continue
+            sudo -E luet mtree -- generate $f -o "$f.mtree"
+          done
+      - name: Append manifests to metadata
+        run: |
+          for f in build/*mtree; do
+            [ -e "$f" ] || continue
+            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
+            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
+          done
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
@@ -98,7 +110,6 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
-      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - run: |
           sudo rm -rf build || true
@@ -149,7 +160,6 @@ jobs:
     env:
       FLAVOR: green
       ARCH: arm64
-      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - uses: actions/checkout@v2
       - name: Run make deps

@@ -45,7 +45,6 @@ arches:
     skip_images_flavor: [ "green", "blue","orange" ]
     release_flavor: [ "green" ]
     arch: "arm64"
-    luet_install_from_cos_repo: false
 
     on:
       push:
