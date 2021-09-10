@@ -94,7 +94,6 @@ jobs:
     - build-green
     env:
       FLAVOR: green
-      LUET_ARCH: arm64
       ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
