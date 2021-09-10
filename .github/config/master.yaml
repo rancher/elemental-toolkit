@@ -1,25 +1,51 @@
 ---
 
+arches:
+  x86_64:
+    local_runner: false
+    push_cache: true
+    skip_build: false
+    skip_docker_build: false
 
-local_runner: false
-push_cache: true
-skip_build: false
-skip_docker_build: false
+    pipeline: "master"
+    publishing_pipeline: true
+    publish_cloud: false
 
-pipeline: "master"
-publishing_pipeline: true
-publish_cloud: false
+    repository: "releases"
+    cache_repository: "build"
+    organization: "quay.io/costoolkit"
+    skip_tests: false
+    flavors: ["green", "blue", "orange"]
+    skip_tests_flavor: ["blue","orange"]
+    skip_images_flavor: ["blue","orange"]
+    release_flavor: []
+    arch: "x86_64"
 
-repository: "releases"
-cache_repository: "build"
-organization: "quay.io/costoolkit"
-skip_tests: false
-flavors: ["green", "blue", "orange"]
-skip_tests_flavor: ["blue","orange"]
-skip_images_flavor: ["blue","orange"]
-release_flavor: []
-arch: "x86_64"
+    on:
+      push:
+        branches: ["master"]
+  arm64:
+    local_runner: true
+    runs_on: [ "self-hosted", "arm64" ]
+    push_cache: true
+    skip_build: false
+    skip_docker_build: true
 
-on: 
-  push: 
-    branches: ["master"]
+    pipeline: "master - arm64"
+    publishing_pipeline: true
+    publish_cloud: false
+
+    repository: "releases"
+    cache_repository: "build"
+    organization: "quay.io/costoolkit"
+    skip_tests: true
+    flavors: [ "green" ]
+    skip_tests_flavor: [ "green","blue","orange" ]
+    skip_images_flavor: [ "green", "blue","orange" ]
+    release_flavor: [ ]
+    arch: "arm64"
+    luet_install_from_cos_repo: false
+
+    on:
+      push:
+        branches: [ "master" ]
