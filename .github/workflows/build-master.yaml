@@ -425,6 +425,7 @@ jobs:
     needs: tests-squashfs-green
     env:
       FLAVOR: green
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: true
@@ -670,6 +671,7 @@ jobs:
     - build-blue
     env:
       FLAVOR: blue
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
@@ -815,6 +817,7 @@ jobs:
     - build-orange
     env:
       FLAVOR: orange
+      LUET_ARCH: x86_64
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
