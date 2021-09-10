@@ -47,7 +47,6 @@ arches:
     arch: "arm64"
     # list of labels to check in order to run jobs in this workflow
     labels: [ "arm64" ]
-    luet_install_from_cos_repo: false
 
     on:
       pull_request:
