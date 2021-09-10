@@ -424,7 +424,6 @@
     {{{- end }}}
     env:
       FLAVOR: {{{ $flavor }}}
-      LUET_ARCH: {{{ $config.arch }}}
       ARCH: {{{ $config.arch }}}
     {{{- if has $config "luet_install_from_cos_repo" }}}
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
