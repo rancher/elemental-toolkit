@@ -478,7 +478,6 @@ jobs:
     - publish-vanilla-ami
     env:
       FLAVOR: green
-      LUET_ARCH: x86_64
       ARCH: x86_64
     steps:
       - uses: actions/checkout@v2

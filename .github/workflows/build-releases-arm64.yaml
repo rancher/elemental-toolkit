@@ -148,7 +148,6 @@ jobs:
     - image-link-green
     env:
       FLAVOR: green
-      LUET_ARCH: arm64
       ARCH: arm64
       LUET_INSTALL_FROM_COS_REPO: false
     steps:
