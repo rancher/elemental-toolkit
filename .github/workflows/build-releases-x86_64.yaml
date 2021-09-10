@@ -417,9 +417,9 @@ jobs:
             echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-green.txt
+          name: images-green-x86_64.txt
           path: |
-            images-green.txt
+            images-green-x86_64.txt
   publish-green:
     runs-on: ubuntu-latest
     needs: tests-squashfs-green
@@ -765,9 +765,9 @@ jobs:
             echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-blue.txt
+          name: images-blue-x86_64.txt
           path: |
-            images-blue.txt
+            images-blue-x86_64.txt
   publish-blue:
     runs-on: ubuntu-latest
     needs:
@@ -910,9 +910,9 @@ jobs:
             echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-orange.txt
+          name: images-orange-x86_64.txt
           path: |
-            images-orange.txt
+            images-orange-x86_64.txt
   publish-orange:
     runs-on: ubuntu-latest
     needs:

@@ -635,9 +635,9 @@
             echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}.txt
+          name: images-{{{ $flavor }}}-{{{$config.arch}}}.txt
           path: |
-            images-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}.txt
+            images-{{{ $flavor }}}-{{{$config.arch}}}.txt
 {{{ end }}}
 
 {{{define "publish_vanilla"}}}
