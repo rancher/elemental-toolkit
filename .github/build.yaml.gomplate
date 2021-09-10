@@ -34,11 +34,14 @@
   {{{- end }}}
 
   {{{- if $config.local_runner }}}
+    {{{ with $golang_arch := $config.arch }}}
+    {{{- if eq $config.arch "armv7" }}}{{{ $golang_arch = "armv6l" }}}# workaround for golang not having a v7 version as v6 is compatible{{{- end}}}
       - name: Install Go
         run: |
-          curl -L https://golang.org/dl/go1.16.5.linux-{{{ $config.arch }}}.tar.gz -o go1.16.5.linux-{{{ $config.arch }}}.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-{{{ $config.arch }}}.tar.gz
-  {{{- else }}}
+          curl -L https://golang.org/dl/go1.16.5.linux-{{{ $golang_arch }}}.tar.gz -o go1.16.5.linux-{{{ $golang_arch }}}.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-{{{ $golang_arch }}}.tar.gz
+    {{{- end }}}
+    {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
