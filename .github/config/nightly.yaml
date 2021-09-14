@@ -10,6 +10,7 @@ arches:
     pipeline: "nightly"
     publishing_pipeline: false
     publish_cloud: false
+    publish_toolchain: false
     repository: "releases"
     cache_repository: "build"
     organization: "quay.io/costoolkit"
