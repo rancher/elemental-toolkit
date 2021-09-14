@@ -6,6 +6,7 @@ arches:
     pipeline: "Pull requests"
     push_cache: false
     publishing_pipeline: false
+    publish_toolchain: false
     publish_cloud: false
     skip_build: false
     skip_docker_build: false
@@ -34,6 +35,7 @@ arches:
     push_cache: false
     publishing_pipeline: false
     publish_cloud: false
+    publish_toolchain: false
     skip_build: false
     skip_docker_build: true
     repository: "releases" # releases for prod

@@ -726,6 +726,38 @@
     {{{- end }}}
 {{{end}}}
 
+{{{define "toolchain_images_steps"}}}
+{{{ $tag := . }}}
+      {{{ tmpl.Exec "prepare_worker" }}}
+      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "cos_version" }}}
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Build  🔧
+        run: |
+          docker build -t quay.io/costoolkit/toolchain:{{{$tag}}} .
+          docker push quay.io/costoolkit/toolchain:{{{$tag}}}
+{{{end}}}
+
+{{{define "toolchain_images"}}}
+{{{ $config := (datasource "config") }}}
+{{{ $flavor := "green" }}}
+{{{- if and $config.publishing_pipeline $config.publish_toolchain }}}
+  build-toolchain-tagged:
+    if: startsWith(github.ref, 'refs/tags/')
+    {{{ tmpl.Exec "runner" }}}
+    needs: publish-{{{$flavor}}}
+    steps:
+      {{{tmpl.Exec "toolchain_images_steps" "${{ env.COS_VERSION }}"}}}
+  build-toolchain-latest:
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    {{{ tmpl.Exec "runner" }}}
+    needs: publish-{{{$flavor}}}
+    steps:
+      {{{tmpl.Exec "toolchain_images_steps" "latest"}}}
+{{{- end}}}
+{{{end}}}
+
 name: Build cOS {{{$config.pipeline}}}
 
 on: 
@@ -789,6 +821,7 @@ jobs:
     {{{- end }}}
 {{{- end }}}
 
+{{{tmpl.Exec "toolchain_images"}}}
 {{{- if $config.publish_cloud }}}
 {{{tmpl.Exec "publish_vanilla"}}}
 {{{- end }}}

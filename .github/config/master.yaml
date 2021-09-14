@@ -10,6 +10,7 @@ arches:
     pipeline: "master"
     publishing_pipeline: true
     publish_cloud: false
+    publish_toolchain: true
 
     repository: "releases"
     cache_repository: "build"
@@ -34,6 +35,7 @@ arches:
     pipeline: "master - arm64"
     publishing_pipeline: true
     publish_cloud: false
+    publish_toolchain: false
 
     repository: "releases"
     cache_repository: "build"
