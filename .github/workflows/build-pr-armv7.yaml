@@ -17,7 +17,7 @@ jobs:
           count: 1
           labels: "armv7"
   build-green:
-    runs-on: [self-hosted, arm64]
+    runs-on: [self-hosted, arm]
     if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
     needs:
       - check-labels

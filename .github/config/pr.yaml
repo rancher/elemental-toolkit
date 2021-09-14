@@ -53,7 +53,7 @@ arches:
         types: [ "labeled", "synchronize" ]  # synchronize means when the PR is updated
   armv7:
     local_runner: true
-    runs_on: [ "self-hosted", "arm64" ]
+    runs_on: [ "self-hosted", "arm" ]
     pipeline: "Pull requests - armv7"
     push_cache: false
     publishing_pipeline: false
