@@ -107,7 +107,7 @@
 {{{define "build_packages"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := . }}}
-  build-{{{ $flavor }}}:
+  build-{{{ $flavor }}}-{{{ $config.arch }}}:
     {{{ tmpl.Exec "runner" }}}
     {{{ tmpl.Exec "needs" }}}
     env:
@@ -175,7 +175,7 @@
   iso-{{{$subset}}}-{{{ $flavor }}}:
     {{{ tmpl.Exec "runner" }}}
     {{{- if not $config.skip_build }}}
-    needs: build-{{{ $flavor }}}
+    needs: build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     env:
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
@@ -350,7 +350,7 @@
     {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
     needs: 
     {{{- if not $config.skip_build }}}
-    - build-{{{ $flavor }}}
+    - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     {{{- if not ( has $config.skip_images_flavor $flavor ) }}}
     - iso-squashfs-{{{ $flavor }}}
@@ -404,7 +404,7 @@
     runs-on: ubuntu-latest
     needs: 
     {{{- if not $config.skip_build }}}
-    - build-{{{ $flavor }}}
+    - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
     {{{- else }}}
@@ -499,7 +499,7 @@
 
     {{{- if not $config.skip_build }}}
     needs:
-    - build-{{{ $flavor }}}
+    - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
 
     steps:
