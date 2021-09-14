@@ -7,8 +7,12 @@ env:
 {{end}}
 {{end}}
 steps:
+- uname -a
+- cat /etc/os-release
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
+- zypper ref
+- zypper repos -d
 - zypper in -y --no-recommends {{.Values.packages}}
 - zypper cc
 {{else if eq .Values.distribution "fedora" }}
