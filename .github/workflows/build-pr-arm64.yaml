@@ -8,9 +8,19 @@ concurrency:
   group: ci-Pull requests - arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
+  check-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mheap/github-action-required-labels@v1
+        with:
+          mode: exactly
+          count: 1
+          labels: "arm64"
   build-green:
     runs-on: [self-hosted, arm64]
     if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    needs:
+      - check-labels
     env:
       LUET_ARCH: arm64
       FLAVOR: green

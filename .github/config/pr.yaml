@@ -48,7 +48,7 @@ arches:
     release_flavor: [ "green" ]
     arch: "arm64"
     # list of labels to check in order to run jobs in this workflow
-    # labels: [ "arm64" ]
+    labels: [ "arm64" ]
 
     on:
       pull_request:
