@@ -7,7 +7,7 @@ skip_checksum: ["golang", "golang-fips"]
 
 packages: >-
     systemd-sysvinit
-    grub2-arm64-efi
+    grub2-arm-efi
     iproute2
     squashfs
     conntrack-tools
@@ -19,7 +19,6 @@ packages: >-
     multipath-tools
     nfs-utils
     open-iscsi
-    open-vm-tools
     python-azure-agent
     qemu-guest-agent
     rng-tools
@@ -29,14 +28,7 @@ packages: >-
     dracut
     e2fsprogs
     dosfstools
-    kernel-firmware-bnx2
-    kernel-firmware-i915
-    kernel-firmware-intel
-    kernel-firmware-iwlwifi
-    kernel-firmware-mellanox
-    kernel-firmware-network
-    kernel-firmware-platform
-    kernel-firmware-realtek
+    kernel-firmware
     coreutils
     less
     device-mapper
