@@ -7,7 +7,7 @@ concurrency:
   group: ci-master - arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
-  build-green:
+  build-green-arm64:
     runs-on: [self-hosted, arm64]
     if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
     env:
@@ -103,7 +103,7 @@ jobs:
   publish-green:
     runs-on: ubuntu-latest
     needs:
-    - build-green
+    - build-green-arm64
     env:
       FLAVOR: green
       ARCH: arm64

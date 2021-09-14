@@ -24,7 +24,7 @@ jobs:
         run: |
           source .envrc
           cos-build $FLAVOR
-  build-green:
+  build-green-x86_64:
     runs-on: ubuntu-latest
     env:
       LUET_ARCH: x86_64
@@ -74,7 +74,7 @@ jobs:
           if-no-files-found: error
   iso-squashfs-green:
     runs-on: ubuntu-latest
-    needs: build-green
+    needs: build-green-x86_64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
@@ -228,7 +228,7 @@ jobs:
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
-    needs: build-green
+    needs: build-green-x86_64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green
     steps:
@@ -388,7 +388,7 @@ jobs:
     runs-on: ubuntu-latest
     container: opensuse/leap:15.3
     needs:
-    - build-green
+    - build-green-x86_64
     steps:
       - name: Install OS deps
         run: |
@@ -502,7 +502,7 @@ jobs:
         run: |
           source .envrc
           cos-build $FLAVOR
-  build-blue:
+  build-blue-x86_64:
     runs-on: ubuntu-latest
     env:
       LUET_ARCH: x86_64
@@ -568,7 +568,7 @@ jobs:
         run: |
           source .envrc
           cos-build $FLAVOR
-  build-orange:
+  build-orange-x86_64:
     runs-on: ubuntu-latest
     env:
       LUET_ARCH: x86_64
