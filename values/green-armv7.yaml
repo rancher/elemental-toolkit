@@ -1,4 +1,4 @@
-image: opensuse/leap:15.3@sha256:b5dd1fc1b96935b8d9e2aa60384dd1bf0d812a9a7b469d25a23bc5cfd82259c8
+image: opensuse/leap:15.3@sha256:4d2d0a7c71ff63e008c04029c6fbe486cdee653f56b31a4a21c0c1ee040d97de
 distribution: "opensuse"
 codename: "green"
 arch: "armv7"
