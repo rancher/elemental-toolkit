@@ -18,6 +18,7 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       HOURS: ${{ github.event.inputs.hours }}
     steps:
+      - uses: actions/checkout@v2
       - name: Get instances
         run: |
           .github/cloud-cleaner.sh
