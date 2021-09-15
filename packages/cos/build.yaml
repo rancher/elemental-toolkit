@@ -1,5 +1,5 @@
-# Refer to https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#build-specs
-# for the syntax format
+#### system/cos system/cos-container and recovery/cos start here
+{{ if or (eq .Values.name "cos-container") (eq .Values.name "cos" ) }}
 requires:
 - name: "cos-setup"
   category: "system"
@@ -131,3 +131,38 @@ excludes:
 - ^/run/.*
 
 {{ end }}
+{{- end}}
+#### system/cos system/cos-container and recovery/cos end here
+
+#### recovery/cos-img starts here
+{{ if eq .Values.name "cos-img" }}
+requires:
+  - category: "recovery"
+    name: "cos"
+    version: ">=0"
+copy:
+  - package:
+      category: "recovery"
+      name: "cos-squash"
+      version: ">=0"
+    source: "/."
+    destination: "/recovery"
+
+package_dir: "/output"
+steps:
+  - mkdir /output
+  - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+{{- end}}
+#### recovery/cos-img ends here
+
+#### recovery/cos-squash starts here
+{{ if eq .Values.name "cos-squash" }}
+requires:
+  - category: "recovery"
+    name: "cos"
+    version: ">=0"
+
+requires_final_images: true
+unpack: true
+{{- end}}
+#### recovery/cos-squash ends here
