@@ -2,6 +2,16 @@ LAUNCH_DATE=$(date --date="-8 hours" "+%Y-%m-%dT%H:%M")
 DO_CLEANUP=${DO_CLEANUP:-false}
 EXCLUDE_LIST=${EXCLUDE_LIST:-}
 
+if [[ -z ${CI} ]] && [[ ${DO_CLEANUP} == "true" ]]; then
+  printf "\xE2\x9A\xA0 This script is only meant to be run on a CI system.\n"
+  printf "\xE2\x9A\xA0 If you still want to run it locally make sure to set the EXCLUDE_LIST to a proper list of instances to avoid terminating them.\n"
+  printf "\xE2\x9A\xA0 Also make sure to run first with DO_CLEANUP=false so it runs in reporting mode.\n"
+  printf "\xE2\x9A\xA0 If after reading this you still want to run it, set the CI env to a non-empty value.\n"
+  printf "\xF0\x9F\x92\x80 You have been advised.\n"
+  exit 1
+fi
+
+
 regions=( $( aws ec2 describe-regions | jq '.Regions[].RegionName' -r ) )
 
 echo "------------------------------------------------------------------"
