@@ -3,6 +3,12 @@ name: Cloud cleaner
 on:
   schedule:
     - cron:  '0 */8 * * *' # every 8 hours
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Hours to check from the current time for running instances"
+        required: false
+        default: "8"
 jobs:
   clean:
     runs-on: ubuntu-latest
@@ -10,6 +16,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      HOURS: ${{ github.event.inputs.hours }}
     steps:
       - name: Get instances
         run: |

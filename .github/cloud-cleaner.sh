@@ -1,5 +1,9 @@
-LAUNCH_DATE=$(date --date="-8 hours" "+%Y-%m-%dT%H:%M")
+HOURS=${HOURS:-8}
+LAUNCH_DATE=$(date --date="-${HOURS} hours" "+%Y-%m-%dT%H:%M")
+
 regions=( $( aws ec2 describe-regions | jq '.Regions[].RegionName' -r ) )
+
+echo "Checking instances that started before ${LAUNCH_DATE}"
 
 for region in "${regions[@]}"; do
   echo "Checking instances on region ${region}"
