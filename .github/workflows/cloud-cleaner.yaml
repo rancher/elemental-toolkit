@@ -17,6 +17,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       HOURS: ${{ github.event.inputs.hours }}
+      EXCLUDE_LIST: "i-07853668c7deeee4a"
     steps:
       - uses: actions/checkout@v2
       - name: Get instances
