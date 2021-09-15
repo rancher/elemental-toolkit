@@ -21,5 +21,5 @@ jobs:
         with:
           name: instances.txt
           path: instances.txt
-          if-no-files-found: warning
+          if-no-files-found: warn
       # this is where we would put a webhook to the slack channel IF WE HAD ONE
