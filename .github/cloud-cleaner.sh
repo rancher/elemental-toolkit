@@ -1,5 +1,4 @@
-HOURS=${HOURS:-8}
-LAUNCH_DATE=$(date --date="-${HOURS} hours" "+%Y-%m-%dT%H:%M")
+LAUNCH_DATE=$(date --date="-8 hours" "+%Y-%m-%dT%H:%M")
 DO_CLEANUP=${DO_CLEANUP:-false}
 EXCLUDE_LIST=${EXCLUDE_LIST:-}
 
