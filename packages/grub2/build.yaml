@@ -10,10 +10,17 @@ steps:
   {{if .Values.distribution}}
     {{if eq .Values.distribution "ubuntu"}}
 - grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
+      {{- if .Values.neednet }}
+- grub-editenv /etc/cos/grubenv_firstboot set neednet={{ .Values.neednet }}
+      {{- end}}
     {{else}}
 - grub2-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
-    {{end}}
+      {{- if .Values.neednet }}
+- grub2-editenv /etc/cos/grubenv_firstboot set neednet={{ .Values.neednet }}
+      {{- end}}
   {{end}}
+  {{end}}
+- cat /etc/cos/grubenv_firstboot
 {{end}}
 
 {{if eq .Values.name "grub2-efi-image"}}
