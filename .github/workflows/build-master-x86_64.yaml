@@ -877,8 +877,10 @@ jobs:
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Build  🔧
         run: |
-          docker build -t quay.io/costoolkit/toolchain:${{ env.COS_VERSION }} .
-          docker push quay.io/costoolkit/toolchain:${{ env.COS_VERSION }}
+          tag="${{ env.COS_VERSION }}"
+          export P_VERSION="${tag/+/-}"
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker push quay.io/costoolkit/toolchain:$P_VERSION
   build-toolchain-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
@@ -903,5 +905,7 @@ jobs:
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Build  🔧
         run: |
-          docker build -t quay.io/costoolkit/toolchain:latest .
-          docker push quay.io/costoolkit/toolchain:latest
+          tag="latest"
+          export P_VERSION="${tag/+/-}"
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker push quay.io/costoolkit/toolchain:$P_VERSION

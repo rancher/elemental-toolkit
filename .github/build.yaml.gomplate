@@ -735,8 +735,10 @@
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Build  🔧
         run: |
-          docker build -t quay.io/costoolkit/toolchain:{{{$tag}}} .
-          docker push quay.io/costoolkit/toolchain:{{{$tag}}}
+          tag="{{{$tag}}}"
+          export P_VERSION="${tag/+/-}"
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker push quay.io/costoolkit/toolchain:$P_VERSION
 {{{end}}}
 
 {{{define "toolchain_images"}}}
