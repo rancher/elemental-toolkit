@@ -19,6 +19,7 @@ source "amazon-ebs" "cos" {
     owners      = var.aws_source_ami_filter_owners
   }
   launch_block_device_mappings {
+    delete_on_termination = var.aws_launch_volume_delete_on_terminate
     device_name = var.aws_launch_volume_name
     volume_size = var.aws_launch_volume_size
   }

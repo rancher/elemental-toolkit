@@ -62,6 +62,12 @@ variable "aws_source_ami_filter_virtualization-type" {
   description = "Type of virtualization type to filter the search for the base AMI"
 }
 
+variable "aws_launch_volume_delete_on_terminate" {
+  type = bool
+  default = true
+  description = "Indicates whether the EBS volume is deleted on instance termination. Check https://www.packer.io/docs/builders/amazon/ebs#block-devices-configuration for full details"
+}
+
 variable "aws_launch_volume_name" {
   type = string
   default = "/dev/sda1"
