@@ -164,5 +164,9 @@ requires:
 
 requires_final_images: true
 unpack: true
+
+excludes:
+  - ^/var/cache/luet
+  - ^/luetbuild
 {{- end}}
 #### recovery/cos-squash ends here
