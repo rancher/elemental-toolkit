@@ -7,6 +7,14 @@ packages:
     labels:
       autobump.revdeps: "true"
       autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
+  - name: "cos-container"
+    category: "system"
+    version: 0.6.8+10
+    brand_name: "cOS"
+    description: "cOS container image, used to build cOS derivatives from scratch"
+    labels:
+      autobump.revdeps: "true"
+      autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - name: "cos"
     category: "recovery"
     version: 0.6.8+10
@@ -15,11 +23,13 @@ packages:
     labels:
       autobump.revdeps: "true"
       autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
-  - name: "cos-container"
-    category: "system"
-    version: 0.6.8+7
+  - name: "cos-img"
+    category: "recovery"
+    version: 0.6.8+10
     brand_name: "cOS"
-    description: "cOS container image, used to build cOS derivatives from scratch"
-    labels:
-      autobump.revdeps: "true"
-      autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
+  - name: "cos-squash"
+    category: "recovery"
+    version: 0.6.8+10
+
+
+
