@@ -89,6 +89,7 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 endif
 	$(LUET) create-repo $(PUBLISH_ARGS) --tree "$(TREE)" \
+	--from-metadata \
     --output $(FINAL_REPO) \
     --packages $(DESTINATION) \
     --name "cOS" \

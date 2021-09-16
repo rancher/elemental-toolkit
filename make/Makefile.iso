@@ -56,6 +56,7 @@ ifneq ($(shell id -u), 0)
 endif
 	$(LUET) create-repo --tree "$(TREE)" \
     --output $(DESTINATION) \
+    --from-metadata \
     --packages $(DESTINATION) \
     --name "cOS" \
     --descr "cOS $(FLAVOR)" \
