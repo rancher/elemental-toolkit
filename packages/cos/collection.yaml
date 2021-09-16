@@ -25,7 +25,7 @@ packages:
       autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - name: "cos-img"
     category: "recovery"
-    version: 0.6.8+10
+    version: 0.6.8+11
     brand_name: "cOS"
   - name: "cos-squash"
     category: "recovery"
