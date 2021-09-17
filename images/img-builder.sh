@@ -6,7 +6,18 @@ if [[ -z "${MANIFEST}" ]]; then
   echo "Manifest required as parameter, cannot continue"
   exit 1
 fi
-FINAL_REPO=${FINAL_REPO:-$(yq r "$MANIFEST" 'raw_disk.repo')}
+
+YQ_VERSION=$( yq -V | cut -d " " -f 3 | cut -d "." -f 1)
+
+if [[ "${YQ_VERSION}" == "3" ]]; then
+  YQ_REPO_COMMAND=(yq r "${MANIFEST}" 'raw_disk.repo')
+  YQ_PACKAGES_COMMAND=(yq r -j "${MANIFEST}")
+else
+  YQ_REPO_COMMAND=(yq e '.raw_disk.repo' "${MANIFEST}")
+  YQ_PACKAGES_COMMAND=(yq e -o=json "$MANIFEST")
+fi
+
+FINAL_REPO=${FINAL_REPO:-$("${YQ_REPO_COMMAND[@]}")}
 
 rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml oem efi
 
@@ -32,7 +43,7 @@ EOF
 # Create root-tree for COS_RECOVERY
 while IFS=$'\t' read -r name target ; do
   luet install --system-target "$target" -y "$name"
-done < <(yq -j read "$MANIFEST" | jq -r '.raw_disk.packages[] | [.name, .target] | @tsv')
+done < <("${YQ_PACKAGES_COMMAND[@]}" | jq -r '.raw_disk.packages[] | [.name, .target] | @tsv')
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
 truncate -s $((2048*1024*1024)) rootfs.part
