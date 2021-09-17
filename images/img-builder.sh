@@ -1,8 +1,12 @@
-#!/bin/bash 
+#!/bin/bash
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
-FLAVOR="${1:-green}"
-FINAL_REPO="${FINAL_REPO:-quay.io/costoolkit/releases-${FLAVOR}}"
+MANIFEST=$1
+if [[ -z "${MANIFEST}" ]]; then
+  echo "Manifest required as parameter, cannot continue"
+  exit 1
+fi
+FINAL_REPO=${FINAL_REPO:-$(yq r "$MANIFEST" 'raw_disk.repo')}
 
 rm -rf ./*.part disk.raw grub_efi.cfg recovery root .luet.yaml oem efi
 
@@ -26,10 +30,9 @@ repositories:
 EOF
 
 # Create root-tree for COS_RECOVERY
-luet install --system-target efi -y system/grub2-efi-image
-luet install --system-target root -y system/grub2-config
-luet install --system-target root/grub2 -y system/grub2-artifacts
-luet install --system-target root/cOS -y recovery/cos-img
+while IFS=$'\t' read -r name target ; do
+  luet install --system-target "$target" -y "$name"
+done < <(yq -j read "$MANIFEST" | jq -r '.raw_disk.packages[] | [.name, .target] | @tsv')
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
 truncate -s $((2048*1024*1024)) rootfs.part
