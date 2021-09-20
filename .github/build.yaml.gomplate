@@ -728,7 +728,6 @@
 {{{end}}}
 
 {{{define "toolchain_images_steps"}}}
-{{{ $config := (datasource "config") }}}
 {{{ $tag := . }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{ tmpl.Exec "make" "deps" }}}
@@ -739,10 +738,8 @@
         run: |
           tag="{{{$tag}}}"
           export P_VERSION="${tag/+/-}"
-          export LUET_ARCH="{{{ $config.arch }}}"
-          export ARCH="{{{ $config.arch }}}"
-          docker build -t quay.io/costoolkit/toolchain{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}:$P_VERSION
-          docker push quay.io/costoolkit/toolchain{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}:$P_VERSION
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
+          docker push quay.io/costoolkit/toolchain:$P_VERSION
 {{{end}}}
 
 {{{define "toolchain_images"}}}
