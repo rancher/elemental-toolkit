@@ -428,6 +428,7 @@ jobs:
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-green
       DOWNLOAD_METADATA: true
+      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
     steps:
       - name: Install Go
@@ -673,6 +674,7 @@ jobs:
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
+      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
     steps:
       - name: Install Go
@@ -818,6 +820,7 @@ jobs:
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
+      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
     steps:
       - name: Install Go

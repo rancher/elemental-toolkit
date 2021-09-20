@@ -109,6 +109,7 @@ jobs:
       ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
+      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
     steps:
       - run: |

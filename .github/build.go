@@ -22,7 +22,7 @@ type resultData struct {
 	Exists  bool
 }
 
-func downloadMeta(p Package, o opData) error {
+func downloadImage(img, dst string) error {
 	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
 	if err != nil {
 		return err
@@ -31,17 +31,21 @@ func downloadMeta(p Package, o opData) error {
 	if err != nil {
 		return err
 	}
-	err = RunSH("unpack", fmt.Sprintf("TMPDIR=%s XDG_RUNTIME_DIR=%s luet util unpack %s %s", tmpdir, tmpdir, p.ImageMetadata(o.FinalRepo), unpackdir))
+	err = RunSH("unpack", fmt.Sprintf("TMPDIR=%s XDG_RUNTIME_DIR=%s luet util unpack %s %s", tmpdir, tmpdir, img, unpackdir))
 	if err != nil {
 		return err
 	}
-	err = RunSH("move", fmt.Sprintf("mv %s/* build/", unpackdir))
+	err = RunSH("move", fmt.Sprintf("mv %s/* %s/", unpackdir, dst))
 	if err != nil {
 		return err
 	}
 	os.RemoveAll(tmpdir)
 	os.RemoveAll(unpackdir)
 	return nil
+}
+
+func downloadMeta(p Package, o opData) error {
+	return downloadImage(p.ImageMetadata(o.FinalRepo), "build")
 }
 
 func metaWorker(i int, wg *sync.WaitGroup, c <-chan Package, o opData) error {
@@ -73,6 +77,7 @@ func main() {
 		fmt.Println("A container repository must be specified with FINAL_REPO")
 		os.Exit(1)
 	}
+
 	buildScript := os.Getenv("BUILD_SCRIPT")
 	if buildScript == "" {
 		buildScript = "./.github/build.sh"
@@ -119,15 +124,15 @@ func main() {
 	}
 
 	if os.Getenv("SKIP_PACKAGES") != "" {
-		for _,skip := range strings.Split(os.Getenv("SKIP_PACKAGES"), " ") {
+		for _, skip := range strings.Split(os.Getenv("SKIP_PACKAGES"), " ") {
 			for index, pkg := range missingPackages {
 				name := fmt.Sprintf("%s/%s", pkg.Category, pkg.Name)
 				if name == skip {
 					fmt.Println("- Skipping build of package due to SKIP_PACKAGES: ", pkg.String())
 					// how absurd is this just to pop one element from a slice ¬_¬
 					missingPackages[index] = missingPackages[len(missingPackages)-1] // Copy last element to index i.
-					missingPackages[len(missingPackages)-1] = Package{}   // Erase last element (write empty value).
-					missingPackages = missingPackages[:len(missingPackages)-1]   // Truncate slice.
+					missingPackages[len(missingPackages)-1] = Package{}              // Erase last element (write empty value).
+					missingPackages = missingPackages[:len(missingPackages)-1]       // Truncate slice.
 				}
 			}
 		}
@@ -157,13 +162,31 @@ func main() {
 					all <- p
 				}
 			}
+
 			close(all)
 			wg.Wait()
 		} else {
-			for _, p := range packs.Packages {
-				if !contains(missingPackages, p) {
-					err := downloadMeta(p, op)
-					checkErr(err)
+			if os.Getenv("DOWNLOAD_ALL") == "true" {
+				fmt.Println("Downloading all available metadata files on the remote repository")
+
+				tags, err := crane.ListTags(finalRepo)
+				checkErr(err)
+
+				for _, t := range tags {
+					if strings.HasSuffix(t, ".metadata.yaml") {
+						img := fmt.Sprintf("%s:%s", finalRepo, t)
+						fmt.Println("Downloading", img)
+						checkErr(
+							downloadImage(img, "build"),
+						)
+					}
+				}
+			} else {
+				for _, p := range packs.Packages {
+					if !contains(missingPackages, p) {
+						err := downloadMeta(p, op)
+						checkErr(err)
+					}
 				}
 			}
 		}
