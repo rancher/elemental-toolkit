@@ -56,7 +56,7 @@ repositories:
   urls:
   - ${REPO_URL}
 EOF
-  ./luet install -y $LUET_PACKAGE
+  ./luet install --no-spinner -y $LUET_PACKAGE
   rm -rf luet
 else
   mv ./luet /usr/bin/luet
