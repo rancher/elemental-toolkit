@@ -882,7 +882,7 @@ jobs:
         run: |
           tag="${{ env.COS_VERSION }}"
           export P_VERSION="${tag/+/-}"
-          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
           docker push quay.io/costoolkit/toolchain:$P_VERSION
   build-toolchain-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
@@ -910,5 +910,5 @@ jobs:
         run: |
           tag="latest"
           export P_VERSION="${tag/+/-}"
-          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
           docker push quay.io/costoolkit/toolchain:$P_VERSION

@@ -738,7 +738,7 @@
         run: |
           tag="{{{$tag}}}"
           export P_VERSION="${tag/+/-}"
-          docker build -t quay.io/costoolkit/toolchain:$P_VERSION
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
           docker push quay.io/costoolkit/toolchain:$P_VERSION
 {{{end}}}
 
