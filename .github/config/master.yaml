@@ -35,7 +35,7 @@ arches:
     pipeline: "master - arm64"
     publishing_pipeline: true
     publish_cloud: false
-    publish_toolchain: true
+    publish_toolchain: false
 
     repository: "releases"
     cache_repository: "build"
