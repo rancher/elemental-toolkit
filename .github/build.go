@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
 )
@@ -22,7 +23,18 @@ type resultData struct {
 	Exists  bool
 }
 
-func downloadImage(img, dst string) error {
+func retryDownload(img, dest string, t int) error {
+	if err := download(img, dest); err != nil {
+		if t <= 0 {
+			return err
+		}
+		time.Sleep(time.Duration(t) * time.Second)
+		return retryDownload(img, dest, t-1)
+	}
+	return nil
+}
+
+func download(img, dst string) error {
 	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
 	if err != nil {
 		return err
@@ -42,6 +54,10 @@ func downloadImage(img, dst string) error {
 	os.RemoveAll(tmpdir)
 	os.RemoveAll(unpackdir)
 	return nil
+}
+
+func downloadImage(img, dst string) error {
+	return retryDownload(img, dst, 4)
 }
 
 func downloadMeta(p Package, o opData) error {
@@ -179,6 +195,7 @@ func main() {
 						checkErr(
 							downloadImage(img, "build"),
 						)
+
 					}
 				}
 			} else {
