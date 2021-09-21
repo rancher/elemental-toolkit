@@ -17,7 +17,7 @@ prelude:
 {{ template "golang_download_package" $opts}}
 steps:
 - |
-    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+    PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
     cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{.Values.name}} && \
     buildtime=$(date -u '+%Y-%m-%d %I:%M:%S %Z') && \
     buildcommit=$(git rev-parse HEAD) && \

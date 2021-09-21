@@ -15,6 +15,7 @@ jobs:
       AUTO_GIT: true
       GIT_SIGNOFF: true
       LUET_NOLOCK: true
+      REVBUMP_CHAR: "-"
       LUET_YES: true
       TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}

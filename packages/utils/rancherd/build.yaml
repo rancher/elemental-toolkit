@@ -15,7 +15,7 @@ prelude:
 {{end}}
 {{end}}
 - |
-   PACKAGE_VERSION=v${PACKAGE_VERSION%\+*} && \
+   PACKAGE_VERSION=v${PACKAGE_VERSION%\-*} && \
    git clone --depth=1 --branch ${PACKAGE_VERSION}  https://github.com/rancher/rancherd
 steps:
 - |
