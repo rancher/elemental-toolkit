@@ -15,6 +15,12 @@ var _ = Describe("cOS Feature tests", func() {
 		s.EventuallyConnects(360)
 	})
 
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
+	})
+
 	Context("After install", func() {
 		It("can enable a persistent k3s install", func() {
 

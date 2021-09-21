@@ -15,6 +15,12 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 		s.EventuallyConnects(360)
 	})
 
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
+	})
+
 	Context("After install can upgrade and reset", func() {
 		When("specifying a directory to upgrade from", func() {
 			It("upgrades from the specified path", func() {

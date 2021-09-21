@@ -15,6 +15,12 @@ var _ = Describe("cOS Recovery deploy tests", func() {
 		s.EventuallyConnects(sut.TimeoutRawDiskTest)
 	})
 
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
+	})
+
 	Context("after running recovery from the raw_disk image", func() {
 		It("uses cos-deploy to install", func() {
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))

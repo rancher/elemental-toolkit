@@ -17,10 +17,7 @@ var _ = Describe("cOS Deploy tests", func() {
 	AfterEach(func() {
 		// Try to gather mtree logs on failure
 		if CurrentGinkgoTestDescription().Failed {
-			s.GatherLog("/tmp/image-mtree-check.log")
-			s.GatherLog("/tmp/luet_mtree_failures.log")
-			s.GatherLog("/tmp/luet_mtree.log")
-			s.GatherLog("/tmp/luet.log")
+			s.GatherAllLogs()
 		}
 		if CurrentGinkgoTestDescription().Failed == false {
 			s.Reset()

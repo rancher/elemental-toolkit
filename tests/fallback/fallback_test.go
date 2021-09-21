@@ -15,6 +15,9 @@ var _ = Describe("cOS booting fallback tests", func() {
 		s.EventuallyConnects()
 	})
 	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
 		if CurrentGinkgoTestDescription().Failed == false {
 			s.Reset()
 		}
