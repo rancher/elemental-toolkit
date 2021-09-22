@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+source /usr/lib/cos/functions.sh
+
 CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
 FORCE="${FORCE:-false}"
 
@@ -13,6 +15,8 @@ find_partitions() {
         echo "State partition cannot be found"
         exit 1
     fi
+
+    OEM=$(blkid -L COS_OEM || true)
 
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$PERSISTENT" ]; then
@@ -152,6 +156,16 @@ upgrade() {
     fi
 
     SELinux_relabel
+
+    mount $PERSISTENT $TARGET/usr/local
+    mount $OEM $TARGET/oem
+    if [ "$STRICT_MODE" = "true" ]; then
+        run_hook after-deploy-chroot $TARGET
+    else 
+        run_hook after-deploy-chroot $TARGET || true
+    fi
+    umount $TARGET/oem
+    umount $TARGET/usr/local
 
     if [ "$STRICT_MODE" = "true" ]; then
       cos-setup after-deploy

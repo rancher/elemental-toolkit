@@ -10,6 +10,8 @@ TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 
+source /usr/lib/cos/functions.sh
+
 if [ "$COS_DEBUG" = true ]; then
     set -x
 fi
@@ -407,6 +409,12 @@ do_copy
 install_grub
 
 SELinux_relabel
+
+if [ "$STRICT_MODE" = "true" ]; then
+  run_hook after-install-chroot $TARGET
+else 
+  run_hook after-install-chroot $TARGET || true
+fi
 
 umount_target 2>/dev/null
 
