@@ -1,0 +1,30 @@
+---
+
+arches:
+  x86_64:
+    local_runner: false
+    pipeline: "Pull requests - docker"
+    push_cache: false
+    publishing_pipeline: false
+    publish_toolchain: false
+    publish_cloud: false
+    skip_build: true
+    skip_docker_build: false
+    repository: "releases" # releases for prod
+    cache_repository: "build"
+    organization: "quay.io/costoolkit"
+    skip_tests: true
+    flavors: ["green", "blue", "orange"]
+    skip_tests_flavor: ["green","blue","orange"]
+    skip_images_flavor: ["green","blue","orange"]
+    release_flavor: ["green"]
+    arch: "x86_64"
+    on:
+      pull_request:
+        paths:
+          - 'conf/**'
+          - 'packages/**'
+          - 'make/**'
+          - '.github/**'
+          - 'Makefile'
+          - 'tests/**'
