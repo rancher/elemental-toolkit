@@ -1,17 +1,15 @@
+name: Cancel lingering jobs
 on:
-  # Runs on PR against master that are closed, that includes merged and closed PRs
-  pull_request:
+  workflow_run:
+    workflows: ["Build cOS Pull requests - arm64", "Build cOS Pull requests - docker", "Build cOS Pull requests", "Build cOS Examples"]
     types:
-      - closed
-    branches:
-      - master
+      - requested
 jobs:
-  clean:
+  cancel:
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel build runs
-        uses: styfle/cancel-workflow-action@0.9.1
+      - uses: styfle/cancel-workflow-action@0.9.1
+        if: github.event_name == 'pull_request' && github.event.action == 'closed'
         with:
           ignore_sha: true # ignore sha becuase we want to cancel all pending jobs
-          workflow_id: build-examples-x86_64.yaml, build-pr-x86_64.yaml, build-pr-arm64.yaml, build-pr-docker-x86_64.yaml  # filenames of the workflows, can also use ids
-          access_token: ${{ github.token }}
+          workflow_id: ${{ github.event.workflow.id }}
