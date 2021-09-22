@@ -1,0 +1,17 @@
+on:
+  # Runs on PR against master that are closed, that includes merged and closed PRs
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel build runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          ignore_sha: true # ignore sha becuase we want to cancel all pending jobs
+          workflow_id: build-examples-x86_64.yaml, build-pr-x86_64.yaml, build-pr-arm64.yaml, build-pr-docker-x86_64.yaml  # filenames of the workflows, can also use ids
+          access_token: ${{ github.token }}
