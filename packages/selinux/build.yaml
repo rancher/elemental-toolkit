@@ -14,7 +14,7 @@ prelude:
 
 steps:
 - |
-    PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+    PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
     # the last value in the github tag(semver minor) is translated to the rpm release format for some reason so we need to transform it here (¬_¬)
     PACKAGE_VERSION="${PACKAGE_VERSION%.*}-${PACKAGE_VERSION##*.}" && \
     mkdir /tmp/rpm && \
