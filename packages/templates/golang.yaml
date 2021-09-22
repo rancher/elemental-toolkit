@@ -17,7 +17,7 @@
 {{ $host:= get . "host" | default "github.com" }}
 - |
   PV="{{$version}}" && \
-  PACKAGE_VERSION=${PV%\+*} && \
+  PACKAGE_VERSION=${PV%\-*} && \
   mkdir -p /luetbuild/go/src/{{$host}}/{{$org}} && cd /luetbuild/go/src/{{$host}}/{{$org}} && \
   git clone https://{{$host}}/{{$org}}/{{$repo}} && cd {{$repo}} && git checkout "$PACKAGE_VERSION" -b build
 {{end}}

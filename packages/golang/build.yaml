@@ -15,7 +15,7 @@ prelude:
 {{end}}
 {{end}}
 - |
-  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+  PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
   wget {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -O golang.tar.gz
 {{ template "do_checksum" (dict "values" .Values "filename" "golang.tar.gz")}}
 
