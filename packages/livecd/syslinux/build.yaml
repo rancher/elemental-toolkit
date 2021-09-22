@@ -3,7 +3,7 @@ image: alpine
 prelude:
 - apk add wget
 - |
-   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
    wget https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-{{.Values.version}}.tar.xz
 - echo "{{ ( index .Values.labels "package.checksum" ) }}  syslinux-{{.Values.version}}.tar.xz" | sha256sum -c
 - mkdir -p /syslinux
@@ -11,7 +11,7 @@ prelude:
 steps:
 - |
    mkdir -p /output/boot/syslinux && \
-   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
    mv /syslinux/syslinux-$PACKAGE_VERSION/bios/core/isolinux.bin /output/boot/syslinux && \
    mv /syslinux/syslinux-$PACKAGE_VERSION/bios/com32/elflink/ldlinux/ldlinux.c32 /output/boot/syslinux && \
    mv /syslinux/syslinux-$PACKAGE_VERSION/bios/mbr/isohdpfx.bin /output/boot/syslinux

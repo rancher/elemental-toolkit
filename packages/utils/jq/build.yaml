@@ -7,7 +7,7 @@ package_dir: /{{.Values.name}}
 
 steps:
 - | 
-   PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
    mkdir -p /${PACKAGE_NAME}/usr/bin && \
    curl -L https://github.com/{{ ( index .Values.labels "github.owner" ) }}/{{ ( index .Values.labels "github.repo" ) }}/releases/download/${PACKAGE_NAME}-${PACKAGE_VERSION}/jq-linux64 -o /${PACKAGE_NAME}/usr/bin/${PACKAGE_NAME} && \
    chmod +x /${PACKAGE_NAME}/usr/bin/${PACKAGE_NAME}
