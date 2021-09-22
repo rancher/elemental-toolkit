@@ -9,7 +9,7 @@ concurrency:
 jobs:
   build-green-arm64:
     runs-on: [self-hosted, arm64]
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
+    if: contains(fromJson('["mudler", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
     env:
       LUET_ARCH: arm64
       FLAVOR: green
