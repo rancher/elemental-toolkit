@@ -19,7 +19,7 @@ prelude:
 
 steps:
 - |
-  PACKAGE_VERSION=${PACKAGE_VERSION%\+*} && \
+  PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
   mkdir -p /luetbuild/{{ ( index .Values.labels "github.repo" ) }} && \
   cd /luetbuild/{{ ( index .Values.labels "github.repo" ) }} && \
   git clone https://github.com/{{ ( index .Values.labels "github.owner" ) }}/{{ ( index .Values.labels "github.repo" ) }} && \
