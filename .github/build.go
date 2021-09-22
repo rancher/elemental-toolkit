@@ -28,10 +28,29 @@ func retryDownload(img, dest string, t int) error {
 		if t <= 0 {
 			return err
 		}
+		fmt.Printf("failed downloading '%s', retrying..\n", img)
 		time.Sleep(time.Duration(t) * time.Second)
 		return retryDownload(img, dest, t-1)
 	}
 	return nil
+}
+
+func retryList(image string, t int) ([]string, error) {
+	tags, err := crane.ListTags(image)
+	if err != nil {
+		if t <= 0 {
+			return tags, err
+		}
+		fmt.Printf("failed listing tags for '%s', retrying..\n", image)
+		time.Sleep(time.Duration(t) * time.Second)
+		return retryList(image, t-1)
+	}
+
+	return tags, nil
+}
+
+func imageTags(tag string) ([]string, error) {
+	return retryList(tag, 4)
 }
 
 func download(img, dst string) error {
@@ -185,7 +204,7 @@ func main() {
 			if os.Getenv("DOWNLOAD_ALL") == "true" {
 				fmt.Println("Downloading all available metadata files on the remote repository")
 
-				tags, err := crane.ListTags(finalRepo)
+				tags, err := imageTags(finalRepo)
 				checkErr(err)
 
 				for _, t := range tags {
