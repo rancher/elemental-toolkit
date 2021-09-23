@@ -47,8 +47,8 @@ arches:
     skip_images_flavor: [ "green","blue","orange" ]
     release_flavor: [ "green" ]
     arch: "arm64"
-    # list of labels to check in order to run jobs in this workflow
-    labels: [ "arm64" ]
+    # labels required for this job to run, list of labels. All will be required.
+    labels: ["arm64"]
 
     on:
       pull_request:

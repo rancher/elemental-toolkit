@@ -67,18 +67,29 @@
   {{{ $config := (datasource "config") }}}
   {{{- if $config.local_runner }}}
     runs-on: [{{{ join $config.runs_on ", "}}}]
-    if: contains(["mudler", "davidcassany", "itxaka", kkaempf", "cOS-cibot"], "${{ github.actor }}") || contains(github.event.pull_request.labels.*.name, 'safe to test')
   {{{- else }}}
     runs-on: ubuntu-latest
   {{{ end }}}
 {{{end}}}
 
-{{{define "needs"}}}
-    {{{ $config := (datasource "config") }}}
-    {{{if has $config "labels"}}}
-    needs:
-      - check-labels
-    {{{end}}}
+{{{- define "generate_labels"}}}
+{{{- $config := (datasource "config") }}}
+{{{- range $config.labels}}} && contains(github.event.pull_request.labels.*.name, '{{{ . }}}'){{{- end}}}
+{{{- end}}}
+
+{{{define "if_with_labels"}}}
+{{{ $config := (datasource "config") }}}
+{{{if has $config "labels"}}}
+  {{{- if $config.local_runner }}}
+    if: contains(fromJson('["mudler", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) {{{- tmpl.Exec "generate_labels" }}}
+  {{{else}}}
+    if: always() && {{{- tmpl.Exec "generate_labels" }}}
+  {{{end}}}
+{{{else}}}
+  {{{- if $config.local_runner }}}
+    if: contains(fromJson('["mudler", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
+  {{{end}}}
+{{{end}}}
 {{{end}}}
 
 {{{define "docker_build_packages"}}}
@@ -86,7 +97,7 @@
   {{{ $flavor := . }}}
   docker-build-{{{ $flavor }}}:
     {{{ tmpl.Exec "runner" }}}
-    {{{ tmpl.Exec "needs" }}}
+    {{{tmpl.Exec "if_with_labels" }}}
     env:
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
@@ -109,7 +120,7 @@
   {{{ $flavor := . }}}
   build-{{{ $flavor }}}-{{{ $config.arch }}}:
     {{{ tmpl.Exec "runner" }}}
-    {{{ tmpl.Exec "needs" }}}
+    {{{tmpl.Exec "if_with_labels" }}}
     env:
       LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
@@ -688,6 +699,7 @@
   {{{ $dir := . }}}
   docker-build-example-{{{ $dir }}}:
     {{{ tmpl.Exec "runner" }}}
+    {{{tmpl.Exec "if_with_labels" }}}
     steps:
   {{{- if $config.local_runner }}}
       - run: |
@@ -713,19 +725,6 @@
             {{{ $dir }}}.tar
 {{{end}}}
 
-{{{define "check_labels"}}}
-{{{ $config := (datasource "config") }}}
-    {{{- if has $config "labels" }}}
-  check-labels:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: mheap/github-action-required-labels@v1
-        with:
-          mode: exactly
-          count: {{{- if has $config "label_count" }}} {{{$config.label_count}}} {{{- else}}} {{{ len $config.labels }}} {{{- end}}}
-          labels: "{{{ join $config.labels  " "}}}"
-    {{{- end }}}
-{{{end}}}
 
 {{{define "toolchain_images_steps"}}}
 {{{ $tag := . }}}
@@ -771,7 +770,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-{{{tmpl.Exec "check_labels" }}}
 {{{- if (has $config "build_examples_dir") }}}
   {{{- range $config.build_examples_dir }}}
     {{{$dir:=.}}}
