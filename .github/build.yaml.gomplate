@@ -190,6 +190,9 @@
     {{{- end }}}
     env:
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
+      LUET_ARCH: {{{ $config.arch }}}
+      FLAVOR: {{{ $flavor }}}
+      ARCH: {{{ $config.arch }}}
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
       - name: Download result for build

@@ -71,6 +71,9 @@ jobs:
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+      LUET_ARCH: arm64
+      FLAVOR: green
+      ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -179,6 +182,9 @@ jobs:
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+      LUET_ARCH: arm64
+      FLAVOR: green
+      ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - run: |
