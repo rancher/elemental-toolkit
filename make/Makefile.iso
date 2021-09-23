@@ -78,6 +78,9 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
+ifeq ("$(ARCH)", "arm64")
+	$(YQ) e -i 'del(.packages.isoimage[] | select(. == "live/grub2"))' $(MANIFEST)
+endif
 	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST) --local $(DESTINATION)
 endif
 
@@ -95,6 +98,10 @@ else
 	$(YQ) e -i '.luet.repositories[0].enable=true' $(MANIFEST).remote
 	$(YQ) e -i '.luet.repositories[0].priority=90' $(MANIFEST).remote
 	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
+	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
+ifeq ("$(ARCH)", "arm64")
+	$(YQ) e -i 'del(.packages.isoimage[] | select(. == "live/grub2"))' $(MANIFEST).remote
+endif
 	$(YQ) e -i ".luet.repositories[0].urls[0]=\"$(FINAL_REPO)\"" $(MANIFEST).remote
 	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST).remote
 endif
