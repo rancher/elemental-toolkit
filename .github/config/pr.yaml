@@ -44,7 +44,7 @@ arches:
     skip_tests: false
     flavors: [ "green" ]
     skip_tests_flavor: [ "green","blue","orange" ]
-    skip_images_flavor: [ "green","blue","orange" ]
+    skip_images_flavor: [ "blue","orange" ]
     release_flavor: [ "green" ]
     arch: "arm64"
     # labels required for this job to run, list of labels. All will be required.

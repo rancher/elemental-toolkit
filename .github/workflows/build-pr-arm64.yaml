@@ -66,3 +66,334 @@ jobs:
           name: build-green-arm64
           path: build
           if-no-files-found: error
+  iso-squashfs-green:
+    runs-on: [self-hosted, arm64]
+    needs: build-green-arm64
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          source .github/helpers.sh
+          create_remote_manifest manifest.yaml
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" MANIFEST=manifest.yaml.remote make local-iso
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  qemu-squashfs-green:
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-squashfs-green:
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.iso.zip
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
+      - name: Install deps
+        run: |
+            brew install yq
+      - name: Build VBox Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-vbox-arm64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  iso-nonsquashfs-green:
+    runs-on: [self-hosted, arm64]
+    needs: build-green-arm64
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-green-arm64
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Tweak manifest and drop squashfs recovery
+        run: |
+          source .github/helpers.sh
+          drop_recovery manifest.yaml
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          source .github/helpers.sh
+          create_remote_manifest manifest.yaml
+          sudo -E MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" MANIFEST=manifest.yaml.remote make local-iso
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E YQ=/usr/bin/yq MAKEISO_ARGS="--output cOS-Seed-green-${{ env.COS_VERSION }}-arm64" make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  qemu-nonsquashfs-green:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-nonsquashfs-green:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+      # - name: Install deps
+      #   run: |
+      #     brew tap hashicorp/tap
+      #     brew install hashicorp/tap/packer
+      - name: Install deps
+        run: |
+            brew install yq
+      - name: Build VBox Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          COS_VERSION=$(cos_version)
+          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-vbox-arm64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  raw-images-green:
+    runs-on: ubuntu-latest
+    container: opensuse/leap:15.3
+    needs:
+    - build-green-arm64
+    steps:
+      - name: Install OS deps
+        run: |
+          zypper in -y bc qemu-tools sudo curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+      - uses: actions/checkout@v2
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-green-arm64
+          path: build
+      - name: Install toolchain
+        run: |
+          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
+          rm -rf /var/lock
+          mkdir -p /var/lock
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Run make raw_disk
+        run: |
+          sudo -E make raw_disk
+      - name: Run make azure_disk
+        run: |
+          sudo -E make azure_disk
+      - name: Run make gce_disk
+        run: |
+          sudo -E make gce_disk
+      - name: Rename images
+        run: |
+          mv disk.raw cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64.raw
+          mv disk.vhd cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64.vhd
+          mv disk.raw.tar.gz cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64
+          path: |
+            cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64.raw
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64
+          path: |
+            cOS-Vanilla-AZURE-green-${{ env.COS_VERSION }}-arm64.vhd
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64
+          path: |
+            cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
+          if-no-files-found: error
+  tests-raw-disk-deploy-green:
+    runs-on: macos-10.15
+    needs: raw-images-green
+    steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: brew install yq cdrtools
+      - name: Export cos version
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          sudo -E make raw_disk_test_deploy
+      - name: Change serial log ownership
+        if: failure()
+        run: |
+          USER_ID=$(id -u)
+          GROUP_ID=$(id -g)
+          sudo chown $USER_ID:$GROUP_ID serial_port1.log
+          sudo chmod 777 serial_port1.log
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-green.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
