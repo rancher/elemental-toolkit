@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 )
 
+const DefaultRetries = 10
+
 type opData struct {
 	FinalRepo string
 }
@@ -50,7 +52,7 @@ func retryList(image string, t int) ([]string, error) {
 }
 
 func imageTags(tag string) ([]string, error) {
-	return retryList(tag, 4)
+	return retryList(tag, DefaultRetries)
 }
 
 func download(img, dst string) error {
@@ -76,7 +78,7 @@ func download(img, dst string) error {
 }
 
 func downloadImage(img, dst string) error {
-	return retryDownload(img, dst, 4)
+	return retryDownload(img, dst, DefaultRetries)
 }
 
 func downloadMeta(p Package, o opData) error {
