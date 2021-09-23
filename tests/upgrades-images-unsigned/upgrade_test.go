@@ -17,6 +17,9 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	})
 
 	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
 		if CurrentGinkgoTestDescription().Failed == false {
 			s.Reset()
 		}

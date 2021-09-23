@@ -13,6 +13,12 @@ var _ = Describe("cOS Smoke tests", func() {
 		s.EventuallyConnects()
 	})
 
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
+	})
+
 	Context("After install", func() {
 		It("can boot into passive", func() {
 			err := s.ChangeBootOnce(sut.Passive)

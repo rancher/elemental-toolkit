@@ -238,6 +238,84 @@ func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {
 	return client, nil
 }
 
+// GatherAllLogs will try to gather as much info from the system as possible, including services, dmesg and os related info
+func (s SUT) GatherAllLogs()  {
+	services := []string{
+		"cos-setup-boot",
+		"cos-setup-fs",
+		"cos-setup-initramfs",
+		"cos-setup-network",
+		"cos-setup-reconcile",
+		"cos-setup-rootfs",
+	}
+
+	logFiles := []string{
+		"/tmp/image-mtree-check.log",
+		"/tmp/luet_mtree_failures.log",
+		"/tmp/luet_mtree.log",
+		"/tmp/luet.log",
+	}
+
+	// services
+	for _, ser := range services {
+		out, err := s.command(fmt.Sprintf("journalctl -u %s -o short-iso >> /tmp/%s.log", ser, ser), true)
+		if err != nil {
+			fmt.Printf("Error getting journal for service %s: %s\n", ser, err.Error())
+			fmt.Printf("Output from command: %s\n", out)
+		}
+		s.GatherLog(fmt.Sprintf("/tmp/%s.log", ser))
+	}
+
+	// log files
+	for _, file := range logFiles {
+		s.GatherLog(file)
+	}
+
+	// dmesg
+	out, err := s.command("dmesg > /tmp/dmesg", true)
+	if err != nil {
+		fmt.Printf("Error getting dmesg : %s\n", err.Error())
+		fmt.Printf("Output from command: %s\n", out)
+	}
+	s.GatherLog("/tmp/dmesg")
+
+	// grab full journal
+	out, err = s.command("journalctl -o short-iso > /tmp/journal.log", true)
+	if err != nil {
+		fmt.Printf("Error getting full journalctl info : %s\n", err.Error())
+		fmt.Printf("Output from command: %s\n", out)
+	}
+	s.GatherLog("/tmp/journal.log")
+
+	// uname
+	out, err = s.command("uname -a > /tmp/uname.log", true)
+	if err != nil {
+		fmt.Printf("Error getting uname info : %s\n", err.Error())
+		fmt.Printf("Output from command: %s\n", out)
+	}
+	s.GatherLog("/tmp/uname.log")
+
+	// disk info
+	out, err = s.command("lsblk -a >> /tmp/disks.log", true)
+	if err != nil {
+		fmt.Printf("Error getting disk info : %s\n", err.Error())
+		fmt.Printf("Output from command: %s\n", out)
+	}
+	out, err = s.command("blkid >> /tmp/disks.log", true)
+	if err != nil {
+		fmt.Printf("Error getting disk info : %s\n", err.Error())
+		fmt.Printf("Output from command: %s\n", out)
+	}
+	s.GatherLog("/tmp/disks.log")
+
+	// Grab users
+	s.GatherLog("/etc/passwd")
+	// Grab system info
+	s.GatherLog("/etc/os-release")
+
+
+}
+
 // GatherLog will try to scp the given log from the machine to a local file
 func (s SUT) GatherLog(logPath string) {
 	fmt.Printf("Trying to get file: %s\n", logPath)

@@ -15,6 +15,12 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		s.EventuallyConnects()
 	})
 
+	AfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			s.GatherAllLogs()
+		}
+	})
+
 	Context("upgrading COS_ACTIVE from the recovery partition", func() {
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed == false {
