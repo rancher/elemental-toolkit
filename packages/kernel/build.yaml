@@ -8,6 +8,14 @@ steps:
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y --no-recommends {{.Values.kernel_package}}
 - zypper cc
+{{ if .Values.arch }}
+  {{ if eq .Values.arch "aarch64" }}
+# aarch64 has an uncompressed kernel so we need to link it to vmlinuz
+- |
+    kernel=$(ls /boot/Image-* | head -n1) && \
+    ln -sf "${kernel#/boot/}" /boot/vmlinuz
+  {{ end }}
+{{ end }}
 {{else if eq .Values.distribution "fedora" }}
 - dnf install -y {{.Values.kernel_package}}
 - dnf clean all
