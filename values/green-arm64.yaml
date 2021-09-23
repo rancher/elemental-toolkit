@@ -1,4 +1,4 @@
-image: opensuse/leap:15.3
+image: opensuse/leap:15.3@sha256:30e1ea6881aaeefb8419a1295708fa523cdc089d1d38aa715552dc7feabbf8af
 distribution: "opensuse"
 codename: "green"
 arch: "aarch64"
