@@ -1,5 +1,10 @@
+{{if .Values.distribution}}
+  {{if eq .Values.distribution "opensuse"}}
 image: {{ .Values.image }}
-
+  {{else }}
+image: opensuse/leap:15.3
+  {{end}}
+{{end}}
 prelude:
 {{ if .Values.arch }}
   {{if eq .Values.arch "x86_64"}}
