@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
@@ -85,29 +84,6 @@ func downloadMeta(p Package, o opData) error {
 	return downloadImage(p.ImageMetadata(o.FinalRepo), "build")
 }
 
-func metaWorker(i int, wg *sync.WaitGroup, c <-chan Package, o opData) error {
-	defer wg.Done()
-
-	for p := range c {
-		checkErr(downloadMeta(p, o))
-	}
-	return nil
-}
-
-func getResultData(p Package, o opData) resultData {
-	fmt.Println("Checking", p, p.Image(o.FinalRepo))
-	return resultData{Package: p, Exists: p.ImageAvailable(o.FinalRepo)}
-}
-
-func buildWorker(i int, wg *sync.WaitGroup, c <-chan Package, o opData, results chan<- resultData) error {
-	defer wg.Done()
-
-	for p := range c {
-		results <- getResultData(p, o)
-	}
-	return nil
-}
-
 func main() {
 	finalRepo := os.Getenv("FINAL_REPO")
 	if finalRepo == "" {
@@ -122,36 +98,13 @@ func main() {
 	packs, err := TreePackages("./packages")
 	checkErr(err)
 	missingPackages := []Package{}
-	op := opData{FinalRepo: finalRepo}
-	if os.Getenv("PARALLEL") == "true" {
-		all := make(chan Package)
-		results := make(chan resultData, len(packs.Packages))
-		wg := new(sync.WaitGroup)
 
-		for i := 0; i < 10; i++ {
-			wg.Add(1)
-			go buildWorker(i, wg, all, op, results)
-		}
+	tags, err := imageTags(finalRepo)
+	checkErr(err)
 
-		for _, p := range packs.Packages {
-			all <- p
-		}
-		close(all)
-
-		for s := 1; s <= len(packs.Packages); s++ {
-			a := <-results
-			if !a.Exists {
-				missingPackages = append(missingPackages, a.Package)
-			}
-		}
-
-		wg.Wait()
-	} else {
-		for _, p := range packs.Packages {
-			a := getResultData(p, op)
-			if !a.Exists {
-				missingPackages = append(missingPackages, a.Package)
-			}
+	for _, p := range packs.Packages {
+		if !containsS(p.ImageTag(), tags) {
+			missingPackages = append(missingPackages, p)
 		}
 	}
 
@@ -185,49 +138,29 @@ func main() {
 	if os.Getenv("DOWNLOAD_METADATA") == "true" {
 		fmt.Println("Populating build folder with metadata files")
 		op := opData{FinalRepo: finalRepo}
-		if os.Getenv("PARALLEL") == "true" {
-			all := make(chan Package)
-			wg := new(sync.WaitGroup)
 
-			for i := 0; i < 1; i++ {
-				wg.Add(1)
-				go metaWorker(i, wg, all, op)
+		if os.Getenv("DOWNLOAD_ALL") == "true" {
+			fmt.Println("Downloading all available metadata files on the remote repository")
+
+			for _, t := range tags {
+				if strings.HasSuffix(t, ".metadata.yaml") {
+					img := fmt.Sprintf("%s:%s", finalRepo, t)
+					fmt.Println("Downloading", img)
+					checkErr(
+						downloadImage(img, "build"),
+					)
+
+				}
 			}
-
+		} else {
 			for _, p := range packs.Packages {
 				if !contains(missingPackages, p) {
-					all <- p
-				}
-			}
-
-			close(all)
-			wg.Wait()
-		} else {
-			if os.Getenv("DOWNLOAD_ALL") == "true" {
-				fmt.Println("Downloading all available metadata files on the remote repository")
-
-				tags, err := imageTags(finalRepo)
-				checkErr(err)
-
-				for _, t := range tags {
-					if strings.HasSuffix(t, ".metadata.yaml") {
-						img := fmt.Sprintf("%s:%s", finalRepo, t)
-						fmt.Println("Downloading", img)
-						checkErr(
-							downloadImage(img, "build"),
-						)
-
-					}
-				}
-			} else {
-				for _, p := range packs.Packages {
-					if !contains(missingPackages, p) {
-						err := downloadMeta(p, op)
-						checkErr(err)
-					}
+					err := downloadMeta(p, op)
+					checkErr(err)
 				}
 			}
 		}
+
 	}
 }
 
@@ -300,13 +233,27 @@ func contains(pp []Package, p Package) bool {
 	return false
 }
 
+func containsS(s string, slice []string) bool {
+	for _, i := range slice {
+		if s == i {
+			return true
+		}
+	}
+	return false
+}
+
 func (p Package) String() string {
 	return fmt.Sprintf("%s/%s@%s", p.Category, p.Name, p.Version)
 }
 
 func (p Package) Image(repository string) string {
 	// ${name}-${category}-${version//+/-}
-	return fmt.Sprintf("%s:%s-%s-%s", repository, p.Name, p.Category, strings.ReplaceAll(p.Version, "+", "-"))
+	return fmt.Sprintf("%s:%s", repository, p.ImageTag())
+}
+
+func (p Package) ImageTag() string {
+	// ${name}-${category}-${version//+/-}
+	return fmt.Sprintf("%s-%s-%s", p.Name, p.Category, strings.ReplaceAll(p.Version, "+", "-"))
 }
 
 func (p Package) ImageMetadata(repository string) string {
@@ -319,24 +266,15 @@ func (p Package) ImageAvailable(repository string) bool {
 }
 
 func (p Package) Equal(pp Package) bool {
-	if p.Name == pp.Name && p.Category == pp.Category && p.Version == pp.Version {
-		return true
-	}
-	return false
+	return p.Name == pp.Name && p.Category == pp.Category && p.Version == pp.Version
 }
 
 func (p Package) EqualS(s string) bool {
-	if s == fmt.Sprintf("%s/%s", p.Category, p.Name) {
-		return true
-	}
-	return false
+	return s == fmt.Sprintf("%s/%s", p.Category, p.Name)
 }
 
 func (p Package) EqualNoV(pp Package) bool {
-	if p.Name == pp.Name && p.Category == pp.Category {
-		return true
-	}
-	return false
+	return p.Name == pp.Name && p.Category == pp.Category
 }
 
 func (s SearchResult) FilterByCategory(cat string) SearchResult {
