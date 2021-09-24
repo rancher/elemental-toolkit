@@ -95,7 +95,6 @@ else
 	$(YQ) e -i '.luet.repositories[0].enable=true' $(MANIFEST).remote
 	$(YQ) e -i '.luet.repositories[0].priority=90' $(MANIFEST).remote
 	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
-	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
 	$(YQ) e -i ".luet.repositories[0].urls[0]=\"$(FINAL_REPO)\"" $(MANIFEST).remote
 	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST).remote
 endif
