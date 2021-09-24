@@ -426,9 +426,15 @@
     {{{- end }}}
     {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
     {{{- else }}}
+    {{{- if $config.build_raw_image }}}
     - raw-images-{{{ $flavor }}}
+    {{{- end }}}
+    {{{- if $config.build_image_vbox }}}
     - vbox-nonsquashfs-{{{ $flavor }}}
+    {{{- end }}}
+    {{{- if $config.build_image_qemu }}}
     - qemu-nonsquashfs-{{{ $flavor }}}
+    {{{- end }}}
     - iso-nonsquashfs-{{{ $flavor }}}
     {{{- end }}}
     - image-link-{{{ $flavor }}}
@@ -457,6 +463,7 @@
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
           path: release
+      {{{- if $config.build_image_vbox }}}
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
@@ -467,11 +474,15 @@
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.ova
           path: release
+      {{{- end }}}
+      {{{- if $config.build_image_qemu }}}
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.qcow
           path: release
+      {{{- end }}}
+      {{{- if $config.build_raw_image }}}
       - name: Download GCE RAW image
         uses: actions/download-artifact@v2
         with:
@@ -487,6 +498,7 @@
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: release
+      {{{- end }}}
       {{{- end}}}
       - name: Download Image links
         uses: actions/download-artifact@v2
