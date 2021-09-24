@@ -1,3 +1,8 @@
+variable "qemu_binary" {
+  type = string
+  default = "qemu-system-x86_64"
+}
+
 variable "accelerator" {
   type    = string
   default = "kvm"

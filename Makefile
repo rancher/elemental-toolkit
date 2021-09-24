@@ -47,7 +47,11 @@ endif
 #
 # Output for "make publish-repo" and base for "make iso"
 #
-FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
+ifneq ($(strip $(ARCH)), x86_64)
+	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)-$(ARCH)
+else
+	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
+endif
 
 #
 # Location of package tree
