@@ -254,6 +254,9 @@
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           COS_VERSION=$(cos_version)
+          {{{if eq $config.arch "arm64" }}}
+          export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          {{{- end}}}
           PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch={{{ $config.arch }}}' -var='flavor={{{ $flavor }}}' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
@@ -797,8 +800,12 @@ jobs:
 
     {{{- if not (has $config.skip_images_flavor $flavor) }}}
   {{{ tmpl.Exec "build_iso" $context }}}
+        {{{- if $config.build_image_qemu }}}
   {{{ tmpl.Exec "build_qemu" $context }}}
+        {{{- end }}}
+        {{{- if $config.build_image_vbox }}}
   {{{ tmpl.Exec "build_vbox" $context }}}
+        {{{- end }}}
     {{{- end }}}
 
     {{{- if not (or $config.skip_tests (has $config.skip_tests_flavor $flavor)) }}}
@@ -816,8 +823,10 @@ jobs:
   {{{- end }}}
 
     {{{- if not (has $config.skip_images_flavor $flavor) }}}
+    {{{- if $config.build_raw_image }}}
   {{{tmpl.Exec "raw_image" $flavor}}}
   {{{tmpl.Exec "raw_image_test_deploy" $flavor}}}
+  {{{- end }}}
 
       {{{- if $config.publish_cloud }}}
   {{{tmpl.Exec "ami_publish" $flavor}}}

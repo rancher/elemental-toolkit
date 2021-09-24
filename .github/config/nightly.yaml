@@ -18,6 +18,9 @@ arches:
     flavors: ["green", "blue", "orange"]
     skip_tests_flavor: ["blue","orange"]
     skip_images_flavor: ["blue","orange"]
+    build_image_qemu: true
+    build_image_vbox: true
+    build_raw_image: true
     release_flavor: ["green"]
     arch: "x86_64"
 
