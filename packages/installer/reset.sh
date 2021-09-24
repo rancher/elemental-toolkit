@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+source /usr/lib/cos/functions.sh
+
 is_booting_from_squashfs() {
     if cat /proc/cmdline | grep -q "COS_RECOVERY"; then
         return 0
@@ -33,6 +35,14 @@ find_partitions() {
     DEVICE=/dev/$(lsblk -no pkname $STATE)
 
     BOOT=$(blkid -L COS_GRUB || true)
+
+    OEM=$(blkid -L COS_OEM || true)
+
+    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    if [ -z "$PERSISTENT" ]; then
+        echo "Persistent partition cannot be found"
+        exit 1
+    fi
 }
 
 do_mount()
@@ -113,6 +123,21 @@ ensure_dir_structure() {
     mkdir ${TARGET}/tmp || true
 }
 
+run_reset_hook() {
+    loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
+    mount -t ext2 ${STATEDIR}/cOS/passive.img $loop_dir
+        
+    mount $PERSISTENT $loop_dir/usr/local
+    mount $OEM $loop_dir/oem
+
+    run_hook after-reset-chroot $loop_dir
+
+    umount $loop_dir/oem
+    umount $loop_dir/usr/local
+    umount $loop_dir
+    rm -rf $loop_dir
+}
+
 copy_active() {
     if is_booting_from_squashfs; then
         tmp_dir=$(mktemp -d -t squashfs-XXXXXXXXXX)
@@ -144,11 +169,12 @@ copy_active() {
 
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
         sync
-        copy_passive
     else
         cp -rf ${RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
-        copy_passive
     fi
+    
+    run_reset_hook
+    copy_passive
 }
 
 trap cleanup exit

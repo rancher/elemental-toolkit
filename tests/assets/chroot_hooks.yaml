@@ -1,0 +1,8 @@
+name: "Setup cos config"
+stages:
+   after-upgrade-chroot:
+     - commands:
+        - echo > /after-upgrade-chroot
+   after-reset-chroot:
+     - commands:
+        - echo > /after-reset-chroot

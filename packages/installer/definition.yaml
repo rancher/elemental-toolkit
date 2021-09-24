@@ -1,3 +1,4 @@
 name: "installer"
 category: "utils"
-version: 0.16.4-6
+version: "0.17"
+description: "Installer, Upgrade and reset utilities to manage cOS derivatives"
