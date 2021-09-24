@@ -346,7 +346,7 @@
           make prepare-test
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
-        if: failure() && contains(matrix.test, 'upgrade')
+        if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
@@ -611,6 +611,12 @@
           GROUP_ID=$(id -g)
           sudo chown $USER_ID:$GROUP_ID serial_port1.log
           sudo chmod 777 serial_port1.log
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
