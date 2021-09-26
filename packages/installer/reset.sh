@@ -3,6 +3,12 @@ set -e
 
 source /usr/lib/cos/functions.sh
 
+ARCH=$(uname -p)
+
+if [ "${ARCH}" == "aarch64" ]; then
+  ARCH="arm64"
+fi
+
 is_booting_from_squashfs() {
     if cat /proc/cmdline | grep -q "COS_RECOVERY"; then
         return 0
@@ -82,7 +88,7 @@ cleanup()
 install_grub()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=x86_64-efi --efi-directory=${STATEDIR}/boot/efi"
+        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${STATE} /boot/grub2
     grub2-install ${GRUB_TARGET} --root-directory=${STATEDIR} --boot-directory=${STATEDIR} --removable ${DEVICE}
