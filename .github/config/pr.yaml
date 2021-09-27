@@ -23,6 +23,7 @@ flavors:
         build_image_qemu: true
         build_image_vbox: true
         build_raw_image: true
+        run_raw_image_test: true
         release_flavor: [ "green" ]
         arch: "x86_64"
         on:
@@ -54,7 +55,8 @@ flavors:
         skip_images_packer: true
         build_image_qemu: false
         build_image_vbox: false
-        build_raw_image: false
+        build_raw_image: true
+        run_raw_image_test: false
         release_flavor: [ "green" ]
         arch: "arm64"
         # labels required for this job to run, list of labels. All will be required.
@@ -71,6 +73,7 @@ flavors:
         build_image_qemu: false
         build_image_vbox: false
         build_raw_image: false
+        run_raw_image_test: false
   blue:
     arches:
       x86_64:
@@ -79,3 +82,4 @@ flavors:
         build_image_qemu: false
         build_image_vbox: false
         build_raw_image: false
+        run_raw_image_test: false
