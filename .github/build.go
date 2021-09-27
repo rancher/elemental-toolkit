@@ -84,6 +84,11 @@ func downloadMeta(p Package, o opData) error {
 	return downloadImage(p.ImageMetadata(o.FinalRepo), "build")
 }
 
+func getResultData(p Package, o opData) resultData {
+	fmt.Println("Checking", p, p.Image(o.FinalRepo))
+	return resultData{Package: p, Exists: p.ImageAvailable(o.FinalRepo)}
+}
+
 func main() {
 	finalRepo := os.Getenv("FINAL_REPO")
 	if finalRepo == "" {
@@ -99,12 +104,11 @@ func main() {
 	checkErr(err)
 	missingPackages := []Package{}
 
-	tags, err := imageTags(finalRepo)
-	checkErr(err)
-
+	op := opData{FinalRepo: finalRepo}
 	for _, p := range packs.Packages {
-		if !containsS(p.ImageTag(), tags) {
-			missingPackages = append(missingPackages, p)
+		a := getResultData(p, op)
+		if !a.Exists {
+			missingPackages = append(missingPackages, a.Package)
 		}
 	}
 
@@ -141,7 +145,8 @@ func main() {
 
 		if os.Getenv("DOWNLOAD_ALL") == "true" {
 			fmt.Println("Downloading all available metadata files on the remote repository")
-
+			tags, err := imageTags(finalRepo)
+			checkErr(err)
 			for _, t := range tags {
 				if strings.HasSuffix(t, ".metadata.yaml") {
 					img := fmt.Sprintf("%s:%s", finalRepo, t)
