@@ -9,6 +9,9 @@ on:
      - Makefile
      - tests/**
      - examples/**
+ push:
+   branches:
+     - master
 concurrency:
   group: ci-Examples-green-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
