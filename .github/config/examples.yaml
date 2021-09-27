@@ -28,6 +28,8 @@ flavors:
         arch: "x86_64"
 
         on:
+          push:
+            branches: [ "master" ]
           pull_request:
             paths:
               - 'conf/**'
