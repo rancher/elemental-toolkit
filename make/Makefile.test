@@ -123,7 +123,7 @@ else
 	# create vm
 	VBoxManage createvm --name "test" --register
 	# increase memory, otherwise grub fails to boot
-	VBoxManage modifyvm "test" --memory 2048
+	VBoxManage modifyvm "test" --memory 10240
 	# config vm options, i.e. efi boot, nat, serial to file, etc...
 	VBoxManage modifyvm "test" --firmware efi --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --natpf1 "guestssh,tcp,,2222,,22"
 	# add sata controller
