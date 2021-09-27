@@ -1,58 +1,77 @@
 ---
 
-arches:
-  x86_64:
-    local_runner: false
-    push_cache: true
-    skip_build: false
-    skip_docker_build: false
+flavors:
+  green:
+    arches:
+      x86_64:
+        &x86_64
+        local_runner: false
+        push_cache: true
+        skip_build: false
+        skip_docker_build: false
 
-    pipeline: "master"
-    publishing_pipeline: true
-    publish_cloud: false
-    publish_toolchain: true
+        pipeline: "master"
+        publishing_pipeline: true
+        publish_cloud: false
+        publish_toolchain: true
 
-    repository: "releases"
-    cache_repository: "build"
-    organization: "quay.io/costoolkit"
-    skip_tests: false
-    flavors: ["green", "blue", "orange"]
-    skip_tests_flavor: ["blue","orange"]
-    skip_images_flavor: ["blue","orange"]
-    build_image_qemu: true
-    build_image_vbox: true
-    build_raw_image: true
-    release_flavor: []
-    arch: "x86_64"
+        repository: "releases"
+        cache_repository: "build"
+        organization: "quay.io/costoolkit"
+        skip_tests: false
+        flavor: "green"
+        skip_tests_flavor: ["blue","orange"]
+        skip_images_flavor: ["blue","orange"]
+        build_image_qemu: true
+        build_image_vbox: true
+        build_raw_image: true
+        release_flavor: []
+        arch: "x86_64"
 
-    on:
-      push:
-        branches: ["master"]
-  arm64:
-    local_runner: true
-    runs_on: [ "self-hosted", "arm64" ]
-    push_cache: true
-    skip_build: false
-    skip_docker_build: true
+        on:
+          push:
+            branches: ["master"]
+      arm64:
+        local_runner: true
+        runs_on: [ "self-hosted", "arm64" ]
+        push_cache: true
+        skip_build: false
+        skip_docker_build: true
 
-    pipeline: "master - arm64"
-    publishing_pipeline: true
-    publish_cloud: false
-    publish_toolchain: false
+        pipeline: "master - arm64"
+        publishing_pipeline: true
+        publish_cloud: false
+        publish_toolchain: false
 
-    repository: "releases"
-    cache_repository: "build"
-    organization: "quay.io/costoolkit"
-    skip_tests: true
-    flavors: [ "green" ]
-    skip_tests_flavor: [ "green","blue","orange" ]
-    skip_images_flavor: [ "blue","orange" ]
-    build_image_qemu: false
-    build_image_vbox: false
-    build_raw_image: false
-    release_flavor: [ ]
-    arch: "arm64"
+        repository: "releases"
+        cache_repository: "build"
+        organization: "quay.io/costoolkit"
+        skip_tests: true
+        flavor: "green"
+        skip_tests_flavor: [ "green","blue","orange" ]
+        skip_images_flavor: [ "blue","orange" ]
+        build_image_qemu: false
+        build_image_vbox: false
+        build_raw_image: false
+        release_flavor: [ ]
+        arch: "arm64"
 
-    on:
-      push:
-        branches: [ "master" ]
+        on:
+          push:
+            branches: [ "master" ]
+  orange:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "orange"
+        publish_toolchain: false
+        build_image_vbox: false
+        build_raw_image: false
+  blue:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "blue"
+        publish_toolchain: false
+        build_image_vbox: false
+        build_raw_image: false

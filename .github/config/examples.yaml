@@ -1,36 +1,38 @@
 ---
 
-arches:
-  x86_64:
-    local_runner: false
-    pipeline: "Examples"
-    push_cache: false
-    publishing_pipeline: false
-    publish_cloud: false
-    publish_toolchain: false
-    skip_build: true
-    skip_docker_build: true
-    repository: "releases" # releases for prod
-    cache_repository: "build"
-    organization: "quay.io/costoolkit"
-    skip_tests: true
-    flavors: ["green", "blue", "orange"]
-    skip_tests_flavor: ["green","blue","orange"]
-    skip_images_flavor: ["green", "blue","orange"]
-    build_image_qemu: false
-    build_image_vbox: false
-    build_raw_image: false
-    release_flavor: []
-    build_examples_dir: ["cos-official", "scratch", "standard"]
-    arch: "x86_64"
+flavors:
+  green:
+    arches:
+      x86_64:
+        local_runner: false
+        pipeline: "Examples"
+        push_cache: false
+        publishing_pipeline: false
+        publish_cloud: false
+        publish_toolchain: false
+        skip_build: true
+        skip_docker_build: true
+        repository: "releases" # releases for prod
+        cache_repository: "build"
+        organization: "quay.io/costoolkit"
+        skip_tests: true
+        flavor: "green"
+        skip_tests_flavor: ["green","blue","orange"]
+        skip_images_flavor: ["green", "blue","orange"]
+        build_image_qemu: false
+        build_image_vbox: false
+        build_raw_image: false
+        release_flavor: []
+        build_examples_dir: ["cos-official", "scratch", "standard"]
+        arch: "x86_64"
 
-    on:
-      pull_request:
-        paths:
-          - 'conf/**'
-          - 'packages/**'
-          - 'make/**'
-          - '.github/**'
-          - 'Makefile'
-          - 'tests/**'
-          - 'examples/**'
+        on:
+          pull_request:
+            paths:
+              - 'conf/**'
+              - 'packages/**'
+              - 'make/**'
+              - '.github/**'
+              - 'Makefile'
+              - 'tests/**'
+              - 'examples/**'

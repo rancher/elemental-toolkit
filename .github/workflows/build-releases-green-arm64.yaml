@@ -1,10 +1,10 @@
-name: Build cOS master - arm64
+name: Build cOS releases - arm64-green-arm64
 on: 
  push:
-   branches:
-     - master
+   tags:
+     - v*
 concurrency:
-  group: ci-master - arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-releases - arm64-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-green-arm64:
@@ -249,3 +249,40 @@ jobs:
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
+  github-release-green:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+    - build-green-arm64
+    - iso-nonsquashfs-green
+    - image-link-green
+    env:
+      FLAVOR: green
+      ARCH: arm64
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run make deps
+        run: |
+          sudo -E make deps
+          sudo luet install --no-spinner -y toolchain/yq
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+          path: release
+      - name: Download Image links
+        uses: actions/download-artifact@v2
+        with:
+          name: images-green-arm64.txt
+          path: release
+      - name: Release
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_COMPRESS: xz
+          GHR_PATH: release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

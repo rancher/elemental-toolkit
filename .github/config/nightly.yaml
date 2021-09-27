@@ -1,29 +1,42 @@
 ---
 
-arches:
-  x86_64:
-    local_runner: false
-    push_cache: false
-    skip_build: false
-    skip_docker_build: false
+flavors:
+  green:
+    arches:
+      x86_64:
+        &x86_64
+        local_runner: false
+        push_cache: false
+        skip_build: false
+        skip_docker_build: false
 
-    pipeline: "nightly"
-    publishing_pipeline: false
-    publish_cloud: false
-    publish_toolchain: false
-    repository: "releases"
-    cache_repository: "build"
-    organization: "quay.io/costoolkit"
-    skip_tests: false
-    flavors: ["green", "blue", "orange"]
-    skip_tests_flavor: ["blue","orange"]
-    skip_images_flavor: ["blue","orange"]
-    build_image_qemu: true
-    build_image_vbox: true
-    build_raw_image: true
-    release_flavor: ["green"]
-    arch: "x86_64"
+        pipeline: "nightly"
+        publishing_pipeline: false
+        publish_cloud: false
+        publish_toolchain: false
+        repository: "releases"
+        cache_repository: "build"
+        organization: "quay.io/costoolkit"
+        skip_tests: false
+        flavor: "green"
+        skip_tests_flavor: ["blue","orange"]
+        skip_images_flavor: ["blue","orange"]
+        build_image_qemu: true
+        build_image_vbox: true
+        build_raw_image: true
+        release_flavor: ["green"]
+        arch: "x86_64"
 
-    on:
-      schedule:
-        - cron:  '0 20 * * *'
+        on:
+          schedule:
+            - cron:  '0 20 * * *'
+  orange:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "orange"
+  blue:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "blue"
