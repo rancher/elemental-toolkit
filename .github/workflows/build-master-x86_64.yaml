@@ -63,7 +63,7 @@ jobs:
           pushd ./.github
           go build -o build
           popd
-          ./.github/build
+          sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
       - name: Generate manifests
@@ -632,7 +632,7 @@ jobs:
           pushd ./.github
           go build -o build
           popd
-          ./.github/build
+          sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
       - name: Generate manifests
@@ -778,7 +778,7 @@ jobs:
           pushd ./.github
           go build -o build
           popd
-          ./.github/build
+          sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
       - name: Generate manifests
