@@ -4,6 +4,10 @@ set -e
 source /usr/lib/cos/functions.sh
 
 CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+ARCH=$(uname -p)
+if [ "${ARCH}" == "aarch64" ]; then
+  ARCH="arm64"
+fi
 
 # 1. Identify active/passive partition
 # 2. Install upgrade in passive partition
@@ -255,7 +259,12 @@ switch_active() {
 
 switch_recovery() {
     if is_squashfs; then
-        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj x86
+        if [[ "${ARCH}" == "arm64" ]]; then
+          XZ_FILTER="arm"
+        else
+          XZ_FILTER="x86"
+        fi
+        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
         mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
         rm -rf $TARGET
     else
