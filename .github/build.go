@@ -193,11 +193,24 @@ func main() {
 		if os.Getenv("DOWNLOAD_ALL") == "true" {
 			fmt.Println("Downloading all available metadata files on the remote repository")
 			var err error
-			for _, t := range currentPackages.Packages {
-				img := fmt.Sprintf("%s:%s.metadata.yaml", finalRepo, t.ImageTag())
-				fmt.Println("Downloading", img)
-				err = multierror.Append(err, downloadImage(img, "build"))
+			if os.Getenv("DOWNLOAD_FROM_LIST") == "true" {
+				tags, err := imageTags(finalRepo)
+				checkErr(err)
+				for _, t := range tags {
+					if strings.HasSuffix(t, ".metadata.yaml") {
+						img := fmt.Sprintf("%s:%s", finalRepo, t)
+						fmt.Println("Downloading", img)
+						err = multierror.Append(err, downloadImage(img, "build"))
+					}
+				}
+			} else {
+				for _, t := range currentPackages.Packages {
+					img := fmt.Sprintf("%s:%s.metadata.yaml", finalRepo, t.ImageTag())
+					fmt.Println("Downloading", img)
+					err = multierror.Append(err, downloadImage(img, "build"))
+				}
 			}
+
 			if err != nil {
 				// We might not want to always be strict, but we might relax because
 				// there might be occasions when we  remove images from registries due
