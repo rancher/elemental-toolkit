@@ -11,6 +11,12 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/hashicorp/go-multierror"
+	"github.com/mudler/luet/pkg/config"
+	installer "github.com/mudler/luet/pkg/installer"
+	. "github.com/mudler/luet/pkg/logger"
+	pkg "github.com/mudler/luet/pkg/package"
+	"github.com/mudler/luet/pkg/tree"
 )
 
 const DefaultRetries = 120
@@ -22,6 +28,44 @@ type opData struct {
 type resultData struct {
 	Package Package
 	Exists  bool
+}
+
+func repositoryPackages(repo string) (searchResult SearchResult) {
+
+	fmt.Println("Retrieving remote repository packages")
+	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	config.LuetCfg.System.TmpDirBase = tmpdir
+	config.LuetCfg.System.Rootfs = tmpdir
+	InitAurora()
+	d := &installer.LuetSystemRepository{
+		LuetRepository: &config.LuetRepository{
+			Name:   "cOS",
+			Type:   "docker",
+			Cached: true,
+			Urls:   []string{repo},
+		},
+
+		Tree: tree.NewInstallerRecipe(pkg.NewInMemoryDatabase(false)),
+	}
+	re, err := d.Sync(false)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, p := range re.GetTree().GetDatabase().World() {
+		searchResult.Packages = append(searchResult.Packages, Package{
+			Name:     p.GetName(),
+			Category: p.GetCategory(),
+			Version:  p.GetVersion(),
+		})
+	}
+
+	return
 }
 
 func retryDownload(img, dest string, t int) error {
@@ -90,6 +134,7 @@ func getResultData(p Package, o opData) resultData {
 }
 
 func main() {
+
 	finalRepo := os.Getenv("FINAL_REPO")
 	if finalRepo == "" {
 		fmt.Println("A container repository must be specified with FINAL_REPO")
@@ -100,15 +145,17 @@ func main() {
 	if buildScript == "" {
 		buildScript = "./.github/build.sh"
 	}
+
 	packs, err := TreePackages("./packages")
 	checkErr(err)
+
+	currentPackages := repositoryPackages(finalRepo)
+
 	missingPackages := []Package{}
 
-	op := opData{FinalRepo: finalRepo}
 	for _, p := range packs.Packages {
-		a := getResultData(p, op)
-		if !a.Exists {
-			missingPackages = append(missingPackages, a.Package)
+		if !Packages(currentPackages.Packages).Exist(p) {
+			missingPackages = append(missingPackages, p)
 		}
 	}
 
@@ -145,17 +192,22 @@ func main() {
 
 		if os.Getenv("DOWNLOAD_ALL") == "true" {
 			fmt.Println("Downloading all available metadata files on the remote repository")
-			tags, err := imageTags(finalRepo)
-			checkErr(err)
-			for _, t := range tags {
-				if strings.HasSuffix(t, ".metadata.yaml") {
-					img := fmt.Sprintf("%s:%s", finalRepo, t)
-					fmt.Println("Downloading", img)
-					checkErr(
-						downloadImage(img, "build"),
-					)
-
+			var err error
+			for _, t := range currentPackages.Packages {
+				img := fmt.Sprintf("%s:%s.metadata.yaml", finalRepo, t.ImageTag())
+				fmt.Println("Downloading", img)
+				err = multierror.Append(err, downloadImage(img, "build"))
+			}
+			if err != nil {
+				// We might not want to always be strict, but we might relax because
+				// there might be occasions when we  remove images from registries due
+				// to cleanups
+				fmt.Println("There were errors while downloading remote images")
+				fmt.Println(err.Error())
+				if os.Getenv("DOWNLOAD_FATAL_MISSING_PACKAGES") == "true" {
+					checkErr(err)
 				}
+
 			}
 		} else {
 			for _, p := range packs.Packages {
@@ -302,4 +354,15 @@ func (s SearchResult) FilterByName(name string) SearchResult {
 		}
 	}
 	return new
+}
+
+type Packages []Package
+
+func (p Packages) Exist(pp Package) bool {
+	for _, pi := range p {
+		if pp.Equal(pi) {
+			return true
+		}
+	}
+	return false
 }
