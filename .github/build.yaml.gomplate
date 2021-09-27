@@ -784,13 +784,13 @@
 {{{- end}}}
 {{{end}}}
 
-name: Build cOS {{{$config.pipeline}}}
+name: Build cOS {{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}
 
 on: 
 {{{$config.on | toYAML | indent 1 }}}
 
 concurrency:
-  group: ci-{{{$config.pipeline}}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-{{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
@@ -800,8 +800,7 @@ jobs:
     {{{tmpl.Exec "build_example_dir" $dir}}}
   {{{- end }}}
 {{{- end}}}
-{{{- range $config.flavors }}}
-  {{{$flavor:=.}}}
+{{{- with $flavor := $config.flavor }}}
 
   {{{- if not $config.skip_docker_build }}}
   {{{tmpl.Exec "docker_build_packages" $flavor}}}
@@ -840,16 +839,14 @@ jobs:
   {{{- end }}}
   {{{- end }}}
 
-    {{{- if not (has $config.skip_images_flavor $flavor) }}}
     {{{- if $config.build_raw_image }}}
   {{{tmpl.Exec "raw_image" $flavor}}}
   {{{tmpl.Exec "raw_image_test_deploy" $flavor}}}
-  {{{- end }}}
+    {{{- end }}}
 
       {{{- if $config.publish_cloud }}}
   {{{tmpl.Exec "ami_publish" $flavor}}}
       {{{- end }}}
-    {{{- end }}}
 {{{- end }}}
 
 {{{tmpl.Exec "toolchain_images"}}}
