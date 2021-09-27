@@ -1,10 +1,10 @@
-name: Build cOS master - arm64-green-arm64
+name: Build cOS master-green-arm64
 on: 
  push:
    branches:
      - master
 concurrency:
-  group: ci-master - arm64-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-master-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-green-arm64:
