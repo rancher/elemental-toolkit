@@ -37,7 +37,7 @@ flavors:
       arm64:
         local_runner: true
         runs_on: [ "self-hosted", "arm64" ]
-        pipeline: "Pull requests - arm64"
+        pipeline: "Pull requests"
         push_cache: false
         publishing_pipeline: false
         publish_cloud: false

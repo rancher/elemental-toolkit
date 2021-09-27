@@ -39,7 +39,7 @@ flavors:
         skip_build: false
         skip_docker_build: true
 
-        pipeline: "releases - arm64"
+        pipeline: "releases"
         publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: false

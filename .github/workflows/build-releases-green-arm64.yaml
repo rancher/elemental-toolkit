@@ -1,10 +1,10 @@
-name: Build cOS releases - arm64-green-arm64
+name: Build cOS releases-green-arm64
 on: 
  push:
    tags:
      - v*
 concurrency:
-  group: ci-releases - arm64-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-releases-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-green-arm64:
