@@ -44,7 +44,7 @@ EOF
 
 # Create root-tree for COS_RECOVERY
 while IFS=$'\t' read -r name target ; do
-  luet install --system-target "$target" -y "$name"
+  luet install --no-spinner --system-target "$target" -y "$name"
 done < <("${YQ_PACKAGES_COMMAND[@]}" | jq -r ".raw_disk.$ARCH.packages[] | [.name, .target] | @tsv")
 
 # Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
