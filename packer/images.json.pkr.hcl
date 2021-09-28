@@ -86,6 +86,7 @@ source "qemu" "cos" {
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"
   firmware               = "${var.firmware}"
+  disk_interface         = "ide"
   disk_size              = "${var.disk_size}"
   format                 = "qcow2"
   headless               = true

@@ -129,10 +129,14 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PACKER_LOG=1
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-squashfs-green-arm64.qcow
@@ -212,10 +216,14 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PACKER_LOG=1
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=arm64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-nonsquashfs-green-arm64.qcow

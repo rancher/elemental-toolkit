@@ -127,8 +127,12 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=x86_64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=hvf
+          PACKER_ARGS="-only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-squashfs-green-x86_64.qcow
@@ -288,8 +292,12 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -var='feature=vagrant' -only qemu.cos" make packer
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=x86_64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=hvf
+          PACKER_ARGS="-only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-nonsquashfs-green-x86_64.qcow
