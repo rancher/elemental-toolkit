@@ -222,3 +222,60 @@ jobs:
           path: |
             cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
           if-no-files-found: error
+  tests-raw-disk-deploy-green:
+    runs-on: macos-10.15
+    needs: raw-images-green
+    steps:
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: brew install yq cdrtools
+      - name: Export cos version
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-arm64
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          sudo -E make raw_disk_test_deploy
+      - name: Change serial log ownership
+        if: failure()
+        run: |
+          USER_ID=$(id -u)
+          GROUP_ID=$(id -g)
+          sudo chown $USER_ID:$GROUP_ID serial_port1.log
+          sudo chmod 777 serial_port1.log
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-green.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-green.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
