@@ -82,11 +82,10 @@ source "googlecompute" "cos" {
 }
 
 source "qemu" "cos" {
-  qemu_binary            = "${var.qemu_binary}"
   accelerator            = "${var.accelerator}"
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"
-  disk_interface         = "ide"
+  firmware               = "${var.firmware}"
   disk_size              = "${var.disk_size}"
   format                 = "qcow2"
   headless               = true
@@ -100,6 +99,39 @@ source "qemu" "cos" {
   ssh_username           = "${var.root_username}"
   vm_name                = "cOS"
 }
+
+source "qemu" "cos-arm64" {
+  qemu_binary            = "qemu-system-aarch64"
+  machine_type           = "virt"
+  accelerator            = "${var.accelerator}"
+  boot_wait              = "${var.sleep}"
+  cpus                   = "${var.cpus}"
+  memory                 = "${var.memory}"
+  disk_interface         = "virtio-scsi"
+  firmware               = "${var.firmware}"
+  cdrom_interface        = "virtio-scsi"
+  disk_size              = "${var.disk_size}"
+  format                 = "qcow2"
+  headless               = true
+  iso_checksum           = "none"
+  iso_url                = "${var.iso}"
+  qemuargs               = [
+    ["-boot", "menu=on,strict=on"], # Override the default packer -boot flag which is not valid on UEFI
+    [ "-device", "virtio-scsi-pci" ], # Add virtio scsi device
+    [ "-device", "scsi-cd,drive=cdrom0,bootindex=0" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
+    [ "-device", "scsi-hd,drive=drive0,bootindex=1" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
+    [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
+    [ "-drive", "if=none,file=output-cos-arm64/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
+    ["-cpu", "cortex-a57"],
+  ]
+  shutdown_command       = "shutdown -hP now"
+  ssh_handshake_attempts = "20"
+  ssh_password           = "${var.root_password}"
+  ssh_timeout            = "5m"
+  ssh_username           = "${var.root_username}"
+  vm_name                = "${var.name}"
+}
+
 
 source "virtualbox-iso" "cos" {
   boot_wait              = "${var.sleep}"
@@ -123,7 +155,7 @@ source "virtualbox-iso" "cos" {
 build {
   description = "cOS"
 
-  sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
+  sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
 
   provisioner "file" {
     except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
@@ -173,11 +205,11 @@ build {
   }
 
   post-processor "vagrant" {
-    only   = ["virtualbox-iso.cos", "qemu.cos"]
+    only   = ["virtualbox-iso.cos", "qemu.cos", "qemu.cos-arm64"]
     output = "cOS_${var.flavor}_${var.build}_${var.arch}.box"
   }
   post-processor "compress" {
-    only   = ["virtualbox-iso.cos", "qemu.cos"]
+    only   = ["virtualbox-iso.cos", "qemu.cos", "qemu.cos-arm64"]
     output = "cOS_${var.flavor}_${var.build}_${var.arch}.tar.gz"
   }
 }
