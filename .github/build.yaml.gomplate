@@ -52,6 +52,31 @@
   {{{- end }}}
 {{{ end }}}
 
+{{{define "prepare_build_macos" }}}
+  {{{ $config := (datasource "config") }}}
+  {{{- if $config.local_runner }}}
+      - run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+  {{{- end }}}
+  {{{- if $config.local_runner }}}
+      - name: Install pre-requisites (golang, make)
+        run: |
+            brew install golang
+            brew install make
+  {{{- else }}}
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+  {{{- end }}}
+{{{ end }}}
+
+
 {{{define "make"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $target := . }}}
@@ -584,7 +609,7 @@
     runs-on: macos-10.15
     needs: raw-images-{{{ $flavor }}}
     steps:
-      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "prepare_build_macos" }}}
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools

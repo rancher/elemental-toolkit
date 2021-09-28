@@ -233,14 +233,10 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
-      - name: Install Go
+      - name: Install pre-requisites (golang, make)
         run: |
-          curl -L https://golang.org/dl/go1.16.5.linux-arm64.tar.gz -o go1.16.5.linux-arm64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-arm64.tar.gz
-      - name: Install make
-        run: |
-            sudo apt-get update
-            sudo apt-get install -y make
+            brew install golang
+            brew install make
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
