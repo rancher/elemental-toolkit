@@ -236,8 +236,8 @@ jobs:
           sudo rm -Rf /var/luet || true
       - name: Install pre-requisites (golang, make)
         run: |
-            sudo chown -R $(whoami) $(brew --prefix)/*
-            brew install golang
+            curl -L https://golang.org/dl/go1.16.5.darwin-arm64.tar.gz -o go1.16.5.darwin-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.darwin-arm64.tar.gz
             brew install make
       - uses: actions/checkout@v2
       - name: Install deps

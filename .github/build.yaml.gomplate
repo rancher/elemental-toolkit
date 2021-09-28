@@ -60,8 +60,8 @@
           sudo rm -Rf /var/luet || true
       - name: Install pre-requisites (golang, make)
         run: |
-            sudo chown -R $(whoami) $(brew --prefix)/*
-            brew install golang
+            curl -L https://golang.org/dl/go1.16.5.darwin-{{{ $config.arch }}}.tar.gz -o go1.16.5.darwin-{{{ $config.arch }}}.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.darwin-{{{ $config.arch }}}.tar.gz
             brew install make
   {{{- else }}}
       - name: Install Go
