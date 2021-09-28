@@ -236,6 +236,7 @@ jobs:
           sudo rm -Rf /var/luet || true
       - name: Install pre-requisites (golang, make)
         run: |
+            sudo chown -R $(whoami) $(brew --prefix)/*
             brew install golang
             brew install make
       - uses: actions/checkout@v2
