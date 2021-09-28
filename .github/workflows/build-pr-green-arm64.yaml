@@ -22,7 +22,8 @@ jobs:
       # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
       SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/syslinux live/systemd-boot live/boot"
     steps:
-      - run: |
+      - name: Clean up
+        run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
           sudo rm /usr/bin/luet || true

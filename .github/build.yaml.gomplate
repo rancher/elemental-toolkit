@@ -24,31 +24,27 @@
 {{{define "prepare_build" }}}
   {{{ $config := (datasource "config") }}}
   {{{- if $config.local_runner }}}
-      - run: |
+      - name: Clean up
+        run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
           sudo rm /usr/bin/luet || true
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
-  {{{- end }}}
-
-  {{{- if $config.local_runner }}}
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.16.5.linux-{{{ $config.arch }}}.tar.gz -o go1.16.5.linux-{{{ $config.arch }}}.tar.gz
           sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-{{{ $config.arch }}}.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
   {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-  {{{- end }}}
-  {{{- if $config.local_runner }}}
-      - name: Install make
-        run: |
-            sudo apt-get update
-            sudo apt-get install -y make
   {{{- end }}}
 {{{ end }}}
 
@@ -62,8 +58,6 @@
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
-  {{{- end }}}
-  {{{- if $config.local_runner }}}
       - name: Install pre-requisites (golang, make)
         run: |
             brew install golang
