@@ -392,24 +392,19 @@ jobs:
           if-no-files-found: warn
   raw-images-green:
     runs-on: ubuntu-latest
-    container: opensuse/leap:15.3
     needs:
     - build-green-x86_64
     steps:
       - name: Install OS deps
         run: |
-          zypper in -y bc qemu-tools sudo curl e2fsprogs dosfstools mtools squashfs gptfdisk make tar gzip xz which
+          sudo apt-get update
+          sudo apt-get install -y bc qemu-utils sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
           name: build-green-x86_64
           path: build
-      - name: Install toolchain
-        run: |
-          # Since some time /var/lock is a symlink to /run/lock, which doesn't exit in the continer
-          rm -rf /var/lock
-          mkdir -p /var/lock
       - name: Run make deps
         run: |
           sudo -E make deps

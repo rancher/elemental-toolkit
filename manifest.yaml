@@ -12,18 +12,30 @@ packages:
 
 
 raw_disk:
-  # Where to get the packages from if the local build doesn't have the needed packages
-  repo: quay.io/costoolkit/releases-green
-  # which packages to install and the target to install them at
-  packages:
-    - name: system/grub2-efi-image
-      target: efi
-    - name: system/grub2-config
-      target: root
-    - name: system/grub2-artifacts
-      target: root/grub2
-    - name: recovery/cos-img
-      target: root/cOS
+  x86_64:
+    # Where to get the packages from if the local build doesn't have the needed packages
+    repo: quay.io/costoolkit/releases-green
+    # which packages to install and the target to install them at
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+      - name: recovery/cos-img
+        target: root/cOS
+  aarch64:
+    repo: quay.io/costoolkit/releases-green-arm64
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+      - name: recovery/cos-img
+        target: root/cOS
 
 # Raw disk creation values end
 
