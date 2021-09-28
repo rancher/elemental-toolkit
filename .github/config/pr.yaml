@@ -53,7 +53,7 @@ flavors:
         skip_tests_flavor: [ "green","blue","orange" ]
         skip_images_flavor: [ "blue","orange" ]
         skip_images_packer: true
-        build_image_qemu: false
+        build_image_qemu: true
         build_image_vbox: false
         build_raw_image: true
         run_raw_image_test: false
