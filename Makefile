@@ -44,14 +44,7 @@ ifeq ("$(MTREE)","")
 MTREE="/usr/bin/luet-mtree"
 endif
 
-#
-# Output for "make publish-repo" and base for "make iso"
-#
-ifneq ($(strip $(ARCH)), x86_64)
-	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)-$(ARCH)
-else
-	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
-endif
+
 
 #
 # Location of package tree
@@ -73,6 +66,15 @@ FLAVOR?=green
 #
 
 ARCH?=x86_64
+
+#
+# Output for "make publish-repo" and base for "make iso"
+#
+ifneq ($(strip $(ARCH)), x86_64)
+	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)-$(ARCH)
+else
+	FINAL_REPO?=quay.io/costoolkit/releases-$(FLAVOR)
+endif
 
 #
 # folder for build artefacts
