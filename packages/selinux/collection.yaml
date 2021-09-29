@@ -14,12 +14,12 @@ packages:
         curl -s -L "https://github.com/{{.Values.labels.github.owner}}/{{.Values.labels.github.repo}}/releases/download/{{.Values.labels.github.tag}}/sha256sum-centos7-noarch.txt" | grep "noarch" | cut -d" " -f 1
   - name: "rancher"
     category: "selinux"
-    version: 0.1.1-7
+    version: "0.2.1"
     labels:
       github.repo: "rancher-selinux"
       github.owner: "rancher"
-      github.tag: "v0.1.production.1"
-      package.checksum: "e7ec513877b9803af75da33c8012f4e0d2694778419bac8438c0d3a713cd1745"
+      github.tag: "v0.2.production.1"
+      package.checksum: "8542cb2e9769fd6b4ca25eefeb7eb21fbd459a4cd6a6c01ca58edf9072de83f3"
       autobump.version_contains: "production"
       autobump.string_replace: '{ "\\.production": "" }'
       autobump.strategy: "github_tag"
