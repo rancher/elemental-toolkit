@@ -112,6 +112,43 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+  qemu-squashfs-green:
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
+          export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
   iso-nonsquashfs-green:
     runs-on: [self-hosted, arm64]
     needs: build-green-arm64
@@ -161,6 +198,43 @@ jobs:
           path: |
             *.iso
             *.sha256
+          if-no-files-found: error
+  qemu-nonsquashfs-green:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
+          export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
           if-no-files-found: error
   raw-images-green:
     runs-on: [self-hosted, arm64]

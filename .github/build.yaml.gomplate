@@ -253,11 +253,19 @@
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch={{{ $config.arch }}}
+          export PKR_VAR_flavor={{{ $flavor }}}
+          export PKR_VAR_feature=vagrant
           {{{if eq $config.arch "arm64" }}}
+          export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
+          {{{else}}}
+          export PKR_VAR_accelerator=hvf
+          PACKER_ARGS="-only qemu.cos" make packer
           {{{- end}}}
-          PACKER_ARGS="-var='accelerator=hvf' -var='build=$COS_VERSION' -var='arch={{{ $config.arch }}}' -var='flavor={{{ $flavor }}}' -var='feature=vagrant' -only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.qcow

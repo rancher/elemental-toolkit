@@ -1,6 +1,5 @@
-variable "qemu_binary" {
-  type = string
-  default = "qemu-system-x86_64"
+variable "firmware" {
+  default = ""
 }
 
 variable "accelerator" {
