@@ -260,7 +260,7 @@
           {{{if eq $config.arch "arm64" }}}
           export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware="/usr/local/Cellar/qemu/6.1.0/share/qemu/edk2-aarch64-code.fd"
+          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
           PACKER_ARGS="-only qemu.cos-arm64" make packer
           {{{else}}}
           export PKR_VAR_accelerator=hvf
