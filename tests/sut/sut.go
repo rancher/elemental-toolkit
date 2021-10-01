@@ -5,7 +5,9 @@ import (
 	"github.com/bramvdbogaerde/go-scp"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,12 +27,15 @@ const (
 	UnknownBoot = iota
 
 	TimeoutRawDiskTest = 600  // Timeout to connect for recovery_raw_disk_test
+	arm64 = "arm64"
+	x86_64 = "x86_64"
 )
 
 type SUT struct {
 	Host     string
 	Username string
 	Password string
+	Arch 	 string
 }
 
 func NewSUT() *SUT {
@@ -48,10 +53,17 @@ func NewSUT() *SUT {
 	if host == "" {
 		host = "127.0.0.1:2222"
 	}
+
+	arch := os.Getenv("ARCH")
+	if arch == "" {
+		arch = x86_64
+	}
+
 	return &SUT{
 		Host:     host,
 		Username: user,
 		Password: pass,
+		Arch: 	  arch,
 	}
 }
 
@@ -153,6 +165,12 @@ func (s *SUT) EventuallyConnects(t ...int) {
 		dur = t[0]
 	}
 	Eventually(func() error {
+		if s.Arch == arm64 {
+			// Reload ssh config from vagrant ssh-config
+			// As after a reboot it wont change for a while, we need to keep getting it
+			host, _ := getVagrantIP(s.Arch)
+			s.Host = fmt.Sprintf("%s:22", host)
+		}
 		out, err := s.command("echo ping", true)
 		if out == "ping\n" {
 			return nil
@@ -188,7 +206,8 @@ func (s *SUT) command(cmd string, timeout bool) (string, error) {
 
 // Reboot reboots the system under test
 func (s *SUT) Reboot(t ...int) {
-	s.command("reboot", true)
+	By("Rebooting")
+	_, _ = s.command("reboot", true)
 	time.Sleep(10 * time.Second)
 	s.EventuallyConnects(t...)
 }
@@ -381,4 +400,13 @@ func DialWithDeadline(network string, addr string, config *ssh.ClientConfig, tim
 		}
 	}()
 	return ssh.NewClient(c, chans, reqs), nil
+}
+
+func getVagrantIP(arch string)  (string, error){
+	By("After reboot, getting the IP from vagrant")
+	cmd := exec.Command("vagrant", "ssh-config", "cos-arm64")
+	out, _ := cmd.Output()
+	rx, _ := regexp.Compile("\\s([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\n")
+	ip := rx.Find(out)
+	return strings.TrimSpace(string(ip)), nil
 }
