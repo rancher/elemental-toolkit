@@ -40,7 +40,6 @@ Vagrant.configure("2") do |config|
             libvirt.cpus = ENV['VAGRANT_CPU'] || "2"
             libvirt.machine_type = "virt"
             libvirt.machine_arch = "aarch64"
-            libvirt.forward_ssh_port = true
             libvirt.graphics_type = "none" # we dont need no stinking graphics
             libvirt.random :model => 'random'
         end
