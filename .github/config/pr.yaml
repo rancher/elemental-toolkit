@@ -50,7 +50,7 @@ flavors:
         organization: "quay.io/costoolkit"
         skip_tests: false
         flavor: "green"
-        skip_tests_flavor: [ "green","blue","orange" ]
+        skip_tests_flavor: [ "blue","orange" ]
         skip_images_flavor: [ "blue","orange" ]
         skip_images_packer: true
         build_image_qemu: true

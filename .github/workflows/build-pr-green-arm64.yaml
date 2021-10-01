@@ -149,6 +149,52 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+  tests-squashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+    runs-on: ubuntu-latest
+    needs: qemu-squashfs-green
+    strategy:
+      matrix:
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - name: Install dependencies
+        run: |
+            sudo apt-get update
+            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.serial.zip
+          path: tests/serial_port1
+          if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: [self-hosted, arm64]
     needs: build-green-arm64
@@ -236,6 +282,52 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+  tests-nonsquashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+    runs-on: ubuntu-latest
+    needs: qemu-nonsquashfs-green
+    strategy:
+      matrix:
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - name: Install dependencies
+        run: |
+            sudo apt-get update
+            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          PATH=$PATH:$GOPATH/bin
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
+          path: tests/serial_port1
+          if-no-files-found: warn
   raw-images-green:
     runs-on: [self-hosted, arm64]
     needs:
