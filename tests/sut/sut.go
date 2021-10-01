@@ -406,7 +406,9 @@ func getVagrantIP(arch string)  (string, error){
 	By("After reboot, getting the IP from vagrant")
 	cmd := exec.Command("vagrant", "ssh-config", "cos-arm64")
 	out, _ := cmd.Output()
+	By(fmt.Sprintf("OUTPUT: %s", out))
 	rx, _ := regexp.Compile("\\s([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\n")
 	ip := rx.Find(out)
+	By(fmt.Sprintf("Got IP: %s", strings.TrimSpace(string(ip))))
 	return strings.TrimSpace(string(ip)), nil
 }

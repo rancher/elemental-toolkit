@@ -330,6 +330,9 @@
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
       ARCH: {{{ $config.arch }}}
+      {{{ if eq $config.arch "arm64" }}}
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      {{{ end }}}
     {{{ if eq $config.arch "arm64" }}}
     runs-on: ubuntu-latest
     needs: qemu-{{{$subset}}}-{{{ $flavor }}}
@@ -346,11 +349,15 @@
         with:
             go-version: '^1.16'
       {{{ if eq $config.arch "arm64" }}}
+      - name: Set up Go for root
+        run: |
+            sudo ln -sf `which go` `sudo which go` || true
+            sudo go version
       - name: Install dependencies
         run: |
             sudo apt-get update
+            sudo apt-get remove --purge apparmor*
             sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system
-            sudo usermod -aG libvirt $(id -un)
       {{{ end }}}
       - uses: actions/checkout@v2
       - name: Download vagrant box
@@ -367,12 +374,18 @@
           {{{ if ne $config.arch "arm64" }}}
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          {{{- end}}}
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
           make ${{ matrix.test }}
+          {{{else}}}
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          sudo -E make test-clean
+          sudo -E make prepare-test
+          make ${{ matrix.test }}
+          {{{- end}}}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:

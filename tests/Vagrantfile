@@ -26,9 +26,10 @@ Vagrant.configure("2") do |config|
 
     config.vm.define "cos-arm64" do |cos|
         cos.vm.box = "cos-arm64"
+        cos.vm.guest = :suse
         cos.vm.provider :libvirt do |libvirt|
             libvirt.loader = ENV["VAGRANT_FIRMWARE"] || "/usr/share/qemu/aavmf-aarch64-code.bin"
-            #libvirt.nvram = "/tmp/vagrant.fd" # enable this for serial output, but you cant remove the mahcine via vagrant anymore see:
+            #libvirt.nvram = "/tmp/vagrant.fd" # enable this for serial output, but you cant remove the macjine via vagrant anymore see:
             # https://github.com/vagrant-libvirt/vagrant-libvirt/issues/1027
             # https://github.com/fog/fog-libvirt/pull/102
             libvirt.features = ["gic version='2'"] #arm64 requires gic
