@@ -167,7 +167,8 @@ jobs:
       - name: Install dependencies
         run: |
             sudo apt-get update
-            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make
+            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system
+            sudo usermod -aG libvirt $(id -un)
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -298,7 +299,8 @@ jobs:
       - name: Install dependencies
         run: |
             sudo apt-get update
-            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make
+            sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system
+            sudo usermod -aG libvirt $(id -un)
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
