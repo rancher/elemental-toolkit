@@ -36,6 +36,12 @@ else
 	@exit 1
 endif
 
+ifeq ($(strip $(ARCH)), arm64)
+BOXNAME?=cos-arm64
+else
+BOXNAME?=cos
+endif
+
 #
 # ------------ actual test targets ------------
 #
@@ -50,8 +56,8 @@ clean_test: test-clean
 
 
 prepare-test: $(VAGRANT) $(BOXFILE)
-	vagrant box add cos $(BOXFILE)
-	cd $(ROOT_DIR)/tests && vagrant up || true
+	vagrant box add $(BOXNAME) $(BOXFILE)
+	cd $(ROOT_DIR)/tests && vagrant up $(BOXNAME) || true
 
 vagrantfile: $(ROOT_DIR)/tests/Vagrantfile $(VAGRANT)
 
@@ -59,8 +65,8 @@ $(ROOT_DIR)/tests/Vagrantfile: $(VAGRANT)
 	cd $(ROOT_DIR)/tests && vagrant init cos
 
 test-clean:
-	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
-	(vagrant box remove cos) 2> /dev/null || true
+	(cd $(ROOT_DIR)/tests && vagrant destroy -f $(BOXNAME)) 2> /dev/null || true
+	(vagrant box remove -f $(BOXNAME)) 2> /dev/null || true
 
 $(VAGRANT):
 	@echo "'vagrant' not found."
