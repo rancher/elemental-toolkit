@@ -9,3 +9,11 @@ steps:
 {{ if .Values.codename }}
 - sed -i 's/:FLAVOR:/{{.Values.codename}}/g' /system/oem/02_upgrades.yaml
 {{end}}
+{{ if .Values.arch }}
+  {{if eq .Values.arch "x86_64"}}
+- sed -i 's/:ARCH://g' /system/oem/02_upgrades.yaml
+  {{end}}
+  {{if eq .Values.arch "aarch64"}}
+- sed -i 's/:ARCH:/arm64/g' /system/oem/02_upgrades.yaml
+  {{end}}
+{{end}}

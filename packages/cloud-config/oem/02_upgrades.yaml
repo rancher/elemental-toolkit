@@ -34,7 +34,7 @@ stages:
                     priority: 1
                     verify: false
                     urls:
-                    - "quay.io/costoolkit/releases-:FLAVOR:"
+                    - "quay.io/costoolkit/releases-:FLAVOR::ARCH:"
          permissions: 0600
          owner: 0
          group: 0
