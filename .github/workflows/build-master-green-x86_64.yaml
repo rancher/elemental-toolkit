@@ -231,9 +231,9 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
           make prepare-test
           make ${{ matrix.test }}
@@ -396,9 +396,9 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
           make prepare-test
           make ${{ matrix.test }}

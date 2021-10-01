@@ -363,10 +363,12 @@
           path: packer
       - name: Run tests 🔧
         run: |
+          {{{ if ne $config.arch "arm64" }}}
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          {{{- end}}}
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
           make prepare-test
           make ${{ matrix.test }}
