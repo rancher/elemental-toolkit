@@ -184,13 +184,12 @@
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
   iso-{{{$subset}}}-{{{ $flavor }}}:
-    {{{ tmpl.Exec "runner" }}}
+    runs-on: ubuntu-latest
     {{{- if not $config.skip_build }}}
     needs: build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     env:
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
-      LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
     steps:
@@ -355,6 +354,8 @@
             sudo go version
       - name: Install dependencies
         run: |
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
             sudo apt-get update
             sudo apt-get remove --purge apparmor*
             sudo apt-get install qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system
