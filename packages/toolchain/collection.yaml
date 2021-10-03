@@ -32,7 +32,7 @@ packages:
       autobump.revdeps: "true"
   - name: "luet-makeiso"
     category: "toolchain-fips"
-    version: 0.3.8-9
+    version: 0.3.8-10
     upx: false
     fips: true
     labels:
