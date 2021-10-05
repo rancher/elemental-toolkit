@@ -50,7 +50,7 @@ cleanup()
 
 usage()
 {
-    echo "Usage: $PROG [--force-efi] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
+    echo "Usage: $PROG [--force-efi] [--force-gpt] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "Example: $PROG /dev/vda"
     echo ""
@@ -110,7 +110,7 @@ do_format()
     parted -s ${DEVICE} mklabel ${PARTTABLE}
 
     # TODO: Size should be tweakable
-    if [ "$PARTTABLE" = "gpt" ]; then
+    if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
@@ -121,6 +121,18 @@ do_format()
         parted -s ${DEVICE} mkpart primary ext4 100MB 15100MB # state
         parted -s ${DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
         parted -s ${DEVICE} mkpart primary ext4 23100MB 100% # persistent
+        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+    elif [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
+        BOOT_NUM=
+        OEM_NUM=2
+        STATE_NUM=3
+        RECOVERY_NUM=4
+        PERSISTENT_NUM=5
+        parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+        parted -s ${DEVICE} mkpart primary ext4 1MB 51MB # oem
+        parted -s ${DEVICE} mkpart primary ext4 51MB 15051MB # state
+        parted -s ${DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
+        parted -s ${DEVICE} mkpart primary ext4 23051MB 100% # persistent
         parted -s ${DEVICE} set 1 ${BOOTFLAG} on
     else
         BOOT_NUM=
@@ -302,6 +314,9 @@ setup_style()
         if [ ! -e /sys/firmware/efi ]; then
             echo WARNING: installing EFI on to a system that does not support EFI
         fi
+    elif [ "$COS_INSTALL_FORCE_GPT" = "true" ]; then
+        PARTTABLE=gpt
+        BOOTFLAG=bios_grub
     else
         PARTTABLE=msdos
         BOOTFLAG=boot
@@ -338,6 +353,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         --force-efi)
             COS_INSTALL_FORCE_EFI=true
+            ;;
+        --force-gpt)
+            COS_INSTALL_FORCE_GPT=true
             ;;
         --poweroff)
             COS_INSTALL_POWER_OFF=true
@@ -402,7 +420,7 @@ trap cleanup exit
 
 if [ "$STRICT_MODE" = "true" ]; then
   cos-setup before-install
-else 
+else
   cos-setup before-install || true
 fi
 
@@ -417,7 +435,7 @@ SELinux_relabel
 
 if [ "$STRICT_MODE" = "true" ]; then
   run_hook after-install-chroot $TARGET
-else 
+else
   run_hook after-install-chroot $TARGET || true
 fi
 
@@ -430,7 +448,7 @@ cos-rebrand
 
 if [ "$STRICT_MODE" = "true" ]; then
   cos-setup after-install
-else 
+else
   cos-setup after-install || true
 fi
 
