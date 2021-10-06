@@ -13,7 +13,7 @@ packages:
   - category: "meta"
     name: "fips-toolchain"
     description: "Meta package for cOS toolchain with fips support"
-    version: "0.7"
+    version: 0.7-1
     requires:
       - category: toolchain-fips
         name: yip
