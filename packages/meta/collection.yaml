@@ -75,7 +75,7 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-minimal-fips"
-    version: "0.7.0"
+    version: 0.7.0-1
     requires:
       - category: meta
         name: cos-core-fips
