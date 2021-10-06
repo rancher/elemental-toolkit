@@ -329,28 +329,65 @@
     env:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
+      ARCH: {{{ $config.arch }}}
+      {{{ if eq $config.arch "arm64" }}}
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      COS_HOST: "192.168.122.50:22"
+      {{{end}}}
+    {{{ if eq $config.arch "arm64" }}}
+    runs-on: ubuntu-latest
+    needs: qemu-{{{$subset}}}-{{{ $flavor }}}
+    {{{else}}}
     runs-on: macos-10.15
     needs: vbox-{{{$subset}}}-{{{ $flavor }}}
+    {{{end}}}
     strategy:
       matrix:
+        {{{ if eq $config.arch "arm64" }}}
+        test: [{{{ join $config.run_tests ", "}}}]
+        {{{else}}}
         test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+        {{{end}}}
     steps:
-      {{{ tmpl.Exec "prepare_build" }}}
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
+          {{{ if eq $config.arch "arm64" }}}
+          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}-QEMU.box
+          {{{else}}}
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
+          {{{end}}}
           path: packer
-
+      {{{ if eq $config.arch "arm64" }}}
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+      {{{end}}}
       - name: Run tests 🔧
         run: |
+          {{{ if ne $config.arch "arm64" }}}
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          {{{end}}}
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
-          make vagrantfile
           make prepare-test
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
@@ -359,12 +396,14 @@
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      {{{ if ne $config.arch "arm64" }}}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
           path: tests/serial_port1
           if-no-files-found: warn
+      {{{end}}}
 {{{ end }}}
 
 {{{define "publish_packages"}}}

@@ -183,6 +183,7 @@ jobs:
     env:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
+      ARCH: x86_64
     runs-on: macos-10.15
     needs: vbox-squashfs-green
     strategy:
@@ -202,11 +203,10 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
-          make vagrantfile
           make prepare-test
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
@@ -348,6 +348,7 @@ jobs:
     env:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
+      ARCH: x86_64
     runs-on: macos-10.15
     needs: vbox-nonsquashfs-green
     strategy:
@@ -367,11 +368,10 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
-          PATH=$PATH:$GOPATH/bin
           make test-clean
-          make vagrantfile
           make prepare-test
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2

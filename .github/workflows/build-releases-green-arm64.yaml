@@ -126,6 +126,93 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+  qemu-squashfs-green:
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
+          export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  tests-squashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      COS_HOST: "192.168.122.50:22"
+    runs-on: ubuntu-latest
+    needs: qemu-squashfs-green
+    strategy:
+      matrix:
+        test: [test-fallback]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+      - name: Run tests 🔧
+        run: |
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: [self-hosted, arm64]
     needs: build-green-arm64
@@ -176,6 +263,93 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+  qemu-nonsquashfs-green:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.iso.zip
+      - name: Install deps
+        run: |
+          brew install qemu
+          brew install yq
+      - name: Build QEMU Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          export PKR_VAR_arch=arm64
+          export PKR_VAR_flavor=green
+          export PKR_VAR_feature=vagrant
+          export PKR_VAR_accelerator=none
+          export PKR_VAR_qemu_binary="qemu-system-aarch64"
+          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
+          PACKER_ARGS="-only qemu.cos-arm64" make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  tests-nonsquashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      COS_HOST: "192.168.122.50:22"
+    runs-on: ubuntu-latest
+    needs: qemu-nonsquashfs-green
+    strategy:
+      matrix:
+        test: [test-fallback]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+      - name: Run tests 🔧
+        run: |
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
   image-link-green:
     runs-on: ubuntu-latest
     needs: publish-green
@@ -198,9 +372,7 @@ jobs:
             images-green-arm64.txt
   publish-green:
     runs-on: ubuntu-latest
-    needs:
-    - build-green-arm64
-    - iso-squashfs-green
+    needs: tests-squashfs-green
     env:
       FLAVOR: green
       ARCH: arm64
@@ -255,8 +427,11 @@ jobs:
     needs:
     - build-green-arm64
     - raw-images-green
+    - qemu-nonsquashfs-green
     - iso-nonsquashfs-green
     - image-link-green
+    - tests-nonsquashfs-green
+    - tests-squashfs-green
     env:
       FLAVOR: green
       ARCH: arm64
@@ -274,6 +449,11 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: cOS-nonsquashfs-green-arm64.iso.zip
+          path: release
+      - name: Download QCOW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64.qcow
           path: release
       - name: Download GCE RAW image
         uses: actions/download-artifact@v2

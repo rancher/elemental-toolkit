@@ -100,7 +100,7 @@ else
 endif
 
 
-BOXFILE=$(shell ls $(ROOT_DIR)/packer/*.box 2> /dev/null)
+BOXFILE=$(shell ls $(ROOT_DIR)/packer/*$(ARCH).box 2> /dev/null)
 ifeq ("$(BOXFILE)","")
 BOXFILE="$(ROOT_DIR)/packer/cOS.box"
 endif
