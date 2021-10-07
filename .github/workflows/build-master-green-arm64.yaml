@@ -81,11 +81,10 @@ jobs:
           path: build
           if-no-files-found: error
   iso-squashfs-green:
-    runs-on: [self-hosted, arm64]
+    runs-on: ubuntu-latest
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
-      LUET_ARCH: arm64
       FLAVOR: green
       ARCH: arm64
     steps:
@@ -215,11 +214,10 @@ jobs:
           path: tests/**/logs/*
           if-no-files-found: warn
   iso-nonsquashfs-green:
-    runs-on: [self-hosted, arm64]
+    runs-on: ubuntu-latest
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
-      LUET_ARCH: arm64
       FLAVOR: green
       ARCH: arm64
     steps:
