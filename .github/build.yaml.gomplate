@@ -333,6 +333,7 @@
       {{{ if eq $config.arch "arm64" }}}
       VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
       COS_HOST: "192.168.122.50:22"
+      COS_TIMEOUT: 1200
       {{{end}}}
     {{{ if eq $config.arch "arm64" }}}
     runs-on: ubuntu-latest
