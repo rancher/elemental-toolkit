@@ -1,85 +1,85 @@
 packages:
-- category: "meta"
-  name: "toolchain"
-  description: "Meta package for cOS toolchain"
-  version: "0.7"
-  requires:
-  - category: toolchain
-    name: yip
-    version: ">=0"
-  - category: toolchain
-    name: luet
-    version: ">=0"
-- category: "meta"
-  name: "fips-toolchain"
-  description: "Meta package for cOS toolchain with fips support"
-  version: "0.7"
-  requires:
-  - category: toolchain-fips
-    name: yip
-    version: ">=0"
-  - category: toolchain-fips
-    name: luet
-    version: ">=0"
-- category: "meta"
-  name: "cos-modules"
-  description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
-  version: "0.8"
-  requires:
-  - category: utils
-    name: installer
-    version: ">=0"
-  - category: system
-    name: cos-setup
-    version: ">=0"
-  - category: system
-    name: immutable-rootfs
-    version: ">=0"
-  - category: system
-    name: grub2-config
-    version: ">=0"
-  - name: "base-dracut-modules"
-    category: "system"
-    version: ">=0"
-- category: "meta"
-  name: "cos-core"
-  description: "cOS core package. It includes toolchain and base grub/dracut configuration"
-  version: "0.7.0"
-  requires:
-  - category: meta
-    name: toolchain
-    version: ">=0"
-  - category: meta
-    name: cos-modules
-    version: ">=0"
-- category: "meta"
-  name: "cos-core-fips"
-  version: "0.7.0"
-  requires:
-  - category: meta
-    name: fips-toolchain
-    version: ">=0"
-  - category: meta
-    name: cos-modules
-    version: ">=0"
-- category: "meta"
-  name: "cos-minimal"
-  version: "0.7.0"
-  description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
-  requires:
-  - category: meta
-    name: cos-core
-    version: ">=0"
-  - category: system
-    name: cloud-config
-    version: ">=0"
-- category: "meta"
-  name: "cos-minimal-fips"
-  version: "0.7.0"
-  requires:
-  - category: meta
-    name: cos-core-fips
-    version: ">=0"
-  - category: system
-    name: cloud-config
-    version: ">=0"
+  - category: "meta"
+    name: "toolchain"
+    description: "Meta package for cOS toolchain"
+    version: 0.7-1
+    requires:
+      - category: toolchain
+        name: yip
+        version: ">=0"
+      - category: toolchain
+        name: luet
+        version: ">=0"
+  - category: "meta"
+    name: "fips-toolchain"
+    description: "Meta package for cOS toolchain with fips support"
+    version: 0.7-1
+    requires:
+      - category: toolchain-fips
+        name: yip
+        version: ">=0"
+      - category: toolchain-fips
+        name: luet
+        version: ">=0"
+  - category: "meta"
+    name: "cos-modules"
+    description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
+    version: 0.8-1
+    requires:
+      - category: utils
+        name: installer
+        version: ">=0"
+      - category: system
+        name: cos-setup
+        version: ">=0"
+      - category: system
+        name: immutable-rootfs
+        version: ">=0"
+      - category: system
+        name: grub2-config
+        version: ">=0"
+      - name: "base-dracut-modules"
+        category: "system"
+        version: ">=0"
+  - category: "meta"
+    name: "cos-core"
+    description: "cOS core package. It includes toolchain and base grub/dracut configuration"
+    version: 0.7.0-1
+    requires:
+      - category: meta
+        name: toolchain
+        version: ">=0"
+      - category: meta
+        name: cos-modules
+        version: ">=0"
+  - category: "meta"
+    name: "cos-core-fips"
+    version: 0.7.0-1
+    requires:
+      - category: meta
+        name: fips-toolchain
+        version: ">=0"
+      - category: meta
+        name: cos-modules
+        version: ">=0"
+  - category: "meta"
+    name: "cos-minimal"
+    version: 0.7.0-1
+    description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
+    requires:
+      - category: meta
+        name: cos-core
+        version: ">=0"
+      - category: system
+        name: cloud-config
+        version: ">=0"
+  - category: "meta"
+    name: "cos-minimal-fips"
+    version: 0.7.0-1
+    requires:
+      - category: meta
+        name: cos-core-fips
+        version: ">=0"
+      - category: system
+        name: cloud-config
+        version: ">=0"
