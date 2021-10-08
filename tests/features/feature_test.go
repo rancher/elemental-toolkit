@@ -12,7 +12,7 @@ var _ = Describe("cOS Feature tests", func() {
 	var s *sut.SUT
 	BeforeEach(func() {
 		s = sut.NewSUT()
-		s.EventuallyConnects(360)
+		s.EventuallyConnects()
 	})
 
 	AfterEach(func() {

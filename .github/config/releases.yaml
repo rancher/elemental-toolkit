@@ -48,11 +48,12 @@ flavors:
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
-        skip_tests: true
+        skip_tests: false
+        run_tests: ["test-fallback"]
         flavor: "green"
-        skip_tests_flavor: [ "green","blue","orange" ]
+        skip_tests_flavor: [ "blue","orange" ]
         skip_images_flavor: [ "blue","orange" ]
-        build_image_qemu: false
+        build_image_qemu: true
         build_image_vbox: false
         build_raw_image: true
         run_raw_image_test: false

@@ -67,11 +67,10 @@ jobs:
           path: build
           if-no-files-found: error
   iso-squashfs-green:
-    runs-on: [self-hosted, arm64]
+    runs-on: ubuntu-latest
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
-      LUET_ARCH: arm64
       FLAVOR: green
       ARCH: arm64
     steps:
@@ -149,12 +148,62 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+  tests-squashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      COS_HOST: "192.168.122.50:22"
+      COS_TIMEOUT: 1200
+    runs-on: ubuntu-latest
+    needs: qemu-squashfs-green
+    strategy:
+      matrix:
+        test: [test-fallback]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+      - name: Run tests 🔧
+        run: |
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
   iso-nonsquashfs-green:
-    runs-on: [self-hosted, arm64]
+    runs-on: ubuntu-latest
     needs: build-green-arm64
     env:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
-      LUET_ARCH: arm64
       FLAVOR: green
       ARCH: arm64
     steps:
@@ -236,6 +285,57 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+  tests-nonsquashfs-green:
+    env:
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+      ARCH: arm64
+      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      COS_HOST: "192.168.122.50:22"
+      COS_TIMEOUT: 1200
+    runs-on: ubuntu-latest
+    needs: qemu-nonsquashfs-green
+    strategy:
+      matrix:
+        test: [test-fallback]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          path: packer
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+      - name: Run tests 🔧
+        run: |
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
   raw-images-green:
     runs-on: [self-hosted, arm64]
     needs:

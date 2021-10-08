@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ type SUT struct {
 	Host     string
 	Username string
 	Password string
+	Timeout  int
 }
 
 func NewSUT() *SUT {
@@ -48,10 +50,19 @@ func NewSUT() *SUT {
 	if host == "" {
 		host = "127.0.0.1:2222"
 	}
+
+	var timeout = 180
+	valueStr :=  os.Getenv("COS_TIMEOUT")
+	value, err := strconv.Atoi(valueStr)
+	if err == nil {
+		timeout = value
+	}
+
 	return &SUT{
 		Host:     host,
 		Username: user,
 		Password: pass,
+		Timeout:  timeout,
 	}
 }
 
@@ -148,7 +159,7 @@ func (s *SUT) GetOSRelease(ss string) string {
 }
 
 func (s *SUT) EventuallyConnects(t ...int) {
-	dur := 180
+	dur := s.Timeout
 	if len(t) > 0 {
 		dur = t[0]
 	}
@@ -188,6 +199,7 @@ func (s *SUT) command(cmd string, timeout bool) (string, error) {
 
 // Reboot reboots the system under test
 func (s *SUT) Reboot(t ...int) {
+	By("Reboot")
 	s.command("reboot", true)
 	time.Sleep(10 * time.Second)
 	s.EventuallyConnects(t...)
