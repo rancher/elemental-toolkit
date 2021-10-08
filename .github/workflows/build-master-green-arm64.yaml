@@ -126,8 +126,11 @@ jobs:
             *.sha256
           if-no-files-found: error
   qemu-squashfs-green:
-    runs-on: macos-10.15
+    runs-on: ubuntu-latest
     needs: iso-squashfs-green
+    env:
+      FLAVOR: green
+      ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -136,11 +139,11 @@ jobs:
           name: cOS-squashfs-green-arm64.iso.zip
       - name: Install deps
         run: |
-          brew install qemu
-          brew install yq
+          sudo -E make deps
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Build QEMU Image 🔧
         run: |
-          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           export PKR_VAR_arch=arm64
@@ -148,7 +151,7 @@ jobs:
           export PKR_VAR_feature=vagrant
           export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
+          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
           PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
@@ -275,8 +278,11 @@ jobs:
             *.sha256
           if-no-files-found: error
   qemu-nonsquashfs-green:
-    runs-on: macos-10.15
+    runs-on: ubuntu-latest
     needs: iso-nonsquashfs-green
+    env:
+      FLAVOR: green
+      ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -285,11 +291,11 @@ jobs:
           name: cOS-nonsquashfs-green-arm64.iso.zip
       - name: Install deps
         run: |
-          brew install qemu
-          brew install yq
+          sudo -E make deps
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Build QEMU Image 🔧
         run: |
-          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           export PKR_VAR_arch=arm64
@@ -297,7 +303,7 @@ jobs:
           export PKR_VAR_feature=vagrant
           export PKR_VAR_accelerator=none
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
+          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
           PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
