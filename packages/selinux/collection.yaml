@@ -1,12 +1,12 @@
 packages:
   - name: "k3s"
     category: "selinux"
-    version: 0.3.0-9
+    version: "0.4.1"
     labels:
       github.repo: "k3s-selinux"
       github.owner: "k3s-io"
-      github.tag: "v0.3.stable.0"
-      package.checksum: "a767f89d96c1ed290e7d2e8d1ebf351c8e86ab4d2ff6098bf30532ff10e17ef9"
+      github.tag: "v0.4.stable.1"
+      package.checksum: "8edb3f29c1060df292e229c144d0c7ec586c69f2b4751e110beafa399dab8ee3"
       autobump.version_contains: "stable"
       autobump.string_replace: '{ "\\.stable": "" }'
       autobump.strategy: "github_tag"
