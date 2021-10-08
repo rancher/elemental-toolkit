@@ -1,0 +1,33 @@
+image: fedora:33@sha256:9ac1fdb859bf5d781617aec9703b16dbf803c177b3675ad4162a58c8a44eda4c
+distribution: "fedora"
+codename: "blue"
+arch: "aarch64"
+golang_arch: "arm64"
+skip_checksum: ["golang", "golang-fips"]
+
+
+packages: >-
+    grub2-efi-aa64
+    grub2-efi-aa64-modules
+    NetworkManager
+    squashfs-tools
+    dracut-live
+    efibootmgr
+    audit
+    systemd
+    parted
+    dracut
+    e2fsprogs
+    dosfstools
+    coreutils
+    device-mapper
+    grub2
+    which
+    curl
+    nano
+    gawk
+    haveged
+    tar
+    rsync
+
+kernel_package: kernel
