@@ -19,7 +19,7 @@ import (
 	"github.com/mudler/luet/pkg/tree"
 )
 
-const DefaultRetries = 120
+const DefaultRetries = 10
 
 type opData struct {
 	FinalRepo string
