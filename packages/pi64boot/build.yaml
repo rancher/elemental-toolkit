@@ -1,0 +1,58 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+env:
+  - BASEPATH=/data
+  - BOOTDIR=/data/output/BOOT/EFI
+  - CROSS_COMPILE=aarch64-linux-gnu-
+  - TZ=Europe/Berlin
+steps:
+  - mkdir -p ${BASEPATH} && cd ${BASEPATH}
+  - zypper in -y cross-arm-gcc7 git libopenssl-1_1-devel flex bison wget 
+  - mkdir -p ${BASEPATH}/output 
+  - pushd ${BASEPATH}
+  - git clone https://github.com/u-boot/u-boot
+  - git clone https://github.com/raspberrypi/firmware
+  - cp -Rfv "${BASEPATH}"/firmware/boot/* output/
+  - pushd u-boot
+  - make distclean
+  - make rpi_4_defconfig
+  - make u-boot.bin
+  - cp u-boot.bin ../output
+  - popd
+  - mkdir -p ${BOOTDIR}/locale
+  - pushd ${BOOTDIR}
+  - wget https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/bootaa64.efi
+  - wget https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/grub.efi
+  - wget https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/MokManager.efi
+  - cat <<EOF >"${BOOTDIR}/grub.cfg"
+    set btrfs_relative_path="yes"
+    search --no-floppy --label rootfs --set=root rootfs
+    set prefix=(\$root)/boot/grub2
+    configfile (\$root)/boot/grub2/grub.cfg
+    EOF
+  - pushd locale
+  - wget https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/EFI/BOOT/locale/en.mo
+  - popd && popd
+  - cat <<EOF > "${BASEPATH}/output/config.txt"
+    force_turbo=0
+    initial_turbo=30
+    over_voltage=0
+    dtoverlay=upstream
+    dtoverlay=smbios
+    arm_freq=840
+    core_frequ=375
+    sdram_freq=400
+    dtoverlay=vc4-kms-v3d
+    max_framebuffers=2
+    arm_64bit=1
+    gpu_mem=16
+    [all]
+    dtoverlay=gpio-fan,gpiopin=14,temp=80000
+    kernel=u-boot.bin
+    enable_uart=1
+    EOF
+
+package_dir: "/data/boot"

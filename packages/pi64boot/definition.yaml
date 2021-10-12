@@ -1,0 +1,6 @@
+name: "pi64boot"
+category: "distro"
+version: "0.01-master"
+hidden: true
+labels:
+  autobump.strategy: "snapshot"
