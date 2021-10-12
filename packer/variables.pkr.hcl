@@ -32,7 +32,6 @@ variable "aws_region" {
 variable "aws_ami_groups" {
   type = list(string)
   default = ["all"]
-  sensitive = true
   description = "A list of groups that have access to launch the resulting AMI(s). By default no groups have permission to launch the AMI. all will make the AMI publicly accessible."
 }
 
