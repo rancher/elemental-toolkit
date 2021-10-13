@@ -54,18 +54,19 @@ func repositoryPackages(repo string) (searchResult SearchResult) {
 	}
 	re, err := d.Sync(false)
 	if err != nil {
-		panic(err)
-	}
+		fmt.Println(err)
+		return
+	} else {
+		for _, p := range re.GetTree().GetDatabase().World() {
+			searchResult.Packages = append(searchResult.Packages, Package{
+				Name:     p.GetName(),
+				Category: p.GetCategory(),
+				Version:  p.GetVersion(),
+			})
+		}
 
-	for _, p := range re.GetTree().GetDatabase().World() {
-		searchResult.Packages = append(searchResult.Packages, Package{
-			Name:     p.GetName(),
-			Category: p.GetCategory(),
-			Version:  p.GetVersion(),
-		})
+		return
 	}
-
-	return
 }
 
 func retryDownload(img, dest string, t int) error {

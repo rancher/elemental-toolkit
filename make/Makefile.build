@@ -27,6 +27,11 @@ PUSH_CACHE?=false
 
 BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
+#
+# Use Docker buildkit
+DOCKER_BUILDKIT?=1
+#
+
 ifneq ($(strip $(ARCH)), x86_64)
 	REPO_CACHE?=quay.io/costoolkit/build-$(FLAVOR)-cache-$(ARCH)
 else
@@ -68,7 +73,7 @@ ifneq ($(shell id -u), 0)
 endif
 	# Buildkit is necessary due to https://github.com/moby/moby/issues/37965
 	@echo "PACKAGES >$(PACKAGES)<"
-	DOCKER_BUILDKIT=1 $(LUET) build $(BUILD_ARGS) \
+	DOCKER_BUILDKIT=$(DOCKER_BUILDKIT) $(LUET) build $(BUILD_ARGS) \
 	--values $(ROOT_DIR)/values/$(FLAVOR)-$(ARCH).yaml \
 	--tree=$(TREE) \
 	--backend $(BACKEND) \

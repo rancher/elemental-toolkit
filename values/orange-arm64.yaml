@@ -1,0 +1,31 @@
+image: ubuntu:20.10@sha256:5f999769760e67e5ebff9b4cdfba47909f695ee62f81fd2cbef6893b9763acad
+distribution: "ubuntu"
+codename: "orange"
+arch: "aarch64"
+golang_arch: "arm64"
+skip_checksum: ["golang", "golang-fips"]
+
+
+packages: >-
+    systemd
+    grub-efi-arm64
+    grub-efi-arm64-bin
+    grub2-common
+    iproute2
+    squashfs-tools
+    parted
+    dracut
+    dracut-live
+    e2fsprogs
+    dosfstools
+    coreutils
+    multipath-tools
+    debianutils
+    curl
+    nano
+    gawk
+    haveged
+    tar
+    rsync
+
+kernel_package: linux-image-generic
