@@ -1,4 +1,4 @@
-name: Build cOS master-orange-arm64
+name: master-orange-arm64
 on: 
  push:
    branches:
