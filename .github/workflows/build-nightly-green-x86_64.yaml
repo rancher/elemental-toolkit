@@ -1,4 +1,4 @@
-name: Build cOS nightly-green-x86_64
+name: nightly-green-x86_64
 on: 
  schedule:
    - cron: 0 20 * * *

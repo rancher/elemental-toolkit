@@ -1,11 +1,11 @@
-name: Build cOS Pull requests-green-arm64
+name: PR-green-arm64
 on: 
  pull_request:
    types:
      - labeled
      - synchronize
 concurrency:
-  group: ci-Pull requests-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-PR-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-green-arm64:

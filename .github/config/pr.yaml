@@ -6,7 +6,7 @@ flavors:
       x86_64:
         &x86_64
         local_runner: false
-        pipeline: "Pull requests"
+        pipeline: "PR"
         push_cache: false
         publishing_pipeline: false
         publish_toolchain: false
@@ -38,7 +38,7 @@ flavors:
       arm64:
         local_runner: true
         runs_on: [ "self-hosted", "arm64" ]
-        pipeline: "Pull requests"
+        pipeline: "PR"
         push_cache: false
         publishing_pipeline: false
         publish_cloud: false

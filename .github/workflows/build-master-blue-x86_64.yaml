@@ -1,4 +1,4 @@
-name: Build cOS master-blue-x86_64
+name: master-blue-x86_64
 on: 
  push:
    branches:

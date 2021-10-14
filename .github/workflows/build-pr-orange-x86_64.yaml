@@ -1,4 +1,4 @@
-name: Build cOS Pull requests-orange-x86_64
+name: PR-orange-x86_64
 on: 
  pull_request:
    paths:
@@ -9,7 +9,7 @@ on:
      - Makefile
      - tests/**
 concurrency:
-  group: ci-Pull requests-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-PR-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-orange-x86_64:
