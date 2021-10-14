@@ -1,4 +1,4 @@
-name: Build cOS Pull requests - docker-blue-x86_64
+name: docker-blue-x86_64
 on: 
  pull_request:
    paths:
@@ -9,7 +9,7 @@ on:
      - Makefile
      - tests/**
 concurrency:
-  group: ci-Pull requests - docker-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-docker-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   docker-build-blue:

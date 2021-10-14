@@ -6,7 +6,7 @@ flavors:
       x86_64:
         &x86_64
         local_runner: false
-        pipeline: "Pull requests - docker"
+        pipeline: "docker"
         push_cache: false
         publishing_pipeline: false
         publish_toolchain: false

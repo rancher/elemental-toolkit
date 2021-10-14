@@ -10,7 +10,7 @@ flavors:
         skip_build: false
         skip_docker_build: false
 
-        pipeline: "releases"
+        pipeline: "release"
         publishing_pipeline: true
         publish_cloud: true
         publish_toolchain: true
@@ -41,7 +41,7 @@ flavors:
         skip_build: false
         skip_docker_build: true
 
-        pipeline: "releases"
+        pipeline: "release"
         publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: false

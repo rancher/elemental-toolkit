@@ -1,4 +1,4 @@
-name: Build cOS nightly-orange-x86_64
+name: nightly-orange-x86_64
 on: 
  schedule:
    - cron: 0 20 * * *

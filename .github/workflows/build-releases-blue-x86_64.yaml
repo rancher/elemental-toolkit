@@ -1,10 +1,10 @@
-name: Build cOS releases-blue-x86_64
+name: release-blue-x86_64
 on: 
  push:
    tags:
      - v*
 concurrency:
-  group: ci-releases-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-release-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   docker-build-blue:

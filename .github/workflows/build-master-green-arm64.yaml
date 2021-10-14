@@ -1,4 +1,4 @@
-name: Build cOS master-green-arm64
+name: master-green-arm64
 on: 
  push:
    branches:

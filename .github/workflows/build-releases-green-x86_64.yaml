@@ -1,10 +1,10 @@
-name: Build cOS releases-green-x86_64
+name: release-green-x86_64
 on: 
  push:
    tags:
      - v*
 concurrency:
-  group: ci-releases-green-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-release-green-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   docker-build-green:
