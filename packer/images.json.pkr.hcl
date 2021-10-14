@@ -206,11 +206,22 @@ build {
   }
 
   post-processor "vagrant" {
-    only   = ["virtualbox-iso.cos", "qemu.cos", "qemu.cos-arm64"]
-    output = "cOS_${var.flavor}_${var.build}_${var.arch}.box"
+    only   = ["virtualbox-iso.cos"]
+    output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.box"
   }
+
+  post-processor "vagrant" {
+    only   = ["qemu.cos", "qemu.cos-arm64"]
+    output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.box"
+  }
+
   post-processor "compress" {
-    only   = ["virtualbox-iso.cos", "qemu.cos", "qemu.cos-arm64"]
-    output = "cOS_${var.flavor}_${var.build}_${var.arch}.tar.gz"
+    only   = ["virtualbox-iso.cos"]
+    output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.tar.gz"
+  }
+
+  post-processor "compress" {
+    only   = ["qemu.cos", "qemu.cos-arm64"]
+    output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.tar.gz"
   }
 }

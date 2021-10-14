@@ -152,13 +152,13 @@ jobs:
           PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-arm64.qcow
+          name: cOS-Packer-squashfs-green-QEMU-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-arm64-QEMU.box
+          name: cOS-Packer-squashfs-green-QEMU-arm64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -184,7 +184,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-arm64-QEMU.box
+          name: cOS-Packer-squashfs-green-QEMU-arm64.box
           path: packer
       - name: Install deps
         run: |
@@ -289,13 +289,13 @@ jobs:
           PACKER_ARGS="-only qemu.cos-arm64" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-arm64.qcow
+          name: cOS-Packer-nonsquashfs-green-QEMU-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          name: cOS-Packer-nonsquashfs-green-QEMU-arm64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -321,7 +321,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-arm64-QEMU.box
+          name: cOS-Packer-nonsquashfs-green-QEMU-arm64.box
           path: packer
       - name: Install deps
         run: |
@@ -450,10 +450,15 @@ jobs:
         with:
           name: cOS-nonsquashfs-green-arm64.iso.zip
           path: release
+      - name: Download vagrant box (qemu)
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-green-QEMU-arm64.box
+          path: release
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-arm64.qcow
+          name: cOS-Packer-nonsquashfs-green-QEMU-arm64.qcow
           path: release
       - name: Download GCE RAW image
         uses: actions/download-artifact@v2

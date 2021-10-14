@@ -271,13 +271,13 @@
           {{{- end}}}
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.qcow
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}-QEMU.box
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -312,13 +312,13 @@
           PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch={{{ $config.arch }}}' -var='flavor={{{ $flavor }}}' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.ova
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -362,9 +362,9 @@
         uses: actions/download-artifact@v2
         with:
           {{{ if eq $config.arch "arm64" }}}
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}-QEMU.box
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           {{{else}}}
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
           {{{end}}}
           path: packer
       {{{ if eq $config.arch "arm64" }}}
@@ -515,22 +515,27 @@
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
           path: release
       {{{- if $config.build_image_vbox }}}
-      - name: Download vagrant box
+      - name: Download vagrant box (vbox)
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
+          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
           path: release
       - name: Download OVA image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.ova
+          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.ova
           path: release
       {{{- end }}}
       {{{- if $config.build_image_qemu }}}
+      - name: Download vagrant box (qemu)
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
+          path: release
       - name: Download QCOW image
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.qcow
+          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
           path: release
       {{{- end }}}
       {{{- if $config.build_raw_image }}}
