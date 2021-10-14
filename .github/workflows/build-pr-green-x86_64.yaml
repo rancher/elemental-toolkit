@@ -134,13 +134,13 @@ jobs:
           PACKER_ARGS="-only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-x86_64.qcow
+          name: cOS-Packer-squashfs-green-QEMU-x86_64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-x86_64-QEMU.box
+          name: cOS-Packer-squashfs-green-QEMU-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -168,13 +168,13 @@ jobs:
           PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-x86_64.ova
+          name: cOS-Packer-squashfs-green-vbox-x86_64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-x86_64.box
+          name: cOS-Packer-squashfs-green-vbox-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -197,7 +197,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-squashfs-green-vbox-x86_64.box
+          name: cOS-Packer-squashfs-green-vbox-x86_64.box
           path: packer
       - name: Run tests 🔧
         run: |
@@ -298,13 +298,13 @@ jobs:
           PACKER_ARGS="-only qemu.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-x86_64.qcow
+          name: cOS-Packer-nonsquashfs-green-QEMU-x86_64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-x86_64-QEMU.box
+          name: cOS-Packer-nonsquashfs-green-QEMU-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -332,13 +332,13 @@ jobs:
           PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-x86_64.ova
+          name: cOS-Packer-nonsquashfs-green-vbox-x86_64.ova
           path: |
             packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-x86_64.box
+          name: cOS-Packer-nonsquashfs-green-vbox-x86_64.box
           path: |
             packer/*.box
           if-no-files-found: error
@@ -361,7 +361,7 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-green-vbox-x86_64.box
+          name: cOS-Packer-nonsquashfs-green-vbox-x86_64.box
           path: packer
       - name: Run tests 🔧
         run: |
