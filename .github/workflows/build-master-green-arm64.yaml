@@ -169,7 +169,7 @@ jobs:
       ARCH: arm64
       VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
       COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1200
+      COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
     needs: qemu-squashfs-green
     strategy:
@@ -306,7 +306,7 @@ jobs:
       ARCH: arm64
       VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
       COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1200
+      COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
     needs: qemu-nonsquashfs-green
     strategy:
