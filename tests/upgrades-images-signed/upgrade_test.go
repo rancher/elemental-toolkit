@@ -12,7 +12,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 	BeforeEach(func() {
 		s = sut.NewSUT()
-		s.EventuallyConnects(360)
+		s.EventuallyConnects()
 	})
 
 	AfterEach(func() {
