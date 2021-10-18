@@ -185,7 +185,11 @@ jobs:
           sudo chmod u+r /etc/qemu/bridge.conf
           sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
           # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
@@ -198,6 +202,12 @@ jobs:
         with:
           name: cOS-squashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.serial.zip
+          path: /tmp/serial_log
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -322,7 +332,11 @@ jobs:
           sudo chmod u+r /etc/qemu/bridge.conf
           sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
           # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
@@ -335,6 +349,12 @@ jobs:
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
+          path: /tmp/serial_log
           if-no-files-found: warn
   raw-images-green:
     runs-on: [self-hosted, arm64]

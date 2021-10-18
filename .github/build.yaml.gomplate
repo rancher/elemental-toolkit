@@ -381,7 +381,11 @@
           sudo chmod u+r /etc/qemu/bridge.conf
           sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
           # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       {{{end}}}
       - name: Run tests 🔧
         run: |
@@ -400,6 +404,14 @@
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      {{{ if eq $config.arch "arm64" }}}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
+          path: /tmp/serial_log
+          if-no-files-found: warn
+      {{{end}}}
       {{{ if ne $config.arch "arm64" }}}
       - uses: actions/upload-artifact@v2
         if: failure()
