@@ -199,7 +199,7 @@ jobs:
         with:
           name: cOS-Packer-squashfs-green-vbox-x86_64.box
           path: packer
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
@@ -207,6 +207,8 @@ jobs:
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -363,7 +365,7 @@ jobs:
         with:
           name: cOS-Packer-nonsquashfs-green-vbox-x86_64.box
           path: packer
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
@@ -371,6 +373,8 @@ jobs:
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()

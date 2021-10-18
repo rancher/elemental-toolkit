@@ -167,7 +167,7 @@ jobs:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
       ARCH: arm64
-      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
@@ -190,7 +190,7 @@ jobs:
         run: |
           sudo -E make deps
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -205,12 +205,14 @@ jobs:
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
           sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -222,7 +224,7 @@ jobs:
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: $GITHUB_WORKSPACE/serial_log.log
+          path: serial_log.log
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -315,7 +317,7 @@ jobs:
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
       ARCH: arm64
-      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
@@ -338,7 +340,7 @@ jobs:
         run: |
           sudo -E make deps
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -353,12 +355,14 @@ jobs:
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
           sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -370,7 +374,7 @@ jobs:
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: $GITHUB_WORKSPACE/serial_log.log
+          path: serial_log.log
           if-no-files-found: warn
   image-link-green:
     runs-on: ubuntu-latest
