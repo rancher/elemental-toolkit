@@ -9,6 +9,8 @@ ISOBOOT=${ISOMNT}/boot
 TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
+GRUBCONF=/etc/cos/grub.cfg
+
 ARCH=$(uname -p)
 
 if [ "${ARCH}" == "aarch64" ]; then
@@ -299,7 +301,7 @@ install_grub()
         GRUBDIR="${STATEDIR}/grub2"
     fi
 
-    cp -rfv /etc/cos/grub.cfg $GRUBDIR/grub.cfg
+    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
 
     if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
         sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
