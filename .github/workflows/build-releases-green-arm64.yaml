@@ -203,7 +203,8 @@ jobs:
       - name: Enable serial for default vagrant-libvirt machine
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
@@ -350,7 +351,8 @@ jobs:
       - name: Enable serial for default vagrant-libvirt machine
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
