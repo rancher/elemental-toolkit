@@ -189,7 +189,7 @@ jobs:
       - name: Enable serial for default vagrant-libvirt machine
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
           sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
@@ -208,7 +208,7 @@ jobs:
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: /tmp/serial_log
+          path: $GITHUB_WORKSPACE/serial_log.log
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -337,7 +337,7 @@ jobs:
       - name: Enable serial for default vagrant-libvirt machine
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='/tmp/serial_log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
           sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Run tests 🔧
         run: |
@@ -356,7 +356,7 @@ jobs:
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: /tmp/serial_log
+          path: $GITHUB_WORKSPACE/serial_log.log
           if-no-files-found: warn
   raw-images-green:
     runs-on: [self-hosted, arm64]
