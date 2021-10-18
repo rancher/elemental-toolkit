@@ -106,7 +106,9 @@ function readCOSLayoutConfig {
     state_bind="${PERSISTENT_STATE_BIND:-false}"
     state_target="${PERSISTENT_STATE_TARGET:-/usr/local/.state}"
 
-    if [ -n "${RW_PATHS}" ]; then
+    # An empty RW_PATHS is a valid value, default rw_paths are only 
+    # applied when RW_PATHS is unset.
+    if [ -n "${RW_PATHS+x}" ]; then
         rw_paths=(${RW_PATHS})
     fi
     if [ -n "${PERSISTENT_STATE_PATHS}" ]; then
