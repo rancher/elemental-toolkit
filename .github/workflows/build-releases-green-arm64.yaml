@@ -164,9 +164,9 @@ jobs:
           if-no-files-found: error
   tests-squashfs-green:
     env:
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
       ARCH: arm64
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
       VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
@@ -204,7 +204,6 @@ jobs:
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-          sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
@@ -314,9 +313,9 @@ jobs:
           if-no-files-found: error
   tests-nonsquashfs-green:
     env:
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
       ARCH: arm64
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
       VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
@@ -354,7 +353,6 @@ jobs:
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-          sudo cat $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
