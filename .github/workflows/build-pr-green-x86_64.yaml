@@ -180,9 +180,9 @@ jobs:
           if-no-files-found: error
   tests-squashfs-green:
     env:
+      ARCH: x86_64
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
-      ARCH: x86_64
     runs-on: macos-10.15
     needs: vbox-squashfs-green
     strategy:
@@ -199,7 +199,7 @@ jobs:
         with:
           name: cOS-Packer-squashfs-green-vbox-x86_64.box
           path: packer
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
@@ -207,6 +207,8 @@ jobs:
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -344,9 +346,9 @@ jobs:
           if-no-files-found: error
   tests-nonsquashfs-green:
     env:
+      ARCH: x86_64
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
-      ARCH: x86_64
     runs-on: macos-10.15
     needs: vbox-nonsquashfs-green
     strategy:
@@ -363,7 +365,7 @@ jobs:
         with:
           name: cOS-Packer-nonsquashfs-green-vbox-x86_64.box
           path: packer
-      - name: Run tests 🔧
+      - name: Prepare tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
@@ -371,6 +373,8 @@ jobs:
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()

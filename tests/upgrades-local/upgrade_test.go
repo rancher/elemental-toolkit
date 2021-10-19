@@ -12,7 +12,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 	BeforeEach(func() {
 		s = sut.NewSUT()
-		s.EventuallyConnects(360)
+		s.EventuallyConnects()
 	})
 
 	AfterEach(func() {
@@ -24,13 +24,22 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 	Context("After install can upgrade and reset", func() {
 		When("specifying a directory to upgrade from", func() {
 			It("upgrades from the specified path", func() {
+				var upgradeRepo = "quay.io/costoolkit/releases-green"
+				var upgradeVersion = "0.7.0-16"
+
+				if s.GetArch() == "aarch64" {
+					By("Upgrading aarch64 system")
+					upgradeVersion = "0.7.0-16"
+					upgradeRepo = "quay.io/costoolkit/releases-green-arm64"
+				}
+
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
 				version := out
 
-				out, err = s.Command("mkdir /run/update && luet util unpack quay.io/costoolkit/releases-opensuse:cos-system-0.5.7 /run/update")
+				out, err = s.Command(fmt.Sprintf("mkdir /run/update && luet util unpack %s:cos-system-%s /run/update", upgradeRepo, upgradeVersion))
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from luet util unpack: %v\n", err)
 				}
@@ -52,7 +61,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.7\n"))
+				Expect(out).To(Equal(fmt.Sprintf("%s\n", upgradeVersion)))
 
 				By("rollbacking state")
 				s.Reset()
@@ -60,7 +69,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal("0.5.7\n"))
+				Expect(out).ToNot(Equal(fmt.Sprintf("%s\n", upgradeVersion)))
 				Expect(out).To(Equal(version))
 			})
 		})

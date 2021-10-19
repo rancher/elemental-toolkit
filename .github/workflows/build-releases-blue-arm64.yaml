@@ -1,10 +1,10 @@
-name: Build cOS releases-blue-arm64
+name: release-blue-arm64
 on: 
  push:
    tags:
      - v*
 concurrency:
-  group: ci-releases-blue-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-release-blue-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-blue-arm64:

@@ -30,8 +30,12 @@ Vagrant.configure("2") do |config|
         cos.vm.provider :libvirt do |libvirt|
             libvirt.qemu_use_session = true
             libvirt.loader = ENV["VAGRANT_FIRMWARE"]
+            # due to this option below, its not possible for vagrant to destroy the machine,
+            # you would need to do it manually with virsh and --nvram option i.e. `virsh undefine --nvram tests_cos-arm64`
+            # but if nvram is not enabled, we get no serial output
+            libvirt.nvram = "/tmp/vagrant.fd"
+            libvirt.features = ["acpi", "gic version='2'"] #arm64 requires gic
             libvirt.management_network_mac = "52:54:00:00:00:01"
-            libvirt.features = ["gic version='2'"] #arm64 requires gic
             libvirt.disk_bus = "virtio"
             libvirt.inputs = [] # override the inputs otherwise it tries to insert a ps2 mouse lmao
             libvirt.cpu_mode = "custom"

@@ -150,17 +150,17 @@ jobs:
           if-no-files-found: error
   tests-squashfs-green:
     env:
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
       ARCH: arm64
-      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1200
+      COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
     needs: qemu-squashfs-green
     strategy:
       matrix:
-        test: [test-fallback]
+        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -176,7 +176,7 @@ jobs:
         run: |
           sudo -E make deps
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -185,19 +185,31 @@ jobs:
           sudo chmod u+r /etc/qemu/bridge.conf
           sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
           # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
-      - name: Run tests 🔧
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+      - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.serial.zip
+          path: serial_log.log
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -287,17 +299,17 @@ jobs:
           if-no-files-found: error
   tests-nonsquashfs-green:
     env:
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
       ARCH: arm64
-      VAGRANT_FIRMWARE: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1200
+      COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
     needs: qemu-nonsquashfs-green
     strategy:
       matrix:
-        test: [test-fallback]
+        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -313,7 +325,7 @@ jobs:
         run: |
           sudo -E make deps
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -322,19 +334,31 @@ jobs:
           sudo chmod u+r /etc/qemu/bridge.conf
           sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
           # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='bob' ip='192.168.122.50' />" --live --config
-      - name: Run tests 🔧
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+      - name: Prepare tests 🔧
         run: |
           go get -u github.com/onsi/ginkgo/ginkgo
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
+      - name: Run tests 🔧
+        run: |
           make ${{ matrix.test }}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
+          path: serial_log.log
           if-no-files-found: warn
   raw-images-green:
     runs-on: [self-hosted, arm64]

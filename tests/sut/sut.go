@@ -158,6 +158,14 @@ func (s *SUT) GetOSRelease(ss string) string {
 	return out
 }
 
+func (s *SUT) GetArch() string {
+	out, err := s.Command("uname -p")
+	Expect(err).ToNot(HaveOccurred())
+	Expect(out).ToNot(Equal(""))
+
+	return strings.TrimSpace(out)
+}
+
 func (s *SUT) EventuallyConnects(t ...int) {
 	dur := s.Timeout
 	if len(t) > 0 {
