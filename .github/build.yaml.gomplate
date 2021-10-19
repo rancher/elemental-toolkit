@@ -240,8 +240,11 @@
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
   qemu-{{{$subset}}}-{{{ $flavor }}}:
-    runs-on: macos-10.15
+    runs-on: ubuntu-latest
     needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    env:
+      FLAVOR: {{{ $flavor }}}
+      ARCH: {{{ $config.arch }}}
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -250,23 +253,22 @@
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Install deps
         run: |
-          brew install qemu
-          brew install yq
+          sudo -E make deps
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Build QEMU Image 🔧
         run: |
-          export YQ=/usr/local/bin/yq
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           export PKR_VAR_arch={{{ $config.arch }}}
           export PKR_VAR_flavor={{{ $flavor }}}
           export PKR_VAR_feature=vagrant
-          {{{if eq $config.arch "arm64" }}}
           export PKR_VAR_accelerator=none
+          {{{if eq $config.arch "arm64" }}}
           export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu/ -name  edk2-aarch64-code.fd -print -quit)
+          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
           PACKER_ARGS="-only qemu.cos-arm64" make packer
           {{{else}}}
-          export PKR_VAR_accelerator=hvf
           PACKER_ARGS="-only qemu.cos" make packer
           {{{- end}}}
       - uses: actions/upload-artifact@v2
