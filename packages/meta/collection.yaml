@@ -24,7 +24,7 @@ packages:
   - category: "meta"
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
-    version: 0.8-1
+    version: 0.8-2
     requires:
       - category: utils
         name: installer
