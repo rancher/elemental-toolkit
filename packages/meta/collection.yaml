@@ -2,7 +2,7 @@ packages:
   - category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.7-1
+    version: 0.7-2
     requires:
       - category: toolchain
         name: yip
@@ -13,7 +13,7 @@ packages:
   - category: "meta"
     name: "fips-toolchain"
     description: "Meta package for cOS toolchain with fips support"
-    version: 0.7-1
+    version: 0.7-2
     requires:
       - category: toolchain-fips
         name: yip
@@ -24,7 +24,7 @@ packages:
   - category: "meta"
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
-    version: 0.8-1
+    version: 0.8-2
     requires:
       - category: utils
         name: installer
@@ -44,7 +44,7 @@ packages:
   - category: "meta"
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
-    version: 0.7.0-1
+    version: 0.7.0-2
     requires:
       - category: meta
         name: toolchain
@@ -54,7 +54,7 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-core-fips"
-    version: 0.7.0-1
+    version: 0.7.0-2
     requires:
       - category: meta
         name: fips-toolchain
@@ -64,7 +64,7 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-minimal"
-    version: 0.7.0-2
+    version: 0.7.0-3
     description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
     requires:
       - category: meta
@@ -75,7 +75,7 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-minimal-fips"
-    version: 0.7.0-2
+    version: 0.7.0-3
     requires:
       - category: meta
         name: cos-core-fips
