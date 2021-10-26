@@ -44,6 +44,14 @@ ifeq ("$(MTREE)","")
 MTREE="/usr/bin/luet-mtree"
 endif
 
+#
+# Path to luet-cosign binary
+#
+export COSIGN?=$(shell which luet-cosign 2> /dev/null)
+ifeq ("$(COSIGN)","")
+COSIGN="/usr/bin/luet-cosign"
+endif
+
 
 
 #
@@ -114,7 +122,7 @@ include make/Makefile.images
 
 #----------------------- targets -----------------------
 
-deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE)
+deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE) $(COSIGN)
 
 as_root:
 ifneq ($(shell id -u), 0)
@@ -161,6 +169,14 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 else
 	$(LUET) install -y toolchain/luet-mtree
+endif
+
+$(COSIGN):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y toolchain/luet-cosign  toolchain/cosign
 endif
 
 clean: clean_build clean_iso clean_run clean_test
