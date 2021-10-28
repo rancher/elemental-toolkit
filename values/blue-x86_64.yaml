@@ -8,6 +8,7 @@ packages: >-
     grub2-pc
     grub2-efi-x64
     grub2-efi-x64-modules
+    shim-x64
     NetworkManager
     squashfs-tools
     dracut-live

@@ -9,6 +9,7 @@ skip_checksum: ["golang", "golang-fips"]
 packages: >-
     grub2-efi-aa64
     grub2-efi-aa64-modules
+    shim-aa64
     NetworkManager
     squashfs-tools
     dracut-live
