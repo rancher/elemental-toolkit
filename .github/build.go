@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,11 +11,9 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/hashicorp/go-multierror"
-	"github.com/mudler/luet/pkg/config"
+	"github.com/mudler/luet/pkg/api/client"
+	"github.com/mudler/luet/pkg/api/core/types"
 	installer "github.com/mudler/luet/pkg/installer"
-	. "github.com/mudler/luet/pkg/logger"
-	pkg "github.com/mudler/luet/pkg/package"
-	"github.com/mudler/luet/pkg/tree"
 )
 
 const DefaultRetries = 10
@@ -25,12 +22,7 @@ type opData struct {
 	FinalRepo string
 }
 
-type resultData struct {
-	Package Package
-	Exists  bool
-}
-
-func repositoryPackages(repo string) (searchResult SearchResult) {
+func repositoryPackages(repo string) (searchResult client.SearchResult) {
 
 	fmt.Println("Retrieving remote repository packages")
 	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
@@ -39,26 +31,19 @@ func repositoryPackages(repo string) (searchResult SearchResult) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	config.LuetCfg.System.TmpDirBase = tmpdir
-	config.LuetCfg.System.Rootfs = tmpdir
-	InitAurora()
-	d := &installer.LuetSystemRepository{
-		LuetRepository: &config.LuetRepository{
-			Name:   "cOS",
-			Type:   "docker",
-			Cached: true,
-			Urls:   []string{repo},
-		},
-
-		Tree: tree.NewInstallerRecipe(pkg.NewInMemoryDatabase(false)),
-	}
-	re, err := d.Sync(false)
+	d := installer.NewSystemRepository(types.LuetRepository{
+		Name:   "cOS",
+		Type:   "docker",
+		Cached: true,
+		Urls:   []string{repo},
+	})
+	re, err := d.Sync(types.NewContext(), false)
 	if err != nil {
 		fmt.Println(err)
 		return
 	} else {
 		for _, p := range re.GetTree().GetDatabase().World() {
-			searchResult.Packages = append(searchResult.Packages, Package{
+			searchResult.Packages = append(searchResult.Packages, client.Package{
 				Name:     p.GetName(),
 				Category: p.GetCategory(),
 				Version:  p.GetVersion(),
@@ -125,13 +110,8 @@ func downloadImage(img, dst string) error {
 	return retryDownload(img, dst, DefaultRetries)
 }
 
-func downloadMeta(p Package, o opData) error {
+func downloadMeta(p client.Package, o opData) error {
 	return downloadImage(p.ImageMetadata(o.FinalRepo), "build")
-}
-
-func getResultData(p Package, o opData) resultData {
-	fmt.Println("Checking", p, p.Image(o.FinalRepo))
-	return resultData{Package: p, Exists: p.ImageAvailable(o.FinalRepo)}
 }
 
 func main() {
@@ -147,15 +127,15 @@ func main() {
 		buildScript = "./.github/build.sh"
 	}
 
-	packs, err := TreePackages("./packages")
+	packs, err := client.TreePackages("./packages")
 	checkErr(err)
 
 	currentPackages := repositoryPackages(finalRepo)
 
-	missingPackages := []Package{}
+	missingPackages := []client.Package{}
 
 	for _, p := range packs.Packages {
-		if !Packages(currentPackages.Packages).Exist(p) {
+		if !client.Packages(currentPackages.Packages).Exist(p) {
 			missingPackages = append(missingPackages, p)
 		}
 	}
@@ -173,7 +153,7 @@ func main() {
 					fmt.Println("- Skipping build of package due to SKIP_PACKAGES: ", pkg.String())
 					// how absurd is this just to pop one element from a slice ¬_¬
 					missingPackages[index] = missingPackages[len(missingPackages)-1] // Copy last element to index i.
-					missingPackages[len(missingPackages)-1] = Package{}              // Erase last element (write empty value).
+					missingPackages[len(missingPackages)-1] = client.Package{}       // Erase last element (write empty value).
 					missingPackages = missingPackages[:len(missingPackages)-1]       // Truncate slice.
 				}
 			}
@@ -225,7 +205,7 @@ func main() {
 			}
 		} else {
 			for _, p := range packs.Packages {
-				if !contains(missingPackages, p) {
+				if !client.Packages(missingPackages).Exist(p) {
 					err := downloadMeta(p, op)
 					checkErr(err)
 				}
@@ -269,114 +249,4 @@ set -o errexit
 set -o nounset
 ` + cmd + `
 `
-}
-
-type SearchResult struct {
-	Packages []Package
-}
-
-type Package struct {
-	Name, Category, Version, Path string
-}
-
-func TreePackages(treedir string) (searchResult SearchResult, err error) {
-	var res []byte
-	res, err = RunSHOUT("tree", fmt.Sprintf("luet tree pkglist --tree %s --output json", treedir))
-	if err != nil {
-		fmt.Println(string(res))
-		return
-	}
-	json.Unmarshal(res, &searchResult)
-	return
-}
-
-func imageAvailable(image string) bool {
-	_, err := crane.Digest(image)
-	return err == nil
-}
-
-func contains(pp []Package, p Package) bool {
-	for _, i := range pp {
-		if i.Equal(p) {
-			return true
-		}
-	}
-	return false
-}
-
-func containsS(s string, slice []string) bool {
-	for _, i := range slice {
-		if s == i {
-			return true
-		}
-	}
-	return false
-}
-
-func (p Package) String() string {
-	return fmt.Sprintf("%s/%s@%s", p.Category, p.Name, p.Version)
-}
-
-func (p Package) Image(repository string) string {
-	// ${name}-${category}-${version//+/-}
-	return fmt.Sprintf("%s:%s", repository, p.ImageTag())
-}
-
-func (p Package) ImageTag() string {
-	// ${name}-${category}-${version//+/-}
-	return fmt.Sprintf("%s-%s-%s", p.Name, p.Category, strings.ReplaceAll(p.Version, "+", "-"))
-}
-
-func (p Package) ImageMetadata(repository string) string {
-	// ${name}-${category}-${version//+/-}
-	return fmt.Sprintf("%s.metadata.yaml", p.Image(repository))
-}
-
-func (p Package) ImageAvailable(repository string) bool {
-	return imageAvailable(p.Image(repository))
-}
-
-func (p Package) Equal(pp Package) bool {
-	return p.Name == pp.Name && p.Category == pp.Category && p.Version == pp.Version
-}
-
-func (p Package) EqualS(s string) bool {
-	return s == fmt.Sprintf("%s/%s", p.Category, p.Name)
-}
-
-func (p Package) EqualNoV(pp Package) bool {
-	return p.Name == pp.Name && p.Category == pp.Category
-}
-
-func (s SearchResult) FilterByCategory(cat string) SearchResult {
-	new := SearchResult{Packages: []Package{}}
-
-	for _, r := range s.Packages {
-		if r.Category == cat {
-			new.Packages = append(new.Packages, r)
-		}
-	}
-	return new
-}
-
-func (s SearchResult) FilterByName(name string) SearchResult {
-	new := SearchResult{Packages: []Package{}}
-
-	for _, r := range s.Packages {
-		if !strings.Contains(r.Name, name) {
-			new.Packages = append(new.Packages, r)
-		}
-	}
-	return new
-}
-
-type Packages []Package
-
-func (p Packages) Exist(pp Package) bool {
-	for _, pi := range p {
-		if pp.Equal(pi) {
-			return true
-		}
-	}
-	return false
 }
