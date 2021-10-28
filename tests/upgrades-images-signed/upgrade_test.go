@@ -37,11 +37,11 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 			})
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				var upgradeRepo = "quay.io/costoolkit/releases-green"
-				var upgradeVersion = "0.7.0-16"
+				var upgradeVersion = "0.7.1-3"
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					upgradeVersion = "0.7.0-16"
+					upgradeVersion = "0.7.1-3"
 					upgradeRepo = "quay.io/costoolkit/releases-green-arm64"
 				}
 

@@ -25,11 +25,11 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 		When("specifying a directory to upgrade from", func() {
 			It("upgrades from the specified path", func() {
 				var upgradeRepo = "quay.io/costoolkit/releases-green"
-				var upgradeVersion = "0.7.0-16"
+				var upgradeVersion = "0.7.1-3"
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					upgradeVersion = "0.7.0-16"
+					upgradeVersion = "0.7.1-3"
 					upgradeRepo = "quay.io/costoolkit/releases-green-arm64"
 				}
 
