@@ -676,7 +676,7 @@ do_upgrade() {
 
     args=""
     if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
-        args="--enable-logfile --logfile /tmp/luet.log --plugin luet-mtree"
+        args="--plugin luet-mtree"
     fi
 
     if [ -z "$COSIGN" ]; then
@@ -686,7 +686,7 @@ do_upgrade() {
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
+        luet install --enable-logfile --logfile /tmp/luet.log $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
         set +x
     elif [ "$DIRECTORY" == true ]; then
@@ -697,7 +697,7 @@ do_upgrade() {
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack --enable-logfile --logfile /tmp/luet.log $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $TARGET
         rm -rf $upgrade_state_dir/tmp/rootfs
