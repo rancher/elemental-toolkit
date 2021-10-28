@@ -46,7 +46,7 @@ var _ = Describe("cOS Deploy tests", func() {
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 				By("deploying with --force")
-				out, err := s.Command(fmt.Sprintf("cos-deploy --docker-image %s:cos-system-%s", upgradeRepo, upgradeVersion))
+				out, err := s.Command(fmt.Sprintf("cos-deploy --force --docker-image %s:cos-system-%s", upgradeRepo, upgradeVersion))
 				Expect(out).Should(ContainSubstring("now you might want to reboot"))
 				Expect(err).NotTo(HaveOccurred())
 			})
