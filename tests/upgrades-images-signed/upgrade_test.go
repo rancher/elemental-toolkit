@@ -36,13 +36,10 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 			})
 			It("upgrades to a specific image and reset back to the installed version", func() {
-				var upgradeRepo = "quay.io/costoolkit/releases-green"
-				var upgradeVersion = "0.7.0-16"
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					upgradeVersion = "0.7.0-16"
-					upgradeRepo = "quay.io/costoolkit/releases-green-arm64"
+					s.GreenRepo = "quay.io/costoolkit/releases-green-arm64"
 				}
 
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
@@ -50,8 +47,8 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", upgradeRepo, upgradeVersion))
-				out, err = s.Command(fmt.Sprintf("cos-upgrade --docker-image %s:cos-system-%s", upgradeRepo, upgradeVersion))
+				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("cos-upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("to /usr/local/.cos-upgrade/tmp/rootfs"))
@@ -64,7 +61,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(fmt.Sprintf("%s\n", upgradeVersion)))
+				Expect(out).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 			})
 		})
 	})

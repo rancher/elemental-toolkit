@@ -55,6 +55,18 @@ copy:
     version: ">=0"
   source: "/usr/bin/yq"
   destination: "/usr/bin/yq"
+- package:
+    category: "toolchain"
+    name: "cosign"
+    version: ">=0"
+  source: "/usr/bin/cosign"
+  destination: "/usr/bin/cosign"
+- package:
+    category: "toolchain"
+    name: "luet-cosign"
+    version: ">=0"
+  source: "/usr/bin/luet-cosign"
+  destination: "/usr/bin/luet-cosign"
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:

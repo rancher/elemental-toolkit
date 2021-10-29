@@ -13,6 +13,11 @@ RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
+## cosign signatures
+COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
+COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
+COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
+
 ## Upgrades
 CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
 ARCH=$(uname -p)
@@ -116,10 +121,10 @@ usage()
     echo "  [--force-efi] [--force-gpt] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "  upgrade:"
-    echo "  [--strict] [--recovery] [--no-verify] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
+    echo "  [--strict] [--recovery] [--no-verify] [--no-cosign] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
     echo ""
     echo "  deploy:"
-    echo "  [--strict] [--no-verify] [--force] [--docker-image] (IMAGE)"
+    echo "  [--strict] [--no-verify] [--no-cosign] [--force] [--docker-image] (IMAGE)"
     echo ""
     echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
     echo "   IMAGE must be a container image if --docker-image is specified"
@@ -522,6 +527,11 @@ find_upgrade_channel() {
             UPGRADE_IMAGE=$RECOVERY_IMAGE
         fi
     fi
+
+    # export cosign values after loading values from file in case we have them setup there
+    export COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    export COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    export COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
 }
 
 is_squashfs() {
@@ -540,8 +550,6 @@ recovery_boot() {
         return 1
     fi
 }
-
-
 
 prepare_squashfs_target() {
     rm -rf $TARGET || true
@@ -634,7 +642,6 @@ switch_recovery() {
     fi
 }
 
-
 ensure_dir_structure() {
     mkdir ${TARGET}/proc || true
     mkdir ${TARGET}/boot || true
@@ -644,7 +651,6 @@ ensure_dir_structure() {
     mkdir ${TARGET}/usr/local || true
     mkdir ${TARGET}/oem || true
 }
-
 
 do_upgrade() {
     ensure_dir_structure
@@ -670,13 +676,17 @@ do_upgrade() {
 
     args=""
     if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
-        args="--enable-logfile --logfile /tmp/luet.log --plugin luet-mtree"
+        args="--plugin luet-mtree"
+    fi
+
+    if [ -z "$COSIGN" ]; then
+      args+=" --plugin luet-cosign"
     fi
 
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
+        luet install --enable-logfile --logfile /tmp/luet.log $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
         set +x
     elif [ "$DIRECTORY" == true ]; then
@@ -687,7 +697,7 @@ do_upgrade() {
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack --enable-logfile --logfile /tmp/luet.log $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $TARGET
         rm -rf $upgrade_state_dir/tmp/rootfs
@@ -897,7 +907,6 @@ check_recovery() {
     fi
 }
 
-
 find_recovery_partitions() {
     STATE=$(blkid -L COS_STATE || true)
     if [ -z "$STATE" ]; then
@@ -1042,6 +1051,9 @@ deploy() {
             --no-verify)
                 VERIFY=false
                 ;;
+            --no-cosign)
+                COSIGN=false
+                ;;
             --strict)
                 STRICT_MODE=true
                 ;;
@@ -1105,6 +1117,9 @@ upgrade() {
                 ;;
             --no-verify)
                 VERIFY=false
+                ;;
+            --no-cosign)
+                COSIGN=false
                 ;;
             -h)
                 usage
