@@ -73,7 +73,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
+			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --no-cosign --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 
@@ -95,7 +95,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
 				By("upgrading to quay.io/costoolkit/test-images:squashfs-recovery-image (0.5.3..) ")
-				out, err := s.Command("cos-upgrade --no-verify --recovery --docker-image quay.io/costoolkit/test-images:squashfs-recovery-image")
+				out, err := s.Command("cos-upgrade --no-verify --no-cosign --recovery --docker-image quay.io/costoolkit/test-images:squashfs-recovery-image")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -121,7 +121,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery")
-				out, err := s.Command("cos-upgrade --no-verify --recovery")
+				out, err := s.Command("cos-upgrade --no-verify --no-cosign --recovery")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
