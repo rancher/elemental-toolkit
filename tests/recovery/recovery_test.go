@@ -1,6 +1,7 @@
 package cos_test
 
 import (
+	"fmt"
 	"github.com/rancher-sandbox/cOS/tests/sut"
 
 	. "github.com/onsi/ginkgo"
@@ -73,7 +74,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command("CURRENT=active.img cos-upgrade --no-verify --no-cosign --docker-image quay.io/costoolkit/releases-opensuse:cos-system-0.5.7")
+			out, err := s.Command(fmt.Sprintf("CURRENT=active.img cos-upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 
@@ -85,7 +86,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			upgradedVersion := s.GetOSRelease("VERSION")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
-			Expect(upgradedVersion).To(Equal("0.5.7\n"))
+			Expect(upgradedVersion).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 		})
 	})
 
@@ -94,8 +95,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
-				By("upgrading to quay.io/costoolkit/test-images:squashfs-recovery-image (0.5.3..) ")
-				out, err := s.Command("cos-upgrade --no-verify --no-cosign --recovery --docker-image quay.io/costoolkit/test-images:squashfs-recovery-image")
+				By(fmt.Sprintf("upgrading to %s:cos-squash-recovery-%s", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("cos-upgrade --recovery --docker-image %s:cos-squash-recovery-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
@@ -110,7 +111,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				out = s.GetOSRelease("VERSION")
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal("0.5.3\n"))
+				Expect(out).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 
 				By("rebooting back to active")
 				s.Reboot()
@@ -121,7 +122,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery")
-				out, err := s.Command("cos-upgrade --no-verify --no-cosign --recovery")
+				out, err := s.Command("cos-upgrade --recovery")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))

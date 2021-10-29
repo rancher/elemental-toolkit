@@ -33,6 +33,8 @@ type SUT struct {
 	Username string
 	Password string
 	Timeout  int
+	GreenRepo string
+	TestVersion string
 }
 
 func NewSUT() *SUT {
@@ -63,6 +65,8 @@ func NewSUT() *SUT {
 		Username: user,
 		Password: pass,
 		Timeout:  timeout,
+		GreenRepo: "quay.io/costoolkit/releases-green",
+		TestVersion: "0.7.1-3",
 	}
 }
 

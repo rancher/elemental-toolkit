@@ -24,13 +24,10 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	Context("After install", func() {
 		When("images are not signed", func() {
 			It("upgrades with --no-verify", func() {
-				var upgradeRepo = "quay.io/costoolkit/releases-green"
-				var upgradeVersion = "0.7.1-3"
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					upgradeVersion = "0.7.1-3"
-					upgradeRepo = "quay.io/costoolkit/releases-green-arm64"
+					s.GreenRepo = "quay.io/costoolkit/releases-green-arm64"
 				}
 
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
@@ -38,7 +35,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				out, err = s.Command(fmt.Sprintf("cos-upgrade --no-verify --docker-image %s:cos-system-%s", upgradeRepo, upgradeVersion))
+				out, err = s.Command(fmt.Sprintf("cos-upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}
@@ -53,7 +50,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(fmt.Sprintf("%s\n", upgradeVersion)))
+				Expect(out).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 
 				By("rollbacking state")
 				s.Reset()
@@ -61,7 +58,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				out, err = s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal(fmt.Sprintf("%s\n", upgradeVersion)))
+				Expect(out).ToNot(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 				Expect(out).To(Equal(version))
 			})
 		})
