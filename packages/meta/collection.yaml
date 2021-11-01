@@ -54,7 +54,7 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-core-fips"
-    version: 0.7.0-2
+    version: 0.7.0-3
     requires:
       - category: meta
         name: fips-toolchain
