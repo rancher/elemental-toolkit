@@ -2,7 +2,7 @@ packages:
   - category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.7-2
+    version: 0.7-3
     requires:
       - category: toolchain
         name: yip
