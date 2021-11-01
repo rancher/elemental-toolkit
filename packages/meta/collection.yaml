@@ -44,7 +44,7 @@ packages:
   - category: "meta"
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
-    version: 0.7.0-2
+    version: 0.7.0-3
     requires:
       - category: meta
         name: toolchain
