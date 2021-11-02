@@ -3,6 +3,10 @@ ARG LUET_VERSION=0.18.1
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
 FROM opensuse/leap:15.3
+
+ENV COSIGN_EXPERIMENTAL=1
+ENV COSIGN_REPOSITORY=raccos/releases-green
+
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
 RUN zypper in -y \
@@ -66,7 +70,10 @@ COPY conf/luet.yaml /etc/luet/luet.yaml
 # Copy luet from the official images
 COPY --from=luet /usr/bin/luet /usr/bin/luet
 
-RUN luet install -y meta/cos-minimal \
+# TODO: change this to meta/cos-verify once the meta package is published
+RUN luet install -y toolchain/cosign toolchain/luet-cosign
+
+RUN luet install --plugin luet-cosign -y meta/cos-minimal \
     utils/k9s \
     utils/nerdctl
 
