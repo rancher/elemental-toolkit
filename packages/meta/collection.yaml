@@ -83,3 +83,13 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
+  - category: "meta"
+    name: "cos-verify"
+    version: 0.7.0-3
+    requires:
+      - category: toolchain
+        name: cosign
+        version: ">=0"
+      - category: toolchain
+        name: luet-cosign
+        version: ">=0"

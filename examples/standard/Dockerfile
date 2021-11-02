@@ -70,8 +70,7 @@ COPY conf/luet.yaml /etc/luet/luet.yaml
 # Copy luet from the official images
 COPY --from=luet /usr/bin/luet /usr/bin/luet
 
-# TODO: change this to meta/cos-verify once the meta package is published
-RUN luet install -y toolchain/cosign toolchain/luet-cosign
+RUN luet install -y meta/cos-verify
 
 RUN luet install --plugin luet-cosign -y meta/cos-minimal \
     utils/k9s \
