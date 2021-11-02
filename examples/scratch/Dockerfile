@@ -1,4 +1,4 @@
-ARG LUET_VERSION=0.18.1
+ARG LUET_VERSION=0.20.6
 
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
