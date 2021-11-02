@@ -4,7 +4,7 @@ set -e
 PROG=$0
 
 ## Installer
-PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install"
+PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
 DISTRO=/run/rootfsbase
 ISOMNT=/run/initramfs/live
 ISOBOOT=${ISOMNT}/boot
@@ -961,23 +961,7 @@ rebrand_grub_menu() {
 	   mount $STATEDIR /run/boot
 	fi
 
-	local grub_file=/run/boot/grub2/grub.cfg
-
-	# https://github.com/rancher-sandbox/cOS-toolkit/issues/537
-	if [ ! -e "$grub_file" ]; then
-	   grub_file="/run/boot/grub/grub.cfg"
-	fi
-
-	if [ ! -e "$grub_file" ]; then
-	   grub_file="/etc/cos/grub.cfg"
-	fi
-
-	if [ ! -e "$grub_file" ]; then
-	   echo "Grub config file not found"
-	   exit 1
-	fi
-
-	sed -i "s/menuentry \"cOS/menuentry \"$grub_entry/g" "$grub_file"
+    grub2-editenv /run/boot/grub_oem_env set default_menu_entry=$grub_entry
 
     umount /run/boot
 }
