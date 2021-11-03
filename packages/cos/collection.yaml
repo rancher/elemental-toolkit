@@ -24,3 +24,4 @@ packages:
   - !!merge <<: *cos
     name: "cos-squash"
     category: "recovery"
+    version: 0.7.2-2
