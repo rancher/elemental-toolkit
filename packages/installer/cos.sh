@@ -14,7 +14,7 @@ RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
-COS_DEFAULT_IMAGE_SIZE=3240
+DEFAULT_IMAGE_SIZE=3240
 
 ## cosign signatures
 COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
@@ -102,7 +102,7 @@ prepare_deploy_target() {
 
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/active.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$COS_DEFAULT_IMAGE_SIZE
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img
     mount -t ext2 -o loop ${STATEDIR}/cOS/active.img $TARGET
 }
@@ -110,7 +110,7 @@ prepare_deploy_target() {
 prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$COS_DEFAULT_IMAGE_SIZE
+    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/transition.img
     mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
@@ -341,7 +341,7 @@ do_mount()
 
     mkdir -p ${STATEDIR}/cOS
     # TODO: Size should be tweakable
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$COS_DEFAULT_IMAGE_SIZE
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
     sync
     LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
@@ -894,7 +894,7 @@ copy_active() {
         
         TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$COS_DEFAULT_IMAGE_SIZE
+        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
         mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
         LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
