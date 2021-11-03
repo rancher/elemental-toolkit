@@ -1,6 +1,6 @@
 name: "luet-cosign"
 category: "toolchain"
-version: "0.0.7"
+version: "0.0.8"
 labels:
   github.repo: "luet-cosign"
   github.owner: "rancher-sandbox"
