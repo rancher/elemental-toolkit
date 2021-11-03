@@ -37,10 +37,13 @@ func repositoryPackages(repo string) (searchResult client.SearchResult) {
 		Cached: true,
 		Urls:   []string{repo},
 	})
-	re, err := d.Sync(types.NewContext(), false)
+
+	ctx := types.NewContext()
+	ctx.Config.GetSystem().Rootfs = "/"
+	ctx.Config.GetSystem().TmpDirBase = tmpdir
+	re, err := d.Sync(ctx, false)
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	} else {
 		for _, p := range re.GetTree().GetDatabase().World() {
 			searchResult.Packages = append(searchResult.Packages, client.Package{
