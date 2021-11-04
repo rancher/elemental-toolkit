@@ -220,12 +220,17 @@ do_format()
 
     echo "Formatting drives.."
 
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" != "gpt" ]; then
+        echo "Custom layout only available with GPT based installations"
+        exit 1
+    fi
+
     dd if=/dev/zero of=${DEVICE} bs=1M count=1
     parted -s ${DEVICE} mklabel ${PARTTABLE}
 
     # Partitioning via cloud-init config file
-    if [ -n "$COS_PARTITION_LAYOUT" ]; then
-        if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
+        if [ "$BOOTFLAG" == "esp" ]; then
             parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
             parted -s ${DEVICE} set 1 ${BOOTFLAG} on
             PREFIX=${DEVICE}
@@ -235,11 +240,9 @@ do_format()
             BOOT=${PREFIX}1
             mkfs.vfat -F 32 ${BOOT}
             fatlabel ${BOOT} COS_GRUB
-        elif [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
+        elif [ "$BOOTFLAG" == "bios_grub" ]; then
             parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
             parted -s ${DEVICE} set 1 ${BOOTFLAG} on
-        else
-            BOOT_STATE=true
         fi
 
         yip -s partitioning $COS_PARTITION_LAYOUT
@@ -250,12 +253,6 @@ do_format()
         STATE=$(blkid -L COS_STATE || true)
         RECOVERY=$(blkid -L COS_RECOVERY || true)
         BOOT=$(blkid -L COS_GRUB || true)
-
-        ID=${STATE/$DEVICE/} # Gets the device number, e.g. /dev/sda2 -> 2
-        ID=${ID/p/} # Remove an eventual p e.g /dev/mmcblk0p1 
-        if [ -n "$BOOT_STATE" ]; then
-            parted -s ${DEVICE} set $ID ${BOOTFLAG} on
-        fi
 
         return 0
     fi
