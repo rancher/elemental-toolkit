@@ -13,6 +13,9 @@ RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
+# Default size (in MB) of disk image files (.img) created during upgrades
+DEFAULT_IMAGE_SIZE=3240
+
 ## cosign signatures
 COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
 COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
@@ -99,7 +102,7 @@ prepare_deploy_target() {
 
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/active.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img
     mount -t ext2 -o loop ${STATEDIR}/cOS/active.img $TARGET
 }
@@ -107,7 +110,7 @@ prepare_deploy_target() {
 prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
+    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/transition.img
     mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
@@ -118,7 +121,7 @@ usage()
     echo ""
     echo "Example: $PROG-install /dev/vda"
     echo "  install:"
-    echo "  [--force-efi] [--force-gpt] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
+    echo "  [--partition-layout /path/to/config/file.yaml ] [--force-efi] [--force-gpt] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "  upgrade:"
     echo "  [--strict] [--recovery] [--no-verify] [--no-cosign] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
@@ -193,27 +196,72 @@ prepare_passive() {
     sync
 }
 
+part_probe() {
+    local dev=$1
+    partprobe ${dev} 2>/dev/null || true
+
+    sync
+    sleep 2
+
+    dmsetup remove_all 2>/dev/null || true
+}
+
+blkid_probe() {
+    OEM=$(blkid -L COS_OEM || true)
+    STATE=$(blkid -L COS_STATE || true)
+    RECOVERY=$(blkid -L COS_RECOVERY || true)
+    BOOT=$(blkid -L COS_GRUB || true)
+    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+}
+
 do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
         STATE=$(blkid -L COS_STATE || true)
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
             tune2fs -L COS_STATE $DEVICE
-            STATE=$(blkid -L COS_STATE)
         fi
-        OEM=$(blkid -L COS_OEM || true)
-        STATE=$(blkid -L COS_STATE || true)
-        RECOVERY=$(blkid -L COS_RECOVERY || true)
-        BOOT=$(blkid -L COS_GRUB || true)
+        blkid_probe
         return 0
     fi
 
     echo "Formatting drives.."
 
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" != "gpt" ]; then
+        echo "Custom layout only available with GPT based installations"
+        exit 1
+    fi
+
     dd if=/dev/zero of=${DEVICE} bs=1M count=1
     parted -s ${DEVICE} mklabel ${PARTTABLE}
 
-    # TODO: Size should be tweakable
+    # Partitioning via cloud-init config file
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
+        if [ "$BOOTFLAG" == "esp" ]; then
+            parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
+            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+            PREFIX=${DEVICE}
+            if [ ! -e ${PREFIX}${STATE_NUM} ]; then
+                PREFIX=${DEVICE}p
+            fi
+            BOOT=${PREFIX}1
+            mkfs.vfat -F 32 ${BOOT}
+            fatlabel ${BOOT} COS_GRUB
+        elif [ "$BOOTFLAG" == "bios_grub" ]; then
+            parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+        fi
+
+        yip -s partitioning $COS_PARTITION_LAYOUT
+
+        part_probe $DEVICE
+
+        blkid_probe
+
+        return 0
+    fi
+
+    # Standard partitioning
     if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
         OEM_NUM=2
@@ -251,10 +299,7 @@ do_format()
         parted -s ${DEVICE} set 2 ${BOOTFLAG} on
     fi
 
-    partprobe ${DEVICE} 2>/dev/null || true
-    sleep 2
-
-    dmsetup remove_all 2>/dev/null || true
+    part_probe $DEVICE
 
     PREFIX=${DEVICE}
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
@@ -297,7 +342,7 @@ do_mount()
 
     mkdir -p ${STATEDIR}/cOS
     # TODO: Size should be tweakable
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=3240
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
     sync
     LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
@@ -850,7 +895,7 @@ copy_active() {
         
         TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=3240
+        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
         mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
         LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
@@ -1193,6 +1238,10 @@ install() {
             --config)
                 shift 1
                 COS_INSTALL_CONFIG_URL=$1
+                ;;
+            --partition-layout)
+                shift 1
+                COS_PARTITION_LAYOUT=$1
                 ;;
             --iso)
                 shift 1

@@ -37,3 +37,6 @@ COSIGN_EXPERIMENTAL=1
 # This can be set to file, URL, KMS URI or Kubernetes Secret
 # This is only used if COSIGN_EXPERIMENTAL is set to 0
 COSIGN_PUBLIC_KEY_LOCATION=""
+
+# Default size (in MB) of disk image files (.img) created during upgrades
+DEFAULT_IMAGE_SIZE=3240
