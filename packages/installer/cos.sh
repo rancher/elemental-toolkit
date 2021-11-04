@@ -199,9 +199,19 @@ prepare_passive() {
 part_probe() {
     local dev=$1
     partprobe ${dev} 2>/dev/null || true
+
+    sync
     sleep 2
 
     dmsetup remove_all 2>/dev/null || true
+}
+
+blkid_probe() {
+    OEM=$(blkid -L COS_OEM || true)
+    STATE=$(blkid -L COS_STATE || true)
+    RECOVERY=$(blkid -L COS_RECOVERY || true)
+    BOOT=$(blkid -L COS_GRUB || true)
+    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
 do_format()
@@ -211,10 +221,7 @@ do_format()
         if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
             tune2fs -L COS_STATE $DEVICE
         fi
-        OEM=$(blkid -L COS_OEM || true)
-        STATE=$(blkid -L COS_STATE || true)
-        RECOVERY=$(blkid -L COS_RECOVERY || true)
-        BOOT=$(blkid -L COS_GRUB || true)
+        blkid_probe
         return 0
     fi
 
@@ -249,10 +256,7 @@ do_format()
 
         part_probe $DEVICE
 
-        OEM=$(blkid -L COS_OEM || true)
-        STATE=$(blkid -L COS_STATE || true)
-        RECOVERY=$(blkid -L COS_RECOVERY || true)
-        BOOT=$(blkid -L COS_GRUB || true)
+        blkid_probe
 
         return 0
     fi
