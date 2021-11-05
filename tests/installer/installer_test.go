@@ -23,9 +23,7 @@ var _ = Describe("cOS Installer tests", func() {
 
 	Context("generic tests", func() {
 		It("booted from iso", func() {
-			out, err := s.Command("cat /proc/cmdline")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(ContainSubstring("live:CDLABEL"))
+			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.LiveCD))
 		})
 		It("has the cdrom mounted", func() {
 			out, err := s.Command("grep /dev/sr /etc/mtab")

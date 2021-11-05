@@ -23,6 +23,7 @@ const (
 	Passive     = 0
 	Active      = iota
 	Recovery    = iota
+	LiveCD      = iota
 	UnknownBoot = iota
 
 	TimeoutRawDiskTest = 600  // Timeout to connect for recovery_raw_disk_test
@@ -141,6 +142,8 @@ func (s *SUT) BootFrom() int {
 		return Passive
 	case strings.Contains(out, "COS_RECOVERY"), strings.Contains(out, "COS_SYSTEM"):
 		return Recovery
+	case strings.Contains(out, "live:CDLABEL"):
+		return LiveCD
 	default:
 		return UnknownBoot
 	}
