@@ -5,6 +5,7 @@ import (
 	"github.com/bramvdbogaerde/go-scp"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ type SUT struct {
 	Timeout  int
 	GreenRepo string
 	TestVersion string
+	CDLocation string
 }
 
 func NewSUT() *SUT {
@@ -376,6 +378,36 @@ func (s SUT) GatherLog(logPath string) {
 	_ = os.Chmod(fmt.Sprintf("logs/%s", baseName), 0666)
 	fmt.Printf("File %s copied!\n", baseName)
 
+}
+
+// EmptyDisk will try to trash the disk given so on reboot the disk is empty and we are forced to use the cd to boot
+// used mainly for installer testing booting from iso
+func (s SUT) EmptyDisk(disk string)  {
+	By(fmt.Sprintf("Trashing %s to restore VM", disk))
+	// 34*512 byte sectors should cover both MBR and GPT
+	_, err := s.Command(fmt.Sprintf("dd if=/dev/zero of=%s bs=512 count=34", disk))
+	Expect(err).To(BeNil())
+}
+
+// SetCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
+func (s SUT) SetCDLocation()  {
+	out, err := exec.Command("bash", "-c", "VBoxManage list dvds|grep Location|cut -d ':' -f 2|xargs").CombinedOutput()
+	Expect(err).To(BeNil())
+	s.CDLocation = string(out)
+}
+
+// EjectCD force removes the DVD so we can boot from disk directly on EFI VMs
+func (s SUT) EjectCD()  {
+	// first store the cd location
+	s.SetCDLocation()
+	_, err := exec.Command("bash", "-c", "VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium emptydrive --forceunmount").CombinedOutput()
+	Expect(err).To(BeNil())
+}
+
+// RestoreCOSCD reattaches the cOS iso to the VM
+func (s SUT) RestoreCOSCD()  {
+	_, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s", s.CDLocation)).CombinedOutput()
+	Expect(err).To(BeNil())
 }
 
 // DialWithDeadline Dials SSH with a deadline to avoid Read timeouts
