@@ -355,7 +355,7 @@
         {{{ if eq $config.arch "arm64" }}}
         test: [{{{ join $config.run_tests ", "}}}]
         {{{else}}}
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images", "test-installer"]
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
         {{{end}}}
     steps:
       - name: Install Go
@@ -429,6 +429,43 @@
           if-no-files-found: warn
       {{{end}}}
 {{{ end }}}
+
+{{{ define "installer_tests"}}}
+  {{{ $config := (datasource "config") }}}
+  {{{ $flavor := index . "flavor" }}}
+  {{{ $subset := index . "subset" }}}
+  tests-{{{$subset}}}-{{{ $flavor }}}-installer:
+    env:
+      ARCH: {{{ $config.arch }}}
+    runs-on: macos-10.15
+    needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make create_vm_from_iso_bios
+      - name: Run tests 🔧
+        run: |
+          make test-installer
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-{{{$subset}}}-test-installer.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+{{{end}}}
 
 {{{define "publish_packages"}}}
   {{{ $config := (datasource "config") }}}
@@ -904,6 +941,11 @@ jobs:
 
     {{{- if not (has $config.skip_images_flavor $flavor) }}}
   {{{ tmpl.Exec "build_iso" $context }}}
+        {{{- if has $config "run_installer_test" }}}
+            {{{- if $config.run_installer_test }}}
+  {{{ tmpl.Exec "installer_tests" $context }}}
+            {{{- end}}}
+        {{{- end}}}
         {{{- if $config.build_image_qemu }}}
   {{{ tmpl.Exec "build_qemu" $context }}}
         {{{- end }}}

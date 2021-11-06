@@ -24,6 +24,7 @@ flavors:
         build_image_vbox: true
         build_raw_image: true
         run_raw_image_test: true
+        run_installer_test: true
         release_flavor: [ "green" ]
         arch: "x86_64"
         on:
