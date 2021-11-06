@@ -1,7 +1,7 @@
 packages:
   - name: "golang"
     category: "build"
-    version: 1.17.2-2
+    version: "1.17.3"
     base_url: https://golang.org/dl
     hidden: true # No need to make it installable for now
     labels:
@@ -14,9 +14,9 @@ packages:
         curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
       autobump.version_hook: |
         curl -s -L 'https://golang.org/VERSION?m=text' | sed 's/go//g'
-      package.version: "1.17.2"
+      package.version: "1.17.3"
       autobump.checksum_hook: "curl -q -L https://storage.googleapis.com/golang/go{{.Values.labels.package.version}}.linux-{{.Values.labels.autobump.arch}}.tar.gz.sha256"
-      package.checksum: "f242a9db6a0ad1846de7b6d94d507915d14062660616a61ef7c808a76e4f1676"
+      package.checksum: "550f9845451c0c94be679faf116291e7807a8d78b43149f9506c1b15eb89008c"
   - name: "golang-fips"
     category: "build"
     version: 1.17.2b7-2
