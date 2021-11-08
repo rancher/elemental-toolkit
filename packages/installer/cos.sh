@@ -94,17 +94,12 @@ is_booting_from_squashfs() {
     fi
 }
 
-prepare_deploy_target() {
-    if [ -f  ${STATEDIR}/cOS/active.img ] && [ "$FORCE" != "true" ]; then
-        echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
-        exit 1
+is_booting_from_live() {
+    if cat /proc/cmdline | grep -q "CDLABEL"; then
+        return 0
+    else
+        return 1
     fi
-
-    mkdir -p ${STATEDIR}/cOS || true
-    rm -rf ${STATEDIR}/cOS/active.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${STATEDIR}/cOS/active.img
-    mount -t ext2 -o loop ${STATEDIR}/cOS/active.img $TARGET
 }
 
 prepare_target() {
@@ -121,13 +116,10 @@ usage()
     echo ""
     echo "Example: $PROG-install /dev/vda"
     echo "  install:"
-    echo "  [--partition-layout /path/to/config/file.yaml ] [--force-efi] [--force-gpt] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
+    echo "  [--partition-layout /path/to/config/file.yaml ] [--force-efi] [--force-gpt] [--docker-image IMAGE] [--no-verify] [--no-cosign] [--iso https://.../OS.iso] [--debug] [--tty TTY] [--poweroff] [--no-format] [--config https://.../config.yaml] DEVICE"
     echo ""
     echo "  upgrade:"
     echo "  [--strict] [--recovery] [--no-verify] [--no-cosign] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
-    echo ""
-    echo "  deploy:"
-    echo "  [--strict] [--no-verify] [--no-cosign] [--force] [--docker-image] (IMAGE)"
     echo ""
     echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
     echo "   IMAGE must be a container image if --docker-image is specified"
@@ -172,7 +164,9 @@ installer_cleanup()
 prepare_recovery() {
     echo "Preparing recovery.."
     mkdir -p $RECOVERYDIR
+
     mount $RECOVERY $RECOVERYDIR
+
     mkdir -p $RECOVERYDIR/cOS
 
     if [ -e "$RECOVERYSQUASHFS" ]; then
@@ -214,6 +208,13 @@ blkid_probe() {
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
+check_required_partitions() {
+    if [ -z "$STATE" ]; then
+            echo "State partition cannot be found"
+            exit 1
+    fi
+}
+
 do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
@@ -222,6 +223,7 @@ do_format()
             tune2fs -L COS_STATE $DEVICE
         fi
         blkid_probe
+        check_required_partitions
         return 0
     fi
 
@@ -335,16 +337,23 @@ do_mount()
     echo "Mounting critical endpoints.."
 
     mkdir -p ${TARGET}
+    ensure_dir_structure $TARGET
 
-    STATEDIR=/tmp/mnt/STATE
-    mkdir -p $STATEDIR || true
-    mount ${STATE} $STATEDIR
+    prepare_statedir "install"
 
-    mkdir -p ${STATEDIR}/cOS
-    # TODO: Size should be tweakable
+    mkdir -p ${STATEDIR}/cOS || true
+
+    if [ -e "${STATEDIR}/cOS/active.img" ]; then
+        rm -rf ${STATEDIR}/cOS/active.img
+    fi
+
     dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
-    sync
+
+    if [ -z "$COS_ACTIVE" ]; then
+        sync
+    fi
+
     LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
     mount -t ext2 $LOOP $TARGET
 
@@ -385,11 +394,22 @@ get_url()
 get_iso()
 {
     if [ -n "$COS_INSTALL_ISO_URL" ]; then
-        ISOMNT=$(mktemp -d -p /tmp cos.XXXXXXXX.isomnt)
-        TEMP_FILE=$(mktemp -p /tmp cos.XXXXXXXX.iso)
+        ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX.isomnt)
+        TEMP_FILE=$(mktemp --tmpdir cos.XXXXXXXX.iso)
         get_url ${COS_INSTALL_ISO_URL} ${TEMP_FILE}
         ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
         mount -o ro ${ISO_DEVICE} ${ISOMNT}
+    fi
+}
+
+get_image()
+{
+    if [ -n "$UPGRADE_IMAGE" ]; then
+        part_probe
+        DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
+        temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
+        args="$(luet_args)"
+        create_rootfs "install" $DISTRO $temp
     fi
 }
 
@@ -398,11 +418,12 @@ do_copy()
     echo "Copying cOS.."
 
     rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
-     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
+    if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
         OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi
+    ensure_dir_structure $TARGET
 }
 
 SELinux_relabel()
@@ -414,6 +435,11 @@ SELinux_relabel()
 
 install_grub()
 {
+    if [ -z "$DEVICE" ]; then
+        echo "No Installation device specified. Skipping GRUB installation"
+        return 0
+    fi
+
     echo "Installing GRUB.."
 
     if [ "$COS_INSTALL_DEBUG" ]; then
@@ -489,9 +515,22 @@ validate_progs()
 validate_device()
 {
     DEVICE=$COS_INSTALL_DEVICE
-    if [ ! -b ${DEVICE} ]; then
+    if [ -n "${DEVICE}" ] && [ ! -b ${DEVICE} ]; then
         echo "You should use an available device. Device ${DEVICE} does not exist."
         exit 1
+    fi
+    if [ -n "$COS_INSTALL_NO_FORMAT" ]; then
+        COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+        COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+        if [ -n "$COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
+            if [ "$FORCE" == "true" ]; then
+                echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
+                return 0
+            else
+                echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
+                exit 1
+            fi
+        fi
     fi
 }
 
@@ -603,9 +642,13 @@ prepare_squashfs_target() {
 }
 
 mount_state() {
-    STATEDIR=/run/initramfs/state
-    mkdir -p $STATEDIR
-    mount ${STATE} ${STATEDIR}
+    if [ -n "${STATE}" ]; then
+        STATEDIR=/run/initramfs/state
+        mkdir -p $STATEDIR
+        mount ${STATE} ${STATEDIR}
+    else
+        echo "No state partition found. Skipping mount"
+    fi
 }
 
 prepare_statedir() {
@@ -613,9 +656,7 @@ prepare_statedir() {
     case $target in
     recovery)
         STATEDIR=/tmp/recovery
-        TARGET=/tmp/upgrade
 
-        mkdir -p $TARGET || true
         mkdir -p $STATEDIR || true
         mount $RECOVERY $STATEDIR
         if is_squashfs; then
@@ -628,9 +669,6 @@ prepare_statedir() {
         ;;
     *)
         STATEDIR=/run/initramfs/cos-state
-        TARGET=/tmp/upgrade
-
-        mkdir -p $TARGET || true
 
         if [ -d "$STATEDIR" ]; then
             if recovery_boot; then
@@ -648,15 +686,14 @@ prepare_statedir() {
 mount_image() {
     local target=$1
 
+    TARGET=/tmp/upgrade
+
+    mkdir -p $TARGET || true
     prepare_statedir $target
 
     case $target in
     upgrade)
         prepare_target
-        ;;
-    deploy)
-        is_mounted /usr/local || mount ${PERSISTENT} /usr/local
-        prepare_deploy_target
         ;;
     esac
 }
@@ -688,19 +725,34 @@ switch_recovery() {
 }
 
 ensure_dir_structure() {
-    mkdir ${TARGET}/proc || true
-    mkdir ${TARGET}/boot || true
-    mkdir ${TARGET}/dev || true
-    mkdir ${TARGET}/sys || true
-    mkdir ${TARGET}/tmp || true
-    mkdir ${TARGET}/usr/local || true
-    mkdir ${TARGET}/oem || true
+    local target=$1
+    for mnt in /sys /proc /dev /tmp /boot /usr/local /oem
+    do
+        if [ ! -d "${target}${mnt}" ]; then
+          mkdir -p ${target}${mnt}
+        fi
+    done
 }
 
-do_upgrade() {
-    ensure_dir_structure
+luet_args() {
+    args="--enable-logfile --logfile /tmp/luet.log"
+    if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
+        args="--plugin luet-mtree"
+    fi
+
+    if [ -z "$COSIGN" ]; then
+      args+=" --plugin luet-cosign"
+    fi
+
+    echo $args
+}
+
+create_rootfs() {
     hook_name=$1
-    upgrade_state_dir="/usr/local/.cos-upgrade"
+    target=$2
+    temp_dir=$3
+
+    upgrade_state_dir="$temp_dir"
     temp_upgrade=$upgrade_state_dir/tmp/upgrade
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
@@ -719,48 +771,49 @@ do_upgrade() {
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
 
-    args=""
-    if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
-        args="--plugin luet-mtree"
-    fi
-
-    if [ -z "$COSIGN" ]; then
-      args+=" --plugin luet-cosign"
-    fi
-
+    args="$(luet_args)"
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install --enable-logfile --logfile /tmp/luet.log $args --system-target $TARGET --system-engine memory -y $UPGRADE_IMAGE
+        luet install $args --system-target $target --system-engine memory -y $UPGRADE_IMAGE
         luet cleanup
         set +x
     elif [ "$DIRECTORY" == true ]; then
         echo "Upgrading from local folder: $UPGRADE_IMAGE"
-        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ $TARGET
+        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ $target
     else
         echo "Upgrading from container image: $UPGRADE_IMAGE"
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack --enable-logfile --logfile /tmp/luet.log $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
-        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $TARGET
+        rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $target
         rm -rf $upgrade_state_dir/tmp/rootfs
     fi
 
-    chmod 755 $TARGET
+    ensure_dir_structure $target
+
+    chmod 755 $target
     SELinux_relabel
 
-    mount $PERSISTENT $TARGET/usr/local
-    mount $OEM $TARGET/oem
-    if [ "$STRICT_MODE" = "true" ]; then
-        run_hook after-$hook_name-chroot $TARGET
-    else 
-        run_hook after-$hook_name-chroot $TARGET || true
+    if [ -n "$PERSISTENT" ]; then
+        mount $PERSISTENT $target/usr/local
     fi
-    umount $TARGET/oem
-    umount $TARGET/usr/local
-
+    if [ -n "$OEM" ]; then
+        mount $OEM $target/oem
+    fi
+    if [ "$STRICT_MODE" = "true" ]; then
+        run_hook after-$hook_name-chroot $target
+    else 
+        run_hook after-$hook_name-chroot $target || true
+    fi
+    if [ -n "$OEM" ]; then
+     umount $target/oem
+    fi
+    if [ -n "$PERSISTENT" ]; then
+        umount $target/usr/local
+    fi
     if [ "$STRICT_MODE" = "true" ]; then
       cos-setup after-$hook_name
     else 
@@ -768,7 +821,7 @@ do_upgrade() {
     fi
 
     rm -rf $upgrade_state_dir
-    umount $TARGET || true
+    umount $target || true
 }
 
 upgrade_cleanup2()
@@ -798,46 +851,6 @@ upgrade_cleanup()
 
 
 ## END UPGRADER
-
-## START DEPLOYER
-
-find_deploy_partitions() {
-    STATE=$(blkid -L COS_STATE || true)
-    if [ -z "$STATE" ]; then
-        echo "State partition cannot be found"
-        exit 1
-    fi
-
-    OEM=$(blkid -L COS_OEM || true)
-
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-    if [ -z "$PERSISTENT" ]; then
-        echo "Persistent partition cannot be found"
-        exit 1
-    fi
-
-    COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-    COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -n "$COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
-        if [ "$FORCE" == "true" ]; then
-            echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
-            return 0
-        else
-            echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
-            exit 1
-        fi
-   
-    fi
-}
-
-set_active_passive() {
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
-
-    cp -f ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
-    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
-}
-
-## END DEPLOYER
 
 ## START COS-RESET
 
@@ -904,7 +917,7 @@ copy_active() {
         --exclude='proc' --exclude='sys' \
         --exclude='dev' --exclude='tmp' \
         $tmp_dir/ $TARGET
-        ensure_dir_structure
+        ensure_dir_structure $TARGET
 
         SELinux_relabel
 
@@ -1070,63 +1083,6 @@ reset() {
     fi
 }
 
-deploy() {
-
-    while [ "$#" -gt 0 ]; do
-        case $1 in
-            --docker-image)
-                NO_CHANNEL=true
-                ;;
-            --no-verify)
-                VERIFY=false
-                ;;
-            --no-cosign)
-                COSIGN=false
-                ;;
-            --strict)
-                STRICT_MODE=true
-                ;;
-            --force)
-                FORCE=true
-                ;;
-            -h)
-                usage
-                ;;
-            --help)
-                usage
-                ;;
-            *)
-                if [ "$#" -gt 2 ]; then
-                    usage
-                fi
-                COS_IMAGE=$1
-                break
-                ;;
-        esac
-        shift 1
-    done
-    find_upgrade_channel
-
-    trap upgrade_cleanup exit
-
-    echo "Deploying system.."
-
-    find_deploy_partitions
-
-    mount_image "deploy"
-
-    do_upgrade "deploy"
-
-    set_active_passive
-
-    rebrand
-
-    echo "Flush changes to disk"
-    sync
-
-    echo "Deployment done, now you might want to reboot"
-}
-
 upgrade() {
 
     while [ "$#" -gt 0 ]; do
@@ -1181,7 +1137,7 @@ upgrade() {
 
         mount_image "recovery"
 
-        do_upgrade "upgrade"
+        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
 
         switch_recovery
     else
@@ -1191,7 +1147,7 @@ upgrade() {
 
         mount_image "upgrade"
 
-        do_upgrade "upgrade"
+        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
 
         switch_active
     fi
@@ -1216,11 +1172,25 @@ install() {
 
     while [ "$#" -gt 0 ]; do
         case $1 in
+            --docker-image)
+                NO_CHANNEL=true
+                shift 1
+                COS_IMAGE=$1
+                ;;
+            --no-verify)
+                VERIFY=false
+                ;;
+            --no-cosign)
+                COSIGN=false
+                ;;
             --no-format)
                 COS_INSTALL_NO_FORMAT=true
                 ;;
             --force-efi)
                 COS_INSTALL_FORCE_EFI=true
+                ;;
+            --force)
+                FORCE=true
                 ;;
             --force-gpt)
                 COS_INSTALL_FORCE_GPT=true
@@ -1269,9 +1239,14 @@ install() {
         shift 1
     done
 
-    load_config
+    # We want to find the upgrade channel if, no ISO url is supplied and:
+    # 1: We aren't booting from LiveCD - the rootfs that we are going to install must be downloaded from somewhere
+    # 2: If we specify directly an image to install
+    if ! is_booting_from_live && [ -z "$COS_INSTALL_ISO_URL" ] || [ -n "$COS_IMAGE" ] && [ -z "$COS_INSTALL_ISO_URL" ]; then
+        find_upgrade_channel
+    fi
 
-    if [ -z "$COS_INSTALL_DEVICE" ]; then
+    if [ -z "$COS_INSTALL_DEVICE" ] && [ -z "$COS_INSTALL_NO_FORMAT" ]; then
         usage
     fi
 
@@ -1281,12 +1256,13 @@ install() {
     trap installer_cleanup exit
 
     if [ "$STRICT_MODE" = "true" ]; then
-    cos-setup before-install
+        cos-setup before-install
     else
-    cos-setup before-install || true
+        cos-setup before-install || true
     fi
 
     get_iso
+    get_image
     setup_style
     do_format
     do_mount
@@ -1295,24 +1271,33 @@ install() {
 
     SELinux_relabel
 
-    if [ "$STRICT_MODE" = "true" ]; then
-    run_hook after-install-chroot $TARGET
-    else
-    run_hook after-install-chroot $TARGET || true
+    # Otherwise, hooks are executed in get_image
+    if [ -z "$UPGRADE_IMAGE" ]; then
+        if [ "$STRICT_MODE" = "true" ]; then
+            run_hook after-install-chroot $TARGET
+        else
+            run_hook after-install-chroot $TARGET || true
+        fi
     fi
 
     umount_target 2>/dev/null
 
-    prepare_recovery
+    if ! is_booting_from_squashfs; then
+        prepare_recovery
+    fi
     prepare_passive
 
     rebrand
 
-    if [ "$STRICT_MODE" = "true" ]; then
-    cos-setup after-install
-    else
-    cos-setup after-install || true
+    if [ -z "$UPGRADE_IMAGE" ]; then
+        if [ "$STRICT_MODE" = "true" ]; then
+            cos-setup after-install
+        else
+            cos-setup after-install || true
+        fi
     fi
+
+    echo "Deployment done, now you might want to reboot"
 
     if [ -n "$INTERACTIVE" ]; then
         exit 0
@@ -1339,10 +1324,6 @@ case $1 in
     rebrand)
         shift 1
         rebrand
-        ;;
-    deploy)
-        shift 1
-        deploy $@
         ;;
     reset)
         shift 1
