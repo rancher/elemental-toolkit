@@ -1006,7 +1006,7 @@ rebrand_grub_menu() {
 	   mount $STATEDIR /run/boot
 	fi
 
-    grub2-editenv /run/boot/grub_oem_env set default_menu_entry=$grub_entry
+    grub2-editenv /run/boot/grub_oem_env set default_menu_entry="$grub_entry"
 
     umount /run/boot
 }
