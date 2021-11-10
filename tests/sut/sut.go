@@ -70,6 +70,7 @@ func NewSUT() *SUT {
 		Timeout:  timeout,
 		GreenRepo: "quay.io/costoolkit/releases-green",
 		TestVersion: "0.7.1-3",
+		CDLocation: "",
 	}
 }
 
@@ -382,31 +383,35 @@ func (s SUT) GatherLog(logPath string) {
 
 // EmptyDisk will try to trash the disk given so on reboot the disk is empty and we are forced to use the cd to boot
 // used mainly for installer testing booting from iso
-func (s SUT) EmptyDisk(disk string)  {
-	By(fmt.Sprintf("Trashing %s to restore VM", disk))
+func (s *SUT) EmptyDisk(disk string)  {
+	By(fmt.Sprintf("Trashing %s to restore VM to a blank state", disk))
 	// 34*512 byte sectors should cover both MBR and GPT
 	_, err := s.Command(fmt.Sprintf("dd if=/dev/zero of=%s bs=512 count=34", disk))
 	Expect(err).To(BeNil())
 }
 
-// SetCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
-func (s SUT) SetCDLocation()  {
+// SetCOSCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
+func (s *SUT) SetCOSCDLocation()  {
+	By("Store CD location")
 	out, err := exec.Command("bash", "-c", "VBoxManage list dvds|grep Location|cut -d ':' -f 2|xargs").CombinedOutput()
 	Expect(err).To(BeNil())
-	s.CDLocation = string(out)
+	s.CDLocation = strings.TrimSpace(string(out))
 }
 
-// EjectCD force removes the DVD so we can boot from disk directly on EFI VMs
-func (s SUT) EjectCD()  {
+// EjectCOSCD force removes the DVD so we can boot from disk directly on EFI VMs
+func (s *SUT) EjectCOSCD()  {
+	By("Ejecting the CD")
 	// first store the cd location
-	s.SetCDLocation()
+	s.SetCOSCDLocation()
 	_, err := exec.Command("bash", "-c", "VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium emptydrive --forceunmount").CombinedOutput()
 	Expect(err).To(BeNil())
 }
 
 // RestoreCOSCD reattaches the cOS iso to the VM
-func (s SUT) RestoreCOSCD()  {
-	_, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s", s.CDLocation)).CombinedOutput()
+func (s *SUT) RestoreCOSCD()  {
+	By("Restoring the CD")
+	out, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s --forceunmount", s.CDLocation)).CombinedOutput()
+	fmt.Printf(string(out))
 	Expect(err).To(BeNil())
 }
 

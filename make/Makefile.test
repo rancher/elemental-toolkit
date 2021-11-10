@@ -100,8 +100,11 @@ test-recovery: $(GINKGO)
 test-deploys-images: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./deploys-images
 
-test-installer: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./installer
+test-installer-bios: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer
+
+test-installer-efi: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using efi" ./installer
 
 $(GINKGO):
 	@echo "'ginkgo' not found."
