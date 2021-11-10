@@ -104,7 +104,7 @@ var _ = Describe("cOS Installer tests", func() {
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
-				s.Reboot()
+				s.Reboot(360)
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})

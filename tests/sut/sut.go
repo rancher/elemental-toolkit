@@ -400,9 +400,9 @@ func (s *SUT) SetCOSCDLocation()  {
 
 // EjectCOSCD force removes the DVD so we can boot from disk directly on EFI VMs
 func (s *SUT) EjectCOSCD()  {
-	By("Ejecting the CD")
 	// first store the cd location
 	s.SetCOSCDLocation()
+	By("Ejecting the CD")
 	_, err := exec.Command("bash", "-c", "VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium emptydrive --forceunmount").CombinedOutput()
 	Expect(err).To(BeNil())
 }
