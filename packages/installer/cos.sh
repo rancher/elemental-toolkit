@@ -856,7 +856,7 @@ reset_grub()
         GRUBDIR="${STATEDIR}/grub2"
     fi
 
-    cp -rfv /etc/cos/grub.cfg $GRUBDIR/grub.cfg
+    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
 }
 
 reset_state() {

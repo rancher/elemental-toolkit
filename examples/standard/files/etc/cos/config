@@ -40,3 +40,6 @@ COSIGN_PUBLIC_KEY_LOCATION=""
 
 # Default size (in MB) of disk image files (.img) created during upgrades
 DEFAULT_IMAGE_SIZE=3240
+
+# Path to default configuration grub file
+GRUBCONF="/etc/cos/grub.cfg"
