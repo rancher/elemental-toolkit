@@ -109,6 +109,82 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+  tests-squashfs-green-installer-efi:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 600
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_efi
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-efi
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+  tests-squashfs-green-installer-bios:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 600
+    runs-on: macos-10.15
+    needs: iso-squashfs-green
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-green-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_bios
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-bios
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
   qemu-squashfs-green:
     runs-on: ubuntu-latest
     needs: iso-squashfs-green
@@ -278,6 +354,82 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+  tests-nonsquashfs-green-installer-efi:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 600
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_efi
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-efi
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+  tests-nonsquashfs-green-installer-bios:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 600
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-green
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-green-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_bios
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-bios
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
   qemu-nonsquashfs-green:
     runs-on: ubuntu-latest
     needs: iso-nonsquashfs-green

@@ -100,6 +100,12 @@ test-recovery: $(GINKGO)
 test-deploys-images: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./deploys-images
 
+test-installer-bios: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer
+
+test-installer-efi: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using efi" ./installer
+
 $(GINKGO):
 	@echo "'ginkgo' not found."
 	@exit 1
@@ -149,4 +155,28 @@ clean_raw_disk_test: as_root
 	rm $(ROOT_DIR)/sda.vdi &>/dev/null || true
 	rm $(ROOT_DIR)/user-data &>/dev/null || true
 	rm $(ROOT_DIR)/cidata.iso &>/dev/null || true
+	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
+
+
+_create_vm_from_iso: $(VBOXMANAGE) $(ISO)
+	VBoxManage createmedium disk --filename sda.vdi --size 30000
+	VBoxManage createvm --name "test" --register
+	VBoxManage modifyvm "test" --memory 10240 --cpus 3
+	VBoxManage modifyvm "test" --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --boot2 dvd --natpf1 "guestssh,tcp,,2222,,22"
+	VBoxManage storagectl "test" --name "sata controller" --add sata --portcount 2
+	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
+	VBoxManage storageattach "test" --storagectl "sata controller" --port 1 --device 0 --type dvddrive --medium $(ISO)
+
+create_vm_from_iso_bios: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
+	VBoxManage startvm "test" --type headless
+
+create_vm_from_iso_efi: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
+	# uefi firmware does not respect boot order (https://www.virtualbox.org/ticket/19364) and no plans to fix it :/
+	VBoxManage modifyvm "test" --firmware efi
+	VBoxManage startvm "test" --type headless
+
+clean_vm_from_iso: $(VBOXMANAGE)
+	VBoxManage controlvm "test" poweroff &>/dev/null || true
+	VBoxManage unregistervm "test" --delete &>/dev/null || true
+	VBoxManage closemedium disk sda.vdi --delete &>/dev/null || true
 	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
