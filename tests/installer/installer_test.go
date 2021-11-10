@@ -15,11 +15,7 @@ var _ = Describe("cOS Installer tests", func() {
 		s.EventuallyConnects()
 	})
 
-	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			s.GatherAllLogs()
-		}
-	})
+
 	Context("Using bios", func() {
 		BeforeEach(func() {
 			s.EmptyDisk("/dev/sda")
@@ -34,6 +30,11 @@ var _ = Describe("cOS Installer tests", func() {
 			out, err = s.Command("df -h /")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
+		})
+		AfterEach(func() {
+			if CurrentGinkgoTestDescription().Failed {
+				s.GatherAllLogs()
+			}
 		})
 		Context("install source tests", func() {
 			It("from iso", func() {
@@ -68,13 +69,6 @@ var _ = Describe("cOS Installer tests", func() {
 		// EFI variant tests is not able to set the boot order and there is no plan to let the user do so according to virtualbox
 		// So we need to manually eject/insert the cd to force the boot order. CD inserted -> boot from cd, CD empty -> boot from disk
 		BeforeEach(func() {
-			// Store COS iso path
-			s.SetCOSCDLocation()
-			// Set Cos CD in the drive
-			s.RestoreCOSCD()
-			s.EmptyDisk("/dev/sda")
-			By("Reboot to make sure we boot from CD")
-			s.Reboot()
 			// Assert we are booting from CD before running the tests
 			By("Making sure we booted from CD")
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.LiveCD))
@@ -84,6 +78,18 @@ var _ = Describe("cOS Installer tests", func() {
 			out, err = s.Command("df -h /")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
+		})
+		AfterEach(func() {
+			if CurrentGinkgoTestDescription().Failed {
+				s.GatherAllLogs()
+			}
+			// Store COS iso path
+			s.SetCOSCDLocation()
+			// Set Cos CD in the drive
+			s.RestoreCOSCD()
+			s.EmptyDisk("/dev/sda")
+			By("Reboot to make sure we boot from CD")
+			s.Reboot()
 		})
 		Context("install source tests", func() {
 			It("from iso", func() {
