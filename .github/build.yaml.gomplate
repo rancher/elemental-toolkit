@@ -467,6 +467,12 @@
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
   {{{- end}}}
 {{{end}}}
 

@@ -140,6 +140,12 @@ jobs:
           name: cOS-squashfs-test-installer-efi.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
   tests-squashfs-green-installer-bios:
     env:
       ARCH: x86_64
@@ -170,6 +176,12 @@ jobs:
         with:
           name: cOS-squashfs-test-installer-bios.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
           if-no-files-found: warn
   qemu-squashfs-green:
     runs-on: ubuntu-latest
@@ -371,6 +383,12 @@ jobs:
           name: cOS-nonsquashfs-test-installer-efi.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
   tests-nonsquashfs-green-installer-bios:
     env:
       ARCH: x86_64
@@ -401,6 +419,12 @@ jobs:
         with:
           name: cOS-nonsquashfs-test-installer-bios.logs.zip
           path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
           if-no-files-found: warn
   qemu-nonsquashfs-green:
     runs-on: ubuntu-latest

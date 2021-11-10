@@ -17,7 +17,7 @@ var _ = Describe("cOS Installer tests", func() {
 
 	AfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
-			//s.GatherAllLogs()
+			s.GatherAllLogs()
 		}
 	})
 	Context("Using bios", func() {
