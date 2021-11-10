@@ -170,7 +170,7 @@ _create_vm_from_iso: $(VBOXMANAGE) $(ISO)
 create_vm_from_iso_bios: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
 	VBoxManage startvm "test" --type headless
 
-create_vm_from_iso_uefi: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
+create_vm_from_iso_efi: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
 	# uefi firmware does not respect boot order (https://www.virtualbox.org/ticket/19364) and no plans to fix it :/
 	VBoxManage modifyvm "test" --firmware efi
 	VBoxManage startvm "test" --type headless
