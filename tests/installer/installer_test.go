@@ -1,6 +1,7 @@
 package cos_test
 
 import (
+	"fmt"
 	"github.com/rancher-sandbox/cOS/tests/sut"
 
 	. "github.com/onsi/ginkgo"
@@ -40,6 +41,9 @@ var _ = Describe("cOS Installer tests", func() {
 			It("from iso", func() {
 				By("Running the cos-installer")
 				out, err := s.Command("cos-installer /dev/sda")
+				fmt.Printf("#################################################")
+				fmt.Printf(out)
+				fmt.Printf("#################################################")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying cOS.."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -94,7 +98,10 @@ var _ = Describe("cOS Installer tests", func() {
 		Context("install source tests", func() {
 			It("from iso", func() {
 				By("Running the cos-installer")
-				out, err := s.Command("cos-installer /dev/sda")
+				out, err := s.Command("cos-installer /dev/sda | while IFS= read -r line; do printf '[%s] %s\\n' \"$(date '+%Y-%m-%d %H:%M:%S')\" \"$line\"; done")
+				fmt.Printf("#################################################")
+				fmt.Printf(out)
+				fmt.Printf("#################################################")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying cOS.."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
