@@ -1,6 +1,6 @@
 name: "rancherd"
 category: "utils"
-version: 0.0.1-alpha11-2
+version: "0.0.1-alpha12-0"
 platform: linux
 labels:
   github.repo: "rancherd"
