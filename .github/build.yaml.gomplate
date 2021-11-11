@@ -525,8 +525,6 @@
             password: ${{ secrets.QUAY_PASSWORD }}
       {{{- end }}}
       {{{ tmpl.Exec "make" "deps" }}}
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@f700e6fbbab82f6897758a3af7a8dede4e308656 # v1.2.1
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
