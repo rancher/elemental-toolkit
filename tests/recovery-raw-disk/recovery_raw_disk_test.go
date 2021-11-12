@@ -1,10 +1,9 @@
 package cos_test
 
 import (
-	"github.com/rancher-sandbox/cOS/tests/sut"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/cOS/tests/sut"
 )
 
 var _ = Describe("cOS Recovery deploy tests", func() {
