@@ -1,0 +1,16 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
+prelude:
+{{ template "distro_install" (dict "Values" .Values "Packages" "wget")}}
+
+steps:
+# TODO: Use zypper
+- wget https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/aarch64/odroidc2-firmware-{{.Values.version}}.aarch64.rpm
+- mkdir -p /data/boot
+- rpm2cpio odroidc2-firmware-{{.Values.version}}.aarch64.rpm | cpio -idmv
+- mv boot/* /data/boot
+
+package_dir: "/data/boot"
