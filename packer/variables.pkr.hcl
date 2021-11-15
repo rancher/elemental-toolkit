@@ -275,3 +275,9 @@ variable "git_sha" {
   default ="none"
   description = "Git sha of the current build, defaults to none."
 }
+
+variable "enable_video_capture" {
+  type = string
+  default ="off"
+  description = "Enable video capture of the vm(only virtualbox)."
+}

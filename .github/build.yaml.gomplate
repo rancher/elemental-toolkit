@@ -324,6 +324,12 @@
           path: |
             packer/*.box
           if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.capture.zip
+          path: capture.webm
+          if-no-files-found: error
 {{{ end }}}
 
 {{{define "test"}}}
@@ -425,7 +431,13 @@
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
-          path: tests/serial_port1
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-{{{$subset}}}-${{ matrix.test }}.capture.zip
+          path: capture.webm
           if-no-files-found: warn
       {{{end}}}
 {{{ end }}}
@@ -473,6 +485,12 @@
         with:
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.serial.zip
           path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.record.zip
+          path: capture.webm
           if-no-files-found: warn
   {{{- end}}}
 {{{end}}}
@@ -736,13 +754,15 @@
           go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
-      - name: Change serial log ownership
+      - name: Change logs ownership
         if: failure()
         run: |
           USER_ID=$(id -u)
           GROUP_ID=$(id -g)
           sudo chown $USER_ID:$GROUP_ID serial_port1.log
+          sudo chown $USER_ID:$GROUP_ID capture.webm || true
           sudo chmod 777 serial_port1.log
+          sudo chmod 777 capture.webm || true
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
@@ -754,6 +774,12 @@
         with:
           name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.serial.zip
           path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.capture.zip
+          path: capture.webm
           if-no-files-found: warn
 {{{ end }}}
 

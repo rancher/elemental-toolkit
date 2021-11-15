@@ -151,6 +151,9 @@ source "virtualbox-iso" "cos" {
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
   vm_name                = "cOS"
+  vboxmanage = [
+    ["modifyvm", "{{.Name}}", "--recording", "${var.enable_video_capture}", "--recordingscreens", "0","--recordingfile", "../capture.webm"],
+  ]
 }
 
 build {
