@@ -36,6 +36,16 @@ raw_disk:
         target: root/grub2
       - name: recovery/cos-img
         target: root/cOS
+  odroid_c2:
+    repo: quay.io/costoolkit/releases-green-arm64
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+
 
 # Raw disk creation values end
 

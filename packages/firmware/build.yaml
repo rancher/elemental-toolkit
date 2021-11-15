@@ -1,13 +1,21 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
+{{if .Values.distribution}}
+  {{if eq .Values.distribution "opensuse"}}
+image: {{ .Values.image }}
+  {{else }}
+image: opensuse/leap:15.3
+  {{end}}
+{{end}}
 
 prelude:
-{{ template "distro_install" (dict "Values" .Values "Packages" "wget")}}
+# - zypper addrepo -G https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/devel:ARM:Factory:Contrib:OdroidC2.repo
+# - zypper --gpg-auto-import-keys ref
+- zypper in -y wget
+#{   { template "distro_install" (dict "Values" .Values "Packages" "wget")}}
 
 steps:
-# TODO: Use zypper
+# - mkdir -p /data/boot
+# - zypper --installroot /data  in -yf odroidc2-firmware.aarch64
+# Without zypper:
 - wget https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/aarch64/odroidc2-firmware-{{.Values.version}}.aarch64.rpm
 - mkdir -p /data/boot
 - rpm2cpio odroidc2-firmware-{{.Values.version}}.aarch64.rpm | cpio -idmv
