@@ -19,7 +19,7 @@ packages:
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"
-    version: 0.7.4-3
+    version: 0.7.4-4
   - !!merge <<: *cos
     name: "cos-squash"
     category: "recovery"
