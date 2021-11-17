@@ -444,6 +444,7 @@ install_grub()
         echo "No Installation device specified. Skipping GRUB installation"
         return 0
     fi
+    local TTY
 
     echo "Installing GRUB.."
 
@@ -472,7 +473,7 @@ install_grub()
 
     grub2-install ${_GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
-    GRUBDIR=
+    local GRUBDIR
     if [ -d "${_STATEDIR}/grub" ]; then
         GRUBDIR="${_STATEDIR}/grub"
     elif [ -d "${_STATEDIR}/grub2" ]; then
@@ -867,7 +868,7 @@ reset_grub()
     #mount -o remount,rw ${_STATE} /boot/grub2
     grub2-install ${_GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
-    GRUBDIR=
+    local GRUBDIR=
     if [ -d "${_STATEDIR}/grub" ]; then
         GRUBDIR="${_STATEDIR}/grub"
     elif [ -d "${_STATEDIR}/grub2" ]; then
