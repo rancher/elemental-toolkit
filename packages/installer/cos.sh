@@ -495,7 +495,7 @@ setup_style()
         if [ ! -e /sys/firmware/efi ]; then
             echo WARNING: installing EFI on to a system that does not support EFI
         fi
-    elif [ "$COS_INSTALL_FORCE_GPT" = "true" ]; then
+    elif [ "$_COS_INSTALL_FORCE_GPT" = "true" ]; then
         _PARTTABLE=gpt
         _BOOTFLAG=bios_grub
     else
@@ -1199,7 +1199,7 @@ install() {
                 _FORCE=true
                 ;;
             --force-gpt)
-                COS_INSTALL_FORCE_GPT=true
+                _COS_INSTALL_FORCE_GPT=true
                 ;;
             --poweroff)
                 _COS_INSTALL_POWER_OFF=true
