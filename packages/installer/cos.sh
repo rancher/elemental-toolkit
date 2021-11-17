@@ -195,7 +195,7 @@ part_probe() {
 }
 
 blkid_probe() {
-    OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L COS_OEM || true)
     STATE=$(blkid -L COS_STATE || true)
     _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
@@ -311,7 +311,7 @@ do_format()
         _BOOT=${PREFIX}${BOOT_NUM}
     fi
     STATE=${PREFIX}${STATE_NUM}
-    OEM=${PREFIX}${OEM_NUM}
+    _OEM=${PREFIX}${OEM_NUM}
     _RECOVERY=${PREFIX}${RECOVERY_NUM}
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
@@ -322,7 +322,7 @@ do_format()
     fi
 
     mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
-    mkfs.ext4 -F -L COS_OEM ${OEM}
+    mkfs.ext4 -F -L COS_OEM ${_OEM}
     mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
 }
 
@@ -358,7 +358,7 @@ do_mount()
     fi
 
     mkdir -p ${_TARGET}/oem
-    mount ${OEM} ${_TARGET}/oem
+    mount ${_OEM} ${_TARGET}/oem
     mkdir -p ${_TARGET}/usr/local
     mount ${PERSISTENT} ${_TARGET}/usr/local
 }
@@ -413,9 +413,9 @@ do_copy()
 
     rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${_TARGET}
     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${_TARGET}/oem/99_custom.yaml
-        get_url "$COS_INSTALL_CONFIG_URL" $OEM
-        chmod 600 ${OEM}
+        _OEM=${_TARGET}/oem/99_custom.yaml
+        get_url "$COS_INSTALL_CONFIG_URL" $_OEM
+        chmod 600 ${_OEM}
     fi
     ensure_dir_structure $_TARGET
 }
@@ -539,7 +539,7 @@ find_partitions() {
         exit 1
     fi
 
-    OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L COS_OEM || true)
 
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$PERSISTENT" ]; then
@@ -794,15 +794,15 @@ create_rootfs() {
     if [ -n "$PERSISTENT" ]; then
         mount $PERSISTENT $target/usr/local
     fi
-    if [ -n "$OEM" ]; then
-        mount $OEM $target/oem
+    if [ -n "$_OEM" ]; then
+        mount $_OEM $target/oem
     fi
     if [ "$STRICT_MODE" = "true" ]; then
         run_hook after-$hook_name-chroot $target
     else 
         run_hook after-$hook_name-chroot $target || true
     fi
-    if [ -n "$OEM" ]; then
+    if [ -n "$_OEM" ]; then
      umount $target/oem
     fi
     if [ -n "$PERSISTENT" ]; then
@@ -882,7 +882,7 @@ run_reset_hook() {
     mount -t ext2 ${_STATEDIR}/cOS/passive.img $loop_dir
         
     mount $PERSISTENT $loop_dir/usr/local
-    mount $OEM $loop_dir/oem
+    mount $_OEM $loop_dir/oem
 
     run_hook after-reset-chroot $loop_dir
 
@@ -969,7 +969,7 @@ find_recovery_partitions() {
 
     _BOOT=$(blkid -L COS_GRUB || true)
 
-    OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L COS_OEM || true)
 
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$PERSISTENT" ]; then
