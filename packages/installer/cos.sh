@@ -1092,7 +1092,7 @@ reset() {
         cos-setup before-reset || true
     fi
 
-    if [ -n "$PERSISTENCE_RESET" ] && [ "$PERSISTENCE_RESET" == "true" ]; then
+    if [ -n "$_PERSISTENCE_RESET" ] && [ "$_PERSISTENCE_RESET" == "true" ]; then
         reset_state
     fi
 
