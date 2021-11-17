@@ -373,12 +373,12 @@ do_mount()
 
 get_url()
 {
-    FROM=$1
-    TO=$2
+    local FROM=$1
+    local TO=$2
     case $FROM in
         ftp*|http*|tftp*)
-            n=0
-            attempts=5
+            local n=0
+            local attempts=5
             until [ "$n" -ge "$attempts" ]
             do
                 curl -o $TO -fL ${FROM} && break
