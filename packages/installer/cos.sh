@@ -790,11 +790,11 @@ create_rootfs() {
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
 
-    args="$(luet_args)"
+    _args="$(luet_args)"
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install $args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
+        luet install $_args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
         luet cleanup
         set +x
     elif [ "$_DIRECTORY" == true ]; then
@@ -805,7 +805,7 @@ create_rootfs() {
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack $_args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $target
         rm -rf $upgrade_state_dir/tmp/rootfs
