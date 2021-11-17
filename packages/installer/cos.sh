@@ -145,7 +145,7 @@ installer_cleanup2()
     umount_target || true
     umount ${_STATEDIR}
     umount ${_RECOVERYDIR}
-    [ -n "$COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
+    [ -n "$_COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
 }
 
 installer_cleanup()
@@ -387,10 +387,10 @@ get_url()
 
 get_iso()
 {
-    if [ -n "$COS_INSTALL_ISO_URL" ]; then
+    if [ -n "$_COS_INSTALL_ISO_URL" ]; then
         _ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX._ISOMNT)
         TEMP_FILE=$(mktemp --tmpdir cos.XXXXXXXX.iso)
-        get_url ${COS_INSTALL_ISO_URL} ${TEMP_FILE}
+        get_url ${_COS_INSTALL_ISO_URL} ${TEMP_FILE}
         ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
         mount -o ro ${ISO_DEVICE} ${_ISOMNT}
     fi
@@ -1209,7 +1209,7 @@ install() {
                 ;;
             --iso)
                 shift 1
-                COS_INSTALL_ISO_URL=$1
+                _COS_INSTALL_ISO_URL=$1
                 ;;
             --tty)
                 shift 1
@@ -1236,7 +1236,7 @@ install() {
     # We want to find the upgrade channel if, no ISO url is supplied and:
     # 1: We aren't booting from LiveCD - the rootfs that we are going to install must be downloaded from somewhere
     # 2: If we specify directly an image to install
-    if ! is_booting_from_live && [ -z "$COS_INSTALL_ISO_URL" ] || [ -n "$COS_IMAGE" ] && [ -z "$COS_INSTALL_ISO_URL" ]; then
+    if ! is_booting_from_live && [ -z "$_COS_INSTALL_ISO_URL" ] || [ -n "$COS_IMAGE" ] && [ -z "$_COS_INSTALL_ISO_URL" ]; then
         find_upgrade_channel
     fi
 
