@@ -448,7 +448,7 @@ install_grub()
 
     echo "Installing GRUB.."
 
-    if [ "$COS_INSTALL_DEBUG" ]; then
+    if [ "$_COS_INSTALL_DEBUG" ]; then
         GRUB_DEBUG="cos.debug"
     fi
 
@@ -1209,7 +1209,7 @@ install() {
                 ;;
             --debug)
                 set -x
-                COS_INSTALL_DEBUG=true
+                _COS_INSTALL_DEBUG=true
                 ;;
             --config)
                 shift 1
