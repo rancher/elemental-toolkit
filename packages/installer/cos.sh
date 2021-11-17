@@ -764,7 +764,7 @@ create_rootfs() {
     mkdir -p $temp_upgrade
 
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
       cos-setup before-$hook_name
     else 
       cos-setup before-$hook_name || true
@@ -809,7 +809,7 @@ create_rootfs() {
     if [ -n "$_OEM" ]; then
         mount $_OEM $target/oem
     fi
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         run_hook after-$hook_name-chroot $target
     else 
         run_hook after-$hook_name-chroot $target || true
@@ -820,7 +820,7 @@ create_rootfs() {
     if [ -n "$_PERSISTENT" ]; then
         umount $target/usr/local
     fi
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
       cos-setup after-$hook_name
     else 
       cos-setup after-$hook_name || true
@@ -1065,7 +1065,7 @@ reset() {
 
     load_config
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-reset
     else 
         cos-setup before-reset || true
@@ -1082,7 +1082,7 @@ reset() {
     #cos-rebrand
     rebrand
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup after-reset
     else 
         cos-setup after-reset || true
@@ -1101,7 +1101,7 @@ upgrade() {
                 DIRECTORY=true
                 ;;
             --strict)
-                STRICT_MODE=true
+                _STRICT_MODE=true
                 ;;
             --recovery)
                 UPGRADE_RECOVERY=true
@@ -1205,7 +1205,7 @@ install() {
                 _COS_INSTALL_POWER_OFF=true
                 ;;
             --strict)
-                STRICT_MODE=true
+                _STRICT_MODE=true
                 ;;
             --debug)
                 set -x
@@ -1261,7 +1261,7 @@ install() {
 
     trap installer_cleanup exit
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-install
     else
         cos-setup before-install || true
@@ -1279,7 +1279,7 @@ install() {
 
     # Otherwise, hooks are executed in get_image
     if [ -z "$UPGRADE_IMAGE" ]; then
-        if [ "$STRICT_MODE" = "true" ]; then
+        if [ "$_STRICT_MODE" = "true" ]; then
             run_hook after-install-chroot $_TARGET
         else
             run_hook after-install-chroot $_TARGET || true
@@ -1296,7 +1296,7 @@ install() {
     rebrand
 
     if [ -z "$UPGRADE_IMAGE" ]; then
-        if [ "$STRICT_MODE" = "true" ]; then
+        if [ "$_STRICT_MODE" = "true" ]; then
             cos-setup after-install
         else
             cos-setup after-install || true
