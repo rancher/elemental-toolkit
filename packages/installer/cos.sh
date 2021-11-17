@@ -613,7 +613,7 @@ find_upgrade_channel() {
             UPGRADE_IMAGE="system/cos"
         fi
 
-        if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
+        if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
             UPGRADE_IMAGE=$RECOVERY_IMAGE
         fi
     fi
@@ -839,7 +839,7 @@ upgrade_cleanup2()
         umount ${_TARGET}/ || true
         rm -rf ${_TARGET}
     fi
-    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
+    if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ]; then
 	    umount ${_STATEDIR} || true
     fi
     if [ "$_STATEDIR" == "/run/initramfs/state" ]; then
@@ -1104,7 +1104,7 @@ upgrade() {
                 _STRICT_MODE=true
                 ;;
             --recovery)
-                UPGRADE_RECOVERY=true
+                _UPGRADE_RECOVERY=true
                 ;;
             --no-verify)
                 _VERIFY=false
@@ -1134,7 +1134,7 @@ upgrade() {
 
     trap upgrade_cleanup exit
 
-    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
+    if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ]; then
         echo "Upgrading recovery partition.."
 
         find_partitions
