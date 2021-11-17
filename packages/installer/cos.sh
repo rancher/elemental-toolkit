@@ -6,10 +6,10 @@ PROG=$0
 ## Installer
 _PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
 _DISTRO=/run/rootfsbase
-ISOMNT=/run/initramfs/live
-TARGET=/run/cos/target
+_ISOMNT=/run/initramfs/live
+_TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
-RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
+RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
@@ -106,7 +106,7 @@ prepare_target() {
     rm -rf ${STATEDIR}/cOS/transition.img || true
     dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/transition.img
-    mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
+    mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $_TARGET
 }
 
 usage()
@@ -135,10 +135,10 @@ usage()
 ## INSTALLER
 umount_target() {
     sync
-    umount ${TARGET}/oem
-    umount ${TARGET}/usr/local
-    umount ${TARGET}/boot/efi || true
-    umount ${TARGET}
+    umount ${_TARGET}/oem
+    umount ${_TARGET}/usr/local
+    umount ${_TARGET}/boot/efi || true
+    umount ${_TARGET}
     if [ -n "$LOOP" ]; then
         losetup -d $LOOP
     fi
@@ -150,7 +150,7 @@ installer_cleanup2()
     umount_target || true
     umount ${STATEDIR}
     umount ${RECOVERYDIR}
-    [ -n "$COS_INSTALL_ISO_URL" ] && umount ${ISOMNT} || true
+    [ -n "$COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
 }
 
 installer_cleanup()
@@ -335,8 +335,8 @@ do_mount()
 {
     echo "Mounting critical endpoints.."
 
-    mkdir -p ${TARGET}
-    ensure_dir_structure $TARGET
+    mkdir -p ${_TARGET}
+    ensure_dir_structure $_TARGET
 
     prepare_statedir "install"
 
@@ -354,18 +354,18 @@ do_mount()
     fi
 
     LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
-    mount -t ext2 $LOOP $TARGET
+    mount -t ext2 $LOOP $_TARGET
 
-    mkdir -p ${TARGET}/boot
+    mkdir -p ${_TARGET}/boot
     if [ -n "${BOOT}" ]; then
-        mkdir -p ${TARGET}/boot/efi
-        mount ${BOOT} ${TARGET}/boot/efi
+        mkdir -p ${_TARGET}/boot/efi
+        mount ${BOOT} ${_TARGET}/boot/efi
     fi
 
-    mkdir -p ${TARGET}/oem
-    mount ${OEM} ${TARGET}/oem
-    mkdir -p ${TARGET}/usr/local
-    mount ${PERSISTENT} ${TARGET}/usr/local
+    mkdir -p ${_TARGET}/oem
+    mount ${OEM} ${_TARGET}/oem
+    mkdir -p ${_TARGET}/usr/local
+    mount ${PERSISTENT} ${_TARGET}/usr/local
 }
 
 get_url()
@@ -393,11 +393,11 @@ get_url()
 get_iso()
 {
     if [ -n "$COS_INSTALL_ISO_URL" ]; then
-        ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX.isomnt)
+        _ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX._ISOMNT)
         TEMP_FILE=$(mktemp --tmpdir cos.XXXXXXXX.iso)
         get_url ${COS_INSTALL_ISO_URL} ${TEMP_FILE}
         ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
-        mount -o ro ${ISO_DEVICE} ${ISOMNT}
+        mount -o ro ${ISO_DEVICE} ${_ISOMNT}
     fi
 }
 
@@ -416,19 +416,19 @@ do_copy()
 {
     echo "Copying cOS.."
 
-    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${TARGET}
+    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${_TARGET}
     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${TARGET}/oem/99_custom.yaml
+        OEM=${_TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
         chmod 600 ${OEM}
     fi
-    ensure_dir_structure $TARGET
+    ensure_dir_structure $_TARGET
 }
 
 SELinux_relabel()
 {
-    if which setfiles > /dev/null && [ -e ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
-        setfiles -r ${TARGET} ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${TARGET}
+    if which setfiles > /dev/null && [ -e ${_TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
+        setfiles -r ${_TARGET} ${_TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${_TARGET}
     fi
 }
 
@@ -456,15 +456,15 @@ install_grub()
     fi
 
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${TARGET}/boot/efi"
+        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
     fi
 
-    mkdir ${TARGET}/proc || true
-    mkdir ${TARGET}/dev || true
-    mkdir ${TARGET}/sys || true
-    mkdir ${TARGET}/tmp || true
+    mkdir ${_TARGET}/proc || true
+    mkdir ${_TARGET}/dev || true
+    mkdir ${_TARGET}/sys || true
+    mkdir ${_TARGET}/tmp || true
 
-    grub2-install ${GRUB_TARGET} --root-directory=${TARGET}  --boot-directory=${STATEDIR} --removable ${DEVICE}
+    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${STATEDIR} --removable ${DEVICE}
 
     GRUBDIR=
     if [ -d "${STATEDIR}/grub" ]; then
@@ -635,9 +635,9 @@ recovery_boot() {
 }
 
 prepare_squashfs_target() {
-    rm -rf $TARGET || true
-    TARGET=${STATEDIR}/tmp/target
-    mkdir -p $TARGET
+    rm -rf $_TARGET || true
+    _TARGET=${STATEDIR}/tmp/target
+    mkdir -p $_TARGET
 }
 
 mount_state() {
@@ -685,9 +685,9 @@ prepare_statedir() {
 mount_image() {
     local target=$1
 
-    TARGET=/tmp/upgrade
+    _TARGET=/tmp/upgrade
 
-    mkdir -p $TARGET || true
+    mkdir -p $_TARGET || true
     prepare_statedir $target
 
     case $target in
@@ -714,9 +714,9 @@ switch_recovery() {
         else
           XZ_FILTER="x86"
         fi
-        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
+        mksquashfs $_TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
         mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
-        rm -rf $TARGET
+        rm -rf $_TARGET
     else
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
         tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
@@ -827,10 +827,10 @@ upgrade_cleanup2()
 {
     rm -rf /usr/local/tmp/upgrade || true
     mount -o remount,ro ${STATE} ${STATEDIR} || true
-    if [ -n "${TARGET}" ]; then
-        umount ${TARGET}/boot/efi || true
-        umount ${TARGET}/ || true
-        rm -rf ${TARGET}
+    if [ -n "${_TARGET}" ]; then
+        umount ${_TARGET}/boot/efi || true
+        umount ${_TARGET}/ || true
+        rm -rf ${_TARGET}
     fi
     if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
 	    umount ${STATEDIR} || true
@@ -905,26 +905,26 @@ copy_active() {
         # Squashfs is at ${RECOVERYDIR}/cOS/recovery.squashfs. 
         mount -t squashfs -o loop ${RECOVERYDIR}/cOS/recovery.squashfs $tmp_dir
         
-        TARGET=$loop_dir
+        _TARGET=$loop_dir
         # TODO: Size should be tweakable
         dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
         mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
         LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
-        mount -t ext2 $LOOP $TARGET
+        mount -t ext2 $LOOP $_TARGET
         rsync -aqzAX --exclude='mnt' \
         --exclude='proc' --exclude='sys' \
         --exclude='dev' --exclude='tmp' \
-        $tmp_dir/ $TARGET
-        ensure_dir_structure $TARGET
+        $tmp_dir/ $_TARGET
+        ensure_dir_structure $_TARGET
 
         SELinux_relabel
 
         # Targets are ${STATEDIR}/cOS/active.img and ${STATEDIR}/cOS/passive.img
         umount $tmp_dir
         rm -rf $tmp_dir
-        umount $TARGET
-        rm -rf $TARGET
+        umount $_TARGET
+        rm -rf $_TARGET
 
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
         sync
@@ -1136,7 +1136,7 @@ upgrade() {
 
         mount_image "recovery"
 
-        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
+        create_rootfs "upgrade" $_TARGET "/usr/local/.cos-upgrade"
 
         switch_recovery
     else
@@ -1146,7 +1146,7 @@ upgrade() {
 
         mount_image "upgrade"
 
-        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
+        create_rootfs "upgrade" $_TARGET "/usr/local/.cos-upgrade"
 
         switch_active
     fi
@@ -1273,9 +1273,9 @@ install() {
     # Otherwise, hooks are executed in get_image
     if [ -z "$UPGRADE_IMAGE" ]; then
         if [ "$STRICT_MODE" = "true" ]; then
-            run_hook after-install-chroot $TARGET
+            run_hook after-install-chroot $_TARGET
         else
-            run_hook after-install-chroot $TARGET || true
+            run_hook after-install-chroot $_TARGET || true
         fi
     fi
 
