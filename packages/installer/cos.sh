@@ -920,6 +920,9 @@ run_reset_hook() {
 
 copy_active() {
     if is_booting_from_squashfs; then
+        local tmp_dir
+        local loop_dir
+        
         tmp_dir=$(mktemp -d -t squashfs-XXXXXXXXXX)
         loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
 
