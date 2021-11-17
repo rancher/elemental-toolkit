@@ -8,7 +8,7 @@ _PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub
 _DISTRO=/run/rootfsbase
 _ISOMNT=/run/initramfs/live
 _TARGET=/run/cos/target
-RECOVERYDIR=/run/cos/recovery
+_RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
@@ -149,7 +149,7 @@ installer_cleanup2()
     sync
     umount_target || true
     umount ${STATEDIR}
-    umount ${RECOVERYDIR}
+    umount ${_RECOVERYDIR}
     [ -n "$COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
 }
 
@@ -162,20 +162,20 @@ installer_cleanup()
 
 prepare_recovery() {
     echo "Preparing recovery.."
-    mkdir -p $RECOVERYDIR
+    mkdir -p $_RECOVERYDIR
 
-    mount $RECOVERY $RECOVERYDIR
+    mount $RECOVERY $_RECOVERYDIR
 
-    mkdir -p $RECOVERYDIR/cOS
+    mkdir -p $_RECOVERYDIR/cOS
 
     if [ -e "$RECOVERYSQUASHFS" ]; then
         echo "Copying squashfs.."
-        cp -a $RECOVERYSQUASHFS $RECOVERYDIR/cOS/recovery.squashfs
+        cp -a $RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
     else
         echo "Copying image file.."
-        cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
+        cp -a $STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
-        tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+        tune2fs -L COS_SYSTEM $_RECOVERYDIR/cOS/recovery.img
     fi
 
     sync
@@ -902,8 +902,8 @@ copy_active() {
         tmp_dir=$(mktemp -d -t squashfs-XXXXXXXXXX)
         loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
 
-        # Squashfs is at ${RECOVERYDIR}/cOS/recovery.squashfs. 
-        mount -t squashfs -o loop ${RECOVERYDIR}/cOS/recovery.squashfs $tmp_dir
+        # Squashfs is at ${_RECOVERYDIR}/cOS/recovery.squashfs.
+        mount -t squashfs -o loop ${_RECOVERYDIR}/cOS/recovery.squashfs $tmp_dir
         
         _TARGET=$loop_dir
         # TODO: Size should be tweakable
@@ -929,7 +929,7 @@ copy_active() {
         mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
         sync
     else
-        cp -rf ${RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
+        cp -rf ${_RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
     fi
     
     run_reset_hook
@@ -989,9 +989,9 @@ do_recovery_mount()
     mkdir -p $STATEDIR || true
 
     if is_booting_from_squashfs; then
-        RECOVERYDIR=/run/initramfs/live
+        _RECOVERYDIR=/run/initramfs/live
     else
-        RECOVERYDIR=/run/initramfs/cos-state
+        _RECOVERYDIR=/run/initramfs/cos-state
     fi
 
     #mount -o remount,rw ${STATE} ${STATEDIR}
