@@ -352,7 +352,7 @@ do_mount()
     dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${_STATEDIR}/cOS/active.img -L COS_ACTIVE
 
-    if [ -z "$COS_ACTIVE" ]; then
+    if [ -z "$_COS_ACTIVE" ]; then
         sync
     fi
 
@@ -522,9 +522,9 @@ validate_device()
         exit 1
     fi
     if [ -n "$COS_INSTALL_NO_FORMAT" ]; then
-        COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+        _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
         COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
+        if [ -n "$_COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
             if [ "$FORCE" == "true" ]; then
                 echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
                 return 0
@@ -555,8 +555,8 @@ find_partitions() {
         exit 1
     fi
 
-    COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-    if [ -n "$COS_ACTIVE" ]; then
+    _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+    if [ -n "$_COS_ACTIVE" ]; then
         CURRENT=active.img
     fi
 
