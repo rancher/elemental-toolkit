@@ -462,7 +462,7 @@ install_grub()
         return 0
     fi
 
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
         _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
     fi
 
@@ -489,7 +489,7 @@ install_grub()
 
 setup_style()
 {
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
         _PARTTABLE=gpt
         _BOOTFLAG=esp
         if [ ! -e /sys/firmware/efi ]; then
@@ -862,7 +862,7 @@ upgrade_cleanup()
 
 reset_grub()
 {
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
         _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${_STATE} /boot/grub2
@@ -1193,7 +1193,7 @@ install() {
                 _COS_INSTALL_NO_FORMAT=true
                 ;;
             --force-efi)
-                COS_INSTALL_FORCE_EFI=true
+                _COS_INSTALL_FORCE_EFI=true
                 ;;
             --force)
                 FORCE=true
