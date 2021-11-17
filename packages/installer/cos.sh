@@ -1066,6 +1066,7 @@ rebrand_cleanup()
 # END COS_REBRAND
 
 rebrand() {
+    local grub_entry
     load_config
     grub_entry="${GRUB_ENTRY_NAME:-cOS}"
 
