@@ -134,8 +134,8 @@ umount_target() {
     umount ${_TARGET}/usr/local
     umount ${_TARGET}/boot/efi || true
     umount ${_TARGET}
-    if [ -n "$LOOP" ]; then
-        losetup -d $LOOP
+    if [ -n "$_LOOP" ]; then
+        losetup -d $_LOOP
     fi
 }
 
@@ -348,8 +348,8 @@ do_mount()
         sync
     fi
 
-    LOOP=$(losetup --show -f ${_STATEDIR}/cOS/active.img)
-    mount -t ext2 $LOOP $_TARGET
+    _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/active.img)
+    mount -t ext2 $_LOOP $_TARGET
 
     mkdir -p ${_TARGET}/boot
     if [ -n "${_BOOT}" ]; then
@@ -905,8 +905,8 @@ copy_active() {
         dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
         mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
-        LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
-        mount -t ext2 $LOOP $_TARGET
+        _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
+        mount -t ext2 $_LOOP $_TARGET
         rsync -aqzAX --exclude='mnt' \
         --exclude='proc' --exclude='sys' \
         --exclude='dev' --exclude='tmp' \
