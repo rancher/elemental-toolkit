@@ -257,6 +257,12 @@ do_format()
         return 0
     fi
 
+    local BOOT_NUM
+    local OEM_NUM
+    local STATE_NUM
+    local RECOVERY_NUM
+    local PERSISTENT_NUM
+
     # Standard partitioning
     if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
