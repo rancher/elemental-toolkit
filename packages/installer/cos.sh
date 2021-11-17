@@ -231,6 +231,8 @@ do_format()
     dd if=/dev/zero of=${_DEVICE} bs=1M count=1
     parted -s ${_DEVICE} mklabel ${_PARTTABLE}
 
+    local PREFIX
+    
     # Partitioning via cloud-init config file
     if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
         if [ "$BOOTFLAG" == "esp" ]; then
