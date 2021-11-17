@@ -7,14 +7,13 @@ PROG=$0
 PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
 DISTRO=/run/rootfsbase
 ISOMNT=/run/initramfs/live
-ISOBOOT=${ISOMNT}/boot
 TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
 RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
-DEFAULT_IMAGE_SIZE=3240
+_DEFAULT_IMAGE_SIZE=3240
 
 ## cosign signatures
 COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
@@ -105,7 +104,7 @@ is_booting_from_live() {
 prepare_target() {
     mkdir -p ${STATEDIR}/cOS || true
     rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
+    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/transition.img
     mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
 }
@@ -347,7 +346,7 @@ do_mount()
         rm -rf ${STATEDIR}/cOS/active.img
     fi
 
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
+    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
     mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
 
     if [ -z "$COS_ACTIVE" ]; then
@@ -908,7 +907,7 @@ copy_active() {
         
         TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
+        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
         mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
         LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
