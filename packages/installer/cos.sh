@@ -159,7 +159,7 @@ prepare_recovery() {
     echo "Preparing recovery.."
     mkdir -p $_RECOVERYDIR
 
-    mount $RECOVERY $_RECOVERYDIR
+    mount $_RECOVERY $_RECOVERYDIR
 
     mkdir -p $_RECOVERYDIR/cOS
 
@@ -197,7 +197,7 @@ part_probe() {
 blkid_probe() {
     OEM=$(blkid -L COS_OEM || true)
     STATE=$(blkid -L COS_STATE || true)
-    RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
@@ -312,7 +312,7 @@ do_format()
     fi
     STATE=${PREFIX}${STATE_NUM}
     OEM=${PREFIX}${OEM_NUM}
-    RECOVERY=${PREFIX}${RECOVERY_NUM}
+    _RECOVERY=${PREFIX}${RECOVERY_NUM}
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
     mkfs.ext4 -F -L COS_STATE ${STATE}
@@ -321,7 +321,7 @@ do_format()
         fatlabel ${_BOOT} COS_GRUB
     fi
 
-    mkfs.ext4 -F -L COS_RECOVERY ${RECOVERY}
+    mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
     mkfs.ext4 -F -L COS_OEM ${OEM}
     mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
 }
@@ -572,8 +572,8 @@ find_partitions() {
 }
 
 find_recovery() {
-    RECOVERY=$(blkid -L COS_RECOVERY || true)
-    if [ -z "$RECOVERY" ]; then
+    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    if [ -z "$_RECOVERY" ]; then
         echo "COS_RECOVERY partition cannot be found"
         exit 1
     fi
@@ -652,7 +652,7 @@ prepare_statedir() {
         _STATEDIR=/tmp/recovery
 
         mkdir -p $_STATEDIR || true
-        mount $RECOVERY $_STATEDIR
+        mount $_RECOVERY $_STATEDIR
         if is_squashfs; then
             echo "Preparing squashfs target"
             prepare_squashfs_target
