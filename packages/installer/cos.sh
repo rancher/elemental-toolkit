@@ -423,9 +423,9 @@ do_copy()
     echo "Copying cOS.."
 
     rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${_TARGET}
-    if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
+    if [ -n "$_COS_INSTALL_CONFIG_URL" ]; then
         _OEM=${_TARGET}/oem/99_custom.yaml
-        get_url "$COS_INSTALL_CONFIG_URL" $_OEM
+        get_url "$_COS_INSTALL_CONFIG_URL" $_OEM
         chmod 600 ${_OEM}
     fi
     ensure_dir_structure $_TARGET
@@ -1212,7 +1212,7 @@ install() {
                 ;;
             --config)
                 shift 1
-                COS_INSTALL_CONFIG_URL=$1
+                _COS_INSTALL_CONFIG_URL=$1
                 ;;
             --partition-layout)
                 shift 1
