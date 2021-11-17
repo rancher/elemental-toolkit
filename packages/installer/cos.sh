@@ -223,16 +223,16 @@ do_format()
 
     echo "Formatting drives.."
 
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" != "gpt" ]; then
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" != "gpt" ]; then
         echo "Custom layout only available with GPT based installations"
         exit 1
     fi
 
     dd if=/dev/zero of=${_DEVICE} bs=1M count=1
-    parted -s ${_DEVICE} mklabel ${PARTTABLE}
+    parted -s ${_DEVICE} mklabel ${_PARTTABLE}
 
     # Partitioning via cloud-init config file
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
         if [ "$BOOTFLAG" == "esp" ]; then
             parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
             parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
@@ -264,7 +264,7 @@ do_format()
     local PERSISTENT_NUM
 
     # Standard partitioning
-    if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
+    if [ "$_PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
@@ -276,7 +276,7 @@ do_format()
         parted -s ${_DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
         parted -s ${_DEVICE} mkpart primary ext4 23100MB 100% # persistent
         parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
-    elif [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
+    elif [ "$_PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
         BOOT_NUM=
         OEM_NUM=2
         STATE_NUM=3
@@ -484,16 +484,16 @@ install_grub()
 setup_style()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        PARTTABLE=gpt
+        _PARTTABLE=gpt
         BOOTFLAG=esp
         if [ ! -e /sys/firmware/efi ]; then
             echo WARNING: installing EFI on to a system that does not support EFI
         fi
     elif [ "$COS_INSTALL_FORCE_GPT" = "true" ]; then
-        PARTTABLE=gpt
+        _PARTTABLE=gpt
         BOOTFLAG=bios_grub
     else
-        PARTTABLE=msdos
+        _PARTTABLE=msdos
         BOOTFLAG=boot
     fi
 }
