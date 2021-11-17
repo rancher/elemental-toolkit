@@ -75,7 +75,6 @@ run_hook() {
     cleanup_chroot $dir
 }
 
-
 is_mounted() {
     mountpoint -q "$1"
 }
@@ -506,6 +505,7 @@ setup_style()
 
 validate_progs()
 {
+    local MISSING
     for i in $_PROGS; do
         if [ ! -x "$(which $i)" ]; then
             MISSING="${MISSING} $i"
