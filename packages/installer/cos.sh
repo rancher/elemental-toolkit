@@ -16,12 +16,12 @@ _GRUBCONF=/etc/cos/grub.cfg
 _DEFAULT_IMAGE_SIZE=3240
 
 ## cosign signatures
-_COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
-_COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
-_COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
+_COSIGN_REPOSITORY="raccos/releases-:FLAVOR:"
+_COSIGN_EXPERIMENTAL="-1"
+_COSIGN_PUBLIC_KEY_LOCATION=""
 
 ## Upgrades
-_CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+_CHANNEL_UPGRADES="true"
 _GRUB_ENTRY_NAME="cOs"
 
 _ARCH=$(uname -p)
@@ -35,7 +35,102 @@ fi
 
 ## COMMON
 
+load_full_config() {
+  # Config values are loaded in the following order:
+  # defaults -> config -> env var -> flags
+  # looks a bit convoluted but mainly we want to avoid that the load of config files overrides
+  # actual env vars as they share the same name
+  # so first we load the env vars and store them in temporary vars
+  load_env_vars
+  # then we load the config files and fill the internal variables used along the script with those values IF there isnt
+  # a temporary env var for the same value
+  load_config
+  # afterwards we set the temporal store vars into the internal variables, overriding any defaults
+  set_env_vars
+  # after this, we load the flags and those will also override the internal values
+}
+
+load_env_vars() {
+    # Load vars from environment variables into temporal vars
+    if [ -n "${VERIFY}" ]; then
+      COS_ENV_VERIFY=$VERIFY
+    fi
+
+    if [ -n "${GRUB_ENTRY_NAME}" ]; then
+      COS_ENV_GRUB_ENTRY_NAME=$GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COSIGN_REPOSITORY}" ]; then
+      COS_ENV_COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COSIGN_EXPERIMENTAL}" ]; then
+      COS_ENV_COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+      COS_ENV_COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${DEFAULT_IMAGE_SIZE}" ]; then
+      COS_ENV_DEFAULT_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${CHANNEL_UPGRADES}" ]; then
+      COS_ENV_CHANNEL_UPGRADES=$CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${UPGRADE_IMAGE}" ]; then
+      COS_ENV_UPGRADE_IMAGE=$UPGRADE_IMAGE
+    fi
+
+    if [ -n "${RECOVERY_IMAGE}" ]; then
+      COS_ENV_RECOVERY_IMAGE=$RECOVERY_IMAGE
+    fi
+}
+
+set_env_vars() {
+    # Set the temp stored env vars into the internal values after loading the config ones
+    # Load vars from environment variables into internal vars
+    if [ -n "${COS_ENV_VERIFY}" ]; then
+      _VERIFY=$COS_ENV_VERIFY
+    fi
+
+    if [ -n "${COS_ENV_GRUB_ENTRY_NAME}" ]; then
+      _GRUB_ENTRY_NAME=$COS_ENV_GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_REPOSITORY}" ]; then
+      _COSIGN_REPOSITORY=$COS_ENV_COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_EXPERIMENTAL}" ]; then
+      _COSIGN_EXPERIMENTAL=$COS_ENV_COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+      _COSIGN_PUBLIC_KEY_LOCATION=$COS_ENV_COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${COS_ENV_DEFAULT_IMAGE_SIZE}" ]; then
+      _DEFAULT_IMAGE_SIZE=$COS_ENV_DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${COS_ENV_CHANNEL_UPGRADES}" ]; then
+      _CHANNEL_UPGRADES=$COS_ENV_CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${COS_ENV_UPGRADE_IMAGE}" ]; then
+      _UPGRADE_IMAGE=$COS_ENV_UPGRADE_IMAGE
+    fi
+
+    if [ -n "${COS_ENV_RECOVERY_IMAGE}" ]; then
+      _RECOVERY_IMAGE=$COS_ENV_RECOVERY_IMAGE
+    fi
+}
+
 load_config() {
+    # in here we load the config files
     if [ -e /etc/environment ]; then
         source /etc/environment
     fi
@@ -53,39 +148,42 @@ load_config() {
     fi
 
     # Load vars from files into internal vars
-    if [ -n "${VERIFY}" ]; then
+    # Always check that the vars loaded from env are not in there
+    # if we have vars from env, then skip overriding
+
+    if [ -n "${VERIFY}" ] && [[ -z "${COS_ENV_VERIFY}" ]]; then
       _VERIFY=$VERIFY
     fi
 
-    if [ -n "${GRUB_ENTRY_NAME}" ]; then
+    if [ -n "${GRUB_ENTRY_NAME}" ] && [[ -z "${COS_ENV_GRUB_ENTRY_NAME}" ]]; then
       _GRUB_ENTRY_NAME=$GRUB_ENTRY_NAME
     fi
 
-    if [ -n "${COSIGN_REPOSITORY}" ]; then
+    if [ -n "${COSIGN_REPOSITORY}" ] && [[ -z "${COS_ENV_COSIGN_REPOSITORY}" ]]; then
       _COSIGN_REPOSITORY=$COSIGN_REPOSITORY
     fi
 
-    if [ -n "${COSIGN_EXPERIMENTAL}" ]; then
+    if [ -n "${COSIGN_EXPERIMENTAL}" ] && [[ -z "${COS_ENV_COSIGN_EXPERIMENTAL}" ]]; then
       _COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
     fi
 
-    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ] && [[ -z "${COS_ENV_COSIGN_PUBLIC_KEY_LOCATION}" ]]; then
       _COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
     fi
 
-    if [ -n "${DEFAULT_IMAGE_SIZE}" ]; then
+    if [ -n "${DEFAULT_IMAGE_SIZE}" ] && [[ -z "${COS_ENV_DEFAULT_IMAGE_SIZE}" ]]; then
       _DEFAULT_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
     fi
 
-    if [ -n "${CHANNEL_UPGRADES}" ]; then
+    if [ -n "${CHANNEL_UPGRADES}" ] && [[ -z "${COS_ENV_CHANNEL_UPGRADES}" ]]; then
       _CHANNEL_UPGRADES=$CHANNEL_UPGRADES
     fi
 
-    if [ -n "${UPGRADE_IMAGE}" ]; then
+    if [ -n "${UPGRADE_IMAGE}" ] && [[ -z "${COS_ENV_UPGRADE_IMAGE}" ]]; then
       _UPGRADE_IMAGE=$UPGRADE_IMAGE
     fi
 
-    if [ -n "${RECOVERY_IMAGE}" ]; then
+    if [ -n "${RECOVERY_IMAGE}" ] && [[ -z "${COS_ENV_RECOVERY_IMAGE}" ]]; then
       _RECOVERY_IMAGE=$RECOVERY_IMAGE
     fi
 
@@ -642,8 +740,6 @@ find_recovery() {
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
 
-    load_config
-
     if [ -n "$_NO_CHANNEL" ] && [ $_NO_CHANNEL == true ]; then
         _CHANNEL_UPGRADES=false
     fi
@@ -1098,23 +1194,18 @@ rebrand_cleanup()
 # END COS_REBRAND
 
 rebrand() {
-    local grub_entry
-    load_config
-    #trap rebrand_cleanup exit
-
     rebrand_grub_menu "${_GRUB_ENTRY_NAME}"
 }
 
 reset() {
     trap reset_cleanup exit
+    load_full_config
 
     check_recovery
 
     find_recovery_partitions
 
     do_recovery_mount
-
-    load_config
 
     if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-reset
@@ -1130,7 +1221,6 @@ reset() {
 
     reset_grub
 
-    #cos-rebrand
     rebrand
 
     if [ "$_STRICT_MODE" = "true" ]; then
@@ -1141,7 +1231,7 @@ reset() {
 }
 
 upgrade() {
-
+    load_full_config
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
@@ -1226,6 +1316,7 @@ upgrade() {
 }
 
 install() {
+    load_full_config
     local _COS_INSTALL_POWER_OFF
     while [ "$#" -gt 0 ]; do
         case $1 in
