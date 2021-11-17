@@ -211,7 +211,7 @@ check_required_partitions() {
 
 do_format()
 {
-    if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
+    if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
         _STATE=$(blkid -L COS_STATE || true)
         if [ -z "$_STATE" ] && [ -n "$_DEVICE" ]; then
             tune2fs -L COS_STATE $_DEVICE
@@ -458,7 +458,7 @@ install_grub()
         TTY=$COS_INSTALL_TTY
     fi
 
-    if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
+    if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
         return 0
     fi
 
@@ -525,7 +525,7 @@ validate_device()
         echo "You should use an available device. Device ${_DEVICE} does not exist."
         exit 1
     fi
-    if [ -n "$COS_INSTALL_NO_FORMAT" ]; then
+    if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
         _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
         COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
         if [ -n "$_COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
@@ -1190,7 +1190,7 @@ install() {
                 _COSIGN=false
                 ;;
             --no-format)
-                COS_INSTALL_NO_FORMAT=true
+                _COS_INSTALL_NO_FORMAT=true
                 ;;
             --force-efi)
                 COS_INSTALL_FORCE_EFI=true
@@ -1252,7 +1252,7 @@ install() {
         find_upgrade_channel
     fi
 
-    if [ -z "$COS_INSTALL_DEVICE" ] && [ -z "$COS_INSTALL_NO_FORMAT" ]; then
+    if [ -z "$COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
         usage
     fi
 
