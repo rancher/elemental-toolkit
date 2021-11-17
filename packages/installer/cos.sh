@@ -408,7 +408,7 @@ get_iso()
 
 get_image()
 {
-    if [ -n "$UPGRADE_IMAGE" ]; then
+    if [ -n "$_UPGRADE_IMAGE" ]; then
         local temp
         part_probe
         _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
@@ -598,6 +598,10 @@ find_upgrade_channel() {
 
     if [ -e "/etc/cos-upgrade-image" ]; then
         source /etc/cos-upgrade-image
+        # This can load the following vars
+        # UPGRADE_IMAGE
+        # CHANNEL_UPGRADES
+        # RECOVERY_IMAGE
     fi
 
     if [ -n "$_NO_CHANNEL" ] && [ $_NO_CHANNEL == true ]; then
@@ -605,16 +609,22 @@ find_upgrade_channel() {
     fi
 
     if [ -n "$_COS_IMAGE" ]; then
-        UPGRADE_IMAGE=$_COS_IMAGE
-        echo "Upgrading to image $UPGRADE_IMAGE"
+        # passing an image from command line so we override any defaults loaded from /etc/cos-upgrade-image
+        _UPGRADE_IMAGE=$_COS_IMAGE
+        echo "Upgrading to image $_UPGRADE_IMAGE"
     else
-
         if [ -z "$UPGRADE_IMAGE" ]; then
-            UPGRADE_IMAGE="system/cos"
+            # there is no UPGRADE_IMAGE on /etc/cos-upgrade-image so we default to system/cos
+            _UPGRADE_IMAGE="system/cos"
+        else
+          # there is a UPGRADE_IMAGE from either env vars or /etc/cos-upgrade-image, use that one
+          _UPGRADE_IMAGE=$UPGRADE_IMAGE
         fi
 
         if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
-            UPGRADE_IMAGE=$RECOVERY_IMAGE
+            # if we have UPGRADE_RECOVERY set to true and there is a RECOVERY_IMAGE set we want to upgrade recovery
+            # so set the upgrade image to the recovery one
+            _UPGRADE_IMAGE=$RECOVERY_IMAGE
         fi
     fi
 
@@ -781,18 +791,18 @@ create_rootfs() {
     if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install $args --system-target $target --system-engine memory -y $UPGRADE_IMAGE
+        luet install $args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
         luet cleanup
         set +x
     elif [ "$DIRECTORY" == true ]; then
-        echo "Upgrading from local folder: $UPGRADE_IMAGE"
-        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ $target
+        echo "Upgrading from local folder: $_UPGRADE_IMAGE"
+        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_UPGRADE_IMAGE}/ $target
     else
-        echo "Upgrading from container image: $UPGRADE_IMAGE"
+        echo "Upgrading from container image: $_UPGRADE_IMAGE"
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack $args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $target
         rm -rf $upgrade_state_dir/tmp/rootfs
@@ -1278,7 +1288,7 @@ install() {
     SELinux_relabel
 
     # Otherwise, hooks are executed in get_image
-    if [ -z "$UPGRADE_IMAGE" ]; then
+    if [ -z "$_UPGRADE_IMAGE" ]; then
         if [ "$_STRICT_MODE" = "true" ]; then
             run_hook after-install-chroot $_TARGET
         else
@@ -1295,7 +1305,7 @@ install() {
 
     rebrand
 
-    if [ -z "$UPGRADE_IMAGE" ]; then
+    if [ -z "$_UPGRADE_IMAGE" ]; then
         if [ "$_STRICT_MODE" = "true" ]; then
             cos-setup after-install
         else
