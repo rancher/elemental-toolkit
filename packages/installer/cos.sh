@@ -409,6 +409,7 @@ get_iso()
 get_image()
 {
     if [ -n "$UPGRADE_IMAGE" ]; then
+        local temp
         part_probe
         _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
