@@ -199,7 +199,7 @@ blkid_probe() {
     _STATE=$(blkid -L COS_STATE || true)
     _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
 check_required_partitions() {
@@ -313,7 +313,7 @@ do_format()
     _STATE=${PREFIX}${STATE_NUM}
     _OEM=${PREFIX}${OEM_NUM}
     _RECOVERY=${PREFIX}${RECOVERY_NUM}
-    PERSISTENT=${PREFIX}${PERSISTENT_NUM}
+    _PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
     mkfs.ext4 -F -L COS_STATE ${_STATE}
     if [ -n "${_BOOT}" ]; then
@@ -323,7 +323,7 @@ do_format()
 
     mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
     mkfs.ext4 -F -L COS_OEM ${_OEM}
-    mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
+    mkfs.ext4 -F -L COS_PERSISTENT ${_PERSISTENT}
 }
 
 do_mount()
@@ -360,7 +360,7 @@ do_mount()
     mkdir -p ${_TARGET}/oem
     mount ${_OEM} ${_TARGET}/oem
     mkdir -p ${_TARGET}/usr/local
-    mount ${PERSISTENT} ${_TARGET}/usr/local
+    mount ${_PERSISTENT} ${_TARGET}/usr/local
 }
 
 get_url()
@@ -541,8 +541,8 @@ find_partitions() {
 
     _OEM=$(blkid -L COS_OEM || true)
 
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-    if [ -z "$PERSISTENT" ]; then
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
@@ -791,8 +791,8 @@ create_rootfs() {
     chmod 755 $target
     SELinux_relabel
 
-    if [ -n "$PERSISTENT" ]; then
-        mount $PERSISTENT $target/usr/local
+    if [ -n "$_PERSISTENT" ]; then
+        mount $_PERSISTENT $target/usr/local
     fi
     if [ -n "$_OEM" ]; then
         mount $_OEM $target/oem
@@ -805,7 +805,7 @@ create_rootfs() {
     if [ -n "$_OEM" ]; then
      umount $target/oem
     fi
-    if [ -n "$PERSISTENT" ]; then
+    if [ -n "$_PERSISTENT" ]; then
         umount $target/usr/local
     fi
     if [ "$STRICT_MODE" = "true" ]; then
@@ -881,7 +881,7 @@ run_reset_hook() {
     loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
     mount -t ext2 ${_STATEDIR}/cOS/passive.img $loop_dir
         
-    mount $PERSISTENT $loop_dir/usr/local
+    mount $_PERSISTENT $loop_dir/usr/local
     mount $_OEM $loop_dir/oem
 
     run_hook after-reset-chroot $loop_dir
@@ -971,8 +971,8 @@ find_recovery_partitions() {
 
     _OEM=$(blkid -L COS_OEM || true)
 
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-    if [ -z "$PERSISTENT" ]; then
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
