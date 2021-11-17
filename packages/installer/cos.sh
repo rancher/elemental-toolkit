@@ -395,12 +395,14 @@ get_url()
 
 get_iso()
 {
+    local temp_file
+    local iso_device
     if [ -n "$_COS_INSTALL_ISO_URL" ]; then
         _ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX._ISOMNT)
-        TEMP_FILE=$(mktemp --tmpdir cos.XXXXXXXX.iso)
-        get_url ${_COS_INSTALL_ISO_URL} ${TEMP_FILE}
-        ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
-        mount -o ro ${ISO_DEVICE} ${_ISOMNT}
+        temp_file=$(mktemp --tmpdir cos.XXXXXXXX.iso)
+        get_url ${_COS_INSTALL_ISO_URL} ${temp_file}
+        iso_device=$(losetup --show -f $temp_file)
+        mount -o ro ${iso_device} ${_ISOMNT}
     fi
 }
 
