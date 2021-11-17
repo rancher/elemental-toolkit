@@ -213,8 +213,8 @@ do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
         _STATE=$(blkid -L COS_STATE || true)
-        if [ -z "$_STATE" ] && [ -n "$DEVICE" ]; then
-            tune2fs -L COS_STATE $DEVICE
+        if [ -z "$_STATE" ] && [ -n "$_DEVICE" ]; then
+            tune2fs -L COS_STATE $_DEVICE
         fi
         blkid_probe
         check_required_partitions
@@ -228,29 +228,29 @@ do_format()
         exit 1
     fi
 
-    dd if=/dev/zero of=${DEVICE} bs=1M count=1
-    parted -s ${DEVICE} mklabel ${PARTTABLE}
+    dd if=/dev/zero of=${_DEVICE} bs=1M count=1
+    parted -s ${_DEVICE} mklabel ${PARTTABLE}
 
     # Partitioning via cloud-init config file
     if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
         if [ "$BOOTFLAG" == "esp" ]; then
-            parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
-            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
-            PREFIX=${DEVICE}
+            parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
+            parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
+            PREFIX=${_DEVICE}
             if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-                PREFIX=${DEVICE}p
+                PREFIX=${_DEVICE}p
             fi
             _BOOT=${PREFIX}1
             mkfs.vfat -F 32 ${_BOOT}
             fatlabel ${_BOOT} COS_GRUB
         elif [ "$BOOTFLAG" == "bios_grub" ]; then
-            parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+            parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+            parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
         fi
 
         yip -s partitioning $COS_PARTITION_LAYOUT
 
-        part_probe $DEVICE
+        part_probe $_DEVICE
 
         blkid_probe
 
@@ -270,46 +270,46 @@ do_format()
         STATE_NUM=3
         RECOVERY_NUM=4
         PERSISTENT_NUM=5
-        parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
-        parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 15100MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23100MB 100% # persistent
-        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+        parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
+        parted -s ${_DEVICE} mkpart primary ext4 50MB 100MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 100MB 15100MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23100MB 100% # persistent
+        parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
     elif [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
         BOOT_NUM=
         OEM_NUM=2
         STATE_NUM=3
         RECOVERY_NUM=4
         PERSISTENT_NUM=5
-        parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-        parted -s ${DEVICE} mkpart primary ext4 1MB 51MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 51MB 15051MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23051MB 100% # persistent
-        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+        parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+        parted -s ${_DEVICE} mkpart primary ext4 1MB 51MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 51MB 15051MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23051MB 100% # persistent
+        parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
     else
         BOOT_NUM=
         OEM_NUM=1
         STATE_NUM=2
         RECOVERY_NUM=3
         PERSISTENT_NUM=4
-        parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 15050MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23050MB 100% # persistent
-        parted -s ${DEVICE} set 2 ${BOOTFLAG} on
+        parted -s ${_DEVICE} mkpart primary ext4 0% 50MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 50MB 15050MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23050MB 100% # persistent
+        parted -s ${_DEVICE} set 2 ${BOOTFLAG} on
     fi
 
-    part_probe $DEVICE
+    part_probe $_DEVICE
 
-    PREFIX=${DEVICE}
+    PREFIX=${_DEVICE}
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-        PREFIX=${DEVICE}p
+        PREFIX=${_DEVICE}p
     fi
 
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-        echo Failed to find ${PREFIX}${STATE_NUM} or ${DEVICE}${STATE_NUM} to format
+        echo Failed to find ${PREFIX}${STATE_NUM} or ${_DEVICE}${STATE_NUM} to format
         exit 1
     fi
 
@@ -435,7 +435,7 @@ SELinux_relabel()
 
 install_grub()
 {
-    if [ -z "$DEVICE" ]; then
+    if [ -z "$_DEVICE" ]; then
         echo "No Installation device specified. Skipping GRUB installation"
         return 0
     fi
@@ -465,7 +465,7 @@ install_grub()
     mkdir ${_TARGET}/sys || true
     mkdir ${_TARGET}/tmp || true
 
-    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${DEVICE}
+    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
     GRUBDIR=
     if [ -d "${_STATEDIR}/grub" ]; then
@@ -514,9 +514,9 @@ validate_progs()
 
 validate_device()
 {
-    DEVICE=$COS_INSTALL_DEVICE
-    if [ -n "${DEVICE}" ] && [ ! -b ${DEVICE} ]; then
-        echo "You should use an available device. Device ${DEVICE} does not exist."
+    _DEVICE=$COS_INSTALL_DEVICE
+    if [ -n "${_DEVICE}" ] && [ ! -b ${_DEVICE} ]; then
+        echo "You should use an available device. Device ${_DEVICE} does not exist."
         exit 1
     fi
     if [ -n "$COS_INSTALL_NO_FORMAT" ]; then
@@ -860,7 +860,7 @@ reset_grub()
         GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${_STATE} /boot/grub2
-    grub2-install ${GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${DEVICE}
+    grub2-install ${GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
     GRUBDIR=
     if [ -d "${_STATEDIR}/grub" ]; then
@@ -971,7 +971,7 @@ find_recovery_partitions() {
         echo "State partition cannot be found"
         exit 1
     fi
-    DEVICE=/dev/$(lsblk -no pkname $_STATE)
+    _DEVICE=/dev/$(lsblk -no pkname $_STATE)
 
     _BOOT=$(blkid -L COS_GRUB || true)
 
