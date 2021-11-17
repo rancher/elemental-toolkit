@@ -97,11 +97,11 @@ is_booting_from_live() {
 }
 
 prepare_target() {
-    mkdir -p ${STATEDIR}/cOS || true
-    rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${STATEDIR}/cOS/transition.img
-    mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $_TARGET
+    mkdir -p ${_STATEDIR}/cOS || true
+    rm -rf ${_STATEDIR}/cOS/transition.img || true
+    dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+    mkfs.ext2 ${_STATEDIR}/cOS/transition.img
+    mount -t ext2 -o loop ${_STATEDIR}/cOS/transition.img $_TARGET
 }
 
 usage()
@@ -143,7 +143,7 @@ installer_cleanup2()
 {
     sync
     umount_target || true
-    umount ${STATEDIR}
+    umount ${_STATEDIR}
     umount ${_RECOVERYDIR}
     [ -n "$COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
 }
@@ -168,7 +168,7 @@ prepare_recovery() {
         cp -a $_RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
     else
         echo "Copying image file.."
-        cp -a $STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
+        cp -a $_STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
         tune2fs -L COS_SYSTEM $_RECOVERYDIR/cOS/recovery.img
     fi
@@ -178,9 +178,9 @@ prepare_recovery() {
 
 prepare_passive() {
     echo "Preparing passive boot.."
-    cp -a ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
+    cp -a ${_STATEDIR}/cOS/active.img ${_STATEDIR}/cOS/passive.img
     sync
-    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     sync
 }
 
@@ -335,20 +335,20 @@ do_mount()
 
     prepare_statedir "install"
 
-    mkdir -p ${STATEDIR}/cOS || true
+    mkdir -p ${_STATEDIR}/cOS || true
 
-    if [ -e "${STATEDIR}/cOS/active.img" ]; then
-        rm -rf ${STATEDIR}/cOS/active.img
+    if [ -e "${_STATEDIR}/cOS/active.img" ]; then
+        rm -rf ${_STATEDIR}/cOS/active.img
     fi
 
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
+    dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L COS_ACTIVE
 
     if [ -z "$COS_ACTIVE" ]; then
         sync
     fi
 
-    LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
+    LOOP=$(losetup --show -f ${_STATEDIR}/cOS/active.img)
     mount -t ext2 $LOOP $_TARGET
 
     mkdir -p ${_TARGET}/boot
@@ -459,13 +459,13 @@ install_grub()
     mkdir ${_TARGET}/sys || true
     mkdir ${_TARGET}/tmp || true
 
-    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${STATEDIR} --removable ${DEVICE}
+    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${DEVICE}
 
     GRUBDIR=
-    if [ -d "${STATEDIR}/grub" ]; then
-        GRUBDIR="${STATEDIR}/grub"
-    elif [ -d "${STATEDIR}/grub2" ]; then
-        GRUBDIR="${STATEDIR}/grub2"
+    if [ -d "${_STATEDIR}/grub" ]; then
+        GRUBDIR="${_STATEDIR}/grub"
+    elif [ -d "${_STATEDIR}/grub2" ]; then
+        GRUBDIR="${_STATEDIR}/grub2"
     fi
 
     cp -rf $_GRUBCONF $GRUBDIR/grub.cfg
@@ -613,7 +613,7 @@ find_upgrade_channel() {
 }
 
 is_squashfs() {
-    if [ -e "${STATEDIR}/cOS/recovery.squashfs" ]; then
+    if [ -e "${_STATEDIR}/cOS/recovery.squashfs" ]; then
         return 0
     else
         return 1
@@ -631,15 +631,15 @@ recovery_boot() {
 
 prepare_squashfs_target() {
     rm -rf $_TARGET || true
-    _TARGET=${STATEDIR}/tmp/target
+    _TARGET=${_STATEDIR}/tmp/target
     mkdir -p $_TARGET
 }
 
 mount_state() {
     if [ -n "${STATE}" ]; then
-        STATEDIR=/run/initramfs/state
-        mkdir -p $STATEDIR
-        mount ${STATE} ${STATEDIR}
+        _STATEDIR=/run/initramfs/state
+        mkdir -p $_STATEDIR
+        mount ${STATE} ${_STATEDIR}
     else
         echo "No state partition found. Skipping mount"
     fi
@@ -649,10 +649,10 @@ prepare_statedir() {
     local target=$1
     case $target in
     recovery)
-        STATEDIR=/tmp/recovery
+        _STATEDIR=/tmp/recovery
 
-        mkdir -p $STATEDIR || true
-        mount $RECOVERY $STATEDIR
+        mkdir -p $_STATEDIR || true
+        mount $RECOVERY $_STATEDIR
         if is_squashfs; then
             echo "Preparing squashfs target"
             prepare_squashfs_target
@@ -662,13 +662,13 @@ prepare_statedir() {
         fi
         ;;
     *)
-        STATEDIR=/run/initramfs/cos-state
+        _STATEDIR=/run/initramfs/cos-state
 
-        if [ -d "$STATEDIR" ]; then
+        if [ -d "$_STATEDIR" ]; then
             if recovery_boot; then
                 mount_state
             else
-                mount -o remount,rw ${STATE} ${STATEDIR}
+                mount -o remount,rw ${STATE} ${_STATEDIR}
             fi
         else
             mount_state
@@ -694,12 +694,12 @@ mount_image() {
 
 switch_active() {
     if [[ "$CURRENT" == "active.img" ]]; then
-        mv -f ${STATEDIR}/cOS/$CURRENT ${STATEDIR}/cOS/passive.img
-        tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+        mv -f ${_STATEDIR}/cOS/$CURRENT ${_STATEDIR}/cOS/passive.img
+        tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     fi
 
-    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
 }
 
 switch_recovery() {
@@ -709,12 +709,12 @@ switch_recovery() {
         else
           XZ_FILTER="x86"
         fi
-        mksquashfs $_TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
-        mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
+        mksquashfs $_TARGET ${_STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
+        mv ${_STATEDIR}/cOS/transition.squashfs ${_STATEDIR}/cOS/recovery.squashfs
         rm -rf $_TARGET
     else
-        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
-        tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+        mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/recovery.img
+        tune2fs -L COS_SYSTEM ${_STATEDIR}/cOS/recovery.img
     fi
 }
 
@@ -821,18 +821,18 @@ create_rootfs() {
 upgrade_cleanup2()
 {
     rm -rf /usr/local/tmp/upgrade || true
-    mount -o remount,ro ${STATE} ${STATEDIR} || true
+    mount -o remount,ro ${STATE} ${_STATEDIR} || true
     if [ -n "${_TARGET}" ]; then
         umount ${_TARGET}/boot/efi || true
         umount ${_TARGET}/ || true
         rm -rf ${_TARGET}
     fi
     if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
-	    umount ${STATEDIR} || true
+	    umount ${_STATEDIR} || true
     fi
-    if [ "$STATEDIR" == "/run/initramfs/state" ]; then
-        umount ${STATEDIR}
-        rm -rf $STATEDIR
+    if [ "$_STATEDIR" == "/run/initramfs/state" ]; then
+        umount ${_STATEDIR}
+        rm -rf $_STATEDIR
     fi
 }
 
@@ -851,16 +851,16 @@ upgrade_cleanup()
 reset_grub()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${STATEDIR}/boot/efi"
+        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${STATE} /boot/grub2
-    grub2-install ${GRUB_TARGET} --root-directory=${STATEDIR} --boot-directory=${STATEDIR} --removable ${DEVICE}
+    grub2-install ${GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${DEVICE}
 
     GRUBDIR=
-    if [ -d "${STATEDIR}/grub" ]; then
-        GRUBDIR="${STATEDIR}/grub"
-    elif [ -d "${STATEDIR}/grub2" ]; then
-        GRUBDIR="${STATEDIR}/grub2"
+    if [ -d "${_STATEDIR}/grub" ]; then
+        GRUBDIR="${_STATEDIR}/grub"
+    elif [ -d "${_STATEDIR}/grub2" ]; then
+        GRUBDIR="${_STATEDIR}/grub2"
     fi
 
     cp -rfv $_GRUBCONF $GRUBDIR/grub.cfg
@@ -872,14 +872,14 @@ reset_state() {
 }
 
 copy_passive() {
-    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
-    cp -rf ${STATEDIR}/cOS/passive.img ${STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    cp -rf ${_STATEDIR}/cOS/passive.img ${_STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
 }
 
 run_reset_hook() {
     loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
-    mount -t ext2 ${STATEDIR}/cOS/passive.img $loop_dir
+    mount -t ext2 ${_STATEDIR}/cOS/passive.img $loop_dir
         
     mount $PERSISTENT $loop_dir/usr/local
     mount $OEM $loop_dir/oem
@@ -902,10 +902,10 @@ copy_active() {
         
         _TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-        mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
+        dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
-        LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
+        LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
         mount -t ext2 $LOOP $_TARGET
         rsync -aqzAX --exclude='mnt' \
         --exclude='proc' --exclude='sys' \
@@ -915,16 +915,16 @@ copy_active() {
 
         SELinux_relabel
 
-        # Targets are ${STATEDIR}/cOS/active.img and ${STATEDIR}/cOS/passive.img
+        # Targets are ${_STATEDIR}/cOS/active.img and ${_STATEDIR}/cOS/passive.img
         umount $tmp_dir
         rm -rf $tmp_dir
         umount $_TARGET
         rm -rf $_TARGET
 
-        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
+        mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/passive.img
         sync
     else
-        cp -rf ${_RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
+        cp -rf ${_RECOVERYDIR}/cOS/recovery.img ${_STATEDIR}/cOS/passive.img
     fi
     
     run_reset_hook
@@ -980,8 +980,8 @@ find_recovery_partitions() {
 
 do_recovery_mount()
 {
-    STATEDIR=/tmp/state
-    mkdir -p $STATEDIR || true
+    _STATEDIR=/tmp/state
+    mkdir -p $_STATEDIR || true
 
     if is_booting_from_squashfs; then
         _RECOVERYDIR=/run/initramfs/live
@@ -989,13 +989,13 @@ do_recovery_mount()
         _RECOVERYDIR=/run/initramfs/cos-state
     fi
 
-    #mount -o remount,rw ${STATE} ${STATEDIR}
+    #mount -o remount,rw ${STATE} ${_STATEDIR}
 
-    mount ${STATE} $STATEDIR
+    mount ${STATE} $_STATEDIR
 
     if [ -n "${BOOT}" ]; then
-        mkdir -p $STATEDIR/boot/efi || true
-        mount ${BOOT} $STATEDIR/boot/efi
+        mkdir -p $_STATEDIR/boot/efi || true
+        mount ${BOOT} $_STATEDIR/boot/efi
     fi
 }
 
@@ -1006,11 +1006,11 @@ do_recovery_mount()
 rebrand_grub_menu() {
 	local grub_entry="$1"
 
-	STATEDIR=$(blkid -L COS_STATE)
+	_STATEDIR=$(blkid -L COS_STATE)
 	mkdir -p /run/boot
 	
 	if ! is_mounted /run/boot; then
-	   mount $STATEDIR /run/boot
+	   mount $_STATEDIR /run/boot
 	fi
 
     grub2-editenv /run/boot/grub_oem_env set default_menu_entry="$grub_entry"
@@ -1021,7 +1021,7 @@ rebrand_grub_menu() {
 rebrand_cleanup2()
 {
     sync
-    umount ${STATEDIR}
+    umount ${_STATEDIR}
 }
 
 rebrand_cleanup()
