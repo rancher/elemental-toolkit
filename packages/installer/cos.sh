@@ -1143,7 +1143,7 @@ upgrade() {
                 if [ "$#" -gt 2 ]; then
                     usage
                 fi
-                _INTERACTIVE=true
+                INTERACTIVE=true
                 _COS_IMAGE=$1
                 break
                 ;;
@@ -1182,7 +1182,7 @@ upgrade() {
     echo "Flush changes to disk"
     sync
 
-    if [ -n "$_INTERACTIVE" ] && [ $_INTERACTIVE == false ]; then
+    if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then
         if grep -q 'cos.upgrade.power_off=true' /proc/cmdline; then
             poweroff -f
         else
@@ -1258,7 +1258,7 @@ install() {
                 if [ "$#" -gt 2 ]; then
                     usage
                 fi
-                _INTERACTIVE=true
+                INTERACTIVE=true
                 _COS_INSTALL_DEVICE=$1
                 break
                 ;;
@@ -1326,7 +1326,7 @@ install() {
 
     echo "Deployment done, now you might want to reboot"
 
-    if [ -n "$_INTERACTIVE" ]; then
+    if [ -n "$INTERACTIVE" ]; then
         exit 0
     fi
 
