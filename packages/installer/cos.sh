@@ -5,7 +5,7 @@ PROG=$0
 
 ## Installer
 _PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
-DISTRO=/run/rootfsbase
+_DISTRO=/run/rootfsbase
 ISOMNT=/run/initramfs/live
 TARGET=/run/cos/target
 RECOVERYDIR=/run/cos/recovery
@@ -405,10 +405,10 @@ get_image()
 {
     if [ -n "$UPGRADE_IMAGE" ]; then
         part_probe
-        DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
+        _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         args="$(luet_args)"
-        create_rootfs "install" $DISTRO $temp
+        create_rootfs "install" $_DISTRO $temp
     fi
 }
 
@@ -416,7 +416,7 @@ do_copy()
 {
     echo "Copying cOS.."
 
-    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
+    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${TARGET}
     if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
         OEM=${TARGET}/oem/99_custom.yaml
         get_url "$COS_INSTALL_CONFIG_URL" $OEM
