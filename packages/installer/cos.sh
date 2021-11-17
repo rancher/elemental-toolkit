@@ -742,7 +742,7 @@ ensure_dir_structure() {
 
 luet_args() {
     args="--enable-logfile --logfile /tmp/luet.log"
-    if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
+    if [ -z "$_VERIFY" ] || [ "$_VERIFY" == true ]; then
         args="--plugin luet-mtree"
     fi
 
@@ -1107,7 +1107,7 @@ upgrade() {
                 UPGRADE_RECOVERY=true
                 ;;
             --no-verify)
-                VERIFY=false
+                _VERIFY=false
                 ;;
             --no-cosign)
                 COSIGN=false
@@ -1184,7 +1184,7 @@ install() {
                 COS_IMAGE=$1
                 ;;
             --no-verify)
-                VERIFY=false
+                _VERIFY=false
                 ;;
             --no-cosign)
                 COSIGN=false
