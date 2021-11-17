@@ -1175,7 +1175,7 @@ upgrade() {
 }
 
 install() {
-
+    local _COS_INSTALL_POWER_OFF
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
