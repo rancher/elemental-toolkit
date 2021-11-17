@@ -9,7 +9,7 @@ _DISTRO=/run/rootfsbase
 _ISOMNT=/run/initramfs/live
 _TARGET=/run/cos/target
 _RECOVERYDIR=/run/cos/recovery
-RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
+_RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
 GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
@@ -168,9 +168,9 @@ prepare_recovery() {
 
     mkdir -p $_RECOVERYDIR/cOS
 
-    if [ -e "$RECOVERYSQUASHFS" ]; then
+    if [ -e "$_RECOVERYSQUASHFS" ]; then
         echo "Copying squashfs.."
-        cp -a $RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
+        cp -a $_RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
     else
         echo "Copying image file.."
         cp -a $STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
