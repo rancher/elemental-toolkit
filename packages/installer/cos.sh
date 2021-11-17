@@ -561,26 +561,26 @@ find_partitions() {
 
     _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
     if [ -n "$_COS_ACTIVE" ]; then
-        CURRENT=active.img
+        _CURRENT=active.img
     fi
 
     _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
     if [ -n "$_COS_PASSIVE" ]; then
-        CURRENT=passive.img
+        _CURRENT=passive.img
     fi
 
-    if [ -z "$CURRENT" ]; then
+    if [ -z "$_CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
         read -p "Could not determine current partition. Do you want to overwrite your current active partition? (CURRENT=active.img) [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
         fi
-        CURRENT=active.img
+        _CURRENT=active.img
         echo
     fi
 
-    echo "-> Upgrade target: $CURRENT"
+    echo "-> Upgrade target: $_CURRENT"
 }
 
 find_recovery() {
@@ -715,8 +715,8 @@ mount_image() {
 }
 
 switch_active() {
-    if [[ "$CURRENT" == "active.img" ]]; then
-        mv -f ${_STATEDIR}/cOS/$CURRENT ${_STATEDIR}/cOS/passive.img
+    if [[ "$_CURRENT" == "active.img" ]]; then
+        mv -f ${_STATEDIR}/cOS/$_CURRENT ${_STATEDIR}/cOS/passive.img
         tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     fi
 
