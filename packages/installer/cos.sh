@@ -1202,7 +1202,7 @@ install() {
                 COS_INSTALL_FORCE_GPT=true
                 ;;
             --poweroff)
-                COS_INSTALL_POWER_OFF=true
+                _COS_INSTALL_POWER_OFF=true
                 ;;
             --strict)
                 STRICT_MODE=true
@@ -1309,7 +1309,7 @@ install() {
         exit 0
     fi
 
-    if [ "$COS_INSTALL_POWER_OFF" = true ] || grep -q 'cos.install.power_off=true' /proc/cmdline; then
+    if [ "$_COS_INSTALL_POWER_OFF" = true ] || grep -q 'cos.install.power_off=true' /proc/cmdline; then
         poweroff -f
     else
         echo " * Rebooting system in 5 seconds (CTRL+C to cancel)"
