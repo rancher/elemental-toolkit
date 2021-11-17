@@ -643,6 +643,7 @@ is_squashfs() {
 }
 
 recovery_boot() {
+    local cmdline
     cmdline="$(cat /proc/cmdline)"
     if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
         return 0
