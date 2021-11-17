@@ -196,14 +196,14 @@ part_probe() {
 
 blkid_probe() {
     _OEM=$(blkid -L COS_OEM || true)
-    STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L COS_STATE || true)
     _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
 check_required_partitions() {
-    if [ -z "$STATE" ]; then
+    if [ -z "$_STATE" ]; then
             echo "State partition cannot be found"
             exit 1
     fi
@@ -212,8 +212,8 @@ check_required_partitions() {
 do_format()
 {
     if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
-        STATE=$(blkid -L COS_STATE || true)
-        if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
+        _STATE=$(blkid -L COS_STATE || true)
+        if [ -z "$_STATE" ] && [ -n "$DEVICE" ]; then
             tune2fs -L COS_STATE $DEVICE
         fi
         blkid_probe
@@ -310,12 +310,12 @@ do_format()
     if [ -n "${BOOT_NUM}" ]; then
         _BOOT=${PREFIX}${BOOT_NUM}
     fi
-    STATE=${PREFIX}${STATE_NUM}
+    _STATE=${PREFIX}${STATE_NUM}
     _OEM=${PREFIX}${OEM_NUM}
     _RECOVERY=${PREFIX}${RECOVERY_NUM}
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
-    mkfs.ext4 -F -L COS_STATE ${STATE}
+    mkfs.ext4 -F -L COS_STATE ${_STATE}
     if [ -n "${_BOOT}" ]; then
         mkfs.vfat -F 32 ${_BOOT}
         fatlabel ${_BOOT} COS_GRUB
@@ -533,8 +533,8 @@ validate_device()
 ## UPGRADER
 
 find_partitions() {
-    STATE=$(blkid -L COS_STATE || true)
-    if [ -z "$STATE" ]; then
+    _STATE=$(blkid -L COS_STATE || true)
+    if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
     fi
@@ -636,10 +636,10 @@ prepare_squashfs_target() {
 }
 
 mount_state() {
-    if [ -n "${STATE}" ]; then
+    if [ -n "${_STATE}" ]; then
         _STATEDIR=/run/initramfs/state
         mkdir -p $_STATEDIR
-        mount ${STATE} ${_STATEDIR}
+        mount ${_STATE} ${_STATEDIR}
     else
         echo "No state partition found. Skipping mount"
     fi
@@ -668,7 +668,7 @@ prepare_statedir() {
             if recovery_boot; then
                 mount_state
             else
-                mount -o remount,rw ${STATE} ${_STATEDIR}
+                mount -o remount,rw ${_STATE} ${_STATEDIR}
             fi
         else
             mount_state
@@ -821,7 +821,7 @@ create_rootfs() {
 upgrade_cleanup2()
 {
     rm -rf /usr/local/tmp/upgrade || true
-    mount -o remount,ro ${STATE} ${_STATEDIR} || true
+    mount -o remount,ro ${_STATE} ${_STATEDIR} || true
     if [ -n "${_TARGET}" ]; then
         umount ${_TARGET}/boot/efi || true
         umount ${_TARGET}/ || true
@@ -853,7 +853,7 @@ reset_grub()
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
         GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
-    #mount -o remount,rw ${STATE} /boot/grub2
+    #mount -o remount,rw ${_STATE} /boot/grub2
     grub2-install ${GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${DEVICE}
 
     GRUBDIR=
@@ -960,12 +960,12 @@ check_recovery() {
 }
 
 find_recovery_partitions() {
-    STATE=$(blkid -L COS_STATE || true)
-    if [ -z "$STATE" ]; then
+    _STATE=$(blkid -L COS_STATE || true)
+    if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
     fi
-    DEVICE=/dev/$(lsblk -no pkname $STATE)
+    DEVICE=/dev/$(lsblk -no pkname $_STATE)
 
     _BOOT=$(blkid -L COS_GRUB || true)
 
@@ -989,9 +989,9 @@ do_recovery_mount()
         _RECOVERYDIR=/run/initramfs/cos-state
     fi
 
-    #mount -o remount,rw ${STATE} ${_STATEDIR}
+    #mount -o remount,rw ${_STATE} ${_STATEDIR}
 
-    mount ${STATE} $_STATEDIR
+    mount ${_STATE} $_STATEDIR
 
     if [ -n "${_BOOT}" ]; then
         mkdir -p $_STATEDIR/boot/efi || true
