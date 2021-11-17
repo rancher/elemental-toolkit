@@ -198,7 +198,7 @@ blkid_probe() {
     OEM=$(blkid -L COS_OEM || true)
     STATE=$(blkid -L COS_STATE || true)
     RECOVERY=$(blkid -L COS_RECOVERY || true)
-    BOOT=$(blkid -L COS_GRUB || true)
+    _BOOT=$(blkid -L COS_GRUB || true)
     PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
@@ -240,9 +240,9 @@ do_format()
             if [ ! -e ${PREFIX}${STATE_NUM} ]; then
                 PREFIX=${DEVICE}p
             fi
-            BOOT=${PREFIX}1
-            mkfs.vfat -F 32 ${BOOT}
-            fatlabel ${BOOT} COS_GRUB
+            _BOOT=${PREFIX}1
+            mkfs.vfat -F 32 ${_BOOT}
+            fatlabel ${_BOOT} COS_GRUB
         elif [ "$BOOTFLAG" == "bios_grub" ]; then
             parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
             parted -s ${DEVICE} set 1 ${BOOTFLAG} on
@@ -308,7 +308,7 @@ do_format()
     fi
 
     if [ -n "${BOOT_NUM}" ]; then
-        BOOT=${PREFIX}${BOOT_NUM}
+        _BOOT=${PREFIX}${BOOT_NUM}
     fi
     STATE=${PREFIX}${STATE_NUM}
     OEM=${PREFIX}${OEM_NUM}
@@ -316,9 +316,9 @@ do_format()
     PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
     mkfs.ext4 -F -L COS_STATE ${STATE}
-    if [ -n "${BOOT}" ]; then
-        mkfs.vfat -F 32 ${BOOT}
-        fatlabel ${BOOT} COS_GRUB
+    if [ -n "${_BOOT}" ]; then
+        mkfs.vfat -F 32 ${_BOOT}
+        fatlabel ${_BOOT} COS_GRUB
     fi
 
     mkfs.ext4 -F -L COS_RECOVERY ${RECOVERY}
@@ -352,9 +352,9 @@ do_mount()
     mount -t ext2 $LOOP $_TARGET
 
     mkdir -p ${_TARGET}/boot
-    if [ -n "${BOOT}" ]; then
+    if [ -n "${_BOOT}" ]; then
         mkdir -p ${_TARGET}/boot/efi
-        mount ${BOOT} ${_TARGET}/boot/efi
+        mount ${_BOOT} ${_TARGET}/boot/efi
     fi
 
     mkdir -p ${_TARGET}/oem
@@ -967,7 +967,7 @@ find_recovery_partitions() {
     fi
     DEVICE=/dev/$(lsblk -no pkname $STATE)
 
-    BOOT=$(blkid -L COS_GRUB || true)
+    _BOOT=$(blkid -L COS_GRUB || true)
 
     OEM=$(blkid -L COS_OEM || true)
 
@@ -993,9 +993,9 @@ do_recovery_mount()
 
     mount ${STATE} $_STATEDIR
 
-    if [ -n "${BOOT}" ]; then
+    if [ -n "${_BOOT}" ]; then
         mkdir -p $_STATEDIR/boot/efi || true
-        mount ${BOOT} $_STATEDIR/boot/efi
+        mount ${_BOOT} $_STATEDIR/boot/efi
     fi
 }
 
