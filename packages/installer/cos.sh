@@ -727,6 +727,7 @@ switch_active() {
 
 switch_recovery() {
     if is_squashfs; then
+        local XZ_FILTER
         if [[ "${_ARCH}" == "arm64" ]]; then
           XZ_FILTER="arm"
         else
