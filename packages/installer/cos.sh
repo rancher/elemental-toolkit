@@ -764,12 +764,12 @@ luet_args() {
 }
 
 create_rootfs() {
-    hook_name=$1
-    target=$2
-    temp_dir=$3
+    local hook_name=$1
+    local target=$2
+    local temp_dir=$3
 
-    upgrade_state_dir="$temp_dir"
-    temp_upgrade=$upgrade_state_dir/tmp/upgrade
+    local upgrade_state_dir="$temp_dir"
+    local temp_upgrade=$upgrade_state_dir/tmp/upgrade
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
