@@ -753,6 +753,7 @@ ensure_dir_structure() {
 }
 
 luet_args() {
+    local args
     args="--enable-logfile --logfile /tmp/luet.log"
     if [ -z "$_VERIFY" ] || [ "$_VERIFY" == true ]; then
         args="--plugin luet-mtree"
