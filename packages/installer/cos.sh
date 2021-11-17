@@ -529,7 +529,7 @@ validate_device()
         _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
         COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
         if [ -n "$_COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
-            if [ "$FORCE" == "true" ]; then
+            if [ "$_FORCE" == "true" ]; then
                 echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
                 return 0
             else
@@ -1196,7 +1196,7 @@ install() {
                 _COS_INSTALL_FORCE_EFI=true
                 ;;
             --force)
-                FORCE=true
+                _FORCE=true
                 ;;
             --force-gpt)
                 COS_INSTALL_FORCE_GPT=true
