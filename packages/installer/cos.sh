@@ -22,15 +22,10 @@ COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
 
 ## Upgrades
 CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
-ARCH=$(uname -p)
-if [ "${ARCH}" == "aarch64" ]; then
-  ARCH="arm64"
-fi
 
-ARCH=$(uname -p)
-
-if [ "${ARCH}" == "aarch64" ]; then
-  ARCH="arm64"
+_ARCH=$(uname -p)
+if [ "${_ARCH}" == "aarch64" ]; then
+  _ARCH="arm64"
 fi
 
 if [ "$COS_DEBUG" = true ]; then
@@ -456,7 +451,7 @@ install_grub()
     fi
 
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
+        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
     fi
 
     mkdir ${_TARGET}/proc || true
@@ -709,7 +704,7 @@ switch_active() {
 
 switch_recovery() {
     if is_squashfs; then
-        if [[ "${ARCH}" == "arm64" ]]; then
+        if [[ "${_ARCH}" == "arm64" ]]; then
           XZ_FILTER="arm"
         else
           XZ_FILTER="x86"
@@ -856,7 +851,7 @@ upgrade_cleanup()
 reset_grub()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${STATEDIR}/boot/efi"
+        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${STATE} /boot/grub2
     grub2-install ${GRUB_TARGET} --root-directory=${STATEDIR} --boot-directory=${STATEDIR} --removable ${DEVICE}
