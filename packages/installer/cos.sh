@@ -604,8 +604,8 @@ find_upgrade_channel() {
         CHANNEL_UPGRADES=false
     fi
 
-    if [ -n "$COS_IMAGE" ]; then
-        UPGRADE_IMAGE=$COS_IMAGE
+    if [ -n "$_COS_IMAGE" ]; then
+        UPGRADE_IMAGE=$_COS_IMAGE
         echo "Upgrading to image $UPGRADE_IMAGE"
     else
 
@@ -1123,7 +1123,7 @@ upgrade() {
                     usage
                 fi
                 _INTERACTIVE=true
-                COS_IMAGE=$1
+                _COS_IMAGE=$1
                 break
                 ;;
         esac
@@ -1181,7 +1181,7 @@ install() {
             --docker-image)
                 NO_CHANNEL=true
                 shift 1
-                COS_IMAGE=$1
+                _COS_IMAGE=$1
                 ;;
             --no-verify)
                 _VERIFY=false
@@ -1248,7 +1248,7 @@ install() {
     # We want to find the upgrade channel if, no ISO url is supplied and:
     # 1: We aren't booting from LiveCD - the rootfs that we are going to install must be downloaded from somewhere
     # 2: If we specify directly an image to install
-    if ! is_booting_from_live && [ -z "$_COS_INSTALL_ISO_URL" ] || [ -n "$COS_IMAGE" ] && [ -z "$_COS_INSTALL_ISO_URL" ]; then
+    if ! is_booting_from_live && [ -z "$_COS_INSTALL_ISO_URL" ] || [ -n "$_COS_IMAGE" ] && [ -z "$_COS_INSTALL_ISO_URL" ]; then
         find_upgrade_channel
     fi
 
