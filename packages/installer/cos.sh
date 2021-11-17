@@ -16,12 +16,13 @@ _GRUBCONF=/etc/cos/grub.cfg
 _DEFAULT_IMAGE_SIZE=3240
 
 ## cosign signatures
-COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
-COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
-COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
+_COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
+_COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
+_COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
 
 ## Upgrades
-CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+_CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
+_GRUB_ENTRY_NAME="cOs"
 
 _ARCH=$(uname -p)
 if [ "${_ARCH}" == "aarch64" ]; then
@@ -46,6 +47,53 @@ load_config() {
     if [ -e /etc/cos/config ]; then
         source /etc/cos/config
     fi
+
+    if [ -e /etc/cos-upgrade-image ]; then
+        source /etc/cos-upgrade-image
+    fi
+
+    # Load vars from files into internal vars
+    if [ -n "${VERIFY}" ]; then
+      _VERIFY=$VERIFY
+    fi
+
+    if [ -n "${GRUB_ENTRY_NAME}" ]; then
+      _GRUB_ENTRY_NAME=$GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COSIGN_REPOSITORY}" ]; then
+      _COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COSIGN_EXPERIMENTAL}" ]; then
+      _COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+      _COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${DEFAULT_IMAGE_SIZE}" ]; then
+      _DEFAULT_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${CHANNEL_UPGRADES}" ]; then
+      _CHANNEL_UPGRADES=$CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${UPGRADE_IMAGE}" ]; then
+      _UPGRADE_IMAGE=$UPGRADE_IMAGE
+    fi
+
+    if [ -n "${RECOVERY_IMAGE}" ]; then
+      _RECOVERY_IMAGE=$RECOVERY_IMAGE
+    fi
+
+
+    # export cosign values after loading values from file in case we have them setup there
+    export COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    export COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    export COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
 }
 
 prepare_chroot() {
@@ -479,7 +527,7 @@ install_grub()
         GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rf $_GRUBCONF $GRUBDIR/grub.cfg
+    cp -rf $GRUBCONF $GRUBDIR/grub.cfg
 
     if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
         sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
@@ -596,16 +644,8 @@ find_upgrade_channel() {
 
     load_config
 
-    if [ -e "/etc/cos-upgrade-image" ]; then
-        source /etc/cos-upgrade-image
-        # This can load the following vars
-        # UPGRADE_IMAGE
-        # CHANNEL_UPGRADES
-        # RECOVERY_IMAGE
-    fi
-
     if [ -n "$_NO_CHANNEL" ] && [ $_NO_CHANNEL == true ]; then
-        CHANNEL_UPGRADES=false
+        _CHANNEL_UPGRADES=false
     fi
 
     if [ -n "$_COS_IMAGE" ]; then
@@ -613,25 +653,17 @@ find_upgrade_channel() {
         _UPGRADE_IMAGE=$_COS_IMAGE
         echo "Upgrading to image $_UPGRADE_IMAGE"
     else
-        if [ -z "$UPGRADE_IMAGE" ]; then
-            # there is no UPGRADE_IMAGE on /etc/cos-upgrade-image so we default to system/cos
+        if [ -z "$_UPGRADE_IMAGE" ]; then
+            # there is no UPGRADE_IMAGE on /etc/cos-upgrade-image or env so we default to system/cos
             _UPGRADE_IMAGE="system/cos"
-        else
-          # there is a UPGRADE_IMAGE from either env vars or /etc/cos-upgrade-image, use that one
-          _UPGRADE_IMAGE=$UPGRADE_IMAGE
         fi
 
-        if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
+        if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ] && [ -n "$_RECOVERY_IMAGE" ]; then
             # if we have UPGRADE_RECOVERY set to true and there is a RECOVERY_IMAGE set we want to upgrade recovery
             # so set the upgrade image to the recovery one
-            _UPGRADE_IMAGE=$RECOVERY_IMAGE
+            _UPGRADE_IMAGE=$_RECOVERY_IMAGE
         fi
     fi
-
-    # export cosign values after loading values from file in case we have them setup there
-    export COSIGN_REPOSITORY=$COSIGN_REPOSITORY
-    export COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
-    export COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
 }
 
 is_squashfs() {
@@ -791,7 +823,7 @@ create_rootfs() {
     export TMPDIR=$temp_upgrade
 
     _args="$(luet_args)"
-    if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
+    if [ -n "$_CHANNEL_UPGRADES" ] && [ "$_CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
         luet install $_args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
@@ -888,7 +920,7 @@ reset_grub()
         GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rfv $_GRUBCONF $GRUBDIR/grub.cfg
+    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
 }
 
 reset_state() {
@@ -1068,11 +1100,9 @@ rebrand_cleanup()
 rebrand() {
     local grub_entry
     load_config
-    grub_entry="${GRUB_ENTRY_NAME:-cOS}"
-
     #trap rebrand_cleanup exit
 
-    rebrand_grub_menu "$grub_entry"
+    rebrand_grub_menu "${_GRUB_ENTRY_NAME}"
 }
 
 reset() {
