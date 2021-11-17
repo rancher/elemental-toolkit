@@ -746,7 +746,7 @@ luet_args() {
         args="--plugin luet-mtree"
     fi
 
-    if [ -z "$COSIGN" ]; then
+    if [ -z "$_COSIGN" ]; then
       args+=" --plugin luet-cosign"
     fi
 
@@ -1110,7 +1110,7 @@ upgrade() {
                 _VERIFY=false
                 ;;
             --no-cosign)
-                COSIGN=false
+                _COSIGN=false
                 ;;
             -h)
                 usage
@@ -1187,7 +1187,7 @@ install() {
                 _VERIFY=false
                 ;;
             --no-cosign)
-                COSIGN=false
+                _COSIGN=false
                 ;;
             --no-format)
                 COS_INSTALL_NO_FORMAT=true
