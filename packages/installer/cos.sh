@@ -48,6 +48,11 @@ load_full_config() {
   # afterwards we set the temporal store vars into the internal variables, overriding any defaults
   set_env_vars
   # after this, we load the flags and those will also override the internal values
+
+  # export cosign values after loading all values
+  export COSIGN_REPOSITORY=$_COSIGN_REPOSITORY
+  export COSIGN_EXPERIMENTAL=$_COSIGN_EXPERIMENTAL
+  export COSIGN_PUBLIC_KEY_LOCATION=$_COSIGN_PUBLIC_KEY_LOCATION
 }
 
 load_env_vars() {
@@ -187,11 +192,6 @@ load_config() {
       _RECOVERY_IMAGE=$RECOVERY_IMAGE
     fi
 
-
-    # export cosign values after loading values from file in case we have them setup there
-    export COSIGN_REPOSITORY=$COSIGN_REPOSITORY
-    export COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
-    export COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
 }
 
 prepare_chroot() {
