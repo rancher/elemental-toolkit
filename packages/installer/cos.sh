@@ -462,7 +462,7 @@ install_grub()
     fi
 
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
+        _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
     fi
 
     mkdir ${_TARGET}/proc || true
@@ -470,7 +470,7 @@ install_grub()
     mkdir ${_TARGET}/sys || true
     mkdir ${_TARGET}/tmp || true
 
-    grub2-install ${GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${_DEVICE}
+    grub2-install ${_GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
     GRUBDIR=
     if [ -d "${_STATEDIR}/grub" ]; then
@@ -862,10 +862,10 @@ upgrade_cleanup()
 reset_grub()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
+        _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
     #mount -o remount,rw ${_STATE} /boot/grub2
-    grub2-install ${GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${_DEVICE}
+    grub2-install ${_GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
     GRUBDIR=
     if [ -d "${_STATEDIR}/grub" ]; then
