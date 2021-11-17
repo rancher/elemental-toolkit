@@ -527,8 +527,8 @@ validate_device()
     fi
     if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
         _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-        COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$_COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
+        _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+        if [ -n "$_COS_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
             if [ "$_FORCE" == "true" ]; then
                 echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
                 return 0
@@ -564,8 +564,8 @@ find_partitions() {
         CURRENT=active.img
     fi
 
-    COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -n "$COS_PASSIVE" ]; then
+    _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+    if [ -n "$_COS_PASSIVE" ]; then
         CURRENT=passive.img
     fi
 
