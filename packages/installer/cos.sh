@@ -452,10 +452,10 @@ install_grub()
         GRUB_DEBUG="cos.debug"
     fi
 
-    if [ -z "${COS_INSTALL_TTY}" ]; then
+    if [ -z "${_COS_INSTALL_TTY}" ]; then
         TTY=$(tty | sed 's!/dev/!!')
     else
-        TTY=$COS_INSTALL_TTY
+        TTY=$_COS_INSTALL_TTY
     fi
 
     if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
@@ -1225,7 +1225,7 @@ install() {
                 ;;
             --tty)
                 shift 1
-                COS_INSTALL_TTY=$1
+                _COS_INSTALL_TTY=$1
                 ;;
             -h)
                 usage
