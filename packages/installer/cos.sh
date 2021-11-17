@@ -903,6 +903,7 @@ copy_passive() {
 }
 
 run_reset_hook() {
+    local loop_dir
     loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
     mount -t ext2 ${_STATEDIR}/cOS/passive.img $loop_dir
         
