@@ -797,7 +797,7 @@ create_rootfs() {
         luet install $args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
         luet cleanup
         set +x
-    elif [ "$DIRECTORY" == true ]; then
+    elif [ "$_DIRECTORY" == true ]; then
         echo "Upgrading from local folder: $_UPGRADE_IMAGE"
         rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_UPGRADE_IMAGE}/ $target
     else
@@ -1111,7 +1111,7 @@ upgrade() {
                 ;;
             --directory)
                 _NO_CHANNEL=true
-                DIRECTORY=true
+                _DIRECTORY=true
                 ;;
             --strict)
                 _STRICT_MODE=true
