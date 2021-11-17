@@ -520,7 +520,7 @@ validate_progs()
 
 validate_device()
 {
-    _DEVICE=$COS_INSTALL_DEVICE
+    _DEVICE=$_COS_INSTALL_DEVICE
     if [ -n "${_DEVICE}" ] && [ ! -b ${_DEVICE} ]; then
         echo "You should use an available device. Device ${_DEVICE} does not exist."
         exit 1
@@ -1238,7 +1238,7 @@ install() {
                     usage
                 fi
                 INTERACTIVE=true
-                COS_INSTALL_DEVICE=$1
+                _COS_INSTALL_DEVICE=$1
                 break
                 ;;
         esac
@@ -1252,7 +1252,7 @@ install() {
         find_upgrade_channel
     fi
 
-    if [ -z "$COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
+    if [ -z "$_COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
         usage
     fi
 
