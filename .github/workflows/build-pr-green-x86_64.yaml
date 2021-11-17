@@ -147,6 +147,12 @@ jobs:
           name: cOS-squashfs-test-installer-efi.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.record.zip
+          path: capture.webm
+          if-no-files-found: warn
   tests-squashfs-green-installer-bios:
     env:
       ARCH: x86_64
@@ -184,6 +190,12 @@ jobs:
         with:
           name: cOS-squashfs-test-installer-bios.serial.zip
           path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.record.zip
+          path: capture.webm
           if-no-files-found: warn
   qemu-squashfs-green:
     runs-on: ubuntu-latest
@@ -257,6 +269,12 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-Packer-squashfs-green-vbox-x86_64.capture.zip
+          path: capture.webm
+          if-no-files-found: error
   tests-squashfs-green:
     env:
       ARCH: x86_64
@@ -299,7 +317,13 @@ jobs:
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: tests/serial_port1
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.capture.zip
+          path: capture.webm
           if-no-files-found: warn
   iso-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -392,6 +416,12 @@ jobs:
           name: cOS-nonsquashfs-test-installer-efi.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.record.zip
+          path: capture.webm
+          if-no-files-found: warn
   tests-nonsquashfs-green-installer-bios:
     env:
       ARCH: x86_64
@@ -429,6 +459,12 @@ jobs:
         with:
           name: cOS-nonsquashfs-test-installer-bios.serial.zip
           path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.record.zip
+          path: capture.webm
           if-no-files-found: warn
   qemu-nonsquashfs-green:
     runs-on: ubuntu-latest
@@ -502,6 +538,12 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-Packer-nonsquashfs-green-vbox-x86_64.capture.zip
+          path: capture.webm
+          if-no-files-found: error
   tests-nonsquashfs-green:
     env:
       ARCH: x86_64
@@ -544,7 +586,13 @@ jobs:
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: tests/serial_port1
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.capture.zip
+          path: capture.webm
           if-no-files-found: warn
   raw-images-green:
     runs-on: ubuntu-latest
@@ -628,13 +676,15 @@ jobs:
           go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
-      - name: Change serial log ownership
+      - name: Change logs ownership
         if: failure()
         run: |
           USER_ID=$(id -u)
           GROUP_ID=$(id -g)
           sudo chown $USER_ID:$GROUP_ID serial_port1.log
+          sudo chown $USER_ID:$GROUP_ID capture.webm || true
           sudo chmod 777 serial_port1.log
+          sudo chmod 777 capture.webm || true
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
@@ -646,4 +696,10 @@ jobs:
         with:
           name: cOS-raw_disk_test_deploy-green.serial.zip
           path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-raw_disk_test_deploy-green.capture.zip
+          path: capture.webm
           if-no-files-found: warn
