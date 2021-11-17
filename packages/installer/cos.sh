@@ -223,7 +223,7 @@ do_format()
 
     echo "Formatting drives.."
 
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" != "gpt" ]; then
+    if [ -n "$_COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" != "gpt" ]; then
         echo "Custom layout only available with GPT based installations"
         exit 1
     fi
@@ -232,9 +232,9 @@ do_format()
     parted -s ${_DEVICE} mklabel ${_PARTTABLE}
 
     local PREFIX
-    
+
     # Partitioning via cloud-init config file
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
+    if [ -n "$_COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
         if [ "$_BOOTFLAG" == "esp" ]; then
             parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
             parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
@@ -250,7 +250,7 @@ do_format()
             parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
         fi
 
-        yip -s partitioning $COS_PARTITION_LAYOUT
+        yip -s partitioning $_COS_PARTITION_LAYOUT
 
         part_probe $_DEVICE
 
@@ -1213,7 +1213,7 @@ install() {
                 ;;
             --partition-layout)
                 shift 1
-                COS_PARTITION_LAYOUT=$1
+                _COS_PARTITION_LAYOUT=$1
                 ;;
             --iso)
                 shift 1
