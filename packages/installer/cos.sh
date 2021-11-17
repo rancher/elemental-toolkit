@@ -10,7 +10,7 @@ _ISOMNT=/run/initramfs/live
 _TARGET=/run/cos/target
 _RECOVERYDIR=/run/cos/recovery
 _RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
-GRUBCONF=/etc/cos/grub.cfg
+_GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
 _DEFAULT_IMAGE_SIZE=3240
@@ -473,7 +473,7 @@ install_grub()
         GRUBDIR="${STATEDIR}/grub2"
     fi
 
-    cp -rf $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rf $_GRUBCONF $GRUBDIR/grub.cfg
 
     if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
         sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
@@ -868,7 +868,7 @@ reset_grub()
         GRUBDIR="${STATEDIR}/grub2"
     fi
 
-    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rfv $_GRUBCONF $GRUBDIR/grub.cfg
 }
 
 reset_state() {
