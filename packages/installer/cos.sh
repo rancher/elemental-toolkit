@@ -235,9 +235,9 @@ do_format()
     
     # Partitioning via cloud-init config file
     if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
-        if [ "$BOOTFLAG" == "esp" ]; then
+        if [ "$_BOOTFLAG" == "esp" ]; then
             parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
-            parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
+            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
             PREFIX=${_DEVICE}
             if [ ! -e ${PREFIX}${STATE_NUM} ]; then
                 PREFIX=${_DEVICE}p
@@ -245,9 +245,9 @@ do_format()
             _BOOT=${PREFIX}1
             mkfs.vfat -F 32 ${_BOOT}
             fatlabel ${_BOOT} COS_GRUB
-        elif [ "$BOOTFLAG" == "bios_grub" ]; then
+        elif [ "$_BOOTFLAG" == "bios_grub" ]; then
             parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-            parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
+            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
         fi
 
         yip -s partitioning $COS_PARTITION_LAYOUT
@@ -266,7 +266,7 @@ do_format()
     local PERSISTENT_NUM
 
     # Standard partitioning
-    if [ "$_PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
+    if [ "$_PARTTABLE" = "gpt" ] && [ "$_BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
@@ -277,8 +277,8 @@ do_format()
         parted -s ${_DEVICE} mkpart primary ext4 100MB 15100MB # state
         parted -s ${_DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
         parted -s ${_DEVICE} mkpart primary ext4 23100MB 100% # persistent
-        parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
-    elif [ "$_PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
+        parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
+    elif [ "$_PARTTABLE" = "gpt" ] && [ "$_BOOTFLAG" == "bios_grub" ]; then
         BOOT_NUM=
         OEM_NUM=2
         STATE_NUM=3
@@ -289,7 +289,7 @@ do_format()
         parted -s ${_DEVICE} mkpart primary ext4 51MB 15051MB # state
         parted -s ${_DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
         parted -s ${_DEVICE} mkpart primary ext4 23051MB 100% # persistent
-        parted -s ${_DEVICE} set 1 ${BOOTFLAG} on
+        parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
     else
         BOOT_NUM=
         OEM_NUM=1
@@ -300,7 +300,7 @@ do_format()
         parted -s ${_DEVICE} mkpart primary ext4 50MB 15050MB # state
         parted -s ${_DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
         parted -s ${_DEVICE} mkpart primary ext4 23050MB 100% # persistent
-        parted -s ${_DEVICE} set 2 ${BOOTFLAG} on
+        parted -s ${_DEVICE} set 2 ${_BOOTFLAG} on
     fi
 
     part_probe $_DEVICE
@@ -487,16 +487,16 @@ setup_style()
 {
     if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
         _PARTTABLE=gpt
-        BOOTFLAG=esp
+        _BOOTFLAG=esp
         if [ ! -e /sys/firmware/efi ]; then
             echo WARNING: installing EFI on to a system that does not support EFI
         fi
     elif [ "$COS_INSTALL_FORCE_GPT" = "true" ]; then
         _PARTTABLE=gpt
-        BOOTFLAG=bios_grub
+        _BOOTFLAG=bios_grub
     else
         _PARTTABLE=msdos
-        BOOTFLAG=boot
+        _BOOTFLAG=boot
     fi
 }
 
