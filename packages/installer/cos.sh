@@ -4,7 +4,7 @@ set -e
 PROG=$0
 
 ## Installer
-PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
+_PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
 DISTRO=/run/rootfsbase
 ISOMNT=/run/initramfs/live
 TARGET=/run/cos/target
@@ -499,7 +499,7 @@ setup_style()
 
 validate_progs()
 {
-    for i in $PROGS; do
+    for i in $_PROGS; do
         if [ ! -x "$(which $i)" ]; then
             MISSING="${MISSING} $i"
         fi
