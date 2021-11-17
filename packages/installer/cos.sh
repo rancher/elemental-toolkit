@@ -600,7 +600,7 @@ find_upgrade_channel() {
         source /etc/cos-upgrade-image
     fi
 
-    if [ -n "$NO_CHANNEL" ] && [ $NO_CHANNEL == true ]; then
+    if [ -n "$_NO_CHANNEL" ] && [ $_NO_CHANNEL == true ]; then
         CHANNEL_UPGRADES=false
     fi
 
@@ -1094,10 +1094,10 @@ upgrade() {
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
-                NO_CHANNEL=true
+                _NO_CHANNEL=true
                 ;;
             --directory)
-                NO_CHANNEL=true
+                _NO_CHANNEL=true
                 DIRECTORY=true
                 ;;
             --strict)
@@ -1179,7 +1179,7 @@ install() {
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
-                NO_CHANNEL=true
+                _NO_CHANNEL=true
                 shift 1
                 _COS_IMAGE=$1
                 ;;
