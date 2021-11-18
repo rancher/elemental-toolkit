@@ -215,6 +215,11 @@ jobs:
     env:
       FLAVOR: green
       ARCH: x86_64
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: none
+      PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -230,11 +235,7 @@ jobs:
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
-          export PKR_VAR_arch=x86_64
-          export PKR_VAR_flavor=green
-          export PKR_VAR_feature=vagrant
-          export PKR_VAR_accelerator=none
-          PACKER_ARGS="-only qemu.cos" make packer
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-squashfs-green-QEMU-x86_64.qcow
@@ -250,16 +251,17 @@ jobs:
   vbox-squashfs-green:
     runs-on: macos-10.15
     needs: iso-squashfs-green
+    env:
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PACKER_TARGET: virtualbox-iso.cos
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
           name: cOS-squashfs-green-x86_64.iso.zip
-      # - name: Install deps
-      #   run: |
-      #     brew tap hashicorp/tap
-      #     brew install hashicorp/tap/packer
       - name: Install deps
         run: |
             brew install yq
@@ -267,8 +269,8 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          export PKR_VAR_build=$(cos_version)
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-squashfs-green-vbox-x86_64.ova
@@ -484,6 +486,11 @@ jobs:
     env:
       FLAVOR: green
       ARCH: x86_64
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: none
+      PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -499,11 +506,7 @@ jobs:
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
-          export PKR_VAR_arch=x86_64
-          export PKR_VAR_flavor=green
-          export PKR_VAR_feature=vagrant
-          export PKR_VAR_accelerator=none
-          PACKER_ARGS="-only qemu.cos" make packer
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-green-QEMU-x86_64.qcow
@@ -519,16 +522,17 @@ jobs:
   vbox-nonsquashfs-green:
     runs-on: macos-10.15
     needs: iso-nonsquashfs-green
+    env:
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PACKER_TARGET: virtualbox-iso.cos
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
           name: cOS-nonsquashfs-green-x86_64.iso.zip
-      # - name: Install deps
-      #   run: |
-      #     brew tap hashicorp/tap
-      #     brew install hashicorp/tap/packer
       - name: Install deps
         run: |
             brew install yq
@@ -536,8 +540,8 @@ jobs:
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch=x86_64' -var='flavor=green' -only virtualbox-iso.cos" make packer
+          export PKR_VAR_build=$(cos_version)
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-green-vbox-x86_64.ova

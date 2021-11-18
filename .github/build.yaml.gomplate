@@ -245,6 +245,17 @@
     env:
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
+      PKR_VAR_arch: {{{ $config.arch }}}
+      PKR_VAR_flavor: {{{ $flavor }}}
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: none
+      {{{if eq $config.arch "arm64" }}}
+      PKR_VAR_qemu_binary: qemu-system-aarch64
+      PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      PACKER_TARGET: qemu.cos-arm64
+      {{{else}}}
+      PACKER_TARGET: qemu.cos
+      {{{- end}}}
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -260,17 +271,7 @@
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
-          export PKR_VAR_arch={{{ $config.arch }}}
-          export PKR_VAR_flavor={{{ $flavor }}}
-          export PKR_VAR_feature=vagrant
-          export PKR_VAR_accelerator=none
-          {{{if eq $config.arch "arm64" }}}
-          export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-          PACKER_ARGS="-only qemu.cos-arm64" make packer
-          {{{else}}}
-          PACKER_ARGS="-only qemu.cos" make packer
-          {{{- end}}}
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
@@ -292,17 +293,17 @@
   vbox-{{{$subset}}}-{{{ $flavor }}}:
     runs-on: macos-10.15
     needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    env:
+      PKR_VAR_arch: {{{ $config.arch }}}
+      PKR_VAR_flavor: {{{ $flavor }}}
+      PKR_VAR_feature: vagrant
+      PACKER_TARGET: virtualbox-iso.cos
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
-
-      # - name: Install deps
-      #   run: |
-      #     brew tap hashicorp/tap
-      #     brew install hashicorp/tap/packer
       - name: Install deps
         run: |
             brew install yq
@@ -310,8 +311,8 @@
         run: |
           export YQ=/usr/local/bin/yq
           source .github/helpers.sh
-          COS_VERSION=$(cos_version)
-          PACKER_ARGS="-var='feature=vagrant' -var='build=$COS_VERSION' -var='arch={{{ $config.arch }}}' -var='flavor={{{ $flavor }}}' -only virtualbox-iso.cos" make packer
+          export PKR_VAR_build=$(cos_version)
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.ova
@@ -793,6 +794,9 @@
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      PKR_VAR_flavor: {{{ $flavor }}}
+      PKR_VAR_git_sha: "${GITHUB_SHA}"
+      PACKER_TARGET: amazon-ebs.cos
     steps:
       - uses: actions/checkout@v2
       {{{ tmpl.Exec "make" "deps" }}}
@@ -805,11 +809,9 @@
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
             export PKR_VAR_cos_version="${COS_VERSION}"
-            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
-            export PKR_VAR_flavor={{{ $flavor }}}
-            export PKR_VAR_git_sha="${GITHUB_SHA}"
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
-            make packer-aws
+            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
+            make packer
 {{{ end }}}
 
 {{{define "image_link"}}}

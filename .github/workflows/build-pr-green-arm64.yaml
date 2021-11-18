@@ -117,6 +117,13 @@ jobs:
     env:
       FLAVOR: green
       ARCH: arm64
+      PKR_VAR_arch: arm64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: none
+      PKR_VAR_qemu_binary: qemu-system-aarch64
+      PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      PACKER_TARGET: qemu.cos-arm64
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -132,13 +139,7 @@ jobs:
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
-          export PKR_VAR_arch=arm64
-          export PKR_VAR_flavor=green
-          export PKR_VAR_feature=vagrant
-          export PKR_VAR_accelerator=none
-          export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-          PACKER_ARGS="-only qemu.cos-arm64" make packer
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-squashfs-green-QEMU-arm64.qcow
@@ -270,6 +271,13 @@ jobs:
     env:
       FLAVOR: green
       ARCH: arm64
+      PKR_VAR_arch: arm64
+      PKR_VAR_flavor: green
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: none
+      PKR_VAR_qemu_binary: qemu-system-aarch64
+      PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      PACKER_TARGET: qemu.cos-arm64
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -285,13 +293,7 @@ jobs:
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
-          export PKR_VAR_arch=arm64
-          export PKR_VAR_flavor=green
-          export PKR_VAR_feature=vagrant
-          export PKR_VAR_accelerator=none
-          export PKR_VAR_qemu_binary="qemu-system-aarch64"
-          export PKR_VAR_firmware=/usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-          PACKER_ARGS="-only qemu.cos-arm64" make packer
+          make packer
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-green-QEMU-arm64.qcow
