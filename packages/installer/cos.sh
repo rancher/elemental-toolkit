@@ -92,6 +92,11 @@ load_env_vars() {
     if [ -n "${RECOVERY_IMAGE}" ]; then
       COS_ENV_RECOVERY_IMAGE=$RECOVERY_IMAGE
     fi
+
+    # Only support CURRENT override via env var, so send it directly into the internal var
+    if [ -n "${CURRENT}" ]; then
+      _CURRENT=$CURRENT
+    fi
 }
 
 set_env_vars() {
