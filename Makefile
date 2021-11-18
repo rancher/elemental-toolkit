@@ -95,9 +95,9 @@ DESTINATION?=$(ROOT_DIR)/build
 export MANIFEST?=$(ROOT_DIR)/manifest.yaml
 
 #
-# Arguments to packer for creating the ISO
+# Packer target to build
 #
-PACKER_ARGS?=-only virtualbox-iso.cos
+PACKER_TARGET?=virtualbox-iso.cos
 
 #
 # Used by .iso, .test, and .run
