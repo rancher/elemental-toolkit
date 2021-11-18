@@ -35,6 +35,7 @@ fi
 
 ## COMMON
 
+
 load_full_config() {
   # Config values are loaded in the following order:
   # defaults -> config -> env var -> flags
@@ -563,7 +564,6 @@ get_image()
         part_probe
         _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
-        args="$(luet_args)"
         create_rootfs "install" $_DISTRO $temp
     fi
 }
@@ -922,7 +922,7 @@ create_rootfs() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
-
+    local _args
     _args="$(luet_args)"
     if [ -n "$_CHANNEL_UPGRADES" ] && [ "$_CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
