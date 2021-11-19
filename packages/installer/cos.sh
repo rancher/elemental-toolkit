@@ -1397,6 +1397,14 @@ install() {
     # 2: If we specify directly an image to install
     if ! is_booting_from_live && [ -z "$_COS_INSTALL_ISO_URL" ] || [ -n "$_COS_IMAGE" ] && [ -z "$_COS_INSTALL_ISO_URL" ]; then
         find_upgrade_channel
+    else
+      # Beforehand the config was only loaded if the path above was set, so we loaded some vars needed for the upgrade
+      # But now the config is loaded on start, so we need to unset some of those loaded vars if we dont need them, otherwise
+      # we can wrongly install stuff
+      unset _UPGRADE_IMAGE
+      unset _RECOVERY_IMAGE
+      # Set channel upgrades to default value
+      _CHANNEL_UPGRADES=true
     fi
 
     if [ -z "$_COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
