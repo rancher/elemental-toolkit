@@ -630,7 +630,7 @@ install_grub()
         GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rf $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rf $_GRUBCONF $GRUBDIR/grub.cfg
 
     if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
         sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
@@ -1021,7 +1021,7 @@ reset_grub()
         GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rfv $_GRUBCONF $GRUBDIR/grub.cfg
 }
 
 reset_state() {
