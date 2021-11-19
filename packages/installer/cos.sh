@@ -889,7 +889,7 @@ luet_args() {
     local args
     args="--enable-logfile --logfile /tmp/luet.log"
     if [ -z "$_VERIFY" ] || [ "$_VERIFY" == true ]; then
-        args="--plugin luet-mtree"
+        args+=" --plugin luet-mtree"
     fi
 
     if [ -z "$_COSIGN" ]; then
