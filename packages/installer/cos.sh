@@ -1403,8 +1403,6 @@ install() {
       # we can wrongly install stuff
       unset _UPGRADE_IMAGE
       unset _RECOVERY_IMAGE
-      # Set channel upgrades to default value
-      _CHANNEL_UPGRADES=true
     fi
 
     if [ -z "$_COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
