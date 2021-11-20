@@ -1,0 +1,4 @@
+packages:
+- name: "odroid-c2"
+  category: "firmware"
+  version: "20170419-5.177"
