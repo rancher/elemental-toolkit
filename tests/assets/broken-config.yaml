@@ -1,0 +1,7 @@
+# stolen from https://gist.github.com/kantord/a56ea6c5920847a186d819633d6d6c18
+dashboard "Variables example":
+  - h1 text: Variables Example
+  -       dropdown my_var=pie:
+  - {"value": pie, "text": "Pie chart"}
+  - {"value": bar, "text": "Bar chart"}
+  p text: "Selected chart type: ${my_var}"

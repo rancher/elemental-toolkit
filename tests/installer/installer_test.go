@@ -1,11 +1,19 @@
 package cos_test
 
 import (
+	"fmt"
 	"github.com/rancher-sandbox/cOS/tests/sut"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry)  {
+	part, err := diskLayout.GetPartition(entry.Label)
+	Expect(err).To(BeNil())
+	Expect((part.Size/1024)/1024).To(Equal(entry.Size))
+	Expect(part.FsType).To(Equal(entry.FsType))
+}
 
 var _ = Describe("cOS Installer tests", func() {
 	var s *sut.SUT
@@ -53,16 +61,141 @@ var _ = Describe("cOS Installer tests", func() {
 			})
 			PIt("from url", func() {})
 		})
-		PContext("partition layout tests", func() {
-			It("with partition layout", func() {})
+		Context("partition layout tests", func() {
+			Context("with partition layout", func() {
+				It("Forcing GPT", func() {
+					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					By("Running the cos-installer with a layout file")
+					Expect(err).To(BeNil())
+					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					Expect(err).To(BeNil())
+					Expect(out).To(ContainSubstring("Copying cOS.."))
+					Expect(out).To(ContainSubstring("Installing GRUB.."))
+					Expect(out).To(ContainSubstring("Preparing recovery.."))
+					Expect(out).To(ContainSubstring("Preparing passive boot.."))
+					Expect(out).To(ContainSubstring("Formatting drives.."))
+					s.Reboot()
+					By("Checking we booted from the installed cOS")
+					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+
+					// check partition values
+					// Values have to match the yaml under ../assets/layout.yaml
+					// That is the file that the installer uses so partitions should match those values
+					disk := s.GetDiskLayout("/dev/sda")
+
+					for _, part := range []sut.PartitionEntry{
+						{
+							Label: "COS_STATE",
+							Size: 8192,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_OEM",
+							Size: 10,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_RECOVERY",
+							Size: 4000,
+							FsType: sut.Ext4,
+						},
+						{
+							Label: "COS_PERSISTENT",
+							Size: 100,
+							FsType: sut.Ext4,
+						},
+					}{
+						CheckPartitionValues(disk, part)
+					}
+				})
+				It("No GPT", func() {
+					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					By("Running the cos-installer with a layout file")
+					Expect(err).To(BeNil())
+					out, err := s.Command("cos-installer --partition-layout /usr/local/layout.yaml /dev/sda")
+					Expect(err).ToNot(BeNil())
+					Expect(out).To(ContainSubstring("Formatting drives.."))
+					Expect(out).To(ContainSubstring("Custom layout only available with GPT based installations"))
+				})
+			})
 		})
-		PContext("efi/gpt tests", func() {
-			It("forces gpt", func() {})
-			It("forces efi", func() {})
+		Context("efi/gpt tests", func() {
+			It("forces gpt", func() {
+				By("Running the installer")
+				out, err := s.Command("cos-installer --force-gpt /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				s.Reboot()
+				By("Checking we booted from the installed cOS")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+			})
+			It("forces efi", func() {
+				By("Running the installer")
+				out, err := s.Command("cos-installer --force-efi /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
+				s.Reboot()
+				// We are on a bios system, we should not be able to boot from an EFI installed system!
+				By("Checking we booted from the CD")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.LiveCD))
+			})
 		})
-		PContext("config file tests", func() {
-			It("uses a proper config file", func() {})
-			It("uses a wrong config file", func() {})
+		Context("config file tests", func() {
+			It("uses a proper config file", func() {
+				err := s.SendFile("../assets/config.yaml", "/tmp/config.yaml", "0770")
+				By("Running the cos-installer with a config file")
+				Expect(err).To(BeNil())
+				By("Running the installer")
+				out, err := s.Command("cos-installer --config /tmp/config.yaml /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				s.Reboot()
+				By("Checking we booted from the installed cOS")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+				By("Checking config file was run")
+				out, err = s.Command("stat /oem/99_custom.yaml")
+				Expect(err).To(BeNil())
+				out, err = s.Command("hostname")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("testhostname"))
+
+			})
+			It("uses a wrong config file", func() {
+				err := s.SendFile("../assets/broken-config.yaml", "/tmp/config.yaml", "0770")
+				By("Running the cos-installer with a broken config file")
+				Expect(err).To(BeNil())
+				By("Running the installer")
+				out, err := s.Command("cos-installer --config /tmp/config.yaml /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				Expect(out).To(ContainSubstring("fatal error: 1 error occurred:"))
+				s.Reboot()
+				By("Checking we booted from the installed cOS")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+				By("Checking config file is there")
+				out, err = s.Command("stat /oem/99_custom.yaml")
+				Expect(err).To(BeNil())
+				By("Check that yip fails to load it")
+				out, err = s.Command("yip /oem/99_custom.yaml")
+				Expect(err).ToNot(BeNil())
+			})
 		})
 	})
 	Context("Using efi", func() {
@@ -78,6 +211,8 @@ var _ = Describe("cOS Installer tests", func() {
 			out, err = s.Command("df -h /")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
+			s.EmptyDisk("/dev/sda")
+			_, _ = s.Command("sync")
 		})
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
@@ -87,9 +222,107 @@ var _ = Describe("cOS Installer tests", func() {
 			s.SetCOSCDLocation()
 			// Set Cos CD in the drive
 			s.RestoreCOSCD()
-			s.EmptyDisk("/dev/sda")
 			By("Reboot to make sure we boot from CD")
 			s.Reboot()
+		})
+		Context("partition layout tests", func() {
+			Context("with partition layout", func() {
+				It("Forcing GPT", func() {
+					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					By("Running the cos-installer with a layout file")
+					Expect(err).To(BeNil())
+					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					fmt.Printf(out)
+					Expect(err).To(BeNil())
+					Expect(out).To(ContainSubstring("Copying cOS.."))
+					Expect(out).To(ContainSubstring("Installing GRUB.."))
+					Expect(out).To(ContainSubstring("Preparing recovery.."))
+					Expect(out).To(ContainSubstring("Preparing passive boot.."))
+					Expect(out).To(ContainSubstring("Formatting drives.."))
+					// Remove iso so we boot directly from the disk
+					s.EjectCOSCD()
+					// Reboot so we boot into the just installed cos
+					s.Reboot(360)
+					By("Checking we booted from the installed cOS")
+					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+					// check partition values
+					// Values have to match the yaml under ../assets/layout.yaml
+					// That is the file that the installer uses so partitions should match those values
+					disk := s.GetDiskLayout("/dev/sda")
+
+					for _, part := range []sut.PartitionEntry{
+						{
+							Label: "COS_STATE",
+							Size: 8192,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_OEM",
+							Size: 10,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_RECOVERY",
+							Size: 4000,
+							FsType: sut.Ext4,
+						},
+						{
+							Label: "COS_PERSISTENT",
+							Size: 100,
+							FsType: sut.Ext4,
+						},
+					}{
+						CheckPartitionValues(disk, part)
+					}
+				})
+				It("Not forcing GPT", func() {
+					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					By("Running the cos-installer with a layout file")
+					Expect(err).To(BeNil())
+					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					Expect(err).To(BeNil())
+					Expect(out).To(ContainSubstring("Copying cOS.."))
+					Expect(out).To(ContainSubstring("Installing GRUB.."))
+					Expect(out).To(ContainSubstring("Preparing recovery.."))
+					Expect(out).To(ContainSubstring("Preparing passive boot.."))
+					Expect(out).To(ContainSubstring("Formatting drives.."))
+					// Remove iso so we boot directly from the disk
+					s.EjectCOSCD()
+					// Reboot so we boot into the just installed cos
+					s.Reboot(360)
+					By("Checking we booted from the installed cOS")
+					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+					// check partition values
+					// Values have to match the yaml under ../assets/layout.yaml
+					// That is the file that the installer uses so partitions should match those values
+					disk := s.GetDiskLayout("/dev/sda")
+
+					for _, part := range []sut.PartitionEntry{
+						{
+							Label: "COS_STATE",
+							Size: 8192,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_OEM",
+							Size: 10,
+							FsType: sut.Ext2,
+						},
+						{
+							Label: "COS_RECOVERY",
+							Size: 4000,
+							FsType: sut.Ext4,
+						},
+						{
+							Label: "COS_PERSISTENT",
+							Size: 100,
+							FsType: sut.Ext4,
+						},
+					}{
+						CheckPartitionValues(disk, part)
+					}
+				})
+			})
 		})
 		Context("install source tests", func() {
 			It("from iso", func() {
@@ -110,16 +343,42 @@ var _ = Describe("cOS Installer tests", func() {
 			})
 			PIt("from url", func() {})
 		})
-		PContext("partition layout tests", func() {
-			It("with partition layout", func() {})
-		})
-		PContext("efi/gpt tests", func() {
-			It("forces gpt", func() {})
-			It("forces efi", func() {})
-		})
-		PContext("config file tests", func() {
-			It("uses a proper config file", func() {})
-			It("uses a wrong config file", func() {})
+		Context("efi/gpt tests", func() {
+			It("forces gpt", func() {
+				By("Running the installer")
+				out, err := s.Command("cos-installer --force-gpt /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
+				// Remove iso so we boot directly from the disk
+				s.EjectCOSCD()
+				// Reboot so we boot into the just installed cos
+				s.Reboot(360)
+				By("Checking we booted from the installed cOS")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+			})
+			It("forces efi", func() {
+				By("Running the installer")
+				out, err := s.Command("cos-installer --force-efi /dev/sda")
+				Expect(err).To(BeNil())
+				Expect(out).To(ContainSubstring("Copying cOS.."))
+				Expect(out).To(ContainSubstring("Installing GRUB.."))
+				Expect(out).To(ContainSubstring("Preparing recovery.."))
+				Expect(out).To(ContainSubstring("Preparing passive boot.."))
+				Expect(out).To(ContainSubstring("Formatting drives.."))
+				Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
+				// Remove iso so we boot directly from the disk
+				s.EjectCOSCD()
+				// Reboot so we boot into the just installed cos
+				s.Reboot(360)
+				// We are on an efi system, should boot from active
+				By("Checking we booted from Active partition")
+				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+			})
 		})
 	})
 })
