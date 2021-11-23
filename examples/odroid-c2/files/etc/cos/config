@@ -4,18 +4,21 @@
 # Disable/enable image verification during upgrades ( default: true )
 VERIFY=false
 
+# Disable cosign by default
+COSIGN=false
+
 # Disable/enable upgrades via release channels instead of container images. ( default: true )
 CHANNEL_UPGRADES=false
 
 # Default container image used for upgrades. ( defaults to system/cos with channel CHANNEL_UPGRADES enabled )
-UPGRADE_IMAGE="quay.io/mudler/cos-test:cos-standard"
+UPGRADE_IMAGE="quay.io/costoolkit/examples:odroid-c2-latest"
 
 # Default recovery image to use when upgrading the recovery partition
 # ( defaults to recovery/cos in vanilla cOS images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).
-RECOVERY_IMAGE="quay.io/mudler/cos-test:cos-standard"
+RECOVERY_IMAGE="quay.io/costoolkit/examples:odroid-c2-latest"
 
 # GRUB entry to display on boot. ( defaults: cOS )
-GRUB_ENTRY_NAME="example"
+GRUB_ENTRY_NAME="cOS Odroid C2 example"
 
 # Space separated list of additional paths that are used to
 # source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )
@@ -31,7 +34,7 @@ COSIGN_REPOSITORY="raccos/releases-green"
 
 # This sets keyless verify on building packages with luet and the luet-cosign plugin.
 # 1  = enabled keyless, 0 = disabled, uses normal public key verification
-COSIGN_EXPERIMENTAL=1
+COSIGN_EXPERIMENTAL=0
 
 # This sets the location of the public key to use to verify the packages installed by luet during upgrade/deploy
 # This can be set to file, URL, KMS URI or Kubernetes Secret
@@ -39,7 +42,7 @@ COSIGN_EXPERIMENTAL=1
 COSIGN_PUBLIC_KEY_LOCATION=""
 
 # Default size (in MB) of disk image files (.img) created during upgrades
-DEFAULT_IMAGE_SIZE=3240
+DEFAULT_IMAGE_SIZE=1200
 
 # Path to default configuration grub file
 GRUBCONF="/etc/cos/grub.cfg"

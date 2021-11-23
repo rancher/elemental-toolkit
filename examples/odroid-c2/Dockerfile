@@ -22,9 +22,6 @@ RUN zypper in -y \
     multipath-tools \
     nfs-utils \
     open-iscsi \
-    open-vm-tools \
-    python-azure-agent \
-    qemu-guest-agent \
     rng-tools \
     systemd \
     vim \
@@ -33,6 +30,15 @@ RUN zypper in -y \
     e2fsprogs \
     dosfstools \
     kernel-default \
+    coreutils \
+    less \
+    device-mapper \
+    grub2 \
+    which \
+    curl \
+    open-vm-tools \
+    python-azure-agent \
+    qemu-guest-agent \
     kernel-firmware-bnx2 \
     kernel-firmware-i915 \
     kernel-firmware-intel \
@@ -41,12 +47,6 @@ RUN zypper in -y \
     kernel-firmware-network \
     kernel-firmware-platform \
     kernel-firmware-realtek \
-    coreutils \
-    less \
-    device-mapper \
-    grub2 \
-    which \
-    curl \
     nano \
     gawk \
     haveged \
@@ -55,6 +55,8 @@ RUN zypper in -y \
     timezone \
     jq \
     gptfdisk
+
+RUN zypper cc
 
 # Copy the luet config file pointing to the upgrade repository
 COPY conf/luet.yaml /etc/luet/luet.yaml
@@ -66,4 +68,8 @@ RUN luet install -y meta/cos-verify
 RUN luet install --plugin luet-cosign -y meta/cos-minimal
 
 COPY files/ /
+
+
 RUN mkinitrd
+
+RUN ln -sf Image /boot/vmlinuz

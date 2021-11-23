@@ -423,4 +423,8 @@ umount $DRIVE || true
 
 echo ">> Done writing $output_image"
 
+echo ">> Creating SHA256 sum"
+
+sha256sum $output_image > $output_image.sha256
+
 cleanup

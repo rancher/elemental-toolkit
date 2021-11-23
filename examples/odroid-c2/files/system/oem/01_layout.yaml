@@ -1,0 +1,9 @@
+name: "Immutable Layout"
+stages:
+  rootfs:
+    - if: '[ ! -f "/run/cos/recovery_mode" ]'
+      name: "Don't require COS_PERSISTENT"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        VOLUMES: "LABEL=COS_OEM:/oem"
+        OVERLAY: "tmpfs:25%"
