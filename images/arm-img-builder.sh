@@ -343,16 +343,25 @@ rm -rf $EFI/var
 
 echo ">> Writing image and partition table"
 dd if=/dev/zero of="${output_image}" bs=1024000 count="${size}" || exit 1
-sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
+#if [ "$model" == "rpi4" || "$model" == "rpi3" ]; then 
+#    sgdisk -n 1:8192:+32M -c 1:EFI -t 1:0b00 ${output_image}
+#else
+#    sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
+#fi
+sgdisk -n 1:8192:+96M -c 1:EFI -t 1:0c00 ${output_image}
 sgdisk -n 2:0:+64M -c 2:oem -t 2:8300 ${output_image}
 sgdisk -n 3:0:+${state_size}M -c 3:state -t 3:8300 ${output_image}
 sgdisk -n 4:0:+${recovery_size}M -c 4:recovery -t 4:8300 ${output_image}
 
 sgdisk -m 1:2:3:4 ${output_image}
 
+#if [ "$model" == "rpi4"] || ["$model" == "rpi3" ]; then 
+    sfdisk --part-type ${output_image} 1 c
+#fi
+
 # Prepare the image and copy over the files
 
-DRIVE=$(losetup -f "${output_image}" --show)
+export DRIVE=$(losetup -f "${output_image}" --show)
 if [ -z "${DRIVE}" ]; then
 	echo "Cannot execute losetup for $output_image"
 	exit 1
@@ -365,7 +374,7 @@ if [ -z "$device" ]; then
   exit 1
 fi
 
-device="/dev/mapper/${device}"
+export device="/dev/mapper/${device}"
 
 partprobe
 

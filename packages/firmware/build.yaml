@@ -7,18 +7,39 @@ image: opensuse/leap:15.3
 {{end}}
 
 prelude:
-# - zypper addrepo -G https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/devel:ARM:Factory:Contrib:OdroidC2.repo
-# - zypper --gpg-auto-import-keys ref
 - zypper in -y wget
-#{   { template "distro_install" (dict "Values" .Values "Packages" "wget")}}
 
 steps:
-# - mkdir -p /data/boot
-# - zypper --installroot /data  in -yf odroidc2-firmware.aarch64
-# Without zypper:
-- wget https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/aarch64/odroidc2-firmware-{{.Values.version}}.aarch64.rpm
+{{if eq .Values.name "odroid-c2"}}
 - mkdir -p /data/boot
+- wget https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/aarch64/odroidc2-firmware-{{.Values.version}}.aarch64.rpm
 - rpm2cpio odroidc2-firmware-{{.Values.version}}.aarch64.rpm | cpio -idmv
 - mv boot/* /data/boot
-
 package_dir: "/data/boot"
+{{end}}
+
+{{if or (eq .Values.name "u-boot-rpi3") (eq .Values.name "u-boot-rpi4")}}
+- mkdir -p /data/{boot,usr}
+- wget https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/aarch64/{{.Values.name}}-{{.Values.version}}.aarch64.rpm
+- rpm2cpio {{.Values.name}}-{{.Values.version}}.aarch64.rpm | cpio -idmv
+- mv usr/* /data
+#- mv boot/* /data
+- mv boot/vc/* /data
+package_dir: "/data"
+{{end}}
+
+{{if or (eq .Values.name "raspberrypi-firmware") (eq .Values.name
+"raspberrypi-firmware-config") (eq .Values.name "raspberrypi-firmware-dt")}}
+- mkdir -p /data/boot
+- mkdir -p /data/usr
+- wget -c https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/noarch/{{.Values.name}}-{{.Values.version}}.noarch.rpm
+- rpm2cpio {{.Values.name}}-{{.Values.version}}.noarch.rpm | cpio -idmv
+{{if or (eq .Values.name "raspberrypi-firmware")}}
+- mv usr/* /data
+{{end}}
+- mv boot/vc/* /data
+- rm -rfv boot
+- rm -rfv usr
+package_dir: "/data"
+{{end}}
+
