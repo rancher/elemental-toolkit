@@ -1,0 +1,16 @@
+name: "Immutable Layout"
+stages:
+  rootfs:
+    # As the image creation script doesn't set up any COS_PERSISTENT partition
+    # or we either partition one on boot, or the user has to provide it.
+    # With this setting we don't require COS_PERSISTENT to be mounted,
+    # that means that the system will boot only in ephemeral mode with no persistency except 
+    # OEM files.
+    # To override this behavior, simply overwrite this file OR specify
+    # a cloud init which is executed after this one in the /oem partition (e.g. 02_custom_layout.yaml ).
+    - if: '[ ! -f "/run/cos/recovery_mode" ]'
+      name: "Don't require COS_PERSISTENT"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        VOLUMES: "LABEL=COS_OEM:/oem"
+        OVERLAY: "tmpfs:25%"
