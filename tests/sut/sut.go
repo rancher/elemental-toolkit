@@ -191,7 +191,7 @@ func (s *SUT) GetOSRelease(ss string) string {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(out).ToNot(Equal(""))
 
-	return out
+	return strings.TrimSpace(out)
 }
 
 func (s *SUT) GetArch() string {
