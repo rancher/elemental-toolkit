@@ -2,11 +2,9 @@ package cos_test
 
 import (
 	"fmt"
-	"github.com/rancher-sandbox/cOS/tests/sut"
-	"strings"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/cOS/tests/sut"
 )
 
 func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry)  {
@@ -79,7 +77,7 @@ var _ = Describe("cOS Installer tests", func() {
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-				Expect(strings.TrimSpace(s.GetOSRelease("VERSION"))).To(Equal(s.TestVersion))
+				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
 			})
 		})
 		Context("partition layout tests", func() {
@@ -377,7 +375,7 @@ var _ = Describe("cOS Installer tests", func() {
 				s.Reboot(360)
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-				Expect(strings.TrimSpace(s.GetOSRelease("VERSION"))).To(Equal(s.TestVersion))
+				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
 			})
 		})
 		Context("efi/gpt tests", func() {

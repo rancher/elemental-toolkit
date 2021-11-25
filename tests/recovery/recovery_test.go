@@ -86,7 +86,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			upgradedVersion := s.GetOSRelease("VERSION")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
-			Expect(upgradedVersion).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
+			Expect(upgradedVersion).To(Equal(s.TestVersion))
 		})
 	})
 
@@ -111,7 +111,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				out = s.GetOSRelease("VERSION")
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
+				Expect(out).To(Equal(s.TestVersion))
 
 				By("rebooting back to active")
 				s.Reboot()
