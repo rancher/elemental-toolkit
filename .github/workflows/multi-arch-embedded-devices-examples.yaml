@@ -1,11 +1,10 @@
 ---
-name: 'build multi-arch example files'
+name: 'Build multi-arch embedded devices example images'
 
 on:
   push:
     branches:
       - master
-      - odroid_c2
     tags:
       - '*'
 
