@@ -1,6 +1,7 @@
 package sut
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bramvdbogaerde/go-scp"
 	"net"
@@ -28,7 +29,32 @@ const (
 	UnknownBoot = iota
 
 	TimeoutRawDiskTest = 600  // Timeout to connect for recovery_raw_disk_test
+
+	Ext2 = "ext2"
+	Ext3 = "ext3"
+	Ext4 = "ext4"
 )
+
+// DiskLayout is the struct that contains the disk output from lsblk
+type DiskLayout struct {
+	BlockDevices []PartitionEntry `json:"blockdevices"`
+}
+
+// PartitionEntry represents a partition entry
+type PartitionEntry struct {
+	Label string `json:"label,omitempty"`
+	Size int `json:"size,omitempty"`
+	FsType string `json:"fstype,omitempty"`
+}
+
+func (d DiskLayout) GetPartition(label string) (PartitionEntry, error) {
+	for _, device := range d.BlockDevices {
+		if device.Label == label {
+			return device, nil
+		}
+	}
+	return PartitionEntry{}, nil
+}
 
 type SUT struct {
 	Host     string
@@ -385,9 +411,9 @@ func (s SUT) GatherLog(logPath string) {
 // used mainly for installer testing booting from iso
 func (s *SUT) EmptyDisk(disk string)  {
 	By(fmt.Sprintf("Trashing %s to restore VM to a blank state", disk))
-	// 34*512 byte sectors should cover both MBR and GPT
-	_, err := s.Command(fmt.Sprintf("dd if=/dev/zero of=%s bs=512 count=34", disk))
-	Expect(err).To(BeNil())
+	_, _ = s.Command(fmt.Sprintf("wipefs -af %s*", disk))
+	_, _ = s.Command("sync")
+	_, _ = s.Command("sleep 5")
 }
 
 // SetCOSCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
@@ -413,6 +439,18 @@ func (s *SUT) RestoreCOSCD()  {
 	out, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s --forceunmount", s.CDLocation)).CombinedOutput()
 	fmt.Printf(string(out))
 	Expect(err).To(BeNil())
+}
+
+func (s SUT) GetDiskLayout(disk string) DiskLayout{
+	// -b size in bytes
+	// -n no headings
+	// -J json output
+	diskLayout := DiskLayout{}
+	out, err := s.Command(fmt.Sprintf("lsblk %s -o LABEL,SIZE,FSTYPE -b -n -J", disk))
+	Expect(err).To(BeNil())
+	err = json.Unmarshal([]byte(strings.TrimSpace(out)), &diskLayout)
+	Expect(err).To(BeNil())
+	return diskLayout
 }
 
 // DialWithDeadline Dials SSH with a deadline to avoid Read timeouts
