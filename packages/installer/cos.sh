@@ -4,34 +4,29 @@ set -e
 PROG=$0
 
 ## Installer
-PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
-DISTRO=/run/rootfsbase
-ISOMNT=/run/initramfs/live
-ISOBOOT=${ISOMNT}/boot
-TARGET=/run/cos/target
-RECOVERYDIR=/run/cos/recovery
-RECOVERYSQUASHFS=${ISOMNT}/recovery.squashfs
-GRUBCONF=/etc/cos/grub.cfg
+_PROGS="dd curl mkfs.ext4 mkfs.vfat fatlabel parted partprobe grub2-install grub2-editenv"
+_DISTRO=/run/rootfsbase
+_ISOMNT=/run/initramfs/live
+_TARGET=/run/cos/target
+_RECOVERYDIR=/run/cos/recovery
+_RECOVERYSQUASHFS=${_ISOMNT}/recovery.squashfs
+_GRUBCONF=/etc/cos/grub.cfg
 
 # Default size (in MB) of disk image files (.img) created during upgrades
-DEFAULT_IMAGE_SIZE=3240
+_DEFAULT_IMAGE_SIZE=3240
 
 ## cosign signatures
-COSIGN_REPOSITORY="${COSIGN_REPOSITORY:-raccos/releases-:FLAVOR:}"
-COSIGN_EXPERIMENTAL="${COSIGN_EXPERIMENTAL:-1}"
-COSIGN_PUBLIC_KEY_LOCATION="${COSIGN_PUBLIC_KEY_LOCATION:-}"
+_COSIGN_REPOSITORY="raccos/releases-:FLAVOR:"
+_COSIGN_EXPERIMENTAL=1
+_COSIGN_PUBLIC_KEY_LOCATION=""
 
 ## Upgrades
-CHANNEL_UPGRADES="${CHANNEL_UPGRADES:-true}"
-ARCH=$(uname -p)
-if [ "${ARCH}" == "aarch64" ]; then
-  ARCH="arm64"
-fi
+_CHANNEL_UPGRADES="true"
+_GRUB_ENTRY_NAME="cOs"
 
-ARCH=$(uname -p)
-
-if [ "${ARCH}" == "aarch64" ]; then
-  ARCH="arm64"
+_ARCH=$(uname -p)
+if [ "${_ARCH}" == "aarch64" ]; then
+  _ARCH="arm64"
 fi
 
 if [ "$COS_DEBUG" = true ]; then
@@ -40,7 +35,113 @@ fi
 
 ## COMMON
 
+
+load_full_config() {
+  # Config values are loaded in the following order:
+  # defaults -> config -> env var -> flags
+  # looks a bit convoluted but mainly we want to avoid that the load of config files overrides
+  # actual env vars as they share the same name
+  # so first we load the env vars and store them in temporary vars
+  load_env_vars
+  # then we load the config files and fill the internal variables used along the script with those values IF there isnt
+  # a temporary env var for the same value
+  load_config
+  # afterwards we set the temporal store vars into the internal variables, overriding any defaults
+  set_env_vars
+  # after this, we load the flags and those will also override the internal values
+
+  # export cosign values after loading all values
+  export COSIGN_REPOSITORY=$_COSIGN_REPOSITORY
+  export COSIGN_EXPERIMENTAL=$_COSIGN_EXPERIMENTAL
+  export COSIGN_PUBLIC_KEY_LOCATION=$_COSIGN_PUBLIC_KEY_LOCATION
+}
+
+load_env_vars() {
+    # Load vars from environment variables into temporal vars
+    if [ -n "${VERIFY}" ]; then
+      COS_ENV_VERIFY=$VERIFY
+    fi
+
+    if [ -n "${GRUB_ENTRY_NAME}" ]; then
+      COS_ENV_GRUB_ENTRY_NAME=$GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COSIGN_REPOSITORY}" ]; then
+      COS_ENV_COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COSIGN_EXPERIMENTAL}" ]; then
+      COS_ENV_COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+      COS_ENV_COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${DEFAULT_IMAGE_SIZE}" ]; then
+      COS_ENV_DEFAULT_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${CHANNEL_UPGRADES}" ]; then
+      COS_ENV_CHANNEL_UPGRADES=$CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${UPGRADE_IMAGE}" ]; then
+      COS_ENV_UPGRADE_IMAGE=$UPGRADE_IMAGE
+    fi
+
+    if [ -n "${RECOVERY_IMAGE}" ]; then
+      COS_ENV_RECOVERY_IMAGE=$RECOVERY_IMAGE
+    fi
+
+    # Only support CURRENT override via env var, so send it directly into the internal var
+    if [ -n "${CURRENT}" ]; then
+      _CURRENT=$CURRENT
+    fi
+}
+
+set_env_vars() {
+    # Set the temp stored env vars into the internal values after loading the config ones
+    # Load vars from environment variables into internal vars
+    if [ -n "${COS_ENV_VERIFY}" ]; then
+      _VERIFY=$COS_ENV_VERIFY
+    fi
+
+    if [ -n "${COS_ENV_GRUB_ENTRY_NAME}" ]; then
+      _GRUB_ENTRY_NAME=$COS_ENV_GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_REPOSITORY}" ]; then
+      _COSIGN_REPOSITORY=$COS_ENV_COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_EXPERIMENTAL}" ]; then
+      _COSIGN_EXPERIMENTAL=$COS_ENV_COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COS_ENV_COSIGN_PUBLIC_KEY_LOCATION}" ]; then
+      _COSIGN_PUBLIC_KEY_LOCATION=$COS_ENV_COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${COS_ENV_DEFAULT_IMAGE_SIZE}" ]; then
+      _DEFAULT_IMAGE_SIZE=$COS_ENV_DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${COS_ENV_CHANNEL_UPGRADES}" ]; then
+      _CHANNEL_UPGRADES=$COS_ENV_CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${COS_ENV_UPGRADE_IMAGE}" ]; then
+      _UPGRADE_IMAGE=$COS_ENV_UPGRADE_IMAGE
+    fi
+
+    if [ -n "${COS_ENV_RECOVERY_IMAGE}" ]; then
+      _RECOVERY_IMAGE=$COS_ENV_RECOVERY_IMAGE
+    fi
+}
+
 load_config() {
+    # in here we load the config files
     if [ -e /etc/environment ]; then
         source /etc/environment
     fi
@@ -52,6 +153,51 @@ load_config() {
     if [ -e /etc/cos/config ]; then
         source /etc/cos/config
     fi
+
+    if [ -e /etc/cos-upgrade-image ]; then
+        source /etc/cos-upgrade-image
+    fi
+
+    # Load vars from files into internal vars
+    # Always check that the vars loaded from env are not in there
+    # if we have vars from env, then skip overriding
+
+    if [ -n "${VERIFY}" ] && [[ -z "${COS_ENV_VERIFY}" ]]; then
+      _VERIFY=$VERIFY
+    fi
+
+    if [ -n "${GRUB_ENTRY_NAME}" ] && [[ -z "${COS_ENV_GRUB_ENTRY_NAME}" ]]; then
+      _GRUB_ENTRY_NAME=$GRUB_ENTRY_NAME
+    fi
+
+    if [ -n "${COSIGN_REPOSITORY}" ] && [[ -z "${COS_ENV_COSIGN_REPOSITORY}" ]]; then
+      _COSIGN_REPOSITORY=$COSIGN_REPOSITORY
+    fi
+
+    if [ -n "${COSIGN_EXPERIMENTAL}" ] && [[ -z "${COS_ENV_COSIGN_EXPERIMENTAL}" ]]; then
+      _COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
+    fi
+
+    if [ -n "${COSIGN_PUBLIC_KEY_LOCATION}" ] && [[ -z "${COS_ENV_COSIGN_PUBLIC_KEY_LOCATION}" ]]; then
+      _COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
+    fi
+
+    if [ -n "${DEFAULT_IMAGE_SIZE}" ] && [[ -z "${COS_ENV_DEFAULT_IMAGE_SIZE}" ]]; then
+      _DEFAULT_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+    fi
+
+    if [ -n "${CHANNEL_UPGRADES}" ] && [[ -z "${COS_ENV_CHANNEL_UPGRADES}" ]]; then
+      _CHANNEL_UPGRADES=$CHANNEL_UPGRADES
+    fi
+
+    if [ -n "${UPGRADE_IMAGE}" ] && [[ -z "${COS_ENV_UPGRADE_IMAGE}" ]]; then
+      _UPGRADE_IMAGE=$UPGRADE_IMAGE
+    fi
+
+    if [ -n "${RECOVERY_IMAGE}" ] && [[ -z "${COS_ENV_RECOVERY_IMAGE}" ]]; then
+      _RECOVERY_IMAGE=$RECOVERY_IMAGE
+    fi
+
 }
 
 prepare_chroot() {
@@ -81,7 +227,6 @@ run_hook() {
     cleanup_chroot $dir
 }
 
-
 is_mounted() {
     mountpoint -q "$1"
 }
@@ -103,11 +248,11 @@ is_booting_from_live() {
 }
 
 prepare_target() {
-    mkdir -p ${STATEDIR}/cOS || true
-    rm -rf ${STATEDIR}/cOS/transition.img || true
-    dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${STATEDIR}/cOS/transition.img
-    mount -t ext2 -o loop ${STATEDIR}/cOS/transition.img $TARGET
+    mkdir -p ${_STATEDIR}/cOS || true
+    rm -rf ${_STATEDIR}/cOS/transition.img || true
+    dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+    mkfs.ext2 ${_STATEDIR}/cOS/transition.img
+    mount -t ext2 -o loop ${_STATEDIR}/cOS/transition.img $_TARGET
 }
 
 usage()
@@ -136,12 +281,12 @@ usage()
 ## INSTALLER
 umount_target() {
     sync
-    umount ${TARGET}/oem
-    umount ${TARGET}/usr/local
-    umount ${TARGET}/boot/efi || true
-    umount ${TARGET}
-    if [ -n "$LOOP" ]; then
-        losetup -d $LOOP
+    umount ${_TARGET}/oem
+    umount ${_TARGET}/usr/local
+    umount ${_TARGET}/boot/efi || true
+    umount ${_TARGET}
+    if [ -n "$_LOOP" ]; then
+        losetup -d $_LOOP
     fi
 }
 
@@ -149,9 +294,9 @@ installer_cleanup2()
 {
     sync
     umount_target || true
-    umount ${STATEDIR}
-    umount ${RECOVERYDIR}
-    [ -n "$COS_INSTALL_ISO_URL" ] && umount ${ISOMNT} || true
+    umount ${_STATEDIR}
+    umount ${_RECOVERYDIR}
+    [ -n "$_COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
 }
 
 installer_cleanup()
@@ -163,20 +308,20 @@ installer_cleanup()
 
 prepare_recovery() {
     echo "Preparing recovery.."
-    mkdir -p $RECOVERYDIR
+    mkdir -p $_RECOVERYDIR
 
-    mount $RECOVERY $RECOVERYDIR
+    mount $_RECOVERY $_RECOVERYDIR
 
-    mkdir -p $RECOVERYDIR/cOS
+    mkdir -p $_RECOVERYDIR/cOS
 
-    if [ -e "$RECOVERYSQUASHFS" ]; then
+    if [ -e "$_RECOVERYSQUASHFS" ]; then
         echo "Copying squashfs.."
-        cp -a $RECOVERYSQUASHFS $RECOVERYDIR/cOS/recovery.squashfs
+        cp -a $_RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
     else
         echo "Copying image file.."
-        cp -a $STATEDIR/cOS/active.img $RECOVERYDIR/cOS/recovery.img
+        cp -a $_STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
-        tune2fs -L COS_SYSTEM $RECOVERYDIR/cOS/recovery.img
+        tune2fs -L COS_SYSTEM $_RECOVERYDIR/cOS/recovery.img
     fi
 
     sync
@@ -184,9 +329,9 @@ prepare_recovery() {
 
 prepare_passive() {
     echo "Preparing passive boot.."
-    cp -a ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
+    cp -a ${_STATEDIR}/cOS/active.img ${_STATEDIR}/cOS/passive.img
     sync
-    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     sync
 }
 
@@ -201,15 +346,15 @@ part_probe() {
 }
 
 blkid_probe() {
-    OEM=$(blkid -L COS_OEM || true)
-    STATE=$(blkid -L COS_STATE || true)
-    RECOVERY=$(blkid -L COS_RECOVERY || true)
-    BOOT=$(blkid -L COS_GRUB || true)
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _OEM=$(blkid -L COS_OEM || true)
+    _STATE=$(blkid -L COS_STATE || true)
+    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _BOOT=$(blkid -L COS_GRUB || true)
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
 }
 
 check_required_partitions() {
-    if [ -z "$STATE" ]; then
+    if [ -z "$_STATE" ]; then
             echo "State partition cannot be found"
             exit 1
     fi
@@ -217,10 +362,10 @@ check_required_partitions() {
 
 do_format()
 {
-    if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
-        STATE=$(blkid -L COS_STATE || true)
-        if [ -z "$STATE" ] && [ -n "$DEVICE" ]; then
-            tune2fs -L COS_STATE $DEVICE
+    if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
+        _STATE=$(blkid -L COS_STATE || true)
+        if [ -z "$_STATE" ] && [ -n "$_DEVICE" ]; then
+            tune2fs -L COS_STATE $_DEVICE
         fi
         blkid_probe
         check_required_partitions
@@ -229,154 +374,162 @@ do_format()
 
     echo "Formatting drives.."
 
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" != "gpt" ]; then
+    if [ -n "$_COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" != "gpt" ]; then
         echo "Custom layout only available with GPT based installations"
         exit 1
     fi
 
-    dd if=/dev/zero of=${DEVICE} bs=1M count=1
-    parted -s ${DEVICE} mklabel ${PARTTABLE}
+    dd if=/dev/zero of=${_DEVICE} bs=1M count=1
+    parted -s ${_DEVICE} mklabel ${_PARTTABLE}
+
+    local PREFIX
 
     # Partitioning via cloud-init config file
-    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
-        if [ "$BOOTFLAG" == "esp" ]; then
-            parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
-            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
-            PREFIX=${DEVICE}
+    if [ -n "$_COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
+        if [ "$_BOOTFLAG" == "esp" ]; then
+            parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
+            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
+            PREFIX=${_DEVICE}
             if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-                PREFIX=${DEVICE}p
+                PREFIX=${_DEVICE}p
             fi
-            BOOT=${PREFIX}1
-            mkfs.vfat -F 32 ${BOOT}
-            fatlabel ${BOOT} COS_GRUB
-        elif [ "$BOOTFLAG" == "bios_grub" ]; then
-            parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+            _BOOT=${PREFIX}1
+            mkfs.vfat -F 32 ${_BOOT}
+            fatlabel ${_BOOT} COS_GRUB
+        elif [ "$_BOOTFLAG" == "bios_grub" ]; then
+            parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
         fi
 
-        yip -s partitioning $COS_PARTITION_LAYOUT
+        yip -s partitioning $_COS_PARTITION_LAYOUT
 
-        part_probe $DEVICE
+        part_probe $_DEVICE
 
         blkid_probe
 
         return 0
     fi
 
+    local BOOT_NUM
+    local OEM_NUM
+    local STATE_NUM
+    local RECOVERY_NUM
+    local PERSISTENT_NUM
+
     # Standard partitioning
-    if [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "esp" ]; then
+    if [ "$_PARTTABLE" = "gpt" ] && [ "$_BOOTFLAG" == "esp" ]; then
         BOOT_NUM=1
         OEM_NUM=2
         STATE_NUM=3
         RECOVERY_NUM=4
         PERSISTENT_NUM=5
-        parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
-        parted -s ${DEVICE} mkpart primary ext4 50MB 100MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 100MB 15100MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23100MB 100% # persistent
-        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
-    elif [ "$PARTTABLE" = "gpt" ] && [ "$BOOTFLAG" == "bios_grub" ]; then
+        parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
+        parted -s ${_DEVICE} mkpart primary ext4 50MB 100MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 100MB 15100MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15100MB 23100MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23100MB 100% # persistent
+        parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
+    elif [ "$_PARTTABLE" = "gpt" ] && [ "$_BOOTFLAG" == "bios_grub" ]; then
         BOOT_NUM=
         OEM_NUM=2
         STATE_NUM=3
         RECOVERY_NUM=4
         PERSISTENT_NUM=5
-        parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-        parted -s ${DEVICE} mkpart primary ext4 1MB 51MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 51MB 15051MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23051MB 100% # persistent
-        parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+        parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+        parted -s ${_DEVICE} mkpart primary ext4 1MB 51MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 51MB 15051MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15051MB 23051MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23051MB 100% # persistent
+        parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
     else
         BOOT_NUM=
         OEM_NUM=1
         STATE_NUM=2
         RECOVERY_NUM=3
         PERSISTENT_NUM=4
-        parted -s ${DEVICE} mkpart primary ext4 0% 50MB # oem
-        parted -s ${DEVICE} mkpart primary ext4 50MB 15050MB # state
-        parted -s ${DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
-        parted -s ${DEVICE} mkpart primary ext4 23050MB 100% # persistent
-        parted -s ${DEVICE} set 2 ${BOOTFLAG} on
+        parted -s ${_DEVICE} mkpart primary ext4 0% 50MB # oem
+        parted -s ${_DEVICE} mkpart primary ext4 50MB 15050MB # state
+        parted -s ${_DEVICE} mkpart primary ext4 15050MB 23050MB # recovery
+        parted -s ${_DEVICE} mkpart primary ext4 23050MB 100% # persistent
+        parted -s ${_DEVICE} set 2 ${_BOOTFLAG} on
     fi
 
-    part_probe $DEVICE
+    part_probe $_DEVICE
 
-    PREFIX=${DEVICE}
+    PREFIX=${_DEVICE}
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-        PREFIX=${DEVICE}p
+        PREFIX=${_DEVICE}p
     fi
 
     if [ ! -e ${PREFIX}${STATE_NUM} ]; then
-        echo Failed to find ${PREFIX}${STATE_NUM} or ${DEVICE}${STATE_NUM} to format
+        echo Failed to find ${PREFIX}${STATE_NUM} or ${_DEVICE}${STATE_NUM} to format
         exit 1
     fi
 
     if [ -n "${BOOT_NUM}" ]; then
-        BOOT=${PREFIX}${BOOT_NUM}
+        _BOOT=${PREFIX}${BOOT_NUM}
     fi
-    STATE=${PREFIX}${STATE_NUM}
-    OEM=${PREFIX}${OEM_NUM}
-    RECOVERY=${PREFIX}${RECOVERY_NUM}
-    PERSISTENT=${PREFIX}${PERSISTENT_NUM}
+    _STATE=${PREFIX}${STATE_NUM}
+    _OEM=${PREFIX}${OEM_NUM}
+    _RECOVERY=${PREFIX}${RECOVERY_NUM}
+    _PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
-    mkfs.ext4 -F -L COS_STATE ${STATE}
-    if [ -n "${BOOT}" ]; then
-        mkfs.vfat -F 32 ${BOOT}
-        fatlabel ${BOOT} COS_GRUB
+    mkfs.ext4 -F -L COS_STATE ${_STATE}
+    if [ -n "${_BOOT}" ]; then
+        mkfs.vfat -F 32 ${_BOOT}
+        fatlabel ${_BOOT} COS_GRUB
     fi
 
-    mkfs.ext4 -F -L COS_RECOVERY ${RECOVERY}
-    mkfs.ext4 -F -L COS_OEM ${OEM}
-    mkfs.ext4 -F -L COS_PERSISTENT ${PERSISTENT}
+    mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
+    mkfs.ext4 -F -L COS_OEM ${_OEM}
+    mkfs.ext4 -F -L COS_PERSISTENT ${_PERSISTENT}
 }
 
 do_mount()
 {
     echo "Mounting critical endpoints.."
 
-    mkdir -p ${TARGET}
-    ensure_dir_structure $TARGET
+    mkdir -p ${_TARGET}
+    ensure_dir_structure $_TARGET
 
     prepare_statedir "install"
 
-    mkdir -p ${STATEDIR}/cOS || true
+    mkdir -p ${_STATEDIR}/cOS || true
 
-    if [ -e "${STATEDIR}/cOS/active.img" ]; then
-        rm -rf ${STATEDIR}/cOS/active.img
+    if [ -e "${_STATEDIR}/cOS/active.img" ]; then
+        rm -rf ${_STATEDIR}/cOS/active.img
     fi
 
-    dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
+    dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L COS_ACTIVE
 
-    if [ -z "$COS_ACTIVE" ]; then
+    if [ -z "$_COS_ACTIVE" ]; then
         sync
     fi
 
-    LOOP=$(losetup --show -f ${STATEDIR}/cOS/active.img)
-    mount -t ext2 $LOOP $TARGET
+    _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/active.img)
+    mount -t ext2 $_LOOP $_TARGET
 
-    mkdir -p ${TARGET}/boot
-    if [ -n "${BOOT}" ]; then
-        mkdir -p ${TARGET}/boot/efi
-        mount ${BOOT} ${TARGET}/boot/efi
+    mkdir -p ${_TARGET}/boot
+    if [ -n "${_BOOT}" ]; then
+        mkdir -p ${_TARGET}/boot/efi
+        mount ${_BOOT} ${_TARGET}/boot/efi
     fi
 
-    mkdir -p ${TARGET}/oem
-    mount ${OEM} ${TARGET}/oem
-    mkdir -p ${TARGET}/usr/local
-    mount ${PERSISTENT} ${TARGET}/usr/local
+    mkdir -p ${_TARGET}/oem
+    mount ${_OEM} ${_TARGET}/oem
+    mkdir -p ${_TARGET}/usr/local
+    mount ${_PERSISTENT} ${_TARGET}/usr/local
 }
 
 get_url()
 {
-    FROM=$1
-    TO=$2
+    local FROM=$1
+    local TO=$2
     case $FROM in
         ftp*|http*|tftp*)
-            n=0
-            attempts=5
+            local n=0
+            local attempts=5
             until [ "$n" -ge "$attempts" ]
             do
                 curl -o $TO -fL ${FROM} && break
@@ -393,23 +546,25 @@ get_url()
 
 get_iso()
 {
-    if [ -n "$COS_INSTALL_ISO_URL" ]; then
-        ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX.isomnt)
-        TEMP_FILE=$(mktemp --tmpdir cos.XXXXXXXX.iso)
-        get_url ${COS_INSTALL_ISO_URL} ${TEMP_FILE}
-        ISO_DEVICE=$(losetup --show -f $TEMP_FILE)
-        mount -o ro ${ISO_DEVICE} ${ISOMNT}
+    local temp_file
+    local iso_device
+    if [ -n "$_COS_INSTALL_ISO_URL" ]; then
+        _ISOMNT=$(mktemp --tmpdir -d cos.XXXXXXXX._ISOMNT)
+        temp_file=$(mktemp --tmpdir cos.XXXXXXXX.iso)
+        get_url ${_COS_INSTALL_ISO_URL} ${temp_file}
+        iso_device=$(losetup --show -f $temp_file)
+        mount -o ro ${iso_device} ${_ISOMNT}
     fi
 }
 
 get_image()
 {
-    if [ -n "$UPGRADE_IMAGE" ]; then
+    if [ -n "$_UPGRADE_IMAGE" ]; then
+        local temp
         part_probe
-        DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
+        _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
-        args="$(luet_args)"
-        create_rootfs "install" $DISTRO $temp
+        create_rootfs "install" $_DISTRO $temp
     fi
 }
 
@@ -417,64 +572,65 @@ do_copy()
 {
     echo "Copying cOS.."
 
-    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${DISTRO}/ ${TARGET}
-    if [ -n "$COS_INSTALL_CONFIG_URL" ]; then
-        OEM=${TARGET}/oem/99_custom.yaml
-        get_url "$COS_INSTALL_CONFIG_URL" $OEM
-        chmod 600 ${OEM}
+    rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${_TARGET}
+    if [ -n "$_COS_INSTALL_CONFIG_URL" ]; then
+        _OEM=${_TARGET}/oem/99_custom.yaml
+        get_url "$_COS_INSTALL_CONFIG_URL" $_OEM
+        chmod 600 ${_OEM}
     fi
-    ensure_dir_structure $TARGET
+    ensure_dir_structure $_TARGET
 }
 
 SELinux_relabel()
 {
-    if which setfiles > /dev/null && [ -e ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
-        setfiles -r ${TARGET} ${TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${TARGET}
+    if which setfiles > /dev/null && [ -e ${_TARGET}/etc/selinux/targeted/contexts/files/file_contexts ]; then
+        setfiles -r ${_TARGET} ${_TARGET}/etc/selinux/targeted/contexts/files/file_contexts ${_TARGET}
     fi
 }
 
 install_grub()
 {
-    if [ -z "$DEVICE" ]; then
+    if [ -z "$_DEVICE" ]; then
         echo "No Installation device specified. Skipping GRUB installation"
         return 0
     fi
+    local TTY
 
     echo "Installing GRUB.."
 
-    if [ "$COS_INSTALL_DEBUG" ]; then
+    if [ "$_COS_INSTALL_DEBUG" ]; then
         GRUB_DEBUG="cos.debug"
     fi
 
-    if [ -z "${COS_INSTALL_TTY}" ]; then
+    if [ -z "${_COS_INSTALL_TTY}" ]; then
         TTY=$(tty | sed 's!/dev/!!')
     else
-        TTY=$COS_INSTALL_TTY
+        TTY=$_COS_INSTALL_TTY
     fi
 
-    if [ "$COS_INSTALL_NO_FORMAT" = "true" ]; then
+    if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
         return 0
     fi
 
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${TARGET}/boot/efi"
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+        _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_TARGET}/boot/efi"
     fi
 
-    mkdir ${TARGET}/proc || true
-    mkdir ${TARGET}/dev || true
-    mkdir ${TARGET}/sys || true
-    mkdir ${TARGET}/tmp || true
+    mkdir ${_TARGET}/proc || true
+    mkdir ${_TARGET}/dev || true
+    mkdir ${_TARGET}/sys || true
+    mkdir ${_TARGET}/tmp || true
 
-    grub2-install ${GRUB_TARGET} --root-directory=${TARGET}  --boot-directory=${STATEDIR} --removable ${DEVICE}
+    grub2-install ${_GRUB_TARGET} --root-directory=${_TARGET}  --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
-    GRUBDIR=
-    if [ -d "${STATEDIR}/grub" ]; then
-        GRUBDIR="${STATEDIR}/grub"
-    elif [ -d "${STATEDIR}/grub2" ]; then
-        GRUBDIR="${STATEDIR}/grub2"
+    local GRUBDIR
+    if [ -d "${_STATEDIR}/grub" ]; then
+        GRUBDIR="${_STATEDIR}/grub"
+    elif [ -d "${_STATEDIR}/grub2" ]; then
+        GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rf $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rf $_GRUBCONF $GRUBDIR/grub.cfg
 
     if [ -e "/dev/${TTY%,*}" ] && [ "$TTY" != tty1 ] && [ "$TTY" != console ] && [ -n "$TTY" ]; then
         sed -i "s!console=tty1!console=tty1 console=${TTY}!g" $GRUBDIR/grub.cfg
@@ -483,24 +639,25 @@ install_grub()
 
 setup_style()
 {
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        PARTTABLE=gpt
-        BOOTFLAG=esp
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+        _PARTTABLE=gpt
+        _BOOTFLAG=esp
         if [ ! -e /sys/firmware/efi ]; then
             echo WARNING: installing EFI on to a system that does not support EFI
         fi
-    elif [ "$COS_INSTALL_FORCE_GPT" = "true" ]; then
-        PARTTABLE=gpt
-        BOOTFLAG=bios_grub
+    elif [ "$_COS_INSTALL_FORCE_GPT" = "true" ]; then
+        _PARTTABLE=gpt
+        _BOOTFLAG=bios_grub
     else
-        PARTTABLE=msdos
-        BOOTFLAG=boot
+        _PARTTABLE=msdos
+        _BOOTFLAG=boot
     fi
 }
 
 validate_progs()
 {
-    for i in $PROGS; do
+    local MISSING
+    for i in $_PROGS; do
         if [ ! -x "$(which $i)" ]; then
             MISSING="${MISSING} $i"
         fi
@@ -514,16 +671,16 @@ validate_progs()
 
 validate_device()
 {
-    DEVICE=$COS_INSTALL_DEVICE
-    if [ -n "${DEVICE}" ] && [ ! -b ${DEVICE} ]; then
-        echo "You should use an available device. Device ${DEVICE} does not exist."
+    _DEVICE=$_COS_INSTALL_DEVICE
+    if [ -n "${_DEVICE}" ] && [ ! -b ${_DEVICE} ]; then
+        echo "You should use an available device. Device ${_DEVICE} does not exist."
         exit 1
     fi
-    if [ -n "$COS_INSTALL_NO_FORMAT" ]; then
-        COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-        COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$COS_ACTIVE" ] || [ -n "$COS_PASSIVE" ]; then
-            if [ "$FORCE" == "true" ]; then
+    if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
+        _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+        _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+        if [ -n "$_COS_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
+            if [ "$_FORCE" == "true" ]; then
                 echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
                 return 0
             else
@@ -539,47 +696,47 @@ validate_device()
 ## UPGRADER
 
 find_partitions() {
-    STATE=$(blkid -L COS_STATE || true)
-    if [ -z "$STATE" ]; then
+    _STATE=$(blkid -L COS_STATE || true)
+    if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
     fi
 
-    OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L COS_OEM || true)
 
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-    if [ -z "$PERSISTENT" ]; then
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
 
-    COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-    if [ -n "$COS_ACTIVE" ]; then
-        CURRENT=active.img
+    _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+    if [ -n "$_COS_ACTIVE" ]; then
+        _CURRENT=active.img
     fi
 
-    COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -n "$COS_PASSIVE" ]; then
-        CURRENT=passive.img
+    _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
+    if [ -n "$_COS_PASSIVE" ]; then
+        _CURRENT=passive.img
     fi
 
-    if [ -z "$CURRENT" ]; then
+    if [ -z "$_CURRENT" ]; then
         # We booted from an ISO or some else medium. We assume we want to fixup the current label
         read -p "Could not determine current partition. Do you want to overwrite your current active partition? (CURRENT=active.img) [y/N] : " -n 1 -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]
         then
             [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
         fi
-        CURRENT=active.img
+        _CURRENT=active.img
         echo
     fi
 
-    echo "-> Upgrade target: $CURRENT"
+    echo "-> Upgrade target: $_CURRENT"
 }
 
 find_recovery() {
-    RECOVERY=$(blkid -L COS_RECOVERY || true)
-    if [ -z "$RECOVERY" ]; then
+    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    if [ -z "$_RECOVERY" ]; then
         echo "COS_RECOVERY partition cannot be found"
         exit 1
     fi
@@ -588,38 +745,30 @@ find_recovery() {
 # cos-upgrade-image: system/cos
 find_upgrade_channel() {
 
-    load_config
-
-    if [ -e "/etc/cos-upgrade-image" ]; then
-        source /etc/cos-upgrade-image
+    if [ -n "$_NO_CHANNEL" ] && [ $_NO_CHANNEL == true ]; then
+        _CHANNEL_UPGRADES=false
     fi
 
-    if [ -n "$NO_CHANNEL" ] && [ $NO_CHANNEL == true ]; then
-        CHANNEL_UPGRADES=false
-    fi
-
-    if [ -n "$COS_IMAGE" ]; then
-        UPGRADE_IMAGE=$COS_IMAGE
-        echo "Upgrading to image $UPGRADE_IMAGE"
+    if [ -n "$_COS_IMAGE" ]; then
+        # passing an image from command line so we override any defaults loaded from /etc/cos-upgrade-image
+        _UPGRADE_IMAGE=$_COS_IMAGE
+        echo "Upgrading to image $_UPGRADE_IMAGE"
     else
-
-        if [ -z "$UPGRADE_IMAGE" ]; then
-            UPGRADE_IMAGE="system/cos"
+        if [ -z "$_UPGRADE_IMAGE" ]; then
+            # there is no UPGRADE_IMAGE on /etc/cos-upgrade-image or env so we default to system/cos
+            _UPGRADE_IMAGE="system/cos"
         fi
 
-        if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ] && [ -n "$RECOVERY_IMAGE" ]; then
-            UPGRADE_IMAGE=$RECOVERY_IMAGE
+        if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ] && [ -n "$_RECOVERY_IMAGE" ]; then
+            # if we have UPGRADE_RECOVERY set to true and there is a RECOVERY_IMAGE set we want to upgrade recovery
+            # so set the upgrade image to the recovery one
+            _UPGRADE_IMAGE=$_RECOVERY_IMAGE
         fi
     fi
-
-    # export cosign values after loading values from file in case we have them setup there
-    export COSIGN_REPOSITORY=$COSIGN_REPOSITORY
-    export COSIGN_EXPERIMENTAL=$COSIGN_EXPERIMENTAL
-    export COSIGN_PUBLIC_KEY_LOCATION=$COSIGN_PUBLIC_KEY_LOCATION
 }
 
 is_squashfs() {
-    if [ -e "${STATEDIR}/cOS/recovery.squashfs" ]; then
+    if [ -e "${_STATEDIR}/cOS/recovery.squashfs" ]; then
         return 0
     else
         return 1
@@ -627,6 +776,7 @@ is_squashfs() {
 }
 
 recovery_boot() {
+    local cmdline
     cmdline="$(cat /proc/cmdline)"
     if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
         return 0
@@ -636,16 +786,16 @@ recovery_boot() {
 }
 
 prepare_squashfs_target() {
-    rm -rf $TARGET || true
-    TARGET=${STATEDIR}/tmp/target
-    mkdir -p $TARGET
+    rm -rf $_TARGET || true
+    _TARGET=${_STATEDIR}/tmp/target
+    mkdir -p $_TARGET
 }
 
 mount_state() {
-    if [ -n "${STATE}" ]; then
-        STATEDIR=/run/initramfs/state
-        mkdir -p $STATEDIR
-        mount ${STATE} ${STATEDIR}
+    if [ -n "${_STATE}" ]; then
+        _STATEDIR=/run/initramfs/state
+        mkdir -p $_STATEDIR
+        mount ${_STATE} ${_STATEDIR}
     else
         echo "No state partition found. Skipping mount"
     fi
@@ -655,10 +805,10 @@ prepare_statedir() {
     local target=$1
     case $target in
     recovery)
-        STATEDIR=/tmp/recovery
+        _STATEDIR=/tmp/recovery
 
-        mkdir -p $STATEDIR || true
-        mount $RECOVERY $STATEDIR
+        mkdir -p $_STATEDIR || true
+        mount $_RECOVERY $_STATEDIR
         if is_squashfs; then
             echo "Preparing squashfs target"
             prepare_squashfs_target
@@ -668,13 +818,13 @@ prepare_statedir() {
         fi
         ;;
     *)
-        STATEDIR=/run/initramfs/cos-state
+        _STATEDIR=/run/initramfs/cos-state
 
-        if [ -d "$STATEDIR" ]; then
+        if [ -d "$_STATEDIR" ]; then
             if recovery_boot; then
                 mount_state
             else
-                mount -o remount,rw ${STATE} ${STATEDIR}
+                mount -o remount,rw ${_STATE} ${_STATEDIR}
             fi
         else
             mount_state
@@ -686,9 +836,9 @@ prepare_statedir() {
 mount_image() {
     local target=$1
 
-    TARGET=/tmp/upgrade
+    _TARGET=/tmp/upgrade
 
-    mkdir -p $TARGET || true
+    mkdir -p $_TARGET || true
     prepare_statedir $target
 
     case $target in
@@ -699,28 +849,29 @@ mount_image() {
 }
 
 switch_active() {
-    if [[ "$CURRENT" == "active.img" ]]; then
-        mv -f ${STATEDIR}/cOS/$CURRENT ${STATEDIR}/cOS/passive.img
-        tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+    if [[ "$_CURRENT" == "active.img" ]]; then
+        mv -f ${_STATEDIR}/cOS/$_CURRENT ${_STATEDIR}/cOS/passive.img
+        tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     fi
 
-    mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
 }
 
 switch_recovery() {
     if is_squashfs; then
-        if [[ "${ARCH}" == "arm64" ]]; then
+        local XZ_FILTER
+        if [[ "${_ARCH}" == "arm64" ]]; then
           XZ_FILTER="arm"
         else
           XZ_FILTER="x86"
         fi
-        mksquashfs $TARGET ${STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
-        mv ${STATEDIR}/cOS/transition.squashfs ${STATEDIR}/cOS/recovery.squashfs
-        rm -rf $TARGET
+        mksquashfs $_TARGET ${_STATEDIR}/cOS/transition.squashfs -b 1024k -comp xz -Xbcj ${XZ_FILTER}
+        mv ${_STATEDIR}/cOS/transition.squashfs ${_STATEDIR}/cOS/recovery.squashfs
+        rm -rf $_TARGET
     else
-        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/recovery.img
-        tune2fs -L COS_SYSTEM ${STATEDIR}/cOS/recovery.img
+        mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/recovery.img
+        tune2fs -L COS_SYSTEM ${_STATEDIR}/cOS/recovery.img
     fi
 }
 
@@ -735,12 +886,13 @@ ensure_dir_structure() {
 }
 
 luet_args() {
+    local args
     args="--enable-logfile --logfile /tmp/luet.log"
-    if [ -z "$VERIFY" ] || [ "$VERIFY" == true ]; then
-        args="--plugin luet-mtree"
+    if [ -z "$_VERIFY" ] || [ "$_VERIFY" == true ]; then
+        args+=" --plugin luet-mtree"
     fi
 
-    if [ -z "$COSIGN" ]; then
+    if [ -z "$_COSIGN" ]; then
       args+=" --plugin luet-cosign"
     fi
 
@@ -748,17 +900,17 @@ luet_args() {
 }
 
 create_rootfs() {
-    hook_name=$1
-    target=$2
-    temp_dir=$3
+    local hook_name=$1
+    local target=$2
+    local temp_dir=$3
 
-    upgrade_state_dir="$temp_dir"
-    temp_upgrade=$upgrade_state_dir/tmp/upgrade
+    local upgrade_state_dir="$temp_dir"
+    local temp_upgrade=$upgrade_state_dir/tmp/upgrade
     rm -rf $upgrade_state_dir || true
     mkdir -p $temp_upgrade
 
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
       cos-setup before-$hook_name
     else 
       cos-setup before-$hook_name || true
@@ -770,23 +922,23 @@ create_rootfs() {
     # FIXME: Define default /var/tmp as tmpdir_base in default luet config file
     export XDG_RUNTIME_DIR=$temp_upgrade
     export TMPDIR=$temp_upgrade
-
-    args="$(luet_args)"
-    if [ -n "$CHANNEL_UPGRADES" ] && [ "$CHANNEL_UPGRADES" == true ]; then
+    local _args
+    _args="$(luet_args)"
+    if [ -n "$_CHANNEL_UPGRADES" ] && [ "$_CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
-        luet install $args --system-target $target --system-engine memory -y $UPGRADE_IMAGE
+        luet install $_args --system-target $target --system-engine memory -y $_UPGRADE_IMAGE
         luet cleanup
         set +x
-    elif [ "$DIRECTORY" == true ]; then
-        echo "Upgrading from local folder: $UPGRADE_IMAGE"
-        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${UPGRADE_IMAGE}/ $target
+    elif [ "$_DIRECTORY" == true ]; then
+        echo "Upgrading from local folder: $_UPGRADE_IMAGE"
+        rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_UPGRADE_IMAGE}/ $target
     else
-        echo "Upgrading from container image: $UPGRADE_IMAGE"
+        echo "Upgrading from container image: $_UPGRADE_IMAGE"
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $args $UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        luet util unpack $_args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $target
         rm -rf $upgrade_state_dir/tmp/rootfs
@@ -797,24 +949,24 @@ create_rootfs() {
     chmod 755 $target
     SELinux_relabel
 
-    if [ -n "$PERSISTENT" ]; then
-        mount $PERSISTENT $target/usr/local
+    if [ -n "$_PERSISTENT" ]; then
+        mount $_PERSISTENT $target/usr/local
     fi
-    if [ -n "$OEM" ]; then
-        mount $OEM $target/oem
+    if [ -n "$_OEM" ]; then
+        mount $_OEM $target/oem
     fi
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         run_hook after-$hook_name-chroot $target
     else 
         run_hook after-$hook_name-chroot $target || true
     fi
-    if [ -n "$OEM" ]; then
+    if [ -n "$_OEM" ]; then
      umount $target/oem
     fi
-    if [ -n "$PERSISTENT" ]; then
+    if [ -n "$_PERSISTENT" ]; then
         umount $target/usr/local
     fi
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
       cos-setup after-$hook_name
     else 
       cos-setup after-$hook_name || true
@@ -827,18 +979,18 @@ create_rootfs() {
 upgrade_cleanup2()
 {
     rm -rf /usr/local/tmp/upgrade || true
-    mount -o remount,ro ${STATE} ${STATEDIR} || true
-    if [ -n "${TARGET}" ]; then
-        umount ${TARGET}/boot/efi || true
-        umount ${TARGET}/ || true
-        rm -rf ${TARGET}
+    mount -o remount,ro ${_STATE} ${_STATEDIR} || true
+    if [ -n "${_TARGET}" ]; then
+        umount ${_TARGET}/boot/efi || true
+        umount ${_TARGET}/ || true
+        rm -rf ${_TARGET}
     fi
-    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
-	    umount ${STATEDIR} || true
+    if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ]; then
+	    umount ${_STATEDIR} || true
     fi
-    if [ "$STATEDIR" == "/run/initramfs/state" ]; then
-        umount ${STATEDIR}
-        rm -rf $STATEDIR
+    if [ "$_STATEDIR" == "/run/initramfs/state" ]; then
+        umount ${_STATEDIR}
+        rm -rf $_STATEDIR
     fi
 }
 
@@ -856,20 +1008,20 @@ upgrade_cleanup()
 
 reset_grub()
 {
-    if [ "$COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
-        GRUB_TARGET="--target=${ARCH}-efi --efi-directory=${STATEDIR}/boot/efi"
+    if [ "$_COS_INSTALL_FORCE_EFI" = "true" ] || [ -e /sys/firmware/efi ]; then
+        _GRUB_TARGET="--target=${_ARCH}-efi --efi-directory=${_STATEDIR}/boot/efi"
     fi
-    #mount -o remount,rw ${STATE} /boot/grub2
-    grub2-install ${GRUB_TARGET} --root-directory=${STATEDIR} --boot-directory=${STATEDIR} --removable ${DEVICE}
+    #mount -o remount,rw ${_STATE} /boot/grub2
+    grub2-install ${_GRUB_TARGET} --root-directory=${_STATEDIR} --boot-directory=${_STATEDIR} --removable ${_DEVICE}
 
-    GRUBDIR=
-    if [ -d "${STATEDIR}/grub" ]; then
-        GRUBDIR="${STATEDIR}/grub"
-    elif [ -d "${STATEDIR}/grub2" ]; then
-        GRUBDIR="${STATEDIR}/grub2"
+    local GRUBDIR=
+    if [ -d "${_STATEDIR}/grub" ]; then
+        GRUBDIR="${_STATEDIR}/grub"
+    elif [ -d "${_STATEDIR}/grub2" ]; then
+        GRUBDIR="${_STATEDIR}/grub2"
     fi
 
-    cp -rfv $GRUBCONF $GRUBDIR/grub.cfg
+    cp -rfv $_GRUBCONF $GRUBDIR/grub.cfg
 }
 
 reset_state() {
@@ -878,17 +1030,18 @@ reset_state() {
 }
 
 copy_passive() {
-    tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
-    cp -rf ${STATEDIR}/cOS/passive.img ${STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${STATEDIR}/cOS/active.img
+    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    cp -rf ${_STATEDIR}/cOS/passive.img ${_STATEDIR}/cOS/active.img
+    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
 }
 
 run_reset_hook() {
+    local loop_dir
     loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
-    mount -t ext2 ${STATEDIR}/cOS/passive.img $loop_dir
+    mount -t ext2 ${_STATEDIR}/cOS/passive.img $loop_dir
         
-    mount $PERSISTENT $loop_dir/usr/local
-    mount $OEM $loop_dir/oem
+    mount $_PERSISTENT $loop_dir/usr/local
+    mount $_OEM $loop_dir/oem
 
     run_hook after-reset-chroot $loop_dir
 
@@ -900,37 +1053,40 @@ run_reset_hook() {
 
 copy_active() {
     if is_booting_from_squashfs; then
+        local tmp_dir
+        local loop_dir
+
         tmp_dir=$(mktemp -d -t squashfs-XXXXXXXXXX)
         loop_dir=$(mktemp -d -t loop-XXXXXXXXXX)
 
-        # Squashfs is at ${RECOVERYDIR}/cOS/recovery.squashfs. 
-        mount -t squashfs -o loop ${RECOVERYDIR}/cOS/recovery.squashfs $tmp_dir
+        # Squashfs is at ${_RECOVERYDIR}/cOS/recovery.squashfs.
+        mount -t squashfs -o loop ${_RECOVERYDIR}/cOS/recovery.squashfs $tmp_dir
         
-        TARGET=$loop_dir
+        _TARGET=$loop_dir
         # TODO: Size should be tweakable
-        dd if=/dev/zero of=${STATEDIR}/cOS/transition.img bs=1M count=$DEFAULT_IMAGE_SIZE
-        mkfs.ext2 ${STATEDIR}/cOS/transition.img -L COS_PASSIVE
+        dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
+        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L COS_PASSIVE
         sync
-        LOOP=$(losetup --show -f ${STATEDIR}/cOS/transition.img)
-        mount -t ext2 $LOOP $TARGET
+        _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
+        mount -t ext2 $_LOOP $_TARGET
         rsync -aqzAX --exclude='mnt' \
         --exclude='proc' --exclude='sys' \
         --exclude='dev' --exclude='tmp' \
-        $tmp_dir/ $TARGET
-        ensure_dir_structure $TARGET
+        $tmp_dir/ $_TARGET
+        ensure_dir_structure $_TARGET
 
         SELinux_relabel
 
-        # Targets are ${STATEDIR}/cOS/active.img and ${STATEDIR}/cOS/passive.img
+        # Targets are ${_STATEDIR}/cOS/active.img and ${_STATEDIR}/cOS/passive.img
         umount $tmp_dir
         rm -rf $tmp_dir
-        umount $TARGET
-        rm -rf $TARGET
+        umount $_TARGET
+        rm -rf $_TARGET
 
-        mv -f ${STATEDIR}/cOS/transition.img ${STATEDIR}/cOS/passive.img
+        mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/passive.img
         sync
     else
-        cp -rf ${RECOVERYDIR}/cOS/recovery.img ${STATEDIR}/cOS/passive.img
+        cp -rf ${_RECOVERYDIR}/cOS/recovery.img ${_STATEDIR}/cOS/passive.img
     fi
     
     run_reset_hook
@@ -952,6 +1108,9 @@ reset_cleanup()
 
 check_recovery() {
     if ! is_booting_from_squashfs; then
+        local system
+        local recovery
+
         system=$(blkid -L COS_SYSTEM || true)
         if [ -z "$system" ]; then
             echo "cos-reset can be run only from recovery"
@@ -966,19 +1125,19 @@ check_recovery() {
 }
 
 find_recovery_partitions() {
-    STATE=$(blkid -L COS_STATE || true)
-    if [ -z "$STATE" ]; then
+    _STATE=$(blkid -L COS_STATE || true)
+    if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
     fi
-    DEVICE=/dev/$(lsblk -no pkname $STATE)
+    _DEVICE=/dev/$(lsblk -no pkname $_STATE)
 
-    BOOT=$(blkid -L COS_GRUB || true)
+    _BOOT=$(blkid -L COS_GRUB || true)
 
-    OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L COS_OEM || true)
 
-    PERSISTENT=$(blkid -L COS_PERSISTENT || true)
-    if [ -z "$PERSISTENT" ]; then
+    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
@@ -986,22 +1145,22 @@ find_recovery_partitions() {
 
 do_recovery_mount()
 {
-    STATEDIR=/tmp/state
-    mkdir -p $STATEDIR || true
+    _STATEDIR=/tmp/state
+    mkdir -p $_STATEDIR || true
 
     if is_booting_from_squashfs; then
-        RECOVERYDIR=/run/initramfs/live
+        _RECOVERYDIR=/run/initramfs/live
     else
-        RECOVERYDIR=/run/initramfs/cos-state
+        _RECOVERYDIR=/run/initramfs/cos-state
     fi
 
-    #mount -o remount,rw ${STATE} ${STATEDIR}
+    #mount -o remount,rw ${_STATE} ${_STATEDIR}
 
-    mount ${STATE} $STATEDIR
+    mount ${_STATE} $_STATEDIR
 
-    if [ -n "${BOOT}" ]; then
-        mkdir -p $STATEDIR/boot/efi || true
-        mount ${BOOT} $STATEDIR/boot/efi
+    if [ -n "${_BOOT}" ]; then
+        mkdir -p $_STATEDIR/boot/efi || true
+        mount ${_BOOT} $_STATEDIR/boot/efi
     fi
 }
 
@@ -1012,11 +1171,11 @@ do_recovery_mount()
 rebrand_grub_menu() {
 	local grub_entry="$1"
 
-	STATEDIR=$(blkid -L COS_STATE)
+	_STATEDIR=$(blkid -L COS_STATE)
 	mkdir -p /run/boot
 	
 	if ! is_mounted /run/boot; then
-	   mount $STATEDIR /run/boot
+	   mount $_STATEDIR /run/boot
 	fi
 
     grub2-editenv /run/boot/grub_oem_env set default_menu_entry="$grub_entry"
@@ -1027,7 +1186,7 @@ rebrand_grub_menu() {
 rebrand_cleanup2()
 {
     sync
-    umount ${STATEDIR}
+    umount ${_STATEDIR}
 }
 
 rebrand_cleanup()
@@ -1040,16 +1199,12 @@ rebrand_cleanup()
 # END COS_REBRAND
 
 rebrand() {
-    load_config
-    grub_entry="${GRUB_ENTRY_NAME:-cOS}"
-
-    #trap rebrand_cleanup exit
-
-    rebrand_grub_menu "$grub_entry"
+    rebrand_grub_menu "${_GRUB_ENTRY_NAME}"
 }
 
 reset() {
     trap reset_cleanup exit
+    load_full_config
 
     check_recovery
 
@@ -1057,15 +1212,13 @@ reset() {
 
     do_recovery_mount
 
-    load_config
-
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-reset
     else 
         cos-setup before-reset || true
     fi
 
-    if [ -n "$PERSISTENCE_RESET" ] && [ "$PERSISTENCE_RESET" == "true" ]; then
+    if [ -n "$_PERSISTENCE_RESET" ] && [ "$_PERSISTENCE_RESET" == "true" ]; then
         reset_state
     fi
 
@@ -1073,10 +1226,9 @@ reset() {
 
     reset_grub
 
-    #cos-rebrand
     rebrand
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup after-reset
     else 
         cos-setup after-reset || true
@@ -1084,27 +1236,27 @@ reset() {
 }
 
 upgrade() {
-
+    load_full_config
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
-                NO_CHANNEL=true
+                _NO_CHANNEL=true
                 ;;
             --directory)
-                NO_CHANNEL=true
-                DIRECTORY=true
+                _NO_CHANNEL=true
+                _DIRECTORY=true
                 ;;
             --strict)
-                STRICT_MODE=true
+                _STRICT_MODE=true
                 ;;
             --recovery)
-                UPGRADE_RECOVERY=true
+                _UPGRADE_RECOVERY=true
                 ;;
             --no-verify)
-                VERIFY=false
+                _VERIFY=false
                 ;;
             --no-cosign)
-                COSIGN=false
+                _COSIGN=false
                 ;;
             -h)
                 usage
@@ -1117,7 +1269,7 @@ upgrade() {
                     usage
                 fi
                 INTERACTIVE=true
-                COS_IMAGE=$1
+                _COS_IMAGE=$1
                 break
                 ;;
         esac
@@ -1128,7 +1280,7 @@ upgrade() {
 
     trap upgrade_cleanup exit
 
-    if [ -n "$UPGRADE_RECOVERY" ] && [ $UPGRADE_RECOVERY == true ]; then
+    if [ -n "$_UPGRADE_RECOVERY" ] && [ $_UPGRADE_RECOVERY == true ]; then
         echo "Upgrading recovery partition.."
 
         find_partitions
@@ -1137,7 +1289,7 @@ upgrade() {
 
         mount_image "recovery"
 
-        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
+        create_rootfs "upgrade" $_TARGET "/usr/local/.cos-upgrade"
 
         switch_recovery
     else
@@ -1147,7 +1299,7 @@ upgrade() {
 
         mount_image "upgrade"
 
-        create_rootfs "upgrade" $TARGET "/usr/local/.cos-upgrade"
+        create_rootfs "upgrade" $_TARGET "/usr/local/.cos-upgrade"
 
         switch_active
     fi
@@ -1169,57 +1321,58 @@ upgrade() {
 }
 
 install() {
-
+    load_full_config
+    local _COS_INSTALL_POWER_OFF
     while [ "$#" -gt 0 ]; do
         case $1 in
             --docker-image)
-                NO_CHANNEL=true
+                _NO_CHANNEL=true
                 shift 1
-                COS_IMAGE=$1
+                _COS_IMAGE=$1
                 ;;
             --no-verify)
-                VERIFY=false
+                _VERIFY=false
                 ;;
             --no-cosign)
-                COSIGN=false
+                _COSIGN=false
                 ;;
             --no-format)
-                COS_INSTALL_NO_FORMAT=true
+                _COS_INSTALL_NO_FORMAT=true
                 ;;
             --force-efi)
-                COS_INSTALL_FORCE_EFI=true
+                _COS_INSTALL_FORCE_EFI=true
                 ;;
             --force)
-                FORCE=true
+                _FORCE=true
                 ;;
             --force-gpt)
-                COS_INSTALL_FORCE_GPT=true
+                _COS_INSTALL_FORCE_GPT=true
                 ;;
             --poweroff)
-                COS_INSTALL_POWER_OFF=true
+                _COS_INSTALL_POWER_OFF=true
                 ;;
             --strict)
-                STRICT_MODE=true
+                _STRICT_MODE=true
                 ;;
             --debug)
                 set -x
-                COS_INSTALL_DEBUG=true
+                _COS_INSTALL_DEBUG=true
                 ;;
             --config)
                 shift 1
-                COS_INSTALL_CONFIG_URL=$1
+                _COS_INSTALL_CONFIG_URL=$1
                 ;;
             --partition-layout)
                 shift 1
-                COS_PARTITION_LAYOUT=$1
+                _COS_PARTITION_LAYOUT=$1
                 ;;
             --iso)
                 shift 1
-                COS_INSTALL_ISO_URL=$1
+                _COS_INSTALL_ISO_URL=$1
                 ;;
             --tty)
                 shift 1
-                COS_INSTALL_TTY=$1
+                _COS_INSTALL_TTY=$1
                 ;;
             -h)
                 usage
@@ -1232,7 +1385,7 @@ install() {
                     usage
                 fi
                 INTERACTIVE=true
-                COS_INSTALL_DEVICE=$1
+                _COS_INSTALL_DEVICE=$1
                 break
                 ;;
         esac
@@ -1242,11 +1395,17 @@ install() {
     # We want to find the upgrade channel if, no ISO url is supplied and:
     # 1: We aren't booting from LiveCD - the rootfs that we are going to install must be downloaded from somewhere
     # 2: If we specify directly an image to install
-    if ! is_booting_from_live && [ -z "$COS_INSTALL_ISO_URL" ] || [ -n "$COS_IMAGE" ] && [ -z "$COS_INSTALL_ISO_URL" ]; then
+    if ! is_booting_from_live && [ -z "$_COS_INSTALL_ISO_URL" ] || [ -n "$_COS_IMAGE" ] && [ -z "$_COS_INSTALL_ISO_URL" ]; then
         find_upgrade_channel
+    else
+      # Beforehand the config was only loaded if the path above was set, so we loaded some vars needed for the upgrade
+      # But now the config is loaded on start, so we need to unset some of those loaded vars if we dont need them, otherwise
+      # we can wrongly install stuff
+      unset _UPGRADE_IMAGE
+      unset _RECOVERY_IMAGE
     fi
 
-    if [ -z "$COS_INSTALL_DEVICE" ] && [ -z "$COS_INSTALL_NO_FORMAT" ]; then
+    if [ -z "$_COS_INSTALL_DEVICE" ] && [ -z "$_COS_INSTALL_NO_FORMAT" ]; then
         usage
     fi
 
@@ -1255,7 +1414,7 @@ install() {
 
     trap installer_cleanup exit
 
-    if [ "$STRICT_MODE" = "true" ]; then
+    if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-install
     else
         cos-setup before-install || true
@@ -1272,11 +1431,11 @@ install() {
     SELinux_relabel
 
     # Otherwise, hooks are executed in get_image
-    if [ -z "$UPGRADE_IMAGE" ]; then
-        if [ "$STRICT_MODE" = "true" ]; then
-            run_hook after-install-chroot $TARGET
+    if [ -z "$_UPGRADE_IMAGE" ]; then
+        if [ "$_STRICT_MODE" = "true" ]; then
+            run_hook after-install-chroot $_TARGET
         else
-            run_hook after-install-chroot $TARGET || true
+            run_hook after-install-chroot $_TARGET || true
         fi
     fi
 
@@ -1289,8 +1448,8 @@ install() {
 
     rebrand
 
-    if [ -z "$UPGRADE_IMAGE" ]; then
-        if [ "$STRICT_MODE" = "true" ]; then
+    if [ -z "$_UPGRADE_IMAGE" ]; then
+        if [ "$_STRICT_MODE" = "true" ]; then
             cos-setup after-install
         else
             cos-setup after-install || true
@@ -1303,7 +1462,7 @@ install() {
         exit 0
     fi
 
-    if [ "$COS_INSTALL_POWER_OFF" = true ] || grep -q 'cos.install.power_off=true' /proc/cmdline; then
+    if [ "$_COS_INSTALL_POWER_OFF" = true ] || grep -q 'cos.install.power_off=true' /proc/cmdline; then
         poweroff -f
     else
         echo " * Rebooting system in 5 seconds (CTRL+C to cancel)"
