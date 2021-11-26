@@ -346,7 +346,7 @@ part_probe() {
 }
 
 blkid_probe() {
-    _OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
     _STATE=$(blkid -L COS_STATE || true)
     _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
@@ -481,7 +481,7 @@ do_format()
     fi
 
     mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
-    mkfs.ext4 -F -L COS_OEM ${_OEM}
+    mkfs.ext4 -F -L ${OEM_LABEL} ${_OEM}
     mkfs.ext4 -F -L COS_PERSISTENT ${_PERSISTENT}
 }
 
@@ -701,7 +701,7 @@ find_partitions() {
         exit 1
     fi
 
-    _OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
 
     _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$_PERSISTENT" ]; then
@@ -1133,7 +1133,7 @@ find_recovery_partitions() {
 
     _BOOT=$(blkid -L COS_GRUB || true)
 
-    _OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
 
     _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
     if [ -z "$_PERSISTENT" ]; then

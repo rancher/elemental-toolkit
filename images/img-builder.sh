@@ -2,8 +2,26 @@
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
 MANIFEST=$1
-if [[ -z "${MANIFEST}" ]]; then
-  echo "Manifest required as parameter, cannot continue"
+if [ -z "${MANIFEST}" ]; then
+  >&2 echo "Manifest required as parameter, cannot continue"
+  exit 1
+fi
+
+CONFIG_FILE=$2
+if [ -z "${CONFIG_FILE}" ]; then
+  >&2 echo "Config file is required as parameter, cannot continue"
+  exit 1
+fi
+
+if [ -e "${CONFIG_FILE}" ]; then
+  source "${CONFIG_FILE}"
+else
+  >&2 echo "Config file ${CONFIG_FILE} is not found, cannot continue"
+  exit 1
+fi
+
+if [ -z "${OEM_LABEL}" ]; then
+  >&2 echo "OEM volume label (OEM_LABEL env var) is not set, cannot continue"
   exit 1
 fi
 
@@ -61,9 +79,9 @@ mcopy -s -i efi.part efi/EFI ::EFI
 mkdir -p oem
 cp root/etc/cos/grubenv_firstboot oem/grubenv
 
-# Create a 64MB filesystem for COS_OEM volume
+# Create a 64MB filesystem for OEM volume
 truncate -s $((64*1024*1024)) oem.part
-mkfs.ext2 -L COS_OEM -d oem oem.part
+mkfs.ext2 -L "${OEM_LABEL}" -d oem oem.part
 
 # Create disk image, add 3MB of initial free space to disk, 1MB is for proper alignement, 2MB are for the hybrid legacy boot.
 truncate -s $((3*1024*1024)) disk.raw

@@ -2,11 +2,17 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
+- name: "cos-config"
+  category: "system"
+  version: ">=0"
+- name: "cos-config-tmpl"
+  category: "utils"
+  version: ">=0"
 
 steps:
 {{if eq .Values.name "grub2-config"}}
-- mkdir /etc/cos
-- cp config/grub.cfg config/bootargs.cfg /etc/cos
+- cp config/grub.cfg config/bootargs.cfg.tmpl /etc/cos
+- cos-tmpl-render /etc/cos/bootargs.cfg.tmpl
   {{if .Values.distribution}}
     {{if eq .Values.distribution "ubuntu"}}
 - grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
