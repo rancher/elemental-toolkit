@@ -412,8 +412,6 @@ func (s SUT) GatherLog(logPath string) {
 func (s *SUT) EmptyDisk(disk string)  {
 	By(fmt.Sprintf("Trashing %s to restore VM to a blank state", disk))
 	_, _ = s.Command(fmt.Sprintf("wipefs -af %s*", disk))
-	_, _ = s.Command("sync")
-	_, _ = s.Command("sleep 5")
 }
 
 // SetCOSCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
