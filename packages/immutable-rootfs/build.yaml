@@ -13,7 +13,7 @@ copy:
 - package: 
     category: "toolchain"
     name: "yip"
-    version: ">=0"
+    version: ">=0.9.24"
   source: "/usr/bin/yip"
   destination: "/usr/bin/yip"
 

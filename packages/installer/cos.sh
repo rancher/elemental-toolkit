@@ -340,7 +340,7 @@ part_probe() {
     partprobe ${dev} 2>/dev/null || true
 
     sync
-    sleep 2
+    sleep 5
 
     dmsetup remove_all 2>/dev/null || true
 }
@@ -561,7 +561,6 @@ get_image()
 {
     if [ -n "$_UPGRADE_IMAGE" ]; then
         local temp
-        part_probe
         _DISTRO=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         temp=$(mktemp --tmpdir -d cos.XXXXXXXX.image)
         create_rootfs "install" $_DISTRO $temp
