@@ -25,6 +25,11 @@ if [ -z "${OEM_LABEL}" ]; then
   exit 1
 fi
 
+if [ -z "${RECOVERY_LABEL}" ]; then
+  >&2 echo "RECOVERY volume label (RECOVERY_LABEL env var) is not set, cannot continue"
+  exit 1
+fi
+
 ARCH=${ARCH:-$(uname -p)}
 
 YQ_VERSION=$( yq -V | cut -d " " -f 3 | cut -d "." -f 1)
@@ -60,14 +65,14 @@ repositories:
     priority: 90
 EOF
 
-# Create root-tree for COS_RECOVERY
+# Create root-tree forOVERY
 while IFS=$'\t' read -r name target ; do
   luet install --no-spinner --system-target "$target" -y "$name"
 done < <("${YQ_PACKAGES_COMMAND[@]}" | jq -r ".raw_disk.$ARCH.packages[] | [.name, .target] | @tsv")
 
-# Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
+# Create a 2GB filesystem for RECOVERY including the contents for root (grub config and squasfs container)
 truncate -s $((2048*1024*1024)) rootfs.part
-mkfs.ext2 -L COS_RECOVERY -d root rootfs.part
+mkfs.ext2 -L "${RECOVERY_LABEL}" -d root rootfs.part
 
 # Create the EFI partition FAT16 and include the EFI image and a basic grub.cfg
 truncate -s $((20*1024*1024)) efi.part

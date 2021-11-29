@@ -14,6 +14,7 @@ steps:
 - cp -rfv oem /system
 - chmod -R 600 /system/oem
 - cos-tmpl-render /system/oem/00_rootfs.yaml.tmpl
+- cos-tmpl-render /system/oem/06_recovery.yaml.tmpl
 {{ if .Values.codename }}
 - sed -i 's/:FLAVOR:/{{.Values.codename}}/g' /system/oem/02_upgrades.yaml
 {{end}}

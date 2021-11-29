@@ -75,11 +75,11 @@ menuentry "${display_name} (fallback)" --id fallback {
 menuentry "${display_name} recovery" --id recovery {
   if search.file /cOS/recovery.squashfs ; then
     set img=/cOS/recovery.squashfs
-    set recoverylabel=COS_RECOVERY
+    set recoverylabel=@RECOVERY_LABEL@
   else
     set img=/cOS/recovery.img
   fi
-  search.fs_label COS_RECOVERY root
+  search.fs_label @RECOVERY_LABEL@ root
   set label=COS_SYSTEM
   loopback loop0 /$img
   set root=($root)

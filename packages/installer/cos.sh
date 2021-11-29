@@ -232,7 +232,7 @@ is_mounted() {
 }
 
 is_booting_from_squashfs() {
-    if cat /proc/cmdline | grep -q "COS_RECOVERY"; then
+    if cat /proc/cmdline | grep -q "${RECOVERY_LABEL}"; then
         return 0
     else
         return 1
@@ -348,7 +348,7 @@ part_probe() {
 blkid_probe() {
     _OEM=$(blkid -L ${OEM_LABEL} || true)
     _STATE=$(blkid -L COS_STATE || true)
-    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _RECOVERY=$(blkid -L ${RECOVERY_LABEL} || true)
     _BOOT=$(blkid -L COS_GRUB || true)
     _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
 }
@@ -480,7 +480,7 @@ do_format()
         fatlabel ${_BOOT} COS_GRUB
     fi
 
-    mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
+    mkfs.ext4 -F -L ${RECOVERY_LABEL} ${_RECOVERY}
     mkfs.ext4 -F -L ${OEM_LABEL} ${_OEM}
     mkfs.ext4 -F -L ${PERSISTENT_LABEL} ${_PERSISTENT}
 }
@@ -734,9 +734,9 @@ find_partitions() {
 }
 
 find_recovery() {
-    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _RECOVERY=$(blkid -L ${RECOVERY_LABEL} || true)
     if [ -z "$_RECOVERY" ]; then
-        echo "COS_RECOVERY partition cannot be found"
+        echo "${RECOVERY_LABEL} partition cannot be found"
         exit 1
     fi
 }
@@ -777,7 +777,7 @@ is_squashfs() {
 recovery_boot() {
     local cmdline
     cmdline="$(cat /proc/cmdline)"
-    if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
+    if echo $cmdline | grep -q "${RECOVERY_LABEL}" || echo $cmdline | grep -q "COS_SYSTEM"; then
         return 0
     else
         return 1
@@ -1115,9 +1115,9 @@ check_recovery() {
             echo "cos-reset can be run only from recovery"
             exit 1
         fi
-        recovery=$(blkid -L COS_RECOVERY || true)
+        recovery=$(blkid -L ${RECOVERY_LABEL} || true)
         if [ -z "$recovery" ]; then
-            echo "Can't find COS_RECOVERY partition"
+            echo "Can't find ${RECOVERY_LABEL} partition"
             exit 1
         fi
     fi

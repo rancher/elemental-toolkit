@@ -11,8 +11,9 @@ requires:
 
 steps:
 {{if eq .Values.name "grub2-config"}}
-- cp config/grub.cfg config/bootargs.cfg.tmpl /etc/cos
+- cp config/grub.cfg.tmpl config/bootargs.cfg.tmpl /etc/cos
 - cos-tmpl-render /etc/cos/bootargs.cfg.tmpl
+- cos-tmpl-render /etc/cos/grub.cfg.tmpl
   {{if .Values.distribution}}
     {{if eq .Values.distribution "ubuntu"}}
 - grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
@@ -24,7 +25,8 @@ steps:
 
 {{if eq .Values.name "grub2-efi-image"}}
 - mkdir -p /EFI/BOOT
-- cp config/grub_efi.cfg /EFI/BOOT/grub.cfg
+- cp config/grub_efi.cfg.tmpl /EFI/BOOT/grub.cfg.tmpl
+- cos-tmpl-render /EFI/BOOT/grub.cfg.tmpl
   {{if .Values.distribution}}
     {{if eq .Values.distribution "opensuse"}}
       {{if .Values.arch }}
