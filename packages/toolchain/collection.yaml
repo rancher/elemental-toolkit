@@ -53,7 +53,7 @@ packages:
     name: "yip"
     upx: false
     fips: false
-    version: 0.9.24
+    version: "0.9.25"
     labels:
       github.repo: "yip"
       github.owner: "mudler"
