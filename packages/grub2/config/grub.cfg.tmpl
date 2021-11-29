@@ -51,7 +51,7 @@ insmod loopback
 insmod squash4
 
 menuentry "${display_name}" --id cos {
-  search.fs_label COS_STATE root
+  search.fs_label @STATE_LABEL@ root
   set img=/cOS/active.img
   set label=COS_ACTIVE
   loopback loop0 /$img
@@ -62,7 +62,7 @@ menuentry "${display_name}" --id cos {
 }
 
 menuentry "${display_name} (fallback)" --id fallback {
-  search.fs_label COS_STATE root
+  search.fs_label @STATE_LABEL@ root
   set img=/cOS/passive.img
   set label=COS_PASSIVE
   loopback loop0 /$img

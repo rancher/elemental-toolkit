@@ -266,7 +266,7 @@ usage()
     echo "  upgrade:"
     echo "  [--strict] [--recovery] [--no-verify] [--no-cosign] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
     echo ""
-    echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
+    echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the ${STATE_LABEL} partition (/dev/vda2)"
     echo "   IMAGE must be a container image if --docker-image is specified"
     echo "   DIRECTORY must be passed if --directory is specified"
     echo ""
@@ -347,7 +347,7 @@ part_probe() {
 
 blkid_probe() {
     _OEM=$(blkid -L ${OEM_LABEL} || true)
-    _STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
     _RECOVERY=$(blkid -L ${RECOVERY_LABEL} || true)
     _BOOT=$(blkid -L COS_GRUB || true)
     _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
@@ -363,9 +363,9 @@ check_required_partitions() {
 do_format()
 {
     if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
-        _STATE=$(blkid -L COS_STATE || true)
+        _STATE=$(blkid -L ${STATE_LABEL} || true)
         if [ -z "$_STATE" ] && [ -n "$_DEVICE" ]; then
-            tune2fs -L COS_STATE $_DEVICE
+            tune2fs -L ${STATE_LABEL} $_DEVICE
         fi
         blkid_probe
         check_required_partitions
@@ -474,7 +474,7 @@ do_format()
     _RECOVERY=${PREFIX}${RECOVERY_NUM}
     _PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
-    mkfs.ext4 -F -L COS_STATE ${_STATE}
+    mkfs.ext4 -F -L ${STATE_LABEL} ${_STATE}
     if [ -n "${_BOOT}" ]; then
         mkfs.vfat -F 32 ${_BOOT}
         fatlabel ${_BOOT} COS_GRUB
@@ -695,7 +695,7 @@ validate_device()
 ## UPGRADER
 
 find_partitions() {
-    _STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
     if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
@@ -1124,7 +1124,7 @@ check_recovery() {
 }
 
 find_recovery_partitions() {
-    _STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
     if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
@@ -1170,7 +1170,7 @@ do_recovery_mount()
 rebrand_grub_menu() {
 	local grub_entry="$1"
 
-	_STATEDIR=$(blkid -L COS_STATE)
+	_STATEDIR=$(blkid -L ${STATE_LABEL})
 	mkdir -p /run/boot
 	
 	if ! is_mounted /run/boot; then
