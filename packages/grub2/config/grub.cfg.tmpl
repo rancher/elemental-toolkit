@@ -80,7 +80,7 @@ menuentry "${display_name} recovery" --id recovery {
     set img=/cOS/recovery.img
   fi
   search.fs_label @RECOVERY_LABEL@ root
-  set label=COS_SYSTEM
+  set label=@SYSTEM_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg

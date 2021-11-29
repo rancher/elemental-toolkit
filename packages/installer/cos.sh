@@ -321,7 +321,7 @@ prepare_recovery() {
         echo "Copying image file.."
         cp -a $_STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
-        tune2fs -L COS_SYSTEM $_RECOVERYDIR/cOS/recovery.img
+        tune2fs -L ${SYSTEM_LABEL} $_RECOVERYDIR/cOS/recovery.img
     fi
 
     sync
@@ -777,7 +777,7 @@ is_squashfs() {
 recovery_boot() {
     local cmdline
     cmdline="$(cat /proc/cmdline)"
-    if echo $cmdline | grep -q "${RECOVERY_LABEL}" || echo $cmdline | grep -q "COS_SYSTEM"; then
+    if echo $cmdline | grep -q "${RECOVERY_LABEL}" || echo $cmdline | grep -q "${SYSTEM_LABEL}"; then
         return 0
     else
         return 1
@@ -870,7 +870,7 @@ switch_recovery() {
         rm -rf $_TARGET
     else
         mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/recovery.img
-        tune2fs -L COS_SYSTEM ${_STATEDIR}/cOS/recovery.img
+        tune2fs -L ${SYSTEM_LABEL} ${_STATEDIR}/cOS/recovery.img
     fi
 }
 
@@ -1110,7 +1110,7 @@ check_recovery() {
         local system
         local recovery
 
-        system=$(blkid -L COS_SYSTEM || true)
+        system=$(blkid -L ${SYSTEM_LABEL} || true)
         if [ -z "$system" ]; then
             echo "cos-reset can be run only from recovery"
             exit 1
