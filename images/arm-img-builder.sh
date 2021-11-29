@@ -74,9 +74,10 @@ usage()
 {
     echo "Usage: $0 [options] image.img"
     echo ""
-    echo "Example: $0 --model odroid-c2 --docker-image <image> output.img"
+    echo "Example: $0 --cos-config cos-config  --model odroid-c2 --docker-image <image> output.img"
     echo ""
     echo "Flags:"
+    echo " --cos-config: (mandatory) Specifies a cos-config file for required environment variables"
     echo " --config: (optional) Specify a cloud-init config file to embed into the final image"
     echo " --manifest: (optional) Specify a manifest file to customize efi/grub packages installed into the image"
     echo " --size: (optional) Image size (MB)"
@@ -119,6 +120,10 @@ trap "cleanup" 1 2 3 6 9 14 15 EXIT
 load_vars
 while [ "$#" -gt 0 ]; do
     case $1 in
+        --cos-config)
+            shift 1
+            cos_config=$1
+            ;;
         --config)
             shift 1
             config=$1
@@ -182,6 +187,18 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [ -z "$cos_config"]; then
+  echo "No cos-config file specified"
+  exit 1
+fi
+
+if [ -e "$cos_config" ]; then
+  source "$cos_config"
+else
+  echo "cos-config file '$cos_config' not found"
+  exit 1
+fi
 
 if [ -z "$output_image" ]; then
   echo "No image file specified"
@@ -253,7 +270,7 @@ mkdir -p ${STATEDIR}/cOS
 
 dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$default_active_size
 
-mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
+mkfs.ext2 ${STATEDIR}/cOS/active.img -L ${ACTIVE_LABEL}
 
 sync
 
@@ -285,7 +302,7 @@ fi
 
 echo ">> Preparing passive.img"
 cp -rfv ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
-tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+tune2fs -L ${PASSIVE_LABEL} ${STATEDIR}/cOS/passive.img
 
 # Preparing recovery
 echo ">> Preparing recovery.img"
@@ -298,7 +315,7 @@ fi
 mkdir -p ${RECOVERY}/cOS
 cp -rfv ${STATEDIR}/cOS/active.img ${RECOVERY}/cOS/recovery.img
 
-tune2fs -L COS_SYSTEM ${RECOVERY}/cOS/recovery.img
+tune2fs -L ${SYSTEM_LABEL} ${RECOVERY}/cOS/recovery.img
 
 # Install real grub config to recovery
 if [ -z "$manifest" ]; then
@@ -377,13 +394,13 @@ oem=${device}p2
 state=${device}p3
 recovery=${device}p4
 
-# Create partitions (COS_RECOVERY, COS_STATE, COS_OEM)
+# Create partitions (RECOVERY, STATE, OEM)
 mkfs.vfat -F 32 ${efi}
 fatlabel ${efi} EFI
 
-mkfs.ext4 -F -L COS_RECOVERY $recovery
-mkfs.ext4 -F -L COS_STATE $state
-mkfs.ext4 -F -L COS_OEM $oem
+mkfs.ext4 -F -L ${RECOVERY_LABEL} $recovery
+mkfs.ext4 -F -L ${STATE_LABEL} $state
+mkfs.ext4 -F -L ${OEM_LABEL} $oem
 
 mkdir $WORKDIR/state
 mkdir $WORKDIR/recovery
