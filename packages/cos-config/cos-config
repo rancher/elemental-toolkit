@@ -44,6 +44,8 @@
 # Path to default configuration grub file
 #GRUBCONF="/etc/cos/grub.cfg"
 
-
 # Label of the OEM volume
 OEM_LABEL="COS_OEM"
+
+# Label of the PERSISTENT volume
+PERSISTENT_LABEL="COS_PERSISTENT"

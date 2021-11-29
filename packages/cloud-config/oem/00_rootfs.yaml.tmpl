@@ -17,7 +17,7 @@ stages:
       name: "Layout configuration"
       environment_file: /run/cos/cos-layout.env
       environment:
-        VOLUMES: "LABEL=@OEM_LABEL@:/oem LABEL=COS_PERSISTENT:/usr/local"
+        VOLUMES: "LABEL=@OEM_LABEL@:/oem LABEL=@PERSISTENT_LABEL@:/usr/local"
         OVERLAY: "tmpfs:25%"
     - if: '[ -f "/run/cos/recovery_mode" ]'
       # omit the persistent partition on recovery mode

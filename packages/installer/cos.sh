@@ -350,7 +350,7 @@ blkid_probe() {
     _STATE=$(blkid -L COS_STATE || true)
     _RECOVERY=$(blkid -L COS_RECOVERY || true)
     _BOOT=$(blkid -L COS_GRUB || true)
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
 }
 
 check_required_partitions() {
@@ -482,7 +482,7 @@ do_format()
 
     mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
     mkfs.ext4 -F -L ${OEM_LABEL} ${_OEM}
-    mkfs.ext4 -F -L COS_PERSISTENT ${_PERSISTENT}
+    mkfs.ext4 -F -L ${PERSISTENT_LABEL} ${_PERSISTENT}
 }
 
 do_mount()
@@ -703,7 +703,7 @@ find_partitions() {
 
     _OEM=$(blkid -L ${OEM_LABEL} || true)
 
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
     if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
@@ -1135,7 +1135,7 @@ find_recovery_partitions() {
 
     _OEM=$(blkid -L ${OEM_LABEL} || true)
 
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
     if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
