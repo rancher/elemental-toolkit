@@ -2,7 +2,7 @@ FROM opensuse/leap
 
 ENV LUET_NOLOCK=true
 
-RUN zypper in -y docker curl squashfs xorriso make which mtools dosfstools jq gptfdisk
+RUN zypper in -y docker curl squashfs xorriso make which mtools dosfstools jq gptfdisk git parted kpartx
 
 COPY . /cOS
 WORKDIR /cOS
