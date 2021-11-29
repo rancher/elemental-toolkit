@@ -501,9 +501,9 @@ do_mount()
     fi
 
     dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L COS_ACTIVE
+    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L ${ACTIVE_LABEL}
 
-    if [ -z "$_COS_ACTIVE" ]; then
+    if [ -z "$_${ACTIVE_LABEL}" ]; then
         sync
     fi
 
@@ -676,11 +676,11 @@ validate_device()
         exit 1
     fi
     if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
-        _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
+        _ACTIVE=$(blkid -L ${ACTIVE_LABEL} || true)
         _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$_COS_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
+        if [ -n "$_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
             if [ "$_FORCE" == "true" ]; then
-                echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
+                echo "Forcing overwrite current ${ACTIVE_LABEL} and COS_PASSIVE partitions"
                 return 0
             else
                 echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
@@ -709,8 +709,8 @@ find_partitions() {
         exit 1
     fi
 
-    _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-    if [ -n "$_COS_ACTIVE" ]; then
+    _ACTIVE=$(blkid -L ${ACTIVE_LABEL} || true)
+    if [ -n "$_ACTIVE" ]; then
         _CURRENT=active.img
     fi
 
@@ -854,7 +854,7 @@ switch_active() {
     fi
 
     mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
+    tune2fs -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 }
 
 switch_recovery() {
@@ -1031,7 +1031,7 @@ reset_state() {
 copy_passive() {
     tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
     cp -rf ${_STATEDIR}/cOS/passive.img ${_STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
+    tune2fs -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 }
 
 run_reset_hook() {

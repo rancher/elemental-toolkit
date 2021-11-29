@@ -53,7 +53,7 @@ insmod squash4
 menuentry "${display_name}" --id cos {
   search.fs_label @STATE_LABEL@ root
   set img=/cOS/active.img
-  set label=COS_ACTIVE
+  set label=@ACTIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg

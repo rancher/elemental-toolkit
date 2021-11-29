@@ -55,3 +55,6 @@ RECOVERY_LABEL="COS_RECOVERY"
 
 # Label of the STATE volume
 STATE_LABEL="COS_STATE"
+
+# Label of the ACTIVE volume
+ACTIVE_LABEL="COS_ACTIVE"
