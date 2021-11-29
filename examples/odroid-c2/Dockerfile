@@ -6,6 +6,8 @@ FROM opensuse/leap:15.3
 ENV COSIGN_EXPERIMENTAL=1
 ENV COSIGN_REPOSITORY=raccos/releases-green
 
+RUN zypper ar -G https://download.opensuse.org/repositories/devel:/ARM:/Factory:/Contrib:/OdroidC2/standard/devel:ARM:Factory:Contrib:OdroidC2.repo
+RUN zypper ref
 RUN zypper in -y \
     # Odroid
     kernel-default-extra \
@@ -39,14 +41,18 @@ RUN zypper in -y \
     open-vm-tools \
     python-azure-agent \
     qemu-guest-agent \
-    kernel-firmware-bnx2 \
-    kernel-firmware-i915 \
-    kernel-firmware-intel \
-    kernel-firmware-iwlwifi \
-    kernel-firmware-mellanox \
-    kernel-firmware-network \
-    kernel-firmware-platform \
-    kernel-firmware-realtek \
+    wireless-tools \
+    wpa_supplicant \
+    iw \
+    iproute2 \
+    dtb-amlogic \
+    aaa_base-extras \
+    odroidc2-firmware \
+    iputils \
+    kmod \
+    libudev1 \
+    vim-small \
+    kernel-firmware-all \
     nano \
     gawk \
     haveged \
