@@ -331,7 +331,7 @@ prepare_passive() {
     echo "Preparing passive boot.."
     cp -a ${_STATEDIR}/cOS/active.img ${_STATEDIR}/cOS/passive.img
     sync
-    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     sync
 }
 
@@ -677,10 +677,10 @@ validate_device()
     fi
     if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
         _ACTIVE=$(blkid -L ${ACTIVE_LABEL} || true)
-        _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
+        _PASSIVE=$(blkid -L ${PASSIVE_LABEL} || true)
+        if [ -n "$_ACTIVE" ] || [ -n "$_PASSIVE" ]; then
             if [ "$_FORCE" == "true" ]; then
-                echo "Forcing overwrite current ${ACTIVE_LABEL} and COS_PASSIVE partitions"
+                echo "Forcing overwrite current ${ACTIVE_LABEL} and ${PASSIVE_LABEL} partitions"
                 return 0
             else
                 echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
@@ -714,8 +714,8 @@ find_partitions() {
         _CURRENT=active.img
     fi
 
-    _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -n "$_COS_PASSIVE" ]; then
+    _PASSIVE=$(blkid -L ${PASSIVE_LABEL} || true)
+    if [ -n "$_PASSIVE" ]; then
         _CURRENT=passive.img
     fi
 
@@ -850,7 +850,7 @@ mount_image() {
 switch_active() {
     if [[ "$_CURRENT" == "active.img" ]]; then
         mv -f ${_STATEDIR}/cOS/$_CURRENT ${_STATEDIR}/cOS/passive.img
-        tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+        tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     fi
 
     mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/active.img
@@ -1029,7 +1029,7 @@ reset_state() {
 }
 
 copy_passive() {
-    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     cp -rf ${_STATEDIR}/cOS/passive.img ${_STATEDIR}/cOS/active.img
     tune2fs -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 }
@@ -1064,7 +1064,7 @@ copy_active() {
         _TARGET=$loop_dir
         # TODO: Size should be tweakable
         dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L COS_PASSIVE
+        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L ${PASSIVE_LABEL}
         sync
         _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
         mount -t ext2 $_LOOP $_TARGET

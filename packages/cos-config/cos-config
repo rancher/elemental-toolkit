@@ -58,3 +58,6 @@ STATE_LABEL="COS_STATE"
 
 # Label of the ACTIVE volume
 ACTIVE_LABEL="COS_ACTIVE"
+
+# Label of the PASSIVE volume
+PASSIVE_LABEL="COS_PASSIVE"

@@ -64,7 +64,7 @@ menuentry "${display_name}" --id cos {
 menuentry "${display_name} (fallback)" --id fallback {
   search.fs_label @STATE_LABEL@ root
   set img=/cOS/passive.img
-  set label=COS_PASSIVE
+  set label=@PASSIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
