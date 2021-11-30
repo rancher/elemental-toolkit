@@ -1,7 +1,7 @@
 packages:
   - category: "toolchain"
     name: "luet"
-    version: "0.20.11"
+    version: "0.20.12"
     branch: ""
     upx: false
     fips: false
