@@ -1,8 +1,8 @@
 packages:
   - name: "immutable-rootfs"
     category: "system"
-    version: 0.2.2
+    version: 0.2.3
     requires:
       - category: toolchain
         name: yip
-        version: ">=0.9.24"
+        version: ">=0.9.25"
