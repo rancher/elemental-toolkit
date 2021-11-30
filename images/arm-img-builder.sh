@@ -18,6 +18,16 @@ load_vars() {
   ## Repositories
   final_repo="${FINAL_REPO:-quay.io/costoolkit/releases-green-arm64}"
   repo_type="${REPO_TYPE:-docker}"
+
+  # Warning: these default values must be aligned with the values provided
+  # in 'packages/cos-config/cos-config', provide an environment file using the
+  # --cos-config flag if different values are needed.
+  : "${OEM_LABEL:=COS_OEM}"
+  : "${RECOVERY_LABEL:=COS_RECOVERY}"
+  : "${ACTIVE_LABEL:=COS_ACTIVE}"
+  : "${PASSIVE_LABEL:=COS_PASSIVE}"
+  : "${SYSTEM_LABEL:=COS_SYSTEM}"
+  : "${STATE_LABEL:=COS_STATE}"
 }
 
 cleanup() {
@@ -77,7 +87,7 @@ usage()
     echo "Example: $0 --cos-config cos-config  --model odroid-c2 --docker-image <image> output.img"
     echo ""
     echo "Flags:"
-    echo " --cos-config: (mandatory) Specifies a cos-config file for required environment variables"
+    echo " --cos-config: (optional) Specifies a cos-config file for required environment variables"
     echo " --config: (optional) Specify a cloud-init config file to embed into the final image"
     echo " --manifest: (optional) Specify a manifest file to customize efi/grub packages installed into the image"
     echo " --size: (optional) Image size (MB)"
@@ -188,16 +198,8 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-if [ -z "$cos_config"]; then
-  echo "No cos-config file specified"
-  exit 1
-fi
-
-if [ -e "$cos_config" ]; then
+if [ -n "$cos_config"] && [ -e "$cos_config" ];
   source "$cos_config"
-else
-  echo "cos-config file '$cos_config' not found"
-  exit 1
 fi
 
 if [ -z "$output_image" ]; then

@@ -1,6 +1,13 @@
 #!/bin/bash
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
+
+# Warning: these default values must be aligned with the values provided
+# in 'packages/cos-config/cos-config', provide an environment file as the
+# second argument if different values are needed.
+: "${OEM_LABEL:=COS_OEM}"
+: "${RECOVERY_LABEL:=COS_RECOVERY}"
+
 MANIFEST=$1
 if [ -z "${MANIFEST}" ]; then
   >&2 echo "Manifest required as parameter, cannot continue"
@@ -8,26 +15,8 @@ if [ -z "${MANIFEST}" ]; then
 fi
 
 CONFIG_FILE=$2
-if [ -z "${CONFIG_FILE}" ]; then
-  >&2 echo "Config file is required as parameter, cannot continue"
-  exit 1
-fi
-
-if [ -e "${CONFIG_FILE}" ]; then
+if [ -n "${CONFIG_FILE}" ] && [ -e "${CONFIG_FILE}" ]; then
   source "${CONFIG_FILE}"
-else
-  >&2 echo "Config file ${CONFIG_FILE} is not found, cannot continue"
-  exit 1
-fi
-
-if [ -z "${OEM_LABEL}" ]; then
-  >&2 echo "OEM volume label (OEM_LABEL env var) is not set, cannot continue"
-  exit 1
-fi
-
-if [ -z "${RECOVERY_LABEL}" ]; then
-  >&2 echo "RECOVERY volume label (RECOVERY_LABEL env var) is not set, cannot continue"
-  exit 1
 fi
 
 ARCH=${ARCH:-$(uname -p)}
