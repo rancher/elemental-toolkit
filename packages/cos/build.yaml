@@ -1,6 +1,11 @@
 #### system/cos system/cos-container and recovery/cos start here
 {{ if or (eq .Values.name "cos-container") (eq .Values.name "cos" ) }}
 requires:
+# Base distro is not required by other packages to facilitate their usage
+# as stand alone packages (e.g. in Dockerfiles), so that it is included here.
+- name: "base"
+  category: "distro"
+  version: ">=0"
 - name: "cos-setup"
   category: "system"
   version: ">=0"
@@ -77,6 +82,8 @@ steps:
 
 # See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
 unpack: true
+# See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#requires_final_images
+requires_final_images: true
 
 # Files to exclude from the final 
 # artifact 
