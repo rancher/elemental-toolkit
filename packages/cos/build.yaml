@@ -33,45 +33,24 @@ requires:
 - name: "dracut-initrd"
   category: "system"
   version: ">=0"
-
-# https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#copy
-copy:
-- package: 
-    category: "toolchain"
-    name: "yip"
-    version: ">=0"
-  source: "/usr/bin/yip"
-  destination: "/usr/bin/yip"
-- package: 
-    category: "toolchain"
-    name: "luet"
-    version: ">=0"
-  source: "/usr/bin/luet"
-  destination: "/usr/bin/luet"
-- package:
-    category: "toolchain"
-    name: "luet-mtree"
-    version: ">=0"
-  source: "/usr/bin/luet-mtree"
-  destination: "/usr/bin/luet-mtree"
-- package:
-    category: "toolchain"
-    name: "yq"
-    version: ">=0"
-  source: "/usr/bin/yq"
-  destination: "/usr/bin/yq"
-- package:
-    category: "toolchain"
-    name: "cosign"
-    version: ">=0"
-  source: "/usr/bin/cosign"
-  destination: "/usr/bin/cosign"
-- package:
-    category: "toolchain"
-    name: "luet-cosign"
-    version: ">=0"
-  source: "/usr/bin/luet-cosign"
-  destination: "/usr/bin/luet-cosign"
+- name: "yip"
+  category: "toolchain"
+  version: ">=0"
+- name: "luet"
+  category: "toolchain"
+  version: ">=0"
+- name: "luet-mtree"
+  category: "toolchain"
+  version: ">=0"
+- name: "yq"
+  category: "toolchain"
+  version: ">=0"
+- name: "cosign"
+  category: "toolchain"
+  version: ">=0"
+- name: "luet-cosign"
+  category: "toolchain"
+  version: ">=0"
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
