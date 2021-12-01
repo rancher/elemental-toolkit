@@ -140,16 +140,18 @@ excludes:
 #### recovery/cos-img starts here
 {{ if eq .Values.name "cos-img" }}
 requires:
-  - category: "recovery"
-    name: "cos"
+  - category: "distro"
+    name: "base"
     version: ">=0"
 copy:
   - package:
       category: "recovery"
-      name: "cos-squash"
+      name: "cos"
       version: ">=0"
     source: "/."
     destination: "/recovery"
+
+requires_final_images: true
 
 package_dir: "/output"
 steps:
@@ -157,19 +159,3 @@ steps:
   - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
 {{- end}}
 #### recovery/cos-img ends here
-
-#### recovery/cos-squash starts here
-{{ if eq .Values.name "cos-squash" }}
-requires:
-- category: "recovery"
-  name: "cos"
-  version: ">=0"
-
-requires_final_images: true
-unpack: true
-
-excludes:
-  - ^/var/cache/luet
-  - ^/luetbuild
-{{- end}}
-#### recovery/cos-squash ends here
