@@ -14,8 +14,8 @@ if [ -e /etc/cos/config ]; then
     source /etc/cos/config
 fi
 
-if [ -z "$COS_OEMDIR" ]; then
-  COS_OEMDIR=/oem
+if [ -z "$OEM_LABELDIR" ]; then
+  OEM_LABELDIR=/oem
 fi
 
 if [ -z "$COS_FEATURESDIR" ]; then
@@ -46,7 +46,7 @@ list() {
   echo ""
   for i in $COS_FEATURESDIR/*.yaml; do
     f=$(basename $i .yaml)
-    if [ -L "$COS_OEMDIR/features/${f}.yaml" ]; then
+    if [ -L "$OEM_LABELDIR/features/${f}.yaml" ]; then
       enabled="(enabled)"
     fi
     echo "- $f $enabled"
@@ -60,22 +60,22 @@ enable() {
       echo "Feature not present"
       exit 1
     fi
-    if [ ! -d "$COS_OEMDIR/features" ]; then
-      mkdir $COS_OEMDIR/features
+    if [ ! -d "$OEM_LABELDIR/features" ]; then
+      mkdir $OEM_LABELDIR/features
     fi
-    if [ -L "$COS_OEMDIR/features/$i.yaml" ]; then
+    if [ -L "$OEM_LABELDIR/features/$i.yaml" ]; then
       echo "Feature $i enabled already"
       continue
     fi
-    ln -s $COS_FEATURESDIR/$i.yaml $COS_OEMDIR/features/$i.yaml
+    ln -s $COS_FEATURESDIR/$i.yaml $OEM_LABELDIR/features/$i.yaml
     echo "$i enabled"
   done
 }
 
 disable() {
   for i in $@; do
-    if [ -L "$COS_OEMDIR/features/$i.yaml" ]; then
-      rm $COS_OEMDIR/features/$i.yaml
+    if [ -L "$OEM_LABELDIR/features/$i.yaml" ]; then
+      rm $OEM_LABELDIR/features/$i.yaml
       echo "Feature $i disabled"
     else
       echo "Feature $i not enabled"

@@ -63,7 +63,7 @@ raw_disk: as_root $(YQ) $(JQ) $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS)
 ifneq ("$(RAW)","")
 	@echo "'$(RAW)' exists, it will be overwritten"
 endif
-	$(ROOT_DIR)/images/img-builder.sh $(MANIFEST)
+	$(ROOT_DIR)/images/img-builder.sh $(MANIFEST) $(COS_CONFIG)
 
 .PHONY: aws_vanilla_ami
 aws_vanilla_ami: $(AWSCLI) $(JQ)

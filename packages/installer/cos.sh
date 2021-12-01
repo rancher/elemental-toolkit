@@ -232,7 +232,7 @@ is_mounted() {
 }
 
 is_booting_from_squashfs() {
-    if cat /proc/cmdline | grep -q "COS_RECOVERY"; then
+    if cat /proc/cmdline | grep -q "${RECOVERY_LABEL}"; then
         return 0
     else
         return 1
@@ -266,7 +266,7 @@ usage()
     echo "  upgrade:"
     echo "  [--strict] [--recovery] [--no-verify] [--no-cosign] [--directory] [--docker-image] (IMAGE/DIRECTORY)"
     echo ""
-    echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the COS_STATE partition (/dev/vda2)"
+    echo "   DEVICE must be the disk that will be partitioned (/dev/vda). If you are using --no-format it should be the device of the ${STATE_LABEL} partition (/dev/vda2)"
     echo "   IMAGE must be a container image if --docker-image is specified"
     echo "   DIRECTORY must be passed if --directory is specified"
     echo ""
@@ -321,7 +321,7 @@ prepare_recovery() {
         echo "Copying image file.."
         cp -a $_STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
-        tune2fs -L COS_SYSTEM $_RECOVERYDIR/cOS/recovery.img
+        tune2fs -L ${SYSTEM_LABEL} $_RECOVERYDIR/cOS/recovery.img
     fi
 
     sync
@@ -331,7 +331,7 @@ prepare_passive() {
     echo "Preparing passive boot.."
     cp -a ${_STATEDIR}/cOS/active.img ${_STATEDIR}/cOS/passive.img
     sync
-    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     sync
 }
 
@@ -346,11 +346,11 @@ part_probe() {
 }
 
 blkid_probe() {
-    _OEM=$(blkid -L COS_OEM || true)
-    _STATE=$(blkid -L COS_STATE || true)
-    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
+    _RECOVERY=$(blkid -L ${RECOVERY_LABEL} || true)
     _BOOT=$(blkid -L COS_GRUB || true)
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
 }
 
 check_required_partitions() {
@@ -363,9 +363,9 @@ check_required_partitions() {
 do_format()
 {
     if [ "$_COS_INSTALL_NO_FORMAT" = "true" ]; then
-        _STATE=$(blkid -L COS_STATE || true)
+        _STATE=$(blkid -L ${STATE_LABEL} || true)
         if [ -z "$_STATE" ] && [ -n "$_DEVICE" ]; then
-            tune2fs -L COS_STATE $_DEVICE
+            tune2fs -L ${STATE_LABEL} $_DEVICE
         fi
         blkid_probe
         check_required_partitions
@@ -474,15 +474,15 @@ do_format()
     _RECOVERY=${PREFIX}${RECOVERY_NUM}
     _PERSISTENT=${PREFIX}${PERSISTENT_NUM}
 
-    mkfs.ext4 -F -L COS_STATE ${_STATE}
+    mkfs.ext4 -F -L ${STATE_LABEL} ${_STATE}
     if [ -n "${_BOOT}" ]; then
         mkfs.vfat -F 32 ${_BOOT}
         fatlabel ${_BOOT} COS_GRUB
     fi
 
-    mkfs.ext4 -F -L COS_RECOVERY ${_RECOVERY}
-    mkfs.ext4 -F -L COS_OEM ${_OEM}
-    mkfs.ext4 -F -L COS_PERSISTENT ${_PERSISTENT}
+    mkfs.ext4 -F -L ${RECOVERY_LABEL} ${_RECOVERY}
+    mkfs.ext4 -F -L ${OEM_LABEL} ${_OEM}
+    mkfs.ext4 -F -L ${PERSISTENT_LABEL} ${_PERSISTENT}
 }
 
 do_mount()
@@ -501,9 +501,9 @@ do_mount()
     fi
 
     dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L COS_ACTIVE
+    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L ${ACTIVE_LABEL}
 
-    if [ -z "$_COS_ACTIVE" ]; then
+    if [ -z "$_${ACTIVE_LABEL}" ]; then
         sync
     fi
 
@@ -676,11 +676,11 @@ validate_device()
         exit 1
     fi
     if [ -n "$_COS_INSTALL_NO_FORMAT" ]; then
-        _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-        _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-        if [ -n "$_COS_ACTIVE" ] || [ -n "$_COS_PASSIVE" ]; then
+        _ACTIVE=$(blkid -L ${ACTIVE_LABEL} || true)
+        _PASSIVE=$(blkid -L ${PASSIVE_LABEL} || true)
+        if [ -n "$_ACTIVE" ] || [ -n "$_PASSIVE" ]; then
             if [ "$_FORCE" == "true" ]; then
-                echo "Forcing overwrite current COS_ACTIVE and COS_PASSIVE partitions"
+                echo "Forcing overwrite current ${ACTIVE_LABEL} and ${PASSIVE_LABEL} partitions"
                 return 0
             else
                 echo "There is already an active deployment in the system, use '--force' flag to overwrite it"
@@ -695,27 +695,27 @@ validate_device()
 ## UPGRADER
 
 find_partitions() {
-    _STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
     if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
     fi
 
-    _OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
 
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
     if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
     fi
 
-    _COS_ACTIVE=$(blkid -L COS_ACTIVE || true)
-    if [ -n "$_COS_ACTIVE" ]; then
+    _ACTIVE=$(blkid -L ${ACTIVE_LABEL} || true)
+    if [ -n "$_ACTIVE" ]; then
         _CURRENT=active.img
     fi
 
-    _COS_PASSIVE=$(blkid -L COS_PASSIVE || true)
-    if [ -n "$_COS_PASSIVE" ]; then
+    _PASSIVE=$(blkid -L ${PASSIVE_LABEL} || true)
+    if [ -n "$_PASSIVE" ]; then
         _CURRENT=passive.img
     fi
 
@@ -734,9 +734,9 @@ find_partitions() {
 }
 
 find_recovery() {
-    _RECOVERY=$(blkid -L COS_RECOVERY || true)
+    _RECOVERY=$(blkid -L ${RECOVERY_LABEL} || true)
     if [ -z "$_RECOVERY" ]; then
-        echo "COS_RECOVERY partition cannot be found"
+        echo "${RECOVERY_LABEL} partition cannot be found"
         exit 1
     fi
 }
@@ -777,7 +777,7 @@ is_squashfs() {
 recovery_boot() {
     local cmdline
     cmdline="$(cat /proc/cmdline)"
-    if echo $cmdline | grep -q "COS_RECOVERY" || echo $cmdline | grep -q "COS_SYSTEM"; then
+    if echo $cmdline | grep -q "${RECOVERY_LABEL}" || echo $cmdline | grep -q "${SYSTEM_LABEL}"; then
         return 0
     else
         return 1
@@ -850,11 +850,11 @@ mount_image() {
 switch_active() {
     if [[ "$_CURRENT" == "active.img" ]]; then
         mv -f ${_STATEDIR}/cOS/$_CURRENT ${_STATEDIR}/cOS/passive.img
-        tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+        tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     fi
 
     mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
+    tune2fs -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 }
 
 switch_recovery() {
@@ -870,7 +870,7 @@ switch_recovery() {
         rm -rf $_TARGET
     else
         mv -f ${_STATEDIR}/cOS/transition.img ${_STATEDIR}/cOS/recovery.img
-        tune2fs -L COS_SYSTEM ${_STATEDIR}/cOS/recovery.img
+        tune2fs -L ${SYSTEM_LABEL} ${_STATEDIR}/cOS/recovery.img
     fi
 }
 
@@ -1029,9 +1029,9 @@ reset_state() {
 }
 
 copy_passive() {
-    tune2fs -L COS_PASSIVE ${_STATEDIR}/cOS/passive.img
+    tune2fs -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/passive.img
     cp -rf ${_STATEDIR}/cOS/passive.img ${_STATEDIR}/cOS/active.img
-    tune2fs -L COS_ACTIVE ${_STATEDIR}/cOS/active.img
+    tune2fs -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 }
 
 run_reset_hook() {
@@ -1064,7 +1064,7 @@ copy_active() {
         _TARGET=$loop_dir
         # TODO: Size should be tweakable
         dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L COS_PASSIVE
+        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L ${PASSIVE_LABEL}
         sync
         _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
         mount -t ext2 $_LOOP $_TARGET
@@ -1110,21 +1110,21 @@ check_recovery() {
         local system
         local recovery
 
-        system=$(blkid -L COS_SYSTEM || true)
+        system=$(blkid -L ${SYSTEM_LABEL} || true)
         if [ -z "$system" ]; then
             echo "cos-reset can be run only from recovery"
             exit 1
         fi
-        recovery=$(blkid -L COS_RECOVERY || true)
+        recovery=$(blkid -L ${RECOVERY_LABEL} || true)
         if [ -z "$recovery" ]; then
-            echo "Can't find COS_RECOVERY partition"
+            echo "Can't find ${RECOVERY_LABEL} partition"
             exit 1
         fi
     fi
 }
 
 find_recovery_partitions() {
-    _STATE=$(blkid -L COS_STATE || true)
+    _STATE=$(blkid -L ${STATE_LABEL} || true)
     if [ -z "$_STATE" ]; then
         echo "State partition cannot be found"
         exit 1
@@ -1133,9 +1133,9 @@ find_recovery_partitions() {
 
     _BOOT=$(blkid -L COS_GRUB || true)
 
-    _OEM=$(blkid -L COS_OEM || true)
+    _OEM=$(blkid -L ${OEM_LABEL} || true)
 
-    _PERSISTENT=$(blkid -L COS_PERSISTENT || true)
+    _PERSISTENT=$(blkid -L ${PERSISTENT_LABEL} || true)
     if [ -z "$_PERSISTENT" ]; then
         echo "Persistent partition cannot be found"
         exit 1
@@ -1170,7 +1170,7 @@ do_recovery_mount()
 rebrand_grub_menu() {
 	local grub_entry="$1"
 
-	_STATEDIR=$(blkid -L COS_STATE)
+	_STATEDIR=$(blkid -L ${STATE_LABEL})
 	mkdir -p /run/boot
 	
 	if ! is_mounted /run/boot; then

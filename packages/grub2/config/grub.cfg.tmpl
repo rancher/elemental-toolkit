@@ -51,9 +51,9 @@ insmod loopback
 insmod squash4
 
 menuentry "${display_name}" --id cos {
-  search.fs_label COS_STATE root
+  search.fs_label @STATE_LABEL@ root
   set img=/cOS/active.img
-  set label=COS_ACTIVE
+  set label=@ACTIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
@@ -62,9 +62,9 @@ menuentry "${display_name}" --id cos {
 }
 
 menuentry "${display_name} (fallback)" --id fallback {
-  search.fs_label COS_STATE root
+  search.fs_label @STATE_LABEL@ root
   set img=/cOS/passive.img
-  set label=COS_PASSIVE
+  set label=@PASSIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
@@ -75,12 +75,12 @@ menuentry "${display_name} (fallback)" --id fallback {
 menuentry "${display_name} recovery" --id recovery {
   if search.file /cOS/recovery.squashfs ; then
     set img=/cOS/recovery.squashfs
-    set recoverylabel=COS_RECOVERY
+    set recoverylabel=@RECOVERY_LABEL@
   else
     set img=/cOS/recovery.img
   fi
-  search.fs_label COS_RECOVERY root
-  set label=COS_SYSTEM
+  search.fs_label @RECOVERY_LABEL@ root
+  set label=@SYSTEM_LABEL@
   loopback loop0 /$img
   set root=($root)
   source (loop0)/etc/cos/bootargs.cfg

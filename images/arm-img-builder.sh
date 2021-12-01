@@ -18,6 +18,16 @@ load_vars() {
   ## Repositories
   final_repo="${FINAL_REPO:-quay.io/costoolkit/releases-green-arm64}"
   repo_type="${REPO_TYPE:-docker}"
+
+  # Warning: these default values must be aligned with the values provided
+  # in 'packages/cos-config/cos-config', provide an environment file using the
+  # --cos-config flag if different values are needed.
+  : "${OEM_LABEL:=COS_OEM}"
+  : "${RECOVERY_LABEL:=COS_RECOVERY}"
+  : "${ACTIVE_LABEL:=COS_ACTIVE}"
+  : "${PASSIVE_LABEL:=COS_PASSIVE}"
+  : "${SYSTEM_LABEL:=COS_SYSTEM}"
+  : "${STATE_LABEL:=COS_STATE}"
 }
 
 cleanup() {
@@ -74,9 +84,10 @@ usage()
 {
     echo "Usage: $0 [options] image.img"
     echo ""
-    echo "Example: $0 --model odroid-c2 --docker-image <image> output.img"
+    echo "Example: $0 --cos-config cos-config  --model odroid-c2 --docker-image <image> output.img"
     echo ""
     echo "Flags:"
+    echo " --cos-config: (optional) Specifies a cos-config file for required environment variables"
     echo " --config: (optional) Specify a cloud-init config file to embed into the final image"
     echo " --manifest: (optional) Specify a manifest file to customize efi/grub packages installed into the image"
     echo " --size: (optional) Image size (MB)"
@@ -119,6 +130,10 @@ trap "cleanup" 1 2 3 6 9 14 15 EXIT
 load_vars
 while [ "$#" -gt 0 ]; do
     case $1 in
+        --cos-config)
+            shift 1
+            cos_config=$1
+            ;;
         --config)
             shift 1
             config=$1
@@ -182,6 +197,10 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [ -n "$cos_config"] && [ -e "$cos_config" ];
+  source "$cos_config"
+fi
 
 if [ -z "$output_image" ]; then
   echo "No image file specified"
@@ -253,7 +272,7 @@ mkdir -p ${STATEDIR}/cOS
 
 dd if=/dev/zero of=${STATEDIR}/cOS/active.img bs=1M count=$default_active_size
 
-mkfs.ext2 ${STATEDIR}/cOS/active.img -L COS_ACTIVE
+mkfs.ext2 ${STATEDIR}/cOS/active.img -L ${ACTIVE_LABEL}
 
 sync
 
@@ -285,7 +304,7 @@ fi
 
 echo ">> Preparing passive.img"
 cp -rfv ${STATEDIR}/cOS/active.img ${STATEDIR}/cOS/passive.img
-tune2fs -L COS_PASSIVE ${STATEDIR}/cOS/passive.img
+tune2fs -L ${PASSIVE_LABEL} ${STATEDIR}/cOS/passive.img
 
 # Preparing recovery
 echo ">> Preparing recovery.img"
@@ -298,7 +317,7 @@ fi
 mkdir -p ${RECOVERY}/cOS
 cp -rfv ${STATEDIR}/cOS/active.img ${RECOVERY}/cOS/recovery.img
 
-tune2fs -L COS_SYSTEM ${RECOVERY}/cOS/recovery.img
+tune2fs -L ${SYSTEM_LABEL} ${RECOVERY}/cOS/recovery.img
 
 # Install real grub config to recovery
 if [ -z "$manifest" ]; then
@@ -377,13 +396,13 @@ oem=${device}p2
 state=${device}p3
 recovery=${device}p4
 
-# Create partitions (COS_RECOVERY, COS_STATE, COS_OEM)
+# Create partitions (RECOVERY, STATE, OEM)
 mkfs.vfat -F 32 ${efi}
 fatlabel ${efi} EFI
 
-mkfs.ext4 -F -L COS_RECOVERY $recovery
-mkfs.ext4 -F -L COS_STATE $state
-mkfs.ext4 -F -L COS_OEM $oem
+mkfs.ext4 -F -L ${RECOVERY_LABEL} $recovery
+mkfs.ext4 -F -L ${STATE_LABEL} $state
+mkfs.ext4 -F -L ${OEM_LABEL} $oem
 
 mkdir $WORKDIR/state
 mkdir $WORKDIR/recovery
