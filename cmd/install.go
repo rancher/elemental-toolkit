@@ -20,16 +20,26 @@ import (
 	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/action"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
-	Args: cobra.MinimumNArgs(1),
+	Args: cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		err := utils.ReadConfigRun(viper.GetString("config_dir"))
+		if err != nil {
+			fmt.Printf("Error reading config: %s\n", err)
+		}
+
+		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
+		// Note that vars with ELEMENTAL in front and that match entries in teh config (only one level deep) are overwritten automatically
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Printf("VALUE: %s", viper.GetString("config_dir"))
 		fmt.Println("Install called")
 		install := action.NewInstallAction(args[0])
 		err := install.Run()
@@ -42,11 +52,7 @@ var installCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	err := utils.ReadConfigRun()
-	if err != nil {
-		fmt.Printf("Error reading config: %s\n", err)
-	}
-	// Add flags here
-	// Should probably load whatever env vars we want to overload here and merge them into the viper configs
-	// Note that vars with ELEMENTAL in front and that match entries in teh config (only one level deep) are overwritten automatically
+	installCmd.Flags().StringP("config_dir", "c", "/etc/elemental/", "dir where the config config reside")
+	viper.BindPFlags(installCmd.Flags())
+
 }
