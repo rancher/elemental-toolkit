@@ -6,7 +6,6 @@ uri:
 license: "MIT"
 labels:
   autobump.revdeps: "true"
-  autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"
   github.repo: "yq"
   github.owner: "mikefarah"
   autobump.strategy: "release"
