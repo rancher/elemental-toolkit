@@ -7,7 +7,6 @@ packages:
     brand_name: "cOS"
     labels:
       autobump.revdeps: "true"
-      autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - !!merge <<: *cos
     name: "cos-container"
     description: "cOS container image, used to build cOS derivatives from scratch"
