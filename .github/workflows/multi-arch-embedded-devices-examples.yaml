@@ -17,7 +17,11 @@ jobs:
           - tag: "odroid-c2-"
             dockerfile: "examples/odroid-c2"
             platforms: "linux/arm64"
-
+            model: odroid_c2
+          - tag: "rpi-"
+            dockerfile: "examples/rpi"
+            platforms: "linux/arm64"
+            model: pi64
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -79,7 +83,7 @@ jobs:
         id: build_image
         run: |
           mkdir build
-          sudo ./images/arm-img-builder.sh --docker-image ${{ steps.prep.outputs.current }} build/cOS-example-${{ matrix.tag }}$COS_VERSION.img
+          sudo ./images/arm-img-builder.sh --model ${{ matrix.model }} --docker-image ${{ steps.prep.outputs.current }} build/cOS-example-${{ matrix.tag }}$COS_VERSION.img
       - name: Upload Image
         run: |
           sudo tar cvf build.tar build
