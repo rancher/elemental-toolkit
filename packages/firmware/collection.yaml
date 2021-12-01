@@ -5,11 +5,11 @@ packages:
 
 - name: "u-boot-rpi4"
   category: "firmware"
-  version: "2021.10-191.23"
+  version: "2021.10-192.1"
 
 - name: "u-boot-rpi3"
   category: "firmware"
-  version: "2021.10-191.23"
+  version: "2021.10-192.1"
 
 - name: "raspberrypi-firmware"
   category: "firmware"
