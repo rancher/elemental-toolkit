@@ -1,6 +1,6 @@
-name: cloud-config
-category: system
-version: 0.11-1
+name: "immutable-rootfs"
+category: "system"
+version: 0.2.4
 requires:
 - name: "cos-setup"
   category: "system"

@@ -21,22 +21,32 @@ packages:
       autobump.revdeps: "true"
   - name: "luet-makeiso"
     category: "toolchain"
-    version: 0.3.8-15
+    version: 0.3.8-16
     upx: false
     fips: false
     labels:
       github.repo: "luet-makeiso"
       github.owner: "mudler"
       autobump.revdeps: "true"
+    requires:
+    - name: "luet"
+      category: "toolchain"
+      # Would be nice to restrict to the luet version defined within this file
+      version: ">=0"
   - name: "luet-makeiso"
     category: "toolchain-fips"
-    version: 0.3.8-16
+    version: 0.3.8-17
     upx: false
     fips: true
     labels:
       github.repo: "luet-makeiso"
       github.owner: "mudler"
       autobump.revdeps: "true"
+    requires:
+    - name: "luet"
+      category: "toolchain-fips"
+      # Would be nice to restrict to the luet version defined within this file
+      version: ">=0"
   - category: "toolchain-fips"
     name: "yip"
     upx: false

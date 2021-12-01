@@ -6,9 +6,6 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
-- name: "cos-setup"
-  category: "system"
-  version: ">=0"
 - name: "installer"
   category: "utils"
   version: ">=0"
@@ -21,9 +18,6 @@ requires:
 - name: "cos-features"
   category: "system"
   version: ">=0"
-- name: "grub2-config"
-  category: "system"
-  version: ">=0"
 - name: "base-dracut-modules"
   category: "system"
   version: ">=0"
@@ -33,6 +27,20 @@ requires:
 - name: "dracut-initrd"
   category: "system"
   version: ">=0"
+- name: "yq"
+  category: "toolchain"
+  version: ">=0"
+
+# Manually adding package dependencies, require_final_images does not pull them
+- name: "cos-config"
+  category: "system"
+  version: ">=0"
+- name: "grub2-config"
+  category: "system"
+  version: ">=0"
+- name: "cos-setup"
+  category: "system"
+  version: ">=0"
 - name: "yip"
   category: "toolchain"
   version: ">=0"
@@ -40,9 +48,6 @@ requires:
   category: "toolchain"
   version: ">=0"
 - name: "luet-mtree"
-  category: "toolchain"
-  version: ">=0"
-- name: "yq"
   category: "toolchain"
   version: ">=0"
 - name: "cosign"
@@ -156,9 +161,9 @@ steps:
 #### recovery/cos-squash starts here
 {{ if eq .Values.name "cos-squash" }}
 requires:
-  - category: "recovery"
-    name: "cos"
-    version: ">=0"
+- category: "recovery"
+  name: "cos"
+  version: ">=0"
 
 requires_final_images: true
 unpack: true
