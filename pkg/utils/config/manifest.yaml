@@ -1,0 +1,74 @@
+packages:
+  rootfs:
+    - system/cos
+  uefi:
+    - live/grub2-efi-image
+  isoimage:
+    - live/grub2
+    - live/grub2-efi-image
+    - recovery/cos-img
+
+# Raw disk creation values start
+
+
+raw_disk:
+  x86_64:
+    # Where to get the packages from if the local build doesn't have the needed packages
+    repo: quay.io/costoolkit/releases-green
+    # which packages to install and the target to install them at
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+      - name: recovery/cos-img
+        target: root/cOS
+  aarch64:
+    repo: quay.io/costoolkit/releases-green-arm64
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+      - name: recovery/cos-img
+        target: root/cOS
+  odroid_c2:
+    repo: quay.io/costoolkit/releases-green-arm64
+    packages:
+      - name: system/grub2-efi-image
+        target: efi
+      - name: system/grub2-config
+        target: root
+      - name: system/grub2-artifacts
+        target: root/grub2
+
+
+# Raw disk creation values end
+
+boot_file: "boot/x86_64/loader/eltorito.img"
+boot_catalog: "boot/x86_64/boot.catalog"
+isohybrid_mbr: "boot/x86_64/loader/boot_hybrid.img"
+
+initramfs:
+  kernel_file: "vmlinuz"
+  rootfs_file: "initrd"
+
+
+image_prefix: "cOS-0."
+image_date: true
+label: "COS_LIVE"
+
+# Additional packages to build
+build:
+  - utils/nerdctl
+  - utils/k9s
+  - utils/jq
+  - selinux/rancher
+  - selinux/k3s
+  - recovery/cos
+  - system/grub2-artifacts
+  - system/grub2-efi-image
