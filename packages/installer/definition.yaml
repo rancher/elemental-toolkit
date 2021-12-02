@@ -1,8 +1,8 @@
 name: "installer"
 category: "utils"
-version: "0.23"
+version: 0.23-1
 description: "Installer, Upgrade and reset utilities to manage cOS derivatives"
 requires:
-- name: "cos-config"
-  category: "system"
-  version: ">=0"
+  - name: "cos-config"
+    category: "system"
+    version: ">=0"
