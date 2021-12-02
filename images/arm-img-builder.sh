@@ -198,7 +198,7 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-if [ -n "$cos_config"] && [ -e "$cos_config" ];
+if [ -n "$cos_config"] && [ -e "$cos_config" ]; then
   source "$cos_config"
 fi
 
