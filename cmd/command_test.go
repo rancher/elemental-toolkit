@@ -32,9 +32,15 @@ func executeCommandC(cmd *cobra.Command, args ...string) (c *cobra.Command, outp
 	os.Stdout = w
 	// run the command
 	c, err = cmd.ExecuteC()
-
+	if err != nil {
+		// Remember to restore stdout!
+		os.Stdout = oldStdout
+		return nil, "", err
+	}
 	err = w.Close()
 	if err != nil {
+		// Remember to restore stdout!
+		os.Stdout = oldStdout
 		return nil, "", err
 	}
 	// Read output from our pipe
@@ -42,5 +48,5 @@ func executeCommandC(cmd *cobra.Command, args ...string) (c *cobra.Command, outp
 	// restore stdout
 	os.Stdout = oldStdout
 
-	return c, string(out), err
+	return c, string(out), nil
 }
