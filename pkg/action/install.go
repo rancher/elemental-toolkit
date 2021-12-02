@@ -27,7 +27,7 @@ import (
 
 type InstallAction struct {
 	Device string
-	Distro string  // Source of data to install
+	Source string  // Source of data to install
 	Target string  // Target to install
 }
 
@@ -55,13 +55,13 @@ func (i InstallAction) Run() error {
 }
 
 func (i InstallAction) doCopy() error {
-	fmt.Printf("Copying cOS..")
+	fmt.Printf("Copying cOS..\n")
 	// 1 - rsync all the system from source to target
 	task := grsync.NewTask(
-		i.Distro,
+		i.Source,
 		i.Target,
 		grsync.RsyncOptions{
-			Quiet: true,
+			Quiet: false,
 			Archive: true,
 			XAttrs: true,
 			ACLs: true,

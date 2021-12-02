@@ -42,13 +42,13 @@ func GetUrl(url string, destination string) error {
 
 	switch {
 	case strings.HasPrefix(url, "http"), strings.HasPrefix(url, "ftp"), strings.HasPrefix(url, "tftp"):
-		fmt.Printf("Downloading from %s to %s", url, destination)
+		fmt.Printf("Downloading from %s to %s\n", url, destination)
 		resp, err := Client.Get(url)
 		if err != nil {return err}
 		source = resp.Body
 		defer resp.Body.Close()
 	default:
-		fmt.Printf("Copying from %s to %s", url, destination)
+		fmt.Printf("Copying from %s to %s\n", url, destination)
 		file, err := os.Open(url)
 		if err != nil {return err}
 		source = file
@@ -60,7 +60,7 @@ func GetUrl(url string, destination string) error {
 	if err != nil {return err}
 	nBytes, err := io.Copy(dest, source)
 	if err != nil {return err}
-	fmt.Printf("Copied %d bytes", nBytes)
+	fmt.Printf("Copied %d bytes\n", nBytes)
 
 	return nil
 }
