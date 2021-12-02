@@ -1,0 +1,7 @@
+name: "elemental-cli"
+category: "utils"
+version: 0.0.1
+labels:
+  github.repo: "elemental-cli"
+  github.owner: "rancher-sandbox"
+  autobump.revdeps: "true"
