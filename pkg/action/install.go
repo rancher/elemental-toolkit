@@ -18,8 +18,8 @@ package action
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1/config"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
-	"github.com/spf13/viper"
 	"github.com/zloylos/grsync"
 	"os"
 	"strings"
@@ -27,13 +27,11 @@ import (
 )
 
 type InstallAction struct {
-	Device string
-	Source string  // Source of data to install
-	Target string  // Target to install
+	Config *config.RunConfig
 }
 
-func NewInstallAction(device string) *InstallAction{
-	return &InstallAction{Device: device}
+func NewInstallAction(config *config.RunConfig) *InstallAction{
+	return &InstallAction{Config: config}
 }
 
 func (i InstallAction) Run() error {
@@ -59,13 +57,13 @@ func (i InstallAction) doCopy() error {
 	fmt.Printf("Copying cOS..\n")
 	// Make sure the values have a / at the end.
 	var source, target string
-	if strings.HasSuffix(i.Source, "/") == false {
-		source = fmt.Sprintf("%s/", i.Source)
-	} else { source = i.Source }
+	if strings.HasSuffix(i.Config.Source, "/") == false {
+		source = fmt.Sprintf("%s/", i.Config.Source)
+	} else { source = i.Config.Source }
 
-	if strings.HasSuffix(i.Target, "/") == false {
-		target = fmt.Sprintf("%s/", i.Target)
-	} else { target = i.Target }
+	if strings.HasSuffix(i.Config.Target, "/") == false {
+		target = fmt.Sprintf("%s/", i.Config.Target)
+	} else { target = i.Config.Target }
 
 	// 1 - rsync all the system from source to target
 	task := grsync.NewTask(
@@ -96,10 +94,10 @@ func (i InstallAction) doCopy() error {
 		return err
 	}
 	// 2 - if we got a cloud config file get it and store in the target
-	if viper.GetString("cloudInit") != "" {
-		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", i.Target)
+	if i.Config.CloudInit != "" {
+		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", i.Config.Target)
 
-		if err := utils.GetUrl(viper.GetString("cloudInit"), customConfig); err != nil {
+		if err := utils.GetUrl(i.Config.CloudInit, customConfig); err != nil {
 			return err
 		}
 

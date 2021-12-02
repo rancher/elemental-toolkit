@@ -29,18 +29,19 @@ var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
 	Args: cobra.ExactArgs(1),
-	PreRun: func(cmd *cobra.Command, args []string) {
-		err := utils.ReadConfigRun(viper.GetString("configDir"))
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := utils.ReadConfigRun(viper.GetString("config-dir"))
+
 		if err != nil {
 			fmt.Printf("Error reading config: %s\n", err)
 		}
 		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg.Device = args[0]
+
 		fmt.Println("Install called")
-		install := action.NewInstallAction(args[0])
-		err := install.Run()
+		install := action.NewInstallAction(cfg)
+		err = install.Run()
 		if err != nil {
 			return err
 		}
@@ -50,16 +51,16 @@ var installCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringP("configDir", "e", "/etc/elemental/", "dir where the elemental config resides")
-	installCmd.Flags().StringP("dockerImage", "d", "", "Install a specified container image")
-	installCmd.Flags().StringP("cloudInit", "c", "", "Cloud-init config file")
+	installCmd.Flags().StringP("config-dir", "e", "/etc/elemental/", "dir where the elemental config resides")
+	installCmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
+	installCmd.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
 	installCmd.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
-	installCmd.Flags().StringP("partitionLayout", "p", "", "Partitioning layout file")
-	installCmd.Flags().BoolP("noVerify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
-	installCmd.Flags().BoolP("noCosign", "", false, "Disable cosign verification (requires images with signatures)")
-	installCmd.Flags().BoolP("noFormat", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
-	installCmd.Flags().BoolP("forceEfi", "", false, "Forces an EFI installation")
-	installCmd.Flags().BoolP("forceGpt", "", false, "Forces a GPT partition table")
+	installCmd.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
+	installCmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
+	installCmd.Flags().BoolP("no-cosign", "", false, "Disable cosign verification (requires images with signatures)")
+	installCmd.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
+	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
+	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
 	installCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
 	installCmd.Flags().BoolP("debug", "", false, "Enables debugging information")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")

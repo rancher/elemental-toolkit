@@ -20,7 +20,7 @@ package action
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
-	"github.com/spf13/viper"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1/config"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -35,11 +35,14 @@ func TestDoCopyEmpty(t *testing.T) {
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(d)
 
-	install := InstallAction{
-		Device: "test",
-		Source: s,
-		Target: d,
+	cfg := &config.RunConfig{
+		Device:    "",
+		Target:    d,
+		Source:    s,
+		CloudInit: "",
 	}
+
+	install := NewInstallAction(cfg)
 
 	err = install.doCopy()
 	Expect(err).To(BeNil())
@@ -58,13 +61,14 @@ func TestDoCopy(t *testing.T) {
 		_, _ = os.CreateTemp(s, "file*")
 	}
 
-
-
-	install := InstallAction{
-		Device: "test",
-		Source: s,
-		Target: d,
+	cfg := &config.RunConfig{
+		Device:    "",
+		Target:    d,
+		Source:    s,
+		CloudInit: "",
 	}
+
+	install := NewInstallAction(cfg)
 
 	err = install.doCopy()
 	Expect(err).To(BeNil())
@@ -97,13 +101,14 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 	err = cloudInit.Close()
 	Expect(err).To(BeNil())
 	defer os.Remove(cloudInit.Name())
-	viper.Reset()
-	viper.Set("cloudInit", cloudInit.Name())
-	install := InstallAction{
-		Device: "test",
-		Source: s,
-		Target: d,
+
+	cfg :=&config.RunConfig{
+		Target:    d,
+		Source:    s,
+		CloudInit: cloudInit.Name(),
 	}
+
+	install := NewInstallAction(cfg)
 
 	err = install.doCopy()
 	Expect(err).To(BeNil())
