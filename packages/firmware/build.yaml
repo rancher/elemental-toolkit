@@ -18,13 +18,17 @@ steps:
 package_dir: "/data/boot"
 {{end}}
 
-{{if or (eq .Values.name "u-boot-rpi3") (eq .Values.name "u-boot-rpi4")}}
+{{if eq .Values.name "u-boot-rpi64"}}
 - mkdir -p /data/{boot,usr}
-- wget https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/aarch64/{{.Values.name}}-{{.Values.version}}.aarch64.rpm
-- rpm2cpio {{.Values.name}}-{{.Values.version}}.aarch64.rpm | cpio -idmv
+- wget https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/aarch64/u-boot-rpiarm64-{{.Values.version}}.aarch64.rpm
+- rpm2cpio u-boot-rpiarm64-{{.Values.version}}.aarch64.rpm | cpio -idmv
+- mv usr/share/doc /data
+- mv usr/share/licenses /data
 - mv usr/* /data
-#- mv boot/* /data
 - mv boot/vc/* /data
+- rm -rf /data/boot
+- rm -rf /data/usr
+- rm -rf /data/share
 package_dir: "/data"
 {{end}}
 
@@ -36,10 +40,11 @@ package_dir: "/data"
 - rpm2cpio {{.Values.name}}-{{.Values.version}}.noarch.rpm | cpio -idmv
 {{if or (eq .Values.name "raspberrypi-firmware")}}
 - mv usr/* /data
+- rm -rfv /data/lib
 {{end}}
 - mv boot/vc/* /data
-- rm -rfv boot
-- rm -rfv usr
+- rm -rfv /data/boot
+- rm -rfv /data/usr
 package_dir: "/data"
 {{end}}
 
