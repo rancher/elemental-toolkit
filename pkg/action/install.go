@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/zloylos/grsync"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -56,10 +57,20 @@ func (i InstallAction) Run() error {
 
 func (i InstallAction) doCopy() error {
 	fmt.Printf("Copying cOS..\n")
+	// Make sure the values have a / at the end.
+	var source, target string
+	if strings.HasSuffix(i.Source, "/") == false {
+		source = fmt.Sprintf("%s/", i.Source)
+	} else { source = i.Source }
+	
+	if strings.HasSuffix(i.Target, "/") == false {
+		target = fmt.Sprintf("%s/", i.Target)
+	} else { target = i.Target }
+
 	// 1 - rsync all the system from source to target
 	task := grsync.NewTask(
-		i.Source,
-		i.Target,
+		source,
+		target,
 		grsync.RsyncOptions{
 			Quiet: false,
 			Archive: true,
