@@ -62,7 +62,7 @@ func (i InstallAction) doCopy() error {
 	if strings.HasSuffix(i.Source, "/") == false {
 		source = fmt.Sprintf("%s/", i.Source)
 	} else { source = i.Source }
-	
+
 	if strings.HasSuffix(i.Target, "/") == false {
 		target = fmt.Sprintf("%s/", i.Target)
 	} else { target = i.Target }

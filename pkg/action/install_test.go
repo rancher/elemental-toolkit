@@ -62,8 +62,8 @@ func TestDoCopy(t *testing.T) {
 
 	install := InstallAction{
 		Device: "test",
-		Source: fmt.Sprintf("%s/", s),
-		Target: fmt.Sprintf("%s/", d),
+		Source: s,
+		Target: d,
 	}
 
 	err = install.doCopy()

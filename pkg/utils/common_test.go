@@ -26,6 +26,8 @@ import (
 	"testing"
 )
 
+var Calls []string
+
 type MockBody struct {}
 
 func (m MockBody) Read(p []byte) (n int, err error){
@@ -36,17 +38,11 @@ func (m MockBody) Close() error {
 	return nil
 }
 
-type MockClient struct {
-	Calls []string
-}
-
-func (m MockClient) GetCalls() []string {
-	return m.Calls
-}
+type MockClient struct {}
 
 func (m *MockClient) Get(url string) (*http.Response, error) {
-	// Store calls to the mock client, so we can verify them
-	m.Calls = append(m.Calls, url)
+	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
+	Calls = append(Calls, url)
 	return &http.Response{Body: &MockBody{}}, nil
 }
 
@@ -54,16 +50,35 @@ func (m *MockClient) Get(url string) (*http.Response, error) {
 func TestGetUrlNet(t *testing.T) {
 	RegisterTestingT(t)
 	Client = &MockClient{}
+
 	url := "http://fake.com"
 	tmpDir, _ := os.MkdirTemp("", "elemental")
 	destination := fmt.Sprintf("%s/test", tmpDir)
 	defer os.RemoveAll(tmpDir)
 	err := GetUrl(url, destination)
 	Expect(err).To(BeNil())
+	Expect(Calls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
+
+	ftp := "ftp://fake"
+	err = GetUrl(ftp, destination)
+	Expect(err).To(BeNil())
+	Expect(Calls).To(ContainElement("ftp://fake"))
+	f, err = os.Stat(destination)
+	Expect(err).To(BeNil())
+	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
+
+	tftp := "tftp://fake"
+	err = GetUrl(tftp, destination)
+	Expect(err).To(BeNil())
+	Expect(Calls).To(ContainElement("tftp://fake"))
+	f, err = os.Stat(destination)
+	Expect(err).To(BeNil())
+	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 }
+
 
 func TestGetUrlFile(t *testing.T) {
 	RegisterTestingT(t)
