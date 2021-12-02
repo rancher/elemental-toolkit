@@ -4,11 +4,16 @@ set -e
 
 load_vars() {
 
-  container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:odroid-c2-latest}
+  if [ "$model" == "rpi64" ]; then
+      container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:rpi-latest}
+  else
+      container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:odroid-c2-latest}
+  fi
   directory=${DIRECTORY:-}
   output_image="${OUTPUT_IMAGE:-arm.img}"
-  model=${MODEL:-odroid_c2}
-
+  if [ "$model" == "" ]; then
+      model=${MODEL:-odroid_c2}
+  fi
   # Img creation options. Size is in MB for all of the vars below
   size="${SIZE:-7544}"
   state_size="${STATE_SIZE:-4992}"
@@ -116,7 +121,6 @@ get_url()
 
 trap "cleanup" 1 2 3 6 9 14 15 EXIT
 
-load_vars
 while [ "$#" -gt 0 ]; do
     case $1 in
         --config)
@@ -182,6 +186,7 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+load_vars
 
 if [ -z "$output_image" ]; then
   echo "No image file specified"
@@ -343,21 +348,20 @@ rm -rf $EFI/var
 
 echo ">> Writing image and partition table"
 dd if=/dev/zero of="${output_image}" bs=1024000 count="${size}" || exit 1
-#if [ "$model" == "rpi4" || "$model" == "rpi3" ]; then 
-#    sgdisk -n 1:8192:+32M -c 1:EFI -t 1:0b00 ${output_image}
-#else
-#    sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
-#fi
-sgdisk -n 1:8192:+96M -c 1:EFI -t 1:0c00 ${output_image}
+if [ "$model" == "rpi64" ]; then 
+    sgdisk -n 1:8192:+32M -c 1:EFI -t 1:0c00 ${output_image}
+else
+    sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
+fi
 sgdisk -n 2:0:+64M -c 2:oem -t 2:8300 ${output_image}
 sgdisk -n 3:0:+${state_size}M -c 3:state -t 3:8300 ${output_image}
 sgdisk -n 4:0:+${recovery_size}M -c 4:recovery -t 4:8300 ${output_image}
 
 sgdisk -m 1:2:3:4 ${output_image}
 
-#if [ "$model" == "rpi4"] || ["$model" == "rpi3" ]; then 
+if [ "$model" == "rpi64" ]; then 
     sfdisk --part-type ${output_image} 1 c
-#fi
+fi
 
 # Prepare the image and copy over the files
 

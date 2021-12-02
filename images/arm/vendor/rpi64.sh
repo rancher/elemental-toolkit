@@ -21,9 +21,8 @@ set -ax
 TEMPDIR="$(mktemp -d)"
 echo $TEMPDIR
 mount "${device}p1" "${TEMPDIR}"
-sudo luet install --config $WORKDIR/luet.yaml -y --system-target $TEMPDIR firmware/u-boot-rpi3
+sudo luet install --config $WORKDIR/luet.yaml -y --system-target $TEMPDIR firmware/u-boot-rpi64
 sudo luet install --config $WORKDIR/luet.yaml -y --system-target $TEMPDIR firmware/raspberrypi-firmware
 sudo luet install --config $WORKDIR/luet.yaml -y --system-target $TEMPDIR firmware/raspberrypi-firmware-config
 sudo luet install --config $WORKDIR/luet.yaml -y --system-target $TEMPDIR firmware/raspberrypi-firmware-dt
 umount "${TEMPDIR}"
-
