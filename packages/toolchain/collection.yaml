@@ -1,5 +1,6 @@
 packages:
-  - category: "toolchain"
+  - &luet
+    category: "toolchain"
     name: "luet"
     version: "0.20.11"
     branch: ""
@@ -9,7 +10,8 @@ packages:
       github.repo: "luet"
       github.owner: "mudler"
       autobump.revdeps: "true"
-  - category: "toolchain-fips"
+  - &luet-fips
+    category: "toolchain-fips"
     name: "luet"
     version: "0.20.11"
     branch: ""
@@ -29,10 +31,7 @@ packages:
       github.owner: "mudler"
       autobump.revdeps: "true"
     requires:
-    - name: "luet"
-      category: "toolchain"
-      # Would be nice to restrict to the luet version defined within this file
-      version: ">=0"
+    - <<: *luet
   - name: "luet-makeiso"
     category: "toolchain-fips"
     version: 0.3.8-17
@@ -43,10 +42,7 @@ packages:
       github.owner: "mudler"
       autobump.revdeps: "true"
     requires:
-    - name: "luet"
-      category: "toolchain-fips"
-      # Would be nice to restrict to the luet version defined within this file
-      version: ">=0"
+    - <<: *luet-fips
   - category: "toolchain-fips"
     name: "yip"
     upx: false
