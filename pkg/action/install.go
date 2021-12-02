@@ -18,12 +18,10 @@ package action
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/viper"
 	"github.com/zloylos/grsync"
-	"io"
-	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -90,7 +88,7 @@ func (i InstallAction) doCopy() error {
 	if viper.GetString("cloudInit") != "" {
 		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", i.Target)
 
-		if err := i.getUrl(viper.GetString("cloudInit"), customConfig); err != nil {
+		if err := utils.GetUrl(viper.GetString("cloudInit"), customConfig); err != nil {
 			return err
 		}
 
@@ -98,36 +96,5 @@ func (i InstallAction) doCopy() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (i InstallAction) getUrl(url string, destination string) error {
-	var source io.Reader
-	var err error
-
-	switch {
-	case strings.HasPrefix(url, "http"):
-	case strings.HasPrefix(url, "ftp"):
-	case strings.HasPrefix(url, "tftp"):
-		fmt.Printf("Downloading from %s to %s", url, destination)
-		resp, err := http.Get(url)
-		if err != nil {return err}
-		source = resp.Body
-		defer resp.Body.Close()
-	default:
-		fmt.Printf("Copying from %s to %s", url, destination)
-		file, err := os.Open(url)
-		if err != nil {return err}
-		source = file
-		defer file.Close()
-	}
-
-	dest, err := os.Create(destination)
-	defer dest.Close()
-	if err != nil {return err}
-	nBytes, err := io.Copy(dest, source)
-	if err != nil {return err}
-	fmt.Printf("Copied %d bytes", nBytes)
-
 	return nil
 }
