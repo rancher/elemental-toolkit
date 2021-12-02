@@ -18,19 +18,20 @@ package action
 
 import (
 	"fmt"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1/config"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/zloylos/grsync"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 )
 
 type InstallAction struct {
-	Config *config.RunConfig
+	Config *v1.RunConfig
 }
 
-func NewInstallAction(config *config.RunConfig) *InstallAction{
+func NewInstallAction(config *v1.RunConfig) *InstallAction{
 	return &InstallAction{Config: config}
 }
 
@@ -95,9 +96,10 @@ func (i InstallAction) doCopy() error {
 	}
 	// 2 - if we got a cloud config file get it and store in the target
 	if i.Config.CloudInit != "" {
+		client := &http.Client{}
 		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", i.Config.Target)
 
-		if err := utils.GetUrl(i.Config.CloudInit, customConfig); err != nil {
+		if err := utils.GetUrl(client, i.Config.CloudInit, customConfig); err != nil {
 			return err
 		}
 

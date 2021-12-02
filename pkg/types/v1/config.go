@@ -1,4 +1,4 @@
-package config
+package v1
 
 type RunConfig struct {
 	Device string `yaml:"device,omitempty" mapstructure:"device"`

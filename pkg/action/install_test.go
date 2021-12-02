@@ -20,7 +20,7 @@ package action
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1/config"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -35,7 +35,7 @@ func TestDoCopyEmpty(t *testing.T) {
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(d)
 
-	cfg := &config.RunConfig{
+	cfg := &v1.RunConfig{
 		Device:    "",
 		Target:    d,
 		Source:    s,
@@ -61,7 +61,7 @@ func TestDoCopy(t *testing.T) {
 		_, _ = os.CreateTemp(s, "file*")
 	}
 
-	cfg := &config.RunConfig{
+	cfg := &v1.RunConfig{
 		Device:    "",
 		Target:    d,
 		Source:    s,
@@ -102,7 +102,7 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 	Expect(err).To(BeNil())
 	defer os.Remove(cloudInit.Name())
 
-	cfg :=&config.RunConfig{
+	cfg :=&v1.RunConfig{
 		Target:    d,
 		Source:    s,
 		CloudInit: cloudInit.Name(),

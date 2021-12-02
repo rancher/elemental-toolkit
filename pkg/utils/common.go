@@ -18,32 +18,20 @@ package utils
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 )
 
-type HTTPClient interface {
-	Get(url string) (*http.Response, error)
-}
-
-var (
-	Client HTTPClient
-)
-
-func init() {
-	Client = &http.Client{}
-}
-
-func GetUrl(url string, destination string) error {
+func GetUrl(client v1.HTTPClient, url string, destination string) error {
 	var source io.Reader
 	var err error
 
 	switch {
 	case strings.HasPrefix(url, "http"), strings.HasPrefix(url, "ftp"), strings.HasPrefix(url, "tftp"):
 		fmt.Printf("Downloading from %s to %s\n", url, destination)
-		resp, err := Client.Get(url)
+		resp, err := client.Get(url)
 		if err != nil {return err}
 		source = resp.Body
 		defer resp.Body.Close()

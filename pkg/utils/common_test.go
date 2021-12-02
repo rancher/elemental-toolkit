@@ -49,13 +49,13 @@ func (m *MockClient) Get(url string) (*http.Response, error) {
 
 func TestGetUrlNet(t *testing.T) {
 	RegisterTestingT(t)
-	Client = &MockClient{}
+	client := &MockClient{}
 
 	url := "http://fake.com"
 	tmpDir, _ := os.MkdirTemp("", "elemental")
 	destination := fmt.Sprintf("%s/test", tmpDir)
 	defer os.RemoveAll(tmpDir)
-	err := GetUrl(url, destination)
+	err := GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
 	Expect(Calls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
@@ -63,7 +63,7 @@ func TestGetUrlNet(t *testing.T) {
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	ftp := "ftp://fake"
-	err = GetUrl(ftp, destination)
+	err = GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
 	Expect(Calls).To(ContainElement("ftp://fake"))
 	f, err = os.Stat(destination)
@@ -71,7 +71,7 @@ func TestGetUrlNet(t *testing.T) {
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	tftp := "tftp://fake"
-	err = GetUrl(tftp, destination)
+	err = GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
 	Expect(Calls).To(ContainElement("tftp://fake"))
 	f, err = os.Stat(destination)
@@ -82,6 +82,7 @@ func TestGetUrlNet(t *testing.T) {
 
 func TestGetUrlFile(t *testing.T) {
 	RegisterTestingT(t)
+	client := &MockClient{}
 	testString := "In a galaxy far far away..."
 
 	tmpDir, _ := os.MkdirTemp("", "elemental")
@@ -95,7 +96,7 @@ func TestGetUrlFile(t *testing.T) {
 	_, err = s.WriteString(testString)
 	defer s.Close()
 
-	err = GetUrl(sourceName, destination)
+	err = GetUrl(client, sourceName, destination)
 	Expect(err).To(BeNil())
 
 	// check they are the same size

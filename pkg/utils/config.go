@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1/config"
+	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/fs"
@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-func ReadConfigBuild(configDir string)  (*config.BuildConfig, error) {
-	cfg := &config.BuildConfig{}
+func ReadConfigBuild(configDir string)  (*v1.BuildConfig, error) {
+	cfg := &v1.BuildConfig{}
 	viper.AddConfigPath(configDir)
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("manifest.yaml")
@@ -29,8 +29,8 @@ func ReadConfigBuild(configDir string)  (*config.BuildConfig, error) {
 	return cfg, nil
 }
 
-func ReadConfigRun(configDir string)  (*config.RunConfig, error) {
-	cfg := &config.RunConfig{}
+func ReadConfigRun(configDir string)  (*v1.RunConfig, error) {
+	cfg := &v1.RunConfig{}
 
 	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 
