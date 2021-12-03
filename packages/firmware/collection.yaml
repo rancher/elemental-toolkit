@@ -17,4 +17,4 @@ packages:
 
 - name: "raspberrypi-firmware-dt"
   category: "firmware"
-  version: "2021.11.19-92.1"
+  version: "2021.11.19-92.2"
