@@ -2,3 +2,19 @@ packages:
 - name: "odroid-c2"
   category: "firmware"
   version: "20170419-5.177"
+
+- name: "u-boot-rpi64"
+  category: "firmware"
+  version: "2021.10-192.4"
+
+- name: "raspberrypi-firmware"
+  category: "firmware"
+  version: "2021.11.16-145.1"
+
+- name: "raspberrypi-firmware-config"
+  category: "firmware"
+  version: "2021.11.16-145.4"
+
+- name: "raspberrypi-firmware-dt"
+  category: "firmware"
+  version: "2021.11.19-92.2"
