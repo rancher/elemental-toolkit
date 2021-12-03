@@ -68,8 +68,8 @@ func selinuxRelabel(target string, fs afero.Fs) error {
 
 	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", target)
 
-	_, err = fs.Stat(contextFile)
-	contextExists := err == nil
+	_, err1 := fs.Stat(contextFile)
+	contextExists := err1 == nil
 
 	if commandExists("setfiles") && contextExists {
 		_, err = exec.Command("setfiles", "-r", target, contextFile, target).CombinedOutput()
