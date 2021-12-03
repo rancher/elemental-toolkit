@@ -1,0 +1,10 @@
+name: dasel
+category: toolchain
+version: "1.22.1"
+labels:
+  github.repo: "dasel"
+  github.owner: "TomWright"
+uri:
+  - https://github.com/TomWright/dasel
+license: "MIT License"
+description: "Query, update and convert data structures from the command line. Comparable to jq/yq but supports JSON, TOML, YAML, XML and CSV with zero runtime dependencies."
