@@ -19,32 +19,12 @@ package utils
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
-	"io"
+	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/spf13/afero"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"testing"
 )
-
-var Calls []string
-
-type MockBody struct {}
-
-func (m MockBody) Read(p []byte) (n int, err error){
-	return 1024, io.EOF
-}
-
-func (m MockBody) Close() error {
-	return nil
-}
-
-type MockClient struct {}
-
-func (m *MockClient) Get(url string) (*http.Response, error) {
-	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
-	Calls = append(Calls, url)
-	return &http.Response{Body: &MockBody{}}, nil
-}
 
 
 func TestGetUrlNet(t *testing.T) {
@@ -57,7 +37,7 @@ func TestGetUrlNet(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 	err := GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("http://fake.com"))
+	Expect(MockClientCalls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -65,7 +45,7 @@ func TestGetUrlNet(t *testing.T) {
 	ftp := "ftp://fake"
 	err = GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("ftp://fake"))
+	Expect(MockClientCalls).To(ContainElement("ftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -73,7 +53,7 @@ func TestGetUrlNet(t *testing.T) {
 	tftp := "tftp://fake"
 	err = GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("tftp://fake"))
+	Expect(MockClientCalls).To(ContainElement("tftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -110,4 +90,29 @@ func TestGetUrlFile(t *testing.T) {
 	Expect(dest).To(ContainSubstring(testString))
 }
 
+func TestBootedFrom(t *testing.T) {
+	RegisterTestingT(t)
+	Expect(BootedFrom("I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(BootedFrom("")).To(BeTrue()) // Empty label should match everything!
+}
 
+func TestSetupStyleDefault(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	c := v1.RunConfig{}
+	setupStyle(&c, fs)
+	Expect(c.PartTable).To(Equal(MSDOS))
+	Expect(c.BootFlag).To(Equal(BOOT))
+	c = v1.RunConfig{
+		ForceEfi: true,
+	}
+	setupStyle(&c, fs)
+	Expect(c.PartTable).To(Equal(GPT))
+	Expect(c.BootFlag).To(Equal(ESP))
+	c = v1.RunConfig{
+		ForceGpt: true,
+	}
+	setupStyle(&c, fs)
+	Expect(c.PartTable).To(Equal(GPT))
+	Expect(c.BootFlag).To(Equal(BIOS))
+}
