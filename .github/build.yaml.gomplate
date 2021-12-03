@@ -949,9 +949,12 @@ name: {{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}
 on: 
 {{{$config.on | toYAML | indent 1 }}}
 
-concurrency:
-  group: ci-{{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
-  cancel-in-progress: true
+# See: https://github.com/actions/runner/issues/1532, https://github.community/t/breaking-change-to-concurrency-group-syntax/
+# Temporary associate concurrency with a string only
+concurrency: ci-{{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
+#concurrency:
+#  group: ci-{{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}-${{ github.head_ref || github.ref }}-${{ github.repository }}
+#  cancel-in-progress: true
 
 jobs:
 {{{- if (has $config "build_examples_dir") }}}
