@@ -350,7 +350,7 @@ rm -rf $EFI/var
 echo ">> Writing image and partition table"
 dd if=/dev/zero of="${output_image}" bs=1024000 count="${size}" || exit 1
 if [ "$model" == "rpi64" ]; then 
-    sgdisk -n 1:8192:+32M -c 1:EFI -t 1:0c00 ${output_image}
+    sgdisk -n 1:8192:+96M -c 1:EFI -t 1:0c00 ${output_image}
 else
     sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
 fi
