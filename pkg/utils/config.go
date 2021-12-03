@@ -18,14 +18,14 @@ func ReadConfigBuild(configDir string)  (*v1.BuildConfig, error) {
 	viper.SetConfigName("manifest.yaml")
 
 	// If a config file is found, read it in.
-	_ = viper.ReadInConfig()
+	viper.ReadInConfig()
 
 	// Set the prefix for vars so we get only the ones starting with ELEMENTAL
 	viper.SetEnvPrefix("ELEMENTAL")
 
 	viper.AutomaticEnv() // read in environment variables that match
 	// unmarshal all the vars into the config object
-	_ = viper.Unmarshal(cfg)
+	viper.Unmarshal(cfg)
 	return cfg, nil
 }
 
@@ -38,7 +38,7 @@ func ReadConfigRun(configDir string)  (*v1.RunConfig, error) {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config.yaml")
 	// If a config file is found, read it in.
-	_ = viper.ReadInConfig()
+	viper.ReadInConfig()
 
 	if _, err := os.Stat(cfgExtra); err == nil {
 		viper.AddConfigPath(cfgExtra)
@@ -61,6 +61,6 @@ func ReadConfigRun(configDir string)  (*v1.RunConfig, error) {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// unmarshal all the vars into the config object
-	_ = viper.Unmarshal(cfg)
+	viper.Unmarshal(cfg)
 	return cfg, nil
 }
