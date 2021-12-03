@@ -1,7 +1,4 @@
 requires:
-- name: "cos-setup"
-  category: "system"
-  version: ">=0"
 - name: "cos-config-tmpl" 
   category: "utils"
   version: ">=0"
