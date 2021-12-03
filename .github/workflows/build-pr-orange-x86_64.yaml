@@ -8,12 +8,9 @@ on:
      - .github/**
      - Makefile
      - tests/**
-# See: https://github.com/actions/runner/issues/1532, https://github.community/t/breaking-change-to-concurrency-group-syntax/
-# Temporary associate concurrency with a string only
-concurrency: ci-PR-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
-#concurrency:
-#  group: ci-PR-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
-#  cancel-in-progress: true
+concurrency:
+  group: ci-PR-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
 jobs:
   build-orange-x86_64:
     runs-on: ubuntu-latest
