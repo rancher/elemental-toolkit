@@ -6,6 +6,7 @@
 # rd.cos.overlay=LABEL=<vol_label>
 # rd.cos.overlay=UUID=<vol_uuid>
 # rd.cos.oemtimeout=<seconds>
+# rd.cos.oemlabel=<vol_label>
 # rd.cos.debugrw
 # rd.cos.disable
 # cos-img/filename=/cOS/active.img

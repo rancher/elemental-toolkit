@@ -27,3 +27,6 @@ steps:
     rm -f /var/lib/dbus/machine-id && \
     mkdir -p /var/lib/dbus && \
     ln -sf /etc/machine-id /var/lib/dbus/machine-id
+
+# See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
+unpack: true

@@ -1,10 +1,22 @@
 #!/bin/bash
 
 # This is PoC for building images without requiring admin capabilities (CAP_SYS_ADMIN)
+
+# Warning: these default values must be aligned with the values provided
+# in 'packages/cos-config/cos-config', provide an environment file as the
+# second argument if different values are needed.
+: "${OEM_LABEL:=COS_OEM}"
+: "${RECOVERY_LABEL:=COS_RECOVERY}"
+
 MANIFEST=$1
-if [[ -z "${MANIFEST}" ]]; then
-  echo "Manifest required as parameter, cannot continue"
+if [ -z "${MANIFEST}" ]; then
+  >&2 echo "Manifest required as parameter, cannot continue"
   exit 1
+fi
+
+CONFIG_FILE=$2
+if [ -n "${CONFIG_FILE}" ] && [ -e "${CONFIG_FILE}" ]; then
+  source "${CONFIG_FILE}"
 fi
 
 ARCH=${ARCH:-$(uname -p)}
@@ -42,14 +54,14 @@ repositories:
     priority: 90
 EOF
 
-# Create root-tree for COS_RECOVERY
+# Create root-tree forOVERY
 while IFS=$'\t' read -r name target ; do
   luet install --no-spinner --system-target "$target" -y "$name"
 done < <("${YQ_PACKAGES_COMMAND[@]}" | jq -r ".raw_disk.$ARCH.packages[] | [.name, .target] | @tsv")
 
-# Create a 2GB filesystem for COS_RECOVERY including the contents for root (grub config and squasfs container)
+# Create a 2GB filesystem for RECOVERY including the contents for root (grub config and squasfs container)
 truncate -s $((2048*1024*1024)) rootfs.part
-mkfs.ext2 -L COS_RECOVERY -d root rootfs.part
+mkfs.ext2 -L "${RECOVERY_LABEL}" -d root rootfs.part
 
 # Create the EFI partition FAT16 and include the EFI image and a basic grub.cfg
 truncate -s $((20*1024*1024)) efi.part
@@ -61,9 +73,9 @@ mcopy -s -i efi.part efi/EFI ::EFI
 mkdir -p oem
 cp root/etc/cos/grubenv_firstboot oem/grubenv
 
-# Create a 64MB filesystem for COS_OEM volume
+# Create a 64MB filesystem for OEM volume
 truncate -s $((64*1024*1024)) oem.part
-mkfs.ext2 -L COS_OEM -d oem oem.part
+mkfs.ext2 -L "${OEM_LABEL}" -d oem oem.part
 
 # Create disk image, add 3MB of initial free space to disk, 1MB is for proper alignement, 2MB are for the hybrid legacy boot.
 truncate -s $((3*1024*1024)) disk.raw

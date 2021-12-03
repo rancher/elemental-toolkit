@@ -2,20 +2,6 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
-# cos-setup is required in module-setup and embedded in the initramfs
-- name: "cos-setup"
-  category: "system"
-  version: ">=0"
-
-copy:
-# yip is required in module-setup and embedded in the initramfs. 
-# We don't put it in requires to avoid pulling golang sublayers
-- package: 
-    category: "toolchain"
-    name: "yip"
-    version: ">=0"
-  source: "/usr/bin/yip"
-  destination: "/usr/bin/yip"
 
 steps:
 {{ if .Values.distribution }}

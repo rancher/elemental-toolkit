@@ -9,7 +9,7 @@ name: "Recovery partition boot setup"
 stages:
    rootfs.before:
      - if: |
-            [ -n "$(blkid -L COS_SYSTEM || true)" ] || cat /proc/cmdline | grep -q "COS_RECOVERY"
+            [ -n "$(blkid -L @SYSTEM_LABEL@ || true)" ] || cat /proc/cmdline | grep -q "@RECOVERY_LABEL@"
        name: "Identify recovery mode"
        files:
        - path: /run/cos/recovery_mode

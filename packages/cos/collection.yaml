@@ -2,12 +2,11 @@ packages:
   - &cos
     name: "cos"
     category: "system"
-    version: 0.7.4-6
+    version: 0.7.9
     description: "cOS base image, used to build cOS live ISOs"
     brand_name: "cOS"
     labels:
       autobump.revdeps: "true"
-      autobump.revbump_related: "recovery/cos-img recovery/cos-squash"
   - !!merge <<: *cos
     name: "cos-container"
     description: "cOS container image, used to build cOS derivatives from scratch"
@@ -15,12 +14,6 @@ packages:
     category: "recovery"
     brand_name: "cOS recovery"
     description: "cOS recovery image, used to boot cOS for troubleshooting"
-    version: 0.7.4-6
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"
-    version: 0.7.4-6
-  - !!merge <<: *cos
-    name: "cos-squash"
-    category: "recovery"
-    version: 0.7.4-6

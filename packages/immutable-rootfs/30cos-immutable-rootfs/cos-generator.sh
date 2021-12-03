@@ -17,8 +17,8 @@ if getargbool 0 rd.cos.debugrw; then
     cos_root_perm="rw"
 fi
 
-oem_timeout=$(getarg rd.cos.oemtimeout=)
-[ -z "${oem_timeout}" ] && oem_timeout="10"
+oem_timeout=$(getargnum 10 1 1800 rd.cos.oemtimeout=)
+oem_label=$(getarg rd.cos.oemlabel=)
 cos_overlay=$(getarg rd.cos.overlay=)
 [ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
 
@@ -26,35 +26,37 @@ GENERATOR_DIR="$2"
 [ -z "$GENERATOR_DIR" ] && exit 1
 [ -d "$GENERATOR_DIR" ] || mkdir "$GENERATOR_DIR"
 
-dev=$(dev_unit_name /dev/disk/by-label/COS_OEM)
-{
-    echo "[Unit]"
-    echo "DefaultDependencies=no"
-    echo "Before=cos-setup-rootfs.service"
-    echo "Conflicts=initrd-switch-root.target"
-    echo "[Mount]"
-    echo "Where=/oem"
-    echo "What=/dev/disk/by-label/COS_OEM"
-    echo "Options=rw,suid,dev,exec,noauto,nouser,async"
-} > "$GENERATOR_DIR"/oem.mount
+if [ -n "${oem_label}" ]; then
+    dev=$(dev_unit_name /dev/disk/by-label/${oem_label})
+    {
+        echo "[Unit]"
+        echo "DefaultDependencies=no"
+        echo "Before=cos-setup-rootfs.service"
+        echo "Conflicts=initrd-switch-root.target"
+        echo "[Mount]"
+        echo "Where=/oem"
+        echo "What=/dev/disk/by-label/${oem_label}"
+        echo "Options=rw,suid,dev,exec,noauto,nouser,async"
+    } > "$GENERATOR_DIR"/oem.mount
 
-if [ ! -e "$GENERATOR_DIR/cos-setup-rootfs.service.wants/oem.mount" ]; then
-    mkdir -p "$GENERATOR_DIR"/cos-setup-rootfs.service.wants
-    ln -s "$GENERATOR_DIR"/oem.mount \
-        "$GENERATOR_DIR"/cos-setup-rootfs.service.wants/oem.mount
-fi
+    if [ ! -e "$GENERATOR_DIR/cos-setup-rootfs.service.wants/oem.mount" ]; then
+        mkdir -p "$GENERATOR_DIR"/cos-setup-rootfs.service.wants
+        ln -s "$GENERATOR_DIR"/oem.mount \
+            "$GENERATOR_DIR"/cos-setup-rootfs.service.wants/oem.mount
+    fi
 
-mkdir -p "$GENERATOR_DIR/$dev.device.d"
-{
-    echo "[Unit]"
-    echo "Before=initrd-root-fs.target"
-    echo "JobRunningTimeoutSec=${oem_timeout}"
-} > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
+    mkdir -p "$GENERATOR_DIR/$dev.device.d"
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "JobRunningTimeoutSec=${oem_timeout}"
+    } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
 
-if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.wants/$dev.device" ]; then
-    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
-    ln -s "$GENERATOR_DIR"/"$dev".device \
-        "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
+    if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.wants/$dev.device" ]; then
+        mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
+        ln -s "$GENERATOR_DIR"/"$dev".device \
+            "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
+    fi
 fi
 
 case "${cos_overlay}" in

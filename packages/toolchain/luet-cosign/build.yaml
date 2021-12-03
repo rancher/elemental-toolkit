@@ -2,9 +2,6 @@ requires:
   - name: "golang"
     category: "build"
     version: ">=0"
-  - name: "cosign"
-    category: "toolchain"
-    version: ">=0"
 
 env:
   - PATH=$PATH:/usr/local/go/bin

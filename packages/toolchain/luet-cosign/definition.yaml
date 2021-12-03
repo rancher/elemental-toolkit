@@ -1,8 +1,11 @@
 name: "luet-cosign"
 category: "toolchain"
-version: 0.0.8-2
+version: 0.0.8-3
 labels:
   github.repo: "luet-cosign"
   github.owner: "rancher-sandbox"
   autobump.revdeps: "true"
-  autobump.revbump_related: "system/cos recovery/cos recovery/cos-img recovery/cos-squash"
+requires:
+- name: "cosign"
+  category: "toolchain"
+  version: ">=0"

@@ -95,6 +95,11 @@ DESTINATION?=$(ROOT_DIR)/build
 export MANIFEST?=$(ROOT_DIR)/manifest.yaml
 
 #
+# cos config environment file
+#
+export COS_CONFIG?=$(ROOT_DIR)/packages/cos-config/cos-config
+
+#
 # Packer target to build
 #
 PACKER_TARGET?=virtualbox-iso.cos
