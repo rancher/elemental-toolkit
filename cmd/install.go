@@ -18,8 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/cmd/config"
 	"github.com/rancher-sandbox/elemental-cli/pkg/action"
-	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -30,7 +30,7 @@ var installCmd = &cobra.Command{
 	Short: "elemental installer",
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := utils.ReadConfigRun(viper.GetString("config-dir"))
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"))
 
 		if err != nil {
 			fmt.Printf("Error reading config: %s\n", err)
