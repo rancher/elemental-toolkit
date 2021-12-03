@@ -3,12 +3,9 @@ on:
  push:
    tags:
      - v*
-# See: https://github.com/actions/runner/issues/1532, https://github.community/t/breaking-change-to-concurrency-group-syntax/
-# Temporary associate concurrency with a string only
-concurrency: ci-release-blue-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
-#concurrency:
-#  group: ci-release-blue-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
-#  cancel-in-progress: true
+concurrency:
+  group: ci-release-blue-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
 jobs:
   build-blue-arm64:
     runs-on: [self-hosted, arm64]
