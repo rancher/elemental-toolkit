@@ -4,16 +4,10 @@ set -e
 
 load_vars() {
 
-  if [ "$model" == "rpi64" ]; then
-      container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:rpi-latest}
-  else
-      container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:odroid-c2-latest}
-  fi
+  model=${MODEL:-odroid_c2}
+
   directory=${DIRECTORY:-}
   output_image="${OUTPUT_IMAGE:-arm.img}"
-  if [ "$model" == "" ]; then
-      model=${MODEL:-odroid_c2}
-  fi
   # Img creation options. Size is in MB for all of the vars below
   size="${SIZE:-7544}"
   state_size="${STATE_SIZE:-4992}"
@@ -121,6 +115,8 @@ get_url()
 
 trap "cleanup" 1 2 3 6 9 14 15 EXIT
 
+load_vars
+
 while [ "$#" -gt 0 ]; do
     case $1 in
         --config)
@@ -186,7 +182,12 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
-load_vars
+
+if [ "$model" == "rpi64" ]; then
+    container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:rpi-latest}
+else
+    container_image=${CONTAINER_IMAGE:-quay.io/costoolkit/examples:odroid-c2-latest}
+fi
 
 if [ -z "$output_image" ]; then
   echo "No image file specified"
