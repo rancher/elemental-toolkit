@@ -15,6 +15,6 @@ prelude:
 steps:
   - |
     PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
-    cd /luetbuild/go/src/github.com/TomWright/dasel && go build --ldflags "$LDFLAGS" ./cmd/dasel && mv dasel /usr/bin/dasel
+    cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{.Values.name}} && go build --ldflags "$LDFLAGS" ./cmd/{{.Values.name}} && mv {{.Values.name}} /usr/bin/{{.Values.name}}
 includes:
   - /usr/bin/dasel
