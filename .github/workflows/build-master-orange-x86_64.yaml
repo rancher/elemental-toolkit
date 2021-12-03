@@ -3,9 +3,12 @@ on:
  push:
    branches:
      - master
-concurrency:
-  group: ci-master-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
-  cancel-in-progress: true
+# See: https://github.com/actions/runner/issues/1532, https://github.community/t/breaking-change-to-concurrency-group-syntax/
+# Temporary associate concurrency with a string only
+concurrency: ci-master-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+#concurrency:
+#  group: ci-master-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+#  cancel-in-progress: true
 jobs:
   docker-build-orange:
     runs-on: ubuntu-latest
