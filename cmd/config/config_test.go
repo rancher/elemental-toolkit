@@ -1,4 +1,4 @@
-package utils
+package config
 
 import (
 	. "github.com/onsi/gomega"
@@ -13,81 +13,70 @@ func setupTest(t *testing.T) {
 }
 
 
-func TestConfigRun(t *testing.T) {
-	setupTest(t)
-	// Load only main config
-	err := ReadConfigRun("config/")
-	Expect(err).To(BeNil())
-	source := viper.GetString("file")
-	// check that the final value comes from the main file
-	Expect(source).To(Equal("main"))
-}
-
 func TestConfigRunCustomNotValidPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	err := ReadConfigRun("/none/")
-	Expect(err).ToNot(BeNil())
+	cfg, err := ReadConfigRun("/none/")
+	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
+	Expect(cfg.Source).To(Equal(""))
 }
 
 func TestConfigRunCustomEmptyPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	err := ReadConfigRun()
-	Expect(err).ToNot(BeNil())
+	cfg, err := ReadConfigRun("")
+	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
+	Expect(cfg.Source).To(Equal(""))
 }
 
 func TestConfigRunOverride(t *testing.T) {
 	setupTest(t)
-	err := ReadConfigRun("config/", "config/config.d/")
+	cfg, err := ReadConfigRun("config/")
 	Expect(err).To(BeNil())
-	source := viper.GetString("file")
+	source := viper.GetString("target")
 	// check that the final value comes from the extra file
 	Expect(source).To(Equal("extra"))
+	Expect(cfg.Target).To(Equal("extra"))
 }
 
 func TestConfigRunOverrideEnv(t *testing.T) {
 	setupTest(t)
-	err := ReadConfigRun("config/", "config/config.d/")
+	_= os.Setenv("ELEMENTAL_TARGET", "environment")
+	cfg, err := ReadConfigRun("config/")
 	Expect(err).To(BeNil())
-	_= os.Setenv("ELEMENTAL_FILE", "environment")
-	source := viper.GetString("file")
+	source := viper.GetString("target")
 	// check that the final value comes from the env var
 	Expect(source).To(Equal("environment"))
+	Expect(cfg.Target).To(Equal("environment"))
 }
 
 func TestConfigBuildCustomNotValidPath(t *testing.T)  {
 	setupTest(t)
-	err := ReadConfigBuild("/none/")
-	Expect(err).ToNot(BeNil())
+	cfg, err := ReadConfigBuild("/none/")
+	Expect(err).To(BeNil())
 	Expect(viper.GetString("label")).To(Equal(""))
+	Expect(cfg.Label).To(Equal(""))
 }
 
 func TestConfigBuildCustomPath(t *testing.T)  {
 	setupTest(t)
-	err := ReadConfigBuild("config/")
+	cfg, err := ReadConfigBuild("config/")
 	Expect(err).To(BeNil())
 	Expect(viper.GetString("label")).To(Equal("COS_LIVE"))
-}
-
-func TestConfigBuildCustomEmptyPath(t *testing.T)  {
-	setupTest(t)
-	// Point to nothing, it will search the current path, should not find the config
-	err := ReadConfigBuild()
-	Expect(err).ToNot(BeNil())
-	Expect(viper.GetString("label")).To(Equal(""))
+	Expect(cfg.Label).To(Equal("COS_LIVE"))
 }
 
 func TestConfigBuildOverrideEnv(t *testing.T) {
 	setupTest(t)
-	err := ReadConfigBuild("config/")
-	Expect(err).To(BeNil())
 	_= os.Setenv("ELEMENTAL_LABEL", "environment")
+	cfg, err := ReadConfigBuild("config/")
+	Expect(err).To(BeNil())
 	source := viper.GetString("label")
 	// check that the final value comes from the env var
 	Expect(source).To(Equal("environment"))
+	Expect(cfg.Label).To(Equal("environment"))
 }
