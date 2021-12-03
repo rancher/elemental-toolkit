@@ -1,0 +1,20 @@
+requires:
+  - name: "golang"
+    category: "build"
+    version: ">=0"
+env:
+  - PATH=$PATH:/usr/local/go/bin
+  - GOPATH=/luetbuild/go
+  - GO111MODULE=on
+  - CGO_ENABLED=0
+  - LDFLAGS="-s -w"
+prelude:
+{{ template "golang_deps" .}}
+{{ $opts:= dict "version" (printf "v%s" .Values.version) "org" ( index .Values.labels "github.owner" ) "repo" ( index .Values.labels "github.repo" ) }}
+{{ template "golang_download_package" $opts}}
+steps:
+  - |
+    PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
+    cd /luetbuild/go/src/github.com/TomWright/dasel && go build --ldflags "$LDFLAGS" ./cmd/dasel && mv dasel /usr/bin/dasel
+includes:
+  - /usr/bin/dasel
