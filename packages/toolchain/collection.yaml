@@ -2,7 +2,7 @@ packages:
   - &luet
     category: "toolchain"
     name: "luet"
-    version: "0.20.11"
+    version: "0.20.12"
     branch: ""
     upx: false
     fips: false
@@ -31,7 +31,7 @@ packages:
       github.owner: "mudler"
       autobump.revdeps: "true"
     requires:
-    - <<: *luet
+      - !!merge <<: *luet
   - name: "luet-makeiso"
     category: "toolchain-fips"
     version: 0.3.8-17
@@ -42,7 +42,7 @@ packages:
       github.owner: "mudler"
       autobump.revdeps: "true"
     requires:
-    - <<: *luet-fips
+      - !!merge <<: *luet-fips
   - category: "toolchain-fips"
     name: "yip"
     upx: false
