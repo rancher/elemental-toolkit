@@ -5,7 +5,7 @@ packages:
 
 - name: "u-boot-rpi64"
   category: "firmware"
-  version: "2021.10-192.1"
+  version: "2021.10-192.4"
 
 - name: "raspberrypi-firmware"
   category: "firmware"
