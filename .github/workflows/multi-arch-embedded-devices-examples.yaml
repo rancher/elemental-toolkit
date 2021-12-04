@@ -21,7 +21,7 @@ jobs:
           - tag: "rpi-"
             dockerfile: "examples/rpi"
             platforms: "linux/arm64"
-            model: pi64
+            model: rpi64
     steps:
       - name: Checkout
         uses: actions/checkout@v2
