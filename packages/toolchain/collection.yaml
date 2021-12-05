@@ -13,7 +13,7 @@ packages:
   - &luet-fips
     category: "toolchain-fips"
     name: "luet"
-    version: "0.20.12"
+    version: 0.20.12-1
     branch: ""
     upx: false
     fips: true
