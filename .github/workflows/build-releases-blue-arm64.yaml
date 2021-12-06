@@ -37,12 +37,12 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y make
-      - name: Install CI plugins
-        run: |
-            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
@@ -136,12 +136,12 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y make
-      - name: Install CI plugins
-        run: |
-            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:

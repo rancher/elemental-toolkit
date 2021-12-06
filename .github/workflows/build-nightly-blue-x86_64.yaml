@@ -19,6 +19,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -40,9 +43,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-      - name: Install CI plugins
-        run: |
-            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -50,6 +50,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
           sudo -E make deps
@@ -139,9 +142,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
-      - name: Install CI plugins
-        run: |
-            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools

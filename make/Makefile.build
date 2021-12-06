@@ -70,7 +70,7 @@ ifeq ("$(PUSH_CACHE)","true")
 endif
 
 ifneq ($(strip $(PLUGINS)), )
-	BUILD_ARGS+=$(foreach var,$(PLUGINS),--plugin $(var);)
+	BUILD_ARGS+=$(foreach var,$(PLUGINS),--plugin $(var))
 endif
 
 PUBLISH_ARGS?=
