@@ -28,6 +28,12 @@ PUSH_CACHE?=false
 BUILD_ARGS?=--pull --no-spinner --only-target-package --live-output
 
 #
+# Luet plugins
+#
+
+PLUGINS?=
+
+#
 # Use Docker buildkit
 DOCKER_BUILDKIT?=1
 #
@@ -61,6 +67,10 @@ endif
 
 ifeq ("$(PUSH_CACHE)","true")
 	BUILD_ARGS+=--push
+endif
+
+ifneq ($(strip $(PLUGINS)), )
+	BUILD_ARGS+=$(foreach var,$(PLUGINS),--plugin $(var);)
 endif
 
 PUBLISH_ARGS?=
