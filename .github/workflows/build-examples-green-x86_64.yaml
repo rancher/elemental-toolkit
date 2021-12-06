@@ -30,6 +30,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
           sudo -E make deps
@@ -62,6 +65,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
           sudo -E make deps
@@ -94,6 +100,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '^1.16'
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
           sudo -E make deps

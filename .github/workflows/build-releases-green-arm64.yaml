@@ -14,6 +14,7 @@ jobs:
       LUET_ARCH: arm64
       FLAVOR: green
       ARCH: arm64
+      PLUGINS: cleanup-images
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -36,6 +37,9 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y make
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -435,6 +439,9 @@ jobs:
         run: |
             sudo apt-get update
             sudo apt-get install -y make
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
