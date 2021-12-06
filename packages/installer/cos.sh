@@ -390,7 +390,7 @@ do_format()
             parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
             parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
             PREFIX=${_DEVICE}
-            if [ ! -e ${PREFIX}${STATE_NUM} ]; then
+            if [ ! -e ${PREFIX}1 ]; then
                 PREFIX=${_DEVICE}p
             fi
             _BOOT=${PREFIX}1
