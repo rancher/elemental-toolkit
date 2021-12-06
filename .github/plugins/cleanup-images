@@ -3,7 +3,7 @@ exec 3>&1 1>>/tmp/cleanup-images.log 2>&1
 
 event="$1"
 payload="$2"
-if [ "$event" == "package.post.build" ]; then
+if [ "$event" == "image.post.push" ]; then
     out=$(docker images --filter="reference=$REPO_CACHE" --format='{{.Repository}}:{{.Tag}}' | xargs -r docker rmi --force)
     out1=$(docker image prune --force)
     jq --arg key0   'state' \
