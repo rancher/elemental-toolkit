@@ -337,6 +337,12 @@ prepare_passive() {
 
 part_probe() {
     local dev=$1
+
+    # Don't require udevadm necessarly, but run it best-effort
+    if hash udevadm 2>/dev/null; then
+        udevadm settle
+    fi
+
     partprobe ${dev} 2>/dev/null || true
 
     sync
@@ -385,20 +391,24 @@ do_format()
     local PREFIX
 
     # Partitioning via cloud-init config file
-    if [ -n "$_COS_PARTITION_LAYOUT" ] && [ "$_PARTTABLE" = "gpt" ]; then
-        if [ "$_BOOTFLAG" == "esp" ]; then
-            parted -s ${_DEVICE} mkpart primary fat32 0% 50MB # efi
-            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
-            PREFIX=${_DEVICE}
+    if [ -n "$COS_PARTITION_LAYOUT" ] && [ "$PARTTABLE" = "gpt" ]; then
+        if [ "$BOOTFLAG" == "esp" ]; then
+            parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
+            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+
+            part_probe $DEVICE
+
+            PREFIX=${DEVICE}
             if [ ! -e ${PREFIX}1 ]; then
-                PREFIX=${_DEVICE}p
+                PREFIX=${DEVICE}p
             fi
-            _BOOT=${PREFIX}1
-            mkfs.vfat -F 32 ${_BOOT}
-            fatlabel ${_BOOT} COS_GRUB
-        elif [ "$_BOOTFLAG" == "bios_grub" ]; then
-            parted -s ${_DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
-            parted -s ${_DEVICE} set 1 ${_BOOTFLAG} on
+            BOOT=${PREFIX}1
+            mkfs.vfat -F 32 ${BOOT}
+            fatlabel ${BOOT} COS_GRUB
+        elif [ "$BOOTFLAG" == "bios_grub" ]; then
+            parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
+            parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+            part_probe $DEVICE
         fi
 
         yip -s partitioning $_COS_PARTITION_LAYOUT
