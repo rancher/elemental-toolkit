@@ -198,6 +198,12 @@ prepare_passive() {
 
 part_probe() {
     local dev=$1
+
+    # Don't require udevadm necessarly, but run it best-effort
+    if hash udevadm 2>/dev/null; then
+        udevadm settle
+    fi
+
     partprobe ${dev} 2>/dev/null || true
 
     sync
@@ -240,6 +246,9 @@ do_format()
         if [ "$BOOTFLAG" == "esp" ]; then
             parted -s ${DEVICE} mkpart primary fat32 0% 50MB # efi
             parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+
+            part_probe $DEVICE
+
             PREFIX=${DEVICE}
             if [ ! -e ${PREFIX}1 ]; then
                 PREFIX=${DEVICE}p
@@ -250,6 +259,7 @@ do_format()
         elif [ "$BOOTFLAG" == "bios_grub" ]; then
             parted -s ${DEVICE} mkpart primary 0% 1MB # BIOS boot partition for GRUB
             parted -s ${DEVICE} set 1 ${BOOTFLAG} on
+            part_probe $DEVICE
         fi
 
         yip -s partitioning $COS_PARTITION_LAYOUT
