@@ -20,6 +20,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -31,6 +34,7 @@ jobs:
       LUET_ARCH: x86_64
       FLAVOR: blue
       ARCH: x86_64
+      PLUGINS: cleanup-images
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
@@ -47,6 +51,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
@@ -136,6 +143,9 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:

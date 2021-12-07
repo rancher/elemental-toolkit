@@ -1,0 +1,20 @@
+#!/bin/bash
+exec 3>&1 1>>/tmp/cleanup-images.log 2>&1
+
+event="$1"
+payload="$2"
+if [ "$event" == "image.post.push" ]; then
+    out=$(docker images --filter="reference=$REPO_CACHE" --format='{{.Repository}}:{{.Tag}}' | xargs -r docker rmi --force)
+    out1=$(docker image prune --force)
+    jq --arg key0   'state' \
+     --arg value0 "Cleaned up $REPO_CACHE: $out $out1" \
+     --arg key1   'data' \
+     --arg value1 "" \
+     --arg key2   'error' \
+     --arg value2 '' \
+     '. | .[$key0]=$value0 | .[$key1]=$value1 | .[$key2]=$value2' \
+     <<<'{}' | tee /dev/fd/3
+     exit 0
+fi
+
+echo "{}" | tee /dev/fd/3
