@@ -47,8 +47,8 @@ packages:
       # We do assume that checksum is sha256
       autobump.checksum_hook: |
         curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").checksum."#text"' -r | tail -n1
-      package.version: "2021.11.16-145.6"
-      package.checksum: "20738f44cb73b0c41a68218dee8fd697ecf645754630c252ba3b907162e65547"
+      package.version: "2021.03.10-2.1"
+      package.checksum: "5700c13c6df1344115c9ae9cb3e31a99773d45ff6b5ad21d98f1e641a4549837"
   - name: "raspberrypi-firmware-dt"
     category: "firmware"
     version: "2021.03.15-2.1"
