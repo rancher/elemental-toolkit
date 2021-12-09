@@ -60,8 +60,7 @@ func commandExists(command string) bool {
 	return err == nil
 }
 
-func BootedFrom(label string) bool {
-	out, _ := exec.Command("cat",  "/proc/cmdline").CombinedOutput()
-
+func BootedFrom(runner v1.Runner, label string) bool {
+	out, _ := runner.Run("cat",  "/proc/cmdline")
 	return strings.Contains(string(out), label)
 }

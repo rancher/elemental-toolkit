@@ -90,8 +90,17 @@ func TestGetUrlFile(t *testing.T) {
 
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)
-	Expect(BootedFrom("I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
-	Expect(BootedFrom("")).To(BeTrue()) // Empty label should match everything!
+	runner := mocks.TestRunner{}
+	Expect(BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
-
+// TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it
+// Matches the command + args and return the proper output we want for testing
+func TestHelperBootedFrom(*testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	defer os.Exit(0)
+	fmt.Println("I_EXPECT_THIS_LABEL_TO_EXIST") // Mock that label
+}
