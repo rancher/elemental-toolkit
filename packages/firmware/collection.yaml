@@ -10,12 +10,12 @@ packages:
       autobump.string_replace: '{ "prefix": "" }'
       autobump.prefix: "prefix"
       autobump.hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").version | map(.)[2] + "-" + map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       autobump.version_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").version | map(.)[2] + "-" + map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       # We do assume that checksum is sha256
-      autobump.checksum: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").checksum."#text"' -r | tail -n1
+      autobump.checksum_hook: |
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="u-boot-rpiarm64") | select(.arch!="src").checksum."#text"' -r | tail -n1
       package.version: "2021.10-193.3"
   - name: "raspberrypi-firmware"
     category: "firmware"
@@ -25,12 +25,12 @@ packages:
       autobump.string_replace: '{ "prefix": "" }'
       autobump.prefix: "prefix"
       autobump.hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       autobump.version_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").version | map(.)[2] + "-" + map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       # We do assume that checksum is sha256
       autobump.checksum_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").checksum."#text"' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware") | select(.arch!="src").checksum."#text"' -r | tail -n1
       package.version: "2021.11.16-145.1"
       package.checksum: "b93291b5c1579afeb63ba8371f2e9f443d221cd7523c0e3bf6b360df521200fe"
   - name: "raspberrypi-firmware-config"
@@ -41,12 +41,12 @@ packages:
       autobump.string_replace: '{ "prefix": "" }'
       autobump.prefix: "prefix"
       autobump.hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       autobump.version_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").version | map(.)[2] + "-" + map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       # We do assume that checksum is sha256
       autobump.checksum_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").checksum."#text"' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-config") | select(.arch!="src").checksum."#text"' -r | tail -n1
       package.version: "2021.11.16-145.6"
       package.checksum: "20738f44cb73b0c41a68218dee8fd697ecf645754630c252ba3b907162e65547"
   - name: "raspberrypi-firmware-dt"
@@ -57,11 +57,11 @@ packages:
       autobump.string_replace: '{ "prefix": "" }'
       autobump.prefix: "prefix"
       autobump.hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       autobump.version_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").version | map(.)[2] + "-" + map(.)[1]' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").version | map(.)[2] + "-" +  map(.)[1]' -r | tail -n1
       # We do assume that checksum is sha256
       autobump.checksum_hook: |
-        curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/$(curl -s -L https://download.opensuse.org/repositories/hardware:/boot/openSUSE_Factory_ARM/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").checksum."#text"' -r | tail -n1
+        curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/$(curl -s -L https://download.opensuse.org/distribution/leap/15.3/repo/oss/repodata/repomd.xml | dasel select -p xml 'repomd.data.[0].location.-href') | gunzip | dasel -r xml -p json | jq '.metadata.package[] | select(.name=="raspberrypi-firmware-dt") | select(.arch!="src").checksum."#text"' -r | tail -n1
       package.version: "2021.12.02-93.1"
       package.checksum: "e777713c037d9ef27f2a854f15643608196c4560653896e0b960a9ee4898d0af"
