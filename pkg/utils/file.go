@@ -23,7 +23,7 @@ import (
 )
 
 
-func selinuxRelabel(target string, fs afero.Fs, raiseError bool) error {
+func SelinuxRelabel(target string, fs afero.Fs, raiseError bool) error {
 	var err error
 
 	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", target)

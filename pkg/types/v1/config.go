@@ -37,7 +37,7 @@ type RunConfig struct {
 	BootFlag string
 }
 
-func (r *RunConfig) setupStyle(fs afero.Fs) {
+func (r *RunConfig) SetupStyle(fs afero.Fs) {
 	var part,boot string
 
 	_, err := fs.Stat("/sys/firmware/efi")

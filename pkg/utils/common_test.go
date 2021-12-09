@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package utils_test
 
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	"io/ioutil"
 	"os"
@@ -34,7 +35,7 @@ func TestGetUrlNet(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "elemental")
 	destination := fmt.Sprintf("%s/test", tmpDir)
 	defer os.RemoveAll(tmpDir)
-	err := GetUrl(client, url, destination)
+	err := utils.GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
 	Expect(mocks.MockClientCalls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
@@ -42,7 +43,7 @@ func TestGetUrlNet(t *testing.T) {
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	ftp := "ftp://fake"
-	err = GetUrl(client, ftp, destination)
+	err = utils.GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
 	Expect(mocks.MockClientCalls).To(ContainElement("ftp://fake"))
 	f, err = os.Stat(destination)
@@ -50,7 +51,7 @@ func TestGetUrlNet(t *testing.T) {
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	tftp := "tftp://fake"
-	err = GetUrl(client, tftp, destination)
+	err = utils.GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
 	Expect(mocks.MockClientCalls).To(ContainElement("tftp://fake"))
 	f, err = os.Stat(destination)
@@ -74,7 +75,7 @@ func TestGetUrlFile(t *testing.T) {
 	_, err = s.WriteString(testString)
 	defer s.Close()
 
-	err = GetUrl(client, sourceName, destination)
+	err = utils.GetUrl(client, sourceName, destination)
 	Expect(err).To(BeNil())
 
 	// check they are the same size
@@ -91,8 +92,8 @@ func TestGetUrlFile(t *testing.T) {
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)
 	runner := mocks.TestRunner{}
-	Expect(BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
-	Expect(BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
+	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
 // TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it

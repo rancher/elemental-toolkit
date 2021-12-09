@@ -1,7 +1,8 @@
-package utils
+package utils_test
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/afero"
 	"testing"
 )
@@ -11,8 +12,8 @@ func TestSelinuxRelabel(t *testing.T) {
 	RegisterTestingT(t)
 	fs := afero.NewMemMapFs()
 	// This is actually failing but not sure we should return an error
-	Expect(selinuxRelabel("/", fs, true)).ToNot(BeNil())
+	Expect(utils.SelinuxRelabel("/", fs, true)).ToNot(BeNil())
 	fs = afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
-	Expect(selinuxRelabel("/", fs, false)).To(BeNil())
+	Expect(utils.SelinuxRelabel("/", fs, false)).To(BeNil())
 }
