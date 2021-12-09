@@ -19,6 +19,9 @@
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
   {{{- end }}}
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
 {{{ end }}}
 
 {{{define "prepare_build" }}}
@@ -50,6 +53,7 @@
             sudo apt-get update
             sudo apt-get install -y make
   {{{- end }}}
+
 {{{ end }}}
 
 {{{define "make"}}}
@@ -125,6 +129,7 @@
       LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
+      PLUGINS: cleanup-images
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
