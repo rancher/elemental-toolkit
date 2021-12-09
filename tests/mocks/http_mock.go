@@ -21,22 +21,31 @@ import (
 	"net/http"
 )
 
-var MockClientCalls []string
+type FakeHttpBody struct {}
 
-type MockBody struct {}
-
-func (m MockBody) Read(p []byte) (n int, err error){
+func (m *FakeHttpBody) Read(p []byte) (n int, err error){
 	return 1024, io.EOF
 }
 
-func (m MockBody) Close() error {
+func (m *FakeHttpBody) Close() error {
 	return nil
 }
 
-type MockClient struct {}
+type FakeHttpClient struct {
+	ClientCalls []string
+}
 
-func (m *MockClient) Get(url string) (*http.Response, error) {
+func (m *FakeHttpClient) Get(url string) (*http.Response, error) {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
-	MockClientCalls = append(MockClientCalls, url)
-	return &http.Response{Body: &MockBody{}}, nil
+	m.ClientCalls = append(m.ClientCalls, url)
+	return &http.Response{Body: &FakeHttpBody{}}, nil
+}
+
+func (m *FakeHttpClient) WasGetCalledWith(url string) bool {
+	for _, c := range m.ClientCalls {
+		if c == url {
+			return true
+		}
+	}
+	return false
 }

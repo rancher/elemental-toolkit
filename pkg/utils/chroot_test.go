@@ -19,18 +19,23 @@ package utils
 import (
 	. "github.com/onsi/gomega"
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"testing"
 )
 
 func TestChroot(t *testing.T) {
 	RegisterTestingT(t)
-	syscallInterface := v1mock.FakeSyscall{}
-	runner := v1mock.FakeRunner{}
-	mounter := mount.FakeMounter{}
-	chroot := NewChroot(&mounter, "/whatever")
+	syscallInterface := &v1mock.FakeSyscall{}
+	chroot := NewChroot(
+		"/whatever",
+		WithRunner(&v1mock.FakeRunner{}),
+		WithFS(afero.NewMemMapFs()),
+		WithSyscall(syscallInterface),
+		WithMounter(&mount.FakeMounter{}),
+		)
 	defer chroot.Close()
-	_, err := chroot.Run(&runner, &syscallInterface, "chroot-command")
+	_, err := chroot.Run( "chroot-command")
 	Expect(err).To(BeNil())
 	Expect(syscallInterface.WasChrootCalledWith("/whatever")).To(BeTrue())
 }

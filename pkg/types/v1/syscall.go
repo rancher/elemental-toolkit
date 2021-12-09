@@ -8,7 +8,7 @@ type SyscallInterface interface {
 
 type RealSyscall struct{}
 
-func (r *RealRunner) Chroot(path string) error {
+func (r *RealSyscall) Chroot(path string) error {
 	return syscall.Chroot(path)
 }
 
