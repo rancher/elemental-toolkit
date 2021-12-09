@@ -23,17 +23,24 @@ import (
 )
 
 
-func selinuxRelabel(target string, fs afero.Fs) error {
+func selinuxRelabel(target string, fs afero.Fs, raiseError bool) error {
 	var err error
 
 	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", target)
 
-	_, err1 := fs.Stat(contextFile)
-	contextExists := err1 == nil
+	_, err = fs.Stat(contextFile)
+	contextExists := err == nil
 
 	if commandExists("setfiles") && contextExists {
 		_, err = exec.Command("setfiles", "-r", target, contextFile, target).CombinedOutput()
 	}
 
-	return err
+	// In the original code this can error out and we dont really care
+	// I guess that to maintain backwards compatibility we have to do the same, we dont care if it raises an error
+	// but we still add the possibility to return an error if we want to change it in the future to be more strict?
+	if raiseError && err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
