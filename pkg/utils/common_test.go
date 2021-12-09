@@ -91,12 +91,12 @@ func TestGetUrlFile(t *testing.T) {
 
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)
-	runner := mocks.TestRunner{}
+	runner := mocks.FakeRunner{}
 	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
 	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
-// TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it
+// TestHelperBootedFrom will be called by the FakeRunner when running the BootedFrom func as it
 // Matches the command + args and return the proper output we want for testing
 func TestHelperBootedFrom(*testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {

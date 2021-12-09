@@ -26,7 +26,7 @@ import (
 func TestChroot(t *testing.T) {
 	RegisterTestingT(t)
 	syscallInterface := v1mock.FakeSyscall{}
-	runner := v1mock.TestRunner{}
+	runner := v1mock.FakeRunner{}
 	mounter := mount.FakeMounter{}
 	chroot := NewChroot(&mounter, "/whatever")
 	defer chroot.Close()
