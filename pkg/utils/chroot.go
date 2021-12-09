@@ -21,43 +21,44 @@ import (
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	mountUtils "k8s.io/mount-utils"
 	"os"
-	"syscall"
+	"strings"
 )
 
 type Chroot struct {
 	path string
 	defaultMounts []string
+	mounter mountUtils.Interface
 }
 
-func NewChroot(path string) *Chroot {
+func NewChroot(mounter mountUtils.Interface,path string) *Chroot {
 	return &Chroot{
 		path: path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},
+		mounter: mounter,
 	}
 }
 
 func (c Chroot) Prepare() error {
-	mounter := mountUtils.New("/usr/bin/mount")
 	mountOptions := []string{"bind"}
 	for _, mnt := range c.defaultMounts {
-		err := os.Mkdir(fmt.Sprintf("%s/%s", c.path, mnt), 0644)
-		err = mounter.Mount(mnt, fmt.Sprintf("%s/%s", c.path, mnt), "bind", mountOptions)
+		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt)
+		err := os.Mkdir(mountPoint, 0644)
+		err = c.mounter.Mount(mnt, mountPoint, "bind", mountOptions)
 		if err != nil {return err}
 	}
 	return nil
 }
 
 func (c Chroot) Close() error {
-	mounter := mountUtils.New("/usr/bin/mount")
 	for _, mnt := range c.defaultMounts {
-		err := mounter.Unmount(fmt.Sprintf("%s/%s", c.path, mnt))
+		err := c.mounter.Unmount(fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt))
 		if err != nil {return err}
 	}
 	return nil
 }
 
 // Run executes a command inside a chroot
-func (c Chroot) Run(runner v1.Runner, command string, args ...string)  ([]byte, error){
+func (c Chroot) Run(runner v1.Runner, sysCallInterface v1.SyscallInterface, command string, args ...string)  ([]byte, error){
 	var out []byte
 	var err error
 	// Store current dir
@@ -66,7 +67,7 @@ func (c Chroot) Run(runner v1.Runner, command string, args ...string)  ([]byte, 
 	if err != nil {fmt.Printf("Cant open /");return out, err}
 	err = c.Prepare()
 	if err != nil {fmt.Printf("Cant mount default mounts");return nil, err}
-	err = syscall.Chroot(c.path)
+	err = sysCallInterface.Chroot(c.path)
 	if err != nil {fmt.Printf("Cant chroot %s", c.path);return out, err}
 	// run commands in the chroot
 	out, err = runner.Run(command, args...)
@@ -74,7 +75,7 @@ func (c Chroot) Run(runner v1.Runner, command string, args ...string)  ([]byte, 
 	// Restore to old dir
 	err = oldRootF.Chdir()
 	if err != nil {fmt.Printf("Cant change to old dir");return out, err}
-	err = syscall.Chroot(".")
+	err = sysCallInterface.Chroot(".")
 	if err != nil {fmt.Printf("Cant chroot back to oldir");return out, err}
 	return out, err
 }

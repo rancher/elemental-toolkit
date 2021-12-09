@@ -17,38 +17,20 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher-sandbox/elemental-cli/tests/mocks"
-	"io/ioutil"
-	"os"
+	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	"k8s.io/mount-utils"
 	"testing"
 )
 
 func TestChroot(t *testing.T) {
 	RegisterTestingT(t)
-	runner := v1.TestRunner{}
-	tmpDir, _ := os.MkdirTemp("", "elemental-*")
-	chroot := NewChroot(tmpDir)
+	syscallInterface := v1mock.FakeSyscall{}
+	runner := v1mock.TestRunner{}
+	mounter := mount.FakeMounter{}
+	chroot := NewChroot(&mounter, "/whatever")
 	defer chroot.Close()
-	// Not even sure how to check that this works...I tested with the RealRunner and it fails to find the command so
-	// That is a confirmation that it works, but otherwise....
-	_, err := chroot.Run(&runner, "ls")
+	_, err := chroot.Run(&runner, &syscallInterface, "chroot-command")
 	Expect(err).To(BeNil())
-	dirs, _ := ioutil.ReadDir(tmpDir)
-	for _, d := range dirs {
-		fullDir := fmt.Sprintf("/%s", d.Name())
-		// Expect the dirs to appear in the defaultMounts
-		Expect(stringInSlice(fullDir, chroot.defaultMounts)).To(BeTrue())
-	}
-}
-
-// I wonder how many times this code has been repeated in go history....
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+	Expect(syscallInterface.WasChrootCalledWith("/whatever")).To(BeTrue())
 }
