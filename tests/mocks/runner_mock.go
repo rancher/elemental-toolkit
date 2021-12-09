@@ -7,7 +7,7 @@ import (
 
 type TestRunner struct{}
 
-func (r TestRunner) Run(command string, args ...string) ([]byte, error) {
+func (r *TestRunner) Run(command string, args ...string) ([]byte, error) {
 	var cs []string
 	// If the command is trying to get the cmdline call the TestHelperBootedFrom test
 	// Maybe a switch statement would be better here??

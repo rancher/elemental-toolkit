@@ -92,8 +92,8 @@ func TestGetUrlFile(t *testing.T) {
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)
 	runner := mocks.TestRunner{}
-	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
-	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
+	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
 // TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it

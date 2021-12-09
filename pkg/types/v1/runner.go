@@ -8,7 +8,7 @@ type Runner interface {
 
 type RealRunner struct{}
 
-func (r RealRunner) Run(command string, args ...string) ([]byte, error) {
+func (r *RealRunner) Run(command string, args ...string) ([]byte, error) {
 	out, err := exec.Command(command, args...).CombinedOutput()
 	return out, err
 }
