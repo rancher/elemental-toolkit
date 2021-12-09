@@ -20,6 +20,7 @@ import (
 	"fmt"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	"github.com/spf13/afero"
 	"io/ioutil"
 	"os"
@@ -29,7 +30,7 @@ import (
 
 func TestGetUrlNet(t *testing.T) {
 	RegisterTestingT(t)
-	client := &MockClient{}
+	client := &mocks.MockClient{}
 
 	url := "http://fake.com"
 	tmpDir, _ := os.MkdirTemp("", "elemental")
@@ -37,7 +38,7 @@ func TestGetUrlNet(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 	err := GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
-	Expect(MockClientCalls).To(ContainElement("http://fake.com"))
+	Expect(mocks.MockClientCalls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -45,7 +46,7 @@ func TestGetUrlNet(t *testing.T) {
 	ftp := "ftp://fake"
 	err = GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
-	Expect(MockClientCalls).To(ContainElement("ftp://fake"))
+	Expect(mocks.MockClientCalls).To(ContainElement("ftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -53,7 +54,7 @@ func TestGetUrlNet(t *testing.T) {
 	tftp := "tftp://fake"
 	err = GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
-	Expect(MockClientCalls).To(ContainElement("tftp://fake"))
+	Expect(mocks.MockClientCalls).To(ContainElement("tftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -62,7 +63,7 @@ func TestGetUrlNet(t *testing.T) {
 
 func TestGetUrlFile(t *testing.T) {
 	RegisterTestingT(t)
-	client := &MockClient{}
+	client := &mocks.MockClient{}
 	testString := "In a galaxy far far away..."
 
 	tmpDir, _ := os.MkdirTemp("", "elemental")
