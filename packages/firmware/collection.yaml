@@ -4,7 +4,7 @@ packages:
     version: "20170419-5.177"
   - name: "u-boot-rpi64"
     category: "firmware"
-    version: "2021.10-193.3"
+    version: "2021.01-5.1"
     labels:
       autobump.strategy: "custom"
       autobump.string_replace: '{ "prefix": "" }'
@@ -19,7 +19,7 @@ packages:
       package.version: "2021.10-193.3"
   - name: "raspberrypi-firmware"
     category: "firmware"
-    version: "2021.11.16-145.1"
+    version: "2021.03.10-2.1"
     labels:
       autobump.strategy: "custom"
       autobump.string_replace: '{ "prefix": "" }'
@@ -35,7 +35,7 @@ packages:
       package.checksum: "b93291b5c1579afeb63ba8371f2e9f443d221cd7523c0e3bf6b360df521200fe"
   - name: "raspberrypi-firmware-config"
     category: "firmware"
-    version: "2021.11.16-145.6"
+    version: "2021.03.10-2.1"
     labels:
       autobump.strategy: "custom"
       autobump.string_replace: '{ "prefix": "" }'
@@ -51,7 +51,7 @@ packages:
       package.checksum: "20738f44cb73b0c41a68218dee8fd697ecf645754630c252ba3b907162e65547"
   - name: "raspberrypi-firmware-dt"
     category: "firmware"
-    version: "2021.12.02-93.1"
+    version: "2021.03.15-2.1"
     labels:
       autobump.strategy: "custom"
       autobump.string_replace: '{ "prefix": "" }'
