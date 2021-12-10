@@ -29,7 +29,7 @@ import (
 
 func TestGetUrlNet(t *testing.T) {
 	RegisterTestingT(t)
-	client := &mocks.MockClient{}
+	client := &mocks.FakeHttpClient{}
 
 	url := "http://fake.com"
 	tmpDir, _ := os.MkdirTemp("", "elemental")
@@ -37,7 +37,7 @@ func TestGetUrlNet(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 	err := utils.GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
-	Expect(mocks.MockClientCalls).To(ContainElement("http://fake.com"))
+	Expect(client.WasGetCalledWith("http://fake.com")).To(BeTrue())
 	f, err := os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -45,7 +45,7 @@ func TestGetUrlNet(t *testing.T) {
 	ftp := "ftp://fake"
 	err = utils.GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
-	Expect(mocks.MockClientCalls).To(ContainElement("ftp://fake"))
+	Expect(client.WasGetCalledWith("ftp://fake")).To(BeTrue())
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -53,7 +53,7 @@ func TestGetUrlNet(t *testing.T) {
 	tftp := "tftp://fake"
 	err = utils.GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
-	Expect(mocks.MockClientCalls).To(ContainElement("tftp://fake"))
+	Expect(client.WasGetCalledWith("tftp://fake")).To(BeTrue())
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
@@ -61,7 +61,7 @@ func TestGetUrlNet(t *testing.T) {
 
 func TestGetUrlFile(t *testing.T) {
 	RegisterTestingT(t)
-	client := &mocks.MockClient{}
+	client := &mocks.FakeHttpClient{}
 	testString := "In a galaxy far far away..."
 
 	tmpDir, _ := os.MkdirTemp("", "elemental")
@@ -91,12 +91,12 @@ func TestGetUrlFile(t *testing.T) {
 
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)
-	runner := mocks.TestRunner{}
-	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
-	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
+	runner := mocks.FakeRunner{}
+	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
-// TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it
+// TestHelperBootedFrom will be called by the FakeRunner when running the BootedFrom func as it
 // Matches the command + args and return the proper output we want for testing
 func TestHelperBootedFrom(*testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
