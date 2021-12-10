@@ -1209,6 +1209,8 @@ upgrade() {
     echo "Flush changes to disk"
     sync
 
+    rebrand
+
     if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then
         if grep -q 'cos.upgrade.power_off=true' /proc/cmdline; then
             poweroff -f
