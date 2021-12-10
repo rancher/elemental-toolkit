@@ -19,12 +19,6 @@ package action
 import (
 	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
-	"github.com/zloylos/grsync"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 type InstallAction struct {
@@ -51,61 +45,5 @@ func (i InstallAction) Run() error {
 	// Rebrand
 	// ????
 	// profit!
-	return nil
-}
-
-func (i InstallAction) doCopy() error {
-	fmt.Printf("Copying cOS..\n")
-	// Make sure the values have a / at the end.
-	var source, target string
-	if strings.HasSuffix(i.Config.Source, "/") == false {
-		source = fmt.Sprintf("%s/", i.Config.Source)
-	} else { source = i.Config.Source }
-
-	if strings.HasSuffix(i.Config.Target, "/") == false {
-		target = fmt.Sprintf("%s/", i.Config.Target)
-	} else { target = i.Config.Target }
-
-	// 1 - rsync all the system from source to target
-	task := grsync.NewTask(
-		source,
-		target,
-		grsync.RsyncOptions{
-			Quiet: false,
-			Archive: true,
-			XAttrs: true,
-			ACLs: true,
-			Exclude: []string{"mnt", "proc", "sys", "dev", "tmp"},
-		},
-	)
-	go func() {
-		for {
-			state := task.State()
-			fmt.Printf(
-				"progress: %.2f / rem. %d / tot. %d / sp. %s \n",
-				state.Progress,
-				state.Remain,
-				state.Total,
-				state.Speed,
-			)
-			<- time.After(time.Second)
-		}
-	}()
-	if err := task.Run(); err != nil {
-		return err
-	}
-	// 2 - if we got a cloud config file get it and store in the target
-	if i.Config.CloudInit != "" {
-		client := &http.Client{}
-		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", i.Config.Target)
-
-		if err := utils.GetUrl(client, i.Config.CloudInit, customConfig); err != nil {
-			return err
-		}
-
-		if err := os.Chmod(customConfig, 0600); err != nil {
-			return err
-		}
-	}
 	return nil
 }
