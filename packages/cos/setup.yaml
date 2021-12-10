@@ -25,3 +25,4 @@ stages:
         DOCUMENTATION_URL: "https://github.com/mudler/cOS"
         VERSION: ":VERSION:"
         PRETTY_NAME: ":PRETTY_NAME:"
+        GRUB_ENTRY_NAME: "cOS :VERSION:"

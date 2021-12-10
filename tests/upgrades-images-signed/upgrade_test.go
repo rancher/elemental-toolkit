@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -27,6 +28,9 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	Context("After install", func() {
 		When("upgrading", func() {
 			It("upgrades to latest available (master) and reset", func() {
+				grubEntry, err := s.Command("grub2-editenv /run/boot/grub_oem_env list | grep default_menu_entry= | sed 's/default_menu_entry=//'")
+				Expect(err).ToNot(HaveOccurred())
+
 				out, err := s.Command("cos-upgrade")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
@@ -34,7 +38,13 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				By("rebooting")
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))
+				By("checking grub menu entry changes", func() {
+					newGrubEntry, err := s.Command("grub2-editenv /run/boot/grub_oem_env list | grep default_menu_entry= | sed 's/default_menu_entry=//'")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(grubEntry).ToNot(Equal(newGrubEntry))
+				})
 			})
+
 			It("upgrades to a specific image and reset back to the installed version", func() {
 
 				if s.GetArch() == "aarch64" {
