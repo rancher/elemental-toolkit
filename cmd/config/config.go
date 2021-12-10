@@ -30,7 +30,7 @@ func ReadConfigBuild(configDir string)  (*v1.BuildConfig, error) {
 }
 
 func ReadConfigRun(configDir string)  (*v1.RunConfig, error) {
-	cfg := &v1.RunConfig{}
+	cfg := v1.NewRunConfig()
 
 	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 
