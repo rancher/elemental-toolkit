@@ -1209,6 +1209,8 @@ rebrand_cleanup()
 # END COS_REBRAND
 
 rebrand() {
+    load_full_config
+    
     rebrand_grub_menu "${_GRUB_ENTRY_NAME}"
 }
 
