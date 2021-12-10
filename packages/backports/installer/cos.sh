@@ -78,6 +78,7 @@ run_hook() {
 
     prepare_chroot $dir
     chroot $dir /usr/bin/cos-setup $hook
+    chroot $dir /usr/bin/cos-rebrand
     cleanup_chroot $dir
 }
 
@@ -1129,8 +1130,6 @@ deploy() {
 
     set_active_passive
 
-    rebrand
-
     echo "Flush changes to disk"
     sync
 
@@ -1208,8 +1207,6 @@ upgrade() {
 
     echo "Flush changes to disk"
     sync
-
-    rebrand
 
     if [ -n "$INTERACTIVE" ] && [ $INTERACTIVE == false ]; then
         if grep -q 'cos.upgrade.power_off=true' /proc/cmdline; then
@@ -1317,8 +1314,6 @@ install() {
 
     prepare_recovery
     prepare_passive
-
-    rebrand
 
     if [ "$STRICT_MODE" = "true" ]; then
     cos-setup after-install
