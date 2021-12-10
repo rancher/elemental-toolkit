@@ -35,6 +35,7 @@ type RunConfig struct {
 	ForceGpt bool `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
 	PartTable string
 	BootFlag string
+	logger Logger
 }
 
 func (r *RunConfig) SetupStyle(fs afero.Fs) {
