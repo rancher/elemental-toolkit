@@ -64,6 +64,7 @@ func init() {
 	installCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
 	installCmd.Flags().BoolP("debug", "", false, "Enables debugging information")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
+	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 
 	viper.BindPFlags(installCmd.Flags())
 

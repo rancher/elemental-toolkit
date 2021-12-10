@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	GPT = "gpt"
-	ESP = "esp"
-	BIOS = "bios_grub"
+	GPT   = "gpt"
+	ESP   = "esp"
+	BIOS  = "bios_grub"
 	MSDOS = "msdos"
-	BOOT = "boot"
+	BOOT  = "boot"
 )
 
 type RunConfigOptions func(a *RunConfig) error
@@ -37,7 +37,7 @@ func WithFs(fs afero.Fs) func(r *RunConfig) error {
 	}
 }
 
-func NewRunConfig(opts...RunConfigOptions) *RunConfig {
+func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	r := &RunConfig{
 		fs: afero.NewOsFs(),
 	}
@@ -51,20 +51,23 @@ func NewRunConfig(opts...RunConfigOptions) *RunConfig {
 }
 
 type RunConfig struct {
-	Device string `yaml:"device,omitempty" mapstructure:"device"`
-	Target string `yaml:"target,omitempty" mapstructure:"target"`
-	Source string `yaml:"source,omitempty" mapstructure:"source"`
+	Device    string `yaml:"device,omitempty" mapstructure:"device"`
+	Target    string `yaml:"target,omitempty" mapstructure:"target"`
+	Source    string `yaml:"source,omitempty" mapstructure:"source"`
 	CloudInit string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	ForceEfi bool `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
-	ForceGpt bool `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	ForceEfi  bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
+	ForceGpt  bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	Tty       string `yaml:"tty,omitempty" mapstructure:"tty"`
 	PartTable string
-	BootFlag string
-	fs afero.Fs
-	logger Logger
+	BootFlag  string
+	fs        afero.Fs
+	StateDir  string // TODO: This should be set on the struct init, currently can be empty
+	GrubConf  string // TODO: This should be set on the struct init, currently can be empty
+	Logger    Logger
 }
 
 func (r *RunConfig) SetupStyle() {
-	var part,boot string
+	var part, boot string
 
 	_, err := r.fs.Stat("/sys/firmware/efi")
 	efiExists := err == nil
