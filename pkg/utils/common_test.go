@@ -14,75 +14,54 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package utils_test
 
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
-	"io"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
+	"github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"testing"
 )
 
-var Calls []string
-
-type MockBody struct {}
-
-func (m MockBody) Read(p []byte) (n int, err error){
-	return 1024, io.EOF
-}
-
-func (m MockBody) Close() error {
-	return nil
-}
-
-type MockClient struct {}
-
-func (m *MockClient) Get(url string) (*http.Response, error) {
-	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
-	Calls = append(Calls, url)
-	return &http.Response{Body: &MockBody{}}, nil
-}
-
 
 func TestGetUrlNet(t *testing.T) {
 	RegisterTestingT(t)
-	client := &MockClient{}
+	client := &mocks.MockClient{}
 
 	url := "http://fake.com"
 	tmpDir, _ := os.MkdirTemp("", "elemental")
 	destination := fmt.Sprintf("%s/test", tmpDir)
 	defer os.RemoveAll(tmpDir)
-	err := GetUrl(client, url, destination)
+	err := utils.GetUrl(client, url, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("http://fake.com"))
+	Expect(mocks.MockClientCalls).To(ContainElement("http://fake.com"))
 	f, err := os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	ftp := "ftp://fake"
-	err = GetUrl(client, ftp, destination)
+	err = utils.GetUrl(client, ftp, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("ftp://fake"))
+	Expect(mocks.MockClientCalls).To(ContainElement("ftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 
 	tftp := "tftp://fake"
-	err = GetUrl(client, tftp, destination)
+	err = utils.GetUrl(client, tftp, destination)
 	Expect(err).To(BeNil())
-	Expect(Calls).To(ContainElement("tftp://fake"))
+	Expect(mocks.MockClientCalls).To(ContainElement("tftp://fake"))
 	f, err = os.Stat(destination)
 	Expect(err).To(BeNil())
 	Expect(f.Size()).To(Equal(int64(1024)))  // We create a 1024 bytes size file on the mock
 }
 
-
 func TestGetUrlFile(t *testing.T) {
 	RegisterTestingT(t)
-	client := &MockClient{}
+	client := &mocks.MockClient{}
 	testString := "In a galaxy far far away..."
 
 	tmpDir, _ := os.MkdirTemp("", "elemental")
@@ -96,7 +75,7 @@ func TestGetUrlFile(t *testing.T) {
 	_, err = s.WriteString(testString)
 	defer s.Close()
 
-	err = GetUrl(client, sourceName, destination)
+	err = utils.GetUrl(client, sourceName, destination)
 	Expect(err).To(BeNil())
 
 	// check they are the same size
@@ -110,4 +89,19 @@ func TestGetUrlFile(t *testing.T) {
 	Expect(dest).To(ContainSubstring(testString))
 }
 
+func TestBootedFrom(t *testing.T) {
+	RegisterTestingT(t)
+	runner := mocks.TestRunner{}
+	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_NOT_EXIST")).To(BeFalse())
+	Expect(utils.BootedFrom(runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
+}
 
+// TestHelperBootedFrom will be called by the TestRunner when running the BootedFrom func as it
+// Matches the command + args and return the proper output we want for testing
+func TestHelperBootedFrom(*testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	defer os.Exit(0)
+	fmt.Println("I_EXPECT_THIS_LABEL_TO_EXIST") // Mock that label
+}

@@ -21,8 +21,10 @@ import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 )
+
 
 func GetUrl(client v1.HTTPClient, url string, destination string) error {
 	var source io.Reader
@@ -51,4 +53,14 @@ func GetUrl(client v1.HTTPClient, url string, destination string) error {
 	fmt.Printf("Copied %d bytes\n", nBytes)
 
 	return nil
+}
+
+func commandExists(command string) bool {
+	_, err := exec.LookPath(command)
+	return err == nil
+}
+
+func BootedFrom(runner v1.Runner, label string) bool {
+	out, _ := runner.Run("cat",  "/proc/cmdline")
+	return strings.Contains(string(out), label)
 }
