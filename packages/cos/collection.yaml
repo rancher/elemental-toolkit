@@ -10,7 +10,7 @@ packages:
   - !!merge <<: *cos
     name: "cos-container"
     description: "cOS container image, used to build cOS derivatives from scratch"
-    version: 0.7.9-15
+    version: 0.7.9-16
   - !!merge <<: *cos
     category: "recovery"
     brand_name: "cOS recovery"
