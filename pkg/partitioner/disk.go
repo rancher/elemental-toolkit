@@ -69,7 +69,7 @@ func (dev Disk) GetLabel() string {
 	return dev.label
 }
 
-func (dev Disk) IsValid() bool {
+func (dev Disk) Exists() bool {
 	_, err := os.Stat(dev.device)
 	return err == nil
 }

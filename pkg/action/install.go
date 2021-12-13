@@ -41,9 +41,9 @@ func (i InstallAction) Run() error {
 	// get_image: _UPGRADE_IMAGE -> create_rootfs -> NOT NECESSARY FOR INSTALL!
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
 	// Check device valid
-	if !disk.IsValid() {
-		i.Config.Logger.Errorf("Disk %s is not valid", i.Config.Target)
-		return errors.New(fmt.Sprintf("Disk %s is not valid", i.Config.Target))
+	if !disk.Exists() {
+		i.Config.Logger.Errorf("Disk %s does not exist", i.Config.Target)
+		return errors.New(fmt.Sprintf("Disk %s does not exist", i.Config.Target))
 	}
 	if i.Config.NoFormat != "" {
 		// User asked for no format, lets check if there is already those labeled partitions in the disk
