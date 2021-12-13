@@ -37,13 +37,6 @@ func WithFS(fs afero.Fs) func(r *Chroot) error {
 	}
 }
 
-func WithFSGrub(fs afero.Fs) func(r *Grub) error {
-	return func(a *Grub) error {
-		a.fs = fs
-		return nil
-	}
-}
-
 func WithMounter(mounter mount.Interface) func(r *Chroot) error {
 	return func(a *Chroot) error {
 		a.mounter = mounter

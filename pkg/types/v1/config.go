@@ -33,7 +33,7 @@ type RunConfigOptions func(a *RunConfig) error
 
 func WithFs(fs afero.Fs) func(r *RunConfig) error {
 	return func(r *RunConfig) error {
-		r.fs = fs
+		r.Fs = fs
 		return nil
 	}
 }
@@ -47,7 +47,7 @@ func WithLogger(logger Logger) func(r *RunConfig) error {
 
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	r := &RunConfig{
-		fs:     afero.NewOsFs(),
+		Fs:     afero.NewOsFs(),
 		Logger: logrus.New(),
 	}
 	for _, o := range opts {
@@ -92,13 +92,13 @@ type RunConfig struct {
 	StateDir     string
 	GrubConf     string
 	Logger       Logger
-	fs           afero.Fs
+	Fs           afero.Fs
 }
 
 func (r *RunConfig) SetupStyle() {
 	var part, boot string
 
-	_, err := r.fs.Stat("/sys/firmware/efi")
+	_, err := r.Fs.Stat("/sys/firmware/efi")
 	efiExists := err == nil
 
 	if r.ForceEfi || efiExists {

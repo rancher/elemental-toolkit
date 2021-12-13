@@ -15,19 +15,19 @@ func TestGrubInstall(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New()
 	logger.SetOutput(buf)
+	fs := afero.NewMemMapFs()
+	_, _ = fs.Create("/etc/cos/grub.cfg")
 
 	config := v1.RunConfig{
 		Device: "/dev/test",
 		Logger: logger,
+		Fs:     fs,
 	}
 	runner := v1mock.FakeRunner{}
-	fs := afero.NewMemMapFs()
-	_, _ = fs.Create("/etc/cos/grub.cfg")
 
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err := grub.Install()
@@ -43,25 +43,25 @@ func TestGrubInstallCfgContents(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New()
 	logger.SetOutput(buf)
-
-	config := v1.RunConfig{
-		Device: "/dev/test",
-		Tty: "",
-		Logger: logger,
-		StateDir: "/state",
-		GrubConf: "/etc/cos/grub.cfg",
-	}
-	runner := v1mock.FakeRunner{}
 	fs := afero.NewMemMapFs()
 	_ = fs.MkdirAll("/state/grub2/", 0666)
 	_ = fs.MkdirAll("/etc/cos/", 0666)
 	err := afero.WriteFile(fs, "/etc/cos/grub.cfg", []byte("console=tty1"), 0644)
 	Expect(err).To(BeNil())
 
+	config := v1.RunConfig{
+		Device:   "/dev/test",
+		Tty:      "",
+		Logger:   logger,
+		StateDir: "/state",
+		GrubConf: "/etc/cos/grub.cfg",
+		Fs:       fs,
+	}
+	runner := v1mock.FakeRunner{}
+
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err = grub.Install()
@@ -80,20 +80,20 @@ func TestGrubInstallEfiX86_64Force(t *testing.T) {
 	logger := log.New()
 	logger.SetOutput(buf)
 	logger.SetLevel(log.DebugLevel)
-
-	config := v1.RunConfig{
-		Device: "/dev/test",
-		ForceEfi: true,
-		Logger: logger,
-	}
-	runner := v1mock.FakeRunner{}
 	fs := afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/cos/grub.cfg")
 
+	config := v1.RunConfig{
+		Device:   "/dev/test",
+		ForceEfi: true,
+		Logger:   logger,
+		Fs:       fs,
+	}
+	runner := v1mock.FakeRunner{}
+
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err := grub.Install()
@@ -110,20 +110,20 @@ func TestGrubInstallEfiX86_64NotForced(t *testing.T) {
 	logger := log.New()
 	logger.SetOutput(buf)
 	logger.SetLevel(log.DebugLevel)
-
-	config := v1.RunConfig{
-		Device: "/dev/test",
-		Logger: logger,
-	}
-	runner := v1mock.FakeRunner{}
 	fs := afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/cos/grub.cfg")
 	_, _ = fs.Create("/sys/firmware/efi")
 
+	config := v1.RunConfig{
+		Device: "/dev/test",
+		Logger: logger,
+		Fs:     fs,
+	}
+	runner := v1mock.FakeRunner{}
+
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err := grub.Install()
@@ -139,21 +139,21 @@ func TestGrubInstallTty(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New()
 	logger.SetOutput(buf)
-
-	config := v1.RunConfig{
-		Device: "/dev/test",
-		Tty: "serial",
-		Logger: logger,
-	}
-	runner := v1mock.FakeRunner{}
 	fs := afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/cos/grub.cfg")
 	_, _ = fs.Create("/dev/serial")
 
+	config := v1.RunConfig{
+		Device: "/dev/test",
+		Tty:    "serial",
+		Logger: logger,
+		Fs:     fs,
+	}
+	runner := v1mock.FakeRunner{}
+
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err := grub.Install()
@@ -167,15 +167,6 @@ func TestGrubInstallTtyConfig(t *testing.T) {
 	buf := &bytes.Buffer{}
 	logger := log.New()
 	logger.SetOutput(buf)
-
-	config := v1.RunConfig{
-		Device: "/dev/test",
-		Tty: "serial",
-		Logger: logger,
-		StateDir: "/state",
-		GrubConf: "/etc/cos/grub.cfg",
-	}
-	runner := v1mock.FakeRunner{}
 	fs := afero.NewMemMapFs()
 	_ = fs.MkdirAll("/state/grub2/", 0666)
 	_ = fs.MkdirAll("/etc/cos/", 0666)
@@ -183,10 +174,19 @@ func TestGrubInstallTtyConfig(t *testing.T) {
 	Expect(err).To(BeNil())
 	_, _ = fs.Create("/dev/serial")
 
+	config := v1.RunConfig{
+		Device:   "/dev/test",
+		Tty:      "serial",
+		Logger:   logger,
+		StateDir: "/state",
+		GrubConf: "/etc/cos/grub.cfg",
+		Fs:       fs,
+	}
+	runner := v1mock.FakeRunner{}
+
 	grub := NewGrub(
-		config,
+		&config,
 		WithRunnerGrub(&runner),
-		WithFSGrub(fs),
 	)
 
 	err = grub.Install()
