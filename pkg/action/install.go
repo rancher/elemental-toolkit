@@ -17,7 +17,11 @@ limitations under the License.
 package action
 
 import (
+	"errors"
+	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 )
 
 type InstallAction struct {
@@ -30,9 +34,36 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 
 func (i InstallAction) Run() error {
 	i.Config.Logger.Infof("InstallAction called")
+	i.Config.SetupStyle()
 	// Rough steps (then they have multisteps inside)
+	runner := v1.RealRunner{}
+	disk := partitioner.NewDisk(i.Config.Target, &runner)
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
 	// Check device valid
+	if !disk.IsValid() {
+		i.Config.Logger.Errorf("Disk %s is not valid", i.Config.Target)
+		return errors.New(fmt.Sprintf("Disk %s is not valid", i.Config.Target))
+	}
+	if i.Config.NoFormat != "" {
+		// User asked for no format, lets check if there is already those labeled partitions in the disk
+		for _, label := range []string{i.Config.ActiveLabel, i.Config.PassiveLabel} {
+			found, err := utils.FindLabel(&runner, label)
+			if err != nil {
+				return err
+			}
+			if found != "" {
+				if i.Config.Force {
+					msg := fmt.Sprintf("Forcing overwrite of existing partitions due to `force` flag")
+					i.Config.Logger.Infof(msg)
+					break
+				} else {
+					msg := fmt.Sprintf("There is already an active deployment in the system, use '--force' flag to overwrite it")
+					i.Config.Logger.Error(msg)
+					return errors.New(msg)
+				}
+			}
+		}
+	}
 	// partition device
 	// check source to install
 	// install Active

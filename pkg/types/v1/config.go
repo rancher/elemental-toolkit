@@ -64,23 +64,35 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	if r.StateDir == "" {
 		r.StateDir = "/run/initramfs/cos-state"
 	}
+
+	if r.ActiveLabel == "" {
+		r.ActiveLabel = "COS_ACTIVE"
+	}
+
+	if r.PassiveLabel == "" {
+		r.ActiveLabel = "COS_PASSIVE"
+	}
 	return r
 }
 
 type RunConfig struct {
-	Device    string `yaml:"device,omitempty" mapstructure:"device"`
-	Target    string `yaml:"target,omitempty" mapstructure:"target"`
-	Source    string `yaml:"source,omitempty" mapstructure:"source"`
-	CloudInit string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	ForceEfi  bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
-	ForceGpt  bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
-	Tty       string `yaml:"tty,omitempty" mapstructure:"tty"`
-	PartTable string
-	BootFlag  string
-	StateDir  string
-	GrubConf  string
-	Logger    Logger
-	fs        afero.Fs
+	Device       string `yaml:"device,omitempty" mapstructure:"device"`
+	Target       string `yaml:"target,omitempty" mapstructure:"target"`
+	Source       string `yaml:"source,omitempty" mapstructure:"source"`
+	CloudInit    string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	ForceEfi     bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
+	ForceGpt     bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
+	NoFormat     string `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	ActiveLabel  string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
+	PassiveLabel string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
+	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
+	PartTable    string
+	BootFlag     string
+	StateDir     string
+	GrubConf     string
+	Logger       Logger
+	fs           afero.Fs
 }
 
 func (r *RunConfig) SetupStyle() {

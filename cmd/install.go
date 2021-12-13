@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"github.com/rancher-sandbox/elemental-cli/cmd/config"
-	"github.com/rancher-sandbox/elemental-cli/pkg/action"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,8 +43,9 @@ var installCmd = &cobra.Command{
 		cfg.Device = args[0]
 
 		cfg.Logger.Infof("Install called")
-		install := action.NewInstallAction(cfg)
-		err = install.Run()
+		// Dont call it yet, not ready
+		//install := action.NewInstallAction(cfg)
+		//err = install.Run()
 		if err != nil {
 			return err
 		}
@@ -69,6 +69,7 @@ func init() {
 	installCmd.Flags().BoolP("debug", "", false, "Enables debugging information")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
+	installCmd.Flags().BoolP("force", "", false, "Force install")
 
 	viper.BindPFlags(installCmd.Flags())
 
