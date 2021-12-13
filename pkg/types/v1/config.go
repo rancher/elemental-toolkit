@@ -16,7 +16,9 @@ limitations under the License.
 
 package v1
 
-import "github.com/spf13/afero"
+import (
+	"github.com/spf13/afero"
+)
 
 const (
 	GPT = "gpt"
@@ -25,6 +27,28 @@ const (
 	MSDOS = "msdos"
 	BOOT = "boot"
 )
+
+type RunConfigOptions func(a *RunConfig) error
+
+func WithFs(fs afero.Fs) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.fs = fs
+		return nil
+	}
+}
+
+func NewRunConfig(opts...RunConfigOptions) *RunConfig {
+	r := &RunConfig{
+		fs: afero.NewOsFs(),
+	}
+	for _, o := range opts {
+		err := o(r)
+		if err != nil {
+			return nil
+		}
+	}
+	return r
+}
 
 type RunConfig struct {
 	Device string `yaml:"device,omitempty" mapstructure:"device"`
@@ -35,13 +59,14 @@ type RunConfig struct {
 	ForceGpt bool `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
 	PartTable string
 	BootFlag string
+	fs afero.Fs
 	logger Logger
 }
 
-func (r *RunConfig) SetupStyle(fs afero.Fs) {
+func (r *RunConfig) SetupStyle() {
 	var part,boot string
 
-	_, err := fs.Stat("/sys/firmware/efi")
+	_, err := r.fs.Stat("/sys/firmware/efi")
 	efiExists := err == nil
 
 	if r.ForceEfi || efiExists {

@@ -9,21 +9,18 @@ import (
 
 func TestSetupStyleDefault(t *testing.T) {
 	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	c := v1.RunConfig{}
-	c.SetupStyle(fs)
+	c := v1.NewRunConfig(v1.WithFs(afero.NewMemMapFs()))
+	c.SetupStyle()
 	Expect(c.PartTable).To(Equal(v1.MSDOS))
 	Expect(c.BootFlag).To(Equal(v1.BOOT))
-	c = v1.RunConfig{
-		ForceEfi: true,
-	}
-	c.SetupStyle(fs)
+	c = v1.NewRunConfig(v1.WithFs(afero.NewMemMapFs()))
+	c.ForceEfi = true
+	c.SetupStyle()
 	Expect(c.PartTable).To(Equal(v1.GPT))
 	Expect(c.BootFlag).To(Equal(v1.ESP))
-	c = v1.RunConfig{
-		ForceGpt: true,
-	}
-	c.SetupStyle(fs)
+	c = v1.NewRunConfig(v1.WithFs(afero.NewMemMapFs()))
+	c.ForceGpt = true
+	c.SetupStyle()
 	Expect(c.PartTable).To(Equal(v1.GPT))
 	Expect(c.BootFlag).To(Equal(v1.BIOS))
 }
