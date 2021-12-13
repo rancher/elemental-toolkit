@@ -47,6 +47,14 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 			return nil
 		}
 	}
+
+	// Set defaults if empty
+	if r.GrubConf == "" {
+		r.GrubConf = "/etc/cos/grub.cfg"
+	}
+	if r.StateDir == "" {
+		r.StateDir = "/run/initramfs/cos-state"
+	}
 	return r
 }
 
@@ -60,10 +68,10 @@ type RunConfig struct {
 	Tty       string `yaml:"tty,omitempty" mapstructure:"tty"`
 	PartTable string
 	BootFlag  string
-	fs        afero.Fs
-	StateDir  string // TODO: This should be set on the struct init, currently can be empty
-	GrubConf  string // TODO: This should be set on the struct init, currently can be empty
+	StateDir  string
+	GrubConf  string
 	Logger    Logger
+	fs        afero.Fs
 }
 
 func (r *RunConfig) SetupStyle() {
