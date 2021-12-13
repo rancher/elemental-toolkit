@@ -1,7 +1,7 @@
 name: "immutable-rootfs"
 category: "system"
-version: 0.2.4
+version: 0.2.4-1
 requires:
-- name: "cos-setup"
-  category: "system"
-  version: ">=0"
+  - name: "cos-setup"
+    category: "system"
+    version: ">=0"
