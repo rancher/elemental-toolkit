@@ -19,6 +19,7 @@ package v1
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"k8s.io/mount-utils"
 )
 
 const (
@@ -45,16 +46,43 @@ func WithLogger(logger Logger) func(r *RunConfig) error {
 	}
 }
 
+func WithSyscall(syscall SyscallInterface) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Syscall = syscall
+		return nil
+	}
+}
+
+func WithMounter(mounter mount.Interface) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Mounter = mounter
+		return nil
+	}
+}
+
+func WithRunner(runner Runner) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Runner = runner
+		return nil
+	}
+}
+
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	r := &RunConfig{
-		Fs:     afero.NewOsFs(),
-		Logger: logrus.New(),
+		Fs:      afero.NewOsFs(),
+		Logger:  logrus.New(),
+		Runner:  &RealRunner{},
+		Syscall: &RealSyscall{},
 	}
 	for _, o := range opts {
 		err := o(r)
 		if err != nil {
 			return nil
 		}
+	}
+
+	if r.Mounter == nil {
+		r.Mounter = mount.New("/usr/bin/mount")
 	}
 
 	// Set defaults if empty
@@ -93,6 +121,9 @@ type RunConfig struct {
 	GrubConf     string
 	Logger       Logger
 	Fs           afero.Fs
+	Mounter      mount.Interface
+	Runner       Runner
+	Syscall      SyscallInterface
 }
 
 func (r *RunConfig) SetupStyle() {

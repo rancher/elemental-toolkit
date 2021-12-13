@@ -21,7 +21,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/mount-utils"
 	"os"
+	"os/exec"
 )
 
 // installCmd represents the install command
@@ -33,7 +35,13 @@ var installCmd = &cobra.Command{
 		logger := logrus.New()
 		logger.SetOutput(os.Stdout)
 
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger)
+		path, err := exec.LookPath("mount")
+		if err != nil {
+			return err
+		}
+		mounter := mount.New(path)
+
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger, mounter)
 
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)

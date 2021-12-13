@@ -22,13 +22,10 @@ func TestGrubInstall(t *testing.T) {
 		Device: "/dev/test",
 		Logger: logger,
 		Fs:     fs,
+		Runner: &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err := grub.Install()
 
@@ -56,13 +53,10 @@ func TestGrubInstallCfgContents(t *testing.T) {
 		StateDir: "/state",
 		GrubConf: "/etc/cos/grub.cfg",
 		Fs:       fs,
+		Runner:   &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err = grub.Install()
 
@@ -88,13 +82,10 @@ func TestGrubInstallEfiX86_64Force(t *testing.T) {
 		ForceEfi: true,
 		Logger:   logger,
 		Fs:       fs,
+		Runner:   &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err := grub.Install()
 
@@ -118,13 +109,10 @@ func TestGrubInstallEfiX86_64NotForced(t *testing.T) {
 		Device: "/dev/test",
 		Logger: logger,
 		Fs:     fs,
+		Runner: &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err := grub.Install()
 
@@ -148,13 +136,10 @@ func TestGrubInstallTty(t *testing.T) {
 		Tty:    "serial",
 		Logger: logger,
 		Fs:     fs,
+		Runner: &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err := grub.Install()
 
@@ -181,13 +166,10 @@ func TestGrubInstallTtyConfig(t *testing.T) {
 		StateDir: "/state",
 		GrubConf: "/etc/cos/grub.cfg",
 		Fs:       fs,
+		Runner:   &v1mock.FakeRunner{},
 	}
-	runner := v1mock.FakeRunner{}
 
-	grub := NewGrub(
-		&config,
-		WithRunnerGrub(&runner),
-	)
+	grub := NewGrub(&config)
 
 	err = grub.Install()
 

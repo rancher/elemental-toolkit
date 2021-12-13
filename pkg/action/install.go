@@ -36,8 +36,7 @@ func (i InstallAction) Run() error {
 	i.Config.Logger.Infof("InstallAction called")
 	i.Config.SetupStyle()
 	// Rough steps (then they have multisteps inside)
-	runner := v1.RealRunner{}
-	disk := partitioner.NewDisk(i.Config.Target, &runner)
+	disk := partitioner.NewDisk(i.Config.Target, i.Config.Runner)
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
 	// get_image: _UPGRADE_IMAGE -> create_rootfs -> NOT NECESSARY FOR INSTALL!
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
@@ -49,7 +48,7 @@ func (i InstallAction) Run() error {
 	if i.Config.NoFormat != "" {
 		// User asked for no format, lets check if there is already those labeled partitions in the disk
 		for _, label := range []string{i.Config.ActiveLabel, i.Config.PassiveLabel} {
-			found, err := utils.FindLabel(&runner, label)
+			found, err := utils.FindLabel(i.Config.Runner, label)
 			if err != nil {
 				return err
 			}
@@ -73,7 +72,7 @@ func (i InstallAction) Run() error {
 		return err
 	}
 	// install grub
-	grub := utils.NewGrub(i.Config, utils.WithRunnerGrub(&runner))
+	grub := utils.NewGrub(i.Config)
 	err = grub.Install()
 	if err != nil {
 		return err

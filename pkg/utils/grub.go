@@ -11,20 +11,11 @@ import (
 type Grub struct {
 	disk   string
 	config *v1.RunConfig
-	runner v1.Runner
 }
 
-func NewGrub(config *v1.RunConfig, opts ...GrubOptions) *Grub {
+func NewGrub(config *v1.RunConfig) *Grub {
 	g := &Grub{
 		config: config,
-		runner: &v1.RealRunner{},
-	}
-
-	for _, o := range opts {
-		err := o(g)
-		if err != nil {
-			return nil
-		}
 	}
 
 	return g
@@ -45,7 +36,7 @@ func (g Grub) Install() error {
 
 	if g.config.Tty == "" {
 		// Get current tty and remove /dev/ from its name
-		out, err := g.runner.Run("tty")
+		out, err := g.config.Runner.Run("tty")
 		tty = strings.TrimPrefix(strings.TrimSpace(string(out)), "/dev/")
 		if err != nil {
 			return err
@@ -84,7 +75,7 @@ func (g Grub) Install() error {
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
-	_, err = g.runner.Run("grub2-install", grubargs...)
+	_, err = g.config.Runner.Run("grub2-install", grubargs...)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"k8s.io/mount-utils"
 	"os"
 	"testing"
 )
@@ -18,7 +19,8 @@ var logger = logrus.New()
 func TestConfigRunCustomNotValidPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	cfg, err := ReadConfigRun("/none/", logger)
+	mounter := mount.FakeMounter{}
+	cfg, err := ReadConfigRun("/none/", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
@@ -28,7 +30,8 @@ func TestConfigRunCustomNotValidPath(t *testing.T) {
 func TestConfigRunCustomEmptyPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	cfg, err := ReadConfigRun("", logger)
+	mounter := mount.FakeMounter{}
+	cfg, err := ReadConfigRun("", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
@@ -37,7 +40,8 @@ func TestConfigRunCustomEmptyPath(t *testing.T) {
 
 func TestConfigRunOverride(t *testing.T) {
 	setupTest(t)
-	cfg, err := ReadConfigRun("config/", logger)
+	mounter := mount.FakeMounter{}
+	cfg, err := ReadConfigRun("config/", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("target")
 	// check that the final value comes from the extra file
@@ -47,8 +51,9 @@ func TestConfigRunOverride(t *testing.T) {
 
 func TestConfigRunOverrideEnv(t *testing.T) {
 	setupTest(t)
+	mounter := mount.FakeMounter{}
 	_ = os.Setenv("ELEMENTAL_TARGET", "environment")
-	cfg, err := ReadConfigRun("config/", logger)
+	cfg, err := ReadConfigRun("config/", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("target")
 	// check that the final value comes from the env var
