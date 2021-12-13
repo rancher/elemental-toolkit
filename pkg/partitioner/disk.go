@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	log "github.com/sirupsen/logrus"
-	"os"
+	"github.com/spf13/afero"
 	"regexp"
 	"strings"
 	"time"
@@ -22,14 +21,36 @@ type Disk struct {
 	parts   []Partition
 	label   string
 	runner  v1.Runner
+	fs      afero.Fs
+	logger  v1.Logger
 }
 
 func MiBToSectors(size uint, sectorSize uint) uint {
 	return size * 1048576 / sectorSize
 }
 
-func NewDisk(device string, runner v1.Runner) *Disk {
-	return &Disk{device: device, runner: runner}
+func NewDisk(device string, opts ...DiskOptions) *Disk {
+	dev := &Disk{device: device}
+
+	for _, opt := range opts {
+		if err := opt(dev); err != nil {
+			return nil
+		}
+	}
+
+	if dev.runner == nil {
+		dev.runner = &v1.RealRunner{}
+	}
+
+	if dev.fs == nil {
+		dev.fs = afero.NewOsFs()
+	}
+
+	if dev.logger == nil {
+		dev.logger = v1.NewLogger()
+	}
+
+	return dev
 }
 
 func (dev Disk) String() string {
@@ -79,7 +100,7 @@ func (dev *Disk) Reload() error {
 func (dev *Disk) CheckDiskFreeSpaceMiB(minSpace uint) bool {
 	freeS, err := dev.GetFreeSpace()
 	if err != nil {
-		log.Warningf("Could not calculate disk free space")
+		dev.logger.Warnf("Could not calculate disk free space")
 		return false
 	}
 	minSec := MiBToSectors(minSpace, dev.sectorS)
@@ -94,7 +115,7 @@ func (dev *Disk) GetFreeSpace() (uint, error) {
 	if dev.sectorS == 0 {
 		err := dev.Reload()
 		if err != nil {
-			log.Errorf("Failed analyzing disk: %v\n", err)
+			dev.logger.Errorf("Failed analyzing disk: %v\n", err)
 			return 0, err
 		}
 	}
@@ -136,7 +157,7 @@ func (dev *Disk) NewPartitionTable(label string) (string, error) {
 	}
 	err = dev.Reload()
 	if err != nil {
-		log.Errorf("Failed analyzing disk: %v\n", err)
+		dev.logger.Errorf("Failed analyzing disk: %v\n", err)
 		return "", err
 	}
 	return out, nil
@@ -150,7 +171,7 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string) (int,
 	if dev.sectorS == 0 {
 		err := dev.Reload()
 		if err != nil {
-			log.Errorf("Failed analyzing disk: %v\n", err)
+			dev.logger.Errorf("Failed analyzing disk: %v\n", err)
 			return 0, err
 		}
 	}
@@ -186,15 +207,15 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string) (int,
 	pc.CreatePartition(&part)
 
 	out, err := pc.WriteChanges()
-	log.Debugf("partitioner output: %s", out)
+	dev.logger.Debugf("partitioner output: %s", out)
 	if err != nil {
-		log.Errorf("Failed creating partition: %v", err)
+		dev.logger.Errorf("Failed creating partition: %v", err)
 		return 0, err
 	}
 	// Reload new partition in dev
 	err = dev.Reload()
 	if err != nil {
-		log.Errorf("Failed analyzing disk: %v\n", err)
+		dev.logger.Errorf("Failed analyzing disk: %v\n", err)
 		return 0, err
 	}
 	return partNum, nil
@@ -212,14 +233,14 @@ func (dev Disk) FormatPartition(partNum int, fileSystem string, label string) (s
 
 func (dev Disk) ReloadPartitionTable() error {
 	for tries := 0; tries <= partitionTries; tries++ {
-		log.Debugf("Trying to reread the partition table of %s (try number %d)", dev, tries+1)
+		dev.logger.Debugf("Trying to reread the partition table of %s (try number %d)", dev, tries+1)
 		out, _ := dev.runner.Run("udevadm", "settle")
-		log.Debugf("Output of udevadm settle: %s", out)
+		dev.logger.Debugf("Output of udevadm settle: %s", out)
 
 		out, err := dev.runner.Run("partprobe", dev.device)
-		log.Debugf("output of partprobe: %s", out)
+		dev.logger.Debugf("output of partprobe: %s", out)
 		if err != nil && tries == (partitionTries-1) {
-			log.Debugf("Error of partprobe: %s", err)
+			dev.logger.Debugf("Error of partprobe: %s", err)
 			return errors.New(fmt.Sprintf("Could not reload partition table: %s", out))
 		}
 
@@ -243,14 +264,14 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 	for tries := 0; tries <= partitionTries; tries++ {
 		err = dev.ReloadPartitionTable()
 		if err != nil {
-			log.Errorf("Failed on reloading the partition table: %v\n", err)
+			dev.logger.Errorf("Failed on reloading the partition table: %v\n", err)
 			return "", err
 		}
-		log.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
+		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
 		out, err := dev.runner.Run("lsblk", "-ltnpo", "name,type", dev.device)
-		log.Debugf("Output of lsblk: %s", out)
+		dev.logger.Debugf("Output of lsblk: %s", out)
 		if err != nil && tries == (partitionTries-1) {
-			log.Debugf("Error of lsblk: %s", err)
+			dev.logger.Debugf("Error of lsblk: %s", err)
 			return "", errors.New(fmt.Sprintf("Could not list device partition nodes: %s", out))
 		}
 
@@ -275,7 +296,7 @@ func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
 	if dev.sectorS == 0 {
 		err := dev.Reload()
 		if err != nil {
-			log.Errorf("Failed analyzing disk: %v\n", err)
+			dev.logger.Errorf("Failed analyzing disk: %v\n", err)
 			return "", err
 		}
 	}
@@ -335,8 +356,8 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 		}
 	case "xfs":
 		// to grow an xfs fs it needs to be mounted :/
-		tmpDir, err := os.MkdirTemp("", "yip")
-		defer os.Remove(tmpDir)
+		tmpDir, err := afero.TempDir(dev.fs, "", "yip")
+		defer dev.fs.RemoveAll(tmpDir)
 
 		if err != nil {
 			return string(out), err
