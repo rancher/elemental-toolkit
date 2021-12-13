@@ -70,8 +70,8 @@ func (dev Disk) GetLabel() string {
 }
 
 func (dev Disk) Exists() bool {
-	_, err := os.Stat(dev.device)
-	return err == nil
+	exists, _ := afero.Exists(dev.fs, dev.device)
+	return exists
 }
 
 func (dev *Disk) Reload() error {
