@@ -38,6 +38,8 @@ func (i InstallAction) Run() error {
 	// Rough steps (then they have multisteps inside)
 	runner := v1.RealRunner{}
 	disk := partitioner.NewDisk(i.Config.Target, &runner)
+	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
+	// get_image: _UPGRADE_IMAGE -> create_rootfs -> NOT NECESSARY FOR INSTALL!
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
 	// Check device valid
 	if !disk.IsValid() {
@@ -65,10 +67,19 @@ func (i InstallAction) Run() error {
 		}
 	}
 	// partition device
-	// check source to install
 	// install Active
+	err := utils.DoCopy(i.Config)
+	if err != nil {
+		return err
+	}
 	// install grub
+	grub := utils.NewGrub(i.Config, utils.WithRunnerGrub(&runner))
+	err = grub.Install()
+	if err != nil {
+		return err
+	}
 	// Relabel SELinux
+	_ = utils.SelinuxRelabel(i.Config.Target, i.Config.Fs, false)
 	// Unmount everything
 	// install Recovery
 	// install Secondary
