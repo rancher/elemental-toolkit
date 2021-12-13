@@ -50,3 +50,10 @@ func WithMounter(mounter mount.Interface) func(r *Chroot) error {
 		return nil
 	}
 }
+
+func WithLogger(logger v1.Logger) func(r *Chroot) error {
+	return func(a *Chroot) error {
+		a.logger = logger
+		return nil
+	}
+}

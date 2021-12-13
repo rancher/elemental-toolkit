@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
@@ -37,9 +38,17 @@ func WithFs(fs afero.Fs) func(r *RunConfig) error {
 	}
 }
 
+func WithLogger(logger Logger) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Logger = logger
+		return nil
+	}
+}
+
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	r := &RunConfig{
-		fs: afero.NewOsFs(),
+		fs:     afero.NewOsFs(),
+		Logger: logrus.New(),
 	}
 	for _, o := range opts {
 		err := o(r)

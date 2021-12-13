@@ -17,7 +17,6 @@ limitations under the License.
 package action
 
 import (
-	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 )
 
@@ -25,12 +24,12 @@ type InstallAction struct {
 	Config *v1.RunConfig
 }
 
-func NewInstallAction(config *v1.RunConfig) *InstallAction{
+func NewInstallAction(config *v1.RunConfig) *InstallAction {
 	return &InstallAction{Config: config}
 }
 
 func (i InstallAction) Run() error {
-	fmt.Println("InstallAction called")
+	i.Config.Logger.Infof("InstallAction called")
 	// Rough steps (then they have multisteps inside)
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
 	// Check device valid

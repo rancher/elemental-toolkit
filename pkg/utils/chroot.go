@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	mountUtils "k8s.io/mount-utils"
 	"os"
@@ -26,21 +27,23 @@ import (
 )
 
 type Chroot struct {
-	path string
+	path          string
 	defaultMounts []string
-	mounter mountUtils.Interface
-	runner  v1.Runner
-	syscall v1.SyscallInterface
-	fs afero.Fs
+	mounter       mountUtils.Interface
+	runner        v1.Runner
+	syscall       v1.SyscallInterface
+	fs            afero.Fs
+	logger        v1.Logger
 }
 
-func NewChroot(path string, opts...ChrootOptions) *Chroot {
+func NewChroot(path string, opts ...ChrootOptions) *Chroot {
 	c := &Chroot{
-		path: path,
+		path:          path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},
-		runner: &v1.RealRunner{},
-		syscall: &v1.RealSyscall{},
-		fs: afero.NewOsFs(),
+		runner:        &v1.RealRunner{},
+		syscall:       &v1.RealSyscall{},
+		fs:            afero.NewOsFs(),
+		logger:        logrus.New(),
 	}
 
 	for _, o := range opts {
@@ -64,7 +67,9 @@ func (c Chroot) Prepare() error {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt)
 		err := c.fs.Mkdir(mountPoint, 0644)
 		err = c.mounter.Mount(mnt, mountPoint, "bind", mountOptions)
-		if err != nil {return err}
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -72,30 +77,50 @@ func (c Chroot) Prepare() error {
 func (c Chroot) Close() error {
 	for _, mnt := range c.defaultMounts {
 		err := c.mounter.Unmount(fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt))
-		if err != nil {return err}
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // Run executes a command inside a chroot
-func (c Chroot) Run(command string, args ...string)  ([]byte, error){
+func (c Chroot) Run(command string, args ...string) ([]byte, error) {
 	var out []byte
 	var err error
 	// Store current dir
-	oldRootF, err := os.Open("/")  // Cant use afero here because doesnt support chdir done below
+	oldRootF, err := os.Open("/") // Cant use afero here because doesnt support chdir done below
 	defer oldRootF.Close()
-	if err != nil {fmt.Printf("Cant open /");return out, err}
+	if err != nil {
+		c.logger.Errorf("Cant open /")
+		return out, err
+	}
 	err = c.Prepare()
-	if err != nil {fmt.Printf("Cant mount default mounts");return nil, err}
+	if err != nil {
+		c.logger.Errorf("Cant mount default mounts")
+		return nil, err
+	}
 	err = c.syscall.Chroot(c.path)
-	if err != nil {fmt.Printf("Cant chroot %s", c.path);return out, err}
+	if err != nil {
+		c.logger.Errorf("Cant chroot %s", c.path)
+		return out, err
+	}
 	// run commands in the chroot
 	out, err = c.runner.Run(command, args...)
-	if err != nil {fmt.Printf("Cant run command on chroot");return out, err}
+	if err != nil {
+		c.logger.Errorf("Cant run command on chroot")
+		return out, err
+	}
 	// Restore to old dir
 	err = oldRootF.Chdir()
-	if err != nil {fmt.Printf("Cant change to old dir");return out, err}
+	if err != nil {
+		c.logger.Errorf("Cant change to old dir")
+		return out, err
+	}
 	err = c.syscall.Chroot(".")
-	if err != nil {fmt.Printf("Cant chroot back to oldir");return out, err}
+	if err != nil {
+		c.logger.Errorf("Cant chroot back to oldir")
+		return out, err
+	}
 	return out, err
 }

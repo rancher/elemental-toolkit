@@ -17,29 +17,33 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/cmd/config"
 	"github.com/rancher-sandbox/elemental-cli/pkg/action"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
 )
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"))
+		logger := logrus.New()
+		logger.SetOutput(os.Stdout)
+
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger)
 
 		if err != nil {
-			fmt.Printf("Error reading config: %s\n", err)
+			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
 		cfg.Device = args[0]
 
-		fmt.Println("Install called")
+		cfg.Logger.Infof("Install called")
 		install := action.NewInstallAction(cfg)
 		err = install.Run()
 		if err != nil {
