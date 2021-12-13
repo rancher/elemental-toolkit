@@ -60,6 +60,7 @@ type RunConfig struct {
 	PartTable string
 	BootFlag string
 	fs afero.Fs
+	logger Logger
 }
 
 func (r *RunConfig) SetupStyle() {
