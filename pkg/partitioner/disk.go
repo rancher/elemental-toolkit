@@ -69,6 +69,11 @@ func (dev Disk) GetLabel() string {
 	return dev.label
 }
 
+func (dev Disk) IsValid() bool {
+	_, err := os.Stat(dev.device)
+	return err == nil
+}
+
 func (dev *Disk) Reload() error {
 	pc := NewPartedCall(dev.String(), dev.runner)
 	prnt, err := pc.Print()
