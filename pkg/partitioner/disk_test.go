@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	mocks "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	"github.com/spf13/afero"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestReload(t *testing.T) {
 		"unit", "s", "print",
 	}}
 	runner.ReturnValue = []byte(printOutput)
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	err := dev.Reload()
 	Expect(err).To(BeNil())
 	Expect(dev.String()).To(Equal("/some/device"))
@@ -33,7 +34,7 @@ func TestCheckDiskFreeSpaceMiB(t *testing.T) {
 		"unit", "s", "print",
 	}}
 	runner.ReturnValue = []byte(printOutput)
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	//Disk has 128M free according to printOutput
 	Expect(dev.CheckDiskFreeSpaceMiB(130)).To(Equal(false))
 	Expect(dev.CheckDiskFreeSpaceMiB(128)).To(Equal(true))
@@ -48,7 +49,7 @@ func TestGetFreeSpace(t *testing.T) {
 		"unit", "s", "print",
 	}}
 	runner.ReturnValue = []byte(printOutput)
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	Expect(dev.GetFreeSpace()).To(Equal(uint(262145)))
 	Expect(runner.CmdsMatch(cmds)).To(BeNil())
 }
@@ -64,7 +65,7 @@ func TestNewPartitionTable(t *testing.T) {
 		"unit", "s", "print",
 	}}
 	runner.ReturnValue = []byte(printOutput)
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	_, err := dev.NewPartitionTable("invalidLabel")
 	Expect(err).NotTo(BeNil())
 	_, err = dev.NewPartitionTable("gpt")
@@ -86,7 +87,7 @@ func TestAddPartition(t *testing.T) {
 		"unit", "s", "print",
 	}}
 	runner.ReturnValue = []byte(printOutput)
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	num, err := dev.AddPartition(130, "ext4", "ignored")
 	Expect(err).NotTo(BeNil())
 	Expect(dev.GetLabel()).To(Equal("msdos"))
@@ -103,14 +104,14 @@ func TestReloadPartitionTable(t *testing.T) {
 		{"udevadm", "settle"},
 		{"partprobe", "/some/device"},
 	}
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	Expect(dev.ReloadPartitionTable()).To(BeNil())
 	Expect(runner.CmdsMatch(cmds)).To(BeNil())
 
 	//Test partprobe failure exhausting all tries
 	triesCount := 11
 	runner.ClearCmds()
-	dev = part.NewDisk("/some/device", runner)
+	dev = part.NewDisk("/some/device", part.WithRunner(runner))
 	runFunc := func(cmd string, args ...string) ([]byte, error) {
 		switch cmd {
 		case "partprobe":
@@ -147,14 +148,14 @@ func TestFindPartitionDevice(t *testing.T) {
 		{"lsblk", "-ltnpo", "name,type", "/some/device"},
 	}
 	runner.ReturnValue = []byte("/some/device4 part")
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	Expect(dev.FindPartitionDevice(4)).To(Equal("/some/device4"))
 	Expect(runner.CmdsMatch(cmds)).To(BeNil())
 
 	//Testing one retry needed
 	triesCount := 1
 	runner.ClearCmds()
-	dev = part.NewDisk("/some/device", runner)
+	dev = part.NewDisk("/some/device", part.WithRunner(runner))
 	runFunc := func(cmd string, args ...string) ([]byte, error) {
 		switch cmd {
 		case "partprobe":
@@ -193,7 +194,7 @@ func TestFormatPartition(t *testing.T) {
 		{"mkfs.xfs", "-L", "OEM", "/some/device4"},
 	}
 	runner.ReturnValue = []byte("/some/device4 part")
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner))
 	_, err := dev.FormatPartition(4, "xfs", "OEM")
 	Expect(err).To(BeNil())
 	Expect(runner.CmdsMatch(cmds)).To(BeNil())
@@ -237,14 +238,14 @@ func TestExpandLastPartition(t *testing.T) {
 	}
 	runner.SideEffect = runFunc
 
-	dev := part.NewDisk("/some/device", runner)
+	dev := part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(afero.NewMemMapFs()))
 	_, err := dev.ExpandLastPartition(0)
 	Expect(err).To(BeNil())
 	Expect(runner.CmdsMatch(append(cmds, extCmds...))).To(BeNil())
 
 	runner.ClearCmds()
 	fileSystem = "xfs"
-	dev = part.NewDisk("/some/device", runner)
+	dev = part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(afero.NewMemMapFs()))
 	_, err = dev.ExpandLastPartition(0)
 	Expect(err).To(BeNil())
 	Expect(runner.CmdsMatch(append(cmds, xfsCmds...))).To(BeNil())
