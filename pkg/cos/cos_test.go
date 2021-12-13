@@ -1,10 +1,11 @@
-package utils
+package cos
 
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -29,7 +30,9 @@ func TestDoCopyEmpty(t *testing.T) {
 		Logger:    logger,
 	}
 
-	err = DoCopy(cfg)
+	c := Cos{config: cfg}
+
+	err = c.CopyCos()
 	Expect(err).To(BeNil())
 }
 
@@ -56,7 +59,8 @@ func TestDoCopy(t *testing.T) {
 		Logger:    logger,
 	}
 
-	err = DoCopy(cfg)
+	c := Cos{config: cfg}
+	err = c.CopyCos()
 	Expect(err).To(BeNil())
 
 	filesDest, err := ioutil.ReadDir(d)
@@ -96,7 +100,10 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 		Logger:    logger,
 	}
 
-	err = DoCopy(cfg)
+	c := Cos{config: cfg}
+	err = c.CopyCos()
+	Expect(err).To(BeNil())
+	err = c.CopyCloudConfig()
 	Expect(err).To(BeNil())
 	filesDest, err := ioutil.ReadDir(fmt.Sprintf("%s/oem", d))
 	destNames := getNamesFromListFiles(filesDest)
@@ -106,6 +113,19 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 	dest, err := ioutil.ReadFile(fmt.Sprintf("%s/oem/99_custom.yaml", d))
 	Expect(dest).To(ContainSubstring(testString))
 
+}
+
+func TestSelinuxRelabel(t *testing.T) {
+	// I cant seem to mock exec.LookPath so it will always fail tor un due setfiles not being in the system :/
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	cfg := &v1.RunConfig{Target: "/", Fs: fs}
+	c := Cos{config: cfg}
+	// This is actually failing but not sure we should return an error
+	Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
+	fs = afero.NewMemMapFs()
+	_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
+	Expect(c.SelinuxRelabel(false)).To(BeNil())
 }
 
 func getNamesFromListFiles(list []os.FileInfo) []string {

@@ -19,6 +19,7 @@ package action
 import (
 	"errors"
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/cos"
 	"github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
@@ -33,41 +34,38 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 }
 
 func (i InstallAction) Run() error {
+	var err error
+
+	newCos := cos.NewCos(i.Config)
 	i.Config.Logger.Infof("InstallAction called")
+	// Install steps really starts here
 	i.Config.SetupStyle()
-	// Rough steps (then they have multisteps inside)
 	disk := partitioner.NewDisk(i.Config.Target, i.Config.Runner)
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
-	// get_image: _UPGRADE_IMAGE -> create_rootfs -> NOT NECESSARY FOR INSTALL!
+	// cos.GetIso() ?
+
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
+	// This will probably need the yip module to be used before being able?
+
 	// Check device valid
 	if !disk.Exists() {
 		i.Config.Logger.Errorf("Disk %s does not exist", i.Config.Target)
 		return errors.New(fmt.Sprintf("Disk %s does not exist", i.Config.Target))
 	}
-	if i.Config.NoFormat != "" {
-		// User asked for no format, lets check if there is already those labeled partitions in the disk
-		for _, label := range []string{i.Config.ActiveLabel, i.Config.PassiveLabel} {
-			found, err := utils.FindLabel(i.Config.Runner, label)
-			if err != nil {
-				return err
-			}
-			if found != "" {
-				if i.Config.Force {
-					msg := fmt.Sprintf("Forcing overwrite of existing partitions due to `force` flag")
-					i.Config.Logger.Infof(msg)
-					break
-				} else {
-					msg := fmt.Sprintf("There is already an active deployment in the system, use '--force' flag to overwrite it")
-					i.Config.Logger.Error(msg)
-					return errors.New(msg)
-				}
-			}
-		}
+
+	// Check no-format flag and force flag against current device
+	err = newCos.CheckNoFormat()
+	if err != nil {
+		return err
 	}
 	// partition device
 	// install Active
-	err := utils.DoCopy(i.Config)
+	err = newCos.CopyCos()
+	if err != nil {
+		return err
+	}
+	// Copy cloud-init if any
+	err = newCos.CopyCloudConfig()
 	if err != nil {
 		return err
 	}
@@ -78,11 +76,15 @@ func (i InstallAction) Run() error {
 		return err
 	}
 	// Relabel SELinux
-	_ = utils.SelinuxRelabel(i.Config.Target, i.Config.Fs, false)
+	_ = newCos.SelinuxRelabel(false)
 	// Unmount everything
+	// cos.CleanupMounts()
 	// install Recovery
+	// cos.CopyRecovery()
 	// install Secondary
+	// cos.CopyPassive()
 	// Rebrand
+	// cos.Rebrand()
 	// ????
 	// profit!
 	return nil

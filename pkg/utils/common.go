@@ -62,7 +62,7 @@ func GetUrl(client v1.HTTPClient, logger v1.Logger, url string, destination stri
 	return nil
 }
 
-func commandExists(command string) bool {
+func CommandExists(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
 }
