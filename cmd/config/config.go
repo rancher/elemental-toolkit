@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func ReadConfigBuild(configDir string)  (*v1.BuildConfig, error) {
+func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
 	cfg := &v1.BuildConfig{}
 	viper.AddConfigPath(configDir)
 	viper.SetConfigType("yaml")
@@ -29,8 +29,8 @@ func ReadConfigBuild(configDir string)  (*v1.BuildConfig, error) {
 	return cfg, nil
 }
 
-func ReadConfigRun(configDir string)  (*v1.RunConfig, error) {
-	cfg := v1.NewRunConfig()
+func ReadConfigRun(configDir string, logger v1.Logger) (*v1.RunConfig, error) {
+	cfg := v1.NewRunConfig(v1.WithLogger(logger))
 
 	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 

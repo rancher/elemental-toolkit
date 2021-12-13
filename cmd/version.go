@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Args:  cobra.ExactArgs(0),
@@ -31,7 +30,7 @@ var versionCmd = &cobra.Command{
 		v := version.Get()
 		commit := v.GitCommit
 		if len(commit) > 7 {
-			commit =  v.GitCommit[:7]
+			commit = v.GitCommit[:7]
 		}
 		if cmd.Flag("long").Changed {
 			fmt.Printf("%#v", v)
@@ -42,6 +41,7 @@ var versionCmd = &cobra.Command{
 		return nil
 	},
 }
+
 func init() {
 	rootCmd.AddCommand(versionCmd)
 	versionCmd.Flags().Bool("long", false, "Show long version info")

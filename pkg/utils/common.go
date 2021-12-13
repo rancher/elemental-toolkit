@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"io"
 	"os"
@@ -25,32 +24,39 @@ import (
 	"strings"
 )
 
-
-func GetUrl(client v1.HTTPClient, url string, destination string) error {
+func GetUrl(client v1.HTTPClient, logger v1.Logger, url string, destination string) error {
 	var source io.Reader
 	var err error
 
 	switch {
 	case strings.HasPrefix(url, "http"), strings.HasPrefix(url, "ftp"), strings.HasPrefix(url, "tftp"):
-		fmt.Printf("Downloading from %s to %s\n", url, destination)
+		logger.Infof("Downloading from %s to %s", url, destination)
 		resp, err := client.Get(url)
-		if err != nil {return err}
+		if err != nil {
+			return err
+		}
 		source = resp.Body
 		defer resp.Body.Close()
 	default:
-		fmt.Printf("Copying from %s to %s\n", url, destination)
+		logger.Infof("Copying from %s to %s", url, destination)
 		file, err := os.Open(url)
-		if err != nil {return err}
+		if err != nil {
+			return err
+		}
 		source = file
 		defer file.Close()
 	}
 
 	dest, err := os.Create(destination)
 	defer dest.Close()
-	if err != nil {return err}
+	if err != nil {
+		return err
+	}
 	nBytes, err := io.Copy(dest, source)
-	if err != nil {return err}
-	fmt.Printf("Copied %d bytes\n", nBytes)
+	if err != nil {
+		return err
+	}
+	logger.Infof("Copied %d bytes", nBytes)
 
 	return nil
 }
@@ -61,6 +67,6 @@ func commandExists(command string) bool {
 }
 
 func BootedFrom(runner v1.Runner, label string) bool {
-	out, _ := runner.Run("cat",  "/proc/cmdline")
+	out, _ := runner.Run("cat", "/proc/cmdline")
 	return strings.Contains(string(out), label)
 }

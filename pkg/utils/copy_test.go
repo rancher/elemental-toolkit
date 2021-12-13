@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -11,6 +12,8 @@ import (
 
 func TestDoCopyEmpty(t *testing.T) {
 	RegisterTestingT(t)
+	logger := logrus.New()
+	logger.SetOutput(ioutil.Discard)
 	s, err := os.MkdirTemp("", "elemental")
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(s)
@@ -23,6 +26,7 @@ func TestDoCopyEmpty(t *testing.T) {
 		Target:    d,
 		Source:    s,
 		CloudInit: "",
+		Logger:    logger,
 	}
 
 	err = DoCopy(cfg)
@@ -31,6 +35,8 @@ func TestDoCopyEmpty(t *testing.T) {
 
 func TestDoCopy(t *testing.T) {
 	RegisterTestingT(t)
+	logger := logrus.New()
+	logger.SetOutput(ioutil.Discard)
 	s, err := os.MkdirTemp("", "elemental")
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(s)
@@ -38,7 +44,7 @@ func TestDoCopy(t *testing.T) {
 	Expect(err).To(BeNil())
 	defer os.RemoveAll(d)
 
-	for i := 0; i<5; i++ {
+	for i := 0; i < 5; i++ {
 		_, _ = os.CreateTemp(s, "file*")
 	}
 
@@ -47,8 +53,8 @@ func TestDoCopy(t *testing.T) {
 		Target:    d,
 		Source:    s,
 		CloudInit: "",
+		Logger:    logger,
 	}
-
 
 	err = DoCopy(cfg)
 	Expect(err).To(BeNil())
@@ -62,9 +68,10 @@ func TestDoCopy(t *testing.T) {
 	Expect(destNames).To(Equal(SourceNames))
 }
 
-
 func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 	RegisterTestingT(t)
+	logger := logrus.New()
+	logger.SetOutput(ioutil.Discard)
 	testString := "In a galaxy far far away..."
 	s, err := os.MkdirTemp("", "elemental")
 	Expect(err).To(BeNil())
@@ -82,10 +89,11 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 	Expect(err).To(BeNil())
 	defer os.Remove(cloudInit.Name())
 
-	cfg :=&v1.RunConfig{
+	cfg := &v1.RunConfig{
 		Target:    d,
 		Source:    s,
 		CloudInit: cloudInit.Name(),
+		Logger:    logger,
 	}
 
 	err = DoCopy(cfg)
@@ -102,7 +110,7 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
 	var names []string
-	for _,f := range list {
+	for _, f := range list {
 		names = append(names, f.Name())
 	}
 	return names

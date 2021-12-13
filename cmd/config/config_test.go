@@ -2,6 +2,7 @@ package config
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
 	"testing"
@@ -12,11 +13,12 @@ func setupTest(t *testing.T) {
 	RegisterTestingT(t)
 }
 
+var logger = logrus.New()
 
 func TestConfigRunCustomNotValidPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	cfg, err := ReadConfigRun("/none/")
+	cfg, err := ReadConfigRun("/none/", logger)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
@@ -26,7 +28,7 @@ func TestConfigRunCustomNotValidPath(t *testing.T) {
 func TestConfigRunCustomEmptyPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	cfg, err := ReadConfigRun("")
+	cfg, err := ReadConfigRun("", logger)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
 	Expect(source).To(Equal(""))
@@ -35,7 +37,7 @@ func TestConfigRunCustomEmptyPath(t *testing.T) {
 
 func TestConfigRunOverride(t *testing.T) {
 	setupTest(t)
-	cfg, err := ReadConfigRun("config/")
+	cfg, err := ReadConfigRun("config/", logger)
 	Expect(err).To(BeNil())
 	source := viper.GetString("target")
 	// check that the final value comes from the extra file
@@ -45,8 +47,8 @@ func TestConfigRunOverride(t *testing.T) {
 
 func TestConfigRunOverrideEnv(t *testing.T) {
 	setupTest(t)
-	_= os.Setenv("ELEMENTAL_TARGET", "environment")
-	cfg, err := ReadConfigRun("config/")
+	_ = os.Setenv("ELEMENTAL_TARGET", "environment")
+	cfg, err := ReadConfigRun("config/", logger)
 	Expect(err).To(BeNil())
 	source := viper.GetString("target")
 	// check that the final value comes from the env var
@@ -54,7 +56,7 @@ func TestConfigRunOverrideEnv(t *testing.T) {
 	Expect(cfg.Target).To(Equal("environment"))
 }
 
-func TestConfigBuildCustomNotValidPath(t *testing.T)  {
+func TestConfigBuildCustomNotValidPath(t *testing.T) {
 	setupTest(t)
 	cfg, err := ReadConfigBuild("/none/")
 	Expect(err).To(BeNil())
@@ -62,7 +64,7 @@ func TestConfigBuildCustomNotValidPath(t *testing.T)  {
 	Expect(cfg.Label).To(Equal(""))
 }
 
-func TestConfigBuildCustomPath(t *testing.T)  {
+func TestConfigBuildCustomPath(t *testing.T) {
 	setupTest(t)
 	cfg, err := ReadConfigBuild("config/")
 	Expect(err).To(BeNil())
@@ -72,7 +74,7 @@ func TestConfigBuildCustomPath(t *testing.T)  {
 
 func TestConfigBuildOverrideEnv(t *testing.T) {
 	setupTest(t)
-	_= os.Setenv("ELEMENTAL_LABEL", "environment")
+	_ = os.Setenv("ELEMENTAL_LABEL", "environment")
 	cfg, err := ReadConfigBuild("config/")
 	Expect(err).To(BeNil())
 	source := viper.GetString("label")
