@@ -7,9 +7,17 @@ import (
 )
 
 type ChrootOptions func(a *Chroot) error
+type GrubOptions func(a *Grub) error
 
 func WithRunner(runner v1.Runner) func(r *Chroot) error {
 	return func(a *Chroot) error {
+		a.runner = runner
+		return nil
+	}
+}
+
+func WithRunnerGrub(runner v1.Runner) func(r *Grub) error {
+	return func(a *Grub) error {
 		a.runner = runner
 		return nil
 	}
@@ -24,6 +32,13 @@ func WithSyscall(syscall v1.SyscallInterface) func(r *Chroot) error {
 
 func WithFS(fs afero.Fs) func(r *Chroot) error {
 	return func(a *Chroot) error {
+		a.fs = fs
+		return nil
+	}
+}
+
+func WithFSGrub(fs afero.Fs) func(r *Grub) error {
+	return func(a *Grub) error {
 		a.fs = fs
 		return nil
 	}
