@@ -78,7 +78,7 @@ run_hook() {
 
     prepare_chroot $dir
     chroot $dir /usr/bin/cos-setup $hook
-    chroot $dir /usr/bin/cos-rebrand
+    chroot $dir /usr/sbin/cos-rebrand
     cleanup_chroot $dir
 }
 
