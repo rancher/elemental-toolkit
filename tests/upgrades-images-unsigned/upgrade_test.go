@@ -76,7 +76,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				grubEntry, err := s.Command("grub2-editenv /run/initramfs/cos-state/grub_oem_env list | grep default_menu_entry= | sed 's/default_menu_entry=//'")
 				Expect(err).ToNot(HaveOccurred())
 
-				out, err := s.Command("cos-upgrade --no-verify --docker-image quay.io/costoolkit/test-images:grub_menu")
+				out, err := s.Command("cos-upgrade --no-cosign --no-verify --docker-image quay.io/costoolkit/test-images:grub_menu")
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}
