@@ -16,3 +16,7 @@ jobs:
           go-version: 1.16.x
       - name: Run tests
         run: make test
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          file: coverage.txt
