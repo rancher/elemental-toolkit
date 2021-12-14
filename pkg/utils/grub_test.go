@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	log "github.com/sirupsen/logrus"
@@ -103,7 +104,7 @@ func TestGrubInstallEfiX86_64NotForced(t *testing.T) {
 	logger.SetLevel(log.DebugLevel)
 	fs := afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/cos/grub.cfg")
-	_, _ = fs.Create("/sys/firmware/efi")
+	_, _ = fs.Create(constants.EfiDevice)
 
 	config := v1.RunConfig{
 		Device: "/dev/test",

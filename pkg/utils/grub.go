@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/spf13/afero"
 	"runtime"
@@ -56,7 +57,7 @@ func (g Grub) Install() error {
 		}
 	}
 
-	efiExists, _ := afero.Exists(g.config.Fs, "/sys/firmware/efi")
+	efiExists, _ := afero.Exists(g.config.Fs, constants.EfiDevice)
 
 	if g.config.ForceEfi || efiExists {
 		g.config.Logger.Infof("Installing grub efi for arch %s", arch)

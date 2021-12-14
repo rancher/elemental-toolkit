@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
@@ -82,23 +83,23 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	if r.Mounter == nil {
-		r.Mounter = mount.New("/usr/bin/mount")
+		r.Mounter = mount.New(constants.MountBinary)
 	}
 
 	// Set defaults if empty
 	if r.GrubConf == "" {
-		r.GrubConf = "/etc/cos/grub.cfg"
+		r.GrubConf = constants.GrubConf
 	}
 	if r.StateDir == "" {
-		r.StateDir = "/run/initramfs/cos-state"
+		r.StateDir = constants.StateDir
 	}
 
 	if r.ActiveLabel == "" {
-		r.ActiveLabel = "COS_ACTIVE"
+		r.ActiveLabel = constants.ActiveLabel
 	}
 
 	if r.PassiveLabel == "" {
-		r.ActiveLabel = "COS_PASSIVE"
+		r.PassiveLabel = constants.PassiveLabel
 	}
 	return r
 }
@@ -129,7 +130,7 @@ type RunConfig struct {
 func (r *RunConfig) SetupStyle() {
 	var part, boot string
 
-	_, err := r.Fs.Stat("/sys/firmware/efi")
+	_, err := r.Fs.Stat(constants.EfiDevice)
 	efiExists := err == nil
 
 	if r.ForceEfi || efiExists {
