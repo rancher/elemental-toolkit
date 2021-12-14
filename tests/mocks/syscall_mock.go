@@ -1,12 +1,12 @@
 package mocks
 
-type FakeSyscall struct{
-	chrootHistory []string  // Track calls to chroot
+type FakeSyscall struct {
+	chrootHistory []string // Track calls to chroot
 }
 
-func (f *FakeSyscall) Chroot(path string)  error {
+func (f *FakeSyscall) Chroot(path string) error {
 	f.chrootHistory = append(f.chrootHistory, path)
-	return nil	
+	return nil
 }
 
 func (f *FakeSyscall) WasChrootCalledWith(path string) bool {

@@ -40,7 +40,7 @@ func (i InstallAction) Run() error {
 	i.Config.Logger.Infof("InstallAction called")
 	// Install steps really starts here
 	i.Config.SetupStyle()
-	disk := partitioner.NewDisk(i.Config.Target, i.Config.Runner)
+	disk := partitioner.NewDisk(i.Config.Target, partitioner.WithRunner(i.Config.Runner))
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
 	// cos.GetIso() ?
 

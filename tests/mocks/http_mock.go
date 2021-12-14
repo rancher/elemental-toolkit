@@ -21,9 +21,9 @@ import (
 	"net/http"
 )
 
-type FakeHttpBody struct {}
+type FakeHttpBody struct{}
 
-func (m *FakeHttpBody) Read(p []byte) (n int, err error){
+func (m *FakeHttpBody) Read(p []byte) (n int, err error) {
 	return 1024, io.EOF
 }
 
