@@ -24,15 +24,8 @@ type Logger interface {
 
 type LoggerOptions func(l Logger) error
 
-func NewLogger(opts ...LoggerOptions) Logger {
-	logger := log.New()
-
-	for _, opt := range opts {
-		if err := opt(logger); err != nil {
-			return nil
-		}
-	}
-	return logger
+func NewLogger() Logger {
+	return log.New()
 }
 
 func NewNullLogger() Logger {

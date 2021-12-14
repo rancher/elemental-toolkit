@@ -38,3 +38,38 @@ func TestSetupStyleDefault(t *testing.T) {
 	Expect(c.PartTable).To(Equal(v1.GPT))
 	Expect(c.BootFlag).To(Equal(v1.BIOS))
 }
+
+func TestRunConfigOptions(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	runner := &v1mock.FakeRunner{}
+	sysc := &v1mock.FakeSyscall{}
+	logger := v1.NewNullLogger()
+	c := v1.NewRunConfig(
+		v1.WithFs(fs),
+		v1.WithMounter(mounter),
+		v1.WithRunner(runner),
+		v1.WithSyscall(sysc),
+		v1.WithLogger(logger),
+	)
+	Expect(c.Fs).To(Equal(fs))
+	Expect(c.Mounter).To(Equal(mounter))
+	Expect(c.Runner).To(Equal(runner))
+	Expect(c.Syscall).To(Equal(sysc))
+	Expect(c.Logger).To(Equal(logger))
+}
+
+func TestRunConfigNoMounter(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	runner := &v1mock.FakeRunner{}
+	sysc := &v1mock.FakeSyscall{}
+	logger := v1.NewNullLogger()
+	_ = v1.NewRunConfig(
+		v1.WithFs(fs),
+		v1.WithRunner(runner),
+		v1.WithSyscall(sysc),
+		v1.WithLogger(logger),
+	)
+}

@@ -45,3 +45,66 @@ func TestChroot(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(syscallInterface.WasChrootCalledWith("/whatever")).To(BeTrue())
 }
+
+func TestChrootFailure(t *testing.T) {
+	RegisterTestingT(t)
+	syscallInterface := &v1mock.FakeSyscall{ErrorOnChroot: true}
+	mounter := &mount.FakeMounter{}
+	runner := &v1mock.FakeRunner{}
+	c := v1.NewRunConfig(
+		v1.WithSyscall(syscallInterface),
+		v1.WithFs(afero.NewMemMapFs()),
+		v1.WithMounter(mounter),
+		v1.WithRunner(runner),
+	)
+	chroot := NewChroot(
+		"/whatever",
+		c,
+	)
+	defer chroot.Close()
+	_, err := chroot.Run("chroot-command")
+	Expect(err).ToNot(BeNil())
+	Expect(syscallInterface.WasChrootCalledWith("/whatever")).To(BeTrue())
+	Expect(err.Error()).To(ContainSubstring("chroot error"))
+}
+
+func TestChrootPrepareFailure(t *testing.T) {
+	RegisterTestingT(t)
+	syscallInterface := &v1mock.FakeSyscall{}
+	mounter := &v1mock.ErrorMounter{ErrorOnMount: true}
+	runner := &v1mock.FakeRunner{}
+	c := v1.NewRunConfig(
+		v1.WithSyscall(syscallInterface),
+		v1.WithFs(afero.NewMemMapFs()),
+		v1.WithMounter(mounter),
+		v1.WithRunner(runner),
+	)
+	chroot := NewChroot(
+		"/whatever",
+		c,
+	)
+	defer chroot.Close()
+	_, err := chroot.Run("chroot-command")
+	Expect(err).ToNot(BeNil())
+	Expect(err.Error()).To(ContainSubstring("mount error"))
+}
+
+func TestChrootCloseFailure(t *testing.T) {
+	RegisterTestingT(t)
+	syscallInterface := &v1mock.FakeSyscall{}
+	mounter := &v1mock.ErrorMounter{ErrorOnUnmount: true}
+	runner := &v1mock.FakeRunner{}
+	c := v1.NewRunConfig(
+		v1.WithSyscall(syscallInterface),
+		v1.WithFs(afero.NewMemMapFs()),
+		v1.WithMounter(mounter),
+		v1.WithRunner(runner),
+	)
+	chroot := NewChroot(
+		"/whatever",
+		c,
+	)
+	err := chroot.Close()
+	Expect(err).ToNot(BeNil())
+	Expect(err.Error()).To(ContainSubstring("unmount error"))
+}
