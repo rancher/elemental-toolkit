@@ -61,7 +61,7 @@ func GetUrl(client v1.HTTPClient, logger v1.Logger, url string, destination stri
 	return nil
 }
 
-func commandExists(command string) bool {
+func CommandExists(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
 }
@@ -69,4 +69,13 @@ func commandExists(command string) bool {
 func BootedFrom(runner v1.Runner, label string) bool {
 	out, _ := runner.Run("cat", "/proc/cmdline")
 	return strings.Contains(string(out), label)
+}
+
+// FindLabel will try to get the partition that has the label given in the current disk
+func FindLabel(runner v1.Runner, label string) (string, error) {
+	out, err := runner.Run("blkid", "-L", label)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }

@@ -17,8 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"k8s.io/mount-utils"
 )
 
 const (
@@ -33,7 +35,7 @@ type RunConfigOptions func(a *RunConfig) error
 
 func WithFs(fs afero.Fs) func(r *RunConfig) error {
 	return func(r *RunConfig) error {
-		r.fs = fs
+		r.Fs = fs
 		return nil
 	}
 }
@@ -45,10 +47,33 @@ func WithLogger(logger Logger) func(r *RunConfig) error {
 	}
 }
 
+func WithSyscall(syscall SyscallInterface) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Syscall = syscall
+		return nil
+	}
+}
+
+func WithMounter(mounter mount.Interface) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Mounter = mounter
+		return nil
+	}
+}
+
+func WithRunner(runner Runner) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Runner = runner
+		return nil
+	}
+}
+
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	r := &RunConfig{
-		fs:     afero.NewOsFs(),
-		Logger: logrus.New(),
+		Fs:      afero.NewOsFs(),
+		Logger:  logrus.New(),
+		Runner:  &RealRunner{},
+		Syscall: &RealSyscall{},
 	}
 	for _, o := range opts {
 		err := o(r)
@@ -57,36 +82,55 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		}
 	}
 
+	if r.Mounter == nil {
+		r.Mounter = mount.New(constants.MountBinary)
+	}
+
 	// Set defaults if empty
 	if r.GrubConf == "" {
-		r.GrubConf = "/etc/cos/grub.cfg"
+		r.GrubConf = constants.GrubConf
 	}
 	if r.StateDir == "" {
-		r.StateDir = "/run/initramfs/cos-state"
+		r.StateDir = constants.StateDir
+	}
+
+	if r.ActiveLabel == "" {
+		r.ActiveLabel = constants.ActiveLabel
+	}
+
+	if r.PassiveLabel == "" {
+		r.PassiveLabel = constants.PassiveLabel
 	}
 	return r
 }
 
 type RunConfig struct {
-	Device    string `yaml:"device,omitempty" mapstructure:"device"`
-	Target    string `yaml:"target,omitempty" mapstructure:"target"`
-	Source    string `yaml:"source,omitempty" mapstructure:"source"`
-	CloudInit string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	ForceEfi  bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
-	ForceGpt  bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
-	Tty       string `yaml:"tty,omitempty" mapstructure:"tty"`
-	PartTable string
-	BootFlag  string
-	StateDir  string
-	GrubConf  string
-	Logger    Logger
-	fs        afero.Fs
+	Device       string `yaml:"device,omitempty" mapstructure:"device"`
+	Target       string `yaml:"target,omitempty" mapstructure:"target"`
+	Source       string `yaml:"source,omitempty" mapstructure:"source"`
+	CloudInit    string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	ForceEfi     bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
+	ForceGpt     bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
+	NoFormat     bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	ActiveLabel  string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
+	PassiveLabel string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
+	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
+	PartTable    string
+	BootFlag     string
+	StateDir     string
+	GrubConf     string
+	Logger       Logger
+	Fs           afero.Fs
+	Mounter      mount.Interface
+	Runner       Runner
+	Syscall      SyscallInterface
 }
 
 func (r *RunConfig) SetupStyle() {
 	var part, boot string
 
-	_, err := r.fs.Stat("/sys/firmware/efi")
+	_, err := r.Fs.Stat(constants.EfiDevice)
 	efiExists := err == nil
 
 	if r.ForceEfi || efiExists {

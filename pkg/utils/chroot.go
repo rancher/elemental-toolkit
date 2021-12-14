@@ -19,9 +19,6 @@ package utils
 import (
 	"fmt"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
-	mountUtils "k8s.io/mount-utils"
 	"os"
 	"strings"
 )
@@ -29,44 +26,23 @@ import (
 type Chroot struct {
 	path          string
 	defaultMounts []string
-	mounter       mountUtils.Interface
-	runner        v1.Runner
-	syscall       v1.SyscallInterface
-	fs            afero.Fs
-	logger        v1.Logger
+	config        *v1.RunConfig
 }
 
-func NewChroot(path string, opts ...ChrootOptions) *Chroot {
-	c := &Chroot{
+func NewChroot(path string, config *v1.RunConfig) *Chroot {
+	return &Chroot{
 		path:          path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},
-		runner:        &v1.RealRunner{},
-		syscall:       &v1.RealSyscall{},
-		fs:            afero.NewOsFs(),
-		logger:        logrus.New(),
+		config:        config,
 	}
-
-	for _, o := range opts {
-		err := o(c)
-		if err != nil {
-			return nil
-		}
-	}
-	// Check if we passed a mounter and set the default otherwise
-	// We do it here because the mounter will call systemd to check if it's running in a systemd enabled system
-	// And that can lead to asking for elevation permissions, even when passing a different mounter
-	if c.mounter == nil {
-		c.mounter = mountUtils.New(path)
-	}
-	return c
 }
 
 func (c Chroot) Prepare() error {
 	mountOptions := []string{"bind"}
 	for _, mnt := range c.defaultMounts {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt)
-		err := c.fs.Mkdir(mountPoint, 0644)
-		err = c.mounter.Mount(mnt, mountPoint, "bind", mountOptions)
+		err := c.config.Fs.Mkdir(mountPoint, 0644)
+		err = c.config.Mounter.Mount(mnt, mountPoint, "bind", mountOptions)
 		if err != nil {
 			return err
 		}
@@ -76,7 +52,7 @@ func (c Chroot) Prepare() error {
 
 func (c Chroot) Close() error {
 	for _, mnt := range c.defaultMounts {
-		err := c.mounter.Unmount(fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt))
+		err := c.config.Mounter.Unmount(fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt))
 		if err != nil {
 			return err
 		}
@@ -89,37 +65,37 @@ func (c Chroot) Run(command string, args ...string) ([]byte, error) {
 	var out []byte
 	var err error
 	// Store current dir
-	oldRootF, err := os.Open("/") // Cant use afero here because doesnt support chdir done below
+	oldRootF, err := os.Open("/") // Can't use afero here because doesn't support chdir done below
 	defer oldRootF.Close()
 	if err != nil {
-		c.logger.Errorf("Cant open /")
+		c.config.Logger.Errorf("Cant open /")
 		return out, err
 	}
 	err = c.Prepare()
 	if err != nil {
-		c.logger.Errorf("Cant mount default mounts")
+		c.config.Logger.Errorf("Cant mount default mounts")
 		return nil, err
 	}
-	err = c.syscall.Chroot(c.path)
+	err = c.config.Syscall.Chroot(c.path)
 	if err != nil {
-		c.logger.Errorf("Cant chroot %s", c.path)
+		c.config.Logger.Errorf("Cant chroot %s", c.path)
 		return out, err
 	}
 	// run commands in the chroot
-	out, err = c.runner.Run(command, args...)
+	out, err = c.config.Runner.Run(command, args...)
 	if err != nil {
-		c.logger.Errorf("Cant run command on chroot")
+		c.config.Logger.Errorf("Cant run command on chroot")
 		return out, err
 	}
 	// Restore to old dir
 	err = oldRootF.Chdir()
 	if err != nil {
-		c.logger.Errorf("Cant change to old dir")
+		c.config.Logger.Errorf("Cant change to old dir")
 		return out, err
 	}
-	err = c.syscall.Chroot(".")
+	err = c.config.Syscall.Chroot(".")
 	if err != nil {
-		c.logger.Errorf("Cant chroot back to oldir")
+		c.config.Logger.Errorf("Cant chroot back to old dir")
 		return out, err
 	}
 	return out, err

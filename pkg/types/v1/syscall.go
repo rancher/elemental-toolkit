@@ -11,4 +11,3 @@ type RealSyscall struct{}
 func (r *RealSyscall) Chroot(path string) error {
 	return syscall.Chroot(path)
 }
-

@@ -17,7 +17,12 @@ limitations under the License.
 package action
 
 import (
+	"errors"
+	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
+	"github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 )
 
 type InstallAction struct {
@@ -29,19 +34,57 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 }
 
 func (i InstallAction) Run() error {
+	var err error
+
+	newElemental := elemental.NewElemental(i.Config)
 	i.Config.Logger.Infof("InstallAction called")
-	// Rough steps (then they have multisteps inside)
+	// Install steps really starts here
+	i.Config.SetupStyle()
+	disk := partitioner.NewDisk(i.Config.Target, partitioner.WithRunner(i.Config.Runner))
+	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
+	// cos.GetIso() ?
+
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
+	// This will probably need the yip module to be used before being able?
+
 	// Check device valid
+	if !disk.Exists() {
+		i.Config.Logger.Errorf("Disk %s does not exist", i.Config.Target)
+		return errors.New(fmt.Sprintf("Disk %s does not exist", i.Config.Target))
+	}
+
+	// Check no-format flag and force flag against current device
+	err = newElemental.CheckNoFormat()
+	if err != nil {
+		return err
+	}
 	// partition device
-	// check source to install
 	// install Active
+	err = newElemental.CopyCos()
+	if err != nil {
+		return err
+	}
+	// Copy cloud-init if any
+	err = newElemental.CopyCloudConfig()
+	if err != nil {
+		return err
+	}
 	// install grub
+	grub := utils.NewGrub(i.Config)
+	err = grub.Install()
+	if err != nil {
+		return err
+	}
 	// Relabel SELinux
+	_ = newElemental.SelinuxRelabel(false)
 	// Unmount everything
+	// cos.CleanupMounts()
 	// install Recovery
+	// cos.CopyRecovery()
 	// install Secondary
+	// cos.CopyPassive()
 	// Rebrand
+	// cos.Rebrand()
 	// ????
 	// profit!
 	return nil

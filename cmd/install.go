@@ -18,11 +18,12 @@ package cmd
 
 import (
 	"github.com/rancher-sandbox/elemental-cli/cmd/config"
-	"github.com/rancher-sandbox/elemental-cli/pkg/action"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/mount-utils"
 	"os"
+	"os/exec"
 )
 
 // installCmd represents the install command
@@ -34,7 +35,13 @@ var installCmd = &cobra.Command{
 		logger := logrus.New()
 		logger.SetOutput(os.Stdout)
 
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger)
+		path, err := exec.LookPath("mount")
+		if err != nil {
+			return err
+		}
+		mounter := mount.New(path)
+
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger, mounter)
 
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
@@ -44,8 +51,9 @@ var installCmd = &cobra.Command{
 		cfg.Device = args[0]
 
 		cfg.Logger.Infof("Install called")
-		install := action.NewInstallAction(cfg)
-		err = install.Run()
+		// Dont call it yet, not ready
+		//install := action.NewInstallAction(cfg)
+		//err = install.Run()
 		if err != nil {
 			return err
 		}
@@ -69,6 +77,7 @@ func init() {
 	installCmd.Flags().BoolP("debug", "", false, "Enables debugging information")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
+	installCmd.Flags().BoolP("force", "", false, "Force install")
 
 	viper.BindPFlags(installCmd.Flags())
 

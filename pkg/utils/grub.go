@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/spf13/afero"
 	"runtime"
@@ -10,23 +11,12 @@ import (
 
 type Grub struct {
 	disk   string
-	config v1.RunConfig
-	fs     afero.Fs
-	runner v1.Runner
+	config *v1.RunConfig
 }
 
-func NewGrub(config v1.RunConfig, opts ...GrubOptions) *Grub {
+func NewGrub(config *v1.RunConfig) *Grub {
 	g := &Grub{
 		config: config,
-		fs:     afero.NewOsFs(),
-		runner: &v1.RealRunner{},
-	}
-
-	for _, o := range opts {
-		err := o(g)
-		if err != nil {
-			return nil
-		}
 	}
 
 	return g
@@ -47,7 +37,7 @@ func (g Grub) Install() error {
 
 	if g.config.Tty == "" {
 		// Get current tty and remove /dev/ from its name
-		out, err := g.runner.Run("tty")
+		out, err := g.config.Runner.Run("tty")
 		tty = strings.TrimPrefix(strings.TrimSpace(string(out)), "/dev/")
 		if err != nil {
 			return err
@@ -59,15 +49,15 @@ func (g Grub) Install() error {
 	// check if dir exists before creating them
 	for _, d := range []string{"proc", "dev", "sys", "tmp"} {
 		createDir := fmt.Sprintf("%s/%s", g.config.Target, d)
-		if exists, _ := afero.DirExists(g.fs, createDir); !exists {
-			err = g.fs.Mkdir(createDir, 0644)
+		if exists, _ := afero.DirExists(g.config.Fs, createDir); !exists {
+			err = g.config.Fs.Mkdir(createDir, 0644)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	efiExists, _ := afero.Exists(g.fs, "/sys/firmware/efi")
+	efiExists, _ := afero.Exists(g.config.Fs, constants.EfiDevice)
 
 	if g.config.ForceEfi || efiExists {
 		g.config.Logger.Infof("Installing grub efi for arch %s", arch)
@@ -86,7 +76,7 @@ func (g Grub) Install() error {
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
-	_, err = g.runner.Run("grub2-install", grubargs...)
+	_, err = g.config.Runner.Run("grub2-install", grubargs...)
 	if err != nil {
 		return err
 	}
@@ -95,20 +85,20 @@ func (g Grub) Install() error {
 	grub2dir := fmt.Sprintf("%s/grub2", g.config.StateDir)
 
 	// Select the proper dir for grub
-	if ok, _ := afero.IsDir(g.fs, grub1dir); ok {
+	if ok, _ := afero.IsDir(g.config.Fs, grub1dir); ok {
 		grubdir = grub1dir
 	}
-	if ok, _ := afero.IsDir(g.fs, grub2dir); ok {
+	if ok, _ := afero.IsDir(g.config.Fs, grub2dir); ok {
 		grubdir = grub2dir
 	}
 	g.config.Logger.Infof("Found grub config dir %s", grubdir)
 
-	grubConf, err := afero.ReadFile(g.fs, g.config.GrubConf)
+	grubConf, err := afero.ReadFile(g.config.Fs, g.config.GrubConf)
 
-	grubConfTarget, err := g.fs.Create(fmt.Sprintf("%s/grub.cfg", grubdir))
+	grubConfTarget, err := g.config.Fs.Create(fmt.Sprintf("%s/grub.cfg", grubdir))
 	defer grubConfTarget.Close()
 
-	ttyExists, _ := afero.Exists(g.fs, fmt.Sprintf("/dev/%s", tty))
+	ttyExists, _ := afero.Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
 
 	if ttyExists && tty != "" && tty != "console" && tty != "tty1" {
 		// We need to add a tty to the grub file

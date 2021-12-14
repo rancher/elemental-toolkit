@@ -2,6 +2,7 @@ package v1
 
 import (
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
 type Logger interface {
@@ -31,5 +32,11 @@ func NewLogger(opts ...LoggerOptions) Logger {
 			return nil
 		}
 	}
+	return logger
+}
+
+func NewNullLogger() Logger {
+	logger := log.New()
+	logger.SetOutput(ioutil.Discard)
 	return logger
 }

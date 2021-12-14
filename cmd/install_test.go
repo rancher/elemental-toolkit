@@ -22,7 +22,6 @@ import (
 	"testing"
 )
 
-
 func TestInstallNoParams(t *testing.T) {
 	RegisterTestingT(t)
 	// Silence cobra output
@@ -35,11 +34,3 @@ func TestInstallNoParams(t *testing.T) {
 	rootCmd.SetErr(nil)
 	Expect(err).ToNot(BeNil())
 }
-
-func TestInstall(t *testing.T) {
-	RegisterTestingT(t)
-	_, _, err := executeCommandC(rootCmd, "install", "/dev/null")
-	//Check output from command here once we add stuff that prints?
-	Expect(err).To(BeNil())
-}
-

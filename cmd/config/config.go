@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/fs"
+	"k8s.io/mount-utils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,8 +30,11 @@ func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
 	return cfg, nil
 }
 
-func ReadConfigRun(configDir string, logger v1.Logger) (*v1.RunConfig, error) {
-	cfg := v1.NewRunConfig(v1.WithLogger(logger))
+func ReadConfigRun(configDir string, logger v1.Logger, mounter mount.Interface) (*v1.RunConfig, error) {
+	cfg := v1.NewRunConfig(
+		v1.WithLogger(logger),
+		v1.WithMounter(mounter),
+	)
 
 	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 
