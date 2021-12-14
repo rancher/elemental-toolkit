@@ -106,7 +106,7 @@ func (c *Cos) SelinuxRelabel(raiseError bool) error {
 // by checking the active/passive labels. If they are set then we check if we have the force flag, which means that we
 // don't care and proceed to overwrite
 func (c Cos) CheckNoFormat() error {
-	if c.config.NoFormat != "" {
+	if c.config.NoFormat {
 		// User asked for no format, lets check if there is already those labeled partitions in the disk
 		for _, label := range []string{c.config.ActiveLabel, c.config.PassiveLabel} {
 			found, err := utils.FindLabel(c.config.Runner, label)

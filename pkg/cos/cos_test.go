@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"io/ioutil"
@@ -126,6 +127,52 @@ func TestSelinuxRelabel(t *testing.T) {
 	fs = afero.NewMemMapFs()
 	_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
 	Expect(c.SelinuxRelabel(false)).To(BeNil())
+}
+
+func TestCheckFormat(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	cfg := &v1.RunConfig{Target: "/", Fs: fs}
+	cos := NewCos(cfg)
+	err := cos.CheckNoFormat()
+	Expect(err).To(BeNil())
+}
+
+func TestCheckNoFormat(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	runner := v1mock.FakeRunner{}
+	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: &runner}
+	cos := NewCos(cfg)
+	err := cos.CheckNoFormat()
+	Expect(err).To(BeNil())
+}
+
+// TestCheckNoFormatWithLabel tests when we set no format but labels exists for active/passive partition
+func TestCheckNoFormatWithLabel(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	logger := v1.NewNullLogger()
+	runner := v1mock.NewTestRunnerV2()
+	runner.ReturnValue = []byte("/dev/fake")
+	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: runner, Logger: logger}
+	cos := NewCos(cfg)
+	err := cos.CheckNoFormat()
+	Expect(err).ToNot(BeNil())
+	Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
+}
+
+// TestCheckNoFormatWithLabel tests when we set no format but labels exists for active/passive partition AND we set the force flag
+func TestCheckNoFormatWithLabelAndForce(t *testing.T) {
+	RegisterTestingT(t)
+	fs := afero.NewMemMapFs()
+	logger := v1.NewNullLogger()
+	runner := v1mock.NewTestRunnerV2()
+	runner.ReturnValue = []byte("/dev/fake")
+	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Force: true, Runner: runner, Logger: logger}
+	cos := NewCos(cfg)
+	err := cos.CheckNoFormat()
+	Expect(err).To(BeNil())
 }
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
