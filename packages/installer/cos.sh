@@ -218,12 +218,13 @@ cleanup_chroot() {
     done
 }
 
-run_hook() {
+run_chroot_hook() {
     local hook=$1
     local dir=$2
 
     prepare_chroot $dir
     chroot $dir /usr/bin/cos-setup $hook
+    chroot $dir /usr/sbin/cos-rebrand
     cleanup_chroot $dir
 }
 
@@ -965,9 +966,9 @@ create_rootfs() {
         mount $_OEM $target/oem
     fi
     if [ "$_STRICT_MODE" = "true" ]; then
-        run_hook after-$hook_name-chroot $target
+        run_chroot_hook after-$hook_name-chroot $target
     else 
-        run_hook after-$hook_name-chroot $target || true
+        run_chroot_hook after-$hook_name-chroot $target || true
     fi
     if [ -n "$_OEM" ]; then
      umount $target/oem
@@ -1052,7 +1053,7 @@ run_reset_hook() {
     mount $_PERSISTENT $loop_dir/usr/local
     mount $_OEM $loop_dir/oem
 
-    run_hook after-reset-chroot $loop_dir
+    run_chroot_hook after-reset-chroot $loop_dir
 
     umount $loop_dir/oem
     umount $loop_dir/usr/local
@@ -1208,6 +1209,8 @@ rebrand_cleanup()
 # END COS_REBRAND
 
 rebrand() {
+    load_full_config
+    
     rebrand_grub_menu "${_GRUB_ENTRY_NAME}"
 }
 
@@ -1442,9 +1445,9 @@ install() {
     # Otherwise, hooks are executed in get_image
     if [ -z "$_UPGRADE_IMAGE" ]; then
         if [ "$_STRICT_MODE" = "true" ]; then
-            run_hook after-install-chroot $_TARGET
+            run_chroot_hook after-install-chroot $_TARGET
         else
-            run_hook after-install-chroot $_TARGET || true
+            run_chroot_hook after-install-chroot $_TARGET || true
         fi
     fi
 
@@ -1454,8 +1457,6 @@ install() {
         prepare_recovery
     fi
     prepare_passive
-
-    rebrand
 
     if [ -z "$_UPGRADE_IMAGE" ]; then
         if [ "$_STRICT_MODE" = "true" ]; then

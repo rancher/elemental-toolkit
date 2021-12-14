@@ -78,6 +78,7 @@ run_hook() {
 
     prepare_chroot $dir
     chroot $dir /usr/bin/cos-setup $hook
+    chroot $dir /usr/sbin/cos-rebrand
     cleanup_chroot $dir
 }
 
@@ -1129,8 +1130,6 @@ deploy() {
 
     set_active_passive
 
-    rebrand
-
     echo "Flush changes to disk"
     sync
 
@@ -1315,8 +1314,6 @@ install() {
 
     prepare_recovery
     prepare_passive
-
-    rebrand
 
     if [ "$STRICT_MODE" = "true" ]; then
     cos-setup after-install

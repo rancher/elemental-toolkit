@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -35,6 +36,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 			})
+
 			It("upgrades to a specific image and reset back to the installed version", func() {
 
 				if s.GetArch() == "aarch64" {
