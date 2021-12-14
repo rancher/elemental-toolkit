@@ -100,6 +100,32 @@ func TestBootedFrom(t *testing.T) {
 	Expect(utils.BootedFrom(&runner, "I_EXPECT_THIS_LABEL_TO_EXIST")).To(BeTrue())
 }
 
+func TestFindLabelNonExisting(t *testing.T) {
+	RegisterTestingT(t)
+	runner := mocks.FakeRunner{}
+	out, err := utils.FindLabel(&runner, "DOESNT_EXIST")
+	Expect(err).To(BeNil())
+	Expect(out).To(BeEmpty())
+}
+
+func TestFindLabel(t *testing.T) {
+	RegisterTestingT(t)
+	runner := mocks.FakeRunner{}
+	out, err := utils.FindLabel(&runner, "EXISTS")
+	Expect(err).To(BeNil())
+	Expect(out).To(Equal("/dev/fake"))
+}
+
+// TestHelperFindLabel will be called by the FakeRunner when running the TestFindLabel func as it
+// Matches the command + args and return the proper output we want for testing
+func TestHelperFindLabel(*testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	defer os.Exit(0)
+	fmt.Println("/dev/fake") // Mock the device returned for that label
+}
+
 // TestHelperBootedFrom will be called by the FakeRunner when running the BootedFrom func as it
 // Matches the command + args and return the proper output we want for testing
 func TestHelperBootedFrom(*testing.T) {

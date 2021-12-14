@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"io"
 	"os"
@@ -74,7 +73,7 @@ func BootedFrom(runner v1.Runner, label string) bool {
 
 // FindLabel will try to get the partition that has the label given in the current disk
 func FindLabel(runner v1.Runner, label string) (string, error) {
-	out, err := runner.Run(fmt.Sprintf("blkid -L %s", label))
+	out, err := runner.Run("blkid", "-L", label)
 	if err != nil {
 		return "", err
 	}

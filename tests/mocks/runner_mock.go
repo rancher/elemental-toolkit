@@ -17,6 +17,9 @@ func (r *FakeRunner) Run(command string, args ...string) ([]byte, error) {
 	if command == "cat" && len(args) > 0 && args[0] == "/proc/cmdline" {
 		cs = []string{"-test.run=TestHelperBootedFrom", "--"}
 		cs = append(cs, args...)
+	} else if command == "blkid" && len(args) == 2 && args[1] == "EXISTS" {
+		cs = []string{"-test.run=TestHelperFindLabel", "--"}
+		cs = append(cs, args...)
 	} else {
 		return make([]byte, 0), nil
 	}
