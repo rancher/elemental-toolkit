@@ -1,4 +1,4 @@
-package cos
+package elemental
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func TestDoCopyEmpty(t *testing.T) {
 		Logger:    logger,
 	}
 
-	c := Cos{config: cfg}
+	c := Elemental{config: cfg}
 
 	err = c.CopyCos()
 	Expect(err).To(BeNil())
@@ -60,7 +60,7 @@ func TestDoCopy(t *testing.T) {
 		Logger:    logger,
 	}
 
-	c := Cos{config: cfg}
+	c := Elemental{config: cfg}
 	err = c.CopyCos()
 	Expect(err).To(BeNil())
 
@@ -101,7 +101,7 @@ func TestDoCopyEmptyWithCloudInit(t *testing.T) {
 		Logger:    logger,
 	}
 
-	c := Cos{config: cfg}
+	c := Elemental{config: cfg}
 	err = c.CopyCos()
 	Expect(err).To(BeNil())
 	err = c.CopyCloudConfig()
@@ -121,7 +121,7 @@ func TestSelinuxRelabel(t *testing.T) {
 	RegisterTestingT(t)
 	fs := afero.NewMemMapFs()
 	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	c := Cos{config: cfg}
+	c := Elemental{config: cfg}
 	// This is actually failing but not sure we should return an error
 	Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
 	fs = afero.NewMemMapFs()
@@ -133,7 +133,7 @@ func TestCheckFormat(t *testing.T) {
 	RegisterTestingT(t)
 	fs := afero.NewMemMapFs()
 	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	cos := NewCos(cfg)
+	cos := NewElemental(cfg)
 	err := cos.CheckNoFormat()
 	Expect(err).To(BeNil())
 }
@@ -143,7 +143,7 @@ func TestCheckNoFormat(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	runner := v1mock.FakeRunner{}
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: &runner}
-	cos := NewCos(cfg)
+	cos := NewElemental(cfg)
 	err := cos.CheckNoFormat()
 	Expect(err).To(BeNil())
 }
@@ -156,7 +156,7 @@ func TestCheckNoFormatWithLabel(t *testing.T) {
 	runner := v1mock.NewTestRunnerV2()
 	runner.ReturnValue = []byte("/dev/fake")
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: runner, Logger: logger}
-	cos := NewCos(cfg)
+	cos := NewElemental(cfg)
 	err := cos.CheckNoFormat()
 	Expect(err).ToNot(BeNil())
 	Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
@@ -170,7 +170,7 @@ func TestCheckNoFormatWithLabelAndForce(t *testing.T) {
 	runner := v1mock.NewTestRunnerV2()
 	runner.ReturnValue = []byte("/dev/fake")
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Force: true, Runner: runner, Logger: logger}
-	cos := NewCos(cfg)
+	cos := NewElemental(cfg)
 	err := cos.CheckNoFormat()
 	Expect(err).To(BeNil())
 }

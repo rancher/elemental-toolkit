@@ -1,4 +1,4 @@
-package cos
+package elemental
 
 import (
 	"errors"
@@ -11,19 +11,19 @@ import (
 	"strings"
 )
 
-// Cos is the struct meant to self-contain most utils and actions related to cos, like installing or applying selinux
-type Cos struct {
+// Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux
+type Elemental struct {
 	config *v1.RunConfig
 }
 
-func NewCos(config *v1.RunConfig) *Cos {
-	return &Cos{
+func NewElemental(config *v1.RunConfig) *Elemental {
+	return &Elemental{
 		config: config,
 	}
 }
 
 // CopyCos will rsync from config.source to config.target
-func (c *Cos) CopyCos() error {
+func (c *Elemental) CopyCos() error {
 	c.config.Logger.Infof("Copying cOS..")
 	// Make sure the values have a / at the end.
 	var source, target string
@@ -60,7 +60,7 @@ func (c *Cos) CopyCos() error {
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
-func (c *Cos) CopyCloudConfig() error {
+func (c *Elemental) CopyCloudConfig() error {
 	if c.config.CloudInit != "" {
 		client := &http.Client{}
 		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", c.config.Target)
@@ -80,7 +80,7 @@ func (c *Cos) CopyCloudConfig() error {
 }
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
-func (c *Cos) SelinuxRelabel(raiseError bool) error {
+func (c *Elemental) SelinuxRelabel(raiseError bool) error {
 	var err error
 
 	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", c.config.Target)
@@ -105,7 +105,7 @@ func (c *Cos) SelinuxRelabel(raiseError bool) error {
 // CheckNoFormat will make sure that if we set the no format option, the system doesnt already contain a cos system
 // by checking the active/passive labels. If they are set then we check if we have the force flag, which means that we
 // don't care and proceed to overwrite
-func (c Cos) CheckNoFormat() error {
+func (c Elemental) CheckNoFormat() error {
 	if c.config.NoFormat {
 		// User asked for no format, lets check if there is already those labeled partitions in the disk
 		for _, label := range []string{c.config.ActiveLabel, c.config.PassiveLabel} {

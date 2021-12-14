@@ -19,7 +19,7 @@ package action
 import (
 	"errors"
 	"fmt"
-	"github.com/rancher-sandbox/elemental-cli/pkg/cos"
+	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
 	"github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
@@ -36,7 +36,7 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 func (i InstallAction) Run() error {
 	var err error
 
-	newCos := cos.NewCos(i.Config)
+	newElemental := elemental.NewElemental(i.Config)
 	i.Config.Logger.Infof("InstallAction called")
 	// Install steps really starts here
 	i.Config.SetupStyle()
@@ -54,18 +54,18 @@ func (i InstallAction) Run() error {
 	}
 
 	// Check no-format flag and force flag against current device
-	err = newCos.CheckNoFormat()
+	err = newElemental.CheckNoFormat()
 	if err != nil {
 		return err
 	}
 	// partition device
 	// install Active
-	err = newCos.CopyCos()
+	err = newElemental.CopyCos()
 	if err != nil {
 		return err
 	}
 	// Copy cloud-init if any
-	err = newCos.CopyCloudConfig()
+	err = newElemental.CopyCloudConfig()
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (i InstallAction) Run() error {
 		return err
 	}
 	// Relabel SELinux
-	_ = newCos.SelinuxRelabel(false)
+	_ = newElemental.SelinuxRelabel(false)
 	// Unmount everything
 	// cos.CleanupMounts()
 	// install Recovery
