@@ -111,7 +111,7 @@ type RunConfig struct {
 	ForceEfi     bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
 	ForceGpt     bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
 	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
-	NoFormat     string `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	NoFormat     bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
 	ActiveLabel  string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
 	PassiveLabel string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
 	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
