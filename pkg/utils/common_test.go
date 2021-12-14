@@ -116,6 +116,15 @@ func TestFindLabel(t *testing.T) {
 	Expect(out).To(Equal("/dev/fake"))
 }
 
+// TestFindLabelError tests that even with an error we return an empty string, so it would be as if the partition is not there
+func TestFindLabelError(t *testing.T) {
+	RegisterTestingT(t)
+	runner := mocks.FakeRunner{ErrorOnCommand: true}
+	out, err := utils.FindLabel(&runner, "WHATEVS")
+	Expect(err).ToNot(BeNil())
+	Expect(out).To(Equal(""))
+}
+
 // TestHelperFindLabel will be called by the FakeRunner when running the TestFindLabel func as it
 // Matches the command + args and return the proper output we want for testing
 func TestHelperFindLabel(*testing.T) {
