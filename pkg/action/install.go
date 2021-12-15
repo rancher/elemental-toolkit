@@ -25,6 +25,7 @@ import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 )
 
+// InstallAction represents the struct that will run the full install from start to finish
 type InstallAction struct {
 	Config *v1.RunConfig
 }
@@ -33,6 +34,7 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 	return &InstallAction{Config: config}
 }
 
+// Run will install the cos system to a device by following several steps
 func (i InstallAction) Run() error {
 	var err error
 

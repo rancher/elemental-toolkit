@@ -5,7 +5,7 @@ import (
 	"k8s.io/mount-utils"
 )
 
-// ErrorMounter is a fake mounter for tests that errors out.
+// ErrorMounter is a fake mounter for tests that can error out.
 type ErrorMounter struct {
 	ErrorOnMount   bool
 	ErrorOnUnmount bool
@@ -19,6 +19,7 @@ func (e ErrorMounter) Mount(source string, target string, fstype string, options
 	return nil
 }
 
+// Unmount will return an error if ErrorOnUnmount is true
 func (e ErrorMounter) Unmount(target string) error {
 	if e.ErrorOnUnmount {
 		return errors.New("unmount error")

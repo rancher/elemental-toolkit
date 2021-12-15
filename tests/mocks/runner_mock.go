@@ -58,8 +58,8 @@ func (r *TestRunnerV2) ClearCmds() {
 	r.cmds = [][]string{}
 }
 
-// It matches the commands list. Note HasPrefix is being used to evaluate the
-// match, so expecting inital part of the command is enough to get a match.
+// CmdsMatch matches the commands list. Note HasPrefix is being used to evaluate the
+// match, so expecting initial part of the command is enough to get a match.
 // It facilitates testing commands with dynamic arguments (aka temporary files)
 func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
 	if len(cmdList) != len(r.cmds) {
