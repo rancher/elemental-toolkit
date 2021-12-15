@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Grub is the struct that will allow us to install grub to the target device
 type Grub struct {
 	disk   string
 	config *v1.RunConfig
@@ -22,6 +23,7 @@ func NewGrub(config *v1.RunConfig) *Grub {
 	return g
 }
 
+// Install installs grub into the device, copy the config file and add any extra TTY to grub
 func (g Grub) Install() error {
 	var grubargs []string
 	var arch, grubdir, tty, finalContent string

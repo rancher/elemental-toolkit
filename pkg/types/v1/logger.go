@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+// Logger is the interface we want for our logger, so we can plug different ones easily
 type Logger interface {
 	Info(...interface{})
 	Warn(...interface{})
@@ -28,6 +29,7 @@ func NewLogger() Logger {
 	return log.New()
 }
 
+// NewNullLogger will return a logger that discards all logs, used mainly for testing
 func NewNullLogger() Logger {
 	logger := log.New()
 	logger.SetOutput(ioutil.Discard)

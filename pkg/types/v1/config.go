@@ -104,6 +104,8 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	return r
 }
 
+// RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
+// Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
 	Device       string `yaml:"device,omitempty" mapstructure:"device"`
 	Target       string `yaml:"target,omitempty" mapstructure:"target"`
@@ -127,6 +129,7 @@ type RunConfig struct {
 	Syscall      SyscallInterface
 }
 
+// SetupStyle will gather what partition table and bootflag we need for the current system
 func (r *RunConfig) SetupStyle() {
 	var part, boot string
 
@@ -148,6 +151,7 @@ func (r *RunConfig) SetupStyle() {
 	r.BootFlag = boot
 }
 
+// BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
 	Label string `yaml:"label,omitempty" mapstructure:"label"`
 }

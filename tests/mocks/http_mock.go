@@ -23,6 +23,7 @@ import (
 
 type FakeHttpBody struct{}
 
+// Read will just return like it has read 1024 bytes, and it reached the end of file like the real http.Client
 func (m *FakeHttpBody) Read(p []byte) (n int, err error) {
 	return 1024, io.EOF
 }
@@ -31,16 +32,20 @@ func (m *FakeHttpBody) Close() error {
 	return nil
 }
 
+// FakeHttpClient is an implementation of HTTPClient interface used for testing
+// It stores Get calls into ClientCalls for easy checking of what was called
 type FakeHttpClient struct {
 	ClientCalls []string
 }
 
+// Get will return a FakeHttpBody and store the url call into ClientCalls
 func (m *FakeHttpClient) Get(url string) (*http.Response, error) {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
 	return &http.Response{Body: &FakeHttpBody{}}, nil
 }
 
+// WasGetCalledWith is a helper method to confirm that the client wazs called with the give url
 func (m *FakeHttpClient) WasGetCalledWith(url string) bool {
 	for _, c := range m.ClientCalls {
 		if c == url {
