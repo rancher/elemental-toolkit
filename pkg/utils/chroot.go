@@ -23,6 +23,7 @@ import (
 	"strings"
 )
 
+// Chroot represents the struct that will allow us to run commands inside a given chroot
 type Chroot struct {
 	path          string
 	defaultMounts []string
@@ -37,6 +38,7 @@ func NewChroot(path string, config *v1.RunConfig) *Chroot {
 	}
 }
 
+// Prepare will mount the defaultMounts as bind mounts, to be ready when we run chroot
 func (c Chroot) Prepare() error {
 	mountOptions := []string{"bind"}
 	for _, mnt := range c.defaultMounts {
@@ -50,6 +52,7 @@ func (c Chroot) Prepare() error {
 	return nil
 }
 
+// Close will unount the defaultMounts that we mounted on Prepare so everything is left clean
 func (c Chroot) Close() error {
 	for _, mnt := range c.defaultMounts {
 		err := c.config.Mounter.Unmount(fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt))

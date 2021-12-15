@@ -24,6 +24,7 @@ import (
 	"strings"
 )
 
+// GetUrl is a simple method that will try to get an url to a destination, no matter if its an http url, ftp, tftp or a file
 func GetUrl(client v1.HTTPClient, logger v1.Logger, url string, destination string) error {
 	var source io.Reader
 	var err error
@@ -66,6 +67,7 @@ func CommandExists(command string) bool {
 	return err == nil
 }
 
+// BootedFrom will check if we are booting from the given label
 func BootedFrom(runner v1.Runner, label string) bool {
 	out, _ := runner.Run("cat", "/proc/cmdline")
 	return strings.Contains(string(out), label)
