@@ -20,6 +20,9 @@ fmt:
 test:
 	go test -v ${PKG} -race -coverprofile=coverage.txt -covermode=atomic
 
+license-check:
+	@.github/license_check.sh
+
 lint: fmt vet
 
 all: lint test build
