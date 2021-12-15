@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/mudler/yip v0.0.0-20211214150120-1d415391cc37
-	github.com/onsi/ginkgo v1.16.4 // indirect
+	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.17.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0
