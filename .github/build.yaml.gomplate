@@ -62,9 +62,6 @@
       - name: Run make {{{ $target }}}
         run: |
           sudo -E make {{{ $target }}}
-  {{{- if eq $target "deps" }}}
-          sudo luet install --no-spinner -y toolchain/yq
-  {{{- end }}}
 {{{end}}}
 
 {{{define "runner"}}}

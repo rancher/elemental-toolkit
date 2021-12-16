@@ -181,7 +181,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax toolchain/luet-cosign  toolchain/cosign@1.3.1
+	$(LUET) install -y --relax meta/cos-verify  toolchain/cosign@1.3.1
 endif
 
 clean: clean_build clean_iso clean_run clean_test

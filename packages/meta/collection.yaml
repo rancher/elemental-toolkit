@@ -85,11 +85,11 @@ packages:
         version: ">=0"
   - category: "meta"
     name: "cos-verify"
-    version: 0.7.0-3
+    version: 0.7.0-4
     requires:
       - category: toolchain
         name: cosign
-        version: ">=0"
+        version: "<1.4"
       - category: toolchain
         name: luet-cosign
         version: ">=0"
