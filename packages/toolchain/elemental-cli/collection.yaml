@@ -1,0 +1,14 @@
+packages:
+  - &elemental
+    name: "elemental-cli"
+    category: "toolchain"
+    bin_name: "elemental"
+    version: "0.0.2"
+    fips: false
+    labels:
+      github.repo: "elemental-cli"
+      github.owner: "rancher-sandbox"
+      autobump.revdeps: "true"
+  - !!merge <<: *elemental
+    category: "toolchain-fips"
+    fips: true 
