@@ -52,7 +52,7 @@ requires:
   version: ">=0"
 - name: "cosign"
   category: "toolchain"
-  version: ">=0"
+  version: "<1.4"
 - name: "luet-cosign"
   category: "toolchain"
   version: ">=0"
