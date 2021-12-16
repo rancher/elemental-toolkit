@@ -21,6 +21,6 @@ steps:
     PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
     cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{.Values.name}} && \
     make build && \
-    mv bin/{{.Values.name}} /usr/bin/{{.Values.name}}
+    mv bin/{{.Values.name}} /usr/bin/{{.Values.bin_name}}
 includes:
-  - /usr/bin/{{.Values.name}}
+  - /usr/bin/{{.Values.bin_name}}

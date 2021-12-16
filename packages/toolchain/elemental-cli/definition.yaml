@@ -1,6 +1,7 @@
 name: "elemental-cli"
-category: "utils"
-version: 0.0.1
+category: "toolchain"
+bin_name: "elemental"
+version: "0.0.2"
 labels:
   github.repo: "elemental-cli"
   github.owner: "rancher-sandbox"

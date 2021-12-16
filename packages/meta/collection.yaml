@@ -1,30 +1,29 @@
 packages:
-  - category: "meta"
+  - &metabase
+    category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.7-3
+    version: "0.9"
     requires:
       - category: toolchain
-        name: yip
+        name: elemental-cli
         version: ">=0"
       - category: toolchain
         name: luet
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "fips-toolchain"
     description: "Meta package for cOS toolchain with fips support"
-    version: 0.7-3
     requires:
       - category: toolchain-fips
-        name: yip
+        name: elemental-cli
         version: ">=0"
       - category: toolchain-fips
         name: luet
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
-    version: 0.8-3
     requires:
       - category: utils
         name: installer
@@ -41,10 +40,9 @@ packages:
       - name: "base-dracut-modules"
         category: "system"
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
-    version: 0.7.0-3
     requires:
       - category: meta
         name: toolchain
@@ -52,9 +50,8 @@ packages:
       - category: meta
         name: cos-modules
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-core-fips"
-    version: 0.7.0-3
     requires:
       - category: meta
         name: fips-toolchain
@@ -62,9 +59,8 @@ packages:
       - category: meta
         name: cos-modules
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-minimal"
-    version: 0.7.0-4
     description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
     requires:
       - category: meta
@@ -73,9 +69,8 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-minimal-fips"
-    version: 0.7.0-4
     requires:
       - category: meta
         name: cos-core-fips
@@ -83,9 +78,8 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
-  - category: "meta"
+  - !!merge <<: *metabase
     name: "cos-verify"
-    version: 0.7.0-4
     requires:
       - category: toolchain
         name: cosign
