@@ -17,7 +17,7 @@ if getargbool 0 rd.cos.debugrw; then
     cos_root_perm="rw"
 fi
 
-oem_timeout=$(getargnum 10 1 1800 rd.cos.oemtimeout=)
+oem_timeout=$(getargnum 120 1 1800 rd.cos.oemtimeout=)
 oem_label=$(getarg rd.cos.oemlabel=)
 cos_overlay=$(getarg rd.cos.overlay=)
 [ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
