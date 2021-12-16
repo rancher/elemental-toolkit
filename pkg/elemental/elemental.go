@@ -19,12 +19,17 @@ package elemental
 import (
 	"errors"
 	"fmt"
+	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
+	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/zloylos/grsync"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/mudler/yip/pkg/console"
+	"github.com/twpayne/go-vfs"
 )
 
 // Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux
@@ -36,6 +41,114 @@ func NewElemental(config *v1.RunConfig) *Elemental {
 	return &Elemental{
 		config: config,
 	}
+}
+
+// PartitionAndFormatDevice creates a new empty partition table on target disk
+// and applies the configured disk layout by creating and formatting all
+// required partitions
+func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
+	c.config.Logger.Infof("Partitioning device...")
+
+	err := c.createPTableAndFirmwarePartitions(disk)
+	if err != nil {
+		return err
+	}
+
+	if c.config.PartTable == v1.GPT && c.config.PartLayout != "" {
+		cloudInit := v1.CloudInitRunner(c.config.Logger)
+		return cloudInit.Run(
+			cnst.PartStage, vfs.OSFS,
+			console.NewStandardConsole(console.WithLogger(c.config.Logger)),
+		)
+	}
+
+	return c.createDataPartitions(disk)
+}
+
+func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
+	errCMsg := "Failed creating %s partition"
+	errFMsg := "Failed formatting partition: %s"
+
+	c.config.Logger.Debugf("Creating partition table...")
+	out, err := disk.NewPartitionTable(c.config.PartTable)
+	if err != nil {
+		c.config.Logger.Errorf("Failed creating new partition table: %s", out)
+		return err
+	}
+
+	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
+		c.config.Logger.Debugf("Creating EFI partition...")
+		efiNum, err := disk.AddPartition(cnst.EfiSize, cnst.EfiFs, cnst.EfiPLabel, v1.ESP)
+		if err != nil {
+			c.config.Logger.Errorf(errCMsg, cnst.EfiPLabel)
+			return err
+		}
+		out, err = disk.FormatPartition(efiNum, cnst.EfiFs, cnst.EfiLabel)
+		if err != nil {
+			c.config.Logger.Errorf(errFMsg, out)
+			return err
+		}
+	} else if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.BIOS {
+		c.config.Logger.Debugf("Creating Bios partition...")
+		_, err = disk.AddPartition(cnst.BiosSize, cnst.BiosFs, cnst.BiosPLabel, v1.BIOS)
+		if err != nil {
+			c.config.Logger.Errorf(errCMsg, cnst.BiosPLabel)
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Elemental) createDataPartitions(disk *part.Disk) error {
+	errCMsg := "Failed creating %s partition"
+	errFMsg := "Failed formatting partition: %s"
+
+	stateFlags := []string{}
+	if c.config.PartTable == v1.MSDOS {
+		stateFlags = append(stateFlags, v1.BOOT)
+	}
+	oemNum, err := disk.AddPartition(c.config.OEMPart.Size, c.config.OEMPart.FS, c.config.OEMPart.PLabel)
+	if err != nil {
+		c.config.Logger.Errorf(errCMsg, c.config.OEMPart.PLabel)
+		return err
+	}
+	stateNum, err := disk.AddPartition(c.config.StatePart.Size, c.config.StatePart.FS, c.config.StatePart.PLabel, stateFlags...)
+	if err != nil {
+		c.config.Logger.Errorf(errCMsg, c.config.StatePart.PLabel)
+		return err
+	}
+	recoveryNum, err := disk.AddPartition(c.config.RecoveryPart.Size, c.config.RecoveryPart.FS, c.config.RecoveryPart.PLabel)
+	if err != nil {
+		c.config.Logger.Errorf(errCMsg, cnst.RecoveryPLabel)
+		return err
+	}
+	persistentNum, err := disk.AddPartition(c.config.PersistentPart.Size, c.config.PersistentPart.FS, c.config.PersistentPart.PLabel)
+	if err != nil {
+		c.config.Logger.Errorf(errCMsg, c.config.PersistentPart.PLabel)
+		return err
+	}
+
+	out, err := disk.FormatPartition(oemNum, c.config.OEMPart.FS, c.config.OEMPart.Label)
+	if err != nil {
+		c.config.Logger.Errorf(errFMsg, out)
+		return err
+	}
+	out, err = disk.FormatPartition(stateNum, c.config.StatePart.FS, c.config.StatePart.Label)
+	if err != nil {
+		c.config.Logger.Errorf(errFMsg, out)
+		return err
+	}
+	out, err = disk.FormatPartition(recoveryNum, c.config.RecoveryPart.FS, c.config.RecoveryPart.Label)
+	if err != nil {
+		c.config.Logger.Errorf(errFMsg, out)
+		return err
+	}
+	out, err = disk.FormatPartition(persistentNum, c.config.PersistentPart.FS, c.config.PersistentPart.Label)
+	if err != nil {
+		c.config.Logger.Errorf(errFMsg, out)
+		return err
+	}
+	return nil
 }
 
 // CopyCos will rsync from config.source to config.target

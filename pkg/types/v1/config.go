@@ -29,6 +29,7 @@ const (
 	BIOS  = "bios_grub"
 	MSDOS = "msdos"
 	BOOT  = "boot"
+	VFAT  = "vfat"
 )
 
 type RunConfigOptions func(a *RunConfig) error
@@ -101,32 +102,97 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	if r.PassiveLabel == "" {
 		r.PassiveLabel = constants.PassiveLabel
 	}
+
+	if r.SystemLabel == "" {
+		r.SystemLabel = constants.SystemLabel
+	}
+
+	r.RecoveryPart = Partition{
+		Label:  constants.RecoveryLabel,
+		Size:   constants.RecoverySize,
+		PLabel: constants.RecoveryPLabel,
+		FS:     constants.LinuxFs,
+	}
+	if r.recoveryLabel != "" {
+		r.RecoveryPart.Label = r.recoveryLabel
+	}
+
+	r.PersistentPart = Partition{
+		Label:  constants.PersistentLabel,
+		Size:   constants.PersistentSize,
+		PLabel: constants.PersistentPLabel,
+		FS:     constants.LinuxFs,
+	}
+	if r.persistentLabel != "" {
+		r.PersistentPart.Label = r.persistentLabel
+	}
+
+	r.OEMPart = Partition{
+		Label:  constants.OEMLabel,
+		Size:   constants.OEMSize,
+		PLabel: constants.OEMPLabel,
+		FS:     constants.LinuxFs,
+	}
+	if r.oEMLabel != "" {
+		r.OEMPart.Label = r.oEMLabel
+	}
+
+	r.StatePart = Partition{
+		Label:  constants.StateLabel,
+		Size:   constants.StateSize,
+		PLabel: constants.StatePLabel,
+		FS:     constants.LinuxFs,
+	}
+	if r.stateLabel != "" {
+		r.StatePart.Label = r.stateLabel
+	}
 	return r
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
 // Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
+	//Interanlly used to compute RunConfig state
+	recoveryLabel   string `yaml:"RECOVERY_LABEL,omitempty" mapstructure:"RECOVERY_LABEL"`
+	persistentLabel string `yaml:"PERSISTENT_LABEL,omitempty" mapstructure:"PERSISTENT_LABEL"`
+	stateLabel      string `yaml:"STATE_LABEL,omitempty" mapstructure:"STATE_LABEL"`
+	oEMLabel        string `yaml:"OEM_LABEL,omitempty" mapstructure:"OEM_LABEL"`
+
 	Device       string `yaml:"device,omitempty" mapstructure:"device"`
 	Target       string `yaml:"target,omitempty" mapstructure:"target"`
 	Source       string `yaml:"source,omitempty" mapstructure:"source"`
 	CloudInit    string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	ForceEfi     bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
 	ForceGpt     bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	PartLayout   string `yaml:"partition-layout,omitempty" mapstructure:"partition-layout"`
 	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
 	NoFormat     bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
 	ActiveLabel  string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
 	PassiveLabel string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
+	SystemLabel  string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
 	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
-	PartTable    string
-	BootFlag     string
-	StateDir     string
-	GrubConf     string
-	Logger       Logger
-	Fs           afero.Fs
-	Mounter      mount.Interface
-	Runner       Runner
-	Syscall      SyscallInterface
+
+	PartTable      string
+	BootFlag       string
+	StateDir       string
+	GrubConf       string
+	Logger         Logger
+	Fs             afero.Fs
+	Mounter        mount.Interface
+	Runner         Runner
+	Syscall        SyscallInterface
+	RecoveryPart   Partition
+	PersistentPart Partition
+	StatePart      Partition
+	OEMPart        Partition
+}
+
+// Partition struct represents a partition with its commonly configurable values, size in MiB
+type Partition struct {
+	Label  string
+	Size   uint
+	PLabel string
+	FS     string
 }
 
 // SetupStyle will gather what partition table and bootflag we need for the current system

@@ -33,6 +33,13 @@ type PartedCall struct {
 	deletions []int
 	label     string
 	runner    v1.Runner
+	flags     []partFlag
+}
+
+type partFlag struct {
+	flag   string
+	active bool
+	number int
 }
 
 // We only manage sizes in sectors unit for the Partition structre in parted wrapper
@@ -46,7 +53,7 @@ type Partition struct {
 }
 
 func NewPartedCall(dev string, runner v1.Runner) *PartedCall {
-	return &PartedCall{dev: dev, wipe: false, parts: []*Partition{}, deletions: []int{}, label: "", runner: runner}
+	return &PartedCall{dev: dev, wipe: false, parts: []*Partition{}, deletions: []int{}, label: "", runner: runner, flags: []partFlag{}}
 }
 
 func (pc PartedCall) optionsBuilder() []string {
@@ -90,6 +97,15 @@ func (pc PartedCall) optionsBuilder() []string {
 		}
 	}
 
+	for _, flag := range pc.flags {
+		opts = append(opts, "set", fmt.Sprintf("%d", flag.number), flag.flag)
+		if flag.active {
+			opts = append(opts, "on")
+		} else {
+			opts = append(opts, "off")
+		}
+	}
+
 	if len(opts) == 0 {
 		return nil
 	}
@@ -120,6 +136,10 @@ func (pc *PartedCall) CreatePartition(p *Partition) {
 
 func (pc *PartedCall) DeletePartition(num int) {
 	pc.deletions = append(pc.deletions, num)
+}
+
+func (pc *PartedCall) SetPartitionFlag(num int, flag string, active bool) {
+	pc.flags = append(pc.flags, partFlag{flag: flag, active: active, number: num})
 }
 
 func (pc *PartedCall) WipeTable(wipe bool) {

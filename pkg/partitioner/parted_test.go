@@ -116,6 +116,21 @@ func TestDeletePartition(t *testing.T) {
 	Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
 }
 
+func TestSetPartitionFlag(t *testing.T) {
+	RegisterTestingT(t)
+	runner := mocks.NewTestRunnerV2()
+	pc := part.NewPartedCall("/some/dev", runner)
+	cmds := [][]string{{
+		"parted", "--script", "--machine", "--", "/some/dev",
+		"unit", "s", "set", "1", "flag", "on", "set", "2", "flag", "off",
+	}}
+	pc.SetPartitionFlag(1, "flag", true)
+	pc.SetPartitionFlag(2, "flag", false)
+	_, err := pc.WriteChanges()
+	Expect(err).To(BeNil())
+	Expect(runner.CmdsMatch(cmds)).To(BeNil())
+}
+
 func TestWipeTable(t *testing.T) {
 	RegisterTestingT(t)
 	runner := mocks.NewTestRunnerV2()

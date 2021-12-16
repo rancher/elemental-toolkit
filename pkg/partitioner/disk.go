@@ -185,7 +185,7 @@ func (dev *Disk) NewPartitionTable(label string) (string, error) {
 }
 
 //Size is expressed in MiB here
-func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string) (int, error) {
+func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string, flags ...string) (int, error) {
 	pc := NewPartedCall(dev.String(), dev.runner)
 
 	//Check we have loaded partition table data
@@ -226,6 +226,9 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string) (int,
 	}
 
 	pc.CreatePartition(&part)
+	for _, flag := range flags {
+		pc.SetPartitionFlag(partNum, flag, true)
+	}
 
 	out, err := pc.WriteChanges()
 	dev.logger.Debugf("partitioner output: %s", out)
@@ -233,6 +236,7 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string) (int,
 		dev.logger.Errorf("Failed creating partition: %v", err)
 		return 0, err
 	}
+
 	// Reload new partition in dev
 	err = dev.Reload()
 	if err != nil {

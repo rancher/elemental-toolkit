@@ -98,6 +98,7 @@ func TestAddPartition(t *testing.T) {
 	}, {
 		"parted", "--script", "--machine", "--", "/some/device",
 		"unit", "s", "mkpart", "primary", "ext4", "50331648", "100%",
+		"set", "5", "boot", "on",
 	}, {
 		"parted", "--script", "--machine", "--", "/some/device",
 		"unit", "s", "print",
@@ -107,7 +108,7 @@ func TestAddPartition(t *testing.T) {
 	num, err := dev.AddPartition(130, "ext4", "ignored")
 	Expect(err).NotTo(BeNil())
 	Expect(dev.GetLabel()).To(Equal("msdos"))
-	num, err = dev.AddPartition(0, "ext4", "ignored")
+	num, err = dev.AddPartition(0, "ext4", "ignored", "boot")
 	Expect(err).To(BeNil())
 	Expect(num).To(Equal(5))
 	Expect(runner.CmdsMatch(cmds)).To(BeNil())

@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
-	"github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
+	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 )
@@ -42,7 +42,12 @@ func (i InstallAction) Run() error {
 	i.Config.Logger.Infof("InstallAction called")
 	// Install steps really starts here
 	i.Config.SetupStyle()
-	disk := partitioner.NewDisk(i.Config.Target, partitioner.WithRunner(i.Config.Runner))
+	disk := part.NewDisk(
+		i.Config.Target,
+		part.WithRunner(i.Config.Runner),
+		part.WithFS(i.Config.Fs),
+		part.WithLogger(i.Config.Logger),
+	)
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
 	// cos.GetIso() ?
 
@@ -61,6 +66,11 @@ func (i InstallAction) Run() error {
 		return err
 	}
 	// partition device
+	// TODO handle non partitioning case
+	err = newElemental.PartitionAndFormatDevice(disk)
+	if err != nil {
+		return err
+	}
 	// install Active
 	err = newElemental.CopyCos()
 	if err != nil {

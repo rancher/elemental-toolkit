@@ -90,3 +90,27 @@ func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
 	}
 	return nil
 }
+
+// MatchMilestones matches all the given commands were executed in the provided
+// order. Note it uses HasPrefix to match commands, see CmdsMatch.
+func (r TestRunnerV2) MatchMilestones(cmdList [][]string) error {
+	var match string
+	for _, cmd := range r.cmds {
+		if len(cmdList) == 0 {
+			break
+		}
+		got := strings.Join(cmd[:], " ")
+		match = strings.Join(cmdList[0][:], " ")
+		if !strings.HasPrefix(got, match) {
+			continue
+		} else {
+			cmdList = cmdList[1:]
+		}
+	}
+
+	if len(cmdList) > 0 {
+		return errors.New(fmt.Sprintf("Command '%s' not executed", match))
+	}
+
+	return nil
+}

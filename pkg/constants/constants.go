@@ -17,10 +17,33 @@ limitations under the License.
 package constants
 
 const (
-	GrubConf     = "/etc/cos/grub.cfg"
-	StateDir     = "/run/initramfs/cos-state"
-	ActiveLabel  = "COS_ACTIVE"
-	PassiveLabel = "COS_PASSIVE"
-	MountBinary  = "/usr/bin/mount"
-	EfiDevice    = "/sys/firmware/efi"
+	GrubConf         = "/etc/cos/grub.cfg"
+	StateDir         = "/run/initramfs/cos-state"
+	BiosPLabel       = "p.bios"
+	EfiLabel         = "COS_GRUB"
+	EfiPLabel        = "p.grub"
+	ActiveLabel      = "COS_ACTIVE"
+	PassiveLabel     = "COS_PASSIVE"
+	SystemLabel      = "COS_SYSTEM"
+	RecoveryLabel    = "COS_RECOVERY"
+	RecoveryPLabel   = "p.recovery"
+	StateLabel       = "COS_STATE"
+	StatePLabel      = "p.state"
+	PersistentLabel  = "COS_PERSISTENT"
+	PersistentPLabel = "p.persistent"
+	OEMLabel         = "COS_OEM"
+	OEMPLabel        = "p.oem"
+	ActivePLabel     = "p.active"
+	MountBinary      = "/usr/bin/mount"
+	EfiDevice        = "/sys/firmware/efi"
+	LinuxFs          = "ext4"
+	EfiFs            = "vfat"
+	BiosFs           = ""
+	EfiSize          = uint(64)
+	OEMSize          = uint(64)
+	StateSize        = uint(15360)
+	RecoverySize     = uint(8192)
+	PersistentSize   = uint(0)
+	BiosSize         = uint(1)
+	PartStage        = "partitioning"
 )
