@@ -59,7 +59,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -125,7 +124,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -395,7 +393,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
@@ -647,7 +644,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Generate link for green
         run: |
             source .github/helpers.sh
@@ -703,7 +699,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -720,12 +715,6 @@ jobs:
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cosign-log
-          path: /tmp/luet-cosign.log
-          if-no-files-found: warn
   raw-images-green:
     runs-on: ubuntu-latest
     needs:
@@ -744,7 +733,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -853,7 +841,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -884,7 +871,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Export cos version
         run: |
              source .github/helpers.sh

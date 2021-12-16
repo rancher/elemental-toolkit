@@ -48,7 +48,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -92,7 +91,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Generate link for blue
         run: |
             source .github/helpers.sh
@@ -156,7 +154,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:

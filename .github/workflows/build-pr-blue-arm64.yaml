@@ -47,7 +47,6 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
-          sudo luet install --no-spinner -y toolchain/yq
       - name: Run make validate
         run: |
           sudo -E make validate
