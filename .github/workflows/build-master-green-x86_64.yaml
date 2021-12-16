@@ -720,6 +720,12 @@ jobs:
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cosign-log
+          path: /tmp/luet-cosign.log
+          if-no-files-found: warn
   raw-images-green:
     runs-on: ubuntu-latest
     needs:
