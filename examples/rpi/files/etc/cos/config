@@ -46,3 +46,24 @@ DEFAULT_IMAGE_SIZE=1200
 
 # Path to default configuration grub file
 GRUBCONF="/etc/cos/grub.cfg"
+
+# Label of the OEM volume
+OEM_LABEL="COS_OEM"
+
+# Label of the PERSISTENT volume
+PERSISTENT_LABEL="COS_PERSISTENT"
+
+# Label of the RECOVERY volume
+RECOVERY_LABEL="COS_RECOVERY"
+
+# Label of the STATE volume
+STATE_LABEL="COS_STATE"
+
+# Label of the ACTIVE volume
+ACTIVE_LABEL="COS_ACTIVE"
+
+# Label of the PASSIVE volume
+PASSIVE_LABEL="COS_PASSIVE"
+
+# Label of the SYSTEM volume
+SYSTEM_LABEL="COS_SYSTEM"
