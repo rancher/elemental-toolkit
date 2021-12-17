@@ -2,15 +2,16 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
 )
 
-func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry)  {
+func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry) {
 	part, err := diskLayout.GetPartition(entry.Label)
 	Expect(err).To(BeNil())
-	Expect((part.Size/1024)/1024).To(Equal(entry.Size))
+	Expect((part.Size / 1024) / 1024).To(Equal(entry.Size))
 	Expect(part.FsType).To(Equal(entry.FsType))
 }
 
@@ -21,7 +22,6 @@ var _ = Describe("cOS Installer tests", func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
 	})
-
 
 	Context("Using bios", func() {
 		BeforeEach(func() {
@@ -104,26 +104,26 @@ var _ = Describe("cOS Installer tests", func() {
 
 					for _, part := range []sut.PartitionEntry{
 						{
-							Label: "COS_STATE",
-							Size: 8192,
+							Label:  "COS_STATE",
+							Size:   8192,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_OEM",
-							Size: 10,
+							Label:  "COS_OEM",
+							Size:   10,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_RECOVERY",
-							Size: 4000,
+							Label:  "COS_RECOVERY",
+							Size:   4000,
 							FsType: sut.Ext4,
 						},
 						{
-							Label: "COS_PERSISTENT",
-							Size: 100,
+							Label:  "COS_PERSISTENT",
+							Size:   100,
 							FsType: sut.Ext4,
 						},
-					}{
+					} {
 						CheckPartitionValues(disk, part)
 					}
 				})
@@ -211,8 +211,8 @@ var _ = Describe("cOS Installer tests", func() {
 				By("Checking config file is there")
 				out, err = s.Command("stat /oem/99_custom.yaml")
 				Expect(err).To(BeNil())
-				By("Check that yip fails to load it")
-				out, err = s.Command("yip /oem/99_custom.yaml")
+				By("Check that elemental fails to load it")
+				out, err = s.Command("elemental cloud-init /oem/99_custom.yaml")
 				Expect(err).ToNot(BeNil())
 			})
 		})
@@ -271,26 +271,26 @@ var _ = Describe("cOS Installer tests", func() {
 
 					for _, part := range []sut.PartitionEntry{
 						{
-							Label: "COS_STATE",
-							Size: 8192,
+							Label:  "COS_STATE",
+							Size:   8192,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_OEM",
-							Size: 10,
+							Label:  "COS_OEM",
+							Size:   10,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_RECOVERY",
-							Size: 4000,
+							Label:  "COS_RECOVERY",
+							Size:   4000,
 							FsType: sut.Ext4,
 						},
 						{
-							Label: "COS_PERSISTENT",
-							Size: 100,
+							Label:  "COS_PERSISTENT",
+							Size:   100,
 							FsType: sut.Ext4,
 						},
-					}{
+					} {
 						CheckPartitionValues(disk, part)
 					}
 				})
@@ -318,26 +318,26 @@ var _ = Describe("cOS Installer tests", func() {
 
 					for _, part := range []sut.PartitionEntry{
 						{
-							Label: "COS_STATE",
-							Size: 8192,
+							Label:  "COS_STATE",
+							Size:   8192,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_OEM",
-							Size: 10,
+							Label:  "COS_OEM",
+							Size:   10,
 							FsType: sut.Ext2,
 						},
 						{
-							Label: "COS_RECOVERY",
-							Size: 4000,
+							Label:  "COS_RECOVERY",
+							Size:   4000,
 							FsType: sut.Ext4,
 						},
 						{
-							Label: "COS_PERSISTENT",
-							Size: 100,
+							Label:  "COS_PERSISTENT",
+							Size:   100,
 							FsType: sut.Ext4,
 						},
-					}{
+					} {
 						CheckPartitionValues(disk, part)
 					}
 				})

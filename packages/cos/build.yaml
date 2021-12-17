@@ -41,7 +41,7 @@ requires:
 - name: "cos-setup"
   category: "system"
   version: ">=0"
-- name: "yip"
+- name: "elemental-cli"
   category: "toolchain"
   version: ">=0"
 - name: "luet"
@@ -62,7 +62,7 @@ steps:
 - sed -i 's/:BRANDING:/{{.Values.brand_name}}/g' setup.yaml
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
 - sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
-- yip setup.yaml
+- elemental cloud-init setup.yaml
 
 # See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
 unpack: true

@@ -412,7 +412,7 @@ do_format()
             part_probe ${_DEVICE}
         fi
 
-        yip -s partitioning $_COS_PARTITION_LAYOUT
+        elemental cloud-init -s partitioning $_COS_PARTITION_LAYOUT
 
         part_probe $_DEVICE
 

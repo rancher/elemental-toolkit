@@ -1,1 +1,1 @@
-A meta package for `luet` and `yip`.
+A meta package for `luet` and `elemental-cli`.
