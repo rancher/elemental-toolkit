@@ -62,18 +62,21 @@ func TestRunConfigOptions(t *testing.T) {
 	runner := &v1mock.FakeRunner{}
 	sysc := &v1mock.FakeSyscall{}
 	logger := v1.NewNullLogger()
+	ci := &v1mock.FakeCloudInitRunner{}
 	c := v1.NewRunConfig(
 		v1.WithFs(fs),
 		v1.WithMounter(mounter),
 		v1.WithRunner(runner),
 		v1.WithSyscall(sysc),
 		v1.WithLogger(logger),
+		v1.WithCloudInitRunner(ci),
 	)
 	Expect(c.Fs).To(Equal(fs))
 	Expect(c.Mounter).To(Equal(mounter))
 	Expect(c.Runner).To(Equal(runner))
 	Expect(c.Syscall).To(Equal(sysc))
 	Expect(c.Logger).To(Equal(logger))
+	Expect(c.CloudInitRunner).To(Equal(ci))
 }
 
 func TestRunConfigNoMounter(t *testing.T) {

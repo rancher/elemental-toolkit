@@ -20,13 +20,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/schema"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/twpayne/go-vfs"
 )
 
 // cloudInit represents the cloud-init command
@@ -41,12 +39,11 @@ var cloudInit = &cobra.Command{
 		stage, _ := cmd.Flags().GetString("stage")
 		dot, _ := cmd.Flags().GetBool("dotnotation")
 
-		runner := v1.CloudInitRunner(logger)
+		runner := v1.NewYipCloudInitRunner(logger)
 		fromStdin := len(args) == 1 && args[0] == "-"
 
-		stdConsole := console.NewStandardConsole(console.WithLogger(logger))
 		if dot {
-			runner.Modifier(schema.DotNotationModifier)
+			runner.SetModifier(schema.DotNotationModifier)
 		}
 
 		if fromStdin {
@@ -58,7 +55,7 @@ var cloudInit = &cobra.Command{
 			args = []string{string(std)}
 		}
 
-		return runner.Run(stage, vfs.OSFS, stdConsole, args...)
+		return runner.Run(stage, args...)
 	},
 }
 

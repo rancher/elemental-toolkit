@@ -21,7 +21,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/mudler/yip/pkg/console"
 	"github.com/sirupsen/logrus"
 
 	. "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
@@ -37,8 +36,7 @@ var _ = Describe("CloudRunner", func() {
 		logger := logrus.New()
 		logger.SetOutput(ioutil.Discard)
 
-		runner := CloudInitRunner(logger)
-		testConsole := console.NewStandardConsole(console.WithLogger(logger))
+		runner := NewYipCloudInitRunner(logger)
 
 		It("executes commands", func() {
 
@@ -73,7 +71,8 @@ stages:
 			err = fs2.WriteFile("/tmp/test/bar", []byte(`boo`), os.ModePerm)
 			Expect(err).Should(BeNil())
 
-			err = runner.Run("test", fs, testConsole, "/some/yip")
+			runner.SetFs(fs)
+			err = runner.Run("test", "/some/yip")
 			Expect(err).Should(BeNil())
 			file, err := os.Open(temp + "/tmp/test/bar")
 			Expect(err).ShouldNot(HaveOccurred())

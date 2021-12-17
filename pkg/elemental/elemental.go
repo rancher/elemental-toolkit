@@ -27,9 +27,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/mudler/yip/pkg/console"
-	"github.com/twpayne/go-vfs"
 )
 
 // Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux
@@ -55,11 +52,7 @@ func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
 	}
 
 	if c.config.PartTable == v1.GPT && c.config.PartLayout != "" {
-		cloudInit := v1.CloudInitRunner(c.config.Logger)
-		return cloudInit.Run(
-			cnst.PartStage, vfs.OSFS,
-			console.NewStandardConsole(console.WithLogger(c.config.Logger)),
-		)
+		return c.config.CloudInitRunner.Run(cnst.PartStage, c.config.PartLayout)
 	}
 
 	return c.createDataPartitions(disk)

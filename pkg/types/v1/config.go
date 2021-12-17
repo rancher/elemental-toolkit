@@ -18,7 +18,6 @@ package v1
 
 import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 )
@@ -69,12 +68,21 @@ func WithRunner(runner Runner) func(r *RunConfig) error {
 	}
 }
 
+func WithCloudInitRunner(ci CloudInitRunner) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.CloudInitRunner = ci
+		return nil
+	}
+}
+
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
+	log := NewLogger()
 	r := &RunConfig{
-		Fs:      afero.NewOsFs(),
-		Logger:  logrus.New(),
-		Runner:  &RealRunner{},
-		Syscall: &RealSyscall{},
+		Fs:              afero.NewOsFs(),
+		Logger:          log,
+		Runner:          &RealRunner{},
+		Syscall:         &RealSyscall{},
+		CloudInitRunner: NewYipCloudInitRunner(log),
 	}
 	for _, o := range opts {
 		err := o(r)
@@ -85,6 +93,10 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 
 	if r.Mounter == nil {
 		r.Mounter = mount.New(constants.MountBinary)
+	}
+
+	if r.CloudInitRunner == nil {
+		r.CloudInitRunner = NewYipCloudInitRunner(r.Logger)
 	}
 
 	// Set defaults if empty
@@ -172,19 +184,20 @@ type RunConfig struct {
 	SystemLabel  string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
 	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
 
-	PartTable      string
-	BootFlag       string
-	StateDir       string
-	GrubConf       string
-	Logger         Logger
-	Fs             afero.Fs
-	Mounter        mount.Interface
-	Runner         Runner
-	Syscall        SyscallInterface
-	RecoveryPart   Partition
-	PersistentPart Partition
-	StatePart      Partition
-	OEMPart        Partition
+	CloudInitRunner CloudInitRunner
+	PartTable       string
+	BootFlag        string
+	StateDir        string
+	GrubConf        string
+	Logger          Logger
+	Fs              afero.Fs
+	Mounter         mount.Interface
+	Runner          Runner
+	Syscall         SyscallInterface
+	RecoveryPart    Partition
+	PersistentPart  Partition
+	StatePart       Partition
+	OEMPart         Partition
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB

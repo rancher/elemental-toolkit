@@ -17,14 +17,27 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/plugins"
+	"github.com/mudler/yip/pkg/schema"
+	"github.com/twpayne/go-vfs"
 )
 
-// CloudInitRunner returns a default cloud init executor with the Elemental plugin set.
+type CloudInitRunner interface {
+	Run(string, ...string) error
+}
+
+type YipCloudInitRunner struct {
+	exec    executor.Executor
+	fs      vfs.FS
+	console plugins.Console
+}
+
+// CloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
-func CloudInitRunner(l Logger) executor.Executor {
-	return executor.NewExecutor(
+func NewYipCloudInitRunner(l Logger) *YipCloudInitRunner {
+	exec := executor.NewExecutor(
 		executor.WithConditionals(
 			plugins.NodeConditional,
 			plugins.IfConditional,
@@ -53,4 +66,21 @@ func CloudInitRunner(l Logger) executor.Executor {
 			plugins.Layout,
 		),
 	)
+	return &YipCloudInitRunner{
+		exec: exec, fs: vfs.OSFS,
+		console: console.NewStandardConsole(console.WithLogger(l)),
+	}
+}
+
+func (ci YipCloudInitRunner) Run(stage string, args ...string) error {
+	return ci.exec.Run(stage, ci.fs, ci.console, args...)
+}
+
+func (ci *YipCloudInitRunner) SetModifier(m schema.Modifier) {
+	ci.exec.Modifier(m)
+}
+
+// Useful for testing purposes
+func (ci *YipCloudInitRunner) SetFs(fs vfs.FS) {
+	ci.fs = fs
 }

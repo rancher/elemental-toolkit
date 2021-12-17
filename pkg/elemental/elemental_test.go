@@ -210,8 +210,11 @@ func TestPartitionAndFormatDevice(t *testing.T) {
 		v1.WithFs(fs),
 		v1.WithMounter(&mount.FakeMounter{}),
 	)
+	cloudInitFile := "partitioning.yaml"
 	fs.Create(cnst.EfiDevice)
 	conf.SetupStyle()
+	cIRunner := &v1mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
+	conf.CloudInitRunner = cIRunner
 	dev := part.NewDisk(
 		"/some/device",
 		part.WithRunner(runner),
@@ -219,16 +222,19 @@ func TestPartitionAndFormatDevice(t *testing.T) {
 		part.WithLogger(conf.Logger),
 	)
 	var partNum, devNum int
-	printOut := printOutput
+	var printOut string
 
-	cmds := [][]string{
+	initCmds := [][]string{
 		{
 			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 			"mklabel", "gpt",
 		}, {
 			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 			"mkpart", "p.grub", "vfat", "2048", "133119", "set", "1", "esp", "on",
-		}, {"mkfs.vfat", "-i", "COS_GRUB", "/some/device1"}, {
+		}, {"mkfs.vfat", "-i", "COS_GRUB", "/some/device1"},
+	}
+	partCmds := [][]string{
+		{
 			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 			"mkpart", "p.oem", "ext4", "133120", "264191",
 		}, {
@@ -270,9 +276,21 @@ func TestPartitionAndFormatDevice(t *testing.T) {
 	}
 	runner.SideEffect = runFunc
 	el := NewElemental(conf)
+
+	// Partition disk with all defaults
+	partNum, devNum, printOut = 0, 0, printOutput
 	err := el.PartitionAndFormatDevice(dev)
 	Expect(err).To(BeNil())
-	Expect(runner.MatchMilestones(cmds)).To(BeNil())
+	Expect(runner.MatchMilestones(append(initCmds, partCmds...))).To(BeNil())
+
+	// Partition disk using cloud-init partitioning stage
+	conf.PartLayout = cloudInitFile
+	partNum, devNum, printOut = 0, 0, printOutput
+	err = el.PartitionAndFormatDevice(dev)
+	Expect(err).To(BeNil())
+	Expect(runner.MatchMilestones(initCmds)).To(BeNil())
+	Expect(len(cIRunner.ExecStages)).To(Equal(1))
+	Expect(cIRunner.ExecStages[0]).To(Equal("partitioning"))
 }
 
 func TestPartitionAndFormatDeviceErrors(t *testing.T) {

@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package mocks
 
-import "os/exec"
+import "errors"
 
-type Runner interface {
-	Run(string, ...string) ([]byte, error)
+type FakeCloudInitRunner struct {
+	ExecStages []string
+	Error      bool
 }
 
-type RealRunner struct{}
-
-func (r RealRunner) Run(command string, args ...string) ([]byte, error) {
-	out, err := exec.Command(command, args...).CombinedOutput()
-	return out, err
+func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
+	ci.ExecStages = append(ci.ExecStages, stage)
+	if ci.Error {
+		return errors.New("cloud init failure")
+	}
+	return nil
 }
