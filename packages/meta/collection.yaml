@@ -83,7 +83,7 @@ packages:
     requires:
       - category: toolchain
         name: cosign
-        version: "<1.4"
+        version: ">1.3.1" # signatures generated with >1.3.1 are not validated with versions <= 1.3.1
       - category: toolchain
         name: luet-cosign
         version: ">=0"
