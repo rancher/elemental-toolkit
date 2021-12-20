@@ -20,6 +20,7 @@ import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
+	"net/http"
 )
 
 const (
@@ -68,6 +69,13 @@ func WithRunner(runner Runner) func(r *RunConfig) error {
 	}
 }
 
+func WithClient(client HTTPClient) func(r *RunConfig) error {
+	return func(r *RunConfig) error {
+		r.Client = client
+		return nil
+	}
+}
+
 func WithCloudInitRunner(ci CloudInitRunner) func(r *RunConfig) error {
 	return func(r *RunConfig) error {
 		r.CloudInitRunner = ci
@@ -83,6 +91,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		Runner:          &RealRunner{},
 		Syscall:         &RealSyscall{},
 		CloudInitRunner: NewYipCloudInitRunner(log),
+		Client:          &http.Client{},
 	}
 	for _, o := range opts {
 		err := o(r)
@@ -115,8 +124,8 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		r.PassiveLabel = constants.PassiveLabel
 	}
 
-	if r.SystemLabel == "" {
-		r.SystemLabel = constants.SystemLabel
+	if r.systemLabel == "" {
+		r.systemLabel = constants.SystemLabel
 	}
 
 	r.RecoveryPart = Partition{
@@ -135,6 +144,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		PLabel: constants.PersistentPLabel,
 		FS:     constants.LinuxFs,
 	}
+
 	if r.persistentLabel != "" {
 		r.PersistentPart.Label = r.persistentLabel
 	}
@@ -145,6 +155,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		PLabel: constants.OEMPLabel,
 		FS:     constants.LinuxFs,
 	}
+
 	if r.oEMLabel != "" {
 		r.OEMPart.Label = r.oEMLabel
 	}
@@ -158,46 +169,53 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	if r.stateLabel != "" {
 		r.StatePart.Label = r.stateLabel
 	}
+	if r.IsoMnt == "" {
+		r.IsoMnt = constants.IsoMnt
+	}
 	return r
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
 // Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
-	//Interanlly used to compute RunConfig state
+	// Internally used to compute RunConfig state
+	// Can come from config, env var or flags
 	recoveryLabel   string `yaml:"RECOVERY_LABEL,omitempty" mapstructure:"RECOVERY_LABEL"`
 	persistentLabel string `yaml:"PERSISTENT_LABEL,omitempty" mapstructure:"PERSISTENT_LABEL"`
 	stateLabel      string `yaml:"STATE_LABEL,omitempty" mapstructure:"STATE_LABEL"`
 	oEMLabel        string `yaml:"OEM_LABEL,omitempty" mapstructure:"OEM_LABEL"`
-
-	Device       string `yaml:"device,omitempty" mapstructure:"device"`
-	Target       string `yaml:"target,omitempty" mapstructure:"target"`
-	Source       string `yaml:"source,omitempty" mapstructure:"source"`
-	CloudInit    string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	ForceEfi     bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
-	ForceGpt     bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
-	PartLayout   string `yaml:"partition-layout,omitempty" mapstructure:"partition-layout"`
-	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
-	NoFormat     bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
-	ActiveLabel  string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
-	PassiveLabel string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
-	SystemLabel  string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
-	Force        bool   `yaml:"force,omitempty" mapstructure:"force"`
-
-	CloudInitRunner CloudInitRunner
-	PartTable       string
-	BootFlag        string
-	StateDir        string
-	GrubConf        string
+	systemLabel     string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
+	Device          string `yaml:"device,omitempty" mapstructure:"device"`
+	Target          string `yaml:"target,omitempty" mapstructure:"target"`
+	Source          string `yaml:"source,omitempty" mapstructure:"source"`
+	CloudInit       string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	ForceEfi        bool   `yaml:"force-efi,omitempty" mapstructure:"force-efi"`
+	ForceGpt        bool   `yaml:"force-gpt,omitempty" mapstructure:"force-gpt"`
+	PartLayout      string `yaml:"partition-layout,omitempty" mapstructure:"partition-layout"`
+	Tty             string `yaml:"tty,omitempty" mapstructure:"tty"`
+	NoFormat        bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	ActiveLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
+	PassiveLabel    string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
+	Force           bool   `yaml:"force,omitempty" mapstructure:"force"`
+	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
+	// Internally used to track stuff around
+	PartTable string
+	BootFlag  string
+	StateDir  string
+	GrubConf  string
+	IsoMnt    string // /run/initramfs/live by default, can be set to a different dir if --iso flag is set
+	// Interfaces used around by methods
 	Logger          Logger
 	Fs              afero.Fs
 	Mounter         mount.Interface
 	Runner          Runner
 	Syscall         SyscallInterface
+	CloudInitRunner CloudInitRunner
 	RecoveryPart    Partition
 	PersistentPart  Partition
 	StatePart       Partition
 	OEMPart         Partition
+	Client          HTTPClient
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
@@ -206,6 +224,10 @@ type Partition struct {
 	Size   uint
 	PLabel string
 	FS     string
+}
+
+func (r RunConfig) GetSystemLabel() string {
+	return r.systemLabel
 }
 
 // SetupStyle will gather what partition table and bootflag we need for the current system

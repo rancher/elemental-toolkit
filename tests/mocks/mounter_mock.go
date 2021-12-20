@@ -25,22 +25,43 @@ import (
 type ErrorMounter struct {
 	ErrorOnMount   bool
 	ErrorOnUnmount bool
+	FakeMounter    mount.Interface
+}
+
+// NewErrorMounter returns an ErrorMounter with an instance of FakeMounter inside so we can use its functions
+func NewErrorMounter() *ErrorMounter {
+	return &ErrorMounter{
+		FakeMounter: &mount.FakeMounter{},
+	}
+}
+
+func (e ErrorMounter) prepare() {
+	if e.FakeMounter == nil {
+		e.FakeMounter = &mount.FakeMounter{}
+	}
 }
 
 // Mount will return an error if ErrorOnMount is true
 func (e ErrorMounter) Mount(source string, target string, fstype string, options []string) error {
+	e.prepare()
 	if e.ErrorOnMount {
 		return errors.New("mount error")
 	}
-	return nil
+	return e.FakeMounter.Mount(source, target, fstype, options)
 }
 
 // Unmount will return an error if ErrorOnUnmount is true
 func (e ErrorMounter) Unmount(target string) error {
+	e.prepare()
 	if e.ErrorOnUnmount {
 		return errors.New("unmount error")
 	}
-	return nil
+	return e.FakeMounter.Unmount(target)
+}
+
+func (e ErrorMounter) List() ([]mount.MountPoint, error) {
+	e.prepare()
+	return e.FakeMounter.List()
 }
 
 // We need to have this below to fulfill the interface for mount.Interface
@@ -54,6 +75,5 @@ func (e ErrorMounter) MountSensitiveWithoutSystemd(source string, target string,
 func (e ErrorMounter) MountSensitiveWithoutSystemdWithMountFlags(source string, target string, fstype string, options []string, sensitiveOptions []string, mountFlags []string) error {
 	return nil
 }
-func (e ErrorMounter) List() ([]mount.MountPoint, error)               { return []mount.MountPoint{}, nil }
 func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) { return true, nil }
 func (e ErrorMounter) GetMountRefs(pathname string) ([]string, error)  { return []string{}, nil }

@@ -42,6 +42,7 @@ func (i InstallAction) Run() error {
 	i.Config.Logger.Infof("InstallAction called")
 	// Install steps really starts here
 	i.Config.SetupStyle()
+
 	disk := part.NewDisk(
 		i.Config.Target,
 		part.WithRunner(i.Config.Runner),
@@ -49,8 +50,10 @@ func (i InstallAction) Run() error {
 		part.WithLogger(i.Config.Logger),
 	)
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
-	// cos.GetIso() ?
-
+	err = newElemental.GetIso()
+	if err != nil {
+		return err
+	}
 	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
 	// This will probably need the yip module to be used before being able?
 
@@ -93,6 +96,10 @@ func (i InstallAction) Run() error {
 	// cos.CleanupMounts()
 	// install Recovery
 	// cos.CopyRecovery()
+	err = newElemental.CopyRecovery()
+	if err != nil {
+		return err
+	}
 	// install Secondary
 	// cos.CopyPassive()
 	// Rebrand

@@ -1,26 +1,28 @@
 /*
-Copyright © 2021 SUSE LLC
+   Copyright © 2021 SUSE LLC
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 */
 
-package elemental
+package elemental_test
 
 import (
 	"errors"
 	"fmt"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
+	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
@@ -36,6 +38,11 @@ var printOutput = `BYT;
 /dev/loop0:50593792s:loopback:512:512:gpt:Loopback device:;`
 var partTmpl = `
 %d:%ss:%ss:2048s:ext4::type=83;`
+
+func TestElementalSuite(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Elemental test suite")
+}
 
 func TestDoCopyEmpty(t *testing.T) {
 	RegisterTestingT(t)
@@ -56,7 +63,7 @@ func TestDoCopyEmpty(t *testing.T) {
 		Logger:    logger,
 	}
 
-	c := Elemental{config: cfg}
+	c := elemental.NewElemental(cfg)
 
 	err = c.CopyCos()
 	Expect(err).To(BeNil())
@@ -85,7 +92,7 @@ func TestDoCopy(t *testing.T) {
 		Logger:    logger,
 	}
 
-	c := Elemental{config: cfg}
+	c := elemental.NewElemental(cfg)
 	err = c.CopyCos()
 	Expect(err).To(BeNil())
 
@@ -98,55 +105,12 @@ func TestDoCopy(t *testing.T) {
 	Expect(destNames).To(Equal(SourceNames))
 }
 
-func TestDoCopyEmptyWithCloudInit(t *testing.T) {
-	RegisterTestingT(t)
-	logger := logrus.New()
-	logger.SetOutput(ioutil.Discard)
-	testString := "In a galaxy far far away..."
-	s, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(s)
-	d, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(d)
-	err = os.Mkdir(fmt.Sprintf("%s/oem", d), 0777)
-	Expect(err).To(BeNil())
-
-	cloudInit, err := os.CreateTemp("", "elemental*")
-	_, err = cloudInit.WriteString(testString)
-	Expect(err).To(BeNil())
-	err = cloudInit.Close()
-	Expect(err).To(BeNil())
-	defer os.Remove(cloudInit.Name())
-
-	cfg := &v1.RunConfig{
-		Target:    d,
-		Source:    s,
-		CloudInit: cloudInit.Name(),
-		Logger:    logger,
-	}
-
-	c := Elemental{config: cfg}
-	err = c.CopyCos()
-	Expect(err).To(BeNil())
-	err = c.CopyCloudConfig()
-	Expect(err).To(BeNil())
-	filesDest, err := ioutil.ReadDir(fmt.Sprintf("%s/oem", d))
-	destNames := getNamesFromListFiles(filesDest)
-
-	Expect(destNames).To(ContainElement("99_custom.yaml"))
-
-	dest, err := ioutil.ReadFile(fmt.Sprintf("%s/oem/99_custom.yaml", d))
-	Expect(dest).To(ContainSubstring(testString))
-
-}
-
 func TestSelinuxRelabel(t *testing.T) {
 	// I cant seem to mock exec.LookPath so it will always fail tor un due setfiles not being in the system :/
 	RegisterTestingT(t)
 	fs := afero.NewMemMapFs()
 	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	c := Elemental{config: cfg}
+	c := elemental.NewElemental(cfg)
 	// This is actually failing but not sure we should return an error
 	Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
 	fs = afero.NewMemMapFs()
@@ -158,8 +122,8 @@ func TestCheckFormat(t *testing.T) {
 	RegisterTestingT(t)
 	fs := afero.NewMemMapFs()
 	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	cos := NewElemental(cfg)
-	err := cos.CheckNoFormat()
+	c := elemental.NewElemental(cfg)
+	err := c.CheckNoFormat()
 	Expect(err).To(BeNil())
 }
 
@@ -168,8 +132,8 @@ func TestCheckNoFormat(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	runner := v1mock.FakeRunner{}
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: &runner}
-	cos := NewElemental(cfg)
-	err := cos.CheckNoFormat()
+	c := elemental.NewElemental(cfg)
+	err := c.CheckNoFormat()
 	Expect(err).To(BeNil())
 }
 
@@ -181,8 +145,8 @@ func TestCheckNoFormatWithLabel(t *testing.T) {
 	runner := v1mock.NewTestRunnerV2()
 	runner.ReturnValue = []byte("/dev/fake")
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: runner, Logger: logger}
-	cos := NewElemental(cfg)
-	err := cos.CheckNoFormat()
+	c := elemental.NewElemental(cfg)
+	err := c.CheckNoFormat()
 	Expect(err).ToNot(BeNil())
 	Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
 }
@@ -195,8 +159,8 @@ func TestCheckNoFormatWithLabelAndForce(t *testing.T) {
 	runner := v1mock.NewTestRunnerV2()
 	runner.ReturnValue = []byte("/dev/fake")
 	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Force: true, Runner: runner, Logger: logger}
-	cos := NewElemental(cfg)
-	err := cos.CheckNoFormat()
+	c := elemental.NewElemental(cfg)
+	err := c.CheckNoFormat()
 	Expect(err).To(BeNil())
 }
 
@@ -275,7 +239,7 @@ func TestPartitionAndFormatDevice(t *testing.T) {
 		}
 	}
 	runner.SideEffect = runFunc
-	el := NewElemental(conf)
+	el := elemental.NewElemental(conf)
 
 	// Partition disk with all defaults
 	partNum, devNum, printOut = 0, 0, printOutput
@@ -345,7 +309,7 @@ func TestPartitionAndFormatDeviceErrors(t *testing.T) {
 		}
 	}
 	runner.SideEffect = runFunc
-	el := NewElemental(conf)
+	el := elemental.NewElemental(conf)
 
 	// Fails efi partition
 	errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "COS_GRUB", printOutput
@@ -404,4 +368,200 @@ func getNamesFromListFiles(list []os.FileInfo) []string {
 		names = append(names, f.Name())
 	}
 	return names
+}
+
+var _ = Describe("Elemental", func() {
+	var config *v1.RunConfig
+	var runner v1.Runner
+	var logger v1.Logger
+	var syscall v1.SyscallInterface
+	var client v1.HTTPClient
+	var mounter mount.Interface
+	var fs afero.Fs
+
+	BeforeEach(func() {
+		runner = &v1mock.FakeRunner{}
+		syscall = &v1mock.FakeSyscall{}
+		mounter = v1mock.NewErrorMounter()
+		client = &v1mock.FakeHttpClient{}
+		logger = v1.NewNullLogger()
+		fs = afero.NewMemMapFs()
+		config = v1.NewRunConfig(
+			v1.WithFs(fs),
+			v1.WithRunner(runner),
+			v1.WithLogger(logger),
+			v1.WithMounter(mounter),
+			v1.WithSyscall(syscall),
+			v1.WithClient(client),
+		)
+	})
+	Context("BootedFromSquash", func() {
+		It("Returns true if booted from squashfs", func() {
+			runner := v1mock.NewTestRunnerV2()
+			runner.ReturnValue = []byte(cnst.RecoveryLabel)
+			config.Runner = runner
+			e := elemental.NewElemental(config)
+			Expect(e.BootedFromSquash()).To(BeTrue())
+		})
+		It("Returns false if not booted from squashfs", func() {
+			e := elemental.NewElemental(config)
+			Expect(e.BootedFromSquash()).To(BeFalse())
+		})
+	})
+	Context("GetRecoveryDir", func() {
+		It("Returns proper dir if booted from squashfs", func() {
+			runner := v1mock.NewTestRunnerV2()
+			runner.ReturnValue = []byte(cnst.RecoveryLabel)
+			config.Runner = runner
+			e := elemental.NewElemental(config)
+			Expect(e.GetRecoveryDir()).To(Equal(cnst.RecoveryDirSquash))
+			Expect(e.GetRecoveryDir()).ToNot(Equal(cnst.RecoveryDir))
+		})
+		It("Returns proper dir if not booted from squashfs", func() {
+			e := elemental.NewElemental(config)
+			Expect(e.GetRecoveryDir()).ToNot(Equal(cnst.RecoveryDirSquash))
+			Expect(e.GetRecoveryDir()).To(Equal(cnst.RecoveryDir))
+		})
+	})
+	Context("GetIso", func() {
+		It("Does nothing if iso is not set", func() {
+			e := elemental.NewElemental(config)
+			Expect(e.GetIso()).To(BeNil())
+		})
+		It("Modifies the IsoMnt var to point to the mounted iso", func() {
+			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
+			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
+			Expect(err).To(BeNil())
+			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			Expect(err).To(BeNil())
+
+			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
+			e := elemental.NewElemental(config)
+			Expect(e.GetIso()).To(BeNil())
+			// Confirm that the isomnt value was set to a new path
+			Expect(config.IsoMnt).ToNot(Equal(cnst.IsoMnt))
+			// Confirm that we tried to mount it properly
+			Expect(pathInMountPoints(mounter, config.IsoMnt)).To(BeTrue())
+
+		})
+		It("Fails if it cant find the iso", func() {
+			config.Iso = "whatever"
+			e := elemental.NewElemental(config)
+			Expect(e.GetIso()).ToNot(BeNil())
+
+		})
+		It("Fails if it cannot mount the iso", func() {
+			config.Mounter = v1mock.ErrorMounter{ErrorOnMount: true}
+			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
+			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
+			Expect(err).To(BeNil())
+			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			Expect(err).To(BeNil())
+
+			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
+			e := elemental.NewElemental(config)
+			Expect(e.GetIso()).ToNot(BeNil())
+			Expect(e.GetIso().Error()).To(ContainSubstring("mount error"))
+		})
+	})
+	Context("CloudConfig", func() {
+		It("Copies the cloud config file", func() {
+			testString := "In a galaxy far far away..."
+			err := afero.WriteFile(fs, "config.yaml", []byte(testString), os.ModePerm)
+			Expect(err).To(BeNil())
+			dest, err := afero.TempDir(fs, "", "elemental")
+			Expect(err).To(BeNil())
+			config.Target = dest
+			config.CloudInit = "config.yaml"
+			e := elemental.NewElemental(config)
+			err = e.CopyCloudConfig()
+			Expect(err).To(BeNil())
+			copiedFile, err := afero.ReadFile(fs, fmt.Sprintf("%s/oem/99_custom.yaml", dest))
+			Expect(err).To(BeNil())
+			Expect(copiedFile).To(ContainSubstring(testString))
+		})
+		It("Doesnt do anything if the config file is not set", func() {
+			e := elemental.NewElemental(config)
+			err := e.CopyCloudConfig()
+			Expect(err).To(BeNil())
+		})
+	})
+	Context("GetUrl", func() {
+		It("Gets an http url", func() {
+			e := elemental.NewElemental(config)
+			Expect(e.GetUrl("http://fake.com/file.txt", "/file.txt")).To(BeNil())
+			exists, err := afero.Exists(fs, "/file.txt")
+			Expect(err).To(BeNil())
+			Expect(exists).To(BeTrue())
+		})
+		It("Gets a file url", func() {
+			e := elemental.NewElemental(config)
+			Expect(afero.WriteFile(fs, "file1.txt", []byte("welcome to the jungle"), os.ModePerm)).To(BeNil())
+			Expect(e.GetUrl("file1.txt", "/file.txt")).To(BeNil())
+			exists, err := afero.Exists(fs, "/file.txt")
+			Expect(err).To(BeNil())
+			Expect(exists).To(BeTrue())
+		})
+	})
+	Context("CopyRecovery", func() {
+		Context("Squashfs", func() {
+			Context(fmt.Sprintf("squash file %s exists", cnst.RecoverySquashFile), func() {
+				It("should copy squash file", func() {
+					runner := v1mock.NewTestRunnerV2()
+					runner.ReturnValue = []byte(cnst.RecoveryLabel)
+					config.Runner = runner
+					// Create recovery.squashfs file
+					squashfile := fmt.Sprintf("%s/%s", config.IsoMnt, cnst.RecoverySquashFile)
+					_, _ = config.Fs.Create(squashfile)
+					e := elemental.NewElemental(config)
+					Expect(e.CopyRecovery()).To(BeNil())
+					// Target should be there
+					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoverySquashFile))
+					Expect(exists).To(BeTrue())
+					Expect(err).To(BeNil())
+				})
+			})
+			Context(fmt.Sprintf("squash file %s does not exists", cnst.RecoverySquashFile), func() {
+				It(fmt.Sprintf("should copy img file %s", cnst.ActiveImgFile), func() {
+					runner := v1mock.NewTestRunnerV2()
+					runner.ReturnValue = []byte(cnst.RecoveryLabel)
+					config.Runner = runner
+					// Create active image file
+					imgfile := fmt.Sprintf("%s/cOS/%s", config.StateDir, cnst.ActiveImgFile)
+					_, _ = config.Fs.Create(imgfile)
+					e := elemental.NewElemental(config)
+					Expect(e.CopyRecovery()).To(BeNil())
+					// Target should be there
+					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoveryImgFile))
+					Expect(exists).To(BeTrue())
+					Expect(err).To(BeNil())
+				})
+			})
+
+		})
+		Context("Non-Squashfs", func() {
+			It("should not do anything", func() {
+				runner := v1mock.NewTestRunnerV2()
+				runner.ReturnValue = []byte("")
+				config.Runner = runner
+				e := elemental.NewElemental(config)
+				Expect(e.CopyRecovery()).To(BeNil())
+				// Target file should not be there
+				exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoverySquashFile))
+				Expect(exists).To(BeFalse())
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+})
+
+// PathInMountPoints will check if the given path is in the mountPoints list
+func pathInMountPoints(mounter mount.Interface, path string) bool {
+	mountPoints, _ := mounter.List()
+	for _, m := range mountPoints {
+		if path == m.Path {
+			return true
+		}
+	}
+	return false
 }

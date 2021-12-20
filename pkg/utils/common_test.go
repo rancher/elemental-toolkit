@@ -21,77 +21,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/rancher-sandbox/elemental-cli/tests/mocks"
-	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"testing"
 )
-
-func TestGetUrlNet(t *testing.T) {
-	RegisterTestingT(t)
-	logger := logrus.New()
-	logger.SetOutput(ioutil.Discard)
-	client := &mocks.FakeHttpClient{}
-
-	url := "http://fake.com"
-	tmpDir, _ := os.MkdirTemp("", "elemental")
-	destination := fmt.Sprintf("%s/test", tmpDir)
-	defer os.RemoveAll(tmpDir)
-	err := utils.GetUrl(client, logger, url, destination)
-	Expect(err).To(BeNil())
-	Expect(client.WasGetCalledWith("http://fake.com")).To(BeTrue())
-	f, err := os.Stat(destination)
-	Expect(err).To(BeNil())
-	Expect(f.Size()).To(Equal(int64(1024))) // We create a 1024 bytes size file on the mock
-
-	ftp := "ftp://fake"
-	err = utils.GetUrl(client, logger, ftp, destination)
-	Expect(err).To(BeNil())
-	Expect(client.WasGetCalledWith("ftp://fake")).To(BeTrue())
-	f, err = os.Stat(destination)
-	Expect(err).To(BeNil())
-	Expect(f.Size()).To(Equal(int64(1024))) // We create a 1024 bytes size file on the mock
-
-	tftp := "tftp://fake"
-	err = utils.GetUrl(client, logger, tftp, destination)
-	Expect(err).To(BeNil())
-	Expect(client.WasGetCalledWith("tftp://fake")).To(BeTrue())
-	f, err = os.Stat(destination)
-	Expect(err).To(BeNil())
-	Expect(f.Size()).To(Equal(int64(1024))) // We create a 1024 bytes size file on the mock
-}
-
-func TestGetUrlFile(t *testing.T) {
-	RegisterTestingT(t)
-	logger := logrus.New()
-	logger.SetOutput(ioutil.Discard)
-	client := &mocks.FakeHttpClient{}
-	testString := "In a galaxy far far away..."
-
-	tmpDir, _ := os.MkdirTemp("", "elemental")
-	defer os.RemoveAll(tmpDir)
-
-	destination := fmt.Sprintf("%s/test", tmpDir)
-	sourceName := fmt.Sprintf("%s/source", tmpDir)
-
-	// Create source file
-	s, err := os.Create(sourceName)
-	_, err = s.WriteString(testString)
-	defer s.Close()
-
-	err = utils.GetUrl(client, logger, sourceName, destination)
-	Expect(err).To(BeNil())
-
-	// check they are the same size
-	f, err := os.Stat(destination)
-	source, err := os.Stat(sourceName)
-	Expect(err).To(BeNil())
-	Expect(f.Size()).To(Equal(source.Size()))
-
-	// Cehck destination contains what we had on the source
-	dest, err := ioutil.ReadFile(destination)
-	Expect(dest).To(ContainSubstring(testString))
-}
 
 func TestBootedFrom(t *testing.T) {
 	RegisterTestingT(t)

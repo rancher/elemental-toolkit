@@ -83,7 +83,6 @@ func TestChrootPrepareFailure(t *testing.T) {
 		"/whatever",
 		c,
 	)
-	defer chroot.Close()
 	_, err := chroot.Run("chroot-command")
 	Expect(err).ToNot(BeNil())
 	Expect(err.Error()).To(ContainSubstring("mount error"))
