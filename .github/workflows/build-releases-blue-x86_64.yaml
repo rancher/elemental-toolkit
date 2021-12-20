@@ -153,3 +153,10 @@ jobs:
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
+      - name: upload cosign logs
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: luetcosign.log.zip
+          path: /tmp/luet-cosign.log
+          if-no-files-found: warn
