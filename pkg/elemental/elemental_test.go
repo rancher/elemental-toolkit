@@ -26,7 +26,6 @@ import (
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"io/ioutil"
 	"k8s.io/mount-utils"
@@ -42,126 +41,6 @@ var partTmpl = `
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Elemental test suite")
-}
-
-func TestDoCopyEmpty(t *testing.T) {
-	RegisterTestingT(t)
-	logger := logrus.New()
-	logger.SetOutput(ioutil.Discard)
-	s, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(s)
-	d, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(d)
-
-	cfg := &v1.RunConfig{
-		Device:    "",
-		Target:    d,
-		Source:    s,
-		CloudInit: "",
-		Logger:    logger,
-	}
-
-	c := elemental.NewElemental(cfg)
-
-	err = c.CopyCos()
-	Expect(err).To(BeNil())
-}
-
-func TestDoCopy(t *testing.T) {
-	RegisterTestingT(t)
-	logger := logrus.New()
-	logger.SetOutput(ioutil.Discard)
-	s, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(s)
-	d, err := os.MkdirTemp("", "elemental")
-	Expect(err).To(BeNil())
-	defer os.RemoveAll(d)
-
-	for i := 0; i < 5; i++ {
-		_, _ = os.CreateTemp(s, "file*")
-	}
-
-	cfg := &v1.RunConfig{
-		Device:    "",
-		Target:    d,
-		Source:    s,
-		CloudInit: "",
-		Logger:    logger,
-	}
-
-	c := elemental.NewElemental(cfg)
-	err = c.CopyCos()
-	Expect(err).To(BeNil())
-
-	filesDest, err := ioutil.ReadDir(d)
-	destNames := getNamesFromListFiles(filesDest)
-	filesSource, err := ioutil.ReadDir(s)
-	SourceNames := getNamesFromListFiles(filesSource)
-
-	// Should be the same files in both dirs now
-	Expect(destNames).To(Equal(SourceNames))
-}
-
-func TestSelinuxRelabel(t *testing.T) {
-	// I cant seem to mock exec.LookPath so it will always fail tor un due setfiles not being in the system :/
-	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	c := elemental.NewElemental(cfg)
-	// This is actually failing but not sure we should return an error
-	Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
-	fs = afero.NewMemMapFs()
-	_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
-	Expect(c.SelinuxRelabel(false)).To(BeNil())
-}
-
-func TestCheckFormat(t *testing.T) {
-	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	cfg := &v1.RunConfig{Target: "/", Fs: fs}
-	c := elemental.NewElemental(cfg)
-	err := c.CheckNoFormat()
-	Expect(err).To(BeNil())
-}
-
-func TestCheckNoFormat(t *testing.T) {
-	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	runner := v1mock.FakeRunner{}
-	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: &runner}
-	c := elemental.NewElemental(cfg)
-	err := c.CheckNoFormat()
-	Expect(err).To(BeNil())
-}
-
-// TestCheckNoFormatWithLabel tests when we set no format but labels exists for active/passive partition
-func TestCheckNoFormatWithLabel(t *testing.T) {
-	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	logger := v1.NewNullLogger()
-	runner := v1mock.NewTestRunnerV2()
-	runner.ReturnValue = []byte("/dev/fake")
-	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Runner: runner, Logger: logger}
-	c := elemental.NewElemental(cfg)
-	err := c.CheckNoFormat()
-	Expect(err).ToNot(BeNil())
-	Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
-}
-
-// TestCheckNoFormatWithLabel tests when we set no format but labels exists for active/passive partition AND we set the force flag
-func TestCheckNoFormatWithLabelAndForce(t *testing.T) {
-	RegisterTestingT(t)
-	fs := afero.NewMemMapFs()
-	logger := v1.NewNullLogger()
-	runner := v1mock.NewTestRunnerV2()
-	runner.ReturnValue = []byte("/dev/fake")
-	cfg := &v1.RunConfig{Target: "/", Fs: fs, NoFormat: true, Force: true, Runner: runner, Logger: logger}
-	c := elemental.NewElemental(cfg)
-	err := c.CheckNoFormat()
-	Expect(err).To(BeNil())
 }
 
 func TestPartitionAndFormatDevice(t *testing.T) {
@@ -394,6 +273,131 @@ var _ = Describe("Elemental", func() {
 			v1.WithSyscall(syscall),
 			v1.WithClient(client),
 		)
+	})
+
+	Context("DoCopy", func() {
+		It("Copies all files from source to target", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+
+			for i := 0; i < 5; i++ {
+				_, _ = os.CreateTemp(sourceDir, "file*")
+			}
+
+			config.Source = sourceDir
+			config.Target = destDir
+
+			c := elemental.NewElemental(config)
+			err = c.CopyCos()
+			Expect(err).To(BeNil())
+
+			filesDest, err := ioutil.ReadDir(destDir)
+			destNames := getNamesFromListFiles(filesDest)
+			filesSource, err := ioutil.ReadDir(sourceDir)
+			SourceNames := getNamesFromListFiles(filesSource)
+
+			// Should be the same files in both dirs now
+			Expect(destNames).To(Equal(SourceNames))
+		})
+		It("should not fail if dirs are empty", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+
+			config.Source = sourceDir
+			config.Target = destDir
+
+			c := elemental.NewElemental(config)
+			err = c.CopyCos()
+			Expect(err).To(BeNil())
+		})
+		It("should fail if destination does not exist", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+
+			config.Source = sourceDir
+			config.Target = "/welp"
+
+			c := elemental.NewElemental(config)
+			err = c.CopyCos()
+			Expect(err).ToNot(BeNil())
+
+		})
+		It("should fail if source does not exist", func() {
+			config.Source = "/welp"
+			config.Target = "/welp"
+
+			c := elemental.NewElemental(config)
+			err := c.CopyCos()
+			Expect(err).ToNot(BeNil())
+
+		})
+	})
+	Context("NoFormat", func() {
+		Context("is disabled", func() {
+			It("Should not error out", func() {
+				c := elemental.NewElemental(config)
+				err := c.CheckNoFormat()
+				Expect(err).To(BeNil())
+			})
+		})
+		Context("is enabled", func() {
+			Context("Labels exist", func() {
+				Context("Force is disabled", func() {
+					It("Should error out", func() {
+						config.NoFormat = true
+						runner := v1mock.NewTestRunnerV2()
+						runner.ReturnValue = []byte("/dev/fake")
+						config.Runner = runner
+						e := elemental.NewElemental(config)
+						err := e.CheckNoFormat()
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
+					})
+				})
+				Context("Force is enabled", func() {
+					It("Should not error out", func() {
+						config.NoFormat = true
+						config.Force = true
+						runner := v1mock.NewTestRunnerV2()
+						runner.ReturnValue = []byte("/dev/fake")
+						config.Runner = runner
+						e := elemental.NewElemental(config)
+						err := e.CheckNoFormat()
+						Expect(err).To(BeNil())
+					})
+				})
+			})
+			Context("Labels dont exist", func() {
+				It("Should not error out", func() {
+					config.NoFormat = true
+					runner := v1mock.NewTestRunnerV2()
+					runner.ReturnValue = []byte("")
+					config.Runner = runner
+					e := elemental.NewElemental(config)
+					err := e.CheckNoFormat()
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+	})
+	Context("SelinuxRelabel", func() {
+		It("Works", func() {
+			c := elemental.NewElemental(config)
+			// This is actually failing but not sure we should return an error
+			Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
+			fs = afero.NewMemMapFs()
+			_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
+			Expect(c.SelinuxRelabel(false)).To(BeNil())
+		})
 	})
 	Context("BootedFromSquash", func() {
 		It("Returns true if booted from squashfs", func() {
