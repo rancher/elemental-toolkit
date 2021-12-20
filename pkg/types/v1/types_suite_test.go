@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestBlackbox(t *testing.T) {
+func TestTypes(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "v1 Blackbox test suite")
+	RunSpecs(t, "v1 types test suite")
 }

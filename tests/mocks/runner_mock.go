@@ -54,10 +54,11 @@ type TestRunnerV2 struct {
 	cmds        [][]string
 	ReturnValue []byte
 	SideEffect  func(command string, args ...string) ([]byte, error)
+	ReturnError error
 }
 
 func NewTestRunnerV2() *TestRunnerV2 {
-	return &TestRunnerV2{cmds: [][]string{}, ReturnValue: []byte{}, SideEffect: nil}
+	return &TestRunnerV2{cmds: [][]string{}, ReturnValue: []byte{}, SideEffect: nil, ReturnError: nil}
 }
 
 func (r *TestRunnerV2) Run(command string, args ...string) ([]byte, error) {
@@ -66,6 +67,8 @@ func (r *TestRunnerV2) Run(command string, args ...string) ([]byte, error) {
 		return r.ReturnValue, nil
 	} else if r.SideEffect != nil {
 		return r.SideEffect(command, args...)
+	} else if r.ReturnError != nil {
+		return []byte{}, r.ReturnError
 	}
 	return []byte{}, nil
 }
