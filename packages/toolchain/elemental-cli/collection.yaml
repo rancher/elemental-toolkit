@@ -11,4 +11,5 @@ packages:
       autobump.revdeps: "true"
   - !!merge <<: *elemental
     category: "toolchain-fips"
-    fips: true 
+    fips: true
+    version: 0.0.2-1
