@@ -149,7 +149,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax toolchain/yq
+	$(LUET) install -y toolchain/yq
 endif
 
 $(JQ):
@@ -157,7 +157,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax utils/jq
+	$(LUET) install -y utils/jq
 endif
 
 $(MAKEISO):
@@ -165,7 +165,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax toolchain/luet-makeiso
+	$(LUET) install -y toolchain/luet-makeiso
 endif
 
 $(MTREE):
@@ -173,7 +173,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax toolchain/luet-mtree
+	$(LUET) install -y toolchain/luet-mtree
 endif
 
 $(COSIGN):
@@ -181,7 +181,7 @@ ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
 	@exit 1
 else
-	$(LUET) install -y --relax meta/cos-verify  toolchain/cosign@1.3.1
+	$(LUET) install -y meta/cos-verify
 endif
 
 clean: clean_build clean_iso clean_run clean_test
