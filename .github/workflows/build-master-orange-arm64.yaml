@@ -120,6 +120,7 @@ jobs:
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-orange
       PUBLISH_ARGS: "--concurrency 1 --plugin luet-cosign"
+      LUET_INSTALL_FROM_COS_REPO: false
     steps:
       - run: |
           sudo rm -rf build || true
