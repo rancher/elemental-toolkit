@@ -96,7 +96,7 @@ jobs:
       ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-${{ github.event.inputs.flavor }}
       DOWNLOAD_METADATA: true
-      DOWNLOAD_ALL: false
+      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-${{ github.event.inputs.flavor }}
