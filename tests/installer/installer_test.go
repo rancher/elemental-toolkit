@@ -204,7 +204,7 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Preparing recovery.."))
 				Expect(out).To(ContainSubstring("Preparing passive boot.."))
 				Expect(out).To(ContainSubstring("Formatting drives.."))
-				Expect(out).To(ContainSubstring("fatal error: 1 error occurred:"))
+				Expect(out).To(ContainSubstring("1 error occurred:"))
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
