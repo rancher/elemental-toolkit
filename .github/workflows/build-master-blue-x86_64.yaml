@@ -107,7 +107,7 @@ jobs:
       DOWNLOAD_ONLY: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-blue
-      PUBLISH_ARGS: "--concurrency 1 --plugin luet-cosign"
+      PUBLISH_ARGS: "--plugin luet-cosign"
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

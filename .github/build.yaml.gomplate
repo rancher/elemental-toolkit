@@ -528,7 +528,7 @@
       {{{- end }}}
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-{{{ $flavor }}}
-      PUBLISH_ARGS: "--concurrency 1 --plugin luet-cosign"
+      PUBLISH_ARGS: "--plugin luet-cosign"
     steps:
       {{{ tmpl.Exec "prepare_build" }}}
       {{{ tmpl.Exec "prepare_worker" }}}
