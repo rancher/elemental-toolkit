@@ -63,14 +63,10 @@ func NewTestRunnerV2() *TestRunnerV2 {
 
 func (r *TestRunnerV2) Run(command string, args ...string) ([]byte, error) {
 	r.cmds = append(r.cmds, append([]string{command}, args...))
-	if len(r.ReturnValue) > 0 {
-		return r.ReturnValue, nil
-	} else if r.SideEffect != nil {
+	if r.SideEffect != nil {
 		return r.SideEffect(command, args...)
-	} else if r.ReturnError != nil {
-		return []byte{}, r.ReturnError
 	}
-	return []byte{}, nil
+	return r.ReturnValue, r.ReturnError
 }
 
 func (r *TestRunnerV2) ClearCmds() {

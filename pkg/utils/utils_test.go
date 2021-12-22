@@ -156,7 +156,7 @@ var _ = Describe("Utils", func() {
 	Context("Grub", func() {
 		Context("Install", func() {
 			BeforeEach(func() {
-				config.Device = "/dev/test"
+				config.Target = "/dev/test"
 				config.StateDir = "/state"
 			})
 			It("installs with default values", func() {
@@ -170,7 +170,7 @@ var _ = Describe("Utils", func() {
 				Expect(err).To(BeNil())
 
 				config.Logger = logger
-				config.Device = "/dev/test"
+				config.Target = "/dev/test"
 				config.StateDir = "/state"
 				config.GrubConf = "/etc/cos/grub.cfg"
 

@@ -19,6 +19,7 @@ package action
 import (
 	"errors"
 	"fmt"
+	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
@@ -74,26 +75,55 @@ func (i InstallAction) Run() error {
 	if err != nil {
 		return err
 	}
-	// install Active
-	err = newElemental.CopyCos()
+
+	err = newElemental.MountPartitions()
 	if err != nil {
+		return err
+	}
+	defer func() {
+		if tmpErr := newElemental.UnmountPartitions(); tmpErr != nil && err == nil {
+			err = tmpErr
+		}
+	}()
+
+	// create active file system image
+	err = newElemental.CreateFileSystemImage(i.Config.ActiveImage)
+	if err != nil {
+		return err
+	}
+
+	//mount file system image
+	loop, err := newElemental.MountImage(i.Config.ActiveImage, cnst.ActiveDir)
+	if err != nil {
+		return err
+	}
+
+	// install Active
+	err = newElemental.CopyCos(cnst.ActiveDir)
+	if err != nil {
+		newElemental.UnmountImage(cnst.ActiveDir, loop)
 		return err
 	}
 	// Copy cloud-init if any
 	err = newElemental.CopyCloudConfig()
 	if err != nil {
+		newElemental.UnmountImage(cnst.ActiveDir, loop)
 		return err
 	}
 	// install grub
 	grub := utils.NewGrub(i.Config)
 	err = grub.Install()
 	if err != nil {
+		newElemental.UnmountImage(cnst.ActiveDir, loop)
 		return err
 	}
 	// Relabel SELinux
 	_ = newElemental.SelinuxRelabel(false)
 	// Unmount everything
-	// cos.CleanupMounts()
+	err = newElemental.UnmountImage(cnst.ActiveDir, loop)
+	if err != nil {
+		return err
+	}
 	// install Recovery
 	// cos.CopyRecovery()
 	err = newElemental.CopyRecovery()
@@ -106,5 +136,5 @@ func (i InstallAction) Run() error {
 	// cos.Rebrand()
 	// ????
 	// profit!
-	return nil
+	return err
 }

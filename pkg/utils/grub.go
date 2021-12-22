@@ -90,7 +90,7 @@ func (g Grub) Install() error {
 		grubargs,
 		fmt.Sprintf("--root-directory=%s", g.config.StateDir),
 		fmt.Sprintf("--boot-directory=%s", g.config.StateDir),
-		fmt.Sprintf("--removable=%s", g.config.Device),
+		fmt.Sprintf("--removable=%s", g.config.Target),
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
@@ -133,6 +133,6 @@ func (g Grub) Install() error {
 		return err
 	}
 
-	g.config.Logger.Infof("Grub install to device %s complete", g.config.Device)
+	g.config.Logger.Infof("Grub install to device %s complete", g.config.Target)
 	return nil
 }

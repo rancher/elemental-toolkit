@@ -145,21 +145,126 @@ func (c *Elemental) createDataPartitions(disk *part.Disk) error {
 	return nil
 }
 
+// MountPartitions mounts recovery, state and oem partitions. Note this method does
+// not umount any partition on exit or on error, umounts must be handled by caller logic.
+func (c Elemental) MountPartitions() error {
+	err := c.mountDeviceByLabel(c.config.StatePart.Label, cnst.StateDir)
+	if err != nil {
+		return err
+	}
+	err = c.mountDeviceByLabel(c.config.RecoveryPart.Label, cnst.RecoveryDir)
+	if err != nil {
+		c.config.Mounter.Unmount(cnst.StateDir)
+		return err
+	}
+	err = c.mountDeviceByLabel(c.config.OEMPart.Label, cnst.OEMDir)
+	if err != nil {
+		c.config.Mounter.Unmount(cnst.StateDir)
+		c.config.Mounter.Unmount(cnst.RecoveryDir)
+		return err
+	}
+	return nil
+}
+
+// UnmountPartitions unmounts recovery, state and oem partitions.
+func (c Elemental) UnmountPartitions() error {
+	var err error
+	errMsg := ""
+	failure := false
+
+	// If there is an early error we still try to unmount other partitions
+	for _, mnt := range []string{cnst.OEMDir, cnst.RecoveryDir, cnst.StateDir} {
+		err = c.config.Mounter.Unmount(mnt)
+		if err != nil {
+			errMsg += fmt.Sprintf("Failed to unmount %s\n", mnt)
+			failure = true
+		}
+	}
+	if failure {
+		return errors.New(errMsg)
+	}
+	return nil
+}
+
+func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...string) error {
+	err := c.config.Fs.MkdirAll(mountpoint, 0644)
+	if err != nil {
+		return err
+	}
+	device, err := c.GetDeviceByLabel(label)
+	if err != nil {
+		return err
+	}
+	err = c.config.Mounter.Mount(mountpoint, device, "auto", opts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c Elemental) MountImage(img v1.Image, mountpoint string) (string, error) {
+	out, err := c.config.Runner.Run("losetup", "--show", "-f", img.File)
+	if err != nil {
+		return "", err
+	}
+	err = c.config.Mounter.Mount(mountpoint, string(out), "auto", []string{})
+	if err != nil {
+		c.config.Runner.Run("losetup", "-d", string(out))
+		return "", err
+	}
+	return string(out), nil
+}
+
+func (c Elemental) UnmountImage(mountpoint string, device string) error {
+	err := c.config.Mounter.Unmount(mountpoint)
+	if err != nil {
+		return err
+	}
+	_, err = c.config.Runner.Run("losetup", "-d", device)
+	return err
+}
+
+// CreateFileSystemImage creates the image file for config.target
+func (c Elemental) CreateFileSystemImage(img v1.Image) error {
+	actImg, err := c.config.Fs.Create(img.File)
+	if err != nil {
+		return err
+	}
+
+	err = actImg.Truncate(int64(img.Size * 1024 * 1024))
+	if err != nil {
+		actImg.Close()
+		c.config.Fs.RemoveAll(img.File)
+		return err
+	}
+	err = actImg.Close()
+	if err != nil {
+		c.config.Fs.RemoveAll(img.File)
+		return err
+	}
+
+	mkfs := part.NewMkfsCall(img.File, img.FS, img.Label, c.config.Runner)
+	_, err = mkfs.Apply()
+	if err != nil {
+		c.config.Fs.RemoveAll(img.File)
+		return err
+	}
+	return nil
+}
+
 // CopyCos will rsync from config.source to config.target
-func (c *Elemental) CopyCos() error {
+func (c *Elemental) CopyCos(target string) error {
 	c.config.Logger.Infof("Copying cOS..")
 	// Make sure the values have a / at the end.
-	var source, target string
+	var source string
 	if strings.HasSuffix(c.config.Source, "/") == false {
 		source = fmt.Sprintf("%s/", c.config.Source)
 	} else {
 		source = c.config.Source
 	}
 
-	if strings.HasSuffix(c.config.Target, "/") == false {
-		target = fmt.Sprintf("%s/", c.config.Target)
-	} else {
-		target = c.config.Target
+	if strings.HasSuffix(target, "/") == false {
+		target = fmt.Sprintf("%s/", target)
 	}
 	// 1 - rsync all the system from source to target
 	task := grsync.NewTask(
@@ -184,7 +289,7 @@ func (c *Elemental) CopyCos() error {
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
 func (c *Elemental) CopyCloudConfig() error {
 	if c.config.CloudInit != "" {
-		customConfig := fmt.Sprintf("%s/oem/99_custom.yaml", c.config.Target)
+		customConfig := fmt.Sprintf("%s/99_custom.yaml", cnst.OEMDir)
 		c.config.Logger.Infof("Trying to copy cloud config file %s to %s", c.config.CloudInit, customConfig)
 
 		if err :=
@@ -204,13 +309,13 @@ func (c *Elemental) CopyCloudConfig() error {
 func (c *Elemental) SelinuxRelabel(raiseError bool) error {
 	var err error
 
-	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", c.config.Target)
+	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", cnst.ActiveDir)
 
 	_, err = c.config.Fs.Stat(contextFile)
 	contextExists := err == nil
 
 	if utils.CommandExists("setfiles") && contextExists {
-		_, err = c.config.Runner.Run("setfiles", "-r", c.config.Target, contextFile, c.config.Target)
+		_, err = c.config.Runner.Run("setfiles", "-r", cnst.ActiveDir, contextFile, cnst.ActiveDir)
 	}
 
 	// In the original code this can error out and we dont really care
@@ -248,15 +353,6 @@ func (c *Elemental) CheckNoFormat() error {
 		}
 	}
 	return nil
-}
-
-// GetRecoveryDir will return the proper dir for the recovery, depending on if we are booting from squashfs or not
-func (c *Elemental) GetRecoveryDir() string {
-	if c.BootedFromSquash() {
-		return cnst.RecoveryDirSquash
-	} else {
-		return cnst.RecoveryDir
-	}
 }
 
 // BootedFromSquash will check if we are booting from squashfs
@@ -336,12 +432,11 @@ func (c *Elemental) GetUrl(url string, destination string) error {
 // Check if we are booting from squash -> false? return
 // true? -> :
 // mkdir -p RECOVERYDIR
-// mount RECOVERY into RECOVERYDIR
 // mkdir -p  RECOVERYDIR/cOS
 // if squash -> cp -a RECOVERYSQUASHFS to RECOVERYDIR/cOS/recovery.squashfs
 // if not -> cp -a STATEDIR/cOS/active.img to RECOVERYDIR/cOS/recovery.img
 // Where:
-// RECOVERYDIR is GetRecoveryDir
+// RECOVERYDIR is cnst.RecoveryDir
 // ISOMNT is /run/initramfs/live by default, can be set to a different dir if COS_INSTALL_ISO_URL is set
 // RECOVERYSQUASHFS is $ISOMNT/recovery.squashfs
 // RECOVERY is GetDeviceByLabel(cnst.RecoveryLabel)
@@ -351,28 +446,12 @@ func (c *Elemental) CopyRecovery() error {
 	if !c.BootedFromSquash() {
 		return nil
 	}
-	recoveryDir := c.GetRecoveryDir()
-	recoveryDirCos := fmt.Sprintf("%s/cOS", recoveryDir)
-	recoveryDirCosSquashTarget := fmt.Sprintf("%s/cOS/%s", recoveryDir, cnst.RecoverySquashFile)
+	recoveryDirCos := fmt.Sprintf("%s/cOS", cnst.RecoveryDir)
+	recoveryDirCosSquashTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile)
 	isoMntCosSquashSource := fmt.Sprintf("%s/%s", c.config.IsoMnt, cnst.RecoverySquashFile)
 	imgCosSource := fmt.Sprintf("%s/cOS/%s", c.config.StateDir, cnst.ActiveImgFile)
-	imgCosTarget := fmt.Sprintf("%s/cOS/%s", recoveryDir, cnst.RecoveryImgFile)
+	imgCosTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile)
 
-	err = c.config.Fs.MkdirAll(recoveryDir, 0644)
-	if err != nil {
-		return err
-	}
-	var mountOptions []string
-	// Get CURRENT recovery device
-	// This can be an existing one (--no-format flag) or a new one done by the partitioner
-	recovery, err := c.GetDeviceByLabel(c.config.RecoveryPart.Label)
-	if err != nil {
-		return err
-	}
-	err = c.config.Mounter.Mount(recoveryDir, recovery, "auto", mountOptions)
-	if err != nil {
-		return err
-	}
 	err = c.config.Fs.MkdirAll(recoveryDirCos, 0644)
 	if err != nil {
 		return err

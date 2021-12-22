@@ -48,7 +48,7 @@ var installCmd = &cobra.Command{
 		}
 		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
-		cfg.Device = args[0]
+		cfg.Target = args[0]
 
 		cfg.Logger.Infof("Install called")
 		// Dont call it yet, not ready

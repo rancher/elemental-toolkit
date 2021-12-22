@@ -116,8 +116,15 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		r.StateDir = constants.StateDir
 	}
 
-	if r.ActiveLabel == "" {
-		r.ActiveLabel = constants.ActiveLabel
+	r.ActiveImage = Image{
+		Label: constants.ActiveLabel,
+		Size:  constants.ImgSize,
+		File:  constants.ActiveImgFile,
+		FS:    constants.LinuxFs,
+	}
+
+	if r.activeLabel != "" {
+		r.ActiveImage.Label = r.activeLabel
 	}
 
 	if r.PassiveLabel == "" {
@@ -185,7 +192,7 @@ type RunConfig struct {
 	stateLabel      string `yaml:"STATE_LABEL,omitempty" mapstructure:"STATE_LABEL"`
 	oEMLabel        string `yaml:"OEM_LABEL,omitempty" mapstructure:"OEM_LABEL"`
 	systemLabel     string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
-	Device          string `yaml:"device,omitempty" mapstructure:"device"`
+	activeLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
 	Target          string `yaml:"target,omitempty" mapstructure:"target"`
 	Source          string `yaml:"source,omitempty" mapstructure:"source"`
 	CloudInit       string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
@@ -216,6 +223,7 @@ type RunConfig struct {
 	StatePart       Partition
 	OEMPart         Partition
 	Client          HTTPClient
+	ActiveImage     Image
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
@@ -224,6 +232,14 @@ type Partition struct {
 	Size   uint
 	PLabel string
 	FS     string
+}
+
+// Image struct represents a file system image with its commonly configurable values, size in MiB
+type Image struct {
+	File  string
+	Label string
+	Size  uint
+	FS    string
 }
 
 func (r RunConfig) GetSystemLabel() string {

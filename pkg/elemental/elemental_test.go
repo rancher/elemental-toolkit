@@ -77,6 +77,175 @@ var _ = Describe("Elemental", func() {
 		)
 	})
 
+	Context("MountPartitions", func() {
+		var runner *v1mock.TestRunnerV2
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			config.Runner = runner
+		})
+
+		It("Mounts disk partitions", func() {
+			runner.ReturnValue = []byte("/some/device")
+			el := elemental.NewElemental(config)
+			err := el.MountPartitions()
+			Expect(err).To(BeNil())
+		})
+
+		It("Fails if state partition resists to mount ", func() {
+			runner.ReturnValue = []byte("/some/device")
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnMount = true
+			el := elemental.NewElemental(config)
+			err := el.MountPartitions()
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("Fails if oem partition is not found ", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", config.OEMPart.Label) {
+					return []byte{}, nil
+				}
+				return []byte("/some/device"), nil
+			}
+			el := elemental.NewElemental(config)
+			err := el.MountPartitions()
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("Fails if recovery partition is not found ", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", config.RecoveryPart.Label) {
+					return []byte{}, nil
+				}
+				return []byte("/some/device"), nil
+			}
+			el := elemental.NewElemental(config)
+			err := el.MountPartitions()
+			Expect(err).NotTo(BeNil())
+		})
+	})
+
+	Context("UnmountPartitions", func() {
+		var runner *v1mock.TestRunnerV2
+		var el *elemental.Elemental
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			config.Runner = runner
+			runner.ReturnValue = []byte("/some/device")
+			el = elemental.NewElemental(config)
+			Expect(el.MountPartitions()).To(BeNil())
+		})
+
+		It("Unmounts disk partitions", func() {
+			err := el.UnmountPartitions()
+			Expect(err).To(BeNil())
+		})
+
+		It("Fails to unmount disk partitions", func() {
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnUnmount = true
+			err := el.UnmountPartitions()
+			Expect(err).NotTo(BeNil())
+		})
+	})
+
+	Context("MountImage", func() {
+		var runner *v1mock.TestRunnerV2
+		var el *elemental.Elemental
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			config.Runner = runner
+			el = elemental.NewElemental(config)
+		})
+
+		It("Mounts file system image", func() {
+			runner.ReturnValue = []byte("/dev/loop")
+			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
+			Expect(err).To(BeNil())
+			Expect(loop).To(Equal("/dev/loop"))
+		})
+
+		It("Fails to set a loop device", func() {
+			runner.ReturnError = errors.New("failed to set a loop device")
+			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
+			Expect(err).NotTo(BeNil())
+			Expect(loop).To(Equal(""))
+		})
+
+		It("Fails to mount a loop device", func() {
+			runner.ReturnValue = []byte("/dev/loop")
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnMount = true
+			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
+			Expect(err).NotTo(BeNil())
+			Expect(loop).To(Equal(""))
+		})
+	})
+
+	Context("UnmountImage", func() {
+		var runner *v1mock.TestRunnerV2
+		var el *elemental.Elemental
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			runner.ReturnValue = []byte("/dev/loop")
+			config.Runner = runner
+			el = elemental.NewElemental(config)
+			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
+			Expect(err).To(BeNil())
+			Expect(loop).To(Equal("/dev/loop"))
+		})
+
+		It("Unmounts file system image", func() {
+			Expect(
+				el.UnmountImage("/some/mountpoint", "/dev/loop"),
+			).To(BeNil())
+		})
+
+		It("Fails to unmount a mountpoint", func() {
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnUnmount = true
+			Expect(
+				el.UnmountImage("/some/mountpoint", "/dev/loop"),
+			).NotTo(BeNil())
+		})
+
+		It("Fails to unset a loop device", func() {
+			runner.ReturnError = errors.New("failed to unset a loop device")
+			Expect(
+				el.UnmountImage("/some/mountpoint", "/dev/loop"),
+			).NotTo(BeNil())
+		})
+	})
+
+	Context("CreateFileSystemImage", func() {
+		var el *elemental.Elemental
+		BeforeEach(func() {
+			el = elemental.NewElemental(config)
+			config.ActiveImage.Size = 32
+		})
+
+		It("Creates a new file system image", func() {
+			_, err := fs.Stat(config.ActiveImage.File)
+			Expect(err).NotTo(BeNil())
+			err = el.CreateFileSystemImage(config.ActiveImage)
+			Expect(err).To(BeNil())
+			stat, err := fs.Stat(config.ActiveImage.File)
+			Expect(err).To(BeNil())
+			Expect(stat.Size()).To(Equal(int64(32 * 1024 * 1024)))
+		})
+
+		It("Fails formatting a file system image", func() {
+			runner := runner.(*v1mock.FakeRunner)
+			runner.ErrorOnCommand = true
+			_, err := fs.Stat(config.ActiveImage.File)
+			Expect(err).NotTo(BeNil())
+			err = el.CreateFileSystemImage(config.ActiveImage)
+			Expect(err).NotTo(BeNil())
+			_, err = fs.Stat(config.ActiveImage.File)
+			Expect(err).NotTo(BeNil())
+		})
+	})
+
 	Context("PartitionAndFormatDevice", func() {
 		var el *elemental.Elemental
 		var dev *part.Disk
@@ -288,10 +457,9 @@ var _ = Describe("Elemental", func() {
 			}
 
 			config.Source = sourceDir
-			config.Target = destDir
 
 			c := elemental.NewElemental(config)
-			err = c.CopyCos()
+			err = c.CopyCos(destDir)
 			Expect(err).To(BeNil())
 
 			filesDest, err := ioutil.ReadDir(destDir)
@@ -311,10 +479,9 @@ var _ = Describe("Elemental", func() {
 			defer os.RemoveAll(destDir)
 
 			config.Source = sourceDir
-			config.Target = destDir
 
 			c := elemental.NewElemental(config)
-			err = c.CopyCos()
+			err = c.CopyCos(destDir)
 			Expect(err).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
@@ -323,19 +490,17 @@ var _ = Describe("Elemental", func() {
 			defer os.RemoveAll(sourceDir)
 
 			config.Source = sourceDir
-			config.Target = "/welp"
 
 			c := elemental.NewElemental(config)
-			err = c.CopyCos()
+			err = c.CopyCos("/welp")
 			Expect(err).ToNot(BeNil())
 
 		})
 		It("should fail if source does not exist", func() {
 			config.Source = "/welp"
-			config.Target = "/welp"
 
 			c := elemental.NewElemental(config)
-			err := c.CopyCos()
+			err := c.CopyCos("/welp")
 			Expect(err).ToNot(BeNil())
 
 		})
@@ -411,21 +576,6 @@ var _ = Describe("Elemental", func() {
 			Expect(e.BootedFromSquash()).To(BeFalse())
 		})
 	})
-	Context("GetRecoveryDir", func() {
-		It("Returns proper dir if booted from squashfs", func() {
-			runner := v1mock.NewTestRunnerV2()
-			runner.ReturnValue = []byte(cnst.RecoveryLabel)
-			config.Runner = runner
-			e := elemental.NewElemental(config)
-			Expect(e.GetRecoveryDir()).To(Equal(cnst.RecoveryDirSquash))
-			Expect(e.GetRecoveryDir()).ToNot(Equal(cnst.RecoveryDir))
-		})
-		It("Returns proper dir if not booted from squashfs", func() {
-			e := elemental.NewElemental(config)
-			Expect(e.GetRecoveryDir()).ToNot(Equal(cnst.RecoveryDirSquash))
-			Expect(e.GetRecoveryDir()).To(Equal(cnst.RecoveryDir))
-		})
-	})
 	Context("GetIso", func() {
 		It("Does nothing if iso is not set", func() {
 			e := elemental.NewElemental(config)
@@ -472,14 +622,12 @@ var _ = Describe("Elemental", func() {
 			testString := "In a galaxy far far away..."
 			err := afero.WriteFile(fs, "config.yaml", []byte(testString), os.ModePerm)
 			Expect(err).To(BeNil())
-			dest, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			config.Target = dest
 			config.CloudInit = "config.yaml"
 			e := elemental.NewElemental(config)
 			err = e.CopyCloudConfig()
 			Expect(err).To(BeNil())
-			copiedFile, err := afero.ReadFile(fs, fmt.Sprintf("%s/oem/99_custom.yaml", dest))
+			copiedFile, err := afero.ReadFile(fs, fmt.Sprintf("%s/99_custom.yaml", cnst.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})
@@ -519,7 +667,7 @@ var _ = Describe("Elemental", func() {
 					e := elemental.NewElemental(config)
 					Expect(e.CopyRecovery()).To(BeNil())
 					// Target should be there
-					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoverySquashFile))
+					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile))
 					Expect(exists).To(BeTrue())
 					Expect(err).To(BeNil())
 				})
@@ -535,7 +683,7 @@ var _ = Describe("Elemental", func() {
 					e := elemental.NewElemental(config)
 					Expect(e.CopyRecovery()).To(BeNil())
 					// Target should be there
-					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoveryImgFile))
+					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile))
 					Expect(exists).To(BeTrue())
 					Expect(err).To(BeNil())
 				})
@@ -550,7 +698,7 @@ var _ = Describe("Elemental", func() {
 				e := elemental.NewElemental(config)
 				Expect(e.CopyRecovery()).To(BeNil())
 				// Target file should not be there
-				exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", e.GetRecoveryDir(), cnst.RecoverySquashFile))
+				exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile))
 				Expect(exists).To(BeFalse())
 				Expect(err).To(BeNil())
 			})
