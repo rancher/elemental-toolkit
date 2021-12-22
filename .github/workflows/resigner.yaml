@@ -51,6 +51,12 @@ jobs:
         uses: sigstore/cosign-installer@main
         with:
           cosign-release: ${{ github.event.inputs.cosign-version }}
+      - name: Fix cosign binary for root
+        run: |
+          cosign_bin="$HOME/.cosign/cosign"
+          sudo ln -s cosign_bin /usr/bin/cosign
+      - name: Verify cosign for sudo
+        run: sudo -E cosign version
       - name: Install Go
         uses: actions/setup-go@v2
         with:
