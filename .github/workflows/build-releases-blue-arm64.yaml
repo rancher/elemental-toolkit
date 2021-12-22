@@ -118,6 +118,7 @@ jobs:
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-blue
       PUBLISH_ARGS: "--plugin luet-cosign"
+      COSIGN_FULCIO_URL: "https://v1.fulcio.sigstore.dev"
     steps:
       - run: |
           sudo rm -rf build || true
