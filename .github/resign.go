@@ -95,7 +95,7 @@ func checkAndSign(tag string, ctx *types.Context) {
 		out, err := exec.Command("cosign", args...).CombinedOutput()
 		if err != nil {
 			ctx.Error("Error signing", tag, ":", err)
-			ctx.Debug("Error signing", tag, " output:", out)
+			ctx.Debug("Error signing", tag, "output:", string(out))
 		} else {
 			ctx.Success("Artifact", tag, "signed")
 		}
