@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func getRepositoryPackages(repo string, ctx *types.Context) (searchResult client.SearchResult) {
@@ -70,6 +71,8 @@ func main() {
 
 func checkAndSign(tag string, ctx *types.Context) {
 	var fulcioFlag string
+	var args []string
+	tag = strings.TrimSpace(tag)
 
 	ctx.Info("Checking artifact", tag)
 	tmpDir, _ := os.MkdirTemp("", "sign-*")
@@ -80,17 +83,20 @@ func checkAndSign(tag string, ctx *types.Context) {
 
 	fulcioURL := os.Getenv("FULCIO_URL") // Allow to set a fulcio url
 	if fulcioURL != "" {
-		fulcioFlag = fmt.Sprintf("--fulcio-url=%s", fulcioURL)
+		fulcioFlag = fmt.Sprintf("--fulcio-url=%s", strings.TrimSpace(fulcioURL))
 		ctx.Info("Found FULCIO_URL var, setting the following flag to the cosing command:", fulcioFlag)
 	}
-
-	args := []string{"verify", tag}
+	args = []string{"verify", tag}
 	ctx.Debug("Calling cosing with the following args:", args)
 	out, err := exec.Command("cosign", args...).CombinedOutput()
 	ctx.Debug("Verify output:", string(out))
 	if err != nil {
 		ctx.Warning("Artifact", tag, "has no signature, signing it")
-		args := []string{fulcioFlag, "sign", tag}
+		if fulcioFlag != "" {
+			args = []string{"sign", fulcioFlag, tag}
+		} else {
+			args = []string{"sign", tag}
+		}
 		ctx.Debug("Calling cosing with the following args:", args)
 		out, err := exec.Command("cosign", args...).CombinedOutput()
 		if err != nil {
