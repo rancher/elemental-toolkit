@@ -1,11 +1,11 @@
 name: "luet-cosign"
 category: "toolchain"
-version: 0.0.10
+version: 0.0.10-1
 labels:
   github.repo: "luet-cosign"
   github.owner: "rancher-sandbox"
   autobump.revdeps: "true"
 requires:
-- name: "cosign"
-  category: "toolchain"
-  version: ">=0"
+  - name: "cosign"
+    category: "toolchain"
+    version: ">=0"
