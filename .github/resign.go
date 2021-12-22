@@ -90,7 +90,7 @@ func checkAndSign(tag string, ctx *types.Context) {
 	ctx.Debug("Verify output:", string(out))
 	if err != nil {
 		ctx.Warning("Artifact", tag, "has no signature, signing it")
-		args := []string{fulcioFlag, "sign", tag}
+		args := []string{"sign", fulcioFlag, tag}
 		ctx.Debug("Calling cosing with the following args:", args)
 		out, err := exec.Command("cosign", args...).CombinedOutput()
 		if err != nil {
