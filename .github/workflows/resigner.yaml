@@ -27,6 +27,11 @@ on:
         default: "v1.4.1"
         type: string
         description: Cosign version to install and use
+      debug:
+        required: false
+        default: "false"
+        type: boolean
+        description: Set debug log level
 concurrency:
   group: ci-sign-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
@@ -40,6 +45,7 @@ jobs:
       COSIGN_REPOSITORY: ${{ github.event.inputs.cosign-repository }}
       FULCIO_URL: ${{ github.event.inputs.fulcio-url }}
       REFERENCEID: ${{ github.event.inputs.reference-id }}
+      DEBUGLOGLEVEL: ${{ github.event.inputs.debug }}
     steps:
       - name: Install Cosign
         uses: sigstore/cosign-installer@main

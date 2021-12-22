@@ -47,6 +47,9 @@ func getRepositoryPackages(repo string, ctx *types.Context) (searchResult client
 func main() {
 	// We want to be cool and keep the same format as luet, so we create the context here to pass around and use the logging functions
 	ctx := types.NewContext()
+	if d := os.Getenv("DEBUGLOGLEVEL"); d != "" && d != "false" {
+		ctx.Config.GetGeneral().Debug = true
+	}
 	finalRepo := os.Getenv("FINAL_REPO")
 	if finalRepo == "" {
 		ctx.Error("A container repository must be specified with FINAL_REPO")
@@ -78,14 +81,21 @@ func checkAndSign(tag string, ctx *types.Context) {
 	fulcioURL := os.Getenv("FULCIO_URL") // Allow to set a fulcio url
 	if fulcioURL != "" {
 		fulcioFlag = fmt.Sprintf("--fulcio-url=%s", fulcioURL)
+		ctx.Info("Found FULCIO_URL var, setting the following flag to the cosing command:", fulcioFlag)
 	}
 
-	_, err := exec.Command("cosign", "verify", tag).CombinedOutput()
+	args := []string{"verify", tag}
+	ctx.Debug("Calling cosing with the following args:", args)
+	out, err := exec.Command("cosign", args...).CombinedOutput()
+	ctx.Debug("Verify output:", string(out))
 	if err != nil {
 		ctx.Warning("Artifact", tag, "has no signature, signing it")
-		out, err := exec.Command("cosign", fulcioFlag, "sign", tag).CombinedOutput()
+		args := []string{fulcioFlag, "sign", tag}
+		ctx.Debug("Calling cosing with the following args:", args)
+		out, err := exec.Command("cosign", args...).CombinedOutput()
 		if err != nil {
-			ctx.Error("Error signing", tag, ":", string(out))
+			ctx.Error("Error signing", tag, ":", err)
+			ctx.Debug("Error signing", tag, " output:", out)
 		} else {
 			ctx.Success("Artifact", tag, "signed")
 		}
