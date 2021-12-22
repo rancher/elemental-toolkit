@@ -156,7 +156,7 @@
           export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
-          go build -o build
+          go build -o build build.go
           popd
           sudo -E ./.github/build
           ls -liah $PWD/build
@@ -556,7 +556,7 @@
         run: |
           export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
-          go build -o build
+          go build -o build build.go
           popd
           sudo -E ./.github/build
           ls -liah $PWD/build
