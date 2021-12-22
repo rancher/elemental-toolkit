@@ -33,212 +33,14 @@ import (
 	"testing"
 )
 
-var printOutput = `BYT;
+const printOutput = `BYT;
 /dev/loop0:50593792s:loopback:512:512:gpt:Loopback device:;`
-var partTmpl = `
+const partTmpl = `
 %d:%ss:%ss:2048s:ext4::type=83;`
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Elemental test suite")
-}
-
-func TestPartitionAndFormatDevice(t *testing.T) {
-	RegisterTestingT(t)
-	runner := v1mock.NewTestRunnerV2()
-	fs := afero.NewMemMapFs()
-	conf := v1.NewRunConfig(
-		v1.WithLogger(v1.NewNullLogger()),
-		v1.WithRunner(runner),
-		v1.WithFs(fs),
-		v1.WithMounter(&mount.FakeMounter{}),
-	)
-	cloudInitFile := "partitioning.yaml"
-	fs.Create(cnst.EfiDevice)
-	conf.SetupStyle()
-	cIRunner := &v1mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
-	conf.CloudInitRunner = cIRunner
-	dev := part.NewDisk(
-		"/some/device",
-		part.WithRunner(runner),
-		part.WithFS(fs),
-		part.WithLogger(conf.Logger),
-	)
-	var partNum, devNum int
-	var printOut string
-
-	initCmds := [][]string{
-		{
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mklabel", "gpt",
-		}, {
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mkpart", "p.grub", "vfat", "2048", "133119", "set", "1", "esp", "on",
-		}, {"mkfs.vfat", "-i", "COS_GRUB", "/some/device1"},
-	}
-	partCmds := [][]string{
-		{
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mkpart", "p.oem", "ext4", "133120", "264191",
-		}, {
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mkpart", "p.state", "ext4", "264192", "31721471",
-		}, {
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mkpart", "p.recovery", "ext4", "31721472", "48498687",
-		}, {
-			"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-			"mkpart", "p.persistent", "ext4", "48498688", "100%",
-		}, {"mkfs.ext4", "-L", "COS_OEM", "/some/device2"},
-		{"mkfs.ext4", "-L", "COS_STATE", "/some/device3"},
-		{"mkfs.ext4", "-L", "COS_RECOVERY", "/some/device4"},
-		{"mkfs.ext4", "-L", "COS_PERSISTENT", "/some/device5"},
-	}
-
-	runFunc := func(cmd string, args ...string) ([]byte, error) {
-		switch cmd {
-		case "parted":
-			idx := 0
-			for i, arg := range args {
-				if arg == "mkpart" {
-					idx = i
-					break
-				}
-			}
-			if idx > 0 {
-				partNum++
-				printOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
-			}
-			return []byte(printOut), nil
-		case "lsblk":
-			devNum++
-			return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
-		default:
-			return []byte{}, nil
-		}
-	}
-	runner.SideEffect = runFunc
-	el := elemental.NewElemental(conf)
-
-	// Partition disk with all defaults
-	partNum, devNum, printOut = 0, 0, printOutput
-	err := el.PartitionAndFormatDevice(dev)
-	Expect(err).To(BeNil())
-	Expect(runner.MatchMilestones(append(initCmds, partCmds...))).To(BeNil())
-
-	// Partition disk using cloud-init partitioning stage
-	conf.PartLayout = cloudInitFile
-	partNum, devNum, printOut = 0, 0, printOutput
-	err = el.PartitionAndFormatDevice(dev)
-	Expect(err).To(BeNil())
-	Expect(runner.MatchMilestones(initCmds)).To(BeNil())
-	Expect(len(cIRunner.ExecStages)).To(Equal(1))
-	Expect(cIRunner.ExecStages[0]).To(Equal("partitioning"))
-}
-
-func TestPartitionAndFormatDeviceErrors(t *testing.T) {
-	RegisterTestingT(t)
-	runner := v1mock.NewTestRunnerV2()
-	fs := afero.NewMemMapFs()
-	conf := v1.NewRunConfig(
-		v1.WithLogger(v1.NewNullLogger()),
-		v1.WithRunner(runner),
-		v1.WithFs(fs),
-		v1.WithMounter(&mount.FakeMounter{}),
-	)
-	fs.Create(cnst.EfiDevice)
-	conf.SetupStyle()
-	dev := part.NewDisk(
-		"/some/device",
-		part.WithRunner(runner),
-		part.WithFS(fs),
-		part.WithLogger(conf.Logger),
-	)
-	var partNum, devNum, errPart int
-	var printOut, errFormat string
-
-	runFunc := func(cmd string, args ...string) ([]byte, error) {
-		switch cmd {
-		case "parted":
-			idx := 0
-			for i, arg := range args {
-				if arg == "mkpart" {
-					idx = i
-					break
-				}
-			}
-			if idx > 0 {
-				partNum++
-				printOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
-				if errPart == partNum {
-					return []byte{}, errors.New("Failure")
-				}
-			}
-			return []byte(printOut), nil
-		case "lsblk":
-			devNum++
-			return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
-		case "mkfs.ext4", "mkfs.vfat":
-			if args[1] == errFormat {
-				return []byte{}, errors.New("Failure")
-			}
-			return []byte{}, nil
-		default:
-			return []byte{}, nil
-		}
-	}
-	runner.SideEffect = runFunc
-	el := elemental.NewElemental(conf)
-
-	// Fails efi partition
-	errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "COS_GRUB", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(partNum).To(Equal(errPart))
-
-	// Fails efi format
-	errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_GRUB", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(devNum).To(Equal(1))
-
-	// Fails oem partition
-	errPart, partNum, devNum, errFormat, printOut = 2, 0, 0, "", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(partNum).To(Equal(errPart))
-
-	// Fails state partition
-	errPart, partNum, devNum, errFormat, printOut = 3, 0, 0, "", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(partNum).To(Equal(errPart))
-
-	// Fails recovery partition
-	errPart, partNum, devNum, errFormat, printOut = 4, 0, 0, "", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(partNum).To(Equal(errPart))
-
-	// Fails persistent partition
-	errPart, partNum, devNum, errFormat, printOut = 5, 0, 0, "", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(partNum).To(Equal(errPart))
-
-	// Fails oem format
-	errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_OEM", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(devNum).To(Equal(2))
-
-	// Fails state format
-	errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_STATE", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(devNum).To(Equal(3))
-
-	// Fails recovery format
-	errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_RECOVERY", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(devNum).To(Equal(4))
-
-	// Fails persistent format
-	errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_PERSISTENT", printOutput
-	Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-	Expect(devNum).To(Equal(5))
 }
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
@@ -273,6 +75,203 @@ var _ = Describe("Elemental", func() {
 			v1.WithSyscall(syscall),
 			v1.WithClient(client),
 		)
+	})
+
+	Context("PartitionAndFormatDevice", func() {
+		var el *elemental.Elemental
+		var dev *part.Disk
+		var runner *v1mock.TestRunnerV2
+		var cInit *v1mock.FakeCloudInitRunner
+		var partNum, devNum, errPart int
+		var printOut, errFormat string
+
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			cInit = &v1mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
+			config.Runner = runner
+			config.CloudInitRunner = cInit
+			fs.Create(cnst.EfiDevice)
+			config.SetupStyle()
+			el = elemental.NewElemental(config)
+			dev = part.NewDisk(
+				"/some/device",
+				part.WithRunner(runner),
+				part.WithFS(fs),
+				part.WithLogger(logger),
+			)
+		})
+
+		Context("Successful run", func() {
+			var runFunc func(cmd string, args ...string) ([]byte, error)
+			var initCmds, partCmds [][]string
+			BeforeEach(func() {
+				initCmds = [][]string{
+					{
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mklabel", "gpt",
+					}, {
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.grub", "vfat", "2048", "133119", "set", "1", "esp", "on",
+					}, {"mkfs.vfat", "-i", "COS_GRUB", "/some/device1"},
+				}
+				partCmds = [][]string{
+					{
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.oem", "ext4", "133120", "264191",
+					}, {
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.state", "ext4", "264192", "31721471",
+					}, {
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.recovery", "ext4", "31721472", "48498687",
+					}, {
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.persistent", "ext4", "48498688", "100%",
+					}, {"mkfs.ext4", "-L", "COS_OEM", "/some/device2"},
+					{"mkfs.ext4", "-L", "COS_STATE", "/some/device3"},
+					{"mkfs.ext4", "-L", "COS_RECOVERY", "/some/device4"},
+					{"mkfs.ext4", "-L", "COS_PERSISTENT", "/some/device5"},
+				}
+
+				runFunc = func(cmd string, args ...string) ([]byte, error) {
+					switch cmd {
+					case "parted":
+						idx := 0
+						for i, arg := range args {
+							if arg == "mkpart" {
+								idx = i
+								break
+							}
+						}
+						if idx > 0 {
+							partNum++
+							printOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
+						}
+						return []byte(printOut), nil
+					case "lsblk":
+						devNum++
+						return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
+					default:
+						return []byte{}, nil
+					}
+				}
+				runner.SideEffect = runFunc
+			})
+
+			It("Successfully creates partitions and formats them", func() {
+				partNum, devNum, printOut = 0, 0, printOutput
+				err := el.PartitionAndFormatDevice(dev)
+				Expect(err).To(BeNil())
+				Expect(runner.MatchMilestones(append(initCmds, partCmds...))).To(BeNil())
+			})
+
+			It("Successfully creates boot partitions and runs 'partitioning' stage", func() {
+				config.PartLayout = "partitioning.yaml"
+				partNum, devNum, printOut = 0, 0, printOutput
+				err := el.PartitionAndFormatDevice(dev)
+				Expect(err).To(BeNil())
+				Expect(runner.MatchMilestones(initCmds)).To(BeNil())
+				Expect(len(cInit.ExecStages)).To(Equal(1))
+				Expect(cInit.ExecStages[0]).To(Equal("partitioning"))
+			})
+		})
+
+		Context("Run with failures", func() {
+			var runFunc func(cmd string, args ...string) ([]byte, error)
+			BeforeEach(func() {
+				runFunc = func(cmd string, args ...string) ([]byte, error) {
+					switch cmd {
+					case "parted":
+						idx := 0
+						for i, arg := range args {
+							if arg == "mkpart" {
+								idx = i
+								break
+							}
+						}
+						if idx > 0 {
+							partNum++
+							printOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
+							if errPart == partNum {
+								return []byte{}, errors.New("Failure")
+							}
+						}
+						return []byte(printOut), nil
+					case "lsblk":
+						devNum++
+						return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
+					case "mkfs.ext4", "mkfs.vfat":
+						if args[1] == errFormat {
+							return []byte{}, errors.New("Failure")
+						}
+						return []byte{}, nil
+					default:
+						return []byte{}, nil
+					}
+				}
+				runner.SideEffect = runFunc
+			})
+
+			It("Fails creating efi partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "COS_GRUB", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails formatting efi partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_GRUB", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(1))
+			})
+
+			It("Fails creating oem partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 2, 0, 0, "", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails creating state partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 3, 0, 0, "", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails creating recovery partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 4, 0, 0, "", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails creating persistent partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 5, 0, 0, "", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails formatting oem partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_OEM", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(2))
+			})
+
+			It("Fails formatting state partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_STATE", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(3))
+			})
+
+			It("Fails formatting recovery partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_RECOVERY", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(4))
+			})
+
+			It("Fails formatting persistent partition", func() {
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_PERSISTENT", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(5))
+			})
+		})
 	})
 
 	Context("DoCopy", func() {
