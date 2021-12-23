@@ -25,7 +25,6 @@ import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/afero"
 	"github.com/zloylos/grsync"
-	"io"
 	"os"
 	"strings"
 )
@@ -191,7 +190,7 @@ func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...s
 	if err != nil {
 		return err
 	}
-	device, err := c.GetDeviceByLabel(label)
+	device, err := utils.GetDeviceByLabel(c.config.Runner, label)
 	if err != nil {
 		return err
 	}
@@ -449,7 +448,7 @@ func (c *Elemental) CopyRecovery() error {
 	recoveryDirCos := fmt.Sprintf("%s/cOS", cnst.RecoveryDir)
 	recoveryDirCosSquashTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile)
 	isoMntCosSquashSource := fmt.Sprintf("%s/%s", c.config.IsoMnt, cnst.RecoverySquashFile)
-	imgCosSource := fmt.Sprintf("%s/cOS/%s", c.config.StateDir, cnst.ActiveImgFile)
+	imgCosSource := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, c.config.ActiveImage.File)
 	imgCosTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile)
 
 	err = c.config.Fs.MkdirAll(recoveryDirCos, 0644)
@@ -458,41 +457,17 @@ func (c *Elemental) CopyRecovery() error {
 	}
 	if exists, _ := afero.Exists(c.config.Fs, isoMntCosSquashSource); exists {
 		c.config.Logger.Infof("Copying squashfs..")
-		sourceSquash, err := c.config.Fs.Open(isoMntCosSquashSource)
-		if err != nil {
-			return err
-		}
-		defer sourceSquash.Close()
-		targetSquash, err := c.config.Fs.Create(recoveryDirCosSquashTarget)
-		if err != nil {
-			return err
-		}
-		defer targetSquash.Close()
-		_, err = io.Copy(targetSquash, sourceSquash)
+		err = utils.CopyFile(c.config.Fs, isoMntCosSquashSource, recoveryDirCosSquashTarget)
 		if err != nil {
 			return err
 		}
 	} else {
 		c.config.Logger.Infof("Copying image file..")
-		sourceImg, err := c.config.Fs.Open(imgCosSource)
+		err = utils.CopyFile(c.config.Fs, imgCosSource, imgCosTarget)
 		if err != nil {
 			return err
 		}
-		defer sourceImg.Close()
-		targetImg, err := c.config.Fs.Create(imgCosTarget)
-		if err != nil {
-			return err
-		}
-		defer targetImg.Close()
-		_, err = io.Copy(targetImg, sourceImg)
-		if err != nil {
-			return err
-		}
-		_, err = c.config.Runner.Run("sync")
-		if err != nil {
-			return err
-		}
-		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.GetSystemLabel(), imgCosSource)
+		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.GetSystemLabel(), imgCosTarget)
 		if err != nil {
 			return err
 		}
@@ -501,14 +476,19 @@ func (c *Elemental) CopyRecovery() error {
 	return nil
 }
 
-// GetDeviceByLabel will try to return the device that matches the given label
-func (c *Elemental) GetDeviceByLabel(label string) (string, error) {
-	out, err := c.config.Runner.Run("blkid", "-t", fmt.Sprintf("LABEL=%s", label), "-o", "device")
+func (c Elemental) CopyPassive() error {
+	actImgFile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, c.config.ActiveImage.File)
+	passImgFile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
+
+	c.config.Logger.Infof("Copying image file..")
+	err := utils.CopyFile(c.config.Fs, actImgFile, passImgFile)
 	if err != nil {
-		return "", err
+		return err
 	}
-	if strings.TrimSpace(string(out)) == "" {
-		return "", errors.New("no device found")
+	_, err = c.config.Runner.Run("tune2fs", "-L", c.config.PassiveLabel, passImgFile)
+	if err != nil {
+		c.config.Logger.Errorf("Failed to apply label %s to $s", c.config.PassiveLabel, passImgFile)
+		c.config.Fs.Remove(passImgFile)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return err
 }

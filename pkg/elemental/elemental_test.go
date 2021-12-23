@@ -678,7 +678,7 @@ var _ = Describe("Elemental", func() {
 					runner.ReturnValue = []byte(cnst.RecoveryLabel)
 					config.Runner = runner
 					// Create active image file
-					imgfile := fmt.Sprintf("%s/cOS/%s", config.StateDir, cnst.ActiveImgFile)
+					imgfile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, config.ActiveImage.File)
 					_, _ = config.Fs.Create(imgfile)
 					e := elemental.NewElemental(config)
 					Expect(e.CopyRecovery()).To(BeNil())
@@ -702,6 +702,45 @@ var _ = Describe("Elemental", func() {
 				Expect(exists).To(BeFalse())
 				Expect(err).To(BeNil())
 			})
+		})
+	})
+
+	Context("CopyPassive", func() {
+		var actImgFile, passImgFile string
+		BeforeEach(func() {
+			actImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, config.ActiveImage.File)
+			passImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
+		})
+
+		It("Copies active image to passive", func() {
+			_, err := fs.Create(actImgFile)
+			Expect(err).To(BeNil())
+			_, err = fs.Stat(passImgFile)
+			Expect(err).NotTo(BeNil())
+			el := elemental.NewElemental(config)
+			Expect(el.CopyPassive()).To(BeNil())
+			_, err = fs.Stat(passImgFile)
+			Expect(err).To(BeNil())
+		})
+
+		It("Fails to copy, active file is not present", func() {
+			_, err := fs.Stat(passImgFile)
+			Expect(err).NotTo(BeNil())
+			el := elemental.NewElemental(config)
+			Expect(el.CopyPassive()).NotTo(BeNil())
+		})
+
+		It("Fails to set the passive label", func() {
+			runner := runner.(*v1mock.FakeRunner)
+			runner.ErrorOnCommand = true
+			_, err := fs.Create(actImgFile)
+			Expect(err).To(BeNil())
+			_, err = fs.Stat(passImgFile)
+			Expect(err).NotTo(BeNil())
+			el := elemental.NewElemental(config)
+			Expect(el.CopyPassive()).NotTo(BeNil())
+			_, err = fs.Stat(passImgFile)
+			Expect(err).NotTo(BeNil())
 		})
 	})
 })

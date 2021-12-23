@@ -88,8 +88,8 @@ func (g Grub) Install() error {
 
 	grubargs = append(
 		grubargs,
-		fmt.Sprintf("--root-directory=%s", g.config.StateDir),
-		fmt.Sprintf("--boot-directory=%s", g.config.StateDir),
+		fmt.Sprintf("--root-directory=%s", constants.StateDir),
+		fmt.Sprintf("--boot-directory=%s", constants.StateDir),
 		fmt.Sprintf("--removable=%s", g.config.Target),
 	)
 
@@ -99,8 +99,8 @@ func (g Grub) Install() error {
 		return err
 	}
 
-	grub1dir := fmt.Sprintf("%s/grub", g.config.StateDir)
-	grub2dir := fmt.Sprintf("%s/grub2", g.config.StateDir)
+	grub1dir := fmt.Sprintf("%s/grub", constants.StateDir)
+	grub2dir := fmt.Sprintf("%s/grub2", constants.StateDir)
 
 	// Select the proper dir for grub
 	if ok, _ := afero.IsDir(g.config.Fs, grub1dir); ok {

@@ -112,9 +112,6 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	if r.GrubConf == "" {
 		r.GrubConf = constants.GrubConf
 	}
-	if r.StateDir == "" {
-		r.StateDir = constants.StateDir
-	}
 
 	r.ActiveImage = Image{
 		Label: constants.ActiveLabel,
@@ -208,7 +205,6 @@ type RunConfig struct {
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string
-	StateDir  string
 	GrubConf  string
 	IsoMnt    string // /run/initramfs/live by default, can be set to a different dir if --iso flag is set
 	// Interfaces used around by methods

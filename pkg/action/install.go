@@ -125,13 +125,15 @@ func (i InstallAction) Run() error {
 		return err
 	}
 	// install Recovery
-	// cos.CopyRecovery()
 	err = newElemental.CopyRecovery()
 	if err != nil {
 		return err
 	}
-	// install Secondary
-	// cos.CopyPassive()
+	// install Passive
+	err = newElemental.CopyPassive()
+	if err != nil {
+		return err
+	}
 	// Rebrand
 	// cos.Rebrand()
 	// ????

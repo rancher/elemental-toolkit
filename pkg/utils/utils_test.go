@@ -19,6 +19,7 @@ package utils_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
@@ -153,25 +154,78 @@ var _ = Describe("Utils", func() {
 			Expect(out).To(Equal(""))
 		})
 	})
+	Context("GetDeviceByLabel", func() {
+		var runner *v1mock.TestRunnerV2
+		var cmds [][]string
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			cmds = [][]string{
+				{"blkid", "-t", "LABEL=FAKE", "-o", "device"},
+			}
+		})
+		It("returns found device", func() {
+			runner.ReturnValue = []byte("/some/device")
+			out, err := utils.GetDeviceByLabel(runner, "FAKE")
+			Expect(err).To(BeNil())
+			Expect(out).To(Equal("/some/device"))
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to run blkid", func() {
+			runner.ReturnError = errors.New("failed running blkid")
+			_, err := utils.GetDeviceByLabel(runner, "FAKE")
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails if no device is found", func() {
+			runner.ReturnValue = []byte("")
+			_, err := utils.GetDeviceByLabel(runner, "FAKE")
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+	})
+	Context("CopyFile", func() {
+		It("Copies source to target", func() {
+			fs.Create("/some/file")
+			_, err := fs.Stat("/some/otherfile")
+			Expect(err).NotTo(BeNil())
+			err = utils.CopyFile(fs, "/some/file", "/some/otherfile")
+			Expect(err).To(BeNil())
+			_, err = fs.Stat("/some/otherfile")
+			Expect(err).To(BeNil())
+		})
+		It("Fails to open non existing file", func() {
+			err := utils.CopyFile(fs, "/some/file", "/some/otherfile")
+			Expect(err).NotTo(BeNil())
+			_, err = fs.Stat("/some/otherfile")
+			Expect(err).NotTo(BeNil())
+		})
+		It("Fails to copy on non writable target", func() {
+			fs.Create("/some/file")
+			_, err := fs.Stat("/some/otherfile")
+			Expect(err).NotTo(BeNil())
+			fs = afero.NewReadOnlyFs(fs)
+			err = utils.CopyFile(fs, "/some/file", "/some/otherfile")
+			Expect(err).NotTo(BeNil())
+			_, err = fs.Stat("/some/otherfile")
+			Expect(err).NotTo(BeNil())
+		})
+	})
 	Context("Grub", func() {
 		Context("Install", func() {
 			BeforeEach(func() {
 				config.Target = "/dev/test"
-				config.StateDir = "/state"
 			})
 			It("installs with default values", func() {
 				buf := &bytes.Buffer{}
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				_ = fs.MkdirAll("/state/grub2/", 0666)
+				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
 				_ = fs.MkdirAll("/etc/cos/", 0666)
 				err := afero.WriteFile(fs, "/etc/cos/grub.cfg", []byte("console=tty1"), 0644)
 				Expect(err).To(BeNil())
 
 				config.Logger = logger
-				config.Target = "/dev/test"
-				config.StateDir = "/state"
 				config.GrubConf = "/etc/cos/grub.cfg"
 
 				grub := utils.NewGrub(config)
@@ -182,7 +236,7 @@ var _ = Describe("Utils", func() {
 				Expect(buf).To(ContainSubstring("Grub install to device /dev/test complete"))
 				Expect(buf).ToNot(ContainSubstring("efi"))
 				Expect(buf.String()).ToNot(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := afero.ReadFile(fs, "/state/grub2/grub.cfg")
+				targetGrub, err := afero.ReadFile(fs, fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
 				Expect(err).To(BeNil())
 				// Should not be modified at all
 				Expect(targetGrub).To(ContainSubstring("console=tty1"))
@@ -228,7 +282,7 @@ var _ = Describe("Utils", func() {
 				buf := &bytes.Buffer{}
 				logger := log.New()
 				logger.SetOutput(buf)
-				_ = fs.MkdirAll("/state/grub2/", 0666)
+				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
 				_ = fs.MkdirAll("/etc/cos/", 0666)
 				err := afero.WriteFile(fs, "/etc/cos/grub.cfg", []byte("console=tty1"), 0644)
 				Expect(err).To(BeNil())
@@ -243,7 +297,7 @@ var _ = Describe("Utils", func() {
 				Expect(err).To(BeNil())
 
 				Expect(buf.String()).To(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := afero.ReadFile(fs, "/state/grub2/grub.cfg")
+				targetGrub, err := afero.ReadFile(fs, fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
 				Expect(err).To(BeNil())
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 
