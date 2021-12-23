@@ -19,7 +19,6 @@ package action
 import (
 	"errors"
 	"fmt"
-	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
@@ -50,8 +49,10 @@ func (i InstallAction) Run() error {
 		part.WithFS(i.Config.Fs),
 		part.WithLogger(i.Config.Logger),
 	)
+	//TODO run cos-setup before-install stage
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
 	err = newElemental.GetIso()
+	//TODO defer unmount ISO
 	if err != nil {
 		return err
 	}
@@ -93,37 +94,38 @@ func (i InstallAction) Run() error {
 	}
 
 	//mount file system image
-	loop, err := newElemental.MountImage(i.Config.ActiveImage, cnst.ActiveDir)
+	err = newElemental.MountImage(&i.Config.ActiveImage)
 	if err != nil {
 		return err
 	}
 
 	// install Active
-	err = newElemental.CopyCos(cnst.ActiveDir)
+	err = newElemental.CopyCos()
 	if err != nil {
-		newElemental.UnmountImage(cnst.ActiveDir, loop)
+		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// Copy cloud-init if any
 	err = newElemental.CopyCloudConfig()
 	if err != nil {
-		newElemental.UnmountImage(cnst.ActiveDir, loop)
+		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// install grub
 	grub := utils.NewGrub(i.Config)
 	err = grub.Install()
 	if err != nil {
-		newElemental.UnmountImage(cnst.ActiveDir, loop)
+		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// Relabel SELinux
 	_ = newElemental.SelinuxRelabel(false)
 	// Unmount everything
-	err = newElemental.UnmountImage(cnst.ActiveDir, loop)
+	err = newElemental.UnmountImage(&i.Config.ActiveImage)
 	if err != nil {
 		return err
 	}
+	//TODO chrooted run of after-install-chroot cloud-init stage
 	// install Recovery
 	err = newElemental.CopyRecovery()
 	if err != nil {
@@ -134,9 +136,11 @@ func (i InstallAction) Run() error {
 	if err != nil {
 		return err
 	}
-	// Rebrand
+	//TODO run after-install cloud-init stage
+	// TODO Rebrand
 	// cos.Rebrand()
 	// ????
 	// profit!
+	// TODO poweroff or reboot or nothing
 	return err
 }

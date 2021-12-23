@@ -27,7 +27,6 @@ import (
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	"github.com/spf13/afero"
-	"io/ioutil"
 	"k8s.io/mount-utils"
 	"os"
 	"testing"
@@ -41,14 +40,6 @@ const partTmpl = `
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Elemental test suite")
-}
-
-func getNamesFromListFiles(list []os.FileInfo) []string {
-	var names []string
-	for _, f := range list {
-		names = append(names, f.Name())
-	}
-	return names
 }
 
 var _ = Describe("Elemental", func() {
@@ -156,29 +147,27 @@ var _ = Describe("Elemental", func() {
 			runner = v1mock.NewTestRunnerV2()
 			config.Runner = runner
 			el = elemental.NewElemental(config)
+			config.ActiveImage.MountPoint = "/some/mountpoint"
 		})
 
 		It("Mounts file system image", func() {
 			runner.ReturnValue = []byte("/dev/loop")
-			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
-			Expect(err).To(BeNil())
-			Expect(loop).To(Equal("/dev/loop"))
+			Expect(el.MountImage(&config.ActiveImage)).To(BeNil())
+			Expect(config.ActiveImage.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Fails to set a loop device", func() {
 			runner.ReturnError = errors.New("failed to set a loop device")
-			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
-			Expect(err).NotTo(BeNil())
-			Expect(loop).To(Equal(""))
+			Expect(el.MountImage(&config.ActiveImage)).NotTo(BeNil())
+			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to mount a loop device", func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
-			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
-			Expect(err).NotTo(BeNil())
-			Expect(loop).To(Equal(""))
+			Expect(el.MountImage(&config.ActiveImage)).NotTo(BeNil())
+			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
 		})
 	})
 
@@ -190,30 +179,25 @@ var _ = Describe("Elemental", func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			config.Runner = runner
 			el = elemental.NewElemental(config)
-			loop, err := el.MountImage(config.ActiveImage, "/some/mountpoint")
-			Expect(err).To(BeNil())
-			Expect(loop).To(Equal("/dev/loop"))
+			config.ActiveImage.MountPoint = "/some/mountpoint"
+			Expect(el.MountImage(&config.ActiveImage)).To(BeNil())
+			Expect(config.ActiveImage.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Unmounts file system image", func() {
-			Expect(
-				el.UnmountImage("/some/mountpoint", "/dev/loop"),
-			).To(BeNil())
+			Expect(el.UnmountImage(&config.ActiveImage)).To(BeNil())
+			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to unmount a mountpoint", func() {
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnUnmount = true
-			Expect(
-				el.UnmountImage("/some/mountpoint", "/dev/loop"),
-			).NotTo(BeNil())
+			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
 		})
 
 		It("Fails to unset a loop device", func() {
 			runner.ReturnError = errors.New("failed to unset a loop device")
-			Expect(
-				el.UnmountImage("/some/mountpoint", "/dev/loop"),
-			).NotTo(BeNil())
+			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
 		})
 	})
 
@@ -451,58 +435,17 @@ var _ = Describe("Elemental", func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-
-			for i := 0; i < 5; i++ {
-				_, _ = os.CreateTemp(sourceDir, "file*")
-			}
-
-			config.Source = sourceDir
-
+			config.ActiveImage.RootTree = sourceDir
+			config.ActiveImage.MountPoint = destDir
 			c := elemental.NewElemental(config)
-			err = c.CopyCos(destDir)
-			Expect(err).To(BeNil())
-
-			filesDest, err := ioutil.ReadDir(destDir)
-			destNames := getNamesFromListFiles(filesDest)
-			filesSource, err := ioutil.ReadDir(sourceDir)
-			SourceNames := getNamesFromListFiles(filesSource)
-
-			// Should be the same files in both dirs now
-			Expect(destNames).To(Equal(SourceNames))
-		})
-		It("should not fail if dirs are empty", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
-			destDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(destDir)
-
-			config.Source = sourceDir
-
-			c := elemental.NewElemental(config)
-			err = c.CopyCos(destDir)
-			Expect(err).To(BeNil())
-		})
-		It("should fail if destination does not exist", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
-
-			config.Source = sourceDir
-
-			c := elemental.NewElemental(config)
-			err = c.CopyCos("/welp")
-			Expect(err).ToNot(BeNil())
-
+			err = c.CopyCos()
+			Expect(c.CopyCos()).To(BeNil())
 		})
 		It("should fail if source does not exist", func() {
-			config.Source = "/welp"
-
+			config.ActiveImage.RootTree = "/welp"
 			c := elemental.NewElemental(config)
-			err := c.CopyCos("/welp")
+			err := c.CopyCos()
 			Expect(err).ToNot(BeNil())
-
 		})
 	})
 	Context("NoFormat", func() {

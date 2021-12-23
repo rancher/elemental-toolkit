@@ -56,4 +56,5 @@ const (
 	ActiveImgFile      = "active.img"
 	PassiveImgFile     = "passive.img"
 	RecoveryImgFile    = "recovery.img"
+	IsoBaseTree        = "/run/rootfsbase"
 )

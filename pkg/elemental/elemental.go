@@ -24,7 +24,6 @@ import (
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/afero"
-	"github.com/zloylos/grsync"
 	"os"
 	"strings"
 )
@@ -201,25 +200,27 @@ func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...s
 	return nil
 }
 
-func (c Elemental) MountImage(img v1.Image, mountpoint string) (string, error) {
+func (c Elemental) MountImage(img *v1.Image) error {
 	out, err := c.config.Runner.Run("losetup", "--show", "-f", img.File)
-	if err != nil {
-		return "", err
-	}
-	err = c.config.Mounter.Mount(mountpoint, string(out), "auto", []string{})
-	if err != nil {
-		c.config.Runner.Run("losetup", "-d", string(out))
-		return "", err
-	}
-	return string(out), nil
-}
-
-func (c Elemental) UnmountImage(mountpoint string, device string) error {
-	err := c.config.Mounter.Unmount(mountpoint)
 	if err != nil {
 		return err
 	}
-	_, err = c.config.Runner.Run("losetup", "-d", device)
+	err = c.config.Mounter.Mount(img.MountPoint, string(out), "auto", []string{})
+	if err != nil {
+		c.config.Runner.Run("losetup", "-d", string(out))
+		return err
+	}
+	img.LoopDevice = string(out)
+	return nil
+}
+
+func (c Elemental) UnmountImage(img *v1.Image) error {
+	err := c.config.Mounter.Unmount(img.MountPoint)
+	if err != nil {
+		return err
+	}
+	_, err = c.config.Runner.Run("losetup", "-d", img.LoopDevice)
+	img.LoopDevice = ""
 	return err
 }
 
@@ -252,33 +253,11 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 }
 
 // CopyCos will rsync from config.source to config.target
-func (c *Elemental) CopyCos(target string) error {
+func (c *Elemental) CopyCos() error {
 	c.config.Logger.Infof("Copying cOS..")
-	// Make sure the values have a / at the end.
-	var source string
-	if strings.HasSuffix(c.config.Source, "/") == false {
-		source = fmt.Sprintf("%s/", c.config.Source)
-	} else {
-		source = c.config.Source
-	}
-
-	if strings.HasSuffix(target, "/") == false {
-		target = fmt.Sprintf("%s/", target)
-	}
-	// 1 - rsync all the system from source to target
-	task := grsync.NewTask(
-		source,
-		target,
-		grsync.RsyncOptions{
-			Quiet:   false,
-			Archive: true,
-			XAttrs:  true,
-			ACLs:    true,
-			Exclude: []string{"mnt", "proc", "sys", "dev", "tmp"},
-		},
-	)
-
-	if err := task.Run(); err != nil {
+	excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
+	err := utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+	if err != nil {
 		return err
 	}
 	c.config.Logger.Infof("Finished copying cOS..")
@@ -291,8 +270,7 @@ func (c *Elemental) CopyCloudConfig() error {
 		customConfig := fmt.Sprintf("%s/99_custom.yaml", cnst.OEMDir)
 		c.config.Logger.Infof("Trying to copy cloud config file %s to %s", c.config.CloudInit, customConfig)
 
-		if err :=
-			c.GetUrl(c.config.CloudInit, customConfig); err != nil {
+		if err := c.GetUrl(c.config.CloudInit, customConfig); err != nil {
 			return err
 		}
 

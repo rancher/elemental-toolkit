@@ -28,9 +28,19 @@ import (
 	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"io/ioutil"
 	"k8s.io/mount-utils"
+	"os"
 	"testing"
 )
+
+func getNamesFromListFiles(list []os.FileInfo) []string {
+	var names []string
+	for _, f := range list {
+		names = append(names, f.Name())
+	}
+	return names
+}
 
 func TestCommonSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -208,6 +218,51 @@ var _ = Describe("Utils", func() {
 			Expect(err).NotTo(BeNil())
 			_, err = fs.Stat("/some/otherfile")
 			Expect(err).NotTo(BeNil())
+		})
+	})
+	Context("SyncData", func() {
+		It("Copies all files from source to target", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+
+			for i := 0; i < 5; i++ {
+				_, _ = os.CreateTemp(sourceDir, "file*")
+			}
+
+			Expect(utils.SyncData(sourceDir, destDir)).To(BeNil())
+
+			filesDest, err := ioutil.ReadDir(destDir)
+			destNames := getNamesFromListFiles(filesDest)
+			filesSource, err := ioutil.ReadDir(sourceDir)
+			SourceNames := getNamesFromListFiles(filesSource)
+
+			// Should be the same files in both dirs now
+			Expect(destNames).To(Equal(SourceNames))
+		})
+		It("should not fail if dirs are empty", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+			Expect(utils.SyncData(sourceDir, destDir)).To(BeNil())
+		})
+		It("should fail if destination does not exist", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			Expect(utils.SyncData(sourceDir, "/welp")).NotTo(BeNil())
+		})
+		It("should fail if source does not exist", func() {
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+			Expect(utils.SyncData("/welp", destDir)).NotTo(BeNil())
 		})
 	})
 	Context("Grub", func() {

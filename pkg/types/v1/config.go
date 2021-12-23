@@ -114,10 +114,12 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	r.ActiveImage = Image{
-		Label: constants.ActiveLabel,
-		Size:  constants.ImgSize,
-		File:  constants.ActiveImgFile,
-		FS:    constants.LinuxFs,
+		Label:      constants.ActiveLabel,
+		Size:       constants.ImgSize,
+		File:       constants.ActiveImgFile,
+		FS:         constants.LinuxFs,
+		RootTree:   constants.IsoBaseTree,
+		MountPoint: constants.ActiveDir,
 	}
 
 	if r.activeLabel != "" {
@@ -236,6 +238,10 @@ type Image struct {
 	Label string
 	Size  uint
 	FS    string
+	// Path of the root tree
+	RootTree   string
+	MountPoint string
+	LoopDevice string
 }
 
 func (r RunConfig) GetSystemLabel() string {

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/spf13/afero"
+	"github.com/zloylos/grsync"
 	"io"
 	"os/exec"
 	"strings"
@@ -82,4 +83,30 @@ func CopyFile(fs afero.Fs, source string, target string) error {
 
 	_, err = io.Copy(targetFile, sourceFile)
 	return err
+}
+
+// SyncData rsync's source folder contents to a target folder content,
+// both are expected to exist before hand.
+func SyncData(source string, target string, excludes ...string) error {
+	if strings.HasSuffix(source, "/") == false {
+		source = fmt.Sprintf("%s/", source)
+	}
+
+	if strings.HasSuffix(target, "/") == false {
+		target = fmt.Sprintf("%s/", target)
+	}
+
+	task := grsync.NewTask(
+		source,
+		target,
+		grsync.RsyncOptions{
+			Quiet:   false,
+			Archive: true,
+			XAttrs:  true,
+			ACLs:    true,
+			Exclude: excludes,
+		},
+	)
+
+	return task.Run()
 }
