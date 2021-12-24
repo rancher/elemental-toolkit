@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - arm_adaptations
     tags:
       - '*'
 
