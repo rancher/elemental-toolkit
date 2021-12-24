@@ -7,7 +7,7 @@ Before=initrd.target
 
 [Service]
 RootDirectory=/sysroot
-BindPaths=/proc /sys /dev /run
+BindPaths=/proc /sys /dev /run /tmp
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/cos-setup initramfs
