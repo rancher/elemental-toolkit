@@ -17,7 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
+	"fmt"
+	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"net/http"
@@ -101,7 +102,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	if r.Mounter == nil {
-		r.Mounter = mount.New(constants.MountBinary)
+		r.Mounter = mount.New(cnst.MountBinary)
 	}
 
 	if r.CloudInitRunner == nil {
@@ -110,16 +111,16 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 
 	// Set defaults if empty
 	if r.GrubConf == "" {
-		r.GrubConf = constants.GrubConf
+		r.GrubConf = cnst.GrubConf
 	}
 
 	r.ActiveImage = Image{
-		Label:      constants.ActiveLabel,
-		Size:       constants.ImgSize,
-		File:       constants.ActiveImgFile,
-		FS:         constants.LinuxFs,
-		RootTree:   constants.IsoBaseTree,
-		MountPoint: constants.ActiveDir,
+		Label:      cnst.ActiveLabel,
+		Size:       cnst.ImgSize,
+		File:       fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.ActiveImgFile),
+		FS:         cnst.LinuxFs,
+		RootTree:   cnst.IsoBaseTree,
+		MountPoint: cnst.ActiveDir,
 	}
 
 	if r.activeLabel != "" {
@@ -127,28 +128,28 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	if r.PassiveLabel == "" {
-		r.PassiveLabel = constants.PassiveLabel
+		r.PassiveLabel = cnst.PassiveLabel
 	}
 
 	if r.systemLabel == "" {
-		r.systemLabel = constants.SystemLabel
+		r.systemLabel = cnst.SystemLabel
 	}
 
 	r.RecoveryPart = Partition{
-		Label:  constants.RecoveryLabel,
-		Size:   constants.RecoverySize,
-		PLabel: constants.RecoveryPLabel,
-		FS:     constants.LinuxFs,
+		Label:  cnst.RecoveryLabel,
+		Size:   cnst.RecoverySize,
+		PLabel: cnst.RecoveryPLabel,
+		FS:     cnst.LinuxFs,
 	}
 	if r.recoveryLabel != "" {
 		r.RecoveryPart.Label = r.recoveryLabel
 	}
 
 	r.PersistentPart = Partition{
-		Label:  constants.PersistentLabel,
-		Size:   constants.PersistentSize,
-		PLabel: constants.PersistentPLabel,
-		FS:     constants.LinuxFs,
+		Label:  cnst.PersistentLabel,
+		Size:   cnst.PersistentSize,
+		PLabel: cnst.PersistentPLabel,
+		FS:     cnst.LinuxFs,
 	}
 
 	if r.persistentLabel != "" {
@@ -156,10 +157,10 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	r.OEMPart = Partition{
-		Label:  constants.OEMLabel,
-		Size:   constants.OEMSize,
-		PLabel: constants.OEMPLabel,
-		FS:     constants.LinuxFs,
+		Label:  cnst.OEMLabel,
+		Size:   cnst.OEMSize,
+		PLabel: cnst.OEMPLabel,
+		FS:     cnst.LinuxFs,
 	}
 
 	if r.oEMLabel != "" {
@@ -167,16 +168,16 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	}
 
 	r.StatePart = Partition{
-		Label:  constants.StateLabel,
-		Size:   constants.StateSize,
-		PLabel: constants.StatePLabel,
-		FS:     constants.LinuxFs,
+		Label:  cnst.StateLabel,
+		Size:   cnst.StateSize,
+		PLabel: cnst.StatePLabel,
+		FS:     cnst.LinuxFs,
 	}
 	if r.stateLabel != "" {
 		r.StatePart.Label = r.stateLabel
 	}
 	if r.IsoMnt == "" {
-		r.IsoMnt = constants.IsoMnt
+		r.IsoMnt = cnst.IsoMnt
 	}
 	return r
 }
@@ -252,7 +253,7 @@ func (r RunConfig) GetSystemLabel() string {
 func (r *RunConfig) SetupStyle() {
 	var part, boot string
 
-	_, err := r.Fs.Stat(constants.EfiDevice)
+	_, err := r.Fs.Stat(cnst.EfiDevice)
 	efiExists := err == nil
 
 	if r.ForceEfi || efiExists {

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"github.com/rancher-sandbox/elemental-cli/cmd/config"
+	"github.com/rancher-sandbox/elemental-cli/pkg/action"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,8 +53,8 @@ var installCmd = &cobra.Command{
 
 		cfg.Logger.Infof("Install called")
 		// Dont call it yet, not ready
-		//install := action.NewInstallAction(cfg)
-		//err = install.Run()
+		install := action.NewInstallAction(cfg)
+		err = install.Run()
 		if err != nil {
 			return err
 		}

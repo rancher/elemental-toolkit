@@ -25,6 +25,7 @@ import (
 	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
 	"github.com/spf13/afero"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -146,16 +147,16 @@ func (c *Elemental) createDataPartitions(disk *part.Disk) error {
 // MountPartitions mounts recovery, state and oem partitions. Note this method does
 // not umount any partition on exit or on error, umounts must be handled by caller logic.
 func (c Elemental) MountPartitions() error {
-	err := c.mountDeviceByLabel(c.config.StatePart.Label, cnst.StateDir)
+	err := c.mountDeviceByLabel(c.config.StatePart.Label, cnst.StateDir, "rw")
 	if err != nil {
 		return err
 	}
-	err = c.mountDeviceByLabel(c.config.RecoveryPart.Label, cnst.RecoveryDir)
+	err = c.mountDeviceByLabel(c.config.RecoveryPart.Label, cnst.RecoveryDir, "rw")
 	if err != nil {
 		c.config.Mounter.Unmount(cnst.StateDir)
 		return err
 	}
-	err = c.mountDeviceByLabel(c.config.OEMPart.Label, cnst.OEMDir)
+	err = c.mountDeviceByLabel(c.config.OEMPart.Label, cnst.OEMDir, "rw")
 	if err != nil {
 		c.config.Mounter.Unmount(cnst.StateDir)
 		c.config.Mounter.Unmount(cnst.RecoveryDir)
@@ -185,7 +186,7 @@ func (c Elemental) UnmountPartitions() error {
 }
 
 func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...string) error {
-	err := c.config.Fs.MkdirAll(mountpoint, 0644)
+	err := c.config.Fs.MkdirAll(mountpoint, 0755)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...s
 	if err != nil {
 		return err
 	}
-	err = c.config.Mounter.Mount(mountpoint, device, "auto", opts)
+	err = c.config.Mounter.Mount(device, mountpoint, "auto", opts)
 	if err != nil {
 		return err
 	}
@@ -201,16 +202,21 @@ func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...s
 }
 
 func (c Elemental) MountImage(img *v1.Image) error {
+	err := c.config.Fs.MkdirAll(img.MountPoint, 0755)
+	if err != nil {
+		return err
+	}
 	out, err := c.config.Runner.Run("losetup", "--show", "-f", img.File)
 	if err != nil {
 		return err
 	}
-	err = c.config.Mounter.Mount(img.MountPoint, string(out), "auto", []string{})
+	loop := strings.TrimSpace(string(out))
+	err = c.config.Mounter.Mount(loop, img.MountPoint, "auto", []string{"rw"})
 	if err != nil {
-		c.config.Runner.Run("losetup", "-d", string(out))
+		c.config.Runner.Run("losetup", "-d", loop)
 		return err
 	}
-	img.LoopDevice = string(out)
+	img.LoopDevice = loop
 	return nil
 }
 
@@ -226,6 +232,11 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 
 // CreateFileSystemImage creates the image file for config.target
 func (c Elemental) CreateFileSystemImage(img v1.Image) error {
+	c.config.Logger.Infof("Creating file system image %s", img.File)
+	err := c.config.Fs.MkdirAll(filepath.Dir(img.File), 0755)
+	if err != nil {
+		return err
+	}
 	actImg, err := c.config.Fs.Create(img.File)
 	if err != nil {
 		return err
@@ -429,7 +440,7 @@ func (c *Elemental) CopyRecovery() error {
 	imgCosSource := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, c.config.ActiveImage.File)
 	imgCosTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile)
 
-	err = c.config.Fs.MkdirAll(recoveryDirCos, 0644)
+	err = c.config.Fs.MkdirAll(recoveryDirCos, 0755)
 	if err != nil {
 		return err
 	}
@@ -455,11 +466,10 @@ func (c *Elemental) CopyRecovery() error {
 }
 
 func (c Elemental) CopyPassive() error {
-	actImgFile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, c.config.ActiveImage.File)
 	passImgFile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
 
 	c.config.Logger.Infof("Copying image file..")
-	err := utils.CopyFile(c.config.Fs, actImgFile, passImgFile)
+	err := utils.CopyFile(c.config.Fs, c.config.ActiveImage.File, passImgFile)
 	if err != nil {
 		return err
 	}

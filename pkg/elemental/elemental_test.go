@@ -649,14 +649,13 @@ var _ = Describe("Elemental", func() {
 	})
 
 	Context("CopyPassive", func() {
-		var actImgFile, passImgFile string
+		var passImgFile string
 		BeforeEach(func() {
-			actImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, config.ActiveImage.File)
 			passImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
 		})
 
 		It("Copies active image to passive", func() {
-			_, err := fs.Create(actImgFile)
+			_, err := fs.Create(config.ActiveImage.File)
 			Expect(err).To(BeNil())
 			_, err = fs.Stat(passImgFile)
 			Expect(err).NotTo(BeNil())
@@ -676,7 +675,7 @@ var _ = Describe("Elemental", func() {
 		It("Fails to set the passive label", func() {
 			runner := runner.(*v1mock.FakeRunner)
 			runner.ErrorOnCommand = true
-			_, err := fs.Create(actImgFile)
+			_, err := fs.Create(config.ActiveImage.File)
 			Expect(err).To(BeNil())
 			_, err = fs.Stat(passImgFile)
 			Expect(err).NotTo(BeNil())

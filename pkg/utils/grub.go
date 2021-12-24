@@ -66,9 +66,9 @@ func (g Grub) Install() error {
 
 	// check if dir exists before creating them
 	for _, d := range []string{"proc", "dev", "sys", "tmp"} {
-		createDir := fmt.Sprintf("%s/%s", g.config.Target, d)
+		createDir := fmt.Sprintf("%s/%s", g.config.ActiveImage.MountPoint, d)
 		if exists, _ := afero.DirExists(g.config.Fs, createDir); !exists {
-			err = g.config.Fs.Mkdir(createDir, 0644)
+			err = g.config.Fs.Mkdir(createDir, 0755)
 			if err != nil {
 				return err
 			}
@@ -82,15 +82,15 @@ func (g Grub) Install() error {
 		grubargs = append(
 			grubargs,
 			fmt.Sprintf("--target=%s-efi", arch),
-			fmt.Sprintf("--efi-directory=%s/boot/efi", g.config.Target),
+			fmt.Sprintf("--efi-directory=%s/boot/efi", g.config.ActiveImage.MountPoint),
 		)
 	}
 
 	grubargs = append(
 		grubargs,
-		fmt.Sprintf("--root-directory=%s", constants.StateDir),
+		fmt.Sprintf("--root-directory=%s", g.config.ActiveImage.MountPoint),
 		fmt.Sprintf("--boot-directory=%s", constants.StateDir),
-		fmt.Sprintf("--removable=%s", g.config.Target),
+		"--removable", g.config.Target,
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
