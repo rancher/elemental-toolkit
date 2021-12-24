@@ -25,6 +25,7 @@ load_vars() {
   : "${RECOVERY_LABEL:=COS_RECOVERY}"
   : "${ACTIVE_LABEL:=COS_ACTIVE}"
   : "${PASSIVE_LABEL:=COS_PASSIVE}"
+  : "${PERSISTENT_LABEL:=COS_PERSISTENT}"
   : "${SYSTEM_LABEL:=COS_SYSTEM}"
   : "${STATE_LABEL:=COS_STATE}"
 }
@@ -374,9 +375,9 @@ if [ "$model" == "rpi64" ]; then
 else
     sgdisk -n 1:8192:+16M -c 1:EFI -t 1:0700 ${output_image}
 fi
-sgdisk -n 2:0:+64M -c 2:oem -t 2:8300 ${output_image}
-sgdisk -n 3:0:+${state_size}M -c 3:state -t 3:8300 ${output_image}
-sgdisk -n 4:0:+${recovery_size}M -c 4:recovery -t 4:8300 ${output_image}
+sgdisk -n 2:0:+${state_size}M -c 2:state -t 2:8300 ${output_image}
+sgdisk -n 3:0:+${recovery_size}M -c 3:recovery -t 3:8300 ${output_image}
+sgdisk -n 4:0:+64M -c 4:persistent -t 4:8300 ${output_image}
 
 sgdisk -m 1:2:3:4 ${output_image}
 
@@ -407,17 +408,17 @@ kpartx -va $DRIVE
 
 echo ">> Populating partitions"
 efi=${device}p1
-oem=${device}p2
-state=${device}p3
-recovery=${device}p4
+state=${device}p2
+recovery=${device}p3
+persistent=${device}p4
 
-# Create partitions (RECOVERY, STATE, OEM)
+# Create partitions (RECOVERY, STATE, COS_PERSISTENT)
 mkfs.vfat -F 32 ${efi}
 fatlabel ${efi} EFI
 
 mkfs.ext4 -F -L ${RECOVERY_LABEL} $recovery
 mkfs.ext4 -F -L ${STATE_LABEL} $state
-mkfs.ext4 -F -L ${OEM_LABEL} $oem
+mkfs.ext4 -F -L ${PERSISTENT_LABEL} $persistent
 
 mkdir $WORKDIR/state
 mkdir $WORKDIR/recovery
@@ -430,10 +431,11 @@ mount $efi $WORKDIR/efi
 # Set a OEM config file if specified
 if [ -n "$config" ]; then
   echo ">> Copying $config OEM config file"
-  mkdir $WORKDIR/oem
-  mount $oem $WORKDIR/oem
-  get_url $config $WORKDIR/oem/99_custom.yaml
-  umount $WORKDIR/oem
+  mkdir $WORKDIR/persistent
+  mount $persistent $WORKDIR/persistent
+  mkdir $WORKDIR/persistent/cloud-config
+  get_url $config $WORKDIR/persistent/cloud-config/99_custom.yaml
+  umount $WORKDIR/persistent
 fi
 
 # Copy over content
