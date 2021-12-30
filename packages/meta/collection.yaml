@@ -60,6 +60,7 @@ packages:
       - category: meta
         name: cos-modules
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-minimal"
     description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
