@@ -92,3 +92,4 @@ packages:
       - category: toolchain
         name: luet-cosign
         version: ">=0"
+    version: 0.9-1
