@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/onsi/ginkgo"
+	//"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
@@ -39,6 +40,7 @@ const partTmpl = `
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
+	//config.DefaultReporterConfig.SlowSpecThreshold = 10
 	RunSpecs(t, "Elemental test suite")
 }
 
@@ -70,23 +72,27 @@ var _ = Describe("Elemental", func() {
 
 	Context("MountPartitions", func() {
 		var runner *v1mock.TestRunnerV2
+		var el *elemental.Elemental
 		BeforeEach(func() {
 			runner = v1mock.NewTestRunnerV2()
 			config.Runner = runner
+			fs.Create(cnst.EfiDevice)
+			config.SetupStyle()
+			Expect(config.PartTable).To(Equal(v1.GPT))
+			Expect(config.BootFlag).To(Equal(v1.ESP))
+			el = elemental.NewElemental(config)
 		})
 
 		It("Mounts disk partitions", func() {
 			runner.ReturnValue = []byte("/some/device")
-			el := elemental.NewElemental(config)
 			err := el.MountPartitions()
 			Expect(err).To(BeNil())
 		})
 
-		It("Fails if state partition resists to mount ", func() {
+		It("Fails if some partition resists to mount ", func() {
 			runner.ReturnValue = []byte("/some/device")
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
-			el := elemental.NewElemental(config)
 			err := el.MountPartitions()
 			Expect(err).NotTo(BeNil())
 		})
@@ -98,19 +104,6 @@ var _ = Describe("Elemental", func() {
 				}
 				return []byte("/some/device"), nil
 			}
-			el := elemental.NewElemental(config)
-			err := el.MountPartitions()
-			Expect(err).NotTo(BeNil())
-		})
-
-		It("Fails if recovery partition is not found ", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", config.RecoveryPart.Label) {
-					return []byte{}, nil
-				}
-				return []byte("/some/device"), nil
-			}
-			el := elemental.NewElemental(config)
 			err := el.MountPartitions()
 			Expect(err).NotTo(BeNil())
 		})
@@ -123,6 +116,10 @@ var _ = Describe("Elemental", func() {
 			runner = v1mock.NewTestRunnerV2()
 			config.Runner = runner
 			runner.ReturnValue = []byte("/some/device")
+			fs.Create(cnst.EfiDevice)
+			config.SetupStyle()
+			Expect(config.PartTable).To(Equal(v1.GPT))
+			Expect(config.BootFlag).To(Equal(v1.ESP))
 			el = elemental.NewElemental(config)
 			Expect(el.MountPartitions()).To(BeNil())
 		})
@@ -256,17 +253,27 @@ var _ = Describe("Elemental", func() {
 
 		Context("Successful run", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
-			var initCmds, partCmds [][]string
+			var efiPartCmds, partCmds, biosPartCmds [][]string
 			BeforeEach(func() {
-				initCmds = [][]string{
+				efiPartCmds = [][]string{
 					{
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 						"mklabel", "gpt",
 					}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-						"mkpart", "p.grub", "vfat", "2048", "133119", "set", "1", "esp", "on",
-					}, {"mkfs.vfat", "-i", "COS_GRUB", "/some/device1"},
+						"mkpart", "p.grub", "fat32", "2048", "133119", "set", "1", "esp", "on",
+					}, {"mkfs.vfat", "-n", "COS_GRUB", "/some/device1"},
 				}
+				biosPartCmds = [][]string{
+					{
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mklabel", "gpt",
+					}, {
+						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
+						"mkpart", "p.bios", "", "2048", "4095", "set", "1", "bios_grub", "on",
+					}, {"wipefs", "--all", "/some/device1"},
+				}
+				// These commands are only valid for EFI case
 				partCmds = [][]string{
 					{
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
@@ -311,11 +318,25 @@ var _ = Describe("Elemental", func() {
 				runner.SideEffect = runFunc
 			})
 
-			It("Successfully creates partitions and formats them", func() {
+			It("Successfully creates partitions and formats them, EFI boot", func() {
+				partNum, devNum, printOut = 0, 0, printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
+				Expect(runner.MatchMilestones(append(efiPartCmds, partCmds...))).To(BeNil())
+			})
+
+			It("Successfully creates partitions and formats them, BIOS boot", func() {
+				config.BootFlag = v1.BIOS
+				el = elemental.NewElemental(config)
+				partNum, devNum, printOut = 0, 0, printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
+				Expect(runner.MatchMilestones(biosPartCmds)).To(BeNil())
+			})
+
+			It("Successfully creates partitions and formats them, EFI boot", func() {
 				partNum, devNum, printOut = 0, 0, printOutput
 				err := el.PartitionAndFormatDevice(dev)
 				Expect(err).To(BeNil())
-				Expect(runner.MatchMilestones(append(initCmds, partCmds...))).To(BeNil())
+				Expect(runner.MatchMilestones(append(efiPartCmds, partCmds...))).To(BeNil())
 			})
 
 			It("Successfully creates boot partitions and runs 'partitioning' stage", func() {
@@ -323,7 +344,7 @@ var _ = Describe("Elemental", func() {
 				partNum, devNum, printOut = 0, 0, printOutput
 				err := el.PartitionAndFormatDevice(dev)
 				Expect(err).To(BeNil())
-				Expect(runner.MatchMilestones(initCmds)).To(BeNil())
+				Expect(runner.MatchMilestones(efiPartCmds)).To(BeNil())
 				Expect(len(cInit.ExecStages)).To(Equal(1))
 				Expect(cInit.ExecStages[0]).To(Equal("partitioning"))
 			})
@@ -353,7 +374,7 @@ var _ = Describe("Elemental", func() {
 					case "lsblk":
 						devNum++
 						return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
-					case "mkfs.ext4", "mkfs.vfat":
+					case "mkfs.ext4", "mkfs.vfat", "wipefs":
 						if args[1] == errFormat {
 							return []byte{}, errors.New("Failure")
 						}
@@ -373,6 +394,22 @@ var _ = Describe("Elemental", func() {
 
 			It("Fails formatting efi partition", func() {
 				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_GRUB", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(devNum).To(Equal(1))
+			})
+
+			It("Fails creating bios partition", func() {
+				config.BootFlag = v1.BIOS
+				el = elemental.NewElemental(config)
+				errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "", printOutput
+				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
+				Expect(partNum).To(Equal(errPart))
+			})
+
+			It("Fails clearing filesystem on bios partition", func() {
+				config.BootFlag = v1.BIOS
+				el = elemental.NewElemental(config)
+				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "/some/device1", printOutput
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(devNum).To(Equal(1))
 			})
@@ -449,50 +486,41 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 	Context("NoFormat", func() {
-		Context("is disabled", func() {
-			It("Should not error out", func() {
-				c := elemental.NewElemental(config)
-				err := c.CheckNoFormat()
-				Expect(err).To(BeNil())
-			})
-		})
-		Context("is enabled", func() {
-			Context("Labels exist", func() {
-				Context("Force is disabled", func() {
-					It("Should error out", func() {
-						config.NoFormat = true
-						runner := v1mock.NewTestRunnerV2()
-						runner.ReturnValue = []byte("/dev/fake")
-						config.Runner = runner
-						e := elemental.NewElemental(config)
-						err := e.CheckNoFormat()
-						Expect(err).ToNot(BeNil())
-						Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
-					})
-				})
-				Context("Force is enabled", func() {
-					It("Should not error out", func() {
-						config.NoFormat = true
-						config.Force = true
-						runner := v1mock.NewTestRunnerV2()
-						runner.ReturnValue = []byte("/dev/fake")
-						config.Runner = runner
-						e := elemental.NewElemental(config)
-						err := e.CheckNoFormat()
-						Expect(err).To(BeNil())
-					})
-				})
-			})
-			Context("Labels dont exist", func() {
-				It("Should not error out", func() {
+		Context("Labels exist", func() {
+			Context("Force is disabled", func() {
+				It("Should error out", func() {
 					config.NoFormat = true
 					runner := v1mock.NewTestRunnerV2()
-					runner.ReturnValue = []byte("")
+					runner.ReturnValue = []byte("/dev/fake")
+					config.Runner = runner
+					e := elemental.NewElemental(config)
+					err := e.CheckNoFormat()
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
+				})
+			})
+			Context("Force is enabled", func() {
+				It("Should not error out", func() {
+					config.NoFormat = true
+					config.Force = true
+					runner := v1mock.NewTestRunnerV2()
+					runner.ReturnValue = []byte("/dev/fake")
 					config.Runner = runner
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).To(BeNil())
 				})
+			})
+		})
+		Context("Labels dont exist", func() {
+			It("Should not error out", func() {
+				config.NoFormat = true
+				runner := v1mock.NewTestRunnerV2()
+				runner.ReturnValue = []byte("")
+				config.Runner = runner
+				e := elemental.NewElemental(config)
+				err := e.CheckNoFormat()
+				Expect(err).To(BeNil())
 			})
 		})
 	})

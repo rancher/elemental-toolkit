@@ -64,6 +64,17 @@ func (e ErrorMounter) List() ([]mount.MountPoint, error) {
 	return e.FakeMounter.List()
 }
 
+func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) {
+	e.prepare()
+	mnts, _ := e.List()
+	for _, mnt := range mnts {
+		if file == mnt.Path {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 // We need to have this below to fulfill the interface for mount.Interface
 
 func (e ErrorMounter) MountSensitive(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
@@ -75,5 +86,4 @@ func (e ErrorMounter) MountSensitiveWithoutSystemd(source string, target string,
 func (e ErrorMounter) MountSensitiveWithoutSystemdWithMountFlags(source string, target string, fstype string, options []string, sensitiveOptions []string, mountFlags []string) error {
 	return nil
 }
-func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) { return true, nil }
-func (e ErrorMounter) GetMountRefs(pathname string) ([]string, error)  { return []string{}, nil }
+func (e ErrorMounter) GetMountRefs(pathname string) ([]string, error) { return []string{}, nil }

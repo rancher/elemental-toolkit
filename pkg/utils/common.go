@@ -60,7 +60,7 @@ func GetDeviceByLabel(runner v1.Runner, label string) (string, error) {
 }
 
 // Copies source file to target file using afero.Fs interface
-func CopyFile(fs afero.Fs, source string, target string) error {
+func CopyFile(fs afero.Fs, source string, target string) (err error) {
 	sourceFile, err := fs.Open(source)
 	if err != nil {
 		return err
@@ -83,6 +83,17 @@ func CopyFile(fs afero.Fs, source string, target string) error {
 
 	_, err = io.Copy(targetFile, sourceFile)
 	return err
+}
+
+// Copies source file to target file using afero.Fs interface
+func CreateDirStructure(fs afero.Fs, target string) error {
+	for _, dir := range []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
+		err := fs.MkdirAll(fmt.Sprintf("%s/%s", target, dir), 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SyncData rsync's source folder contents to a target folder content,

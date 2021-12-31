@@ -16,7 +16,9 @@ limitations under the License.
 
 package v1
 
-import "os/exec"
+import (
+	"os/exec"
+)
 
 type Runner interface {
 	Run(string, ...string) ([]byte, error)

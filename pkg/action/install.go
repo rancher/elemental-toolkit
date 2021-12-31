@@ -19,6 +19,7 @@ package action
 import (
 	"errors"
 	"fmt"
+	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
@@ -34,12 +35,31 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 	return &InstallAction{Config: config}
 }
 
-// Run will install the cos system to a device by following several steps
-func (i InstallAction) Run() error {
+func (i InstallAction) installHook(hook string, chroot bool) error {
+	var out []byte
 	var err error
+	if chroot {
+		chroot := utils.NewChroot(i.Config.ActiveImage.MountPoint, i.Config)
+		chroot.SetExtraMounts(map[string]string{
+			cnst.PersistentDir: "/usr/local",
+			cnst.OEMDir:        "/oem",
+		})
+		out, err = chroot.Run(cnst.CosSetup, cnst.AfterInstallChrootHook)
+	} else {
+		i.Config.Logger.Infof("Running %s hook", hook)
+		out, err = i.Config.Runner.Run(cnst.CosSetup, hook)
+	}
+	i.Config.Logger.Debugf("%s output: %s", hook, string(out))
+	if err != nil && i.Config.Strict {
+		return err
+	}
+	return nil
+}
 
+// Run will install the cos system to a device by following several steps
+func (i InstallAction) Run() (err error) {
 	newElemental := elemental.NewElemental(i.Config)
-	i.Config.Logger.Infof("InstallAction called")
+
 	// Install steps really starts here
 	i.Config.SetupStyle()
 
@@ -49,7 +69,11 @@ func (i InstallAction) Run() error {
 		part.WithFS(i.Config.Fs),
 		part.WithLogger(i.Config.Logger),
 	)
-	//TODO run cos-setup before-install stage
+
+	err = i.installHook(cnst.BeforeInstallHook, false)
+	if err != nil {
+		return err
+	}
 	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
 	err = newElemental.GetIso()
 	//TODO defer unmount ISO
@@ -65,16 +89,19 @@ func (i InstallAction) Run() error {
 		return errors.New(fmt.Sprintf("Disk %s does not exist", i.Config.Target))
 	}
 
-	// Check no-format flag and force flag against current device
-	err = newElemental.CheckNoFormat()
-	if err != nil {
-		return err
-	}
-	// partition device
-	// TODO handle non partitioning case
-	err = newElemental.PartitionAndFormatDevice(disk)
-	if err != nil {
-		return err
+	// Check no-format flag
+	if i.Config.NoFormat {
+		// Check force flag against current device
+		err = newElemental.CheckNoFormat()
+		if err != nil {
+			return err
+		}
+	} else {
+		// Partition device
+		err = newElemental.PartitionAndFormatDevice(disk)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = newElemental.MountPartitions()
@@ -98,34 +125,43 @@ func (i InstallAction) Run() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if tmpErr := newElemental.UnmountImage(&i.Config.ActiveImage); tmpErr != nil && err == nil {
+			err = tmpErr
+		}
+	}()
 
 	// install Active
 	err = newElemental.CopyCos()
 	if err != nil {
-		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// Copy cloud-init if any
 	err = newElemental.CopyCloudConfig()
 	if err != nil {
-		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// install grub
 	grub := utils.NewGrub(i.Config)
 	err = grub.Install()
 	if err != nil {
-		newElemental.UnmountImage(&i.Config.ActiveImage)
 		return err
 	}
 	// Relabel SELinux
 	_ = newElemental.SelinuxRelabel(false)
-	// Unmount everything
+
+	err = i.installHook(cnst.AfterInstallChrootHook, true)
+	if err != nil {
+		newElemental.UnmountImage(&i.Config.ActiveImage)
+		return err
+	}
+	//TODO rebrand here is really needed? see cos-installer script
+
+	// Unmount active image
 	err = newElemental.UnmountImage(&i.Config.ActiveImage)
 	if err != nil {
 		return err
 	}
-	//TODO chrooted run of after-install-chroot cloud-init stage
 	// install Recovery
 	err = newElemental.CopyRecovery()
 	if err != nil {
@@ -136,7 +172,11 @@ func (i InstallAction) Run() error {
 	if err != nil {
 		return err
 	}
-	//TODO run after-install cloud-init stage
+
+	err = i.installHook(cnst.AfterInstallHook, false)
+	if err != nil {
+		return err
+	}
 	// TODO Rebrand
 	// cos.Rebrand()
 	// ????

@@ -30,7 +30,6 @@ const (
 	BIOS  = "bios_grub"
 	MSDOS = "msdos"
 	BOOT  = "boot"
-	VFAT  = "vfat"
 )
 
 type RunConfigOptions func(a *RunConfig) error
@@ -135,47 +134,58 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		r.systemLabel = cnst.SystemLabel
 	}
 
+	r.EfiPart = Partition{
+		Label:      cnst.EfiLabel,
+		Size:       cnst.EfiSize,
+		PLabel:     cnst.EfiPLabel,
+		FS:         cnst.EfiFs,
+		MountPoint: cnst.EfiDir,
+	}
+
 	r.RecoveryPart = Partition{
-		Label:  cnst.RecoveryLabel,
-		Size:   cnst.RecoverySize,
-		PLabel: cnst.RecoveryPLabel,
-		FS:     cnst.LinuxFs,
+		Label:      cnst.RecoveryLabel,
+		Size:       cnst.RecoverySize,
+		PLabel:     cnst.RecoveryPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.RecoveryDir,
 	}
 	if r.recoveryLabel != "" {
 		r.RecoveryPart.Label = r.recoveryLabel
 	}
 
 	r.PersistentPart = Partition{
-		Label:  cnst.PersistentLabel,
-		Size:   cnst.PersistentSize,
-		PLabel: cnst.PersistentPLabel,
-		FS:     cnst.LinuxFs,
+		Label:      cnst.PersistentLabel,
+		Size:       cnst.PersistentSize,
+		PLabel:     cnst.PersistentPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.PersistentDir,
 	}
-
 	if r.persistentLabel != "" {
 		r.PersistentPart.Label = r.persistentLabel
 	}
 
 	r.OEMPart = Partition{
-		Label:  cnst.OEMLabel,
-		Size:   cnst.OEMSize,
-		PLabel: cnst.OEMPLabel,
-		FS:     cnst.LinuxFs,
+		Label:      cnst.OEMLabel,
+		Size:       cnst.OEMSize,
+		PLabel:     cnst.OEMPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.OEMDir,
 	}
-
 	if r.oEMLabel != "" {
 		r.OEMPart.Label = r.oEMLabel
 	}
 
 	r.StatePart = Partition{
-		Label:  cnst.StateLabel,
-		Size:   cnst.StateSize,
-		PLabel: cnst.StatePLabel,
-		FS:     cnst.LinuxFs,
+		Label:      cnst.StateLabel,
+		Size:       cnst.StateSize,
+		PLabel:     cnst.StatePLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.StateDir,
 	}
 	if r.stateLabel != "" {
 		r.StatePart.Label = r.stateLabel
 	}
+
 	if r.IsoMnt == "" {
 		r.IsoMnt = cnst.IsoMnt
 	}
@@ -204,6 +214,7 @@ type RunConfig struct {
 	ActiveLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
 	PassiveLabel    string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
 	Force           bool   `yaml:"force,omitempty" mapstructure:"force"`
+	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
 	// Internally used to track stuff around
 	PartTable string
@@ -221,16 +232,18 @@ type RunConfig struct {
 	PersistentPart  Partition
 	StatePart       Partition
 	OEMPart         Partition
+	EfiPart         Partition
 	Client          HTTPClient
 	ActiveImage     Image
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
-	Label  string
-	Size   uint
-	PLabel string
-	FS     string
+	Label      string
+	Size       uint
+	PLabel     string
+	FS         string
+	MountPoint string
 }
 
 // Image struct represents a file system image with its commonly configurable values, size in MiB

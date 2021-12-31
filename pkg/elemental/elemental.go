@@ -60,7 +60,6 @@ func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
 
 func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 	errCMsg := "Failed creating %s partition"
-	errFMsg := "Failed formatting partition: %s"
 
 	c.config.Logger.Debugf("Creating partition table...")
 	out, err := disk.NewPartitionTable(c.config.PartTable)
@@ -78,14 +77,21 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 		}
 		out, err = disk.FormatPartition(efiNum, cnst.EfiFs, cnst.EfiLabel)
 		if err != nil {
-			c.config.Logger.Errorf(errFMsg, out)
+			c.config.Logger.Errorf("Failed formatting partition: %s", out)
 			return err
 		}
 	} else if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.BIOS {
 		c.config.Logger.Debugf("Creating Bios partition...")
-		_, err = disk.AddPartition(cnst.BiosSize, cnst.BiosFs, cnst.BiosPLabel, v1.BIOS)
+		biosNum, err := disk.AddPartition(cnst.BiosSize, cnst.BiosFs, cnst.BiosPLabel, v1.BIOS)
 		if err != nil {
 			c.config.Logger.Errorf(errCMsg, cnst.BiosPLabel)
+			return err
+		}
+		// make sure to remove any kind of FS, it could be there from previous data in disk,
+		// this partition is not formated
+		err = disk.WipeFsOnPartition(biosNum)
+		if err != nil {
+			c.config.Logger.Errorf("Failed to wipe filesystem for bios partition")
 			return err
 		}
 	}
@@ -144,25 +150,31 @@ func (c *Elemental) createDataPartitions(disk *part.Disk) error {
 	return nil
 }
 
-// MountPartitions mounts recovery, state and oem partitions. Note this method does
-// not umount any partition on exit or on error, umounts must be handled by caller logic.
+// MountPartitions mounts state, recovery, oem, persistent and efi partitions.
+// Note umounts must be handled by caller logic.
 func (c Elemental) MountPartitions() error {
-	err := c.mountDeviceByLabel(c.config.StatePart.Label, cnst.StateDir, "rw")
-	if err != nil {
-		return err
+	c.config.Logger.Infof("Mounting disk partitions")
+	var err error
+	parts := []v1.Partition{
+		c.config.StatePart,
+		c.config.RecoveryPart,
+		c.config.OEMPart,
+		c.config.PersistentPart,
 	}
-	err = c.mountDeviceByLabel(c.config.RecoveryPart.Label, cnst.RecoveryDir, "rw")
-	if err != nil {
-		c.config.Mounter.Unmount(cnst.StateDir)
-		return err
+
+	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
+		parts = append(parts, c.config.EfiPart)
 	}
-	err = c.mountDeviceByLabel(c.config.OEMPart.Label, cnst.OEMDir, "rw")
-	if err != nil {
-		c.config.Mounter.Unmount(cnst.StateDir)
-		c.config.Mounter.Unmount(cnst.RecoveryDir)
-		return err
+
+	for _, part := range parts {
+		err = c.MountPartition(part, "rw")
+		if err != nil {
+			c.UnmountPartitions()
+			return err
+		}
 	}
-	return nil
+
+	return err
 }
 
 // UnmountPartitions unmounts recovery, state and oem partitions.
@@ -170,12 +182,22 @@ func (c Elemental) UnmountPartitions() error {
 	var err error
 	errMsg := ""
 	failure := false
+	parts := []v1.Partition{
+		c.config.PersistentPart,
+		c.config.OEMPart,
+		c.config.RecoveryPart,
+		c.config.StatePart,
+	}
+
+	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
+		parts = append([]v1.Partition{c.config.EfiPart}, parts...)
+	}
 
 	// If there is an early error we still try to unmount other partitions
-	for _, mnt := range []string{cnst.OEMDir, cnst.RecoveryDir, cnst.StateDir} {
-		err = c.config.Mounter.Unmount(mnt)
+	for _, part := range parts {
+		err = c.UnmountPartition(part)
 		if err != nil {
-			errMsg += fmt.Sprintf("Failed to unmount %s\n", mnt)
+			errMsg += fmt.Sprintf("Failed to unmount %s\n", part.MountPoint)
 			failure = true
 		}
 	}
@@ -185,20 +207,30 @@ func (c Elemental) UnmountPartitions() error {
 	return nil
 }
 
-func (c Elemental) mountDeviceByLabel(label string, mountpoint string, opts ...string) error {
-	err := c.config.Fs.MkdirAll(mountpoint, 0755)
+func (c Elemental) MountPartition(part v1.Partition, opts ...string) error {
+	err := c.config.Fs.MkdirAll(part.MountPoint, 0755)
 	if err != nil {
 		return err
 	}
-	device, err := utils.GetDeviceByLabel(c.config.Runner, label)
+	device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label)
 	if err != nil {
 		return err
 	}
-	err = c.config.Mounter.Mount(device, mountpoint, "auto", opts)
+	err = c.config.Mounter.Mount(device, part.MountPoint, "auto", opts)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c Elemental) UnmountPartition(part v1.Partition) error {
+	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
+	// for bind mounts here
+	if notMnt, _ := c.config.Mounter.IsLikelyNotMountPoint(part.MountPoint); notMnt == true {
+		c.config.Logger.Debugf("Not unmounting partition, %s doesn't look like mountpoint", part.MountPoint)
+		return nil
+	}
+	return c.config.Mounter.Unmount(part.MountPoint)
 }
 
 func (c Elemental) MountImage(img *v1.Image) error {
@@ -221,6 +253,13 @@ func (c Elemental) MountImage(img *v1.Image) error {
 }
 
 func (c Elemental) UnmountImage(img *v1.Image) error {
+	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
+	// for bind mounts here
+	if notMnt, _ := c.config.Mounter.IsLikelyNotMountPoint(img.MountPoint); notMnt == true {
+		c.config.Logger.Debugf("Not unmounting image, %s doesn't look like mountpoint", img.MountPoint)
+		return nil
+	}
+
 	err := c.config.Mounter.Unmount(img.MountPoint)
 	if err != nil {
 		return err
@@ -267,7 +306,11 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 func (c *Elemental) CopyCos() error {
 	c.config.Logger.Infof("Copying cOS..")
 	excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
-	err := utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+	err := utils.CreateDirStructure(c.config.Fs, c.config.ActiveImage.MountPoint)
+	if err != nil {
+		return err
+	}
+	err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
 	if err != nil {
 		return err
 	}
@@ -320,23 +363,19 @@ func (c *Elemental) SelinuxRelabel(raiseError bool) error {
 // by checking the active/passive labels. If they are set then we check if we have the force flag, which means that we
 // don't care and proceed to overwrite
 func (c *Elemental) CheckNoFormat() error {
-	if c.config.NoFormat {
-		// User asked for no format, lets check if there is already those labeled partitions in the disk
-		for _, label := range []string{c.config.ActiveLabel, c.config.PassiveLabel} {
-			found, err := utils.FindLabel(c.config.Runner, label)
-			if err != nil {
-				return err
-			}
-			if found != "" {
-				if c.config.Force {
-					msg := fmt.Sprintf("Forcing overwrite of existing partitions due to `force` flag")
-					c.config.Logger.Infof(msg)
-					return nil
-				} else {
-					msg := fmt.Sprintf("There is already an active deployment in the system, use '--force' flag to overwrite it")
-					c.config.Logger.Error(msg)
-					return errors.New(msg)
-				}
+	c.config.Logger.Infof("Checking no-format condition")
+	// User asked for no format, lets check if there are already those labeled file systems in the disk
+	for _, label := range []string{c.config.ActiveImage.Label, c.config.PassiveLabel} {
+		found, _ := utils.FindLabel(c.config.Runner, label)
+		if found != "" {
+			if c.config.Force {
+				msg := fmt.Sprintf("Forcing overwrite of existing OS image due to `force` flag")
+				c.config.Logger.Infof(msg)
+				return nil
+			} else {
+				msg := fmt.Sprintf("There is already an active deployment in the system, use '--force' flag to overwrite it")
+				c.config.Logger.Error(msg)
+				return errors.New(msg)
 			}
 		}
 	}

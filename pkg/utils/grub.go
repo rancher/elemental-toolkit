@@ -18,7 +18,7 @@ package utils
 
 import (
 	"fmt"
-	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
+	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/spf13/afero"
 	"runtime"
@@ -64,43 +64,33 @@ func (g Grub) Install() error {
 		tty = g.config.Tty
 	}
 
-	// check if dir exists before creating them
-	for _, d := range []string{"proc", "dev", "sys", "tmp"} {
-		createDir := fmt.Sprintf("%s/%s", g.config.ActiveImage.MountPoint, d)
-		if exists, _ := afero.DirExists(g.config.Fs, createDir); !exists {
-			err = g.config.Fs.Mkdir(createDir, 0755)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	efiExists, _ := afero.Exists(g.config.Fs, constants.EfiDevice)
+	efiExists, _ := afero.Exists(g.config.Fs, cnst.EfiDevice)
 
 	if g.config.ForceEfi || efiExists {
 		g.config.Logger.Infof("Installing grub efi for arch %s", arch)
 		grubargs = append(
 			grubargs,
 			fmt.Sprintf("--target=%s-efi", arch),
-			fmt.Sprintf("--efi-directory=%s/boot/efi", g.config.ActiveImage.MountPoint),
+			fmt.Sprintf("--efi-directory=%s", cnst.EfiDir),
 		)
 	}
 
 	grubargs = append(
 		grubargs,
 		fmt.Sprintf("--root-directory=%s", g.config.ActiveImage.MountPoint),
-		fmt.Sprintf("--boot-directory=%s", constants.StateDir),
+		fmt.Sprintf("--boot-directory=%s", cnst.StateDir),
 		"--removable", g.config.Target,
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
-	_, err = g.config.Runner.Run("grub2-install", grubargs...)
+	out, err := g.config.Runner.Run("grub2-install", grubargs...)
 	if err != nil {
+		g.config.Logger.Errorf(string(out))
 		return err
 	}
 
-	grub1dir := fmt.Sprintf("%s/grub", constants.StateDir)
-	grub2dir := fmt.Sprintf("%s/grub2", constants.StateDir)
+	grub1dir := fmt.Sprintf("%s/grub", cnst.StateDir)
+	grub2dir := fmt.Sprintf("%s/grub2", cnst.StateDir)
 
 	// Select the proper dir for grub
 	if ok, _ := afero.IsDir(g.config.Fs, grub1dir); ok {

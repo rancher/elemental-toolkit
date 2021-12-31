@@ -85,7 +85,9 @@ func (pc PartedCall) optionsBuilder() []string {
 
 		opts = append(opts, "mkpart", pLabel)
 
-		if part.FileSystem != "" {
+		if m, _ := regexp.MatchString("fat|vfat", part.FileSystem); m == true {
+			opts = append(opts, "fat32")
+		} else {
 			opts = append(opts, part.FileSystem)
 		}
 

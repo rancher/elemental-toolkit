@@ -256,61 +256,37 @@ func (dev Disk) FormatPartition(partNum int, fileSystem string, label string) (s
 	return mkfs.Apply()
 }
 
-func (dev Disk) ReloadPartitionTable() error {
-	for tries := 0; tries <= partitionTries; tries++ {
-		dev.logger.Debugf("Trying to reread the partition table of %s (try number %d)", dev, tries+1)
-		out, _ := dev.runner.Run("udevadm", "settle")
-		dev.logger.Debugf("Output of udevadm settle: %s", out)
-
-		out, err := dev.runner.Run("partprobe", dev.device)
-		dev.logger.Debugf("output of partprobe: %s", out)
-		if err != nil && tries == (partitionTries-1) {
-			dev.logger.Debugf("Error of partprobe: %s", err)
-			return errors.New(fmt.Sprintf("Could not reload partition table: %s", out))
-		}
-
-		// If nothing failed exit
-		if err == nil {
-			break
-		}
-		time.Sleep(1 * time.Second)
+func (dev Disk) WipeFsOnPartition(partNum int) error {
+	pDev, err := dev.FindPartitionDevice(partNum)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	_, err = dev.runner.Run("wipefs", "--all", pDev)
+	return err
 }
 
 func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
-	var match string
-
-	re, err := regexp.Compile(fmt.Sprintf("(?m)^(/.*%d) part$", partNum))
-	if err != nil {
-		return "", errors.New("Failed compiling regexp")
-	}
+	re, _ := regexp.Compile(fmt.Sprintf("(?m)^(/.*%d) part$", partNum))
 
 	for tries := 0; tries <= partitionTries; tries++ {
-		err = dev.ReloadPartitionTable()
-		if err != nil {
-			dev.logger.Errorf("Failed on reloading the partition table: %v\n", err)
-			return "", err
-		}
+		out, _ := dev.runner.Run("udevadm", "settle")
+		dev.logger.Debugf("Output of udevadm settle: %s", out)
 		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
 		out, err := dev.runner.Run("lsblk", "-ltnpo", "name,type", dev.device)
 		dev.logger.Debugf("Output of lsblk: %s", out)
 		if err != nil && tries == (partitionTries-1) {
 			dev.logger.Debugf("Error of lsblk: %s", err)
 			return "", errors.New(fmt.Sprintf("Could not list device partition nodes: %s", out))
-		}
-
-		matched := re.FindStringSubmatch(string(out))
-		if matched == nil && tries == (partitionTries-1) {
-			return "", errors.New(fmt.Sprintf("Could not find partition device path for partition %d", partNum))
-		}
-		if matched != nil {
-			match = matched[1]
-			break
+		} else if err == nil {
+			matched := re.FindStringSubmatch(string(out))
+			if matched != nil {
+				return matched[1], nil
+			}
 		}
 		time.Sleep(1 * time.Second)
 	}
-	return match, nil
+	return "", errors.New(fmt.Sprintf("Could not find partition device path for partition %d", partNum))
 }
 
 //Size is expressed in MiB here
