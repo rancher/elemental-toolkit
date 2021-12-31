@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	"github.com/rancher-sandbox/cOS/tests/sut"
 
 	. "github.com/onsi/ginkgo"
@@ -95,8 +96,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
-				By(fmt.Sprintf("upgrading to %s:cos-squash-recovery-%s", s.GreenRepo, s.TestVersion))
-				out, err := s.Command(fmt.Sprintf("cos-upgrade --recovery --docker-image %s:cos-squash-recovery-%s", s.GreenRepo, s.TestVersion))
+				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("cos-upgrade --recovery --docker-image %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
