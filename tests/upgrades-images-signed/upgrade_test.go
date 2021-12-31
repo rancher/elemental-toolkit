@@ -52,9 +52,14 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				out, err = s.Command(fmt.Sprintf("cos-upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(out).Should(ContainSubstring("to /usr/local/.cos-upgrade/tmp/rootfs"))
-				Expect(out).Should(ContainSubstring("Upgrade target: active.img"))
+				Expect(out).Should(
+					And(
+						ContainSubstring("Upgrade done, now you might want to reboot"),
+						ContainSubstring("/usr/local/.cos-upgrade/tmp/rootfs"),
+						ContainSubstring("Upgrade target: active.img"),
+						ContainSubstring("Pulled"),
+					),
+				)
 
 				By("rebooting and checking out the version")
 				s.Reboot()
