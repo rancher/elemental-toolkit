@@ -3,7 +3,6 @@ package sut
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bramvdbogaerde/go-scp"
 	"net"
 	"os"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bramvdbogaerde/go-scp"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,7 +29,7 @@ const (
 	LiveCD      = iota
 	UnknownBoot = iota
 
-	TimeoutRawDiskTest = 600  // Timeout to connect for recovery_raw_disk_test
+	TimeoutRawDiskTest = 600 // Timeout to connect for recovery_raw_disk_test
 
 	Ext2 = "ext2"
 	Ext3 = "ext3"
@@ -42,8 +43,8 @@ type DiskLayout struct {
 
 // PartitionEntry represents a partition entry
 type PartitionEntry struct {
-	Label string `json:"label,omitempty"`
-	Size int `json:"size,omitempty"`
+	Label  string `json:"label,omitempty"`
+	Size   int    `json:"size,omitempty"`
 	FsType string `json:"fstype,omitempty"`
 }
 
@@ -57,13 +58,13 @@ func (d DiskLayout) GetPartition(label string) (PartitionEntry, error) {
 }
 
 type SUT struct {
-	Host     string
-	Username string
-	Password string
-	Timeout  int
-	GreenRepo string
+	Host        string
+	Username    string
+	Password    string
+	Timeout     int
+	GreenRepo   string
 	TestVersion string
-	CDLocation string
+	CDLocation  string
 }
 
 func NewSUT() *SUT {
@@ -83,20 +84,20 @@ func NewSUT() *SUT {
 	}
 
 	var timeout = 180
-	valueStr :=  os.Getenv("COS_TIMEOUT")
+	valueStr := os.Getenv("COS_TIMEOUT")
 	value, err := strconv.Atoi(valueStr)
 	if err == nil {
 		timeout = value
 	}
 
 	return &SUT{
-		Host:     host,
-		Username: user,
-		Password: pass,
-		Timeout:  timeout,
-		GreenRepo: "quay.io/costoolkit/releases-green",
-		TestVersion: "0.7.1-3",
-		CDLocation: "",
+		Host:        host,
+		Username:    user,
+		Password:    pass,
+		Timeout:     timeout,
+		GreenRepo:   "quay.io/costoolkit/releases-green",
+		TestVersion: "0.7.11-5",
+		CDLocation:  "",
 	}
 }
 
@@ -295,7 +296,7 @@ func (s *SUT) connectToHost(timeout bool) (*ssh.Client, error) {
 }
 
 // GatherAllLogs will try to gather as much info from the system as possible, including services, dmesg and os related info
-func (s SUT) GatherAllLogs()  {
+func (s SUT) GatherAllLogs() {
 	services := []string{
 		"cos-setup-boot",
 		"cos-setup-fs",
@@ -369,7 +370,6 @@ func (s SUT) GatherAllLogs()  {
 	// Grab system info
 	s.GatherLog("/etc/os-release")
 
-
 }
 
 // GatherLog will try to scp the given log from the machine to a local file
@@ -409,7 +409,7 @@ func (s SUT) GatherLog(logPath string) {
 
 // EmptyDisk will try to trash the disk given so on reboot the disk is empty and we are forced to use the cd to boot
 // used mainly for installer testing booting from iso
-func (s *SUT) EmptyDisk(disk string)  {
+func (s *SUT) EmptyDisk(disk string) {
 	By(fmt.Sprintf("Trashing %s to restore VM to a blank state", disk))
 	_, _ = s.Command(fmt.Sprintf("wipefs -af %s*", disk))
 	_, _ = s.Command("sync")
@@ -417,7 +417,7 @@ func (s *SUT) EmptyDisk(disk string)  {
 }
 
 // SetCOSCDLocation gets the location of the iso attached to the vbox vm and stores it for later remount
-func (s *SUT) SetCOSCDLocation()  {
+func (s *SUT) SetCOSCDLocation() {
 	By("Store CD location")
 	out, err := exec.Command("bash", "-c", "VBoxManage list dvds|grep Location|cut -d ':' -f 2|xargs").CombinedOutput()
 	Expect(err).To(BeNil())
@@ -425,7 +425,7 @@ func (s *SUT) SetCOSCDLocation()  {
 }
 
 // EjectCOSCD force removes the DVD so we can boot from disk directly on EFI VMs
-func (s *SUT) EjectCOSCD()  {
+func (s *SUT) EjectCOSCD() {
 	// first store the cd location
 	s.SetCOSCDLocation()
 	By("Ejecting the CD")
@@ -434,14 +434,14 @@ func (s *SUT) EjectCOSCD()  {
 }
 
 // RestoreCOSCD reattaches the cOS iso to the VM
-func (s *SUT) RestoreCOSCD()  {
+func (s *SUT) RestoreCOSCD() {
 	By("Restoring the CD")
 	out, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s --forceunmount", s.CDLocation)).CombinedOutput()
 	fmt.Printf(string(out))
 	Expect(err).To(BeNil())
 }
 
-func (s SUT) GetDiskLayout(disk string) DiskLayout{
+func (s SUT) GetDiskLayout(disk string) DiskLayout {
 	// -b size in bytes
 	// -n no headings
 	// -J json output
