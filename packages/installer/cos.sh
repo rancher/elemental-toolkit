@@ -319,6 +319,12 @@ prepare_recovery() {
         echo "Copying squashfs.."
         cp -a $_RECOVERYSQUASHFS $_RECOVERYDIR/cOS/recovery.squashfs
     else
+        if is_mounted /run/initramfs/cos-state; then
+            echo "Recovery partition already mounted ande being used at /run/initramfs/cos-state. Backing off from replacing recovery"
+            echo "Recovery partition can be upgraded while booting from an active or a passive partition only"
+            umount $_RECOVERYDIR
+            return
+        fi
         echo "Copying image file.."
         cp -a $_STATEDIR/cOS/active.img $_RECOVERYDIR/cOS/recovery.img
         sync
@@ -326,6 +332,7 @@ prepare_recovery() {
     fi
 
     sync
+    umount $_RECOVERYDIR
 }
 
 prepare_passive() {
