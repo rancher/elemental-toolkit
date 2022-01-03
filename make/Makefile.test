@@ -47,7 +47,7 @@ VMNAME=cos-arm64
 endif
 
 
-test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-hooks test-fallback test-recovery test-deploys-images
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-hooks test-fallback test-recovery test-deploys-images-active test-deploys-images-recovery
 
 #
 # remove test artifacts
@@ -97,8 +97,11 @@ test-smoke: $(GINKGO)
 test-recovery: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery
 
-test-deploys-images: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./deploys-images
+test-deploys-images-active: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "From active" ./deploys-images
+
+test-deploys-images-recovery: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
 
 test-installer-bios: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer

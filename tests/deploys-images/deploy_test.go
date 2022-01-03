@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -24,9 +25,9 @@ var _ = Describe("cOS Deploy tests", func() {
 			s.Reset()
 		}
 	})
-	Context("After install", func() {
-		When("deploying again", func() {
 
+	Context("From active", func() {
+		When("deploying again", func() {
 			It("deploys only if --force flag is provided", func() {
 				By("deploying without --force")
 				out, err := s.Command(fmt.Sprintf("cos-deploy --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
@@ -38,7 +39,12 @@ var _ = Describe("cOS Deploy tests", func() {
 				Expect(out).Should(ContainSubstring("now you might want to reboot"))
 				Expect(err).NotTo(HaveOccurred())
 			})
-			It("force deploys from recovery", func() {
+		})
+	})
+
+	Context("From recovery", func() {
+		When("deploying again", func() {
+			It("deploys only if --force flag is provided", func() {
 				err := s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()

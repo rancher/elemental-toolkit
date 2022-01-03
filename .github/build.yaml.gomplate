@@ -364,7 +364,7 @@
         {{{ if eq $config.arch "arm64" }}}
         test: [{{{ join $config.run_tests ", "}}}]
         {{{else}}}
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-active", "test-deploys-images-recovery" ]
         {{{end}}}
     steps:
       - name: Install Go
