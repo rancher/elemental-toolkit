@@ -13,7 +13,6 @@ jobs:
       LUET_ARCH: x86_64
       FLAVOR: blue
       ARCH: x86_64
-      PLUGINS: cleanup-images
       FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
