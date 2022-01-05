@@ -241,11 +241,15 @@ is_booting_from_squashfs() {
 }
 
 is_booting_from_live() {
+    if [ -n "$_COS_BOOTING_FROM_LIVE" ]; then
+        return 0
+    fi
+
     if cat /proc/cmdline | grep -q "CDLABEL"; then
         return 0
-    else
-        return 1
     fi
+
+    return 1
 }
 
 prepare_target() {
