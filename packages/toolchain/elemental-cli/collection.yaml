@@ -9,7 +9,6 @@ packages:
       github.repo: "elemental-cli"
       github.owner: "rancher-sandbox"
       autobump.revdeps: "true"
-  - !!merge <<: *elemental
-    category: "toolchain-fips"
-    fips: true
-    version: 0.0.4-1
+  # - !!merge <<: *elemental
+  #   category: "toolchain-fips"
+  #   fips: true

@@ -37,10 +37,14 @@
   {{{- end }}}
 
   {{{- if $config.local_runner }}}
+  {{{ $arch := $config.arch }}}
+  {{{ if eq $arch "x86_64" }}}
+  {{{ $arch = "amd64" }}}
+  {{{ end }}}
       - name: Install Go
         run: |
-          curl -L https://golang.org/dl/go1.16.5.linux-{{{ $config.arch }}}.tar.gz -o go1.16.5.linux-{{{ $config.arch }}}.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.16.5.linux-{{{ $config.arch }}}.tar.gz
+          curl -L https://golang.org/dl/go1.17.5.linux-{{{ $arch }}}.tar.gz -o go1.17.5.linux-{{{ $arch }}}.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-{{{ $arch }}}.tar.gz
   {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v2
@@ -126,7 +130,6 @@
       LUET_ARCH: {{{ $config.arch }}}
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
-      PLUGINS: cleanup-images
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: {{{$config.push_cache}}}
@@ -364,7 +367,7 @@
         {{{ if eq $config.arch "arm64" }}}
         test: [{{{ join $config.run_tests ", "}}}]
         {{{else}}}
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images"]
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-active", "test-deploys-images-recovery" ]
         {{{end}}}
     steps:
       - name: Install Go
@@ -699,6 +702,12 @@
     {{{- end }}}
 
     steps:
+  {{{- if $config.local_runner }}}
+      - name: Cleanup
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+  {{{- end }}}
       - name: Install OS deps
         run: |
           sudo apt-get update
@@ -746,7 +755,10 @@
     runs-on: macos-10.15
     needs: raw-images-{{{ $flavor }}}
     steps:
-      {{{ tmpl.Exec "prepare_build" }}}
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '^1.16'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
