@@ -29,5 +29,8 @@ RUN usermod -aG sudo runner && usermod -aG docker runner
 RUN echo "%sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 WORKDIR /runner
 RUN chown runner:runner /runner -Rfv
+RUN mkdir /home/runner/.docker
+RUN chown runner:runner /home/runner -Rfv
+
 ENTRYPOINT ["/entrypoint.sh"]
 
