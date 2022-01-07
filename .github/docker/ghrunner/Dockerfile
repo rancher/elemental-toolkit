@@ -11,7 +11,7 @@ RUN apt-get update \
     git \
     make \
     jq \
-    python \
+    python python-yaml \
     iputils-ping \
     apt-transport-https \
     ca-certificates \
