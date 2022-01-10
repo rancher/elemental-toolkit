@@ -24,13 +24,16 @@ jobs:
       PUSH_CACHE: false
       REPO_CACHE: quay.io/costoolkit/build-orange-cache
     steps:
-      - run: |
+      - name: Release space from worker ♻
+        if: always()
+        run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
           sudo rm /usr/bin/luet || true
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
         run: |
           curl -L https://golang.org/dl/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
@@ -42,6 +45,16 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
@@ -70,3 +83,13 @@ jobs:
           name: build-orange-x86_64
           path: build
           if-no-files-found: error
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          docker system prune -f -a --volumes || true

@@ -13,28 +13,34 @@
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-  {{{- if not $config.local_runner }}}
-      - name: Release space from worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-  {{{- end }}}
+  {{{ tmpl.Exec "runner_cleanup" }}}
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
 {{{ end }}}
 
-{{{define "prepare_build" }}}
+{{{define "runner_cleanup" }}}
   {{{ $config := (datasource "config") }}}
+      - name: Release space from worker ♻
+        if: always()
+        run: |
   {{{- if $config.local_runner }}}
-      - run: |
           sudo rm -rf build || true
           sudo rm -rf bin || true
           sudo rm /usr/bin/luet || true
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          docker system prune -f -a --volumes || true
+  {{{- else }}}
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
   {{{- end }}}
+{{{ end }}}
+
+{{{define "prepare_build" }}}
+  {{{ $config := (datasource "config") }}}
+  {{{ tmpl.Exec "runner_cleanup" }}}
 
   {{{- if $config.local_runner }}}
   {{{ $arch := $config.arch }}}
@@ -107,11 +113,6 @@
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
     steps:
-  {{{- if $config.local_runner }}}
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-  {{{- end }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       - name: Build  🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -186,6 +187,7 @@
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
           if-no-files-found: error
+      {{{ tmpl.Exec "runner_cleanup" }}}
 {{{end}}}
 
 {{{define "build_iso"}}}
@@ -702,12 +704,7 @@
     {{{- end }}}
 
     steps:
-  {{{- if $config.local_runner }}}
-      - name: Cleanup
-        run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-  {{{- end }}}
+    {{{ tmpl.Exec "runner_cleanup" }}}
       - name: Install OS deps
         run: |
           sudo apt-get update
@@ -908,11 +905,6 @@
     {{{ tmpl.Exec "runner" }}}
     {{{tmpl.Exec "if_with_labels" }}}
     steps:
-  {{{- if $config.local_runner }}}
-      - run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-  {{{- end }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{ tmpl.Exec "prepare_build" }}}
       {{{ tmpl.Exec "make" "deps" }}}
