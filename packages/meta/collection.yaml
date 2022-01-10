@@ -21,6 +21,7 @@ packages:
       - category: toolchain-fips
         name: luet
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
