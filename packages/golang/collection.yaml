@@ -19,7 +19,7 @@ packages:
       package.checksum: "bd78114b0d441b029c8fe0341f4910370925a4d270a6a590668840675b0c653e"
   - name: "golang-fips"
     category: "build"
-    version: "1.17.5b7"
+    version: 1.17.5b7-1
     base_url: https://go-boringcrypto.storage.googleapis.com
     hidden: true # No need to make it installable for now
     labels:
