@@ -134,57 +134,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		r.systemLabel = cnst.SystemLabel
 	}
 
-	r.EfiPart = Partition{
-		Label:      cnst.EfiLabel,
-		Size:       cnst.EfiSize,
-		PLabel:     cnst.EfiPLabel,
-		FS:         cnst.EfiFs,
-		MountPoint: cnst.EfiDir,
-	}
-
-	r.RecoveryPart = Partition{
-		Label:      cnst.RecoveryLabel,
-		Size:       cnst.RecoverySize,
-		PLabel:     cnst.RecoveryPLabel,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.RecoveryDir,
-	}
-	if r.recoveryLabel != "" {
-		r.RecoveryPart.Label = r.recoveryLabel
-	}
-
-	r.PersistentPart = Partition{
-		Label:      cnst.PersistentLabel,
-		Size:       cnst.PersistentSize,
-		PLabel:     cnst.PersistentPLabel,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.PersistentDir,
-	}
-	if r.persistentLabel != "" {
-		r.PersistentPart.Label = r.persistentLabel
-	}
-
-	r.OEMPart = Partition{
-		Label:      cnst.OEMLabel,
-		Size:       cnst.OEMSize,
-		PLabel:     cnst.OEMPLabel,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.OEMDir,
-	}
-	if r.oEMLabel != "" {
-		r.OEMPart.Label = r.oEMLabel
-	}
-
-	r.StatePart = Partition{
-		Label:      cnst.StateLabel,
-		Size:       cnst.StateSize,
-		PLabel:     cnst.StatePLabel,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.StateDir,
-	}
-	if r.stateLabel != "" {
-		r.StatePart.Label = r.stateLabel
-	}
+	r.Partitions = []*Partition{}
 
 	if r.IsoMnt == "" {
 		r.IsoMnt = cnst.IsoMnt
@@ -228,11 +178,7 @@ type RunConfig struct {
 	Runner          Runner
 	Syscall         SyscallInterface
 	CloudInitRunner CloudInitRunner
-	RecoveryPart    Partition
-	PersistentPart  Partition
-	StatePart       Partition
-	OEMPart         Partition
-	EfiPart         Partition
+	Partitions      []*Partition
 	Client          HTTPClient
 	ActiveImage     Image
 }
@@ -243,6 +189,7 @@ type Partition struct {
 	Size       uint
 	PLabel     string
 	FS         string
+	Flags      []string
 	MountPoint string
 }
 
@@ -262,26 +209,99 @@ func (r RunConfig) GetSystemLabel() string {
 	return r.systemLabel
 }
 
-// SetupStyle will gather what partition table and bootflag we need for the current system
-func (r *RunConfig) SetupStyle() {
-	var part, boot string
-
+// setupStyle will gather what partition table and bootflag we need for the current system
+func (r *RunConfig) setupStyle() {
 	_, err := r.Fs.Stat(cnst.EfiDevice)
 	efiExists := err == nil
+	statePartFlags := []string{}
+	var part *Partition
 
 	if r.ForceEfi || efiExists {
-		part = GPT
-		boot = ESP
+		r.PartTable = GPT
+		r.BootFlag = ESP
+		part = &Partition{
+			Label:      cnst.EfiLabel,
+			Size:       cnst.EfiSize,
+			PLabel:     cnst.EfiPLabel,
+			FS:         cnst.EfiFs,
+			MountPoint: cnst.EfiDir,
+			Flags:      []string{ESP},
+		}
+		r.Partitions = append(r.Partitions, part)
 	} else if r.ForceGpt {
-		part = GPT
-		boot = BIOS
+		r.PartTable = GPT
+		r.BootFlag = BIOS
+		part = &Partition{
+			Label:      "",
+			Size:       cnst.BiosSize,
+			PLabel:     cnst.BiosPLabel,
+			FS:         "",
+			MountPoint: "",
+			Flags:      []string{BIOS},
+		}
+		r.Partitions = append(r.Partitions, part)
 	} else {
-		part = MSDOS
-		boot = BOOT
+		r.PartTable = MSDOS
+		r.BootFlag = BOOT
+		statePartFlags = []string{BOOT}
 	}
 
-	r.PartTable = part
-	r.BootFlag = boot
+	part = &Partition{
+		Label:      cnst.OEMLabel,
+		Size:       cnst.OEMSize,
+		PLabel:     cnst.OEMPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.OEMDir,
+		Flags:      []string{},
+	}
+	if r.oEMLabel != "" {
+		part.Label = r.oEMLabel
+	}
+	r.Partitions = append(r.Partitions, part)
+
+	part = &Partition{
+		Label:      cnst.StateLabel,
+		Size:       cnst.StateSize,
+		PLabel:     cnst.StatePLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.StateDir,
+		Flags:      statePartFlags,
+	}
+	if r.stateLabel != "" {
+		part.Label = r.stateLabel
+	}
+	r.Partitions = append(r.Partitions, part)
+
+	part = &Partition{
+		Label:      cnst.RecoveryLabel,
+		Size:       cnst.RecoverySize,
+		PLabel:     cnst.RecoveryPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.RecoveryDir,
+		Flags:      []string{},
+	}
+	if r.recoveryLabel != "" {
+		part.Label = r.recoveryLabel
+	}
+	r.Partitions = append(r.Partitions, part)
+
+	part = &Partition{
+		Label:      cnst.PersistentLabel,
+		Size:       cnst.PersistentSize,
+		PLabel:     cnst.PersistentPLabel,
+		FS:         cnst.LinuxFs,
+		MountPoint: cnst.PersistentDir,
+		Flags:      []string{},
+	}
+	if r.persistentLabel != "" {
+		part.Label = r.persistentLabel
+	}
+	r.Partitions = append(r.Partitions, part)
+}
+
+// DigestSetup will gather what partition table and bootflag we need for the current system
+func (r *RunConfig) DigestSetup() {
+	r.setupStyle()
 }
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts

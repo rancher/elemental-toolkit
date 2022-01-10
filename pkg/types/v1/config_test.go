@@ -29,7 +29,7 @@ import (
 
 var _ = Describe("Types", func() {
 	Context("Config", func() {
-		Context("SetupStyle", func() {
+		Context("DigestSetup", func() {
 			Context("On efi system", func() {
 				It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
 					fs := afero.NewMemMapFs()
@@ -40,7 +40,7 @@ var _ = Describe("Types", func() {
 						v1.WithMounter(&mount.FakeMounter{}),
 						v1.WithRunner(&v1mock.FakeRunner{}),
 						v1.WithSyscall(&v1mock.FakeSyscall{}))
-					c.SetupStyle()
+					c.DigestSetup()
 					Expect(c.PartTable).To(Equal(v1.GPT))
 					Expect(c.BootFlag).To(Equal(v1.ESP))
 				})
@@ -53,7 +53,7 @@ var _ = Describe("Types", func() {
 						v1.WithRunner(&v1mock.FakeRunner{}),
 						v1.WithSyscall(&v1mock.FakeSyscall{}))
 					c.ForceEfi = true
-					c.SetupStyle()
+					c.DigestSetup()
 					Expect(c.PartTable).To(Equal(v1.GPT))
 					Expect(c.BootFlag).To(Equal(v1.ESP))
 				})
@@ -66,7 +66,7 @@ var _ = Describe("Types", func() {
 						v1.WithRunner(&v1mock.FakeRunner{}),
 						v1.WithSyscall(&v1mock.FakeSyscall{}))
 					c.ForceGpt = true
-					c.SetupStyle()
+					c.DigestSetup()
 					Expect(c.PartTable).To(Equal(v1.GPT))
 					Expect(c.BootFlag).To(Equal(v1.BIOS))
 				})
@@ -78,7 +78,7 @@ var _ = Describe("Types", func() {
 						v1.WithMounter(&mount.FakeMounter{}),
 						v1.WithRunner(&v1mock.FakeRunner{}),
 						v1.WithSyscall(&v1mock.FakeSyscall{}))
-					c.SetupStyle()
+					c.DigestSetup()
 					Expect(c.PartTable).To(Equal(v1.MSDOS))
 					Expect(c.BootFlag).To(Equal(v1.BOOT))
 				})

@@ -77,7 +77,7 @@ var _ = Describe("Elemental", func() {
 			runner = v1mock.NewTestRunnerV2()
 			config.Runner = runner
 			fs.Create(cnst.EfiDevice)
-			config.SetupStyle()
+			config.DigestSetup()
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
 			el = elemental.NewElemental(config)
@@ -99,7 +99,7 @@ var _ = Describe("Elemental", func() {
 
 		It("Fails if oem partition is not found ", func() {
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", config.OEMPart.Label) {
+				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", cnst.OEMLabel) {
 					return []byte{}, nil
 				}
 				return []byte("/some/device"), nil
@@ -117,7 +117,7 @@ var _ = Describe("Elemental", func() {
 			config.Runner = runner
 			runner.ReturnValue = []byte("/some/device")
 			fs.Create(cnst.EfiDevice)
-			config.SetupStyle()
+			config.DigestSetup()
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
 			el = elemental.NewElemental(config)
@@ -232,8 +232,9 @@ var _ = Describe("Elemental", func() {
 		var dev *part.Disk
 		var runner *v1mock.TestRunnerV2
 		var cInit *v1mock.FakeCloudInitRunner
-		var partNum, devNum, errPart int
-		var printOut, errFormat string
+		var partNum, errPart int
+		var printOut string
+		var failEfiFormat bool
 
 		BeforeEach(func() {
 			runner = v1mock.NewTestRunnerV2()
@@ -241,7 +242,6 @@ var _ = Describe("Elemental", func() {
 			config.Runner = runner
 			config.CloudInitRunner = cInit
 			fs.Create(cnst.EfiDevice)
-			config.SetupStyle()
 			el = elemental.NewElemental(config)
 			dev = part.NewDisk(
 				"/some/device",
@@ -255,6 +255,7 @@ var _ = Describe("Elemental", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			var efiPartCmds, partCmds, biosPartCmds [][]string
 			BeforeEach(func() {
+				partNum, printOut = 0, printOutput
 				efiPartCmds = [][]string{
 					{
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
@@ -278,19 +279,16 @@ var _ = Describe("Elemental", func() {
 					{
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 						"mkpart", "p.oem", "ext4", "133120", "264191",
-					}, {
+					}, {"mkfs.ext4", "-L", "COS_OEM", "/some/device2"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 						"mkpart", "p.state", "ext4", "264192", "31721471",
-					}, {
+					}, {"mkfs.ext4", "-L", "COS_STATE", "/some/device3"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 						"mkpart", "p.recovery", "ext4", "31721472", "48498687",
-					}, {
+					}, {"mkfs.ext4", "-L", "COS_RECOVERY", "/some/device4"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
 						"mkpart", "p.persistent", "ext4", "48498688", "100%",
-					}, {"mkfs.ext4", "-L", "COS_OEM", "/some/device2"},
-					{"mkfs.ext4", "-L", "COS_STATE", "/some/device3"},
-					{"mkfs.ext4", "-L", "COS_RECOVERY", "/some/device4"},
-					{"mkfs.ext4", "-L", "COS_PERSISTENT", "/some/device5"},
+					}, {"mkfs.ext4", "-L", "COS_PERSISTENT", "/some/device5"},
 				}
 
 				runFunc = func(cmd string, args ...string) ([]byte, error) {
@@ -309,8 +307,7 @@ var _ = Describe("Elemental", func() {
 						}
 						return []byte(printOut), nil
 					case "lsblk":
-						devNum++
-						return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
+						return []byte(fmt.Sprintf("/some/device%d part", partNum)), nil
 					default:
 						return []byte{}, nil
 					}
@@ -319,29 +316,23 @@ var _ = Describe("Elemental", func() {
 			})
 
 			It("Successfully creates partitions and formats them, EFI boot", func() {
-				partNum, devNum, printOut = 0, 0, printOutput
+				config.DigestSetup()
 				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
 				Expect(runner.MatchMilestones(append(efiPartCmds, partCmds...))).To(BeNil())
 			})
 
 			It("Successfully creates partitions and formats them, BIOS boot", func() {
-				config.BootFlag = v1.BIOS
+				config.ForceGpt = true
+				fs.Remove(cnst.EfiDevice)
+				config.DigestSetup()
 				el = elemental.NewElemental(config)
-				partNum, devNum, printOut = 0, 0, printOutput
 				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
 				Expect(runner.MatchMilestones(biosPartCmds)).To(BeNil())
 			})
 
-			It("Successfully creates partitions and formats them, EFI boot", func() {
-				partNum, devNum, printOut = 0, 0, printOutput
-				err := el.PartitionAndFormatDevice(dev)
-				Expect(err).To(BeNil())
-				Expect(runner.MatchMilestones(append(efiPartCmds, partCmds...))).To(BeNil())
-			})
-
 			It("Successfully creates boot partitions and runs 'partitioning' stage", func() {
+				config.DigestSetup()
 				config.PartLayout = "partitioning.yaml"
-				partNum, devNum, printOut = 0, 0, printOutput
 				err := el.PartitionAndFormatDevice(dev)
 				Expect(err).To(BeNil())
 				Expect(runner.MatchMilestones(efiPartCmds)).To(BeNil())
@@ -353,6 +344,7 @@ var _ = Describe("Elemental", func() {
 		Context("Run with failures", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			BeforeEach(func() {
+				partNum, printOut = 0, printOutput
 				runFunc = func(cmd string, args ...string) ([]byte, error) {
 					switch cmd {
 					case "parted":
@@ -372,10 +364,11 @@ var _ = Describe("Elemental", func() {
 						}
 						return []byte(printOut), nil
 					case "lsblk":
-						devNum++
-						return []byte(fmt.Sprintf("/some/device%d part", devNum)), nil
-					case "mkfs.ext4", "mkfs.vfat", "wipefs":
-						if args[1] == errFormat {
+						return []byte(fmt.Sprintf("/some/device%d part", partNum)), nil
+					case "mkfs.ext4", "wipefs":
+						return []byte{}, errors.New("Failure")
+					case "mkfs.vfat":
+						if failEfiFormat {
 							return []byte{}, errors.New("Failure")
 						}
 						return []byte{}, nil
@@ -387,79 +380,51 @@ var _ = Describe("Elemental", func() {
 			})
 
 			It("Fails creating efi partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "COS_GRUB", printOutput
+				config.DigestSetup()
+				errPart, failEfiFormat = 1, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(errPart))
 			})
 
 			It("Fails formatting efi partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_GRUB", printOutput
+				config.DigestSetup()
+				errPart, failEfiFormat = 0, true
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(1))
+				Expect(partNum).To(Equal(1))
 			})
 
 			It("Fails creating bios partition", func() {
-				config.BootFlag = v1.BIOS
+				config.ForceGpt = true
+				fs.Remove(cnst.EfiDevice)
+				config.DigestSetup()
 				el = elemental.NewElemental(config)
-				errPart, partNum, devNum, errFormat, printOut = 1, 0, 0, "", printOutput
+				errPart, failEfiFormat = 1, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(errPart))
 			})
 
 			It("Fails clearing filesystem on bios partition", func() {
-				config.BootFlag = v1.BIOS
+				config.ForceGpt = true
+				fs.Remove(cnst.EfiDevice)
+				config.DigestSetup()
 				el = elemental.NewElemental(config)
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "/some/device1", printOutput
+				errPart, failEfiFormat = 0, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(1))
+				Expect(partNum).To(Equal(1))
 			})
 
-			It("Fails creating oem partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 2, 0, 0, "", printOutput
+			It("Fails creating a data partition", func() {
+				config.DigestSetup()
+				errPart, failEfiFormat = 2, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(errPart))
 			})
 
-			It("Fails creating state partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 3, 0, 0, "", printOutput
+			It("Fails formatting a data partition", func() {
+				config.DigestSetup()
+				errPart, failEfiFormat = 0, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(partNum).To(Equal(errPart))
-			})
-
-			It("Fails creating recovery partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 4, 0, 0, "", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(partNum).To(Equal(errPart))
-			})
-
-			It("Fails creating persistent partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 5, 0, 0, "", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(partNum).To(Equal(errPart))
-			})
-
-			It("Fails formatting oem partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_OEM", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(2))
-			})
-
-			It("Fails formatting state partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_STATE", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(3))
-			})
-
-			It("Fails formatting recovery partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_RECOVERY", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(4))
-			})
-
-			It("Fails formatting persistent partition", func() {
-				errPart, partNum, devNum, errFormat, printOut = 0, 0, 0, "COS_PERSISTENT", printOutput
-				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
-				Expect(devNum).To(Equal(5))
+				Expect(partNum).To(Equal(2))
 			})
 		})
 	})

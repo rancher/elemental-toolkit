@@ -60,9 +60,6 @@ func (i InstallAction) installHook(hook string, chroot bool) error {
 func (i InstallAction) Run() (err error) {
 	newElemental := elemental.NewElemental(i.Config)
 
-	// Install steps really starts here
-	i.Config.SetupStyle()
-
 	disk := part.NewDisk(
 		i.Config.Target,
 		part.WithRunner(i.Config.Runner),

@@ -59,8 +59,6 @@ func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
 }
 
 func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
-	errCMsg := "Failed creating %s partition"
-
 	c.config.Logger.Debugf("Creating partition table...")
 	out, err := disk.NewPartitionTable(c.config.PartTable)
 	if err != nil {
@@ -68,30 +66,32 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 		return err
 	}
 
-	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
-		c.config.Logger.Debugf("Creating EFI partition...")
-		efiNum, err := disk.AddPartition(cnst.EfiSize, cnst.EfiFs, cnst.EfiPLabel, v1.ESP)
+	if c.config.PartTable == v1.GPT {
+		err = c.createAndFormatPartition(disk, c.config.Partitions[0])
 		if err != nil {
-			c.config.Logger.Errorf(errCMsg, cnst.EfiPLabel)
+			c.config.Logger.Errorf("Failed creating EFI or BIOS boot partition")
 			return err
 		}
-		out, err = disk.FormatPartition(efiNum, cnst.EfiFs, cnst.EfiLabel)
+	}
+	return nil
+}
+
+func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition) error {
+	num, err := disk.AddPartition(part.Size, part.FS, part.PLabel, part.Flags...)
+	if err != nil {
+		c.config.Logger.Errorf("Failed creating %s partition", part.PLabel)
+		return err
+	}
+	if part.FS != "" {
+		out, err := disk.FormatPartition(num, part.FS, part.Label)
 		if err != nil {
 			c.config.Logger.Errorf("Failed formatting partition: %s", out)
 			return err
 		}
-	} else if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.BIOS {
-		c.config.Logger.Debugf("Creating Bios partition...")
-		biosNum, err := disk.AddPartition(cnst.BiosSize, cnst.BiosFs, cnst.BiosPLabel, v1.BIOS)
+	} else {
+		err = disk.WipeFsOnPartition(num)
 		if err != nil {
-			c.config.Logger.Errorf(errCMsg, cnst.BiosPLabel)
-			return err
-		}
-		// make sure to remove any kind of FS, it could be there from previous data in disk,
-		// this partition is not formated
-		err = disk.WipeFsOnPartition(biosNum)
-		if err != nil {
-			c.config.Logger.Errorf("Failed to wipe filesystem for bios partition")
+			c.config.Logger.Errorf("Failed to wipe filesystem of partition %d", num)
 			return err
 		}
 	}
@@ -99,53 +99,18 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 }
 
 func (c *Elemental) createDataPartitions(disk *part.Disk) error {
-	errCMsg := "Failed creating %s partition"
-	errFMsg := "Failed formatting partition: %s"
-
-	stateFlags := []string{}
-	if c.config.PartTable == v1.MSDOS {
-		stateFlags = append(stateFlags, v1.BOOT)
+	var dataParts []*v1.Partition
+	// Skip the creation of EFI or BIOS partitions on GPT
+	if c.config.PartTable == v1.GPT {
+		dataParts = c.config.Partitions[1:]
+	} else {
+		dataParts = c.config.Partitions
 	}
-	oemNum, err := disk.AddPartition(c.config.OEMPart.Size, c.config.OEMPart.FS, c.config.OEMPart.PLabel)
-	if err != nil {
-		c.config.Logger.Errorf(errCMsg, c.config.OEMPart.PLabel)
-		return err
-	}
-	stateNum, err := disk.AddPartition(c.config.StatePart.Size, c.config.StatePart.FS, c.config.StatePart.PLabel, stateFlags...)
-	if err != nil {
-		c.config.Logger.Errorf(errCMsg, c.config.StatePart.PLabel)
-		return err
-	}
-	recoveryNum, err := disk.AddPartition(c.config.RecoveryPart.Size, c.config.RecoveryPart.FS, c.config.RecoveryPart.PLabel)
-	if err != nil {
-		c.config.Logger.Errorf(errCMsg, cnst.RecoveryPLabel)
-		return err
-	}
-	persistentNum, err := disk.AddPartition(c.config.PersistentPart.Size, c.config.PersistentPart.FS, c.config.PersistentPart.PLabel)
-	if err != nil {
-		c.config.Logger.Errorf(errCMsg, c.config.PersistentPart.PLabel)
-		return err
-	}
-
-	out, err := disk.FormatPartition(oemNum, c.config.OEMPart.FS, c.config.OEMPart.Label)
-	if err != nil {
-		c.config.Logger.Errorf(errFMsg, out)
-		return err
-	}
-	out, err = disk.FormatPartition(stateNum, c.config.StatePart.FS, c.config.StatePart.Label)
-	if err != nil {
-		c.config.Logger.Errorf(errFMsg, out)
-		return err
-	}
-	out, err = disk.FormatPartition(recoveryNum, c.config.RecoveryPart.FS, c.config.RecoveryPart.Label)
-	if err != nil {
-		c.config.Logger.Errorf(errFMsg, out)
-		return err
-	}
-	out, err = disk.FormatPartition(persistentNum, c.config.PersistentPart.FS, c.config.PersistentPart.Label)
-	if err != nil {
-		c.config.Logger.Errorf(errFMsg, out)
-		return err
+	for _, part := range dataParts {
+		err := c.createAndFormatPartition(disk, part)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -155,22 +120,14 @@ func (c *Elemental) createDataPartitions(disk *part.Disk) error {
 func (c Elemental) MountPartitions() error {
 	c.config.Logger.Infof("Mounting disk partitions")
 	var err error
-	parts := []v1.Partition{
-		c.config.StatePart,
-		c.config.RecoveryPart,
-		c.config.OEMPart,
-		c.config.PersistentPart,
-	}
 
-	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
-		parts = append(parts, c.config.EfiPart)
-	}
-
-	for _, part := range parts {
-		err = c.MountPartition(part, "rw")
-		if err != nil {
-			c.UnmountPartitions()
-			return err
+	for _, part := range c.config.Partitions {
+		if part.MountPoint != "" {
+			err = c.MountPartition(part, "rw")
+			if err != nil {
+				c.UnmountPartitions()
+				return err
+			}
 		}
 	}
 
@@ -182,23 +139,15 @@ func (c Elemental) UnmountPartitions() error {
 	var err error
 	errMsg := ""
 	failure := false
-	parts := []v1.Partition{
-		c.config.PersistentPart,
-		c.config.OEMPart,
-		c.config.RecoveryPart,
-		c.config.StatePart,
-	}
-
-	if c.config.PartTable == v1.GPT && c.config.BootFlag == v1.ESP {
-		parts = append([]v1.Partition{c.config.EfiPart}, parts...)
-	}
 
 	// If there is an early error we still try to unmount other partitions
-	for _, part := range parts {
-		err = c.UnmountPartition(part)
-		if err != nil {
-			errMsg += fmt.Sprintf("Failed to unmount %s\n", part.MountPoint)
-			failure = true
+	for _, part := range c.config.Partitions {
+		if part.MountPoint != "" {
+			err = c.UnmountPartition(part)
+			if err != nil {
+				errMsg += fmt.Sprintf("Failed to unmount %s\n", part.MountPoint)
+				failure = true
+			}
 		}
 	}
 	if failure {
@@ -207,7 +156,7 @@ func (c Elemental) UnmountPartitions() error {
 	return nil
 }
 
-func (c Elemental) MountPartition(part v1.Partition, opts ...string) error {
+func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	err := c.config.Fs.MkdirAll(part.MountPoint, 0755)
 	if err != nil {
 		return err
@@ -223,7 +172,7 @@ func (c Elemental) MountPartition(part v1.Partition, opts ...string) error {
 	return nil
 }
 
-func (c Elemental) UnmountPartition(part v1.Partition) error {
+func (c Elemental) UnmountPartition(part *v1.Partition) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
 	if notMnt, _ := c.config.Mounter.IsLikelyNotMountPoint(part.MountPoint); notMnt == true {

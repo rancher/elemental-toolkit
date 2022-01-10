@@ -51,6 +51,8 @@ var installCmd = &cobra.Command{
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
 		cfg.Target = args[0]
 
+		cfg.DigestSetup()
+
 		cfg.Logger.Infof("Install called")
 		// Dont call it yet, not ready
 		install := action.NewInstallAction(cfg)
