@@ -17,7 +17,9 @@ limitations under the License.
 package config
 
 import (
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -25,97 +27,91 @@ import (
 	"testing"
 )
 
-func setupTest(t *testing.T) {
-	viper.Reset()
-	RegisterTestingT(t)
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "CLI config test suite")
 }
 
-var logger = logrus.New()
-var mounter = mount.FakeMounter{}
+var _ = Describe("Config", func() {
+	Context("Build config", func() {
+		It("values empty if config path not valid", func() {
+			cfg, err := ReadConfigBuild("/none/")
+			Expect(err).To(BeNil())
+			Expect(viper.GetString("label")).To(Equal(""))
+			Expect(cfg.Label).To(Equal(""))
+		})
+		It("values filled if config path valid", func() {
+			cfg, err := ReadConfigBuild("config/")
+			Expect(err).To(BeNil())
+			Expect(viper.GetString("label")).To(Equal("COS_LIVE"))
+			Expect(cfg.Label).To(Equal("COS_LIVE"))
+		})
+		It("overrides values with env values", func() {
+			_ = os.Setenv("ELEMENTAL_LABEL", "environment")
+			cfg, err := ReadConfigBuild("config/")
+			Expect(err).To(BeNil())
+			source := viper.GetString("label")
+			// check that the final value comes from the env var
+			Expect(source).To(Equal("environment"))
+			Expect(cfg.Label).To(Equal("environment"))
+		})
 
-func TestConfigRunCustomNotValidPath(t *testing.T) {
-	setupTest(t)
-	// Load only main config
-	cfg, err := ReadConfigRun("/none/", logger, &mounter)
-	Expect(err).To(BeNil())
-	source := viper.GetString("file")
-	Expect(source).To(Equal(""))
-	Expect(cfg.Source).To(Equal(""))
-}
+	})
+	Context("Run config", func() {
+		var logger v1.Logger
+		var mounter mount.Interface
 
-func TestConfigRunCustomEmptyPath(t *testing.T) {
-	setupTest(t)
-	// Load only main config
-	cfg, err := ReadConfigRun("", logger, &mounter)
-	Expect(err).To(BeNil())
-	source := viper.GetString("file")
-	Expect(source).To(Equal(""))
-	Expect(cfg.Source).To(Equal(""))
-}
+		BeforeEach(func() {
+			logger = logrus.New()
+			mounter = &mount.FakeMounter{}
+		})
 
-func TestConfigRunOverride(t *testing.T) {
-	setupTest(t)
-	cfg, err := ReadConfigRun("config/", logger, &mounter)
-	Expect(err).To(BeNil())
-	source := viper.GetString("target")
-	// check that the final value comes from the extra file
-	Expect(source).To(Equal("extra"))
-	Expect(cfg.Target).To(Equal("extra"))
-}
+		It("values empty if config does not exist", func() {
+			cfg, err := ReadConfigRun("/none/", logger, mounter)
+			Expect(err).To(BeNil())
+			source := viper.GetString("file")
+			Expect(source).To(Equal(""))
+			Expect(cfg.Source).To(Equal(""))
+		})
+		It("values empty if config value is empty", func() {
+			cfg, err := ReadConfigRun("", logger, mounter)
+			Expect(err).To(BeNil())
+			source := viper.GetString("file")
+			Expect(source).To(Equal(""))
+			Expect(cfg.Source).To(Equal(""))
+		})
+		It("overrides values with config files", func() {
+			cfg, err := ReadConfigRun("config/", logger, mounter)
+			Expect(err).To(BeNil())
+			source := viper.GetString("target")
+			// check that the final value comes from the extra file
+			Expect(source).To(Equal("extra"))
+			Expect(cfg.Target).To(Equal("extra"))
+		})
+		It("overrides values with env values", func() {
+			_ = os.Setenv("ELEMENTAL_TARGET", "environment")
+			cfg, err := ReadConfigRun("config/", logger, mounter)
+			Expect(err).To(BeNil())
+			source := viper.GetString("target")
+			// check that the final value comes from the env var
+			Expect(source).To(Equal("environment"))
+			Expect(cfg.Target).To(Equal("environment"))
+		})
+		It("sets log level debug based on debug flag", func() {
+			// Default value
+			_, err := ReadConfigRun("config/", logger, mounter)
+			Expect(err).To(BeNil())
+			debug := viper.GetBool("debug")
+			Expect(logger.GetLevel()).ToNot(Equal(logrus.DebugLevel))
+			Expect(debug).To(BeFalse())
 
-func TestConfigRunOverrideEnv(t *testing.T) {
-	setupTest(t)
-	_ = os.Setenv("ELEMENTAL_TARGET", "environment")
-	cfg, err := ReadConfigRun("config/", logger, &mounter)
-	Expect(err).To(BeNil())
-	source := viper.GetString("target")
-	// check that the final value comes from the env var
-	Expect(source).To(Equal("environment"))
-	Expect(cfg.Target).To(Equal("environment"))
-}
-
-func TestConfigRunDebugFlag(t *testing.T) {
-	setupTest(t)
-	// Default value
-	_, err := ReadConfigRun("config/", logger, &mounter)
-	Expect(err).To(BeNil())
-	debug := viper.GetBool("debug")
-	Expect(logger.Level).ToNot(Equal(logrus.DebugLevel))
-	Expect(debug).To(BeFalse())
-
-	// Set it via viper, like the flag
-	viper.Set("debug", true)
-	_, err = ReadConfigRun("config/", logger, &mounter)
-	Expect(err).To(BeNil())
-	debug = viper.GetBool("debug")
-	Expect(debug).To(BeTrue())
-	Expect(logger.Level).To(Equal(logrus.DebugLevel))
-
-}
-
-func TestConfigBuildCustomNotValidPath(t *testing.T) {
-	setupTest(t)
-	cfg, err := ReadConfigBuild("/none/")
-	Expect(err).To(BeNil())
-	Expect(viper.GetString("label")).To(Equal(""))
-	Expect(cfg.Label).To(Equal(""))
-}
-
-func TestConfigBuildCustomPath(t *testing.T) {
-	setupTest(t)
-	cfg, err := ReadConfigBuild("config/")
-	Expect(err).To(BeNil())
-	Expect(viper.GetString("label")).To(Equal("COS_LIVE"))
-	Expect(cfg.Label).To(Equal("COS_LIVE"))
-}
-
-func TestConfigBuildOverrideEnv(t *testing.T) {
-	setupTest(t)
-	_ = os.Setenv("ELEMENTAL_LABEL", "environment")
-	cfg, err := ReadConfigBuild("config/")
-	Expect(err).To(BeNil())
-	source := viper.GetString("label")
-	// check that the final value comes from the env var
-	Expect(source).To(Equal("environment"))
-	Expect(cfg.Label).To(Equal("environment"))
-}
+			// Set it via viper, like the flag
+			viper.Set("debug", true)
+			_, err = ReadConfigRun("config/", logger, mounter)
+			Expect(err).To(BeNil())
+			debug = viper.GetBool("debug")
+			Expect(debug).To(BeTrue())
+			Expect(logger.GetLevel()).To(Equal(logrus.DebugLevel))
+		})
+	})
+})

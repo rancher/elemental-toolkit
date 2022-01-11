@@ -17,26 +17,25 @@ limitations under the License.
 package cmd
 
 import (
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental-cli/internal/version"
-	"testing"
 )
 
-func TestVersion(t *testing.T) {
-	RegisterTestingT(t)
-	_, output, err := executeCommandC(rootCmd, "version")
-	Expect(err).To(BeNil())
-	v := version.Get().Version
-	Expect(output).To(ContainSubstring(v))
-}
-
-func TestVersionLong(t *testing.T) {
-	RegisterTestingT(t)
-	_, output, err := executeCommandC(rootCmd, "version", "--long")
-	Expect(err).To(BeNil())
-	v := version.Get().Version
-	Expect(output).To(ContainSubstring(v))
-	Expect(output).To(ContainSubstring("Version"))
-	Expect(output).To(ContainSubstring("GitCommit"))
-	Expect(output).To(ContainSubstring("GoVersion"))
-}
+var _ = Describe("Version", func() {
+	It("Reports the version", func() {
+		_, output, err := executeCommandC(rootCmd, "version")
+		Expect(err).To(BeNil())
+		v := version.Get().Version
+		Expect(output).To(ContainSubstring(v))
+	})
+	It("Reports the version in long format", func() {
+		_, output, err := executeCommandC(rootCmd, "version", "--long")
+		Expect(err).To(BeNil())
+		v := version.Get().Version
+		Expect(output).To(ContainSubstring(v))
+		Expect(output).To(ContainSubstring("Version"))
+		Expect(output).To(ContainSubstring("GitCommit"))
+		Expect(output).To(ContainSubstring("GoVersion"))
+	})
+})

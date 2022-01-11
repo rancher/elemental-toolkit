@@ -38,6 +38,7 @@ type Logger interface {
 	Panicf(string, ...interface{})
 	Tracef(string, ...interface{})
 	SetLevel(level log.Level)
+	GetLevel() log.Level
 }
 
 func DebugLevel() log.Level {

@@ -18,19 +18,20 @@ package cmd
 
 import (
 	"bytes"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
-func TestInstallNoParams(t *testing.T) {
-	RegisterTestingT(t)
-	// Silence cobra output
-	buf := new(bytes.Buffer)
-	rootCmd.SetOut(buf)
-	rootCmd.SetErr(buf)
-	_, _, err := executeCommandC(rootCmd, "install")
-	// Restore cobra output
-	rootCmd.SetOut(nil)
-	rootCmd.SetErr(nil)
-	Expect(err).ToNot(BeNil())
-}
+var _ = Describe("Install", func() {
+	It("outputs usage if no DEVICE param", func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "install")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).ToNot(BeNil())
+		Expect(buf).To(ContainSubstring("Usage:"))
+	})
+})

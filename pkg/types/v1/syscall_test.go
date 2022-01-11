@@ -17,15 +17,25 @@ limitations under the License.
 package v1_test
 
 import (
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"testing"
+	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 )
 
-func TestSyscall(t *testing.T) {
-	RegisterTestingT(t)
-	r := v1.RealSyscall{}
-	err := r.Chroot("/tmp/")
-	// We need elevated privs to chroot so this should fail
-	Expect(err).ToNot(BeNil())
-}
+// unit test stolen from yip
+var _ = Describe("Syscall", func() {
+	It("Calling chroot on the real syscall should fail", func() {
+		r := v1.RealSyscall{}
+		err := r.Chroot("/tmp/")
+		// We need elevated privs to chroot so this should fail
+		Expect(err).ToNot(BeNil())
+	})
+
+	It("Calling chroot on the fake syscall should not fail", func() {
+		r := v1mock.FakeSyscall{}
+		err := r.Chroot("/tmp/")
+		// We need elevated privs to chroot so this should fail
+		Expect(err).To(BeNil())
+	})
+})

@@ -17,30 +17,25 @@ limitations under the License.
 package v1_test
 
 import (
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"reflect"
-	"testing"
 )
 
-// Test logger is same type as a logrus.Logger
-func TestNewLogger(t *testing.T) {
-	RegisterTestingT(t)
-	l1 := v1.NewLogger()
-	l2 := logrus.New()
-	Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
-}
-
-// Test logger is same type as a logrus.Logger
-func TestNewNullLogger(t *testing.T) {
-	RegisterTestingT(t)
-	l1 := v1.NewNullLogger()
-	l2 := logrus.New()
-	Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
-}
-
-func TestDebugLevel(t *testing.T) {
-	RegisterTestingT(t)
-	Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
-}
+var _ = Describe("logger", func() {
+	It("TestNewLogger returns a logger interface", func() {
+		l1 := v1.NewLogger()
+		l2 := logrus.New()
+		Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
+	})
+	It("TestNewNullLogger returns logger interface", func() {
+		l1 := v1.NewNullLogger()
+		l2 := logrus.New()
+		Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
+	})
+	It("DebugLevel returns the proper log level for debug output", func() {
+		Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
+	})
+})

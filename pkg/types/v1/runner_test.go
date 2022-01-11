@@ -17,14 +17,26 @@ limitations under the License.
 package v1_test
 
 import (
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"testing"
+	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
 )
 
-func TestRealRunner_Run(t *testing.T) {
-	RegisterTestingT(t)
-	r := v1.RealRunner{}
-	_, err := r.Run("pwd")
-	Expect(err).To(BeNil())
-}
+var _ = Describe("Runner", func() {
+	It("Runs commands on the real Runner", func() {
+		r := v1.RealRunner{}
+		_, err := r.Run("pwd")
+		Expect(err).To(BeNil())
+	})
+	It("Runs commands on the fake RunnerV1", func() {
+		r := v1mock.FakeRunner{}
+		_, err := r.Run("pwd")
+		Expect(err).To(BeNil())
+	})
+	It("Runs commands on the fake RunnerV2", func() {
+		r := v1mock.TestRunnerV2{}
+		_, err := r.Run("pwd")
+		Expect(err).To(BeNil())
+	})
+})
