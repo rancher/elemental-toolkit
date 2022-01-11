@@ -77,7 +77,6 @@ func init() {
 	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
 	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
 	installCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
-	installCmd.Flags().BoolP("debug", "", false, "Enables debugging information")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	installCmd.Flags().BoolP("force", "", false, "Force install")

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,8 +34,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
+	rootCmd.PersistentFlags().Bool("debug", false, "enable debug output")
+	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 }

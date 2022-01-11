@@ -166,6 +166,7 @@ type RunConfig struct {
 	Force           bool   `yaml:"force,omitempty" mapstructure:"force"`
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
+	Debug           bool
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string

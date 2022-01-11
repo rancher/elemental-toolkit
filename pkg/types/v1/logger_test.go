@@ -39,3 +39,8 @@ func TestNewNullLogger(t *testing.T) {
 	l2 := logrus.New()
 	Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
 }
+
+func TestDebugLevel(t *testing.T) {
+	RegisterTestingT(t)
+	Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
+}

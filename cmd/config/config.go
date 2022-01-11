@@ -82,5 +82,10 @@ func ReadConfigRun(configDir string, logger v1.Logger, mounter mount.Interface) 
 
 	// unmarshal all the vars into the config object
 	viper.Unmarshal(cfg)
+
+	// Set debug level
+	if cfg.Debug {
+		cfg.Logger.SetLevel(v1.DebugLevel())
+	}
 	return cfg, nil
 }

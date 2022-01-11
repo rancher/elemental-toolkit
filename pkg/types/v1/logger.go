@@ -37,6 +37,12 @@ type Logger interface {
 	Fatalf(string, ...interface{})
 	Panicf(string, ...interface{})
 	Tracef(string, ...interface{})
+	SetLevel(level log.Level)
+}
+
+func DebugLevel() log.Level {
+	l, _ := log.ParseLevel("debug")
+	return l
 }
 
 type LoggerOptions func(l Logger) error

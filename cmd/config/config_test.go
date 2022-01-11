@@ -31,11 +31,11 @@ func setupTest(t *testing.T) {
 }
 
 var logger = logrus.New()
+var mounter = mount.FakeMounter{}
 
 func TestConfigRunCustomNotValidPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	mounter := mount.FakeMounter{}
 	cfg, err := ReadConfigRun("/none/", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
@@ -46,7 +46,6 @@ func TestConfigRunCustomNotValidPath(t *testing.T) {
 func TestConfigRunCustomEmptyPath(t *testing.T) {
 	setupTest(t)
 	// Load only main config
-	mounter := mount.FakeMounter{}
 	cfg, err := ReadConfigRun("", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("file")
@@ -56,7 +55,6 @@ func TestConfigRunCustomEmptyPath(t *testing.T) {
 
 func TestConfigRunOverride(t *testing.T) {
 	setupTest(t)
-	mounter := mount.FakeMounter{}
 	cfg, err := ReadConfigRun("config/", logger, &mounter)
 	Expect(err).To(BeNil())
 	source := viper.GetString("target")
@@ -67,7 +65,6 @@ func TestConfigRunOverride(t *testing.T) {
 
 func TestConfigRunOverrideEnv(t *testing.T) {
 	setupTest(t)
-	mounter := mount.FakeMounter{}
 	_ = os.Setenv("ELEMENTAL_TARGET", "environment")
 	cfg, err := ReadConfigRun("config/", logger, &mounter)
 	Expect(err).To(BeNil())
@@ -75,6 +72,25 @@ func TestConfigRunOverrideEnv(t *testing.T) {
 	// check that the final value comes from the env var
 	Expect(source).To(Equal("environment"))
 	Expect(cfg.Target).To(Equal("environment"))
+}
+
+func TestConfigRunDebugFlag(t *testing.T) {
+	setupTest(t)
+	// Default value
+	_, err := ReadConfigRun("config/", logger, &mounter)
+	Expect(err).To(BeNil())
+	debug := viper.GetBool("debug")
+	Expect(logger.Level).ToNot(Equal(logrus.DebugLevel))
+	Expect(debug).To(BeFalse())
+
+	// Set it via viper, like the flag
+	viper.Set("debug", true)
+	_, err = ReadConfigRun("config/", logger, &mounter)
+	Expect(err).To(BeNil())
+	debug = viper.GetBool("debug")
+	Expect(debug).To(BeTrue())
+	Expect(logger.Level).To(Equal(logrus.DebugLevel))
+
 }
 
 func TestConfigBuildCustomNotValidPath(t *testing.T) {
