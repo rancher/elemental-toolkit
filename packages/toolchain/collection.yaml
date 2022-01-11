@@ -34,7 +34,7 @@ packages:
       - !!merge <<: *luet
   - name: "luet-makeiso"
     category: "toolchain-fips"
-    version: 0.3.8-20
+    version: 0.3.8-21
     upx: false
     fips: true
     labels:
