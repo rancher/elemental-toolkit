@@ -63,4 +63,6 @@ const (
 	AfterInstallChrootHook = "after-install-chroot"
 	AfterInstallHook       = "after-install"
 	BeforeInstallHook      = "before-install"
+	LuetCosignPlugin       = "luet-cosign"
+	LuetMtreePlugin        = "luet-mtree"
 )

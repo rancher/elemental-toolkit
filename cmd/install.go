@@ -54,6 +54,7 @@ var installCmd = &cobra.Command{
 		cfg.DigestSetup()
 
 		cfg.Logger.Infof("Install called")
+
 		// Dont call it yet, not ready
 		install := action.NewInstallAction(cfg)
 		err = install.Run()

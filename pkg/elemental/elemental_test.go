@@ -440,14 +440,29 @@ var _ = Describe("Elemental", func() {
 			config.ActiveImage.RootTree = sourceDir
 			config.ActiveImage.MountPoint = destDir
 			c := elemental.NewElemental(config)
-			err = c.CopyCos()
-			Expect(c.CopyCos()).To(BeNil())
+			Expect(c.CopyActive()).To(BeNil())
 		})
 		It("should fail if source does not exist", func() {
 			config.ActiveImage.RootTree = "/welp"
 			c := elemental.NewElemental(config)
-			err := c.CopyCos()
-			Expect(err).ToNot(BeNil())
+			Expect(c.CopyActive()).ToNot(BeNil())
+		})
+		It("Unpacks a docker image to target", func() {
+			config.DockerImg = "myimage"
+			luet := v1mock.NewFakeLuet()
+			config.Luet = luet
+			c := elemental.NewElemental(config)
+			Expect(c.CopyActive()).To(BeNil())
+			Expect(luet.UnpackCalled()).To(BeTrue())
+		})
+		It("Fails to unpack a docker image to target", func() {
+			config.DockerImg = "myimage"
+			luet := v1mock.NewFakeLuet()
+			luet.OnUnpackError = true
+			config.Luet = luet
+			c := elemental.NewElemental(config)
+			Expect(c.CopyActive()).NotTo(BeNil())
+			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 	})
 	Context("NoFormat", func() {

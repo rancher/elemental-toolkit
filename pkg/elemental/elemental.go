@@ -163,10 +163,12 @@ func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	}
 	device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label)
 	if err != nil {
+		c.config.Logger.Errorf("Could not find a device with label %s", part.Label)
 		return err
 	}
 	err = c.config.Mounter.Mount(device, part.MountPoint, "auto", opts)
 	if err != nil {
+		c.config.Logger.Errorf("Failed mounting device %s with label %s", device, part.Label)
 		return err
 	}
 	return nil
@@ -251,15 +253,24 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 	return nil
 }
 
-// CopyCos will rsync from config.source to config.target
-func (c *Elemental) CopyCos() error {
+// CopyActive will place the system root tree into the Active image
+func (c *Elemental) CopyActive() error {
 	c.config.Logger.Infof("Copying cOS..")
-	excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
-	err := utils.CreateDirStructure(c.config.Fs, c.config.ActiveImage.MountPoint)
-	if err != nil {
-		return err
+	var err error
+
+	if c.config.DockerImg != "" {
+		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, c.config.DockerImg)
+		if err != nil {
+			return err
+		}
+	} else {
+		excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
+		err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+		if err != nil {
+			return err
+		}
 	}
-	err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+	err = utils.CreateDirStructure(c.config.Fs, c.config.ActiveImage.MountPoint)
 	if err != nil {
 		return err
 	}
@@ -270,7 +281,7 @@ func (c *Elemental) CopyCos() error {
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
 func (c *Elemental) CopyCloudConfig() error {
 	if c.config.CloudInit != "" {
-		customConfig := fmt.Sprintf("%s/99_custom.yaml", cnst.OEMDir)
+		customConfig := filepath.Join(cnst.OEMDir, "99_custom.yaml")
 		c.config.Logger.Infof("Trying to copy cloud config file %s to %s", c.config.CloudInit, customConfig)
 
 		if err := c.GetUrl(c.config.CloudInit, customConfig); err != nil {
@@ -289,7 +300,7 @@ func (c *Elemental) CopyCloudConfig() error {
 func (c *Elemental) SelinuxRelabel(raiseError bool) error {
 	var err error
 
-	contextFile := fmt.Sprintf("%s/etc/selinux/targeted/contexts/files/file_contexts", cnst.ActiveDir)
+	contextFile := filepath.Join(cnst.ActiveDir, "/etc/selinux/targeted/contexts/files/file_contexts")
 
 	_, err = c.config.Fs.Stat(contextFile)
 	contextExists := err == nil
@@ -349,7 +360,7 @@ func (c *Elemental) GetIso() error {
 		if err != nil {
 			return err
 		}
-		tmpFile := fmt.Sprintf("%s/cOs.iso", tmpDir)
+		tmpFile := filepath.Join(tmpDir, "cOs.iso")
 		err = c.GetUrl(c.config.Iso, tmpFile)
 		if err != nil {
 			defer c.config.Fs.RemoveAll(tmpDir)
@@ -422,11 +433,11 @@ func (c *Elemental) CopyRecovery() error {
 	if !c.BootedFromSquash() {
 		return nil
 	}
-	recoveryDirCos := fmt.Sprintf("%s/cOS", cnst.RecoveryDir)
-	recoveryDirCosSquashTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile)
-	isoMntCosSquashSource := fmt.Sprintf("%s/%s", c.config.IsoMnt, cnst.RecoverySquashFile)
-	imgCosSource := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, c.config.ActiveImage.File)
-	imgCosTarget := fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile)
+	recoveryDirCos := filepath.Join(cnst.RecoveryDir, "cOS")
+	recoveryDirCosSquashTarget := filepath.Join(cnst.RecoveryDir, "cOS", cnst.RecoverySquashFile)
+	isoMntCosSquashSource := filepath.Join(c.config.IsoMnt, cnst.RecoverySquashFile)
+	imgCosSource := filepath.Join(cnst.StateDir, "cOS", c.config.ActiveImage.File)
+	imgCosTarget := filepath.Join(cnst.RecoveryDir, "cOS", cnst.RecoveryImgFile)
 
 	err = c.config.Fs.MkdirAll(recoveryDirCos, 0755)
 	if err != nil {
@@ -454,7 +465,7 @@ func (c *Elemental) CopyRecovery() error {
 }
 
 func (c Elemental) CopyPassive() error {
-	passImgFile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
+	passImgFile := filepath.Join(cnst.StateDir, "cOS", cnst.PassiveImgFile)
 
 	c.config.Logger.Infof("Copying image file..")
 	err := utils.CopyFile(c.config.Fs, c.config.ActiveImage.File, passImgFile)
