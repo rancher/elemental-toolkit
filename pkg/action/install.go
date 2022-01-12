@@ -44,7 +44,7 @@ func (i InstallAction) installHook(hook string, chroot bool) error {
 			cnst.PersistentDir: "/usr/local",
 			cnst.OEMDir:        "/oem",
 		})
-		out, err = chroot.Run(cnst.CosSetup, cnst.AfterInstallChrootHook)
+		out, err = chroot.Run(cnst.CosSetup, hook)
 	} else {
 		i.Config.Logger.Infof("Running %s hook", hook)
 		out, err = i.Config.Runner.Run(cnst.CosSetup, hook)
