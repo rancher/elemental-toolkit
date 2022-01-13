@@ -302,6 +302,9 @@ installer_cleanup2()
     umount ${_STATEDIR}
     umount ${_RECOVERYDIR}
     [ -n "$_COS_INSTALL_ISO_URL" ] && umount ${_ISOMNT} || true
+    if [ "$_COS_SILENCE_HOOKS" = "true" ]; then
+        unset LOGLEVEL
+    fi
 }
 
 installer_cleanup()
@@ -1403,6 +1406,8 @@ install() {
             --help)
                 usage
                 ;;
+            --silence-hooks)
+                _COS_SILENCE_HOOKS=true
             *)
                 if [ "$#" -gt 2 ]; then
                     usage
@@ -1436,6 +1441,9 @@ install() {
     validate_device
 
     trap installer_cleanup exit
+    if [ "$_COS_SILENCE_HOOKS" = "true" ]; then
+        export LOGLEVEL=error
+    fi
 
     if [ "$_STRICT_MODE" = "true" ]; then
         cos-setup before-install
