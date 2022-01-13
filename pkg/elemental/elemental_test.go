@@ -528,10 +528,6 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 	Context("GetIso", func() {
-		It("Does nothing if iso is not set", func() {
-			e := elemental.NewElemental(config)
-			Expect(e.GetIso()).To(BeNil())
-		})
 		It("Modifies the IsoMnt var to point to the mounted iso", func() {
 			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
 			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
@@ -541,7 +537,8 @@ var _ = Describe("Elemental", func() {
 
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
-			Expect(e.GetIso()).To(BeNil())
+			_, err = e.GetIso()
+			Expect(err).To(BeNil())
 			// Confirm that the isomnt value was set to a new path
 			Expect(config.IsoMnt).ToNot(Equal(cnst.IsoMnt))
 			// Confirm that we tried to mount it properly
@@ -551,7 +548,8 @@ var _ = Describe("Elemental", func() {
 		It("Fails if it cant find the iso", func() {
 			config.Iso = "whatever"
 			e := elemental.NewElemental(config)
-			Expect(e.GetIso()).ToNot(BeNil())
+			_, err := e.GetIso()
+			Expect(err).ToNot(BeNil())
 
 		})
 		It("Fails if it cannot mount the iso", func() {
@@ -564,8 +562,9 @@ var _ = Describe("Elemental", func() {
 
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
-			Expect(e.GetIso()).ToNot(BeNil())
-			Expect(e.GetIso().Error()).To(ContainSubstring("mount error"))
+			_, err = e.GetIso()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("mount error"))
 		})
 	})
 	Context("CloudConfig", func() {

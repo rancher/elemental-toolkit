@@ -71,14 +71,20 @@ func (i InstallAction) Run() (err error) {
 	if err != nil {
 		return err
 	}
-	// get_iso: _COS_INSTALL_ISO_URL -> download -> mount
-	err = newElemental.GetIso()
-	//TODO defer unmount ISO
-	if err != nil {
-		return err
+
+	if i.Config.Iso != "" {
+		tmpDir, err := newElemental.GetIso()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			i.Config.Logger.Infof("Unmounting downloaded ISO")
+			if tmpErr := i.Config.Mounter.Unmount(i.Config.IsoMnt); tmpErr != nil && err == nil {
+				err = tmpErr
+			}
+			i.Config.Fs.RemoveAll(tmpDir)
+		}()
 	}
-	// Remember to hook the yip hooks (before-install, after-install-chroot, after-install)
-	// This will probably need the yip module to be used before being able?
 
 	// Check device valid
 	if !disk.Exists() {
@@ -106,7 +112,7 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 	defer func() {
-		i.Config.Logger.Debugf("Unmounting partitions")
+		i.Config.Logger.Infof("Unmounting partitions")
 		if tmpErr := newElemental.UnmountPartitions(); tmpErr != nil && err == nil {
 			err = tmpErr
 		}
@@ -124,7 +130,7 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 	defer func() {
-		i.Config.Logger.Debugf("Unmounting Active image")
+		i.Config.Logger.Infof("Unmounting Active image")
 		if tmpErr := newElemental.UnmountImage(&i.Config.ActiveImage); tmpErr != nil && err == nil {
 			err = tmpErr
 		}

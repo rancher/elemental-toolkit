@@ -350,40 +350,37 @@ func (c Elemental) BootedFromSquash() bool {
 	return false
 }
 
-// GetIso will check if iso flag is set and if true will try to:
-// download the iso to a temp file
-// and mount the iso file as loop,
+// GetIso will try to:
+// download the iso into a temporary folder
+// and mount the iso file as loop in a subfolder
 // and modify the IsoMnt var to point to the newly mounted dir
-func (c *Elemental) GetIso() error {
-	if c.config.Iso != "" {
-		tmpDir, err := afero.TempDir(c.config.Fs, "", "elemental")
-		if err != nil {
-			return err
-		}
-		tmpFile := filepath.Join(tmpDir, "cOs.iso")
-		err = c.GetUrl(c.config.Iso, tmpFile)
-		if err != nil {
-			defer c.config.Fs.RemoveAll(tmpDir)
-			return err
-		}
-		tmpIsoMount, err := afero.TempDir(c.config.Fs, "", "elemental-iso-mounted-")
-		if err != nil {
-			defer c.config.Fs.RemoveAll(tmpDir)
-			return err
-		}
-		var mountOptions []string
-		c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, tmpIsoMount)
-		err = c.config.Mounter.Mount(tmpFile, tmpIsoMount, "loop", mountOptions)
-		if err != nil {
-			defer c.config.Fs.RemoveAll(tmpDir)
-			defer c.config.Fs.RemoveAll(tmpIsoMount)
-			return err
-		}
-		// Store the new mounted dir into IsoMnt, so we can use it down the line
-		c.config.IsoMnt = tmpIsoMount
-		return nil
+func (c *Elemental) GetIso() (tmpDir string, err error) {
+	tmpDir, err = afero.TempDir(c.config.Fs, "", "elemental")
+	if err != nil {
+		return "", err
 	}
-	return nil
+	tmpFile := filepath.Join(tmpDir, "cOs.iso")
+	err = c.GetUrl(c.config.Iso, tmpFile)
+	if err != nil {
+		c.config.Fs.RemoveAll(tmpDir)
+		return "", err
+	}
+	tmpIsoMount := filepath.Join(tmpDir, "iso-mounted")
+	err = c.config.Fs.MkdirAll(tmpIsoMount, 0755)
+	if err != nil {
+		c.config.Fs.RemoveAll(tmpDir)
+		return "", err
+	}
+	var mountOptions []string
+	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, tmpIsoMount)
+	err = c.config.Mounter.Mount(tmpFile, tmpIsoMount, "loop", mountOptions)
+	if err != nil {
+		c.config.Fs.RemoveAll(tmpDir)
+		return "", err
+	}
+	// Store the new mounted dir into IsoMnt, so we can use it down the line
+	c.config.IsoMnt = tmpIsoMount
+	return tmpDir, nil
 }
 
 // GetUrl is a simple method that will try to get an url to a destination, no matter if its an http url, ftp, tftp or a file
