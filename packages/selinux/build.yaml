@@ -1,7 +1,4 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
+image: centos:7
 env:
 - GITHUB_ORG={{ ( index .Values.labels "github.owner" ) }}
 - GITHUB_REPO={{ ( index .Values.labels "github.repo" ) }}
@@ -9,8 +6,7 @@ env:
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 prelude:
-- zypper ar https://download.opensuse.org/repositories/security:/SELinux/openSUSE_Leap_15.3/security:SELinux.repo
-- zypper --gpg-auto-import-keys in -y --allow-vendor-change --allow-downgrade container-selinux -libsemanage1
+- yum -y install container-selinux curl
 
 steps:
 - |
