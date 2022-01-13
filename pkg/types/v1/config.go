@@ -93,18 +93,24 @@ func WithLuet(luet LuetInterface) func(r *RunConfig) error {
 func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 	log := NewLogger()
 	r := &RunConfig{
-		Fs:              afero.NewOsFs(),
-		Logger:          log,
-		Runner:          &RealRunner{},
-		Syscall:         &RealSyscall{},
-		CloudInitRunner: NewYipCloudInitRunner(log),
-		Client:          &http.Client{},
+		Fs:      afero.NewOsFs(),
+		Logger:  log,
+		Runner:  &RealRunner{},
+		Syscall: &RealSyscall{},
+		Client:  &http.Client{},
 	}
 	for _, o := range opts {
 		err := o(r)
 		if err != nil {
 			return nil
 		}
+	}
+
+	// Delay the yip runner creation, so we set the proper logger instead of blindly setting it to the logger we create
+	// at the start of NewRunConfig, as WithLogger can be passed on init, and that would result in 2 different logger
+	// instances, on on the config.Logger and the other on config.CloudInitRunner
+	if r.CloudInitRunner == nil {
+		r.CloudInitRunner = NewYipCloudInitRunner(r.Logger)
 	}
 
 	if r.Mounter == nil {
@@ -177,6 +183,7 @@ type RunConfig struct {
 	DockerImg       string `yaml:"docker-image,omitempty" mapstructure:"docker-image"`
 	NoCosign        bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
+	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string

@@ -17,6 +17,7 @@ limitations under the License.
 package v1_test
 
 import (
+	"bytes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
@@ -37,5 +38,11 @@ var _ = Describe("logger", func() {
 	})
 	It("DebugLevel returns the proper log level for debug output", func() {
 		Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
+	})
+	It("NewBufferLogger stores content in a buffer", func() {
+		b := &bytes.Buffer{}
+		l1 := v1.NewBufferLogger(b)
+		l1.Info("TEST")
+		Expect(b).To(ContainSubstring("TEST"))
 	})
 })

@@ -54,6 +54,7 @@ var _ = Describe("Utils", func() {
 	var client v1.HTTPClient
 	var mounter *v1mock.ErrorMounter
 	var fs afero.Fs
+	var memLog *bytes.Buffer
 
 	BeforeEach(func() {
 		runner = &v1mock.FakeRunner{}
@@ -370,6 +371,71 @@ var _ = Describe("Utils", func() {
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 
 			})
+		})
+	})
+	Context("RunStage", func() {
+		BeforeEach(func() {
+			// Use a different config with a buffer for logger, so we can check the output
+			// We also use the real fs
+			memLog = &bytes.Buffer{}
+			logger = v1.NewBufferLogger(memLog)
+			fs = afero.NewOsFs()
+			config = v1.NewRunConfig(
+				v1.WithFs(fs),
+				v1.WithRunner(runner),
+				v1.WithLogger(logger),
+				v1.WithMounter(mounter),
+				v1.WithSyscall(syscall),
+				v1.WithClient(client),
+			)
+		})
+		It("Goes over extra paths", func() {
+			d, _ := afero.TempDir(fs, "", "elemental")
+			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
+			defer os.RemoveAll(d)
+			config.CloudInitPaths = d
+			Expect(utils.RunStage("luke", config)).To(BeNil())
+			Expect(memLog).To(ContainSubstring(fmt.Sprintf("Executing %s", d)))
+			Expect(memLog).To(ContainSubstring("luke"))
+			Expect(memLog).To(ContainSubstring("luke.before"))
+			Expect(memLog).To(ContainSubstring("luke.after"))
+		})
+		It("Skips non existant paths", func() {
+			config.CloudInitPaths = "/fake"
+			Expect(utils.RunStage("obi-wan", config)).To(BeNil())
+			Expect(memLog).To(ContainSubstring("obi-wan"))
+			Expect(memLog).ToNot(ContainSubstring("/fake"))
+		})
+		It("parses cmdline uri", func() {
+			d, _ := afero.TempDir(fs, "", "elemental")
+			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
+			defer os.RemoveAll(d)
+
+			r := v1mock.NewTestRunnerV2()
+			r.ReturnValue = []byte(fmt.Sprintf("cos.setup=%s/test.yaml", d))
+			config.Runner = r
+			Expect(utils.RunStage("padme", config)).To(BeNil())
+			Expect(memLog).To(ContainSubstring("padme"))
+			Expect(memLog).To(ContainSubstring(fmt.Sprintf("%s/test.yaml", d)))
+		})
+		It("parses cmdline uri with dotnotation", func() {
+			config.Logger.SetLevel(log.DebugLevel)
+			r := v1mock.NewTestRunnerV2()
+			r.ReturnValue = []byte("stages.leia[0].commands[0]='echo beepboop'")
+			config.Runner = r
+			Expect(utils.RunStage("leia", config)).To(BeNil())
+			Expect(memLog).To(ContainSubstring("leia"))
+			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
+			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
+
+			r = v1mock.NewTestRunnerV2()
+			// try with a non-clean cmdline
+			r.ReturnValue = []byte("BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'")
+			config.Runner = r
+			Expect(utils.RunStage("leia", config)).To(BeNil())
+			Expect(memLog).To(ContainSubstring("leia"))
+			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
+			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
 		})
 	})
 })

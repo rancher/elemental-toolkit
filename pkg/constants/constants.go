@@ -66,3 +66,7 @@ const (
 	LuetCosignPlugin       = "luet-cosign"
 	LuetMtreePlugin        = "luet-mtree"
 )
+
+func GetCloudInitPaths() []string {
+	return []string{"/system/oem", "/oem/", "/usr/local/cloud-config/"}
+}

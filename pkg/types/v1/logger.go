@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"bytes"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 )
@@ -56,5 +57,12 @@ func NewLogger() Logger {
 func NewNullLogger() Logger {
 	logger := log.New()
 	logger.SetOutput(ioutil.Discard)
+	return logger
+}
+
+// NewBufferLogger will return a logger that stores all logs in a buffer, used mainly for testing
+func NewBufferLogger(b *bytes.Buffer) Logger {
+	logger := log.New()
+	logger.SetOutput(b)
 	return logger
 }

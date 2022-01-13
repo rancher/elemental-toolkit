@@ -26,6 +26,7 @@ import (
 
 type CloudInitRunner interface {
 	Run(string, ...string) error
+	SetModifier(schema.Modifier)
 }
 
 type YipCloudInitRunner struct {

@@ -16,7 +16,10 @@ limitations under the License.
 
 package mocks
 
-import "errors"
+import (
+	"errors"
+	"github.com/mudler/yip/pkg/schema"
+)
 
 type FakeCloudInitRunner struct {
 	ExecStages []string
@@ -29,4 +32,8 @@ func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
 		return errors.New("cloud init failure")
 	}
 	return nil
+}
+
+func (ci *FakeCloudInitRunner) SetModifier(modifier schema.Modifier) {
+	return
 }
