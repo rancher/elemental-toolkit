@@ -52,14 +52,25 @@ func ReadConfigRun(configDir string, logger v1.Logger, mounter mount.Interface) 
 		v1.WithMounter(mounter),
 	)
 
-	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
+	cfgDefault := []string{"/etc/os-release", "/etc/cos/config"}
+
+	for _, c := range cfgDefault {
+		if _, err := os.Stat(c); err == nil {
+			cfg.Logger.Debug("Loading config file: %s", c)
+			viper.SetConfigFile(c)
+			viper.SetConfigType("env")
+			cobra.CheckErr(viper.MergeInConfig())
+		}
+	}
 
 	viper.AddConfigPath(configDir)
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config.yaml")
 	// If a config file is found, read it in.
-	viper.ReadInConfig()
+	viper.MergeInConfig()
 
+	// Load extra config files on configdir/config.d/ so we can override config values
+	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 	if _, err := os.Stat(cfgExtra); err == nil {
 		viper.AddConfigPath(cfgExtra)
 		err = filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
