@@ -1408,6 +1408,7 @@ install() {
                 ;;
             --silence-hooks)
                 _COS_SILENCE_HOOKS=true
+                ;;
             *)
                 if [ "$#" -gt 2 ]; then
                     usage
