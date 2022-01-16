@@ -23,7 +23,7 @@ packages:
       autobump.revdeps: "true"
   - name: "luet-makeiso"
     category: "toolchain"
-    version: 0.3.8-18
+    version: 0.3.8-19
     upx: false
     fips: false
     labels:
