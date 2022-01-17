@@ -17,6 +17,7 @@ limitations under the License.
 package mocks
 
 import (
+	"errors"
 	"io"
 	"net/http"
 )
@@ -36,12 +37,16 @@ func (m *FakeHttpBody) Close() error {
 // It stores Get calls into ClientCalls for easy checking of what was called
 type FakeHttpClient struct {
 	ClientCalls []string
+	Error       bool
 }
 
 // Get will return a FakeHttpBody and store the url call into ClientCalls
 func (m *FakeHttpClient) Get(url string) (*http.Response, error) {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
+	if m.Error {
+		return nil, errors.New("fake http error")
+	}
 	return &http.Response{Body: &FakeHttpBody{}}, nil
 }
 

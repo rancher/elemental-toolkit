@@ -35,25 +35,29 @@ func NewInstallAction(config *v1.RunConfig) *InstallAction {
 	return &InstallAction{Config: config}
 }
 
-func (i InstallAction) installHook(hook string, chroot bool) error {
-	var out []byte
-	var err error
+func (i InstallAction) installHook(hook string, chroot bool) (err error) {
 	if chroot {
 		chroot := utils.NewChroot(i.Config.ActiveImage.MountPoint, i.Config)
 		chroot.SetExtraMounts(map[string]string{
 			cnst.PersistentDir: "/usr/local",
 			cnst.OEMDir:        "/oem",
 		})
-		out, err = chroot.Run(cnst.CosSetup, hook)
-	} else {
-		i.Config.Logger.Infof("Running %s hook", hook)
-		out, err = i.Config.Runner.Run(cnst.CosSetup, hook)
+		err = chroot.Prepare()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if tmpErr := chroot.Close(); tmpErr != nil && err == nil {
+				err = tmpErr
+			}
+		}()
 	}
-	i.Config.Logger.Debugf("%s output: %s", hook, string(out))
-	if err != nil && i.Config.Strict {
-		return err
+	i.Config.Logger.Infof("Running %s hook", hook)
+	err = utils.RunStage(hook, i.Config)
+	if !i.Config.Strict {
+		err = nil
 	}
-	return nil
+	return err
 }
 
 // Run will install the cos system to a device by following several steps

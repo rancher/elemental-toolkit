@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/onsi/ginkgo"
-	//"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
