@@ -147,10 +147,14 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		r.systemLabel = cnst.SystemLabel
 	}
 
-	r.Partitions = []*Partition{}
+	r.Partitions = PartitionList{}
 
 	if r.IsoMnt == "" {
 		r.IsoMnt = cnst.IsoMnt
+	}
+
+	if r.GrubDefEntry == "" {
+		r.GrubDefEntry = cnst.GrubDefEntry
 	}
 	return r
 }
@@ -184,6 +188,7 @@ type RunConfig struct {
 	NoCosign        bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
 	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
+	GrubDefEntry    string `yaml:"GRUB_ENTRY_NAME,omitempty" mapstructure:"GRUB_ENTRY_NAME"`
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string
@@ -197,7 +202,7 @@ type RunConfig struct {
 	Syscall         SyscallInterface
 	CloudInitRunner CloudInitRunner
 	Luet            LuetInterface
-	Partitions      []*Partition
+	Partitions      PartitionList
 	Client          HTTPClient
 	ActiveImage     Image
 }
@@ -212,6 +217,8 @@ type Partition struct {
 	MountPoint string
 }
 
+type PartitionList []*Partition
+
 // Image struct represents a file system image with its commonly configurable values, size in MiB
 type Image struct {
 	File  string
@@ -222,6 +229,15 @@ type Image struct {
 	RootTree   string
 	MountPoint string
 	LoopDevice string
+}
+
+func (pl PartitionList) GetByPLabel(label string) *Partition {
+	for _, p := range pl {
+		if p.PLabel == label {
+			return p
+		}
+	}
+	return nil
 }
 
 func (r RunConfig) GetSystemLabel() string {

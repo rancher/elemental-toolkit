@@ -278,5 +278,14 @@ var _ = Describe("Actions", func() {
 			cmdFail = "tune2fs"
 			Expect(install.Run()).NotTo(BeNil())
 		})
+
+		It("Fails setting the grub default entry", func() {
+			config.Target = device
+			config.ActiveImage.Size = activeSize
+			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.MountPoint = activeMount
+			cmdFail = "grub2-editenv"
+			Expect(install.Run()).NotTo(BeNil())
+		})
 	})
 })

@@ -691,6 +691,18 @@ var _ = Describe("Elemental", func() {
 			Expect(err).NotTo(BeNil())
 		})
 	})
+
+	Context("SetDefaultGrubEntry", func() {
+		It("Sets the default grub entry without issues", func() {
+			config.Partitions = append(config.Partitions, &v1.Partition{PLabel: cnst.StatePLabel})
+			el := elemental.NewElemental(config)
+			Expect(el.SetDefaultGrubEntry()).To(BeNil())
+		})
+		It("Fails if state partition is not found", func() {
+			el := elemental.NewElemental(config)
+			Expect(el.SetDefaultGrubEntry()).NotTo(BeNil())
+		})
+	})
 })
 
 // PathInMountPoints will check if the given path is in the mountPoints list

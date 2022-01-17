@@ -123,5 +123,30 @@ var _ = Describe("Types", func() {
 				Expect(c.Mounter).To(Equal(mount.New(constants.MountBinary)))
 			})
 		})
+		Context("PartitionList.GetByPLabel", func() {
+			var c *v1.RunConfig
+
+			BeforeEach(func() {
+				fs := afero.NewMemMapFs()
+				_, _ = fs.Create(constants.EfiDevice)
+
+				c = v1.NewRunConfig(
+					v1.WithFs(fs),
+					v1.WithMounter(&mount.FakeMounter{}),
+					v1.WithRunner(&v1mock.FakeRunner{}),
+					v1.WithSyscall(&v1mock.FakeSyscall{}))
+				c.DigestSetup()
+			})
+			It("Finds a partition given a partition label", func() {
+				c.DigestSetup()
+				part := c.Partitions.GetByPLabel(constants.StatePLabel)
+				Expect(part.PLabel).To(Equal(constants.StatePLabel))
+			})
+			It("Returns nil if requested partition label is not found", func() {
+				c.DigestSetup()
+				Expect(c.Partitions.GetByPLabel("whatever")).To(BeNil())
+			})
+		})
 	})
+
 })

@@ -186,9 +186,12 @@ func (i InstallAction) Run() (err error) {
 	if err != nil {
 		return err
 	}
-	// TODO Rebrand
-	// cos.Rebrand()
-	// ????
+
+	// installation rebrand (only grub for now)
+	err = newElemental.Rebrand()
+	if err != nil {
+		return err
+	}
 	// profit!
 	// TODO poweroff or reboot or nothing
 	return err

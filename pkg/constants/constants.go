@@ -18,6 +18,8 @@ package constants
 
 const (
 	GrubConf               = "/etc/cos/grub.cfg"
+	GrubOEMEnv             = "grub_oem_env"
+	GrubDefEntry           = "cOs"
 	BiosPLabel             = "p.bios"
 	EfiLabel               = "COS_GRUB"
 	EfiPLabel              = "p.grub"

@@ -371,6 +371,33 @@ var _ = Describe("Utils", func() {
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 
 			})
+
+		})
+		Context("SetPersistentVariables", func() {
+			It("Sets the grub envrionment file", func() {
+				runner := v1mock.NewTestRunnerV2()
+				config.Runner = runner
+				grub := utils.NewGrub(config)
+				Expect(grub.SetPersistentVariables(
+					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
+				)).To(BeNil())
+				Expect(runner.CmdsMatch([][]string{
+					{"grub2-editenv", "somefile", "set", "key1=value1"},
+					{"grub2-editenv", "somefile", "set", "key2=value2"},
+				})).To(BeNil())
+			})
+			It("Fails running grub2-editenv", func() {
+				runner := v1mock.NewTestRunnerV2()
+				runner.ReturnError = errors.New("grub error")
+				config.Runner = runner
+				grub := utils.NewGrub(config)
+				Expect(grub.SetPersistentVariables(
+					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
+				)).NotTo(BeNil())
+				Expect(runner.CmdsMatch([][]string{
+					{"grub2-editenv", "somefile", "set", "key1=value1"},
+				})).To(BeNil())
+			})
 		})
 	})
 	Context("RunStage", func() {

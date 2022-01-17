@@ -476,3 +476,23 @@ func (c Elemental) CopyPassive() error {
 	}
 	return err
 }
+
+// Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in
+// State partition mountpoint.
+func (c Elemental) SetDefaultGrubEntry() error {
+	part := c.config.Partitions.GetByPLabel(cnst.StatePLabel)
+	if part == nil {
+		return errors.New("State partition not found. Cannot set grub env file")
+	}
+	grub := utils.NewGrub(c.config)
+	return grub.SetPersistentVariables(
+		filepath.Join(part.MountPoint, cnst.GrubOEMEnv),
+		map[string]string{"default_menu_entry": c.config.GrubDefEntry},
+	)
+}
+
+// Runs rebranding procedure. Note this assumes all required partitions and
+// images to be mounted in advance.
+func (c Elemental) Rebrand() error {
+	return c.SetDefaultGrubEntry()
+}
