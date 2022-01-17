@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.9"
+    version: 0.9-1
     requires:
       - category: toolchain
         name: elemental-cli
@@ -21,6 +21,7 @@ packages:
       - category: toolchain-fips
         name: luet
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes installer, cos-setup, dracut and grub configuration"
@@ -40,6 +41,7 @@ packages:
       - name: "base-dracut-modules"
         category: "system"
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
@@ -50,6 +52,7 @@ packages:
       - category: meta
         name: cos-modules
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-core-fips"
     requires:
@@ -59,6 +62,7 @@ packages:
       - category: meta
         name: cos-modules
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-minimal"
     description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
@@ -69,6 +73,7 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-minimal-fips"
     requires:
@@ -78,6 +83,7 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
+    version: 0.9-1
   - !!merge <<: *metabase
     name: "cos-verify"
     requires:
@@ -87,3 +93,4 @@ packages:
       - category: toolchain
         name: luet-cosign
         version: ">=0"
+    version: 0.9-1
