@@ -47,4 +47,5 @@ var runStage = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runStage)
+	runStage.Flags().Bool("strict", false, "Set strict checking for errors, i.e. fail if errors were found")
 }

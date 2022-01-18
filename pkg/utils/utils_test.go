@@ -374,7 +374,7 @@ var _ = Describe("Utils", func() {
 
 		})
 		Context("SetPersistentVariables", func() {
-			It("Sets the grub envrionment file", func() {
+			It("Sets the grub environment file", func() {
 				runner := v1mock.NewTestRunnerV2()
 				config.Runner = runner
 				grub := utils.NewGrub(config)
@@ -416,13 +416,32 @@ var _ = Describe("Utils", func() {
 				v1.WithClient(client),
 			)
 		})
+		It("fails if strict mode is enabled", func() {
+			config.Logger.SetLevel(log.DebugLevel)
+			config.Strict = true
+			r := v1mock.NewTestRunnerV2()
+			r.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
+			config.Runner = r
+			Expect(utils.RunStage("c3po", config)).ToNot(BeNil())
+		})
+		It("does not fail but prints errors by default", func() {
+			config.Logger.SetLevel(log.DebugLevel)
+			config.Strict = false
+			r := v1mock.NewTestRunnerV2()
+			r.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
+			config.Runner = r
+			out := utils.RunStage("c3po", config)
+			Expect(out).To(BeNil())
+			Expect(memLog).To(ContainSubstring("Some errors found but were ignored"))
+		})
 		It("Goes over extra paths", func() {
 			d, _ := afero.TempDir(fs, "", "elemental")
 			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
 			defer os.RemoveAll(d)
+			config.Logger.SetLevel(log.DebugLevel)
 			config.CloudInitPaths = d
 			Expect(utils.RunStage("luke", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring(fmt.Sprintf("Executing %s", d)))
+			Expect(memLog).To(ContainSubstring(fmt.Sprintf("Adding extra paths: %s", d)))
 			Expect(memLog).To(ContainSubstring("luke"))
 			Expect(memLog).To(ContainSubstring("luke.before"))
 			Expect(memLog).To(ContainSubstring("luke.after"))
