@@ -19,7 +19,7 @@ packages:
       package.checksum: "231654bbf2dab3d86c1619ce799e77b03d96f9b50770297c8f4dff8836fc8ca2"
   - name: "golang-fips"
     category: "build"
-    version: 1.17.5b7-1
+    version: "1.17.6b7"
     base_url: https://go-boringcrypto.storage.googleapis.com
     hidden: true # No need to make it installable for now
     labels:
@@ -31,7 +31,7 @@ packages:
         curl -s -L https://raw.githubusercontent.com/golang/go/dev.boringcrypto/misc/boring/RELEASES | tail -n1 | cut -d" " -f 1 | sed 's/go//'
       autobump.version_hook: |
         curl -s -L https://raw.githubusercontent.com/golang/go/dev.boringcrypto/misc/boring/RELEASES | tail -n1 | cut -d" " -f 1 | sed 's/go//'
-      package.version: "1.17.5b7"
+      package.version: "1.17.6b7"
       autobump.checksum_hook: |
         curl -s -L https://raw.githubusercontent.com/golang/go/dev.boringcrypto/misc/boring/RELEASES | grep go{{.Values.labels.package.version}} | grep -v src | cut -d" " -f 5
-      package.checksum: "92407bbc855fd05c5252a2ee2d4fcb6eb077cf64fd0d70da53ba7914c22ec1d7"
+      package.checksum: "5b55a001fb80f9baaed621c2469977b9c9afe13b9afc6fd5712057856ab86f5d"
