@@ -175,7 +175,7 @@ build {
 
   provisioner "shell" {
     except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
-    inline = ["INTERACTIVE=false cos-installer --config /90_custom.yaml /dev/sda",
+    inline = ["INTERACTIVE=false cos-installer --cloud-init /90_custom.yaml /dev/sda",
       "if [ -n \"${var.feature}\" ]; then mount /dev/disk/by-label/COS_OEM /oem; cos-feature enable ${var.feature}; fi"
     ]
     pause_after = "30s"
