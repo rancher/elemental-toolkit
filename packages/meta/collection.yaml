@@ -3,11 +3,11 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.9-1
+    version: 0.9-2
     requires:
       - category: toolchain
         name: elemental-cli
-        version: ">=0"
+        version: ">0.0.7"
       - category: toolchain
         name: luet
         version: ">=0"
@@ -31,7 +31,7 @@ packages:
         version: ">=0"
       - category: system
         name: cos-setup
-        version: ">=0"
+        version: ">0.6.1-1"
       - category: system
         name: immutable-rootfs
         version: ">=0"

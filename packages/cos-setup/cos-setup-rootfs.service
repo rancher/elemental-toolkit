@@ -9,7 +9,7 @@ Conflicts=initrd-switch-root.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=/usr/bin/ln -sf -t / /sysroot/system
-ExecStart=/usr/bin/cos-setup rootfs
+ExecStart=/usr/bin/elemental run-stage rootfs
 
 [Install]
 RequiredBy=initrd-fs.target
