@@ -1,0 +1,21 @@
+repositories:
+- &cos
+  name: "cos"
+  description: "cOS official"
+  # Repository type
+  type: "docker"
+  # Repository cache
+  cached: true
+  # Repository priority
+  priority: 1
+  # Repository architecture
+  arch: "amd64"
+  # Enable/disable Docker notary checks
+  # 
+  verify: false
+  urls:
+  - "quay.io/costoolkit/releases-green"
+- <<: *cos
+  arch: "arm64"
+  urls:
+  - "quay.io/costoolkit/releases-green-arm64"
