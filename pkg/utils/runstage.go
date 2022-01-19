@@ -22,6 +22,7 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/spf13/afero"
 	"strings"
 )
 
@@ -38,6 +39,16 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 		cfg.Logger.Debugf("Adding extra paths: %s", cfg.CloudInitPaths)
 		extraCloudInitPathsSplit := strings.Split(cfg.CloudInitPaths, " ")
 		CloudInitPaths = append(CloudInitPaths, extraCloudInitPathsSplit...)
+	}
+
+	// Cleanup paths. Check if they exist and add them to the final list to avoid failures on non-existing paths
+	for _, path := range CloudInitPaths {
+		exists, err := afero.Exists(cfg.Fs, path)
+		if exists && err == nil {
+			FinalCloudInitPaths = append(FinalCloudInitPaths, path)
+		} else {
+			cfg.Logger.Debugf("Skipping path %s as it doesnt exists or cant access it", path)
+		}
 	}
 
 	stageBefore := fmt.Sprintf("%s.before", stage)
