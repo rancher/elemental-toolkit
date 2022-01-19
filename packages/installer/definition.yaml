@@ -8,7 +8,7 @@ requires:
   version: ">=0"
 - name: "elemental-cli"
   category: "toolchain"
-  version: ">0.0.7"
+  version: ">0.0.10"
 - name: "luet-cosign"
   category: "toolchain"
   version: ">=0"

@@ -4,4 +4,4 @@ version: 0.6.2
 requires:
   - name: "elemental-cli"
     category: "toolchain"
-    version: ">0.0.7"
+    version: ">0.0.10"
