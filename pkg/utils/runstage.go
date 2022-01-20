@@ -103,6 +103,9 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 	}
 
 	cfg.CloudInitRunner.SetModifier(schema.DotNotationModifier)
+	// After RunStage reset the modifier
+	defer cfg.CloudInitRunner.SetModifier(nil)
+
 	err = cfg.CloudInitRunner.Run(stageBefore, string(cmdLineOut))
 	if err != nil {
 		errors = multierror.Append(errors, err)

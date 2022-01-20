@@ -52,6 +52,7 @@ var installCmd = &cobra.Command{
 		cfg.Target = args[0]
 
 		cfg.DigestSetup()
+		cmd.SilenceUsage = true
 
 		cfg.Logger.Infof("Install called")
 
