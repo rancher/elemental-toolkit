@@ -446,12 +446,6 @@ var _ = Describe("Utils", func() {
 			Expect(memLog).To(ContainSubstring("luke.before"))
 			Expect(memLog).To(ContainSubstring("luke.after"))
 		})
-		It("Skips non existant paths", func() {
-			config.CloudInitPaths = "/fake"
-			Expect(utils.RunStage("obi-wan", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring("obi-wan"))
-			Expect(memLog).ToNot(ContainSubstring("/fake"))
-		})
 		It("parses cmdline uri", func() {
 			d, _ := afero.TempDir(fs, "", "elemental")
 			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)

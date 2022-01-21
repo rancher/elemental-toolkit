@@ -22,14 +22,12 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"github.com/spf13/afero"
 	"strings"
 )
 
 // RunStage will run yip
 func RunStage(stage string, cfg *v1.RunConfig) error {
 	var cmdLineYipUri string
-	var FinalCloudInitPaths []string
 	var errors error
 	CloudInitPaths := constants.GetCloudInitPaths()
 
@@ -39,16 +37,6 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 		cfg.Logger.Debugf("Adding extra paths: %s", cfg.CloudInitPaths)
 		extraCloudInitPathsSplit := strings.Split(cfg.CloudInitPaths, " ")
 		CloudInitPaths = append(CloudInitPaths, extraCloudInitPathsSplit...)
-	}
-
-	// Cleanup paths. Check if they exist and add them to the final list to avoid failures on non-existing paths
-	for _, path := range CloudInitPaths {
-		exists, err := afero.Exists(cfg.Fs, path)
-		if exists && err == nil {
-			FinalCloudInitPaths = append(FinalCloudInitPaths, path)
-		} else {
-			cfg.Logger.Debugf("Skipping path %s as it doesnt exists or cant access it", path)
-		}
 	}
 
 	stageBefore := fmt.Sprintf("%s.before", stage)
@@ -80,15 +68,15 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 	}
 
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
-	err = cfg.CloudInitRunner.Run(stageBefore, FinalCloudInitPaths...)
+	err = cfg.CloudInitRunner.Run(stageBefore, CloudInitPaths...)
 	if err != nil {
 		errors = multierror.Append(errors, err)
 	}
-	err = cfg.CloudInitRunner.Run(stage, FinalCloudInitPaths...)
+	err = cfg.CloudInitRunner.Run(stage, CloudInitPaths...)
 	if err != nil {
 		errors = multierror.Append(errors, err)
 	}
-	err = cfg.CloudInitRunner.Run(stageAfter, FinalCloudInitPaths...)
+	err = cfg.CloudInitRunner.Run(stageAfter, CloudInitPaths...)
 	if err != nil {
 		errors = multierror.Append(errors, err)
 	}
