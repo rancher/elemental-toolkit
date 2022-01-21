@@ -10,7 +10,7 @@ RootDirectory=/sysroot
 BindPaths=/proc /sys /dev /run /tmp
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/cos-setup initramfs
+ExecStart=/usr/bin/elemental run-stage initramfs
 
 [Install]
 RequiredBy=initrd.target

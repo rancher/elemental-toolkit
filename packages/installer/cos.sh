@@ -223,7 +223,7 @@ run_chroot_hook() {
     local dir=$2
 
     prepare_chroot $dir
-    chroot $dir /usr/bin/cos-setup $hook
+    chroot $dir /usr/bin/elemental run-stage $hook
     chroot $dir /usr/sbin/cos-rebrand
     cleanup_chroot $dir
 }
@@ -935,9 +935,9 @@ create_rootfs() {
 
 
     if [ "$_STRICT_MODE" = "true" ]; then
-      cos-setup before-$hook_name
+      elemental run-stage before-$hook_name
     else 
-      cos-setup before-$hook_name || true
+      elemental run-stage before-$hook_name || true
     fi
 
     # FIXME: XDG_RUNTIME_DIR is for containerd, by default that points to /run/user/<uid>
@@ -991,9 +991,9 @@ create_rootfs() {
         umount $target/usr/local
     fi
     if [ "$_STRICT_MODE" = "true" ]; then
-      cos-setup after-$hook_name
+      elemental run-stage after-$hook_name
     else 
-      cos-setup after-$hook_name || true
+      elemental run-stage after-$hook_name || true
     fi
 
     rm -rf $upgrade_state_dir
@@ -1239,9 +1239,9 @@ reset() {
     do_recovery_mount
 
     if [ "$_STRICT_MODE" = "true" ]; then
-        cos-setup before-reset
+        elemental run-stage before-reset
     else 
-        cos-setup before-reset || true
+        elemental run-stage before-reset || true
     fi
 
     if [ -n "$_PERSISTENCE_RESET" ] && [ "$_PERSISTENCE_RESET" == "true" ]; then
@@ -1255,9 +1255,9 @@ reset() {
     rebrand
 
     if [ "$_STRICT_MODE" = "true" ]; then
-        cos-setup after-reset
+        elemental run-stage after-reset
     else 
-        cos-setup after-reset || true
+        elemental run-stage after-reset || true
     fi
 }
 
@@ -1447,9 +1447,9 @@ install() {
     fi
 
     if [ "$_STRICT_MODE" = "true" ]; then
-        cos-setup before-install
+        elemental run-stage before-install
     else
-        cos-setup before-install || true
+        elemental run-stage before-install || true
     fi
 
     get_iso
@@ -1480,9 +1480,9 @@ install() {
 
     if [ -z "$_UPGRADE_IMAGE" ]; then
         if [ "$_STRICT_MODE" = "true" ]; then
-            cos-setup after-install
+            elemental run-stage after-install
         else
-            cos-setup after-install || true
+            elemental run-stage after-install || true
         fi
     fi
 

@@ -5,7 +5,7 @@ Before=getty.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/cos-setup boot
+ExecStart=/usr/bin/elemental run-stage boot
 
 [Install]
 WantedBy=multi-user.target
