@@ -13,7 +13,7 @@ env:
 
 prelude:
   {{ template "golang_deps" .}}
-  {{ $opts:= dict "version" (printf "v%s" .Values.version) "org" ( index .Values.labels "github.owner" ) "repo" ( index .Values.labels "github.repo" ) }}
+  {{ $opts:= dict "version" ( index .Values.labels "git.hash" ) "org" ( index .Values.labels "github.owner" ) "repo" ( index .Values.labels "github.repo" ) }}
   {{ template "golang_download_package" $opts}}
 steps:
   - |
