@@ -412,6 +412,14 @@ var _ = Describe("Elemental", func() {
 				Expect(partNum).To(Equal(1))
 			})
 
+			It("Fails creating custom partitions on non gpt disks", func() {
+				fs.Remove(cnst.EfiDevice)
+				config.DigestSetup()
+				config.PartLayout = "partitioning.yaml"
+				err := el.PartitionAndFormatDevice(dev)
+				Expect(err).NotTo(BeNil())
+			})
+
 			It("Fails creating a data partition", func() {
 				config.DigestSetup()
 				errPart, failEfiFormat = 2, false

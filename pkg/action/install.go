@@ -116,7 +116,6 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 	defer func() {
-		i.Config.Logger.Infof("Unmounting partitions")
 		if tmpErr := newElemental.UnmountPartitions(); tmpErr != nil && err == nil {
 			err = tmpErr
 		}
@@ -129,12 +128,11 @@ func (i InstallAction) Run() (err error) {
 	}
 
 	//mount file system image
-	err = newElemental.MountImage(&i.Config.ActiveImage)
+	err = newElemental.MountImage(&i.Config.ActiveImage, "rw")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		i.Config.Logger.Infof("Unmounting Active image")
 		if tmpErr := newElemental.UnmountImage(&i.Config.ActiveImage); tmpErr != nil && err == nil {
 			err = tmpErr
 		}

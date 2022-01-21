@@ -51,8 +51,13 @@ func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
 		return err
 	}
 
-	if c.config.PartTable == v1.GPT && c.config.PartLayout != "" {
-		return c.config.CloudInitRunner.Run(cnst.PartStage, c.config.PartLayout)
+	if c.config.PartLayout != "" {
+		if c.config.PartTable == v1.GPT {
+			c.config.Logger.Infof("Setting custom partitions from %s...", c.config.PartLayout)
+			return c.config.CloudInitRunner.Run(cnst.PartStage, c.config.PartLayout)
+		} else {
+			return errors.New("Custom partitioning is only supported for GPT disks")
+		}
 	}
 
 	return c.createDataPartitions(disk)
@@ -77,18 +82,21 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 }
 
 func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition) error {
+	c.config.Logger.Debugf("Adding partition %s", part.PLabel)
 	num, err := disk.AddPartition(part.Size, part.FS, part.PLabel, part.Flags...)
 	if err != nil {
 		c.config.Logger.Errorf("Failed creating %s partition", part.PLabel)
 		return err
 	}
 	if part.FS != "" {
+		c.config.Logger.Debugf("Formatting partition with label %s", part.Label)
 		out, err := disk.FormatPartition(num, part.FS, part.Label)
 		if err != nil {
 			c.config.Logger.Errorf("Failed formatting partition: %s", out)
 			return err
 		}
 	} else {
+		c.config.Logger.Debugf("Wipe file system on %s", part.PLabel)
 		err = disk.WipeFsOnPartition(num)
 		if err != nil {
 			c.config.Logger.Errorf("Failed to wipe filesystem of partition %d", num)
@@ -136,6 +144,7 @@ func (c Elemental) MountPartitions() error {
 
 // UnmountPartitions unmounts recovery, state and oem partitions.
 func (c Elemental) UnmountPartitions() error {
+	c.config.Logger.Infof("Unmounting disk partitions")
 	var err error
 	errMsg := ""
 	failure := false
@@ -156,7 +165,9 @@ func (c Elemental) UnmountPartitions() error {
 	return nil
 }
 
+// MountPartitions mounts a partition with the given mount options
 func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
+	c.config.Logger.Debugf("Mounting partition %s", part.Label)
 	err := c.config.Fs.MkdirAll(part.MountPoint, 0755)
 	if err != nil {
 		return err
@@ -174,6 +185,7 @@ func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	return nil
 }
 
+// UnmountPartition unmounts the given partition or does nothing if not mounted
 func (c Elemental) UnmountPartition(part *v1.Partition) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
@@ -181,10 +193,13 @@ func (c Elemental) UnmountPartition(part *v1.Partition) error {
 		c.config.Logger.Debugf("Not unmounting partition, %s doesn't look like mountpoint", part.MountPoint)
 		return nil
 	}
+	c.config.Logger.Debugf("Unmounting partition %s", part.Label)
 	return c.config.Mounter.Unmount(part.MountPoint)
 }
 
-func (c Elemental) MountImage(img *v1.Image) error {
+// MountImage mounts an image with the given mount options
+func (c Elemental) MountImage(img *v1.Image, opts ...string) error {
+	c.config.Logger.Debugf("Mounting image %s", img.Label)
 	err := c.config.Fs.MkdirAll(img.MountPoint, 0755)
 	if err != nil {
 		return err
@@ -194,7 +209,7 @@ func (c Elemental) MountImage(img *v1.Image) error {
 		return err
 	}
 	loop := strings.TrimSpace(string(out))
-	err = c.config.Mounter.Mount(loop, img.MountPoint, "auto", []string{"rw"})
+	err = c.config.Mounter.Mount(loop, img.MountPoint, "auto", opts)
 	if err != nil {
 		c.config.Runner.Run("losetup", "-d", loop)
 		return err
@@ -203,6 +218,7 @@ func (c Elemental) MountImage(img *v1.Image) error {
 	return nil
 }
 
+// UnmountImage unmounts the given image or does nothing if not mounted
 func (c Elemental) UnmountImage(img *v1.Image) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
@@ -211,6 +227,7 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 		return nil
 	}
 
+	c.config.Logger.Debugf("Unmounting image %s", img.Label)
 	err := c.config.Mounter.Unmount(img.MountPoint)
 	if err != nil {
 		return err
@@ -255,7 +272,7 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 
 // CopyActive will place the system root tree into the Active image
 func (c *Elemental) CopyActive() error {
-	c.config.Logger.Infof("Copying cOS..")
+	c.config.Logger.Infof("Copying Active image...")
 	var err error
 
 	if c.config.DockerImg != "" {
@@ -274,7 +291,7 @@ func (c *Elemental) CopyActive() error {
 	if err != nil {
 		return err
 	}
-	c.config.Logger.Infof("Finished copying cOS..")
+	c.config.Logger.Infof("Finished copying Active...")
 	return nil
 }
 
@@ -430,6 +447,7 @@ func (c *Elemental) CopyRecovery() error {
 	if !c.BootedFromSquash() {
 		return nil
 	}
+	c.config.Logger.Infof("Copying Recovery image...")
 	recoveryDirCos := filepath.Join(cnst.RecoveryDir, "cOS")
 	recoveryDirCosSquashTarget := filepath.Join(cnst.RecoveryDir, "cOS", cnst.RecoverySquashFile)
 	isoMntCosSquashSource := filepath.Join(c.config.IsoMnt, cnst.RecoverySquashFile)
@@ -457,14 +475,15 @@ func (c *Elemental) CopyRecovery() error {
 			return err
 		}
 	}
-	c.config.Logger.Infof("Recovery copied")
+	c.config.Logger.Infof("Finished copying Recovery...")
 	return nil
 }
 
+// CopyPassive writes the passive image to target device by copying Active image.
 func (c Elemental) CopyPassive() error {
 	passImgFile := filepath.Join(cnst.StateDir, "cOS", cnst.PassiveImgFile)
 
-	c.config.Logger.Infof("Copying image file..")
+	c.config.Logger.Infof("Copying Passive image...")
 	err := utils.CopyFile(c.config.Fs, c.config.ActiveImage.File, passImgFile)
 	if err != nil {
 		return err
@@ -473,7 +492,9 @@ func (c Elemental) CopyPassive() error {
 	if err != nil {
 		c.config.Logger.Errorf("Failed to apply label %s to $s", c.config.PassiveLabel, passImgFile)
 		c.config.Fs.Remove(passImgFile)
+		return err
 	}
+	c.config.Logger.Infof("Finished copying Passive...")
 	return err
 }
 
