@@ -361,7 +361,8 @@ func (c *Elemental) CheckNoFormat() error {
 
 // BootedFromSquash will check if we are booting from squashfs
 func (c Elemental) BootedFromSquash() bool {
-	if utils.BootedFrom(c.config.Runner, cnst.RecoveryLabel) {
+	part := c.config.Partitions.GetByPLabel(cnst.RecoveryPLabel)
+	if part != nil && utils.BootedFrom(c.config.Runner, part.Label) {
 		return true
 	}
 	return false
@@ -432,7 +433,6 @@ func (c *Elemental) GetUrl(url string, destination string) error {
 // CopyRecovery will
 // Check if we are booting from squash -> false? return
 // true? -> :
-// mkdir -p RECOVERYDIR
 // mkdir -p  RECOVERYDIR/cOS
 // if squash -> cp -a RECOVERYSQUASHFS to RECOVERYDIR/cOS/recovery.squashfs
 // if not -> cp -a STATEDIR/cOS/active.img to RECOVERYDIR/cOS/recovery.img
@@ -444,33 +444,35 @@ func (c *Elemental) GetUrl(url string, destination string) error {
 // either is get from the system if NoFormat is enabled (searching for label COS_RECOVERY) or is a newly generated partition
 func (c *Elemental) CopyRecovery() error {
 	var err error
-	if !c.BootedFromSquash() {
+	if c.BootedFromSquash() {
 		return nil
 	}
 	c.config.Logger.Infof("Copying Recovery image...")
 	recoveryDirCos := filepath.Join(cnst.RecoveryDir, "cOS")
-	recoveryDirCosSquashTarget := filepath.Join(cnst.RecoveryDir, "cOS", cnst.RecoverySquashFile)
-	isoMntCosSquashSource := filepath.Join(c.config.IsoMnt, cnst.RecoverySquashFile)
-	imgCosSource := filepath.Join(cnst.StateDir, "cOS", c.config.ActiveImage.File)
-	imgCosTarget := filepath.Join(cnst.RecoveryDir, "cOS", cnst.RecoveryImgFile)
+
+	imgSource := c.config.ActiveImage.File
+	squashedImgSource := filepath.Join(c.config.IsoMnt, cnst.RecoverySquashFile)
+
+	imgTarget := filepath.Join(recoveryDirCos, cnst.RecoveryImgFile)
+	squashedImgTarget := filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
 
 	err = c.config.Fs.MkdirAll(recoveryDirCos, 0755)
 	if err != nil {
 		return err
 	}
-	if exists, _ := afero.Exists(c.config.Fs, isoMntCosSquashSource); exists {
+	if exists, _ := afero.Exists(c.config.Fs, squashedImgSource); exists {
 		c.config.Logger.Infof("Copying squashfs..")
-		err = utils.CopyFile(c.config.Fs, isoMntCosSquashSource, recoveryDirCosSquashTarget)
+		err = utils.CopyFile(c.config.Fs, squashedImgSource, squashedImgTarget)
 		if err != nil {
 			return err
 		}
 	} else {
 		c.config.Logger.Infof("Copying image file..")
-		err = utils.CopyFile(c.config.Fs, imgCosSource, imgCosTarget)
+		err = utils.CopyFile(c.config.Fs, imgSource, imgTarget)
 		if err != nil {
 			return err
 		}
-		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.GetSystemLabel(), imgCosTarget)
+		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.GetSystemLabel(), imgTarget)
 		if err != nil {
 			return err
 		}

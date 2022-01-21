@@ -523,6 +523,7 @@ var _ = Describe("Elemental", func() {
 	})
 	Context("BootedFromSquash", func() {
 		It("Returns true if booted from squashfs", func() {
+			config.DigestSetup()
 			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte(cnst.RecoveryLabel)
 			config.Runner = runner
@@ -612,12 +613,9 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 	Context("CopyRecovery", func() {
-		Context("Squashfs", func() {
+		Context("Non-Squashfs boot", func() {
 			Context(fmt.Sprintf("squash file %s exists", cnst.RecoverySquashFile), func() {
 				It("should copy squash file", func() {
-					runner := v1mock.NewTestRunnerV2()
-					runner.ReturnValue = []byte(cnst.RecoveryLabel)
-					config.Runner = runner
 					// Create recovery.squashfs file
 					squashfile := fmt.Sprintf("%s/%s", config.IsoMnt, cnst.RecoverySquashFile)
 					_, _ = config.Fs.Create(squashfile)
@@ -631,11 +629,8 @@ var _ = Describe("Elemental", func() {
 			})
 			Context(fmt.Sprintf("squash file %s does not exists", cnst.RecoverySquashFile), func() {
 				It(fmt.Sprintf("should copy img file %s", cnst.ActiveImgFile), func() {
-					runner := v1mock.NewTestRunnerV2()
-					runner.ReturnValue = []byte(cnst.RecoveryLabel)
-					config.Runner = runner
 					// Create active image file
-					imgfile := fmt.Sprintf("%s/cOS/%s", cnst.StateDir, config.ActiveImage.File)
+					imgfile := config.ActiveImage.File
 					_, _ = config.Fs.Create(imgfile)
 					e := elemental.NewElemental(config)
 					Expect(e.CopyRecovery()).To(BeNil())
@@ -647,10 +642,11 @@ var _ = Describe("Elemental", func() {
 			})
 
 		})
-		Context("Non-Squashfs", func() {
+		Context("Squashfs boot", func() {
 			It("should not do anything", func() {
+				config.DigestSetup()
 				runner := v1mock.NewTestRunnerV2()
-				runner.ReturnValue = []byte("")
+				runner.ReturnValue = []byte(cnst.RecoveryLabel)
 				config.Runner = runner
 				e := elemental.NewElemental(config)
 				Expect(e.CopyRecovery()).To(BeNil())
