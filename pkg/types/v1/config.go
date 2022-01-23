@@ -18,7 +18,7 @@ package v1
 
 import (
 	"fmt"
-	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
+	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"net/http"

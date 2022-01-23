@@ -19,8 +19,8 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 )
 
 // unit test stolen from yip

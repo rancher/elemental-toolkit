@@ -17,8 +17,8 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/rancher-sandbox/elemental-cli/cmd/config"
-	"github.com/rancher-sandbox/elemental-cli/pkg/action"
+	"github.com/rancher-sandbox/elemental/cmd/config"
+	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

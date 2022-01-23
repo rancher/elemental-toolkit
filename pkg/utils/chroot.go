@@ -19,7 +19,7 @@ package utils
 import (
 	"errors"
 	"fmt"
-	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"os"
 	"sort"
 	"strings"

@@ -19,11 +19,11 @@ package action
 import (
 	"errors"
 	"fmt"
-	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
-	"github.com/rancher-sandbox/elemental-cli/pkg/elemental"
-	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental-cli/pkg/utils"
+	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/elemental"
+	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
 )
 
 // InstallAction represents the struct that will run the full install from start to finish

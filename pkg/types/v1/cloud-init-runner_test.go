@@ -23,7 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	. "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	. "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/twpayne/go-vfs/vfst"
 
 	. "github.com/onsi/ginkgo"

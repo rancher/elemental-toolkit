@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/mudler/yip/pkg/schema"
-	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -18,8 +18,8 @@ package utils
 
 import (
 	"fmt"
-	cnst "github.com/rancher-sandbox/elemental-cli/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/afero"
 	"runtime"
 	"strings"

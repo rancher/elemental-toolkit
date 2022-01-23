@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/rancher-sandbox/elemental-cli/cmd"
+import "github.com/rancher-sandbox/elemental/cmd"
 
 func main() {
 	cmd.Execute()

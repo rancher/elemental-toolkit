@@ -3,8 +3,8 @@ GIT_TAG = $(shell git describe --tags 2>/dev/null || echo "v0.0.1" )
 
 PKG        := ./...
 LDFLAGS    := -w -s
-LDFLAGS += -X "github.com/rancher-sandbox/elemental-cli/internal/version.version=${GIT_TAG}"
-LDFLAGS += -X "github.com/rancher-sandbox/elemental-cli/internal/version.gitCommit=${GIT_COMMIT}"
+LDFLAGS += -X "github.com/rancher-sandbox/elemental/internal/version.version=${GIT_TAG}"
+LDFLAGS += -X "github.com/rancher-sandbox/elemental/internal/version.gitCommit=${GIT_COMMIT}"
 
 
 

@@ -19,7 +19,7 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"os"
 )
 

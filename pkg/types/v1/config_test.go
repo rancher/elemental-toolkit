@@ -20,9 +20,9 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental-cli/pkg/constants"
-	"github.com/rancher-sandbox/elemental-cli/pkg/types/v1"
-	v1mock "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 )

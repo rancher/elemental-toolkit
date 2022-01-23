@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/rancher-sandbox/elemental-cli/internal/version"
+	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/spf13/cobra"
 )
 

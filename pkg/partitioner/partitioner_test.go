@@ -21,8 +21,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
-	part "github.com/rancher-sandbox/elemental-cli/pkg/partitioner"
-	mocks "github.com/rancher-sandbox/elemental-cli/tests/mocks"
+	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
+	mocks "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/spf13/afero"
 	"testing"
 )
