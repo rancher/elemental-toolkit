@@ -718,7 +718,8 @@
     needs:
     - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
-
+    env:
+      LUET_ARCH: {{{ $config.arch }}}
     steps:
     {{{ tmpl.Exec "runner_cleanup" }}}
       - name: Install OS deps

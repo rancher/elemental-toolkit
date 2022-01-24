@@ -866,6 +866,8 @@ jobs:
     runs-on: [self-hosted, x64]
     needs:
     - build-green-x86_64
+    env:
+      LUET_ARCH: x86_64
     steps:
       - name: Release space from worker ♻
         if: always()

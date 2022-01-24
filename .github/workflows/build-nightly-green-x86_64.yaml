@@ -641,6 +641,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - build-green-x86_64
+    env:
+      LUET_ARCH: x86_64
     steps:
       - name: Release space from worker ♻
         if: always()
