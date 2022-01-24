@@ -18,13 +18,13 @@ prelude:
 steps:
   - |
     PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
-    cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{.Values.name}} && \
+    cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{ ( index .Values.labels "github.repo" ) }} && \
     make build && \
-    mv bin/{{.Values.name}} /usr/bin/{{.Values.name}}
+    mv bin/{{.Values.bin_name}} /usr/bin/{{.Values.bin_name}}
 {{ if .Values.fips }}
   # Check that we build with fips
   - go tool nm /usr/bin/{{.Values.name}} | grep '_Cfunc__goboringcrypto_' 1> /dev/null
 {{ end }}
 
 includes:
-  - /usr/bin/{{.Values.name}}
+  - /usr/bin/{{.Values.bin_name}}
