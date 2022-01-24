@@ -20,11 +20,11 @@ steps:
     PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
     cd /luetbuild/go/src/github.com/{{ ( index .Values.labels "github.owner" ) }}/{{.Values.name}} && \
     make build && \
-    mv bin/{{.Values.name}} /usr/bin/{{.Values.bin_name}}
+    mv bin/{{.Values.name}} /usr/bin/{{.Values.name}}
 {{ if .Values.fips }}
   # Check that we build with fips
-  - go tool nm /usr/bin/{{.Values.bin_name}} | grep '_Cfunc__goboringcrypto_' 1> /dev/null
+  - go tool nm /usr/bin/{{.Values.name}} | grep '_Cfunc__goboringcrypto_' 1> /dev/null
 {{ end }}
 
 includes:
-  - /usr/bin/{{.Values.bin_name}}
+  - /usr/bin/{{.Values.name}}
