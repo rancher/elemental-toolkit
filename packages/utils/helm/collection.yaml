@@ -9,7 +9,7 @@ packages:
     labels:
       github.repo: "helm"
       github.owner: "helm"
-      autobump.skip_if_contains: "rc"
+      autobump.skip_if_contains: '["rc"]'  # Needs to be a json list of strings to work
 # TODO: fips doesn't work yet
 #- !!merge <<: *helm
 #  category: "utils-fips"
