@@ -9,8 +9,8 @@ packages:
       github.owner: "rancher-sandbox"
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
+      autobump.git.branch: "main"
       git.hash: "d1d11006f556aacaddf82a403894a4445b7b696c"
-      git.branch: "main"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
