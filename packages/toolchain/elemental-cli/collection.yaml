@@ -2,14 +2,14 @@ packages:
   - &elemental
     name: "elemental-cli"
     category: "toolchain"
-    version: 0.0.13-0
+    version: "0.20220124"
     fips: false
     labels:
       github.repo: "elemental"
       github.owner: "rancher-sandbox"
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
-      git.hash: "d1d11006f556aacaddf82a403894a4445b7b696c"
+      git.hash: "null"
       git.branch: "main"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
