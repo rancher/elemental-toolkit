@@ -19,7 +19,6 @@ package config
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -58,30 +57,28 @@ var _ = Describe("Config", func() {
 
 	})
 	Context("Run config", func() {
-		var logger v1.Logger
 		var mounter mount.Interface
 
 		BeforeEach(func() {
-			logger = logrus.New()
 			mounter = &mount.FakeMounter{}
 		})
 
 		It("values empty if config does not exist", func() {
-			cfg, err := ReadConfigRun("/none/", logger, mounter)
+			cfg, err := ReadConfigRun("/none/", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("file")
 			Expect(source).To(Equal(""))
 			Expect(cfg.Source).To(Equal(""))
 		})
 		It("values empty if config value is empty", func() {
-			cfg, err := ReadConfigRun("", logger, mounter)
+			cfg, err := ReadConfigRun("", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("file")
 			Expect(source).To(Equal(""))
 			Expect(cfg.Source).To(Equal(""))
 		})
 		It("overrides values with config files", func() {
-			cfg, err := ReadConfigRun("config/", logger, mounter)
+			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("target")
 			// check that the final value comes from the extra file
@@ -90,7 +87,7 @@ var _ = Describe("Config", func() {
 		})
 		It("overrides values with env values", func() {
 			_ = os.Setenv("ELEMENTAL_TARGET", "environment")
-			cfg, err := ReadConfigRun("config/", logger, mounter)
+			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("target")
 			// check that the final value comes from the env var
@@ -99,19 +96,19 @@ var _ = Describe("Config", func() {
 		})
 		It("sets log level debug based on debug flag", func() {
 			// Default value
-			_, err := ReadConfigRun("config/", logger, mounter)
+			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
 			debug := viper.GetBool("debug")
-			Expect(logger.GetLevel()).ToNot(Equal(logrus.DebugLevel))
+			Expect(cfg.Logger.GetLevel()).ToNot(Equal(logrus.DebugLevel))
 			Expect(debug).To(BeFalse())
 
 			// Set it via viper, like the flag
 			viper.Set("debug", true)
-			_, err = ReadConfigRun("config/", logger, mounter)
+			cfg, err = ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
 			debug = viper.GetBool("debug")
 			Expect(debug).To(BeTrue())
-			Expect(logger.GetLevel()).To(Equal(logrus.DebugLevel))
+			Expect(cfg.Logger.GetLevel()).To(Equal(logrus.DebugLevel))
 		})
 	})
 })

@@ -19,11 +19,9 @@ package cmd
 import (
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os"
 	"os/exec"
 )
 
@@ -33,16 +31,13 @@ var installCmd = &cobra.Command{
 	Short: "elemental installer",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := logrus.New()
-		logger.SetOutput(os.Stdout)
-
 		path, err := exec.LookPath("mount")
 		if err != nil {
 			return err
 		}
 		mounter := mount.New(path)
 
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger, mounter)
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
 
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)

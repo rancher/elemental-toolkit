@@ -185,7 +185,6 @@ type RunConfig struct {
 	Force           bool   `yaml:"force,omitempty" mapstructure:"force"`
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
-	Debug           bool
 	DockerImg       string `yaml:"docker-image,omitempty" mapstructure:"docker-image"`
 	NoCosign        bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`

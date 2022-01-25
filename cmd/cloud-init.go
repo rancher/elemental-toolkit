@@ -17,12 +17,13 @@ limitations under the License.
 package cmd
 
 import (
+	"github.com/rancher-sandbox/elemental/cmd/config"
 	"io/ioutil"
+	"k8s.io/mount-utils"
 	"os"
 
 	"github.com/mudler/yip/pkg/schema"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,13 +34,14 @@ var cloudInit = &cobra.Command{
 	Short: "elemental cloud-init",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := logrus.New()
-		logger.SetOutput(os.Stdout)
-
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+		if err != nil {
+			return err
+		}
 		stage, _ := cmd.Flags().GetString("stage")
 		dot, _ := cmd.Flags().GetBool("dotnotation")
 
-		runner := v1.NewYipCloudInitRunner(logger)
+		runner := v1.NewYipCloudInitRunner(cfg.Logger)
 		fromStdin := len(args) == 1 && args[0] == "-"
 
 		if dot {

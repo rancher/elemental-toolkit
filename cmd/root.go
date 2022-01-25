@@ -40,6 +40,10 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().Bool("debug", false, "enable debug output")
 	rootCmd.PersistentFlags().String("config-dir", "", "set config dir (default is empty)")
+	rootCmd.PersistentFlags().String("logfile", "", "set logfile")
+	rootCmd.PersistentFlags().Bool("quiet", false, "do not output to stdout")
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.BindPFlag("config-dir", rootCmd.PersistentFlags().Lookup("config-dir"))
+	viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
+	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
 }

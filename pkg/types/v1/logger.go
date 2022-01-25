@@ -19,6 +19,7 @@ package v1
 import (
 	"bytes"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 )
 
@@ -40,6 +41,8 @@ type Logger interface {
 	Tracef(string, ...interface{})
 	SetLevel(level log.Level)
 	GetLevel() log.Level
+	SetOutput(writer io.Writer)
+	SetFormatter(formatter log.Formatter)
 }
 
 func DebugLevel() log.Level {

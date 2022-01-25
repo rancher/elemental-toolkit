@@ -19,9 +19,12 @@ package config
 import (
 	"fmt"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io"
 	"io/fs"
+	"io/ioutil"
 	"k8s.io/mount-utils"
 	"os"
 	"path/filepath"
@@ -46,17 +49,52 @@ func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
 	return cfg, nil
 }
 
-func ReadConfigRun(configDir string, logger v1.Logger, mounter mount.Interface) (*v1.RunConfig, error) {
+func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, error) {
 	cfg := v1.NewRunConfig(
-		v1.WithLogger(logger),
+		v1.WithLogger(v1.NewLogger()),
 		v1.WithMounter(mounter),
 	)
+
+	// Set debug level
+	if viper.GetBool("debug") {
+		cfg.Logger.SetLevel(v1.DebugLevel())
+	}
+
+	// Set formatter so both file and stdout format are equal
+	cfg.Logger.SetFormatter(&logrus.TextFormatter{
+		ForceColors:      true,
+		DisableColors:    false,
+		DisableTimestamp: false,
+		FullTimestamp:    true,
+	})
+
+	// Logfile
+	logfile := viper.GetString("logfile")
+	if logfile != "" {
+		o, err := cfg.Fs.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, fs.ModePerm)
+
+		if err != nil {
+			cfg.Logger.Errorf("Could not open %s for logging to file: %s", logfile, err.Error())
+		}
+
+		if viper.GetBool("quiet") { // if quiet is set, only set the log to the file
+			cfg.Logger.SetOutput(o)
+		} else { // else set it to both stdout and the file
+			mw := io.MultiWriter(os.Stdout, o)
+			cfg.Logger.SetOutput(mw)
+		}
+	} else { // no logfile
+		if viper.GetBool("quiet") { // quiet is enabled so discard all logging
+			cfg.Logger.SetOutput(ioutil.Discard)
+		} else { // default to stdout
+			cfg.Logger.SetOutput(os.Stdout)
+		}
+	}
 
 	cfgDefault := []string{"/etc/os-release", "/etc/cos/config"}
 
 	for _, c := range cfgDefault {
 		if _, err := os.Stat(c); err == nil {
-			cfg.Logger.Debug("Loading config file: %s", c)
 			viper.SetConfigFile(c)
 			viper.SetConfigType("env")
 			cobra.CheckErr(viper.MergeInConfig())
@@ -94,9 +132,5 @@ func ReadConfigRun(configDir string, logger v1.Logger, mounter mount.Interface) 
 	// unmarshal all the vars into the config object
 	viper.Unmarshal(cfg)
 
-	// Set debug level
-	if cfg.Debug {
-		cfg.Logger.SetLevel(v1.DebugLevel())
-	}
 	return cfg, nil
 }

@@ -19,11 +19,9 @@ package cmd
 import (
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os"
 )
 
 // cloudInit represents the cloud-init command
@@ -32,10 +30,7 @@ var runStage = &cobra.Command{
 	Short: "elemental run-stage",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := logrus.New()
-		logger.SetOutput(os.Stdout)
-
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger, &mount.FakeMounter{})
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)

@@ -21,11 +21,9 @@ import (
 	"github.com/mudler/luet/pkg/api/core/context"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os"
 	"path/filepath"
 )
 
@@ -37,10 +35,7 @@ var pullImage = &cobra.Command{
 	SilenceUsage:  true, // Do not show usage on error
 	SilenceErrors: true, // Do not propagate errors down the line, we control them
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := logrus.New()
-		logger.SetOutput(os.Stdout)
-
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), logger, &mount.FakeMounter{})
+		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
