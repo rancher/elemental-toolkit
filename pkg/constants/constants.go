@@ -38,6 +38,7 @@ const (
 	MountBinary            = "/usr/bin/mount"
 	EfiDevice              = "/sys/firmware/efi"
 	LinuxFs                = "ext4"
+	LinuxImgFs             = "ext2"
 	EfiFs                  = "vfat"
 	BiosFs                 = ""
 	EfiSize                = uint(64)

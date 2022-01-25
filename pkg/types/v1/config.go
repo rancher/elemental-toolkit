@@ -132,7 +132,7 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		Label:      cnst.ActiveLabel,
 		Size:       cnst.ImgSize,
 		File:       fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.ActiveImgFile),
-		FS:         cnst.LinuxFs,
+		FS:         cnst.LinuxImgFs,
 		RootTree:   cnst.IsoBaseTree,
 		MountPoint: cnst.ActiveDir,
 	}
