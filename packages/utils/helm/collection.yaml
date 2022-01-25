@@ -3,13 +3,13 @@ packages:
     name: "helm"
     fips: false
     category: "utils"
-    version: 3.7.2-2
+    version: "3.8.0"
     description: "The Kubernetes Package Manager"
     license: "Apache-2.0 License"
     labels:
       github.repo: "helm"
       github.owner: "helm"
-      autobump.skip_if_contains: '["rc"]'  # Needs to be a json list of strings to work
+      autobump.skip_if_contains: '["rc"]' # Needs to be a json list of strings to work
 # TODO: fips doesn't work yet
 #- !!merge <<: *helm
 #  category: "utils-fips"
