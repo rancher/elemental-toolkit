@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"
@@ -25,13 +24,6 @@ import (
 
 var _ = Describe("pull-image", func() {
 	Context("execution", func() {
-		buf := new(bytes.Buffer)
-
-		BeforeEach(func() {
-			buf = new(bytes.Buffer)
-			rootCmd.SetOut(buf)
-			rootCmd.SetErr(buf)
-		})
 
 		// This requires elevated perms
 		XIt("executes command correctly", func() {
@@ -47,7 +39,6 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).ToNot(HaveOccurred())
 		})
-
 		It("fails when image is missing", func() {
 			_, _, err := executeCommandC(
 				rootCmd,
@@ -55,7 +46,6 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).To(HaveOccurred())
 		})
-
 		It("fails when destination is missing", func() {
 			_, _, err := executeCommandC(
 				rootCmd,
@@ -64,7 +54,6 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).To(HaveOccurred())
 		})
-
 		It("fails when image is not an image", func() {
 			_, _, err := executeCommandC(
 				rootCmd,

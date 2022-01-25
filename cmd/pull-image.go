@@ -60,8 +60,9 @@ var pullImage = &cobra.Command{
 		server, _ := cmd.Flags().GetString("auth-server-address")
 		identity, _ := cmd.Flags().GetString("auth-identity-token")
 		registryToken, _ := cmd.Flags().GetString("auth-registry-token")
+		plugins, _ := cmd.Flags().GetStringArray("plugin")
 
-		context := &context.Context{}
+		context := context.NewContext()
 		auth := &types.AuthConfig{
 			Username:      user,
 			Password:      pass,
@@ -71,7 +72,7 @@ var pullImage = &cobra.Command{
 			RegistryToken: registryToken,
 		}
 
-		luet := v1.NewLuet(cfg.Logger, context, auth)
+		luet := v1.NewLuet(cfg.Logger, context, auth, plugins...)
 		luet.VerifyImageUnpack = verify
 		err = luet.Unpack(destination, image)
 
@@ -93,4 +94,5 @@ func init() {
 	pullImage.Flags().String("auth-identity-token", "", "Authentication identity token")
 	pullImage.Flags().String("auth-registry-token", "", "Authentication registry token")
 	pullImage.Flags().Bool("verify", false, "Verify signed images to notary before to pull")
+	pullImage.Flags().StringArray("plugin", []string{}, "A list of runtime plugins to load. Can be repeated to add more than one plugin")
 }
