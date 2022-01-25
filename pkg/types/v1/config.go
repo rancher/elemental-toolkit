@@ -18,6 +18,8 @@ package v1
 
 import (
 	"fmt"
+	dockTypes "github.com/docker/docker/api/types"
+	"github.com/mudler/luet/pkg/api/core/context"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
@@ -344,7 +346,7 @@ func (r *RunConfig) setupLuet() {
 		if !r.NoVerify {
 			plugins = append(plugins, cnst.LuetMtreePlugin)
 		}
-		r.Luet = NewLuet(r.Logger, plugins...)
+		r.Luet = NewLuet(r.Logger, context.NewContext(), &dockTypes.AuthConfig{}, plugins...)
 	}
 }
 

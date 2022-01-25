@@ -17,6 +17,8 @@ limitations under the License.
 package v1_test
 
 import (
+	dockTypes "github.com/docker/docker/api/types"
+	context2 "github.com/mudler/luet/pkg/api/core/context"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -30,7 +32,9 @@ var _ = Describe("Types", func() {
 		var err error
 		target, err = os.MkdirTemp("", "elemental")
 		Expect(err).To(BeNil())
-		luet = v1.NewLuet(v1.NewNullLogger(), []string{}...)
+		context := context2.NewContext()
+		auth := &dockTypes.AuthConfig{}
+		luet = v1.NewLuet(v1.NewNullLogger(), context, auth, []string{}...)
 	})
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())

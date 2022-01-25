@@ -19,8 +19,7 @@ package v1
 import (
 	dockTypes "github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
-	"github.com/mudler/luet/cmd/util"
-	bus "github.com/mudler/luet/pkg/api/core/bus"
+	"github.com/mudler/luet/pkg/api/core/bus"
 	"github.com/mudler/luet/pkg/api/core/context"
 	"github.com/mudler/luet/pkg/helpers/docker"
 )
@@ -30,13 +29,14 @@ type LuetInterface interface {
 }
 
 type Luet struct {
-	log Logger
+	log               Logger
+	context           *context.Context
+	auth              *dockTypes.AuthConfig
+	VerifyImageUnpack bool
 }
 
-func NewLuet(log Logger, plugins ...string) *Luet {
-	util.DefaultContext = context.NewContext()
-
-	bus.Manager.Initialize(util.DefaultContext, plugins...)
+func NewLuet(log Logger, context *context.Context, auth *dockTypes.AuthConfig, plugins ...string) *Luet {
+	bus.Manager.Initialize(context, plugins...)
 	if len(bus.Manager.Plugins) != 0 {
 		log.Infof("Enabled plugins:")
 		for _, p := range bus.Manager.Plugins {
@@ -44,13 +44,16 @@ func NewLuet(log Logger, plugins ...string) *Luet {
 		}
 	}
 
-	return &Luet{log: log}
+	return &Luet{
+		log:     log,
+		context: context,
+		auth:    auth,
+	}
 }
 
 func (l Luet) Unpack(target string, image string) error {
 	l.log.Infof("Unpacking docker image: %s", image)
-	info, err := docker.DownloadAndExtractDockerImage(
-		util.DefaultContext, image, target, &dockTypes.AuthConfig{}, false)
+	info, err := docker.DownloadAndExtractDockerImage(l.context, image, target, l.auth, l.VerifyImageUnpack)
 	if err != nil {
 		return err
 	}
