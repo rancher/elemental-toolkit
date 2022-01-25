@@ -52,7 +52,10 @@ ifeq ("$(COSIGN)","")
 COSIGN="/usr/bin/luet-cosign"
 endif
 
-
+export ELEMENTAL?=$(shell which elemental 2> /dev/null)
+ifeq ("$(ELEMENTAL)","")
+ELEMENTAL="/usr/bin/elemental"
+endif
 
 #
 # Location of package tree
@@ -127,7 +130,7 @@ include make/Makefile.images
 
 #----------------------- targets -----------------------
 
-deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE) $(COSIGN)
+deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE) $(COSIGN) $(ELEMENTAL)
 
 as_root:
 ifneq ($(shell id -u), 0)
@@ -182,6 +185,14 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 else
 	$(LUET) install -y meta/cos-verify
+endif
+
+$(ELEMENTAL):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y toolchain/elemental-cli
 endif
 
 clean: clean_build clean_iso clean_run clean_test

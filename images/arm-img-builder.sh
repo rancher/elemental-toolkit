@@ -297,7 +297,7 @@ ensure_dir_structure $TARGET
 # Download the container image
 if [ -z "$directory" ]; then
   echo ">>> Downloading container image"
-  luet util unpack $container_image $TARGET
+  elemental pull-image $container_image $TARGET
 else
   echo ">>> Copying files from $directory"
   rsync -axq --exclude='host' --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${directory}/ $TARGET

@@ -36,9 +36,9 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				version := out
 
-				out, err = s.Command(fmt.Sprintf("mkdir /run/update && luet util unpack %s:cos-system-%s /run/update", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("mkdir /run/update && elemental pull-image %s:cos-system-%s /run/update", s.GreenRepo, s.TestVersion))
 				if err != nil {
-					fmt.Fprintf(GinkgoWriter, "Error from luet util unpack: %v\n", err)
+					fmt.Fprintf(GinkgoWriter, "Error from elemental pull-image: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))

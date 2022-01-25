@@ -923,6 +923,20 @@ luet_args() {
     echo $args
 }
 
+unpack_args() {
+    local args
+    args="--logfile /tmp/elemental.log"
+    if [ -z "$_VERIFY" ] || [ "$_VERIFY" == true ]; then
+        args+=" --plugin luet-mtree"
+    fi
+
+    if [ -z "$_COSIGN" ]; then
+      args+=" --plugin luet-cosign"
+    fi
+
+    echo $args
+}
+
 create_rootfs() {
     local hook_name=$1
     local target=$2
@@ -948,6 +962,7 @@ create_rootfs() {
     export TMPDIR=$temp_upgrade
     local _args
     _args="$(luet_args)"
+    _unpack_args="$(unpack_args)"
     if [ -n "$_CHANNEL_UPGRADES" ] && [ "$_CHANNEL_UPGRADES" == true ]; then
         echo "Upgrading from release channel"
         set -x
@@ -962,7 +977,7 @@ create_rootfs() {
         set -x
         # unpack doesnt like when you try to unpack to a non existing dir
         mkdir -p $upgrade_state_dir/tmp/rootfs || true
-        luet util unpack $_args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
+        elemental pull-image $_unpack_args $_UPGRADE_IMAGE $upgrade_state_dir/tmp/rootfs
         set +x
         rsync -aqzAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' $upgrade_state_dir/tmp/rootfs/ $target
         rm -rf $upgrade_state_dir/tmp/rootfs
