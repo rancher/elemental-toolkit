@@ -258,6 +258,8 @@ jobs:
       PKR_VAR_flavor: green
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: none
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -537,6 +539,8 @@ jobs:
       PKR_VAR_flavor: green
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: none
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
