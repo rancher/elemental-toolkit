@@ -172,7 +172,8 @@ func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	if err != nil {
 		return err
 	}
-	device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label)
+	// Lets error out only after 10 attempts to find the device
+	device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label, 10)
 	if err != nil {
 		c.config.Logger.Errorf("Could not find a device with label %s", part.Label)
 		return err
@@ -343,7 +344,7 @@ func (c *Elemental) CheckNoFormat() error {
 	c.config.Logger.Infof("Checking no-format condition")
 	// User asked for no format, lets check if there are already those labeled file systems in the disk
 	for _, label := range []string{c.config.ActiveImage.Label, c.config.PassiveLabel} {
-		found, _ := utils.FindLabel(c.config.Runner, label)
+		found, _ := utils.GetDeviceByLabel(c.config.Runner, label, 1)
 		if found != "" {
 			if c.config.Force {
 				msg := fmt.Sprintf("Forcing overwrite of existing OS image due to `force` flag")

@@ -270,9 +270,8 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 	re, _ := regexp.Compile(fmt.Sprintf("(?m)^(/.*%d) part$", partNum))
 
 	for tries := 0; tries <= partitionTries; tries++ {
-		out, _ := dev.runner.Run("udevadm", "settle")
-		dev.logger.Debugf("Output of udevadm settle: %s", out)
 		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
+		dev.runner.Run("udevadm", "settle")
 		out, err := dev.runner.Run("lsblk", "-ltnpo", "name,type", dev.device)
 		dev.logger.Debugf("Output of lsblk: %s", out)
 		if err != nil && tries == (partitionTries-1) {

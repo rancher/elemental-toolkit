@@ -145,56 +145,34 @@ var _ = Describe("Utils", func() {
 			Expect(utils.BootedFrom(runner, "FAKELABEL")).To(BeTrue())
 		})
 	})
-	Context("FindLabel", func() {
-		It("returns empty and no error if label does not exist", func() {
-			runner := v1mock.NewTestRunnerV2()
-			runner.ReturnValue = []byte("")
-			out, err := utils.FindLabel(runner, "FAKE")
-			Expect(err).To(BeNil())
-			Expect(out).To(BeEmpty())
-		})
-		It("returns path and no error if label does exist", func() {
-			runner := v1mock.NewTestRunnerV2()
-			runner.ReturnValue = []byte("/dev/fake")
-			out, err := utils.FindLabel(runner, "FAKE")
-			Expect(err).To(BeNil())
-			Expect(out).To(Equal("/dev/fake"))
-		})
-		It("returns empty and error if there is an error", func() {
-			runner := v1mock.NewTestRunnerV2()
-			runner.ReturnError = errors.New("something")
-			out, err := utils.FindLabel(runner, "FAKE")
-			Expect(err).ToNot(BeNil())
-			Expect(out).To(Equal(""))
-		})
-	})
 	Context("GetDeviceByLabel", func() {
 		var runner *v1mock.TestRunnerV2
 		var cmds [][]string
 		BeforeEach(func() {
 			runner = v1mock.NewTestRunnerV2()
 			cmds = [][]string{
-				{"blkid", "-t", "LABEL=FAKE", "-o", "device"},
+				{"udevadm", "settle"},
+				{"blkid", "--label", "FAKE"},
 			}
 		})
 		It("returns found device", func() {
 			runner.ReturnValue = []byte("/some/device")
-			out, err := utils.GetDeviceByLabel(runner, "FAKE")
+			out, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).To(BeNil())
 			Expect(out).To(Equal("/some/device"))
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("fails to run blkid", func() {
 			runner.ReturnError = errors.New("failed running blkid")
-			_, err := utils.GetDeviceByLabel(runner, "FAKE")
+			_, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
-		It("fails if no device is found", func() {
+		It("fails if no device is found in two attempts", func() {
 			runner.ReturnValue = []byte("")
-			_, err := utils.GetDeviceByLabel(runner, "FAKE")
+			_, err := utils.GetDeviceByLabel(runner, "FAKE", 2)
 			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
 		})
 	})
 	Context("CopyFile", func() {

@@ -25,6 +25,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 func CommandExists(command string) bool {
@@ -38,25 +39,19 @@ func BootedFrom(runner v1.Runner, label string) bool {
 	return strings.Contains(string(out), label)
 }
 
-// FindLabel will try to get the partition that has the label given in the current disk
-func FindLabel(runner v1.Runner, label string) (string, error) {
-	out, err := runner.Run("blkid", "-L", label)
-	if err != nil {
-		return "", err
+// GetDeviceByLabel will try to return the device that matches the given label.
+// attempts value sets the number of attempts to find the device, it
+// waits a second between attempts.
+func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, error) {
+	for tries := 0; tries < attempts; tries++ {
+		runner.Run("udevadm", "settle")
+		out, err := runner.Run("blkid", "--label", label)
+		if err == nil && strings.TrimSpace(string(out)) != "" {
+			return strings.TrimSpace(string(out)), nil
+		}
+		time.Sleep(1 * time.Second)
 	}
-	return strings.TrimSpace(string(out)), nil
-}
-
-// GetDeviceByLabel will try to return the device that matches the given label
-func GetDeviceByLabel(runner v1.Runner, label string) (string, error) {
-	out, err := runner.Run("blkid", "-t", fmt.Sprintf("LABEL=%s", label), "-o", "device")
-	if err != nil {
-		return "", err
-	}
-	if strings.TrimSpace(string(out)) == "" {
-		return "", errors.New("no device found")
-	}
-	return strings.TrimSpace(string(out)), nil
+	return "", errors.New("no device found")
 }
 
 // Copies source file to target file using afero.Fs interface

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
@@ -39,7 +40,7 @@ const partTmpl = `
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	//config.DefaultReporterConfig.SlowSpecThreshold = 10
+	config.DefaultReporterConfig.SlowSpecThreshold = 11
 	RunSpecs(t, "Elemental test suite")
 }
 
@@ -98,7 +99,7 @@ var _ = Describe("Elemental", func() {
 
 		It("Fails if oem partition is not found ", func() {
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if len(args) >= 2 && args[1] == fmt.Sprintf("LABEL=%s", cnst.OEMLabel) {
+				if len(args) >= 2 && args[1] == cnst.OEMLabel {
 					return []byte{}, nil
 				}
 				return []byte("/some/device"), nil
