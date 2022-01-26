@@ -311,6 +311,7 @@ func (s SUT) GatherAllLogs() {
 		"/tmp/luet_mtree_failures.log",
 		"/tmp/luet_mtree.log",
 		"/tmp/luet.log",
+		"/tmp/elemental.log",
 	}
 
 	// services

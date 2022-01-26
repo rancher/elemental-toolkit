@@ -1,6 +1,6 @@
 name: "installer"
 category: "utils"
-version: "0.27.0"
+version: "0.28.0"
 description: "Installer, Upgrade and reset utilities to manage cOS derivatives"
 requires:
 - name: "luet-mtree"
@@ -8,7 +8,7 @@ requires:
   version: ">=0"
 - name: "elemental-cli"
   category: "toolchain"
-  version: ">0.0.10"
+  version: ">0.20220124"
 - name: "luet-cosign"
   category: "toolchain"
   version: ">=0"

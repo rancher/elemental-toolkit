@@ -88,15 +88,12 @@ func imageTags(tag string) ([]string, error) {
 }
 
 func download(img, dst string) error {
-	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
-	if err != nil {
-		return err
-	}
 	unpackdir, err := ioutil.TempDir(os.TempDir(), "ci")
 	if err != nil {
 		return err
 	}
-	err = RunSH("unpack", fmt.Sprintf("TMPDIR=%s XDG_RUNTIME_DIR=%s luet util unpack %s %s", tmpdir, tmpdir, img, unpackdir))
+	// TODO: Use luet lib directly?? Move this into elemental??
+	err = RunSH("unpack", fmt.Sprintf("elemental pull-image %s %s", img, unpackdir))
 	if err != nil {
 		return err
 	}
@@ -104,7 +101,6 @@ func download(img, dst string) error {
 	if err != nil {
 		return err
 	}
-	os.RemoveAll(tmpdir)
 	os.RemoveAll(unpackdir)
 	return nil
 }
