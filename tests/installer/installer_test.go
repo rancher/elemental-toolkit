@@ -171,7 +171,6 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
-				//Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
 				s.Reboot()
 				// We are on a bios system, we should not be able to boot from an EFI installed system!
 				By("Checking we booted from the CD")
@@ -275,7 +274,7 @@ var _ = Describe("cOS Installer tests", func() {
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
 					// Reboot so we boot into the just installed cos
-					s.Reboot(360)
+					s.Reboot()
 					By("Checking we booted from the installed cOS")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 					// check partition values
@@ -312,7 +311,7 @@ var _ = Describe("cOS Installer tests", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("cos-installer --partition-layout /usr/local/layout.yaml /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Copying Active image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -323,7 +322,7 @@ var _ = Describe("cOS Installer tests", func() {
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
 					// Reboot so we boot into the just installed cos
-					s.Reboot(360)
+					s.Reboot()
 					By("Checking we booted from the installed cOS")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 					// check partition values
@@ -372,7 +371,7 @@ var _ = Describe("cOS Installer tests", func() {
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
-				s.Reboot(360)
+				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
@@ -389,7 +388,7 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
-				s.Reboot(600)
+				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
@@ -406,11 +405,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Copying Recovery image..."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
-				//Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
-				s.Reboot(360)
+				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
@@ -424,11 +422,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Copying Recovery image..."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
-				//Expect(out).To(ContainSubstring(fmt.Sprintf("Installing for %s-efi platform.", s.GetArch())))
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
-				s.Reboot(360)
+				s.Reboot()
 				// We are on an efi system, should boot from active
 				By("Checking we booted from Active partition")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
