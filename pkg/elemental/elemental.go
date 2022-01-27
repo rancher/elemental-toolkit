@@ -473,7 +473,7 @@ func (c *Elemental) CopyRecovery() error {
 		if err != nil {
 			return err
 		}
-		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.GetSystemLabel(), imgTarget)
+		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.SystemLabel, imgTarget)
 		if err != nil {
 			return err
 		}

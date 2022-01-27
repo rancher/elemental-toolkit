@@ -137,16 +137,16 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 		MountPoint: cnst.ActiveDir,
 	}
 
-	if r.activeLabel != "" {
-		r.ActiveImage.Label = r.activeLabel
+	if r.ActiveLabel != "" {
+		r.ActiveImage.Label = r.ActiveLabel
 	}
 
 	if r.PassiveLabel == "" {
 		r.PassiveLabel = cnst.PassiveLabel
 	}
 
-	if r.systemLabel == "" {
-		r.systemLabel = cnst.SystemLabel
+	if r.SystemLabel == "" {
+		r.SystemLabel = cnst.SystemLabel
 	}
 
 	r.Partitions = PartitionList{}
@@ -164,14 +164,14 @@ func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
 // Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
-	// Internally used to compute RunConfig state
 	// Can come from config, env var or flags
-	recoveryLabel   string `yaml:"RECOVERY_LABEL,omitempty" mapstructure:"RECOVERY_LABEL"`
-	persistentLabel string `yaml:"PERSISTENT_LABEL,omitempty" mapstructure:"PERSISTENT_LABEL"`
-	stateLabel      string `yaml:"STATE_LABEL,omitempty" mapstructure:"STATE_LABEL"`
-	oEMLabel        string `yaml:"OEM_LABEL,omitempty" mapstructure:"OEM_LABEL"`
-	systemLabel     string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
-	activeLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
+	RecoveryLabel   string `yaml:"RECOVERY_LABEL,omitempty" mapstructure:"RECOVERY_LABEL"`
+	PersistentLabel string `yaml:"PERSISTENT_LABEL,omitempty" mapstructure:"PERSISTENT_LABEL"`
+	StateLabel      string `yaml:"STATE_LABEL,omitempty" mapstructure:"STATE_LABEL"`
+	OEMLabel        string `yaml:"OEM_LABEL,omitempty" mapstructure:"OEM_LABEL"`
+	SystemLabel     string `yaml:"SYSTEM_LABEL,omitempty" mapstructure:"SYSTEM_LABEL"`
+	ActiveLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
+	PassiveLabel    string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
 	Target          string `yaml:"target,omitempty" mapstructure:"target"`
 	Source          string `yaml:"source,omitempty" mapstructure:"source"`
 	CloudInit       string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
@@ -180,8 +180,6 @@ type RunConfig struct {
 	PartLayout      string `yaml:"partition-layout,omitempty" mapstructure:"partition-layout"`
 	Tty             string `yaml:"tty,omitempty" mapstructure:"tty"`
 	NoFormat        bool   `yaml:"no-format,omitempty" mapstructure:"no-format"`
-	ActiveLabel     string `yaml:"ACTIVE_LABEL,omitempty" mapstructure:"ACTIVE_LABEL"`
-	PassiveLabel    string `yaml:"PASSIVE_LABEL,omitempty" mapstructure:"PASSIVE_LABEL"`
 	Force           bool   `yaml:"force,omitempty" mapstructure:"force"`
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
@@ -241,10 +239,6 @@ func (pl PartitionList) GetByPLabel(label string) *Partition {
 	return nil
 }
 
-func (r RunConfig) GetSystemLabel() string {
-	return r.systemLabel
-}
-
 // setupStyle will gather what partition table and bootflag we need for the current system
 func (r *RunConfig) setupStyle() {
 	_, err := r.Fs.Stat(cnst.EfiDevice)
@@ -290,8 +284,8 @@ func (r *RunConfig) setupStyle() {
 		MountPoint: cnst.OEMDir,
 		Flags:      []string{},
 	}
-	if r.oEMLabel != "" {
-		part.Label = r.oEMLabel
+	if r.OEMLabel != "" {
+		part.Label = r.OEMLabel
 	}
 	r.Partitions = append(r.Partitions, part)
 
@@ -303,8 +297,8 @@ func (r *RunConfig) setupStyle() {
 		MountPoint: cnst.StateDir,
 		Flags:      statePartFlags,
 	}
-	if r.stateLabel != "" {
-		part.Label = r.stateLabel
+	if r.StateLabel != "" {
+		part.Label = r.StateLabel
 	}
 	r.Partitions = append(r.Partitions, part)
 
@@ -316,8 +310,8 @@ func (r *RunConfig) setupStyle() {
 		MountPoint: cnst.RecoveryDir,
 		Flags:      []string{},
 	}
-	if r.recoveryLabel != "" {
-		part.Label = r.recoveryLabel
+	if r.RecoveryLabel != "" {
+		part.Label = r.RecoveryLabel
 	}
 	r.Partitions = append(r.Partitions, part)
 
@@ -329,8 +323,8 @@ func (r *RunConfig) setupStyle() {
 		MountPoint: cnst.PersistentDir,
 		Flags:      []string{},
 	}
-	if r.persistentLabel != "" {
-		part.Label = r.persistentLabel
+	if r.PersistentLabel != "" {
+		part.Label = r.PersistentLabel
 	}
 	r.Partitions = append(r.Partitions, part)
 }
