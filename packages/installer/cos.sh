@@ -526,7 +526,7 @@ do_mount()
     fi
 
     dd if=/dev/zero of=${_STATEDIR}/cOS/active.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-    mkfs.ext2 ${_STATEDIR}/cOS/active.img -L ${ACTIVE_LABEL}
+    mkfs.ext2 -L ${ACTIVE_LABEL} ${_STATEDIR}/cOS/active.img
 
     if [ -z "$_${ACTIVE_LABEL}" ]; then
         sync
