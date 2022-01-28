@@ -359,7 +359,7 @@ var _ = Describe("Utils", func() {
 				Expect(grub.SetPersistentVariables(
 					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
 				)).To(BeNil())
-				Expect(runner.CmdsMatch([][]string{
+				Expect(runner.IncludesCmds([][]string{
 					{"grub2-editenv", "somefile", "set", "key1=value1"},
 					{"grub2-editenv", "somefile", "set", "key2=value2"},
 				})).To(BeNil())
@@ -370,7 +370,7 @@ var _ = Describe("Utils", func() {
 				config.Runner = runner
 				grub := utils.NewGrub(config)
 				Expect(grub.SetPersistentVariables(
-					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
+					"somefile", map[string]string{"key1": "value1"},
 				)).NotTo(BeNil())
 				Expect(runner.CmdsMatch([][]string{
 					{"grub2-editenv", "somefile", "set", "key1=value1"},

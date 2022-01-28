@@ -73,7 +73,7 @@ func (r *TestRunnerV2) ClearCmds() {
 	r.cmds = [][]string{}
 }
 
-// CmdsMatch matches the commands list. Note HasPrefix is being used to evaluate the
+// CmdsMatch matches the commands list in order. Note HasPrefix is being used to evaluate the
 // match, so expecting initial part of the command is enough to get a match.
 // It facilitates testing commands with dynamic arguments (aka temporary files)
 func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
@@ -85,6 +85,26 @@ func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
 		got := strings.Join(r.cmds[i][:], " ")
 		if !strings.HasPrefix(got, expect) {
 			return errors.New(fmt.Sprintf("Expected command: '%s.*' got: '%s'", expect, got))
+		}
+	}
+	return nil
+}
+
+// IncludesCmds checks the given commands were executed in any order.
+// Note it uses HasPrefix to match commands, see CmdsMatch.
+func (r TestRunnerV2) IncludesCmds(cmdList [][]string) error {
+	for _, cmd := range cmdList {
+		expect := strings.Join(cmd[:], " ")
+		found := false
+		for _, rcmd := range r.cmds {
+			got := strings.Join(rcmd[:], " ")
+			if strings.HasPrefix(got, expect) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.New(fmt.Sprintf("Command '%s.*' not found", expect))
 		}
 	}
 	return nil
