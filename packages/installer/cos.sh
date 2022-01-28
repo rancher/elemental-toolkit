@@ -1104,7 +1104,7 @@ copy_active() {
         _TARGET=$loop_dir
         # TODO: Size should be tweakable
         dd if=/dev/zero of=${_STATEDIR}/cOS/transition.img bs=1M count=$_DEFAULT_IMAGE_SIZE
-        mkfs.ext2 ${_STATEDIR}/cOS/transition.img -L ${PASSIVE_LABEL}
+        mkfs.ext2 -L ${PASSIVE_LABEL} ${_STATEDIR}/cOS/transition.img
         sync
         _LOOP=$(losetup --show -f ${_STATEDIR}/cOS/transition.img)
         mount -t ext2 $_LOOP $_TARGET
