@@ -184,7 +184,7 @@ type RunConfig struct {
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
 	DockerImg       string `yaml:"docker-image,omitempty" mapstructure:"docker-image"`
-	NoCosign        bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
+	Cosign          bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
 	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
 	GrubDefEntry    string `yaml:"GRUB_ENTRY_NAME,omitempty" mapstructure:"GRUB_ENTRY_NAME"`
@@ -333,7 +333,7 @@ func (r *RunConfig) setupStyle() {
 func (r *RunConfig) setupLuet() {
 	if r.DockerImg != "" {
 		plugins := []string{}
-		if !r.NoCosign {
+		if r.Cosign {
 			plugins = append(plugins, cnst.LuetCosignPlugin)
 		}
 		if !r.NoVerify {
