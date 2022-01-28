@@ -68,7 +68,7 @@ var _ = Describe("cOS Installer tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the cos-installer")
-				out, err := s.Command(fmt.Sprintf("cos-installer --no-cosign --no-verify --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("cos-installer --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying Active image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -378,7 +378,7 @@ var _ = Describe("cOS Installer tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the cos-installer")
-				out, err := s.Command(fmt.Sprintf("cos-installer --no-verify --no-cosign --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("cos-installer --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying Active image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
