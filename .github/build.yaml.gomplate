@@ -256,6 +256,8 @@
       PKR_VAR_flavor: {{{ $flavor }}}
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: none
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
       {{{if eq $config.arch "arm64" }}}
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
@@ -459,7 +461,7 @@
   tests-{{{$subset}}}-{{{ $flavor }}}-installer-{{{$variant}}}:
     env:
       ARCH: {{{ $config.arch }}}
-      COS_TIMEOUT: 600
+      COS_TIMEOUT: 800
     runs-on: macos-10.15
     needs: iso-{{{$subset}}}-{{{ $flavor }}}
     steps:

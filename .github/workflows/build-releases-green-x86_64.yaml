@@ -163,7 +163,7 @@ jobs:
   tests-squashfs-green-installer-efi:
     env:
       ARCH: x86_64
-      COS_TIMEOUT: 600
+      COS_TIMEOUT: 800
     runs-on: macos-10.15
     needs: iso-squashfs-green
     steps:
@@ -207,7 +207,7 @@ jobs:
   tests-squashfs-green-installer-bios:
     env:
       ARCH: x86_64
-      COS_TIMEOUT: 600
+      COS_TIMEOUT: 800
     runs-on: macos-10.15
     needs: iso-squashfs-green
     steps:
@@ -258,6 +258,8 @@ jobs:
       PKR_VAR_flavor: green
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: none
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -442,7 +444,7 @@ jobs:
   tests-nonsquashfs-green-installer-efi:
     env:
       ARCH: x86_64
-      COS_TIMEOUT: 600
+      COS_TIMEOUT: 800
     runs-on: macos-10.15
     needs: iso-nonsquashfs-green
     steps:
@@ -486,7 +488,7 @@ jobs:
   tests-nonsquashfs-green-installer-bios:
     env:
       ARCH: x86_64
-      COS_TIMEOUT: 600
+      COS_TIMEOUT: 800
     runs-on: macos-10.15
     needs: iso-nonsquashfs-green
     steps:
@@ -537,6 +539,8 @@ jobs:
       PKR_VAR_flavor: green
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: none
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
