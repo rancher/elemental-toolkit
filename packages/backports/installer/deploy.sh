@@ -1,4 +1,6 @@
 #!/bin/bash
 set -e
 
-cos deploy $@
+export INTERACTIVE=true
+
+cos install --no-format $@
