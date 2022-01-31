@@ -108,8 +108,8 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 	}
 
 	if errors != nil && !cfg.Strict {
-		cfg.Logger.Info("Some errors found but were ignored:")
-		cfg.Logger.Info(errors)
+		cfg.Logger.Info("Some errors found but were ignored. Enable --strict mode to fail on those or --debug to see them in the log")
+		cfg.Logger.Warn(errors)
 		return nil
 	}
 
