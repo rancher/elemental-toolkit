@@ -175,6 +175,28 @@ var _ = Describe("Utils", func() {
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
 		})
 	})
+	Context("CosignVerify", func() {
+		var runner *v1mock.TestRunnerV2
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+		})
+		It("runs a keyless verification", func() {
+			_, err := utils.CosignVerify(fs, runner, "some/image:latest", "", true)
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"cosign", "-d=true", "some/image:latest"}})).To(BeNil())
+		})
+		It("runs a verification using a public key", func() {
+			_, err := utils.CosignVerify(fs, runner, "some/image:latest", "https://mykey.pub", false)
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch(
+				[][]string{{"cosign", "-key", "https://mykey.pub", "some/image:latest"}},
+			)).To(BeNil())
+		})
+		It("Fails to to create temporary directories", func() {
+			_, err := utils.CosignVerify(afero.NewReadOnlyFs(fs), runner, "some/image:latest", "", true)
+			Expect(err).NotTo(BeNil())
+		})
+	})
 	Context("CopyFile", func() {
 		It("Copies source to target", func() {
 			fs.Create("/some/file")

@@ -50,6 +50,13 @@ func DebugLevel() log.Level {
 	return l
 }
 
+func IsDebugLevel(l Logger) bool {
+	if l.GetLevel() == DebugLevel() {
+		return true
+	}
+	return false
+}
+
 type LoggerOptions func(l Logger) error
 
 func NewLogger() Logger {

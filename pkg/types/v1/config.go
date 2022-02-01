@@ -184,7 +184,8 @@ type RunConfig struct {
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
 	DockerImg       string `yaml:"docker-image,omitempty" mapstructure:"docker-image"`
-	Cosign          bool   `yaml:"no-cosign,omitempty" mapstructure:"no-cosign"`
+	Cosign          bool   `yaml:"cosign,omitempty" mapstructure:"cosign"`
+	CosignPubKey    string `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
 	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
 	GrubDefEntry    string `yaml:"GRUB_ENTRY_NAME,omitempty" mapstructure:"GRUB_ENTRY_NAME"`
@@ -333,8 +334,8 @@ func (r *RunConfig) setupStyle() {
 func (r *RunConfig) setupLuet() {
 	if r.DockerImg != "" {
 		plugins := []string{}
-		if r.Cosign {
-			plugins = append(plugins, cnst.LuetCosignPlugin)
+		if r.Cosign && r.CosignPubKey == "" {
+			r.Logger.Warnf("Keyless cosign verification is experimental, consider setting a public key")
 		}
 		if !r.NoVerify {
 			plugins = append(plugins, cnst.LuetMtreePlugin)

@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/zloylos/grsync"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -115,4 +116,31 @@ func SyncData(source string, target string, excludes ...string) error {
 	)
 
 	return task.Run()
+}
+
+func CosignVerify(fs afero.Fs, runner v1.Runner, image string, publicKey string, debug bool) (string, error) {
+	args := []string{}
+
+	if debug {
+		args = append(args, "-d=true")
+	}
+	if publicKey != "" {
+		args = append(args, "-key", publicKey)
+	} else {
+		os.Setenv("COSIGN_EXPERIMENTAL", "1")
+		defer os.Unsetenv("COSIGN_EXPERIMENTAL")
+	}
+	args = append(args, image)
+
+	// Give each cosign its own tuf dir so it doesnt collide with others accessing the same files at the same time
+	tmpDir, err := afero.TempDir(fs, "", "cosign-tuf-")
+	if err != nil {
+		return "", err
+	}
+	_ = os.Setenv("TUF_ROOT", tmpDir)
+	defer fs.RemoveAll(tmpDir)
+	defer os.Unsetenv("TUF_ROOT")
+
+	out, err := runner.Run("cosign", args...)
+	return string(out), err
 }

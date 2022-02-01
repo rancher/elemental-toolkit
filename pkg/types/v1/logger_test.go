@@ -39,6 +39,14 @@ var _ = Describe("logger", func() {
 	It("DebugLevel returns the proper log level for debug output", func() {
 		Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
 	})
+	It("Returns true on IsDebugLevel when log level is set to debug", func() {
+		l := v1.NewLogger()
+		l.SetLevel(v1.DebugLevel())
+		Expect(v1.IsDebugLevel(l)).To(BeTrue())
+	})
+	It("Returns false on IsDebugLevel when log level is not set to debug", func() {
+		Expect(v1.IsDebugLevel(v1.NewLogger())).To(BeFalse())
+	})
 	It("NewBufferLogger stores content in a buffer", func() {
 		b := &bytes.Buffer{}
 		l1 := v1.NewBufferLogger(b)

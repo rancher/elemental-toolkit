@@ -127,6 +127,10 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 	// the env stuff ourselves, as this will only match keys in the config root
 	replacer := strings.NewReplacer("-", "_")
 	viper.SetEnvKeyReplacer(replacer)
+
+	// Manually bind public key env variable as it uses a different name in config files or flags.
+	viper.BindEnv("CosingPubKey", "COSIGN_PUBLIC_KEY_LOCATION")
+
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// unmarshal all the vars into the config object

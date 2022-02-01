@@ -70,6 +70,7 @@ func init() {
 	installCmd.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
 	installCmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
 	installCmd.Flags().BoolP("cosign", "", false, "Enable cosign verification (requires images with signatures)")
+	installCmd.Flags().StringP("cosign-key", "", "", "Sets the URL of the public key to be used by cosign validation")
 	installCmd.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
 	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
 	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")

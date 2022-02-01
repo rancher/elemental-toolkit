@@ -437,7 +437,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("DoCopy", func() {
+	Context("CopyActive", func() {
 		It("Copies all files from source to target", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
@@ -462,6 +462,28 @@ var _ = Describe("Elemental", func() {
 			c := elemental.NewElemental(config)
 			Expect(c.CopyActive()).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
+		})
+		It("Unpacks a docker image to target with cosign validation", func() {
+			config.DockerImg = "myimage"
+			runner := v1mock.NewTestRunnerV2()
+			config.Runner = runner
+			config.Cosign = true
+			luet := v1mock.NewFakeLuet()
+			config.Luet = luet
+			c := elemental.NewElemental(config)
+			Expect(c.CopyActive()).To(BeNil())
+			Expect(luet.UnpackCalled()).To(BeTrue())
+			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
+		})
+		It("Fails cosign validation", func() {
+			config.DockerImg = "myimage"
+			runner := v1mock.NewTestRunnerV2()
+			runner.ReturnError = errors.New("cosign error")
+			config.Runner = runner
+			config.Cosign = true
+			c := elemental.NewElemental(config)
+			Expect(c.CopyActive()).NotTo(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
 		})
 		It("Fails to unpack a docker image to target", func() {
 			config.DockerImg = "myimage"

@@ -277,6 +277,17 @@ func (c *Elemental) CopyActive() error {
 	var err error
 
 	if c.config.DockerImg != "" {
+		if c.config.Cosign {
+			c.config.Logger.Infof("Running cosing verification for %s", c.config.DockerImg)
+			out, err := utils.CosignVerify(
+				c.config.Fs, c.config.Runner, c.config.DockerImg,
+				c.config.CosignPubKey, v1.IsDebugLevel(c.config.Logger),
+			)
+			if err != nil {
+				c.config.Logger.Errorf("Cosign verification failed: %s", out)
+				return err
+			}
+		}
 		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, c.config.DockerImg)
 		if err != nil {
 			return err
