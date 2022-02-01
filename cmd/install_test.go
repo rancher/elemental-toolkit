@@ -34,4 +34,28 @@ var _ = Describe("Install", func() {
 		Expect(err).ToNot(BeNil())
 		Expect(buf).To(ContainSubstring("Usage:"))
 	})
+	It("Errors out setting reboot and poweroff at the same time", func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "install", "--reboot", "--poweroff", "/dev/whatever")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).ToNot(BeNil())
+		Expect(buf).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+	})
+	It("Errors out setting consign-key without setting cosign", func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "install", "--cosign-key", "pubKey.url", "/dev/whatever")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).ToNot(BeNil())
+		Expect(buf).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+	})
 })
