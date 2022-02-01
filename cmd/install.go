@@ -46,7 +46,10 @@ var installCmd = &cobra.Command{
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
 		cfg.Target = args[0]
 
-		cfg.DigestSetup()
+		err = cfg.DigestSetup()
+		if err != nil {
+			return err
+		}
 		cmd.SilenceUsage = true
 
 		cfg.Logger.Infof("Install called")
@@ -75,9 +78,10 @@ func init() {
 	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
 	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
 	installCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
-	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	installCmd.Flags().BoolP("force", "", false, "Force install")
+	installCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
+	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 
 	viper.BindPFlags(installCmd.Flags())
 

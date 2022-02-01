@@ -31,6 +31,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
@@ -195,6 +196,26 @@ var _ = Describe("Utils", func() {
 		It("Fails to to create temporary directories", func() {
 			_, err := utils.CosignVerify(afero.NewReadOnlyFs(fs), runner, "some/image:latest", "", true)
 			Expect(err).NotTo(BeNil())
+		})
+	})
+	Context("Reboot and shutdown", func() {
+		var runner *v1mock.TestRunnerV2
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+		})
+		It("reboots", func() {
+			start := time.Now()
+			utils.Reboot(runner, 2)
+			duration := time.Since(start)
+			Expect(runner.CmdsMatch([][]string{{"reboot", "-f"}})).To(BeNil())
+			Expect(duration.Seconds() >= 2).To(BeTrue())
+		})
+		It("shuts down", func() {
+			start := time.Now()
+			utils.Shutdown(runner, 3)
+			duration := time.Since(start)
+			Expect(runner.CmdsMatch([][]string{{"poweroff", "-f"}})).To(BeNil())
+			Expect(duration.Seconds() >= 3).To(BeTrue())
 		})
 	})
 	Context("CopyFile", func() {

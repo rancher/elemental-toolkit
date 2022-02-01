@@ -118,6 +118,22 @@ func SyncData(source string, target string, excludes ...string) error {
 	return task.Run()
 }
 
+// Reboot reboots the system afater the given delay (in seconds) time passed.
+func Reboot(runner v1.Runner, delay time.Duration) error {
+	time.Sleep(delay * time.Second)
+	_, err := runner.Run("reboot", "-f")
+	return err
+}
+
+// Shutdown halts the system afater the given delay (in seconds) time passed.
+func Shutdown(runner v1.Runner, delay time.Duration) error {
+	time.Sleep(delay * time.Second)
+	_, err := runner.Run("poweroff", "-f")
+	return err
+}
+
+// CosignVerify runs a cosign validation for the give image and given public key. If no
+// key is provided then it attempts a keyless validation (experimental feature).
 func CosignVerify(fs afero.Fs, runner v1.Runner, image string, publicKey string, debug bool) (string, error) {
 	args := []string{}
 

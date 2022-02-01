@@ -125,7 +125,9 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
+			config.Reboot = true
 			Expect(install.Run()).To(BeNil())
+			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
 		})
 
 		It("Successfully installs despite hooks failure", func() {
@@ -134,7 +136,9 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
+			config.PowerOff = true
 			Expect(install.Run()).To(BeNil())
+			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})
 
 		It("Successfully installs from ISO", func() {

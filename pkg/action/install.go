@@ -190,7 +190,14 @@ func (i InstallAction) Run() (err error) {
 	if err != nil {
 		return err
 	}
-	// profit!
-	// TODO poweroff or reboot or nothing
+
+	// Reboot, poweroff or nothing
+	if i.Config.Reboot {
+		i.Config.Logger.Infof("Rebooting in 5 seconds")
+		return utils.Reboot(i.Config.Runner, 5)
+	} else if i.Config.PowerOff {
+		i.Config.Logger.Infof("Shutting down in 5 seconds")
+		return utils.Shutdown(i.Config.Runner, 5)
+	}
 	return err
 }

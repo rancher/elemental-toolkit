@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
 	"fmt"
 	dockTypes "github.com/docker/docker/api/types"
 	"github.com/mudler/luet/pkg/api/core/context"
@@ -189,6 +190,8 @@ type RunConfig struct {
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
 	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
 	GrubDefEntry    string `yaml:"GRUB_ENTRY_NAME,omitempty" mapstructure:"GRUB_ENTRY_NAME"`
+	Reboot          bool   `yaml:"reboot,omitempty" mapstructure:"reboot"`
+	PowerOff        bool   `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string
@@ -330,13 +333,30 @@ func (r *RunConfig) setupStyle() {
 	r.Partitions = append(r.Partitions, part)
 }
 
+// sanityChecks just verifies some potential inconsistencies on configuration
+func (r RunConfig) sanityChecks() error {
+	err := errors.New("Invalid options")
+	if r.Reboot && r.PowerOff {
+		r.Logger.Errorf("'reboot' and 'poweroff' are mutually exclusive options")
+		return err
+	}
+
+	if r.CosignPubKey != "" && !r.Cosign {
+		r.Logger.Errorf("'cosign-key' requires 'cosing' option to be enabled")
+		return err
+	}
+
+	if r.Cosign && r.CosignPubKey == "" {
+		r.Logger.Warnf("No 'cosign-key' option set, keyless cosign verification is experimental")
+	}
+
+	return nil
+}
+
 // setupLuet will initialize Luet interface if required
 func (r *RunConfig) setupLuet() {
 	if r.DockerImg != "" {
 		plugins := []string{}
-		if r.Cosign && r.CosignPubKey == "" {
-			r.Logger.Warnf("Keyless cosign verification is experimental, consider setting a public key")
-		}
 		if !r.NoVerify {
 			plugins = append(plugins, cnst.LuetMtreePlugin)
 		}
@@ -345,9 +365,14 @@ func (r *RunConfig) setupLuet() {
 }
 
 // DigestSetup will gather what partition table and bootflag we need for the current system
-func (r *RunConfig) DigestSetup() {
+func (r *RunConfig) DigestSetup() error {
+	err := r.sanityChecks()
+	if err != nil {
+		return err
+	}
 	r.setupStyle()
 	r.setupLuet()
+	return nil
 }
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
