@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,21 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package cmd
 
-import "syscall"
+import (
+	"bytes"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
 
-type SyscallInterface interface {
-	Chroot(string) error
-	Chdir(string) error
-}
-
-type RealSyscall struct{}
-
-func (r *RealSyscall) Chroot(path string) error {
-	return syscall.Chroot(path)
-}
-
-func (r *RealSyscall) Chdir(path string) error {
-	return syscall.Chdir(path)
-}
+var _ = Describe("Upgrade", func() {
+	It("Returns error if both --docker-image and --directory flags are used", func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "upgrade", "--docker-image", "img", "--directory", "/tmp")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).To(HaveOccurred())
+	})
+})

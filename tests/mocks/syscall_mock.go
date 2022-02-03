@@ -35,6 +35,10 @@ func (f *FakeSyscall) Chroot(path string) error {
 	return nil
 }
 
+func (f *FakeSyscall) Chdir(path string) error {
+	return nil
+}
+
 // WasChrootCalledWith is a helper method to check if Chroot was called with the given path
 func (f *FakeSyscall) WasChrootCalledWith(path string) bool {
 	for _, c := range f.chrootHistory {

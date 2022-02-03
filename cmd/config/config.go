@@ -91,7 +91,7 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		}
 	}
 
-	cfgDefault := []string{"/etc/os-release", "/etc/cos/config"}
+	cfgDefault := []string{"/etc/os-release", "/etc/cos/config", "/etc/cos-upgrade-image"}
 
 	for _, c := range cfgDefault {
 		if _, err := os.Stat(c); err == nil {

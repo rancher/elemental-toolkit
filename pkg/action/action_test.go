@@ -17,14 +17,21 @@
 package action_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/mudler/luet/pkg/api/core/context"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	. "github.com/rancher-sandbox/elemental/tests"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"k8s.io/mount-utils"
 	"os"
 	"testing"
 )
@@ -254,7 +261,7 @@ var _ = Describe("Actions", func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
-		It("Fails if requested remote clound config can't be downloaded", func() {
+		It("Fails if requested remote cloud config can't be downloaded", func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -290,6 +297,411 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "grub2-editenv"
 			Expect(install.Run()).NotTo(BeNil())
+		})
+	})
+	Context("Upgrade Action", func() {
+		var upgrade *action.UpgradeAction
+		var memLog *bytes.Buffer
+		var luet *v1.Luet
+		activeImg := fmt.Sprintf("%s/cOS/%s", constants.UpgradeStateDir, constants.ActiveImgFile)
+		passiveImg := fmt.Sprintf("%s/cOS/%s", constants.UpgradeStateDir, constants.PassiveImgFile)
+		recoveryImgSquash := fmt.Sprintf("%s/cOS/%s", constants.UpgradeRecoveryDir, constants.RecoverySquashFile)
+		recoveryImg := fmt.Sprintf("%s/cOS/%s", constants.UpgradeRecoveryDir, constants.RecoveryImgFile)
+		transitionImgSquash := fmt.Sprintf("%s/cOS/%s", constants.UpgradeRecoveryDir, constants.TransitionSquashFile)
+		transitionImg := fmt.Sprintf("%s/cOS/%s", constants.UpgradeStateDir, constants.TransitionImgFile)
+		transitionImgRecovery := fmt.Sprintf("%s/cOS/%s", constants.UpgradeRecoveryDir, constants.TransitionImgFile)
+
+		BeforeEach(func() {
+			memLog = &bytes.Buffer{}
+			logger = v1.NewBufferLogger(memLog)
+			config.Logger = logger
+			logger.SetLevel(logrus.DebugLevel)
+			context := context.NewContext()
+			dockerAuth := &types.AuthConfig{}
+			luet = v1.NewLuet(logger, context, dockerAuth, []string{}...)
+			config.Luet = luet
+			// These values are loaded from /etc/cos/config normally via CMD
+			config.StateLabel = constants.StateLabel
+			config.PassiveLabel = constants.PassiveLabel
+			config.RecoveryLabel = constants.RecoveryLabel
+			config.ActiveLabel = constants.ActiveLabel
+			config.ImgSize = 10
+		})
+		It("Fails to upgrade if its a channel upgrade (not supported yet)", func() {
+			config.ChannelUpgrades = true
+			upgrade = action.NewUpgradeAction(config)
+			err := upgrade.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("channel upgrade not supported yet"))
+		})
+		It("Fails if some hook fails and strict is set", func() {
+			runner = v1mock.NewTestRunnerV2()
+			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+				if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
+					return []byte("/dev/active"), nil
+				}
+				if command == "lsblk" {
+					return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+				}
+				if command == "cat" && args[0] == "/proc/cmdline" {
+					return []byte(constants.ActiveLabel), nil
+				}
+				return []byte{}, nil
+			}
+			config.Runner = runner
+			config.DockerImg = "alpine"
+			config.Strict = true
+			cloudInit.Error = true
+			upgrade = action.NewUpgradeAction(config)
+			err := upgrade.Run()
+			Expect(err).To(HaveOccurred())
+			// Make sure is a cloud init error!
+			Expect(err.Error()).To(ContainSubstring("cloud init"))
+		})
+		Context(fmt.Sprintf("Booting from %s", constants.ActiveLabel), func() {
+			BeforeEach(func() {
+				runner = v1mock.NewTestRunnerV2()
+				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
+						return []byte("/dev/active"), nil
+					}
+					if command == "lsblk" {
+						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+					}
+					if command == "cat" && args[0] == "/proc/cmdline" {
+						return []byte(constants.ActiveLabel), nil
+					}
+					if command == "mv" && args[0] == "-f" && args[1] == activeImg && args[2] == passiveImg {
+						// we doing backup, do the "move"
+						source, _ := afero.ReadFile(fs, activeImg)
+						_ = afero.WriteFile(fs, passiveImg, source, os.ModePerm)
+						_ = fs.RemoveAll(activeImg)
+					}
+					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
+						// we doing the image substitution, do the "move"
+						source, _ := afero.ReadFile(fs, transitionImg)
+						_ = afero.WriteFile(fs, activeImg, source, os.ModePerm)
+						_ = fs.RemoveAll(transitionImg)
+					}
+					return []byte{}, nil
+				}
+				config.Runner = runner
+				// Create fake active/passive files
+				_ = afero.WriteFile(fs, activeImg, []byte("active"), os.ModePerm)
+				_ = afero.WriteFile(fs, passiveImg, []byte("passive"), os.ModePerm)
+			})
+			AfterEach(func() {
+				_ = fs.RemoveAll(activeImg)
+				_ = fs.RemoveAll(passiveImg)
+			})
+			RunTestOnlyWithRoot("Successfully upgrades from docker image", func() {
+				config.DockerImg = "alpine"
+				upgrade = action.NewUpgradeAction(config)
+				err := upgrade.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect cos-state to have been mounted with our fake lsblk values
+				fakeMounted := mount.MountPoint{
+					Device: "/dev/fake1",
+					Path:   "/run/initramfs/cos-state",
+					Type:   "fakefs",
+				}
+				Expect(mounter.List()).To(ContainElement(fakeMounted))
+
+				// This should be the new image
+				info, err := fs.Stat(activeImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Image size should be the config.ImgSize as its truncated from the upgrade
+				Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+				Expect(info.IsDir()).To(BeFalse())
+				fmt.Print(info.Sys())
+
+				// Should have backed up active to passive
+				info, err = fs.Stat(passiveImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Should be a tiny image as it should only contain our text
+				// As this was generated by us at the start test and moved by the upgrade from active.iomg
+				Expect(info.Size()).To(BeNumerically(">", 0))
+				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+				f, _ := afero.ReadFile(fs, passiveImg)
+				// This should be a backup so it should read active
+				Expect(f).To(ContainSubstring("active"))
+
+				// Expect transition image to be gone
+				_, err = fs.Stat(transitionImg)
+				Expect(err).To(HaveOccurred())
+			})
+			RunTestOnlyWithRoot("Successfully upgrades from directory", func() {
+				config.DirectoryUpgrade = "/tmp/upgradesource"
+				// Create the dir on real os as rsync works on the real os
+				_ = os.MkdirAll(config.DirectoryUpgrade, os.ModeDir)
+				defer os.RemoveAll(config.DirectoryUpgrade)
+				// create a random file on it
+				_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+
+				upgrade = action.NewUpgradeAction(config)
+				err := upgrade.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				// Not much that we can create here as the dir copy was done on the real os, but we do the rest of the ops on a mem one
+				// This should be the new image
+				info, err := fs.Stat(activeImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Image size should not be empty
+				Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+				Expect(info.IsDir()).To(BeFalse())
+
+				// Should have backed up active to passive
+				info, err = fs.Stat(passiveImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Should be an really small image as it should only contain our text
+				// As this was generated by us at the start test and moved by the upgrade from active.iomg
+				Expect(info.Size()).To(BeNumerically(">", 0))
+				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+				f, _ := afero.ReadFile(fs, passiveImg)
+				// This should be a backup so it should read active
+				Expect(f).To(ContainSubstring("active"))
+
+				// Expect transition image to be gone
+				_, err = fs.Stat(transitionImg)
+				Expect(err).To(HaveOccurred())
+
+			})
+			XIt("Successfully upgrades from channel upgrade", func() {})
+			XIt("Successfully upgrades with cosign", func() {})
+			XIt("Successfully upgrades with mtree", func() {})
+			XIt("Successfully upgrades with strict", func() {})
+		})
+		Context(fmt.Sprintf("Booting from %s", constants.PassiveLabel), func() {
+			BeforeEach(func() {
+				runner = v1mock.NewTestRunnerV2()
+				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
+						return []byte("/dev/active"), nil
+					}
+					if command == "lsblk" {
+						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+					}
+					if command == "cat" && args[0] == "/proc/cmdline" {
+						return []byte(constants.PassiveLabel), nil
+					}
+					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
+						// we doing the image substitution, do the "move"
+						source, _ := afero.ReadFile(fs, transitionImg)
+						_ = afero.WriteFile(fs, activeImg, source, os.ModePerm)
+						_ = fs.RemoveAll(transitionImg)
+					}
+					return []byte{}, nil
+				}
+				config.Runner = runner
+				// Create fake active/passive files
+				_ = afero.WriteFile(fs, activeImg, []byte("active"), os.ModePerm)
+				_ = afero.WriteFile(fs, passiveImg, []byte("passive"), os.ModePerm)
+			})
+			AfterEach(func() {
+				_ = fs.RemoveAll(activeImg)
+				_ = fs.RemoveAll(passiveImg)
+			})
+			RunTestOnlyWithRoot("does not backup active img to passive", func() {
+				config.DockerImg = "alpine"
+				upgrade = action.NewUpgradeAction(config)
+				err := upgrade.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				// Expect cos-state to have been mounted with our fake lsblk values
+				fakeMounted := mount.MountPoint{
+					Device: "/dev/fake1",
+					Path:   "/run/initramfs/cos-state",
+					Type:   "fakefs",
+				}
+				Expect(mounter.List()).To(ContainElement(fakeMounted))
+
+				// This should be the new image
+				info, err := fs.Stat(activeImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Image size should not be empty
+				Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+				Expect(info.IsDir()).To(BeFalse())
+
+				// Passive should have not been touched
+				info, err = fs.Stat(passiveImg)
+				Expect(err).ToNot(HaveOccurred())
+				// Should be a tiny image as it should only contain our text
+				// As this was generated by us at the start test and moved by the upgrade from active.iomg
+				Expect(info.Size()).To(BeNumerically(">", 0))
+				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+				f, _ := afero.ReadFile(fs, passiveImg)
+				Expect(f).To(ContainSubstring("passive"))
+
+				// Expect transition image to be gone
+				_, err = fs.Stat(transitionImg)
+				Expect(err).To(HaveOccurred())
+
+			})
+		})
+		Context(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), func() {
+			BeforeEach(func() {
+				config.RecoveryUpgrade = true
+			})
+			Context("Using squashfs", func() {
+				BeforeEach(func() {
+					runner = v1mock.NewTestRunnerV2()
+					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
+							return []byte("/dev/active"), nil
+						}
+						if command == "lsblk" {
+							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+						}
+						if command == "cat" && args[0] == "/proc/cmdline" {
+							return []byte(constants.RecoverySquashFile), nil
+						}
+						if command == "mksquashfs" && args[0] == "/tmp/upgrade" && args[1] == "/run/initramfs/live/cOS/transition.squashfs" {
+							// create the transition img for squash to fake it
+							_, _ = fs.Create(transitionImgSquash)
+						}
+						if command == "mv" && args[0] == "-f" && args[1] == transitionImgSquash && args[2] == recoveryImgSquash {
+							// fake "move"
+							f, _ := afero.ReadFile(fs, transitionImgSquash)
+							_ = afero.WriteFile(fs, recoveryImgSquash, f, os.ModePerm)
+							_ = fs.RemoveAll(transitionImgSquash)
+						}
+						return []byte{}, nil
+					}
+					config.Runner = runner
+					// Create recoveryImgSquash so ti identifies that we are using squash recovery
+					_ = afero.WriteFile(fs, recoveryImgSquash, []byte("recovery"), os.ModePerm)
+				})
+				AfterEach(func() {
+					_ = fs.RemoveAll(activeImg)
+					_ = fs.RemoveAll(passiveImg)
+				})
+				RunTestOnlyWithRoot("Successfully upgrades recovery from docker image", func() {
+					// This should be the old image
+					info, err := fs.Stat(recoveryImgSquash)
+					Expect(err).ToNot(HaveOccurred())
+					// Image size should be empty
+					Expect(info.Size()).To(BeNumerically(">", 0))
+					Expect(info.IsDir()).To(BeFalse())
+					f, _ := afero.ReadFile(fs, recoveryImgSquash)
+					Expect(f).To(ContainSubstring("recovery"))
+
+					config.DockerImg = "alpine"
+					upgrade = action.NewUpgradeAction(config)
+					err = upgrade.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					// This should be the new image
+					info, err = fs.Stat(recoveryImgSquash)
+					Expect(err).ToNot(HaveOccurred())
+					// Image size should be empty
+					Expect(info.Size()).To(BeNumerically("==", 0))
+					Expect(info.IsDir()).To(BeFalse())
+					f, _ = afero.ReadFile(fs, recoveryImgSquash)
+					Expect(f).ToNot(ContainSubstring("recovery"))
+
+					// Transition squash should not exist
+					info, err = fs.Stat(transitionImgSquash)
+					Expect(err).To(HaveOccurred())
+
+				})
+				RunTestOnlyWithRoot("Successfully upgrades recovery from directory", func() {
+					config.DirectoryUpgrade = "/tmp/upgradesource"
+					// Create the dir on real os as rsync works on the real os
+					_ = os.MkdirAll(config.DirectoryUpgrade, os.ModeDir)
+					defer os.RemoveAll(config.DirectoryUpgrade)
+					// create a random file on it
+					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+
+					upgrade = action.NewUpgradeAction(config)
+					err := upgrade.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					// This should be the new image
+					info, err := fs.Stat(recoveryImgSquash)
+					Expect(err).ToNot(HaveOccurred())
+					// Image size should be empty
+					Expect(info.Size()).To(BeNumerically("==", 0))
+					Expect(info.IsDir()).To(BeFalse())
+
+					// Transition squash should not exist
+					info, err = fs.Stat(transitionImgSquash)
+					Expect(err).To(HaveOccurred())
+
+				})
+				XIt("Successfully upgrades recovery from channel upgrade", func() {})
+			})
+			Context("Not using squashfs", func() {
+				BeforeEach(func() {
+					runner = v1mock.NewTestRunnerV2()
+					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
+							return []byte("/dev/active"), nil
+						}
+						if command == "lsblk" {
+							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+						}
+						if command == "cat" && args[0] == "/proc/cmdline" {
+							return []byte(constants.RecoveryLabel), nil
+						}
+						if command == "mv" && args[0] == "-f" && args[1] == transitionImgRecovery && args[2] == recoveryImg {
+							// fake "move"
+							f, _ := afero.ReadFile(fs, transitionImgRecovery)
+							_ = afero.WriteFile(fs, recoveryImg, f, os.ModePerm)
+							_ = fs.RemoveAll(transitionImgRecovery)
+						}
+						return []byte{}, nil
+					}
+					config.Runner = runner
+					_ = afero.WriteFile(fs, recoveryImg, []byte("recovery"), os.ModePerm)
+
+				})
+				AfterEach(func() {
+					_ = fs.RemoveAll(activeImg)
+					_ = fs.RemoveAll(passiveImg)
+					_ = fs.RemoveAll(recoveryImg)
+				})
+				RunTestOnlyWithRoot("Successfully upgrades recovery from docker image", func() {
+					// This should be the old image
+					info, err := fs.Stat(recoveryImg)
+					Expect(err).ToNot(HaveOccurred())
+					// Image size should not be empty
+					Expect(info.Size()).To(BeNumerically(">", 0))
+					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+					Expect(info.IsDir()).To(BeFalse())
+					f, _ := afero.ReadFile(fs, recoveryImg)
+					Expect(f).To(ContainSubstring("recovery"))
+
+					config.DockerImg = "alpine"
+					config.Logger.SetLevel(logrus.DebugLevel)
+					upgrade = action.NewUpgradeAction(config)
+					err = upgrade.Run()
+					Expect(err).ToNot(HaveOccurred())
+
+					// Expect cos-state to have been remounted back on RO
+					fakeMounted := mount.MountPoint{
+						Device: "/dev/fake1",
+						Path:   "/run/initramfs/live",
+						Type:   "fakefs",
+					}
+					Expect(mounter.List()).To(ContainElement(fakeMounted))
+
+					// Should have created recovery image
+					info, err = fs.Stat(recoveryImg)
+					Expect(err).ToNot(HaveOccurred())
+					// Should have default image size
+					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+
+					// Expect the rest of the images to not be there
+					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
+						exists, _ := afero.Exists(fs, img)
+						Expect(exists).To(BeFalse())
+					}
+
+				})
+				XIt("Successfully upgrades recovery from directory", func() {})
+				XIt("Successfully upgrades recovery from channel upgrade", func() {})
+			})
 		})
 	})
 })

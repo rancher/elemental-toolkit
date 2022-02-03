@@ -29,6 +29,9 @@ var runStage = &cobra.Command{
 	Use:   "run-stage STAGE",
 	Short: "elemental run-stage",
 	Args:  cobra.MinimumNArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlags(cmd.Flags())
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 

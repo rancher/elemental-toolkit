@@ -326,16 +326,16 @@ func (c *Elemental) CopyCloudConfig() error {
 }
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
-func (c *Elemental) SelinuxRelabel(raiseError bool) error {
+func (c *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
 	var err error
 
-	contextFile := filepath.Join(cnst.ActiveDir, "/etc/selinux/targeted/contexts/files/file_contexts")
+	contextFile := filepath.Join(rootDir, "/etc/selinux/targeted/contexts/files/file_contexts")
 
 	_, err = c.config.Fs.Stat(contextFile)
 	contextExists := err == nil
 
 	if utils.CommandExists("setfiles") && contextExists {
-		_, err = c.config.Runner.Run("setfiles", "-r", cnst.ActiveDir, contextFile, cnst.ActiveDir)
+		_, err = c.config.Runner.Run("setfiles", "-r", rootDir, contextFile, rootDir)
 	}
 
 	// In the original code this can error out and we dont really care

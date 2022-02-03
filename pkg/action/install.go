@@ -155,7 +155,7 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 	// Relabel SELinux
-	_ = newElemental.SelinuxRelabel(false)
+	_ = newElemental.SelinuxRelabel(cnst.ActiveDir, false)
 
 	err = i.installHook(cnst.AfterInstallChrootHook, true)
 	if err != nil {

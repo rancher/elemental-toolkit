@@ -218,6 +218,92 @@ var _ = Describe("Utils", func() {
 			Expect(duration.Seconds() >= 3).To(BeTrue())
 		})
 	})
+	Context("GetFullDeviceByLabel", func() {
+		var runner *v1mock.TestRunnerV2
+		var cmds [][]string
+		BeforeEach(func() {
+			runner = v1mock.NewTestRunnerV2()
+			cmds = [][]string{
+				{"udevadm", "settle"},
+				{"blkid", "--label", "FAKE"},
+			}
+		})
+		It("returns found v1.Partition", func() {
+			cmds = [][]string{
+				{"udevadm", "settle"},
+				{"blkid", "--label", "FAKE"},
+				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+			}
+			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
+					return []byte("/dev/fake"), nil
+				}
+				if command == "lsblk" {
+					return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake"}]}`), nil
+				}
+				return nil, nil
+			}
+			out, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
+			var flags []string
+			Expect(err).To(BeNil())
+			Expect(out.Label).To(Equal("fake"))
+			Expect(out.Size).To(Equal(uint(1)))
+			Expect(out.FS).To(Equal("fakefs"))
+			Expect(out.MountPoint).To(Equal("/mnt/fake"))
+			Expect(out.Flags).To(Equal(flags))
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to run blkid", func() {
+			runner.ReturnError = errors.New("failed running blkid")
+			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
+			Expect(err).To(HaveOccurred())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to run lsblk", func() {
+			cmds = [][]string{
+				{"udevadm", "settle"},
+				{"blkid", "--label", "FAKE"},
+				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+			}
+			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
+					return []byte("/dev/fake"), nil
+				}
+				if command == "lsblk" {
+					return nil, errors.New("error")
+				}
+				return nil, nil
+			}
+			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
+			Expect(err).To(HaveOccurred())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to parse json output", func() {
+			cmds = [][]string{
+				{"udevadm", "settle"},
+				{"blkid", "--label", "FAKE"},
+				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+			}
+			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
+					return []byte("/dev/fake"), nil
+				}
+				if command == "lsblk" {
+					return []byte("output changed"), nil
+				}
+				return nil, nil
+			}
+			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
+			Expect(err).To(HaveOccurred())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails if no device is found in two attempts", func() {
+			runner.ReturnValue = []byte("")
+			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 2)
+			Expect(err).To(HaveOccurred())
+			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
+		})
+	})
 	Context("CopyFile", func() {
 		It("Copies source to target", func() {
 			fs.Create("/some/file")
@@ -497,6 +583,45 @@ var _ = Describe("Utils", func() {
 			Expect(memLog).To(ContainSubstring("leia"))
 			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
 			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
+		})
+	})
+	Context("CreateSquashFS", func() {
+		It("runs with no options if none given", func() {
+			runner := v1mock.NewTestRunnerV2()
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
+			Expect(runner.IncludesCmds([][]string{
+				{"mksquashfs", "source", "dest"},
+			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("runs with options if given", func() {
+			runner := v1mock.NewTestRunnerV2()
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", constants.GetDefaultSquashfsOptions())
+			cmd := []string{"mksquashfs", "source", "dest"}
+			cmd = append(cmd, constants.GetDefaultSquashfsOptions()...)
+			Expect(runner.IncludesCmds([][]string{
+				cmd,
+			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("returns an error if it fails", func() {
+			runner := v1mock.NewTestRunnerV2()
+			runner.ReturnError = errors.New("error")
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
+			Expect(runner.IncludesCmds([][]string{
+				{"mksquashfs", "source", "dest"},
+			})).To(BeNil())
+			Expect(err).To(HaveOccurred())
+		})
+	})
+	Context("CommandExists", func() {
+		It("returns false if command does not exists", func() {
+			exists := utils.CommandExists("THISCOMMANDSHOULDNOTBETHERECOMEON")
+			Expect(exists).To(BeFalse())
+		})
+		It("returns true if command exists", func() {
+			exists := utils.CommandExists("true")
+			Expect(exists).To(BeTrue())
 		})
 	})
 })

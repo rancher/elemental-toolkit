@@ -140,9 +140,16 @@ func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
 			}
 		}()
 	}
+	// Change to new dir before running chroot!
+	err = c.config.Syscall.Chdir(c.path)
+	if err != nil {
+		c.config.Logger.Errorf("Cant chdir %s: %s", c.path, err)
+		return nil, err
+	}
+
 	err = c.config.Syscall.Chroot(c.path)
 	if err != nil {
-		c.config.Logger.Errorf("Cant chroot %s", c.path)
+		c.config.Logger.Errorf("Cant chroot %s: %s", c.path, err)
 		return nil, err
 	}
 
@@ -168,7 +175,8 @@ func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
 	// run command in the chroot
 	out, err = c.config.Runner.Run(command, args...)
 	if err != nil {
-		c.config.Logger.Errorf("Cant run command on chroot")
+		c.config.Logger.Errorf("Cant run command %s with args %v on chroot: %s", command, args, err)
+		c.config.Logger.Debugf("Output from command: %s", out)
 		return out, err
 	}
 

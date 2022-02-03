@@ -30,6 +30,9 @@ var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
 	Args:  cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlags(cmd.Flags())
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := exec.LookPath("mount")
 		if err != nil {
@@ -82,7 +85,4 @@ func init() {
 	installCmd.Flags().BoolP("force", "", false, "Force install")
 	installCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
 	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
-
-	viper.BindPFlags(installCmd.Flags())
-
 }

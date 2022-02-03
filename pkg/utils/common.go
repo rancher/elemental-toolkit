@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -28,6 +29,11 @@ import (
 	"strings"
 	"time"
 )
+
+// tmpBlockdevices is a temporal struct to extract the output of lsblk json
+type tmpBlockdevices struct {
+	Blockdevices []v1.Partition
+}
 
 func CommandExists(command string) bool {
 	_, err := exec.LookPath(command)
@@ -53,6 +59,31 @@ func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, err
 		time.Sleep(1 * time.Second)
 	}
 	return "", errors.New("no device found")
+}
+
+// GetFullDeviceByLabel works like GetDeviceByLabel, but it will try to get as much info as possible from the existing
+// partition and return a v1.Partition object
+func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (v1.Partition, error) {
+	for tries := 0; tries < attempts; tries++ {
+		_, _ = runner.Run("udevadm", "settle")
+		out, err := runner.Run("blkid", "--label", label)
+		device := strings.TrimSpace(string(out))
+		if err == nil && device != "" {
+			out, err = runner.Run("lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", device)
+			if err == nil && strings.TrimSpace(string(out)) != "" {
+				a := tmpBlockdevices{}
+				err = json.Unmarshal(out, &a)
+				if err != nil {
+					return v1.Partition{}, err
+				}
+				return a.Blockdevices[0], nil
+			} else {
+				return v1.Partition{}, err
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return v1.Partition{}, errors.New("no device found")
 }
 
 // Copies source file to target file using afero.Fs interface
@@ -159,4 +190,21 @@ func CosignVerify(fs afero.Fs, runner v1.Runner, image string, publicKey string,
 
 	out, err := runner.Run("cosign", args...)
 	return string(out), err
+}
+
+// CreateSquashFS creates a squash file at destination from a source, with options
+// TODO: Check validity of source maybe?
+func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destination string, options []string) error {
+	// create args
+	args := []string{source, destination}
+	// append options passed to args in order to have the correct order
+	args = append(args, options...)
+	logger.Debug("Running command: mksquashfs with args: %s", args)
+	out, err := runner.Run("mksquashfs", args...)
+	if err != nil {
+		logger.Debugf("Error running squashfs creation, stdout: %s", out)
+		logger.Errorf("Error while creating squashfs from %s to %s: %s", source, destination, err)
+		return err
+	}
+	return nil
 }

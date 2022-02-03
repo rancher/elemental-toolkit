@@ -33,6 +33,9 @@ var cloudInit = &cobra.Command{
 	Use:   "cloud-init",
 	Short: "elemental cloud-init",
 	Args:  cobra.MinimumNArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlags(cmd.Flags())
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 		if err != nil {
@@ -65,5 +68,4 @@ func init() {
 	rootCmd.AddCommand(cloudInit)
 	cloudInit.PersistentFlags().StringP("stage", "s", "default", "Stage to apply")
 	cloudInit.PersistentFlags().BoolP("dotnotation", "d", false, "Parse input in dotnotation ( e.g. `stages.foo.name=..` ) ")
-	viper.BindPFlags(cloudInit.Flags())
 }

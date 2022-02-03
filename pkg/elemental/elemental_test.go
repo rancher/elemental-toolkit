@@ -538,10 +538,10 @@ var _ = Describe("Elemental", func() {
 		It("Works", func() {
 			c := elemental.NewElemental(config)
 			// This is actually failing but not sure we should return an error
-			Expect(c.SelinuxRelabel(true)).ToNot(BeNil())
+			Expect(c.SelinuxRelabel("/", true)).ToNot(BeNil())
 			fs = afero.NewMemMapFs()
 			_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
-			Expect(c.SelinuxRelabel(false)).To(BeNil())
+			Expect(c.SelinuxRelabel("/", false)).To(BeNil())
 		})
 	})
 	Context("BootedFromSquash", func() {

@@ -16,6 +16,8 @@ limitations under the License.
 
 package constants
 
+import "runtime"
+
 const (
 	GrubConf               = "/etc/cos/grub.cfg"
 	GrubOEMEnv             = "grub_oem_env"
@@ -49,7 +51,6 @@ const (
 	BiosSize               = uint(1)
 	ImgSize                = uint(3072)
 	PartStage              = "partitioning"
-	RecoveryDirSquash      = "/run/initramfs/live"
 	IsoMnt                 = "/run/initramfs/live"
 	RecoveryDir            = "/run/cos/recovery"
 	StateDir               = "/run/cos/state"
@@ -68,8 +69,28 @@ const (
 	BeforeInstallHook      = "before-install"
 	LuetCosignPlugin       = "luet-cosign"
 	LuetMtreePlugin        = "luet-mtree"
+	UpgradeActive          = "active"
+	UpgradeRecovery        = "recovery"
+	UpgradeSource          = "system/cos"
+	UpgradeTempDir         = "/tmp/upgrade"
+	UpgradeStateDir        = "/run/initramfs/cos-state"
+	UpgradeRecoveryDir     = "/run/initramfs/live"
+	TransitionImgFile      = "transition.img"
+	TransitionSquashFile   = "transition.squashfs"
 )
 
 func GetCloudInitPaths() []string {
 	return []string{"/system/oem", "/oem/", "/usr/local/cloud-config/"}
+}
+
+// GetDefaultSquashfsOptions returns the default options to use when creating a squashfs
+func GetDefaultSquashfsOptions() []string {
+	options := []string{"-b", "1024k", "-comp", "xz", "-Xbcj"}
+	// Set the filter based on arch for best compression results
+	if runtime.GOARCH == "arm64" {
+		options = append(options, "arm")
+	} else {
+		options = append(options, "x86")
+	}
+	return options
 }
