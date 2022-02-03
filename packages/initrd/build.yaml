@@ -7,10 +7,10 @@ requires:
   version: ">=0"
 - name: "immutable-rootfs"
   category: "system"
-  version: ">=0"
+  version: ">0.3-1"
 - name: "cos-setup"
   category: "system"
-  version: ">=0"
+  version: ">0.6.1"
 
 copy:
 # elemental is required in module-setup and embedded in the initramfs. 
