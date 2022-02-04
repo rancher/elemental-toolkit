@@ -17,16 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"os"
 )
 
-var _ = Describe("pull-image", func() {
-	Context("execution", func() {
-
-		// This requires elevated perms
-		XIt("executes command correctly", func() {
+var _ = Describe("pull-image", Label("pull-image", "cmd"), func() {
+	Describe("execution", func() {
+		It("executes command correctly", Label("root"), func() {
 			d, err := os.MkdirTemp("", "elemental")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(d)
@@ -39,14 +37,14 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("fails when image is missing", func() {
+		It("fails when image is missing", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"pull-image",
 			)
 			Expect(err).To(HaveOccurred())
 		})
-		It("fails when destination is missing", func() {
+		It("fails when destination is missing", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"pull-image",
@@ -54,7 +52,7 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).To(HaveOccurred())
 		})
-		It("fails when image is not an image", func() {
+		It("fails when image is not an image", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"pull-image",
@@ -63,7 +61,7 @@ var _ = Describe("pull-image", func() {
 			)
 			Expect(err).To(HaveOccurred())
 		})
-		It("fails when destination does not exists", func() {
+		It("fails when destination does not exists", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"pull-image",

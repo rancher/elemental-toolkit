@@ -19,13 +19,13 @@ package cmd
 import (
 	"bytes"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cloud-init", func() {
-	Context("execution", func() {
-		When("invoked with inline yaml", func() {
+var _ = Describe("cloud-init", Label("cloud-init", "cmd"), func() {
+	Describe("execution", func() {
+		When("invoked with inline yaml", Label("inline", "yaml"), func() {
 			buf := new(bytes.Buffer)
 
 			BeforeEach(func() {
@@ -47,7 +47,7 @@ var _ = Describe("cloud-init", func() {
 				Expect(out).To(ContainSubstring("foobarz"))
 			})
 
-			It("fails when a malformed yaml is given", func() {
+			It("fails when a malformed yaml is given", Label("args"), func() {
 				_, _, err := executeCommandC(
 					rootCmd,
 					"cloud-init",
@@ -59,7 +59,7 @@ var _ = Describe("cloud-init", func() {
 				Expect(err).To(HaveOccurred())
 			})
 
-			It("ignores empty input", func() {
+			It("ignores empty input", Label("args"), func() {
 				_, _, err := executeCommandC(
 					rootCmd,
 					"cloud-init",

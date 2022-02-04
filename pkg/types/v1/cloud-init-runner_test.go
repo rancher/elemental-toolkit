@@ -26,13 +26,13 @@ import (
 	. "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/twpayne/go-vfs/vfst"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 // unit test stolen from yip
-var _ = Describe("CloudRunner", func() {
-	Context("loading yaml files", func() {
+var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
+	Describe("loading yaml files", func() {
 		logger := logrus.New()
 		logger.SetOutput(ioutil.Discard)
 

@@ -18,12 +18,12 @@ package cmd
 
 import (
 	"bytes"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Upgrade", func() {
-	It("Returns error if both --docker-image and --directory flags are used", func() {
+var _ = Describe("Upgrade", Label("upgrade", "cmd", "systemctl"), func() {
+	It("Returns error if both --docker-image and --directory flags are used", Label("flags"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)

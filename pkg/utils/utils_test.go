@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -47,7 +47,7 @@ func TestCommonSuite(t *testing.T) {
 	RunSpecs(t, "Elemental utils suite")
 }
 
-var _ = Describe("Utils", func() {
+var _ = Describe("Utils", Label("utils"), func() {
 	var config *v1.RunConfig
 	var runner v1.Runner
 	var logger v1.Logger
@@ -73,7 +73,7 @@ var _ = Describe("Utils", func() {
 			v1.WithClient(client),
 		)
 	})
-	Context("Chroot", func() {
+	Describe("Chroot", Label("chroot"), func() {
 		var chroot *utils.Chroot
 		BeforeEach(func() {
 			chroot = utils.NewChroot(
@@ -81,7 +81,7 @@ var _ = Describe("Utils", func() {
 				config,
 			)
 		})
-		Context("on success", func() {
+		Describe("on success", func() {
 			It("command should be called in the chroot", func() {
 				_, err := chroot.Run("chroot-command")
 				Expect(err).To(BeNil())
@@ -98,7 +98,7 @@ var _ = Describe("Utils", func() {
 				Expect(err).To(BeNil())
 			})
 		})
-		Context("on failure", func() {
+		Describe("on failure", func() {
 			It("should return error if chroot-command fails", func() {
 				runner := runner.(*v1mock.FakeRunner)
 				runner.ErrorOnCommand = true
@@ -120,13 +120,13 @@ var _ = Describe("Utils", func() {
 				Expect(syscall.WasChrootCalledWith("/whatever")).To(BeTrue())
 				Expect(err.Error()).To(ContainSubstring("chroot error"))
 			})
-			It("should return error if failed to mount on prepare", func() {
+			It("should return error if failed to mount on prepare", Label("mount"), func() {
 				mounter.ErrorOnMount = true
 				_, err := chroot.Run("chroot-command")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("mount error"))
 			})
-			It("should return error if failed to unmount on close", func() {
+			It("should return error if failed to unmount on close", Label("unmount"), func() {
 				mounter.ErrorOnUnmount = true
 				_, err := chroot.Run("chroot-command")
 				Expect(err).ToNot(BeNil())
@@ -134,7 +134,7 @@ var _ = Describe("Utils", func() {
 			})
 		})
 	})
-	Context("TestBootedFrom", func() {
+	Describe("TestBootedFrom", Label("BootedFrom"), func() {
 		It("returns true if we are booting from label FAKELABEL", func() {
 			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte("")
@@ -146,7 +146,7 @@ var _ = Describe("Utils", func() {
 			Expect(utils.BootedFrom(runner, "FAKELABEL")).To(BeTrue())
 		})
 	})
-	Context("GetDeviceByLabel", func() {
+	Describe("GetDeviceByLabel", Label("GetDeviceByLabel"), func() {
 		var runner *v1mock.TestRunnerV2
 		var cmds [][]string
 		BeforeEach(func() {
@@ -176,7 +176,7 @@ var _ = Describe("Utils", func() {
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
 		})
 	})
-	Context("CosignVerify", func() {
+	Describe("CosignVerify", Label("cosign"), func() {
 		var runner *v1mock.TestRunnerV2
 		BeforeEach(func() {
 			runner = v1mock.NewTestRunnerV2()
@@ -198,7 +198,7 @@ var _ = Describe("Utils", func() {
 			Expect(err).NotTo(BeNil())
 		})
 	})
-	Context("Reboot and shutdown", func() {
+	Describe("Reboot and shutdown", Label("reboot", "shutdown"), func() {
 		var runner *v1mock.TestRunnerV2
 		BeforeEach(func() {
 			runner = v1mock.NewTestRunnerV2()
@@ -218,7 +218,7 @@ var _ = Describe("Utils", func() {
 			Expect(duration.Seconds() >= 3).To(BeTrue())
 		})
 	})
-	Context("GetFullDeviceByLabel", func() {
+	Describe("GetFullDeviceByLabel", Label("GetFullDeviceByLabel", "partition", "types"), func() {
 		var runner *v1mock.TestRunnerV2
 		var cmds [][]string
 		BeforeEach(func() {
@@ -304,7 +304,7 @@ var _ = Describe("Utils", func() {
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
 		})
 	})
-	Context("CopyFile", func() {
+	Describe("CopyFile", Label("CopyFile"), func() {
 		It("Copies source to target", func() {
 			fs.Create("/some/file")
 			_, err := fs.Stat("/some/otherfile")
@@ -328,7 +328,7 @@ var _ = Describe("Utils", func() {
 			Expect(err).NotTo(BeNil())
 		})
 	})
-	Context("CreateDirStructure", func() {
+	Describe("CreateDirStructure", Label("CreateDirStructure"), func() {
 		It("Creates essential directories", func() {
 			Expect(utils.CreateDirStructure(fs, "/my/root")).To(BeNil())
 			for _, dir := range []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
@@ -341,7 +341,7 @@ var _ = Describe("Utils", func() {
 			Expect(utils.CreateDirStructure(fs, "/my/root")).NotTo(BeNil())
 		})
 	})
-	Context("SyncData", func() {
+	Describe("SyncData", Label("SyncData"), func() {
 		It("Copies all files from source to target", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
@@ -386,8 +386,8 @@ var _ = Describe("Utils", func() {
 			Expect(utils.SyncData("/welp", destDir)).NotTo(BeNil())
 		})
 	})
-	Context("Grub", func() {
-		Context("Install", func() {
+	Describe("Grub", Label("grub"), func() {
+		Describe("Install", func() {
 			BeforeEach(func() {
 				config.Target = "/dev/test"
 			})
@@ -418,7 +418,7 @@ var _ = Describe("Utils", func() {
 				Expect(targetGrub).To(ContainSubstring("console=tty1"))
 
 			})
-			It("installs with efi on efi system", func() {
+			It("installs with efi on efi system", Label("efi"), func() {
 				buf := &bytes.Buffer{}
 				logger := log.New()
 				logger.SetOutput(buf)
@@ -436,7 +436,7 @@ var _ = Describe("Utils", func() {
 				Expect(buf.String()).To(ContainSubstring("--efi-directory"))
 				Expect(buf.String()).To(ContainSubstring("Installing grub efi for arch x86_64"))
 			})
-			It("installs with efi with --force-efi", func() {
+			It("installs with efi with --force-efi", Label("efi"), func() {
 				buf := &bytes.Buffer{}
 				logger := log.New()
 				logger.SetOutput(buf)
@@ -480,7 +480,7 @@ var _ = Describe("Utils", func() {
 			})
 
 		})
-		Context("SetPersistentVariables", func() {
+		Describe("SetPersistentVariables", func() {
 			It("Sets the grub environment file", func() {
 				runner := v1mock.NewTestRunnerV2()
 				config.Runner = runner
@@ -507,7 +507,7 @@ var _ = Describe("Utils", func() {
 			})
 		})
 	})
-	Context("RunStage", func() {
+	Describe("RunStage", Label("RunStage"), func() {
 		BeforeEach(func() {
 			// Use a different config with a buffer for logger, so we can check the output
 			// We also use the real fs
@@ -523,7 +523,7 @@ var _ = Describe("Utils", func() {
 				v1.WithClient(client),
 			)
 		})
-		It("fails if strict mode is enabled", func() {
+		It("fails if strict mode is enabled", Label("strict"), func() {
 			config.Logger.SetLevel(log.DebugLevel)
 			config.Strict = true
 			r := v1mock.NewTestRunnerV2()
@@ -531,7 +531,7 @@ var _ = Describe("Utils", func() {
 			config.Runner = r
 			Expect(utils.RunStage("c3po", config)).ToNot(BeNil())
 		})
-		It("does not fail but prints errors by default", func() {
+		It("does not fail but prints errors by default", Label("strict"), func() {
 			config.Logger.SetLevel(log.DebugLevel)
 			config.Strict = false
 			r := v1mock.NewTestRunnerV2()
@@ -585,7 +585,7 @@ var _ = Describe("Utils", func() {
 			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
 		})
 	})
-	Context("CreateSquashFS", func() {
+	Describe("CreateSquashFS", Label("CreateSquashFS"), func() {
 		It("runs with no options if none given", func() {
 			runner := v1mock.NewTestRunnerV2()
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
@@ -614,7 +614,7 @@ var _ = Describe("Utils", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Context("CommandExists", func() {
+	Describe("CommandExists", Label("CommandExists"), func() {
 		It("returns false if command does not exists", func() {
 			exists := utils.CommandExists("THISCOMMANDSHOULDNOTBETHERECOMEON")
 			Expect(exists).To(BeFalse())

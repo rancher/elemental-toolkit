@@ -22,12 +22,11 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/mudler/luet/pkg/api/core/context"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
-	. "github.com/rancher-sandbox/elemental/tests"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -43,7 +42,6 @@ const partTmpl = `
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	//config.DefaultReporterConfig.SlowSpecThreshold = 10
 	RunSpecs(t, "Actions test suite")
 }
 
@@ -75,7 +73,7 @@ var _ = Describe("Actions", func() {
 			v1.WithCloudInitRunner(cloudInit),
 		)
 	})
-	Context("Install Action", func() {
+	Describe("Install Action", Label("install"), func() {
 		var install *action.InstallAction
 		var device, activeTree, activeMount, cmdFail string
 		var activeSize uint
@@ -137,7 +135,7 @@ var _ = Describe("Actions", func() {
 			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
 		})
 
-		It("Successfully installs despite hooks failure", func() {
+		It("Successfully installs despite hooks failure", Label("hooks"), func() {
 			cloudInit.Error = true
 			config.Target = device
 			config.ActiveImage.Size = activeSize
@@ -148,7 +146,7 @@ var _ = Describe("Actions", func() {
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})
 
-		It("Successfully installs from ISO", func() {
+		It("Successfully installs from ISO", Label("iso"), func() {
 			fs.Create("cOS.iso")
 			config.Iso = "cOS.iso"
 			config.Target = device
@@ -158,7 +156,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).To(BeNil())
 		})
 
-		It("Successfully installs without formatting despite detecting a previous installation", func() {
+		It("Successfully installs without formatting despite detecting a previous installation", Label("no-format", "disk"), func() {
 			config.NoFormat = true
 			config.Force = true
 			config.Target = device
@@ -168,7 +166,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).To(BeNil())
 		})
 
-		It("Successfully installs a docker image", func() {
+		It("Successfully installs a docker image", Label("docker"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -180,7 +178,7 @@ var _ = Describe("Actions", func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
-		It("Successfully installs and adds remote cloud-config", func() {
+		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -190,25 +188,25 @@ var _ = Describe("Actions", func() {
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
 
-		It("Fails if disk doesn't exist", func() {
+		It("Fails if disk doesn't exist", Label("disk"), func() {
 			config.Target = "nonexistingdisk"
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails if some hook fails and strict is set", func() {
+		It("Fails if some hook fails and strict is set", Label("strict"), func() {
 			config.Target = device
 			config.Strict = true
 			cloudInit.Error = true
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails to install from ISO if the ISO is not found", func() {
+		It("Fails to install from ISO if the ISO is not found", Label("iso"), func() {
 			config.Iso = "nonexistingiso"
 			config.Target = device
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails to install without formatting if a previous install is detected", func() {
+		It("Fails to install without formatting if a previous install is detected", Label("no-format", "disk"), func() {
 			config.NoFormat = true
 			config.Force = false
 			config.Target = device
@@ -218,13 +216,13 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails to mount partitions", func() {
+		It("Fails to mount partitions", Label("disk", "mount"), func() {
 			config.Target = device
 			mounter.ErrorOnMount = true
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails on parted errors", func() {
+		It("Fails on parted errors", Label("disk", "partitions"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -233,7 +231,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails to unmount partitions", func() {
+		It("Fails to unmount partitions", Label("disk", "partitions"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -242,13 +240,13 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails to create a filesystem image", func() {
+		It("Fails to create a filesystem image", Label("disk", "image"), func() {
 			config.Target = device
 			config.Fs = afero.NewReadOnlyFs(fs)
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails if luet fails to unpack image", func() {
+		It("Fails if luet fails to unpack image", Label("image", "luet", "unpack"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -261,7 +259,7 @@ var _ = Describe("Actions", func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
-		It("Fails if requested remote cloud config can't be downloaded", func() {
+		It("Fails if requested remote cloud config can't be downloaded", Label("cloud-config"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -272,7 +270,7 @@ var _ = Describe("Actions", func() {
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
 
-		It("Fails on grub2-install errors", func() {
+		It("Fails on grub2-install errors", Label("grub"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -281,7 +279,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails copying Passive image", func() {
+		It("Fails copying Passive image", Label("copy", "active"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -290,7 +288,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 
-		It("Fails setting the grub default entry", func() {
+		It("Fails setting the grub default entry", Label("grub"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
@@ -299,7 +297,7 @@ var _ = Describe("Actions", func() {
 			Expect(install.Run()).NotTo(BeNil())
 		})
 	})
-	Context("Upgrade Action", func() {
+	Describe("Upgrade Action", Label("upgrade"), func() {
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
 		var luet *v1.Luet
@@ -358,7 +356,7 @@ var _ = Describe("Actions", func() {
 			// Make sure is a cloud init error!
 			Expect(err.Error()).To(ContainSubstring("cloud init"))
 		})
-		Context(fmt.Sprintf("Booting from %s", constants.ActiveLabel), func() {
+		Describe(fmt.Sprintf("Booting from %s", constants.ActiveLabel), Label("active_label"), func() {
 			BeforeEach(func() {
 				runner = v1mock.NewTestRunnerV2()
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -394,7 +392,7 @@ var _ = Describe("Actions", func() {
 				_ = fs.RemoveAll(activeImg)
 				_ = fs.RemoveAll(passiveImg)
 			})
-			RunTestOnlyWithRoot("Successfully upgrades from docker image", func() {
+			It("Successfully upgrades from docker image", Label("docker", "root"), func() {
 				config.DockerImg = "alpine"
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -414,7 +412,6 @@ var _ = Describe("Actions", func() {
 				// Image size should be the config.ImgSize as its truncated from the upgrade
 				Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
 				Expect(info.IsDir()).To(BeFalse())
-				fmt.Print(info.Sys())
 
 				// Should have backed up active to passive
 				info, err = fs.Stat(passiveImg)
@@ -431,16 +428,16 @@ var _ = Describe("Actions", func() {
 				_, err = fs.Stat(transitionImg)
 				Expect(err).To(HaveOccurred())
 			})
-			RunTestOnlyWithRoot("Successfully upgrades from directory", func() {
-				config.DirectoryUpgrade = "/tmp/upgradesource"
+			It("Successfully upgrades from directory", Label("directory", "root"), func() {
+				config.DirectoryUpgrade, _ = os.MkdirTemp("", "elemental")
 				// Create the dir on real os as rsync works on the real os
-				_ = os.MkdirAll(config.DirectoryUpgrade, os.ModeDir)
 				defer os.RemoveAll(config.DirectoryUpgrade)
 				// create a random file on it
-				_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+				err := os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+				Expect(err).ToNot(HaveOccurred())
 
 				upgrade = action.NewUpgradeAction(config)
-				err := upgrade.Run()
+				err = upgrade.Run()
 				Expect(err).ToNot(HaveOccurred())
 
 				// Not much that we can create here as the dir copy was done on the real os, but we do the rest of the ops on a mem one
@@ -467,12 +464,12 @@ var _ = Describe("Actions", func() {
 				Expect(err).To(HaveOccurred())
 
 			})
-			XIt("Successfully upgrades from channel upgrade", func() {})
-			XIt("Successfully upgrades with cosign", func() {})
-			XIt("Successfully upgrades with mtree", func() {})
-			XIt("Successfully upgrades with strict", func() {})
+			It("Successfully upgrades from channel upgrade", Pending, Label("channel", "root"), func() {})
+			It("Successfully upgrades with cosign", Pending, Label("channel", "cosign", "root"), func() {})
+			It("Successfully upgrades with mtree", Pending, Label("channel", "mtree", "root"), func() {})
+			It("Successfully upgrades with strict", Pending, Label("channel", "strict", "root"), func() {})
 		})
-		Context(fmt.Sprintf("Booting from %s", constants.PassiveLabel), func() {
+		Describe(fmt.Sprintf("Booting from %s", constants.PassiveLabel), Label("passive_label"), func() {
 			BeforeEach(func() {
 				runner = v1mock.NewTestRunnerV2()
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -502,7 +499,7 @@ var _ = Describe("Actions", func() {
 				_ = fs.RemoveAll(activeImg)
 				_ = fs.RemoveAll(passiveImg)
 			})
-			RunTestOnlyWithRoot("does not backup active img to passive", func() {
+			It("does not backup active img to passive", Label("docker", "root"), func() {
 				config.DockerImg = "alpine"
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -539,11 +536,11 @@ var _ = Describe("Actions", func() {
 
 			})
 		})
-		Context(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), func() {
+		Describe(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), Label("recovery_label"), func() {
 			BeforeEach(func() {
 				config.RecoveryUpgrade = true
 			})
-			Context("Using squashfs", func() {
+			Describe("Using squashfs", Label("squashfs"), func() {
 				BeforeEach(func() {
 					runner = v1mock.NewTestRunnerV2()
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -576,7 +573,7 @@ var _ = Describe("Actions", func() {
 					_ = fs.RemoveAll(activeImg)
 					_ = fs.RemoveAll(passiveImg)
 				})
-				RunTestOnlyWithRoot("Successfully upgrades recovery from docker image", func() {
+				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImgSquash)
 					Expect(err).ToNot(HaveOccurred())
@@ -605,7 +602,7 @@ var _ = Describe("Actions", func() {
 					Expect(err).To(HaveOccurred())
 
 				})
-				RunTestOnlyWithRoot("Successfully upgrades recovery from directory", func() {
+				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
 					config.DirectoryUpgrade = "/tmp/upgradesource"
 					// Create the dir on real os as rsync works on the real os
 					_ = os.MkdirAll(config.DirectoryUpgrade, os.ModeDir)
@@ -629,9 +626,9 @@ var _ = Describe("Actions", func() {
 					Expect(err).To(HaveOccurred())
 
 				})
-				XIt("Successfully upgrades recovery from channel upgrade", func() {})
+				It("Successfully upgrades recovery from channel upgrade", Pending, Label("channel", "root"), func() {})
 			})
-			Context("Not using squashfs", func() {
+			Describe("Not using squashfs", Label("non-squashfs"), func() {
 				BeforeEach(func() {
 					runner = v1mock.NewTestRunnerV2()
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -661,7 +658,7 @@ var _ = Describe("Actions", func() {
 					_ = fs.RemoveAll(passiveImg)
 					_ = fs.RemoveAll(recoveryImg)
 				})
-				RunTestOnlyWithRoot("Successfully upgrades recovery from docker image", func() {
+				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
@@ -699,8 +696,8 @@ var _ = Describe("Actions", func() {
 					}
 
 				})
-				XIt("Successfully upgrades recovery from directory", func() {})
-				XIt("Successfully upgrades recovery from channel upgrade", func() {})
+				It("Successfully upgrades recovery from directory", Pending, Label("directory", "root"), func() {})
+				It("Successfully upgrades recovery from channel upgrade", Pending, Label("channel", "root"), func() {})
 			})
 		})
 	})

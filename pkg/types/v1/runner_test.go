@@ -17,13 +17,13 @@ limitations under the License.
 package v1_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 )
 
-var _ = Describe("Runner", func() {
+var _ = Describe("Runner", Label("types", "runner"), func() {
 	It("Runs commands on the real Runner", func() {
 		r := v1.RealRunner{}
 		_, err := r.Run("pwd")

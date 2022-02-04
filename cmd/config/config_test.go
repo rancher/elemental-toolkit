@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -32,20 +32,20 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("Config", func() {
-	Context("Build config", func() {
-		It("values empty if config path not valid", func() {
+	Describe("Build config", Label("config", "build"), func() {
+		It("values empty if config path not valid", Label("path", "values"), func() {
 			cfg, err := ReadConfigBuild("/none/")
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("label")).To(Equal(""))
 			Expect(cfg.Label).To(Equal(""))
 		})
-		It("values filled if config path valid", func() {
+		It("values filled if config path valid", Label("path", "values"), func() {
 			cfg, err := ReadConfigBuild("config/")
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("label")).To(Equal("COS_LIVE"))
 			Expect(cfg.Label).To(Equal("COS_LIVE"))
 		})
-		It("overrides values with env values", func() {
+		It("overrides values with env values", Label("env", "values"), func() {
 			_ = os.Setenv("ELEMENTAL_LABEL", "environment")
 			cfg, err := ReadConfigBuild("config/")
 			Expect(err).To(BeNil())
@@ -56,28 +56,28 @@ var _ = Describe("Config", func() {
 		})
 
 	})
-	Context("Run config", func() {
+	Describe("Run config", Label("config", "run"), func() {
 		var mounter mount.Interface
 
 		BeforeEach(func() {
 			mounter = &mount.FakeMounter{}
 		})
 
-		It("values empty if config does not exist", func() {
+		It("values empty if config does not exist", Label("path", "values"), func() {
 			cfg, err := ReadConfigRun("/none/", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("file")
 			Expect(source).To(Equal(""))
 			Expect(cfg.Source).To(Equal(""))
 		})
-		It("values empty if config value is empty", func() {
+		It("values empty if config value is empty", Label("path", "values"), func() {
 			cfg, err := ReadConfigRun("", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("file")
 			Expect(source).To(Equal(""))
 			Expect(cfg.Source).To(Equal(""))
 		})
-		It("overrides values with config files", func() {
+		It("overrides values with config files", Label("path", "values"), func() {
 			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
 			source := viper.GetString("target")
@@ -85,7 +85,7 @@ var _ = Describe("Config", func() {
 			Expect(source).To(Equal("extra"))
 			Expect(cfg.Target).To(Equal("extra"))
 		})
-		It("overrides values with env values", func() {
+		It("overrides values with env values", Label("path", "values"), func() {
 			_ = os.Setenv("ELEMENTAL_TARGET", "environment")
 			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())
@@ -94,7 +94,7 @@ var _ = Describe("Config", func() {
 			Expect(source).To(Equal("environment"))
 			Expect(cfg.Target).To(Equal("environment"))
 		})
-		It("sets log level debug based on debug flag", func() {
+		It("sets log level debug based on debug flag", Label("flag", "values"), func() {
 			// Default value
 			cfg, err := ReadConfigRun("config/", mounter)
 			Expect(err).To(BeNil())

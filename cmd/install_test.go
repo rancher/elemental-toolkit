@@ -18,12 +18,12 @@ package cmd
 
 import (
 	"bytes"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Install", func() {
-	It("outputs usage if no DEVICE param", func() {
+var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
+	It("outputs usage if no DEVICE param", Label("args"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
@@ -34,7 +34,7 @@ var _ = Describe("Install", func() {
 		Expect(err).ToNot(BeNil())
 		Expect(buf).To(ContainSubstring("Usage:"))
 	})
-	It("Errors out setting reboot and poweroff at the same time", func() {
+	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
@@ -46,7 +46,7 @@ var _ = Describe("Install", func() {
 		Expect(buf).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("Invalid options"))
 	})
-	It("Errors out setting consign-key without setting cosign", func() {
+	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)

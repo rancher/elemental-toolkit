@@ -18,8 +18,7 @@ package partitioner_test
 
 import (
 	"errors"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
 	mocks "github.com/rancher-sandbox/elemental/tests/mocks"
@@ -36,16 +35,15 @@ const printOutput = `BYT;
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	config.DefaultReporterConfig.SlowSpecThreshold = 10
 	RunSpecs(t, "Partitioner test suite")
 }
 
-var _ = Describe("Partitioner", func() {
+var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func() {
 	var runner *mocks.TestRunnerV2
 	BeforeEach(func() {
 		runner = mocks.NewTestRunnerV2()
 	})
-	Context("Parted tests", func() {
+	Describe("Parted tests", Label("parted"), func() {
 		var pc *part.PartedCall
 		BeforeEach(func() {
 			pc = part.NewPartedCall("/some/dev", runner)
@@ -176,7 +174,7 @@ var _ = Describe("Partitioner", func() {
 			Expect(parts[1].StartS).To(Equal(uint(98304)))
 		})
 	})
-	Context("Mkfs tests", func() {
+	Describe("Mkfs tests", Label("mkfs", "filesystem"), func() {
 		It("Successfully formats a partition with xfs", func() {
 			mkfs := part.NewMkfsCall("/some/device", "xfs", "OEM", runner)
 			_, err := mkfs.Apply()
@@ -197,7 +195,7 @@ var _ = Describe("Partitioner", func() {
 			Expect(err).NotTo(BeNil())
 		})
 	})
-	Context("Disk tests", func() {
+	Describe("Disk tests", Label("mkfs", "filesystem"), func() {
 		var dev *part.Disk
 		var cmds [][]string
 		var printCmd []string
@@ -211,7 +209,7 @@ var _ = Describe("Partitioner", func() {
 				"unit", "s", "print",
 			}
 		})
-		Context("Load data without changes", func() {
+		Describe("Load data without changes", func() {
 			BeforeEach(func() {
 				cmds = [][]string{printCmd}
 				runner.ReturnValue = []byte(printOutput)
@@ -240,7 +238,7 @@ var _ = Describe("Partitioner", func() {
 				Expect(dev.GetLabel()).To(Equal("msdos"))
 			})
 		})
-		Context("Modify disk", func() {
+		Describe("Modify disk", func() {
 			It("Fails to create an unsupported partition table label", func() {
 				runner.ReturnValue = []byte(printOutput)
 				_, err := dev.NewPartitionTable("invalidLabel")
@@ -334,7 +332,7 @@ var _ = Describe("Partitioner", func() {
 				runner.ReturnError = errors.New("some error")
 				Expect(dev.WipeFsOnPartition(1)).NotTo(BeNil())
 			})
-			Context("Expanding partitions", func() {
+			Describe("Expanding partitions", func() {
 				var fileSystem string
 				BeforeEach(func() {
 					cmds = [][]string{

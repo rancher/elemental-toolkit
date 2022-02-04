@@ -18,13 +18,13 @@ package cmd
 
 import (
 	"bytes"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"os"
 )
 
-var _ = Describe("run-stage", func() {
-	Context("execution", func() {
+var _ = Describe("run-stage", Label("run-stage", "cmd"), func() {
+	When("execution", func() {
 		buf := new(bytes.Buffer)
 
 		BeforeEach(func() {
@@ -44,9 +44,8 @@ var _ = Describe("run-stage", func() {
 			Expect(out).To(ContainSubstring("test.before"))
 			Expect(out).To(ContainSubstring("test.after"))
 		})
-
 		// This requires fixing the env vars, otherwise it wont work
-		XIt("picks extra paths correctly", func() {
+		It("picks extra paths correctly", Pending, Label("env"), func() {
 			d, _ := os.MkdirTemp("", "elemental")
 			defer os.RemoveAll(d)
 			_ = os.Setenv("ELEMENTAL_CLOUD_INIT_PATHS", d)
@@ -58,8 +57,7 @@ var _ = Describe("run-stage", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(ContainSubstring(d))
 		})
-
-		It("fails when stage is missing", func() {
+		It("fails when stage is missing", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"run-stage",

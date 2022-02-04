@@ -18,14 +18,14 @@ package v1_test
 
 import (
 	"bytes"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"reflect"
 )
 
-var _ = Describe("logger", func() {
+var _ = Describe("logger", Label("log", "logger", "types"), func() {
 	It("TestNewLogger returns a logger interface", func() {
 		l1 := v1.NewLogger()
 		l2 := logrus.New()

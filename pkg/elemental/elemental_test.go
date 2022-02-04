@@ -19,8 +19,7 @@ package elemental_test
 import (
 	"errors"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
@@ -40,11 +39,10 @@ const partTmpl = `
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	config.DefaultReporterConfig.SlowSpecThreshold = 11
 	RunSpecs(t, "Elemental test suite")
 }
 
-var _ = Describe("Elemental", func() {
+var _ = Describe("Elemental", Label("elemental"), func() {
 	var config *v1.RunConfig
 	var runner v1.Runner
 	var logger v1.Logger
@@ -70,7 +68,7 @@ var _ = Describe("Elemental", func() {
 		)
 	})
 
-	Context("MountPartitions", func() {
+	Describe("MountPartitions", Label("MountPartitions", "disk", "partition", "mount"), func() {
 		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
@@ -109,7 +107,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("UnmountPartitions", func() {
+	Describe("UnmountPartitions", Label("UnmountPartitions", "disk", "partition", "unmount"), func() {
 		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
@@ -137,7 +135,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("MountImage", func() {
+	Describe("MountImage", Label("MountImage", "mount", "image"), func() {
 		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
@@ -153,13 +151,13 @@ var _ = Describe("Elemental", func() {
 			Expect(config.ActiveImage.LoopDevice).To(Equal("/dev/loop"))
 		})
 
-		It("Fails to set a loop device", func() {
+		It("Fails to set a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to set a loop device")
 			Expect(el.MountImage(&config.ActiveImage)).NotTo(BeNil())
 			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
 		})
 
-		It("Fails to mount a loop device", func() {
+		It("Fails to mount a loop device", Label("loop"), func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
@@ -168,7 +166,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("UnmountImage", func() {
+	Describe("UnmountImage", Label("MountImage", "mount", "image"), func() {
 		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
@@ -192,13 +190,13 @@ var _ = Describe("Elemental", func() {
 			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
 		})
 
-		It("Fails to unset a loop device", func() {
+		It("Fails to unset a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to unset a loop device")
 			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
 		})
 	})
 
-	Context("CreateFileSystemImage", func() {
+	Describe("CreateFileSystemImage", Label("CreateFileSystemImage", "image"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
 			el = elemental.NewElemental(config)
@@ -215,7 +213,7 @@ var _ = Describe("Elemental", func() {
 			Expect(stat.Size()).To(Equal(int64(32 * 1024 * 1024)))
 		})
 
-		It("Fails formatting a file system image", func() {
+		It("Fails formatting a file system image", Label("format"), func() {
 			runner := runner.(*v1mock.FakeRunner)
 			runner.ErrorOnCommand = true
 			_, err := fs.Stat(config.ActiveImage.File)
@@ -227,7 +225,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("PartitionAndFormatDevice", func() {
+	Describe("PartitionAndFormatDevice", Label("PartitionAndFormatDevice", "partition", "format"), func() {
 		var el *elemental.Elemental
 		var dev *part.Disk
 		var runner *v1mock.TestRunnerV2
@@ -251,7 +249,7 @@ var _ = Describe("Elemental", func() {
 			)
 		})
 
-		Context("Successful run", func() {
+		Describe("Successful run", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			var efiPartCmds, partCmds, biosPartCmds [][]string
 			BeforeEach(func() {
@@ -341,7 +339,7 @@ var _ = Describe("Elemental", func() {
 			})
 		})
 
-		Context("Run with failures", func() {
+		Describe("Run with failures", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			BeforeEach(func() {
 				partNum, printOut = 0, printOutput
@@ -437,7 +435,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("CopyActive", func() {
+	Describe("CopyActive", Label("CopyActive", "active_label"), func() {
 		It("Copies all files from source to target", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
@@ -455,7 +453,7 @@ var _ = Describe("Elemental", func() {
 			c := elemental.NewElemental(config)
 			Expect(c.CopyActive()).ToNot(BeNil())
 		})
-		It("Unpacks a docker image to target", func() {
+		It("Unpacks a docker image to target", Label("docker"), func() {
 			config.DockerImg = "myimage"
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
@@ -463,7 +461,7 @@ var _ = Describe("Elemental", func() {
 			Expect(c.CopyActive()).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
-		It("Unpacks a docker image to target with cosign validation", func() {
+		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.DockerImg = "myimage"
 			runner := v1mock.NewTestRunnerV2()
 			config.Runner = runner
@@ -475,7 +473,7 @@ var _ = Describe("Elemental", func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
 		})
-		It("Fails cosign validation", func() {
+		It("Fails cosign validation", Label("cosign"), func() {
 			config.DockerImg = "myimage"
 			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnError = errors.New("cosign error")
@@ -485,7 +483,7 @@ var _ = Describe("Elemental", func() {
 			Expect(c.CopyActive()).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
 		})
-		It("Fails to unpack a docker image to target", func() {
+		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			config.DockerImg = "myimage"
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
@@ -495,9 +493,9 @@ var _ = Describe("Elemental", func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 	})
-	Context("NoFormat", func() {
-		Context("Labels exist", func() {
-			Context("Force is disabled", func() {
+	Describe("NoFormat", Label("NoFormat", "format"), func() {
+		Describe("Labels exist", func() {
+			Describe("Force is disabled", func() {
 				It("Should error out", func() {
 					config.NoFormat = true
 					runner := v1mock.NewTestRunnerV2()
@@ -509,7 +507,7 @@ var _ = Describe("Elemental", func() {
 					Expect(err.Error()).To(ContainSubstring("There is already an active deployment"))
 				})
 			})
-			Context("Force is enabled", func() {
+			Describe("Force is enabled", func() {
 				It("Should not error out", func() {
 					config.NoFormat = true
 					config.Force = true
@@ -522,7 +520,7 @@ var _ = Describe("Elemental", func() {
 				})
 			})
 		})
-		Context("Labels dont exist", func() {
+		Describe("Labels dont exist", func() {
 			It("Should not error out", func() {
 				config.NoFormat = true
 				runner := v1mock.NewTestRunnerV2()
@@ -534,7 +532,7 @@ var _ = Describe("Elemental", func() {
 			})
 		})
 	})
-	Context("SelinuxRelabel", func() {
+	Describe("SelinuxRelabel", Label("SelinuxRelabel", "selinux"), func() {
 		It("Works", func() {
 			c := elemental.NewElemental(config)
 			// This is actually failing but not sure we should return an error
@@ -544,7 +542,7 @@ var _ = Describe("Elemental", func() {
 			Expect(c.SelinuxRelabel("/", false)).To(BeNil())
 		})
 	})
-	Context("BootedFromSquash", func() {
+	Describe("BootedFromSquash", Label("BootedFromSquash", "squashfs"), func() {
 		It("Returns true if booted from squashfs", func() {
 			config.DigestSetup()
 			runner := v1mock.NewTestRunnerV2()
@@ -558,7 +556,7 @@ var _ = Describe("Elemental", func() {
 			Expect(e.BootedFromSquash()).To(BeFalse())
 		})
 	})
-	Context("GetIso", func() {
+	Describe("GetIso", Label("GetIso", "iso"), func() {
 		It("Modifies the IsoMnt var to point to the mounted iso", func() {
 			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
 			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
@@ -598,7 +596,7 @@ var _ = Describe("Elemental", func() {
 			Expect(err.Error()).To(ContainSubstring("mount error"))
 		})
 	})
-	Context("CloudConfig", func() {
+	Describe("CloudConfig", Label("CloudConfig", "cloud-config"), func() {
 		It("Copies the cloud config file", func() {
 			testString := "In a galaxy far far away..."
 			err := afero.WriteFile(fs, "config.yaml", []byte(testString), os.ModePerm)
@@ -618,8 +616,8 @@ var _ = Describe("Elemental", func() {
 			Expect(err).To(BeNil())
 		})
 	})
-	Context("GetUrl", func() {
-		It("Gets an http url", func() {
+	Describe("GetUrl", Label("GetUrl"), func() {
+		It("Gets an http url", Label("http"), func() {
 			e := elemental.NewElemental(config)
 			Expect(e.GetUrl("http://fake.com/file.txt", "/file.txt")).To(BeNil())
 			exists, err := afero.Exists(fs, "/file.txt")
@@ -635,9 +633,9 @@ var _ = Describe("Elemental", func() {
 			Expect(exists).To(BeTrue())
 		})
 	})
-	Context("CopyRecovery", func() {
-		Context("Non-Squashfs boot", func() {
-			Context(fmt.Sprintf("squash file %s exists", cnst.RecoverySquashFile), func() {
+	Describe("CopyRecovery", Label("CopyRecovery", "recovery_label"), func() {
+		Describe("Non-Squashfs boot", func() {
+			Describe(fmt.Sprintf("squash file %s exists", cnst.RecoverySquashFile), Label("squashfs"), func() {
 				It("should copy squash file", func() {
 					// Create recovery.squashfs file
 					squashfile := fmt.Sprintf("%s/%s", config.IsoMnt, cnst.RecoverySquashFile)
@@ -650,7 +648,7 @@ var _ = Describe("Elemental", func() {
 					Expect(err).To(BeNil())
 				})
 			})
-			Context(fmt.Sprintf("squash file %s does not exists", cnst.RecoverySquashFile), func() {
+			Describe(fmt.Sprintf("squash file %s does not exists", cnst.RecoverySquashFile), Label("non-squashfs"), func() {
 				It(fmt.Sprintf("should copy img file %s", cnst.ActiveImgFile), func() {
 					// Create active image file
 					imgfile := config.ActiveImage.File
@@ -665,7 +663,7 @@ var _ = Describe("Elemental", func() {
 			})
 
 		})
-		Context("Squashfs boot", func() {
+		Describe("Squashfs boot", func() {
 			It("should not do anything", func() {
 				config.DigestSetup()
 				runner := v1mock.NewTestRunnerV2()
@@ -681,7 +679,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("CopyPassive", func() {
+	Describe("CopyPassive", Label("CopyPassive", "passive_label"), func() {
 		var passImgFile string
 		BeforeEach(func() {
 			passImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
@@ -719,7 +717,7 @@ var _ = Describe("Elemental", func() {
 		})
 	})
 
-	Context("SetDefaultGrubEntry", func() {
+	Describe("SetDefaultGrubEntry", Label("SetDefaultGrubEntry", "grub"), func() {
 		It("Sets the default grub entry without issues", func() {
 			config.Partitions = append(config.Partitions, &v1.Partition{PLabel: cnst.StatePLabel})
 			el := elemental.NewElemental(config)

@@ -19,13 +19,13 @@ package v1_test
 import (
 	dockTypes "github.com/docker/docker/api/types"
 	context2 "github.com/mudler/luet/pkg/api/core/context"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"os"
 )
 
-var _ = Describe("Types", func() {
+var _ = Describe("Types", Label("luet", "types"), func() {
 	var luet *v1.Luet
 	var target string
 	BeforeEach(func() {
@@ -39,8 +39,8 @@ var _ = Describe("Types", func() {
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())
 	})
-	Context("Luet", func() {
-		It("Fails to unpack without root privileges", func() {
+	Describe("Luet", func() {
+		It("Fails to unpack without root privileges", Label("unpack"), func() {
 			image := "quay.io/costoolkit/releases-green:cloud-config-system-0.11-1"
 			Expect(luet.Unpack(target, image)).NotTo(BeNil())
 		})

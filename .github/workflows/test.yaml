@@ -13,10 +13,21 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.x
+          go-version: '^1.16'
+      - name: Deps
+        run: make test_deps
+      - name: Build
+        run: make build
       - name: Run tests
-        run: make test
+        run: |
+          sudo env "PATH=$PATH" make test_root
+          make test
+      - name: Merge coverage
+        run: |
+          echo "mode: atomic" > coverage.out
+          grep -v "mode: atomic" coverage.txt >> coverage.out
+          grep -v "mode: atomic" coverage_root.txt >> coverage.out
       - name: Codecov
-        uses: codecov/codecov-action@v2.1.0
+        uses: codecov/codecov-action@v2
         with:
-          file: coverage.txt
+          file: ./coverage.out
