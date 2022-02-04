@@ -123,7 +123,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(c.Mounter).To(Equal(mount.New(constants.MountBinary)))
 			})
 		})
-		Describe("PartitionList.GetByPLabel", Label("partition"), func() {
+		Describe("PartitionList.GetByName", Label("partition"), func() {
 			var c *v1.RunConfig
 
 			BeforeEach(func() {
@@ -139,12 +139,12 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			})
 			It("Finds a partition given a partition label", func() {
 				c.DigestSetup()
-				part := c.Partitions.GetByPLabel(constants.StatePLabel)
-				Expect(part.PLabel).To(Equal(constants.StatePLabel))
+				part := c.Partitions.GetByName(constants.StatePartName)
+				Expect(part.Name).To(Equal(constants.StatePartName))
 			})
 			It("Returns nil if requested partition label is not found", func() {
 				c.DigestSetup()
-				Expect(c.Partitions.GetByPLabel("whatever")).To(BeNil())
+				Expect(c.Partitions.GetByName("whatever")).To(BeNil())
 			})
 		})
 	})

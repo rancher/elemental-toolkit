@@ -719,7 +719,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 	Describe("SetDefaultGrubEntry", Label("SetDefaultGrubEntry", "grub"), func() {
 		It("Sets the default grub entry without issues", func() {
-			config.Partitions = append(config.Partitions, &v1.Partition{PLabel: cnst.StatePLabel})
+			config.Partitions = append(config.Partitions, &v1.Partition{Name: cnst.StatePartName})
 			el := elemental.NewElemental(config)
 			Expect(el.SetDefaultGrubEntry()).To(BeNil())
 		})

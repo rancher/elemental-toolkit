@@ -224,7 +224,7 @@ type RunConfig struct {
 type Partition struct {
 	Label      string
 	Size       uint
-	PLabel     string
+	Name       string
 	FS         string   `json:"FSTYPE,omitempty"`
 	Flags      []string `json:"PARTFLAGS,omitempty"`
 	MountPoint string
@@ -245,9 +245,9 @@ type Image struct {
 	LoopDevice string
 }
 
-func (pl PartitionList) GetByPLabel(label string) *Partition {
+func (pl PartitionList) GetByName(name string) *Partition {
 	for _, p := range pl {
-		if p.PLabel == label {
+		if p.Name == name {
 			return p
 		}
 	}
@@ -267,7 +267,7 @@ func (r *RunConfig) setupStyle() {
 		part = &Partition{
 			Label:      cnst.EfiLabel,
 			Size:       cnst.EfiSize,
-			PLabel:     cnst.EfiPLabel,
+			Name:       cnst.EfiPartName,
 			FS:         cnst.EfiFs,
 			MountPoint: cnst.EfiDir,
 			Flags:      []string{ESP},
@@ -279,7 +279,7 @@ func (r *RunConfig) setupStyle() {
 		part = &Partition{
 			Label:      "",
 			Size:       cnst.BiosSize,
-			PLabel:     cnst.BiosPLabel,
+			Name:       cnst.BiosPartName,
 			FS:         "",
 			MountPoint: "",
 			Flags:      []string{BIOS},
@@ -294,7 +294,7 @@ func (r *RunConfig) setupStyle() {
 	part = &Partition{
 		Label:      cnst.OEMLabel,
 		Size:       cnst.OEMSize,
-		PLabel:     cnst.OEMPLabel,
+		Name:       cnst.OEMPartName,
 		FS:         cnst.LinuxFs,
 		MountPoint: cnst.OEMDir,
 		Flags:      []string{},
@@ -307,7 +307,7 @@ func (r *RunConfig) setupStyle() {
 	part = &Partition{
 		Label:      cnst.StateLabel,
 		Size:       cnst.StateSize,
-		PLabel:     cnst.StatePLabel,
+		Name:       cnst.StatePartName,
 		FS:         cnst.LinuxFs,
 		MountPoint: cnst.StateDir,
 		Flags:      statePartFlags,
@@ -320,7 +320,7 @@ func (r *RunConfig) setupStyle() {
 	part = &Partition{
 		Label:      cnst.RecoveryLabel,
 		Size:       cnst.RecoverySize,
-		PLabel:     cnst.RecoveryPLabel,
+		Name:       cnst.RecoveryPartName,
 		FS:         cnst.LinuxFs,
 		MountPoint: cnst.RecoveryDir,
 		Flags:      []string{},
@@ -333,7 +333,7 @@ func (r *RunConfig) setupStyle() {
 	part = &Partition{
 		Label:      cnst.PersistentLabel,
 		Size:       cnst.PersistentSize,
-		PLabel:     cnst.PersistentPLabel,
+		Name:       cnst.PersistentPartName,
 		FS:         cnst.LinuxFs,
 		MountPoint: cnst.PersistentDir,
 		Flags:      []string{},

@@ -82,10 +82,10 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 }
 
 func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition) error {
-	c.config.Logger.Debugf("Adding partition %s", part.PLabel)
-	num, err := disk.AddPartition(part.Size, part.FS, part.PLabel, part.Flags...)
+	c.config.Logger.Debugf("Adding partition %s", part.Name)
+	num, err := disk.AddPartition(part.Size, part.FS, part.Name, part.Flags...)
 	if err != nil {
-		c.config.Logger.Errorf("Failed creating %s partition", part.PLabel)
+		c.config.Logger.Errorf("Failed creating %s partition", part.Name)
 		return err
 	}
 	if part.FS != "" {
@@ -96,7 +96,7 @@ func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition
 			return err
 		}
 	} else {
-		c.config.Logger.Debugf("Wipe file system on %s", part.PLabel)
+		c.config.Logger.Debugf("Wipe file system on %s", part.Name)
 		err = disk.WipeFsOnPartition(num)
 		if err != nil {
 			c.config.Logger.Errorf("Failed to wipe filesystem of partition %d", num)
@@ -373,7 +373,7 @@ func (c *Elemental) CheckNoFormat() error {
 
 // BootedFromSquash will check if we are booting from squashfs
 func (c Elemental) BootedFromSquash() bool {
-	part := c.config.Partitions.GetByPLabel(cnst.RecoveryPLabel)
+	part := c.config.Partitions.GetByName(cnst.RecoveryPartName)
 	if part != nil && utils.BootedFrom(c.config.Runner, part.Label) {
 		return true
 	}
@@ -515,7 +515,7 @@ func (c Elemental) CopyPassive() error {
 // Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in
 // State partition mountpoint.
 func (c Elemental) SetDefaultGrubEntry() error {
-	part := c.config.Partitions.GetByPLabel(cnst.StatePLabel)
+	part := c.config.Partitions.GetByName(cnst.StatePartName)
 	if part == nil {
 		return errors.New("State partition not found. Cannot set grub env file")
 	}
