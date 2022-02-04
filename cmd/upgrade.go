@@ -54,7 +54,8 @@ var upgradeCmd = &cobra.Command{
 		}
 
 		// Init setup
-		err = cfg.DigestSetup()
+		// TBC action.InstallSetup is the exact equivalent of the old DigestSetup
+		err = action.InstallSetup(cfg)
 		if err != nil {
 			cfg.Logger.Errorf("Error digesting setup: %s\n", err)
 		}
@@ -89,7 +90,7 @@ func init() {
 	upgradeCmd.Flags().String("directory", "", "Use directory as source to install from")
 	upgradeCmd.Flags().Bool("recovery", false, "Upgrade the recovery")
 	upgradeCmd.Flags().Bool("no-verify", false, "Disable mtree verification")
-	upgradeCmd.Flags().Bool("no-cosign", false, "Disable cosign verification")
+	upgradeCmd.Flags().Bool("cosign", false, "Disable cosign verification")
 	upgradeCmd.Flags().Bool("strict", false, "Fail on any errors")
 	upgradeCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
 	upgradeCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")

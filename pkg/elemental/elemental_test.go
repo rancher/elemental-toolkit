@@ -21,6 +21,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental/pkg/action"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
@@ -75,7 +76,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner = v1mock.NewTestRunnerV2()
 			config.Runner = runner
 			fs.Create(cnst.EfiDevice)
-			config.DigestSetup()
+			action.InstallSetup(config)
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
 			el = elemental.NewElemental(config)
@@ -115,7 +116,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			config.Runner = runner
 			runner.ReturnValue = []byte("/some/device")
 			fs.Create(cnst.EfiDevice)
-			config.DigestSetup()
+			action.InstallSetup(config)
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
 			el = elemental.NewElemental(config)
@@ -199,6 +200,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("CreateFileSystemImage", Label("CreateFileSystemImage", "image"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
+			action.InstallSetup(config)
 			el = elemental.NewElemental(config)
 			config.ActiveImage.Size = 32
 		})
@@ -314,7 +316,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			})
 
 			It("Successfully creates partitions and formats them, EFI boot", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
 				Expect(runner.MatchMilestones(append(efiPartCmds, partCmds...))).To(BeNil())
 			})
@@ -322,14 +324,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			It("Successfully creates partitions and formats them, BIOS boot", func() {
 				config.ForceGpt = true
 				fs.Remove(cnst.EfiDevice)
-				config.DigestSetup()
+				action.InstallSetup(config)
 				el = elemental.NewElemental(config)
 				Expect(el.PartitionAndFormatDevice(dev)).To(BeNil())
 				Expect(runner.MatchMilestones(biosPartCmds)).To(BeNil())
 			})
 
 			It("Successfully creates boot partitions and runs 'partitioning' stage", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				config.PartLayout = "partitioning.yaml"
 				err := el.PartitionAndFormatDevice(dev)
 				Expect(err).To(BeNil())
@@ -378,14 +380,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			})
 
 			It("Fails creating efi partition", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				errPart, failEfiFormat = 1, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(errPart))
 			})
 
 			It("Fails formatting efi partition", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				errPart, failEfiFormat = 0, true
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(1))
@@ -394,7 +396,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			It("Fails creating bios partition", func() {
 				config.ForceGpt = true
 				fs.Remove(cnst.EfiDevice)
-				config.DigestSetup()
+				action.InstallSetup(config)
 				el = elemental.NewElemental(config)
 				errPart, failEfiFormat = 1, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
@@ -404,7 +406,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			It("Fails clearing filesystem on bios partition", func() {
 				config.ForceGpt = true
 				fs.Remove(cnst.EfiDevice)
-				config.DigestSetup()
+				action.InstallSetup(config)
 				el = elemental.NewElemental(config)
 				errPart, failEfiFormat = 0, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
@@ -413,21 +415,21 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 			It("Fails creating custom partitions on non gpt disks", func() {
 				fs.Remove(cnst.EfiDevice)
-				config.DigestSetup()
+				action.InstallSetup(config)
 				config.PartLayout = "partitioning.yaml"
 				err := el.PartitionAndFormatDevice(dev)
 				Expect(err).NotTo(BeNil())
 			})
 
 			It("Fails creating a data partition", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				errPart, failEfiFormat = 2, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(errPart))
 			})
 
 			It("Fails formatting a data partition", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				errPart, failEfiFormat = 0, false
 				Expect(el.PartitionAndFormatDevice(dev)).NotTo(BeNil())
 				Expect(partNum).To(Equal(2))
@@ -544,7 +546,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 	Describe("BootedFromSquash", Label("BootedFromSquash", "squashfs"), func() {
 		It("Returns true if booted from squashfs", func() {
-			config.DigestSetup()
+			action.InstallSetup(config)
 			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte(cnst.RecoveryLabel)
 			config.Runner = runner
@@ -665,7 +667,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		Describe("Squashfs boot", func() {
 			It("should not do anything", func() {
-				config.DigestSetup()
+				action.InstallSetup(config)
 				runner := v1mock.NewTestRunnerV2()
 				runner.ReturnValue = []byte(cnst.RecoveryLabel)
 				config.Runner = runner
@@ -682,6 +684,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("CopyPassive", Label("CopyPassive", "passive_label"), func() {
 		var passImgFile string
 		BeforeEach(func() {
+			action.InstallSetup(config)
 			passImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
 		})
 

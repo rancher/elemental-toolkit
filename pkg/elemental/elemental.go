@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
-	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
+	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/afero"
@@ -43,7 +43,7 @@ func NewElemental(config *v1.RunConfig) *Elemental {
 // PartitionAndFormatDevice creates a new empty partition table on target disk
 // and applies the configured disk layout by creating and formatting all
 // required partitions
-func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
+func (c *Elemental) PartitionAndFormatDevice(disk *partitioner.Disk) error {
 	c.config.Logger.Infof("Partitioning device...")
 
 	err := c.createPTableAndFirmwarePartitions(disk)
@@ -63,7 +63,7 @@ func (c *Elemental) PartitionAndFormatDevice(disk *part.Disk) error {
 	return c.createDataPartitions(disk)
 }
 
-func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
+func (c *Elemental) createPTableAndFirmwarePartitions(disk *partitioner.Disk) error {
 	c.config.Logger.Debugf("Creating partition table...")
 	out, err := disk.NewPartitionTable(c.config.PartTable)
 	if err != nil {
@@ -81,7 +81,7 @@ func (c *Elemental) createPTableAndFirmwarePartitions(disk *part.Disk) error {
 	return nil
 }
 
-func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition) error {
+func (c *Elemental) createAndFormatPartition(disk *partitioner.Disk, part *v1.Partition) error {
 	c.config.Logger.Debugf("Adding partition %s", part.Name)
 	num, err := disk.AddPartition(part.Size, part.FS, part.Name, part.Flags...)
 	if err != nil {
@@ -106,7 +106,7 @@ func (c *Elemental) createAndFormatPartition(disk *part.Disk, part *v1.Partition
 	return nil
 }
 
-func (c *Elemental) createDataPartitions(disk *part.Disk) error {
+func (c *Elemental) createDataPartitions(disk *partitioner.Disk) error {
 	var dataParts []*v1.Partition
 	// Skip the creation of EFI or BIOS partitions on GPT
 	if c.config.PartTable == v1.GPT {
@@ -123,7 +123,7 @@ func (c *Elemental) createDataPartitions(disk *part.Disk) error {
 	return nil
 }
 
-// MountPartitions mounts state, recovery, oem, persistent and efi partitions.
+// MountPartitions mounts configured partitions. Partitions with an unset mountpoint are not mounted.
 // Note umounts must be handled by caller logic.
 func (c Elemental) MountPartitions() error {
 	c.config.Logger.Infof("Mounting disk partitions")
@@ -142,7 +142,7 @@ func (c Elemental) MountPartitions() error {
 	return err
 }
 
-// UnmountPartitions unmounts recovery, state and oem partitions.
+// UnmountPartitions unmounts configured partitiosn. Partitions with an unset mountpoint are not unmounted.
 func (c Elemental) UnmountPartitions() error {
 	c.config.Logger.Infof("Unmounting disk partitions")
 	var err error
@@ -168,7 +168,7 @@ func (c Elemental) UnmountPartitions() error {
 // MountPartitions mounts a partition with the given mount options
 func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	c.config.Logger.Debugf("Mounting partition %s", part.Label)
-	err := c.config.Fs.MkdirAll(part.MountPoint, 0755)
+	err := c.config.Fs.MkdirAll(part.MountPoint, os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (c Elemental) UnmountPartition(part *v1.Partition) error {
 // MountImage mounts an image with the given mount options
 func (c Elemental) MountImage(img *v1.Image, opts ...string) error {
 	c.config.Logger.Debugf("Mounting image %s", img.Label)
-	err := c.config.Fs.MkdirAll(img.MountPoint, 0755)
+	err := c.config.Fs.MkdirAll(img.MountPoint, os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 // CreateFileSystemImage creates the image file for config.target
 func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 	c.config.Logger.Infof("Creating file system image %s", img.File)
-	err := c.config.Fs.MkdirAll(filepath.Dir(img.File), 0755)
+	err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 		return err
 	}
 
-	mkfs := part.NewMkfsCall(img.File, img.FS, img.Label, c.config.Runner)
+	mkfs := partitioner.NewMkfsCall(img.File, img.FS, img.Label, c.config.Runner)
 	_, err = mkfs.Apply()
 	if err != nil {
 		c.config.Fs.RemoveAll(img.File)
@@ -396,7 +396,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 		return "", err
 	}
 	tmpIsoMount := filepath.Join(tmpDir, "iso-mounted")
-	err = c.config.Fs.MkdirAll(tmpIsoMount, 0755)
+	err = c.config.Fs.MkdirAll(tmpIsoMount, os.ModeDir)
 	if err != nil {
 		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
@@ -468,7 +468,7 @@ func (c *Elemental) CopyRecovery() error {
 	imgTarget := filepath.Join(recoveryDirCos, cnst.RecoveryImgFile)
 	squashedImgTarget := filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
 
-	err = c.config.Fs.MkdirAll(recoveryDirCos, 0755)
+	err = c.config.Fs.MkdirAll(recoveryDirCos, os.ModeDir)
 	if err != nil {
 		return err
 	}

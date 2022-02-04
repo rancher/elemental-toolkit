@@ -73,14 +73,51 @@ var _ = Describe("Actions", func() {
 			v1.WithCloudInitRunner(cloudInit),
 		)
 	})
+
+	Describe("Install Setup", Label("parttable"), func() {
+		Describe("On efi system", Label("efi"), func() {
+			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
+				_, _ = fs.Create(constants.EfiDevice)
+				err := action.InstallSetup(config)
+				Expect(err).To(BeNil())
+				Expect(config.PartTable).To(Equal(v1.GPT))
+				Expect(config.BootFlag).To(Equal(v1.ESP))
+			})
+		})
+		Describe("On --force-efi flag", func() {
+			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
+				config.ForceEfi = true
+				err := action.InstallSetup(config)
+				Expect(err).To(BeNil())
+				Expect(config.PartTable).To(Equal(v1.GPT))
+				Expect(config.BootFlag).To(Equal(v1.ESP))
+			})
+		})
+		Describe("On --force-gpt flag", func() {
+			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.BIOS), func() {
+				config.ForceGpt = true
+				err := action.InstallSetup(config)
+				Expect(err).To(BeNil())
+				Expect(config.PartTable).To(Equal(v1.GPT))
+				Expect(config.BootFlag).To(Equal(v1.BIOS))
+			})
+		})
+		Describe("On default values", func() {
+			It(fmt.Sprintf("sets part to %s and boot to %s", v1.MSDOS, v1.BOOT), func() {
+				err := action.InstallSetup(config)
+				Expect(err).To(BeNil())
+				Expect(config.PartTable).To(Equal(v1.MSDOS))
+				Expect(config.BootFlag).To(Equal(v1.BOOT))
+			})
+		})
+	})
+
 	Describe("Install Action", Label("install"), func() {
-		var install *action.InstallAction
 		var device, activeTree, activeMount, cmdFail string
 		var activeSize uint
 		var err error
 
 		BeforeEach(func() {
-			install = action.NewInstallAction(config)
 			activeTree, err = os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			activeMount, err = os.MkdirTemp("", "elemental")
@@ -117,7 +154,7 @@ var _ = Describe("Actions", func() {
 				}
 			}
 
-			config.DigestSetup()
+			action.InstallSetup(config)
 		})
 
 		AfterEach(func() {
@@ -131,7 +168,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			config.Reboot = true
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
 		})
 
@@ -142,7 +179,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			config.PowerOff = true
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})
 
@@ -153,7 +190,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 		})
 
 		It("Successfully installs without formatting despite detecting a previous installation", Label("no-format", "disk"), func() {
@@ -163,7 +200,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 		})
 
 		It("Successfully installs a docker image", Label("docker"), func() {
@@ -174,7 +211,7 @@ var _ = Describe("Actions", func() {
 			config.DockerImg = "my/image:latest"
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
@@ -184,26 +221,26 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
-			Expect(install.Run()).To(BeNil())
+			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
 
 		It("Fails if disk doesn't exist", Label("disk"), func() {
 			config.Target = "nonexistingdisk"
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails if some hook fails and strict is set", Label("strict"), func() {
 			config.Target = device
 			config.Strict = true
 			cloudInit.Error = true
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to install from ISO if the ISO is not found", Label("iso"), func() {
 			config.Iso = "nonexistingiso"
 			config.Target = device
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to install without formatting if a previous install is detected", Label("no-format", "disk"), func() {
@@ -213,13 +250,13 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.Size = activeSize
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to mount partitions", Label("disk", "mount"), func() {
 			config.Target = device
 			mounter.ErrorOnMount = true
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails on parted errors", Label("disk", "partitions"), func() {
@@ -228,7 +265,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "parted"
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to unmount partitions", Label("disk", "partitions"), func() {
@@ -237,13 +274,13 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			mounter.ErrorOnUnmount = true
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to create a filesystem image", Label("disk", "image"), func() {
 			config.Target = device
 			config.Fs = afero.NewReadOnlyFs(fs)
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails if luet fails to unpack image", Label("image", "luet", "unpack"), func() {
@@ -255,7 +292,7 @@ var _ = Describe("Actions", func() {
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
 			config.Luet = luet
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
@@ -266,7 +303,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
 			client.Error = true
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
 
@@ -276,7 +313,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "grub2-install"
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails copying Passive image", Label("copy", "active"), func() {
@@ -285,7 +322,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "tune2fs"
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails setting the grub default entry", Label("grub"), func() {
@@ -294,7 +331,7 @@ var _ = Describe("Actions", func() {
 			config.ActiveImage.RootTree = activeTree
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "grub2-editenv"
-			Expect(install.Run()).NotTo(BeNil())
+			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 	})
 	Describe("Upgrade Action", Label("upgrade"), func() {

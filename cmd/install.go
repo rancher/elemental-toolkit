@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
@@ -41,15 +42,30 @@ var installCmd = &cobra.Command{
 		mounter := mount.New(path)
 
 		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
-
 		if err != nil {
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
+
+		err = errors.New("Invalid options")
+		if viper.GetBool("reboot") && viper.GetBool("poweroff") {
+			cfg.Logger.Errorf("'reboot' and 'poweroff' are mutually exclusive options")
+			return err
+		}
+
+		if viper.GetString("cosign-key") != "" && !viper.GetBool("cosign") {
+			cfg.Logger.Errorf("'cosign-key' requires 'cosing' option to be enabled")
+			return err
+		}
+
+		if viper.GetBool("cosign") && viper.GetString("cosign-key") == "" {
+			cfg.Logger.Warnf("No 'cosign-key' option set, keyless cosign verification is experimental")
+		}
+
 		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
 		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
 		cfg.Target = args[0]
 
-		err = cfg.DigestSetup()
+		err = action.InstallSetup(cfg)
 		if err != nil {
 			return err
 		}
@@ -57,9 +73,7 @@ var installCmd = &cobra.Command{
 
 		cfg.Logger.Infof("Install called")
 
-		// Dont call it yet, not ready
-		install := action.NewInstallAction(cfg)
-		err = install.Run()
+		err = action.InstallRun(cfg)
 		if err != nil {
 			return err
 		}
@@ -69,7 +83,6 @@ var installCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringP("config-dir", "e", "/etc/elemental/", "dir where the elemental config resides")
 	installCmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
 	installCmd.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
 	installCmd.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
