@@ -29,7 +29,7 @@ import (
 
 func installHook(config *v1.RunConfig, hook string, chroot bool) error {
 	if chroot {
-		return actionChrootHook(
+		return ActionChrootHook(
 			config, hook, config.ActiveImage.MountPoint,
 			map[string]string{
 				cnst.PersistentDir: "/usr/local",
@@ -37,86 +37,14 @@ func installHook(config *v1.RunConfig, hook string, chroot bool) error {
 			},
 		)
 	}
-	return actionHook(config, hook)
+	return ActionHook(config, hook)
 }
 
 // InstallSetup will set installation parameters according to
 // the given configuration flags
 func InstallSetup(config *v1.RunConfig) error {
-	_, err := config.Fs.Stat(cnst.EfiDevice)
-	efiExists := err == nil
-	statePartFlags := []string{}
-	var part *v1.Partition
-
-	if config.ForceEfi || efiExists {
-		config.PartTable = v1.GPT
-		config.BootFlag = v1.ESP
-		part = &v1.Partition{
-			Label:      cnst.EfiLabel,
-			Size:       cnst.EfiSize,
-			Name:       cnst.EfiPartName,
-			FS:         cnst.EfiFs,
-			MountPoint: cnst.EfiDir,
-			Flags:      []string{v1.ESP},
-		}
-		config.Partitions = append(config.Partitions, part)
-	} else if config.ForceGpt {
-		config.PartTable = v1.GPT
-		config.BootFlag = v1.BIOS
-		part = &v1.Partition{
-			Label:      "",
-			Size:       cnst.BiosSize,
-			Name:       cnst.BiosPartName,
-			FS:         "",
-			MountPoint: "",
-			Flags:      []string{v1.BIOS},
-		}
-		config.Partitions = append(config.Partitions, part)
-	} else {
-		config.PartTable = v1.MSDOS
-		config.BootFlag = v1.BOOT
-		statePartFlags = []string{v1.BOOT}
-	}
-
-	part = &v1.Partition{
-		Label:      config.OEMLabel,
-		Size:       cnst.OEMSize,
-		Name:       cnst.OEMPartName,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.OEMDir,
-		Flags:      []string{},
-	}
-	config.Partitions = append(config.Partitions, part)
-
-	part = &v1.Partition{
-		Label:      config.StateLabel,
-		Size:       cnst.StateSize,
-		Name:       cnst.StatePartName,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.StateDir,
-		Flags:      statePartFlags,
-	}
-	config.Partitions = append(config.Partitions, part)
-
-	part = &v1.Partition{
-		Label:      config.RecoveryLabel,
-		Size:       cnst.RecoverySize,
-		Name:       cnst.RecoveryPartName,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.RecoveryDir,
-		Flags:      []string{},
-	}
-	config.Partitions = append(config.Partitions, part)
-
-	part = &v1.Partition{
-		Label:      config.PersistentLabel,
-		Size:       cnst.PersistentSize,
-		Name:       cnst.PersistentPartName,
-		FS:         cnst.LinuxFs,
-		MountPoint: cnst.PersistentDir,
-		Flags:      []string{},
-	}
-	config.Partitions = append(config.Partitions, part)
+	SetPartitionsFromScratch(config)
+	SetupLuet(config)
 
 	config.ActiveImage = v1.Image{
 		Label:      config.ActiveLabel,
@@ -126,8 +54,6 @@ func InstallSetup(config *v1.RunConfig) error {
 		RootTree:   cnst.IsoBaseTree,
 		MountPoint: cnst.ActiveDir,
 	}
-
-	setupLuet(config)
 
 	return nil
 }
