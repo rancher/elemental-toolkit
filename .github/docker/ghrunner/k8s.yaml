@@ -29,6 +29,18 @@ spec:
       labels:
         app: github-runner
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - github-runner
       automountServiceAccountToken: false
       volumes:
       - name: modules
