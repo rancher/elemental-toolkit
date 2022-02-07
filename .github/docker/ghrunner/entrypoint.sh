@@ -7,15 +7,16 @@ REPO=${REPO:-dockerhub-autobuild}
 OS=${OS:-linux}
 
 if [ -z "${ORG}" ]; then
-    echo "missing ORG, bailing out!"
+    echo "WARN: missing ORG"
+    exit 1
 fi
 
 if [ -z "${REPO}" ]; then
-    echo "missing REPO, bailing out!"
+    echo "WARN: missing REPO"
 fi
 
 if [ -z "${TOKEN}" ]; then
-    echo "missing TOKEN, bailing out!"
+    echo "ERROR: missing TOKEN, bailing out!"
     exit 1
 fi
 
@@ -24,6 +25,10 @@ curl -o ${FILE} -L https://github.com/actions/runner/releases/download/v${VERSIO
 echo "${CHECKSUM}  ${FILE}" | shasum -a 256 -c
 tar xzf ./${FILE}
 ./bin/installdependencies.sh
+
+# Make sure that if /var/run is mounted it has the correct permissions for the runner user
+chgrp docker /var/run/docker.sock
+
 su runner -c "./config.sh --unattended --url https://github.com/${ORG}/${REPO} --token ${TOKEN} --name docker-runner-$(hostname) --labels ${ARCH},${OS},self-hosted"
 while true; do
     su runner -c "./run.sh"
