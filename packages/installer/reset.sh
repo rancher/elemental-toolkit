@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-cos reset $@
+elemental --debug --logfile /tmp/elemental.log reset $@

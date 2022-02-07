@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-elemental install $@
+elemental --debug --logfile /tmp/elemental.log install $@
