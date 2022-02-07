@@ -96,6 +96,7 @@ func (c *Chroot) Prepare() error {
 		}
 		c.activeMounts = append(c.activeMounts, mountPoint)
 	}
+
 	return nil
 }
 
@@ -118,20 +119,20 @@ func (c *Chroot) Close() error {
 	return nil
 }
 
-// Run executes a command inside a chroot
-func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
+// RunCallback runs the given callback in a chroot environment
+func (c *Chroot) RunCallback(callback func() error) (err error) {
 	// Store current root
 	oldRootF, err := os.Open("/") // Can't use afero here because doesn't support chdir done below
-	defer oldRootF.Close()
 	if err != nil {
 		c.config.Logger.Errorf("Cant open /")
-		return nil, err
+		return err
 	}
+	defer oldRootF.Close()
 	if len(c.activeMounts) == 0 {
 		err = c.Prepare()
 		if err != nil {
 			c.config.Logger.Errorf("Cant mount default mounts")
-			return nil, err
+			return err
 		}
 		defer func() {
 			tmpErr := c.Close()
@@ -144,13 +145,13 @@ func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
 	err = c.config.Syscall.Chdir(c.path)
 	if err != nil {
 		c.config.Logger.Errorf("Cant chdir %s: %s", c.path, err)
-		return nil, err
+		return err
 	}
 
 	err = c.config.Syscall.Chroot(c.path)
 	if err != nil {
 		c.config.Logger.Errorf("Cant chroot %s: %s", c.path, err)
-		return nil, err
+		return err
 	}
 
 	// Restore to old root
@@ -172,13 +173,19 @@ func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
 		}
 	}()
 
-	// run command in the chroot
-	out, err = c.config.Runner.Run(command, args...)
+	return callback()
+}
+
+// Run executes a command inside a chroot
+func (c *Chroot) Run(command string, args ...string) (out []byte, err error) {
+	callback := func() error {
+		out, err = c.config.Runner.Run(command, args...)
+		return err
+	}
+	err = c.RunCallback(callback)
 	if err != nil {
 		c.config.Logger.Errorf("Cant run command %s with args %v on chroot: %s", command, args, err)
 		c.config.Logger.Debugf("Output from command: %s", out)
-		return out, err
 	}
-
 	return out, err
 }

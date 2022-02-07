@@ -39,16 +39,10 @@ func ActionHook(config *v1.RunConfig, hook string) error {
 func ActionChrootHook(config *v1.RunConfig, hook string, chrootDir string, bindMounts map[string]string) (err error) {
 	chroot := utils.NewChroot(chrootDir, config)
 	chroot.SetExtraMounts(bindMounts)
-	err = chroot.Prepare()
-	if err != nil {
-		return err
+	callback := func() error {
+		return ActionHook(config, hook)
 	}
-	defer func() {
-		if tmpErr := chroot.Close(); tmpErr != nil && err == nil {
-			err = tmpErr
-		}
-	}()
-	return ActionHook(config, hook)
+	return chroot.RunCallback(callback)
 }
 
 // SetupLuet sets the Luet object with the appropriate plugins

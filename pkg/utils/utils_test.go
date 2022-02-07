@@ -97,6 +97,17 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, err = chroot.Run("chroot-another-command")
 				Expect(err).To(BeNil())
 			})
+			It("runs a callback in a custom chroot", func() {
+				called := false
+				callback := func() error {
+					called = true
+					return nil
+				}
+				err := chroot.RunCallback(callback)
+				Expect(err).To(BeNil())
+				Expect(syscall.WasChrootCalledWith("/whatever")).To(BeTrue())
+				Expect(called).To(BeTrue())
+			})
 		})
 		Describe("on failure", func() {
 			It("should return error if chroot-command fails", func() {
@@ -105,6 +116,17 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, err := chroot.Run("chroot-command")
 				Expect(err).NotTo(BeNil())
 				Expect(syscall.WasChrootCalledWith("/whatever")).To(BeTrue())
+			})
+			It("should return error if callback fails", func() {
+				called := false
+				callback := func() error {
+					called = true
+					return errors.New("Callback error")
+				}
+				err := chroot.RunCallback(callback)
+				Expect(err).NotTo(BeNil())
+				Expect(syscall.WasChrootCalledWith("/whatever")).To(BeTrue())
+				Expect(called).To(BeTrue())
 			})
 			It("should return error if preparing twice before closing", func() {
 				Expect(chroot.Prepare()).To(BeNil())
