@@ -17,11 +17,15 @@ limitations under the License.
 package v1_test
 
 import (
+	"context"
 	dockTypes "github.com/docker/docker/api/types"
+	dockClient "github.com/docker/docker/client"
 	context2 "github.com/mudler/luet/pkg/api/core/context"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -42,7 +46,19 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 	Describe("Luet", func() {
 		It("Fails to unpack without root privileges", Label("unpack"), func() {
 			image := "quay.io/costoolkit/releases-green:cloud-config-system-0.11-1"
-			Expect(luet.Unpack(target, image)).NotTo(BeNil())
+			Expect(luet.Unpack(target, image, false)).NotTo(BeNil())
+		})
+		It("Check that luet can unpack the local image", Label("unpack", "root"), func() {
+			image := "docker.io/library/alpine"
+			ctx := context.Background()
+			cli, err := dockClient.NewClientWithOpts(dockClient.FromEnv, dockClient.WithAPIVersionNegotiation())
+			Expect(err).ToNot(HaveOccurred())
+			// Pull image
+			reader, err := cli.ImagePull(ctx, image, dockTypes.ImagePullOptions{})
+			defer reader.Close()
+			_, _ = io.Copy(ioutil.Discard, reader)
+			// Check that luet can unpack the local image
+			Expect(luet.Unpack(target, image, true)).To(BeNil())
 		})
 	})
 })

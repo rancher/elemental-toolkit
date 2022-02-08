@@ -30,7 +30,7 @@ func NewFakeLuet() *FakeLuet {
 	}
 }
 
-func (l *FakeLuet) Unpack(target string, image string) error {
+func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 	l.unpackCalled = true
 	if l.OnUnpackError == true {
 		return errors.New("Luet install error")

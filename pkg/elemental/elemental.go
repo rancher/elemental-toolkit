@@ -288,7 +288,7 @@ func (c *Elemental) CopyActive() error {
 				return err
 			}
 		}
-		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, c.config.DockerImg)
+		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, c.config.DockerImg, false)
 		if err != nil {
 			return err
 		}

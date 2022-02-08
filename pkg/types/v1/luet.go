@@ -25,7 +25,7 @@ import (
 )
 
 type LuetInterface interface {
-	Unpack(string, string) error
+	Unpack(string, string, bool) error
 }
 
 type Luet struct {
@@ -51,13 +51,21 @@ func NewLuet(log Logger, context *context.Context, auth *dockTypes.AuthConfig, p
 	}
 }
 
-func (l Luet) Unpack(target string, image string) error {
+func (l Luet) Unpack(target string, image string, local bool) error {
 	l.log.Infof("Unpacking docker image: %s", image)
-	info, err := docker.DownloadAndExtractDockerImage(l.context, image, target, l.auth, l.VerifyImageUnpack)
-	if err != nil {
-		return err
-	}
-	l.log.Infof("Pulled: %s %s", info.Target.Digest, info.Name)
-	l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
-	return nil
+	if !local {
+	     info, err := docker.DownloadAndExtractDockerImage(l.context, image, target, l.auth, l.VerifyImageUnpack)
+	     if err != nil {
+		  return err
+	     }
+	     l.log.Infof("Pulled: %s %s", info.Target.Digest, info.Name)
+	     l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
+        } else {
+             info, err := docker.ExtractDockerImage(l.context, image, target)
+             if err != nil {
+                  return err
+             }
+             l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
+        }
+        return nil
 }
