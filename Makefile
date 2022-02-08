@@ -23,7 +23,13 @@ vet:
 	go vet ${PKG}
 
 fmt:
-	go fmt ${PKG}
+ifneq ($(shell go fmt ${PKG}),)
+	@echo "Please commit the changes from 'make fmt'"
+	@exit 1
+else
+	@echo "All files formatted"
+	@exit 0
+endif
 
 test_deps:
 	go install github.com/onsi/ginkgo/v2/ginkgo
