@@ -115,7 +115,7 @@ func (u *UpgradeAction) Run() error {
 	var err error
 	var transitionImg string
 	cleanup := Cleanup{Remove: []string{constants.UpgradeTempDir}}
-	upgradeStateDir := constants.UpgradeStateDir
+	upgradeStateDir := constants.RunningStateDir
 
 	// if upgrading the recovery we mount the state in a different place as its already mounted RO, we need to remount it
 	if u.Config.RecoveryUpgrade {

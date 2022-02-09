@@ -21,6 +21,7 @@ import (
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/afero"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -40,10 +41,9 @@ func NewGrub(config *v1.RunConfig) *Grub {
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install() error {
+func (g Grub) Install() (err error) {
 	var grubargs []string
 	var arch, grubdir, tty, finalContent string
-	var err error
 
 	switch runtime.GOARCH {
 	case "arm64":
@@ -75,10 +75,12 @@ func (g Grub) Install() error {
 		)
 	}
 
+	statePart := g.config.Partitions.GetByName(cnst.StatePartName)
+
 	grubargs = append(
 		grubargs,
 		fmt.Sprintf("--root-directory=%s", g.config.ActiveImage.MountPoint),
-		fmt.Sprintf("--boot-directory=%s", cnst.StateDir),
+		fmt.Sprintf("--boot-directory=%s", statePart.MountPoint),
 		"--removable", g.config.Target,
 	)
 
@@ -89,8 +91,8 @@ func (g Grub) Install() error {
 		return err
 	}
 
-	grub1dir := fmt.Sprintf("%s/grub", cnst.StateDir)
-	grub2dir := fmt.Sprintf("%s/grub2", cnst.StateDir)
+	grub1dir := filepath.Join(statePart.MountPoint, "grub")
+	grub2dir := filepath.Join(statePart.MountPoint, "grub2")
 
 	// Select the proper dir for grub
 	if ok, _ := afero.IsDir(g.config.Fs, grub1dir); ok {

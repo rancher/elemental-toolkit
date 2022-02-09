@@ -239,6 +239,13 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 		})
 		Describe("Modify disk", func() {
+			It("Format an already existing partition", func() {
+				err := part.FormatDevice(runner, "/dev/device1", "ext4", "MY_LABEL")
+				Expect(err).To(BeNil())
+				Expect(runner.CmdsMatch([][]string{
+					{"mkfs.ext4", "-L", "MY_LABEL", "/dev/device1"},
+				})).To(BeNil())
+			})
 			It("Fails to create an unsupported partition table label", func() {
 				runner.ReturnValue = []byte(printOutput)
 				_, err := dev.NewPartitionTable("invalidLabel")

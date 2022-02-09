@@ -33,7 +33,7 @@ import (
 
 // tmpBlockdevices is a temporal struct to extract the output of lsblk json
 type tmpBlockdevices struct {
-	Blockdevices []v1.Partition
+	Blockdevices []v1.Partition `json:"blockdevices,omitempty"`
 }
 
 func CommandExists(command string) bool {
@@ -70,7 +70,7 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (v1.Part
 		out, err := runner.Run("blkid", "--label", label)
 		device := strings.TrimSpace(string(out))
 		if err == nil && device != "" {
-			out, err = runner.Run("lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", device)
+			out, err = runner.Run("lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", device)
 			if err == nil && strings.TrimSpace(string(out)) != "" {
 				a := tmpBlockdevices{}
 				err = json.Unmarshal(out, &a)
@@ -78,7 +78,7 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (v1.Part
 					return v1.Partition{}, err
 				}
 				return a.Blockdevices[0], nil
-			} else {
+			} else if err != nil {
 				return v1.Partition{}, err
 			}
 		}

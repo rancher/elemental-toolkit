@@ -40,6 +40,12 @@ func NewElemental(config *v1.RunConfig) *Elemental {
 	}
 }
 
+// FormatPartition will format an already existing partition
+func (c *Elemental) FormatPartition(part *v1.Partition, opts ...string) error {
+	c.config.Logger.Infof("Formatting '%s' partition", part.Name)
+	return partitioner.FormatDevice(c.config.Runner, part.Path, part.FS, part.Label, opts...)
+}
+
 // PartitionAndFormatDevice creates a new empty partition table on target disk
 // and applies the configured disk layout by creating and formatting all
 // required partitions
@@ -190,7 +196,7 @@ func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 func (c Elemental) UnmountPartition(part *v1.Partition) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
-	if notMnt, _ := c.config.Mounter.IsLikelyNotMountPoint(part.MountPoint); notMnt == true {
+	if notMnt, _ := c.config.Mounter.IsLikelyNotMountPoint(part.MountPoint); notMnt {
 		c.config.Logger.Debugf("Not unmounting partition, %s doesn't look like mountpoint", part.MountPoint)
 		return nil
 	}
@@ -276,11 +282,11 @@ func (c *Elemental) CopyActive(source v1.InstallUpgradeSource) error {
 	c.config.Logger.Infof("Copying Active image...")
 	var err error
 
-	if source.IsDocker && c.config.DockerImg != "" {
+	if source.IsDocker {
 		if c.config.Cosign {
-			c.config.Logger.Infof("Running cosing verification for %s", c.config.DockerImg)
+			c.config.Logger.Infof("Running cosing verification for %s", source.Source)
 			out, err := utils.CosignVerify(
-				c.config.Fs, c.config.Runner, c.config.DockerImg,
+				c.config.Fs, c.config.Runner, source.Source,
 				c.config.CosignPubKey, v1.IsDebugLevel(c.config.Logger),
 			)
 			if err != nil {
@@ -288,22 +294,34 @@ func (c *Elemental) CopyActive(source v1.InstallUpgradeSource) error {
 				return err
 			}
 		}
-		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, c.config.DockerImg, false)
+		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, source.Source, false)
 		if err != nil {
 			return err
 		}
-	}
-	if source.IsDir {
+	} else if source.IsDir {
 		excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
 		err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
 		if err != nil {
 			return err
 		}
-	}
-
-	if source.IsChannel {
+	} else if source.IsChannel {
 		err = c.config.Luet.UnpackFromChannel(c.config.ActiveImage.MountPoint, source.Source)
 		if err != nil {
+			return err
+		}
+	} else if source.IsFile {
+		err := c.config.Fs.MkdirAll(filepath.Dir(c.config.ActiveImage.File), os.ModeDir)
+		if err != nil {
+			return err
+		}
+		err = utils.CopyFile(c.config.Fs, source.Source, c.config.ActiveImage.File)
+		if err != nil {
+			return err
+		}
+		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.ActiveLabel, c.config.ActiveImage.File)
+		if err != nil {
+			c.config.Logger.Errorf("Failed to apply label %s to $s", c.config.ActiveLabel, c.config.ActiveImage.File)
+			c.config.Fs.Remove(c.config.ActiveImage.File)
 			return err
 		}
 	}

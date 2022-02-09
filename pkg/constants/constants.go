@@ -66,16 +66,20 @@ const (
 	AfterInstallChrootHook = "after-install-chroot"
 	AfterInstallHook       = "after-install"
 	BeforeInstallHook      = "before-install"
+	AfterResetChrootHook   = "after-reset-chroot"
+	AfterResetHook         = "after-reset"
+	BeforeResetHook        = "before-reset"
 	LuetCosignPlugin       = "luet-cosign"
 	LuetMtreePlugin        = "luet-mtree"
 	UpgradeActive          = "active"
 	UpgradeRecovery        = "recovery"
 	UpgradeSource          = "system/cos"
 	UpgradeTempDir         = "/tmp/upgrade"
-	UpgradeStateDir        = "/run/initramfs/cos-state"
 	UpgradeRecoveryDir     = "/run/initramfs/live"
 	TransitionImgFile      = "transition.img"
 	TransitionSquashFile   = "transition.squashfs"
+	// TODO converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
+	RunningStateDir = "/run/initramfs/cos-state"
 )
 
 func GetCloudInitPaths() []string {

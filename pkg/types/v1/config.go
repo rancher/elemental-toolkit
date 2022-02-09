@@ -205,6 +205,8 @@ type RunConfig struct {
 	RecoveryImage    string `yaml:"RECOVERY_IMAGE,omitempty" mapstructure:"RECOVERY_IMAGE"`
 	RecoveryUpgrade  bool   // configured only via flag, no need to map it to any config
 	ImgSize          uint   `yaml:"DEFAULT_IMAGE_SIZE,omitempty" mapstructure:"DEFAULT_IMAGE_SIZE"`
+	Directory        string `yaml:"directory,omitempty" mapstructure:"directory"`
+	ResetPersistent  bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string
@@ -225,13 +227,14 @@ type RunConfig struct {
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
-	Label      string
+	Label      string `json:"label,omitempty"`
 	Size       uint
 	Name       string
-	FS         string   `json:"FSTYPE,omitempty"`
-	Flags      []string `json:"PARTFLAGS,omitempty"`
-	MountPoint string
-	Path       string `json:"PATH,omitempty"`
+	FS         string `json:"fstype,omitempty"`
+	Flags      []string
+	MountPoint string `json:"mountpoint,omitempty"`
+	Path       string `json:"path,omitempty"`
+	Disk       string `json:"pkname,omitempty"`
 }
 
 type PartitionList []*Partition

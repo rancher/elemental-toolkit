@@ -29,13 +29,16 @@ import (
 
 func installHook(config *v1.RunConfig, hook string, chroot bool) error {
 	if chroot {
-		return ActionChrootHook(
-			config, hook, config.ActiveImage.MountPoint,
-			map[string]string{
-				cnst.PersistentDir: "/usr/local",
-				cnst.OEMDir:        "/oem",
-			},
-		)
+		extraMounts := map[string]string{}
+		persistent := config.Partitions.GetByName(cnst.PersistentPartName)
+		if persistent != nil {
+			extraMounts[persistent.MountPoint] = "/usr/local"
+		}
+		oem := config.Partitions.GetByName(cnst.OEMPartName)
+		if oem != nil {
+			extraMounts[oem.MountPoint] = "/oem"
+		}
+		return ActionChrootHook(config, hook, config.ActiveImage.MountPoint, extraMounts)
 	}
 	return ActionHook(config, hook)
 }

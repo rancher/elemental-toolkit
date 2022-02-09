@@ -30,6 +30,7 @@ import (
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -227,6 +228,18 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 
+	Describe("FormatPartition", Label("FormatPartition", "partition", "format"), func() {
+		It("Reformats an already existing partition", func() {
+			el := elemental.NewElemental(config)
+			part := &v1.Partition{
+				Path:  "/dev/device1",
+				FS:    "ext4",
+				Label: "MY_LABEL",
+			}
+			Expect(el.FormatPartition(part)).To(BeNil())
+		})
+
+	})
 	Describe("PartitionAndFormatDevice", Label("PartitionAndFormatDevice", "partition", "format"), func() {
 		var el *elemental.Elemental
 		var dev *part.Disk
@@ -442,7 +455,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			source = v1.InstallUpgradeSource{}
 		})
-		It("Copies all files from source to target", func() {
+		It("Copies files from a directory source", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(sourceDir)
@@ -456,7 +469,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			source.IsDir = true
 			Expect(c.CopyActive(source)).To(BeNil())
 		})
-		It("should fail if source does not exist", func() {
+		It("Fails if source directory does not exist", func() {
 			config.ActiveImage.RootTree = "/welp"
 			c := elemental.NewElemental(config)
 			source.Source = config.ActiveImage.RootTree
@@ -509,6 +522,69 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			source.IsDocker = true
 			Expect(c.CopyActive(source)).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
+		})
+		It("Copies image file to target", func() {
+			sourceImg := "source.img"
+			_, err := fs.Create(sourceImg)
+			Expect(err).To(BeNil())
+			destDir, err := afero.TempDir(fs, "", "elemental")
+			Expect(err).To(BeNil())
+			config.ActiveImage.RootTree = sourceImg
+			config.ActiveImage.MountPoint = destDir
+			config.ActiveImage.File = filepath.Join(destDir, "active.img")
+			c := elemental.NewElemental(config)
+			source.Source = sourceImg
+			source.IsFile = true
+			_, err = fs.Stat(config.ActiveImage.File)
+			Expect(err).NotTo(BeNil())
+			Expect(c.CopyActive(source)).To(BeNil())
+			_, err = fs.Stat(config.ActiveImage.File)
+			Expect(err).To(BeNil())
+		})
+		It("Fails to copy, source file is not present", func() {
+			sourceImg := "source.img"
+			destDir := "whatever"
+			config.ActiveImage.RootTree = sourceImg
+			config.ActiveImage.MountPoint = destDir
+			c := elemental.NewElemental(config)
+			source.Source = sourceImg
+			source.IsFile = true
+			Expect(c.CopyActive(source)).NotTo(BeNil())
+		})
+		It("Fails to set the active label", func() {
+			runner := runner.(*v1mock.FakeRunner)
+			runner.ErrorOnCommand = true
+			sourceImg := "source.img"
+			_, err := fs.Create(sourceImg)
+			Expect(err).To(BeNil())
+			destDir, err := afero.TempDir(fs, "", "elemental")
+			Expect(err).To(BeNil())
+			config.ActiveImage.RootTree = sourceImg
+			config.ActiveImage.MountPoint = destDir
+			config.ActiveImage.File = filepath.Join(destDir, "active.img")
+			source.Source = sourceImg
+			source.IsFile = true
+			el := elemental.NewElemental(config)
+			Expect(el.CopyActive(source)).NotTo(BeNil())
+		})
+		It("Unpacks from channel to target", func() {
+			luet := v1mock.NewFakeLuet()
+			config.Luet = luet
+			c := elemental.NewElemental(config)
+			source.Source = "somechannel"
+			source.IsChannel = true
+			Expect(c.CopyActive(source)).To(BeNil())
+			Expect(luet.UnpackChannelCalled()).To(BeTrue())
+		})
+		It("Fails to unpack from channel to target", func() {
+			luet := v1mock.NewFakeLuet()
+			luet.OnUnpackFromChannelError = true
+			config.Luet = luet
+			c := elemental.NewElemental(config)
+			source.Source = "somechannel"
+			source.IsChannel = true
+			Expect(c.CopyActive(source)).NotTo(BeNil())
+			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 	})
 	Describe("NoFormat", Label("NoFormat", "format"), func() {

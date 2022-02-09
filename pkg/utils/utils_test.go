@@ -22,8 +22,9 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	log "github.com/sirupsen/logrus"
@@ -254,7 +255,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
 				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
 			}
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
@@ -285,7 +286,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
 				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
 			}
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
@@ -304,7 +305,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
 				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH", "/dev/fake"},
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
 			}
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
@@ -412,6 +413,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		Describe("Install", func() {
 			BeforeEach(func() {
 				config.Target = "/dev/test"
+				action.SetPartitionsFromScratch(config)
 			})
 			It("installs with default values", func() {
 				buf := &bytes.Buffer{}

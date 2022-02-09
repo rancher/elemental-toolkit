@@ -22,4 +22,5 @@ type InstallUpgradeSource struct {
 	IsDir     bool
 	IsChannel bool
 	IsDocker  bool
+	IsFile    bool
 }

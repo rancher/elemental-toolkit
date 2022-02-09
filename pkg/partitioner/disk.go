@@ -69,6 +69,13 @@ func NewDisk(device string, opts ...DiskOptions) *Disk {
 	return dev
 }
 
+// FormatDevice formats a block device with the given parameters
+func FormatDevice(runner v1.Runner, device string, fileSystem string, label string, opts ...string) error {
+	mkfs := MkfsCall{fileSystem: fileSystem, label: label, customOpts: opts, dev: device, runner: runner}
+	_, err := mkfs.Apply()
+	return err
+}
+
 func (dev Disk) String() string {
 	return dev.device
 }
