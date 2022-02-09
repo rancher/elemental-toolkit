@@ -648,4 +648,24 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(exists).To(BeTrue())
 		})
 	})
+	Describe("LoadEnvFile", Label("LoadEnvFile"), func() {
+		It("returns proper map if file exists", func() {
+			err := afero.WriteFile(fs, "/etc/envfile", []byte("TESTKEY=TESTVALUE"), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+			envData, err := utils.LoadEnvFile(fs, "/etc/envfile")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(envData).To(HaveKeyWithValue("TESTKEY", "TESTVALUE"))
+		})
+		It("returns error if file doesnt exist", func() {
+			_, err := utils.LoadEnvFile(fs, "/etc/envfile")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns error if it cant unmarshall the env file", func() {
+			err := afero.WriteFile(fs, "/etc/envfile", []byte("WHATWHAT"), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = utils.LoadEnvFile(fs, "/etc/envfile")
+			Expect(err).To(HaveOccurred())
+		})
+	})
 })

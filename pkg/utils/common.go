@@ -210,21 +210,21 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 	return nil
 }
 
-// LoadOsRelease will try to parse the /etc/os-release file and return a map with the kye/values
-func LoadOsRelease(fs afero.Fs) (map[string]string, error) {
-	var osReleaseMap map[string]string
+// LoadEnvFile will try to parse the file given and return a map with the kye/values
+func LoadEnvFile(fs afero.Fs, file string) (map[string]string, error) {
+	var envMap map[string]string
 	var err error
 
-	f, err := fs.Open("/etc/os-release")
+	f, err := fs.Open(file)
 	if err != nil {
-		return osReleaseMap, err
+		return envMap, err
 	}
 	defer f.Close()
 
-	osReleaseMap, err = godotenv.Parse(f)
+	envMap, err = godotenv.Parse(f)
 	if err != nil {
-		return osReleaseMap, err
+		return envMap, err
 	}
 
-	return osReleaseMap, err
+	return envMap, err
 }

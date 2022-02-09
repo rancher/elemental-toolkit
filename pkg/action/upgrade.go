@@ -59,55 +59,21 @@ func (u *UpgradeAction) Error(s string, args ...interface{}) {
 
 func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
 	if chroot {
-		return ActionChrootHook(
-			config, hook, config.ActiveImage.MountPoint,
-			map[string]string{
-				"/usr/local": "/usr/local",
-				"/oem":       "/oem",
-			},
-		)
+		mountPoints := map[string]string{}
+
+		oemDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.OEMLabel, 5)
+		if err == nil {
+			mountPoints[oemDevice.MountPoint] = "/oem"
+		}
+
+		persistentDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 5)
+		if err == nil {
+			mountPoints[persistentDevice.MountPoint] = "/usr/local"
+		}
+
+		return ActionChrootHook(config, hook, config.ActiveImage.MountPoint, mountPoints)
 	}
 	return ActionHook(config, hook)
-}
-
-func rebrandChroot(config *v1.RunConfig) error {
-	grub := utils.NewGrub(config)
-	chroot := utils.NewChroot(config.ActiveImage.MountPoint, config)
-	stateDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.StateLabel, 5)
-	if err != nil {
-		config.Logger.Errorf("Could not get state partition")
-		return err
-	}
-
-	chroot.SetExtraMounts(map[string]string{
-		"/usr/local":           "/usr/local",
-		"/oem":                 "/oem",
-		stateDevice.MountPoint: "/run/boot",
-	})
-
-	err = chroot.Prepare()
-	if err != nil {
-		config.Logger.Errorf("Failed to setup chroot: %s", err)
-		err := chroot.Close()
-		if err != nil {
-			config.Logger.Errorf("Also failed to close chroot: %s", err)
-			return err
-		}
-		return err
-	}
-	defer chroot.Close()
-
-	callback := func() error {
-		// Reload the data from the chroot /etc/os-release as it's different from the running system
-		chrootOsRelease, err := utils.LoadOsRelease(config.Fs)
-		if err != nil {
-			config.Logger.Errorf("Could not load /etc/os-release values of the chroot system: %s", err)
-			return err
-		}
-		grubEnvFile := filepath.Join("/", "run", "boot", constants.GrubOEMEnv)
-		return grub.SetPersistentVariables(grubEnvFile, map[string]string{"default_menu_entry": chrootOsRelease["GRUB_ENTRY_NAME"]})
-	}
-	return chroot.RunCallback(callback)
 }
 
 func (u *UpgradeAction) Run() error {
@@ -253,7 +219,13 @@ func (u *UpgradeAction) Run() error {
 		return u.cleanup(cleanup, err)
 	}
 
-	err = rebrandChroot(u.Config)
+	// Load the os-release file from the new upgraded system
+	osRelease, err := utils.LoadEnvFile(u.Config.Fs, filepath.Join(constants.UpgradeTempDir, "etc", "os-release"))
+	// override grub vars with the new system vars
+	u.Config.GrubDefEntry = osRelease["GRUB_ENTRY_NAME"]
+
+	err = ele.Rebrand()
+
 	if err != nil {
 		u.Error("Error running rebrand: %s", err)
 		return u.cleanup(cleanup, err)

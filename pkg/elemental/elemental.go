@@ -541,9 +541,17 @@ func (c Elemental) CopyPassive() error {
 // Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in
 // State partition mountpoint.
 func (c Elemental) SetDefaultGrubEntry() error {
-	part := c.config.Partitions.GetByName(cnst.StatePartName)
+	var part *v1.Partition
+
+	part = c.config.Partitions.GetByName(cnst.StatePartName)
 	if part == nil {
-		return errors.New("State partition not found. Cannot set grub env file")
+		// Try to fall back to get it via StateLabel
+		p, err := utils.GetFullDeviceByLabel(c.config.Runner, c.config.StateLabel, 5)
+		if err != nil {
+			return errors.New("state partition not found. Cannot set grub env file")
+		} else {
+			part = &p
+		}
 	}
 	grub := utils.NewGrub(c.config)
 	return grub.SetPersistentVariables(
