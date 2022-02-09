@@ -130,9 +130,10 @@ func (g Grub) Install() error {
 // Sets the given key value pairs into as grub variables into the given file
 func (g Grub) SetPersistentVariables(grubEnvFile string, vars map[string]string) error {
 	for key, value := range vars {
+		g.config.Logger.Debugf("Running grub2-editenv with params: %s set %s=%s", grubEnvFile, key, value)
 		out, err := g.config.Runner.Run("grub2-editenv", grubEnvFile, "set", fmt.Sprintf("%s=%s", key, value))
 		if err != nil {
-			g.config.Logger.Errorf(fmt.Sprintf("Failed setting grub variables: %v", out))
+			g.config.Logger.Errorf(fmt.Sprintf("Failed setting grub variables: %s", out))
 			return err
 		}
 	}

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/afero"
 	"github.com/zloylos/grsync"
@@ -207,4 +208,23 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 		return err
 	}
 	return nil
+}
+
+// LoadOsRelease will try to parse the /etc/os-release file and return a map with the kye/values
+func LoadOsRelease(fs afero.Fs) (map[string]string, error) {
+	var osReleaseMap map[string]string
+	var err error
+
+	f, err := fs.Open("/etc/os-release")
+	if err != nil {
+		return osReleaseMap, err
+	}
+	defer f.Close()
+
+	osReleaseMap, err = godotenv.Parse(f)
+	if err != nil {
+		return osReleaseMap, err
+	}
+
+	return osReleaseMap, err
 }

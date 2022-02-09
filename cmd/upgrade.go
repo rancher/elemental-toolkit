@@ -53,12 +53,8 @@ var upgradeCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		// Init setup
-		// TBC action.InstallSetup is the exact equivalent of the old DigestSetup
-		err = action.InstallSetup(cfg)
-		if err != nil {
-			cfg.Logger.Errorf("Error digesting setup: %s\n", err)
-		}
+		// Init luet
+		action.SetupLuet(cfg)
 
 		// docker-image and directory are mutually exclusive. Can't have your cake and eat it too.
 		if viper.GetString("docker-image") != "" && viper.GetString("directory") != "" {

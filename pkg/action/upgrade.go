@@ -17,27 +17,17 @@ limitations under the License.
 package action
 
 import (
-	"errors"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"os"
 	"path/filepath"
 )
-
-// UpgradeSource represents a source object to identify where it's coming from easily
-type UpgradeSource struct {
-	source    string
-	isDir     bool
-	isChannel bool
-	isDocker  bool
-}
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
 type UpgradeAction struct {
@@ -67,53 +57,57 @@ func (u *UpgradeAction) Error(s string, args ...interface{}) {
 	u.Config.Logger.Errorf(s, args...)
 }
 
-func (u *UpgradeAction) upgradeHook(hook string, chroot bool, rebrand bool) (err error) {
-	if chroot { // TODO: This is not really doing anything for hooks as it closes the chroot before running the hooks?
-		newChroot := utils.NewChroot(u.Config.ActiveImage.MountPoint, u.Config)
-		newChroot.SetExtraMounts(map[string]string{
-			"/usr/local": "/usr/local",
-			"/oem":       "/oem",
-		})
-		err = newChroot.Prepare()
+func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
+	if chroot {
+		return ActionChrootHook(
+			config, hook, config.ActiveImage.MountPoint,
+			map[string]string{
+				"/usr/local": "/usr/local",
+				"/oem":       "/oem",
+			},
+		)
+	}
+	return ActionHook(config, hook)
+}
+
+func rebrandChroot(config *v1.RunConfig) error {
+	grub := utils.NewGrub(config)
+	chroot := utils.NewChroot(config.ActiveImage.MountPoint, config)
+	stateDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.StateLabel, 5)
+	if err != nil {
+		config.Logger.Errorf("Could not get state partition")
+		return err
+	}
+
+	chroot.SetExtraMounts(map[string]string{
+		"/usr/local":           "/usr/local",
+		"/oem":                 "/oem",
+		stateDevice.MountPoint: "/run/boot",
+	})
+
+	err = chroot.Prepare()
+	if err != nil {
+		config.Logger.Errorf("Failed to setup chroot: %s", err)
+		err := chroot.Close()
 		if err != nil {
+			config.Logger.Errorf("Also failed to close chroot: %s", err)
 			return err
 		}
-
-		defer func() {
-			if tmpErr := newChroot.Close(); tmpErr != nil && err == nil {
-				err = tmpErr
-			}
-		}()
-
-		if rebrand {
-			grubEnvFile := filepath.Join("/", constants.GrubOEMEnv)
-			vars := map[string]string{"default_menu_entry": u.Config.GrubDefEntry}
-			for key, value := range vars {
-				out, err := newChroot.Run("grub2-editenv", grubEnvFile, "set", fmt.Sprintf("%s=%s", key, value))
-				if err != nil {
-					u.Error("Failed setting grub variables: %v", out)
-					if u.Config.Strict {
-						return err
-					}
-				}
-			}
-		}
-	}
-	u.Info("Running %s hook", hook)
-	// Sorry, but I dont want to see all the yip stuff
-	oldLevel := u.Config.Logger.GetLevel()
-	u.Config.Logger.SetLevel(logrus.ErrorLevel)
-	err = utils.RunStage(hook, u.Config)
-	u.Config.Logger.SetLevel(oldLevel)
-	u.Info("Hook %s run", hook)
-	if u.Config.Strict {
 		return err
-	} else {
-		if err != nil {
-			u.Debug("Strict disabled, setting err to nil: %v", err)
-		}
-		return nil
 	}
+	defer chroot.Close()
+
+	callback := func() error {
+		// Reload the data from the chroot /etc/os-release as it's different from the running system
+		chrootOsRelease, err := utils.LoadOsRelease(config.Fs)
+		if err != nil {
+			config.Logger.Errorf("Could not load /etc/os-release values of the chroot system: %s", err)
+			return err
+		}
+		grubEnvFile := filepath.Join("/", "run", "boot", constants.GrubOEMEnv)
+		return grub.SetPersistentVariables(grubEnvFile, map[string]string{"default_menu_entry": chrootOsRelease["GRUB_ENTRY_NAME"]})
+	}
+	return chroot.RunCallback(callback)
 }
 
 func (u *UpgradeAction) Run() error {
@@ -129,12 +123,7 @@ func (u *UpgradeAction) Run() error {
 	}
 
 	upgradeTarget, upgradeSource := u.getTargetAndSource()
-	// TODO: support channel upgrades
-	if upgradeSource.isChannel {
-		msg := "channel upgrade not supported yet"
-		u.Error(msg)
-		return errors.New(msg)
-	}
+
 	u.Config.Logger.Infof("Upgrading %s partition", upgradeTarget)
 
 	err = u.Config.Fs.MkdirAll(constants.UpgradeTempDir, os.ModeDir)
@@ -148,11 +137,13 @@ func (u *UpgradeAction) Run() error {
 	if u.Config.RecoveryUpgrade {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 5)
 		if err != nil {
+			u.Error("Could not find state partition to mount with label %s", u.Config.RecoveryLabel)
 			return u.cleanup(cleanup, err)
 		}
 	} else {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 5)
 		if err != nil {
+			u.Error("Could not find state partition to mount with label %s", u.Config.StateLabel)
 			return u.cleanup(cleanup, err)
 		}
 	}
@@ -212,7 +203,7 @@ func (u *UpgradeAction) Run() error {
 		Label:      u.Config.ActiveLabel,
 		FS:         constants.LinuxImgFs,
 		MountPoint: constants.UpgradeTempDir,
-		RootTree:   upgradeSource.source, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
+		RootTree:   upgradeSource.Source, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
 	}
 
 	// If on recovery, set the label to the RecoveryLabel instead
@@ -238,14 +229,14 @@ func (u *UpgradeAction) Run() error {
 		_ = u.Config.Fs.MkdirAll(filepath.Join(constants.UpgradeTempDir, d), os.ModeDir)
 	}
 
-	err = u.upgradeHook("before-upgrade", false, false)
+	err = upgradeHook(u.Config, "before-upgrade", false)
 	if err != nil {
 		u.Error("Error while running hook before-upgrade: %s", err)
 		return u.cleanup(cleanup, err)
 	}
 	// Setting the activeImg to our img, tricks CopyActive into doing it anyway even if it's a recovery img
 	u.Config.ActiveImage = img
-	err = ele.CopyActive()
+	err = ele.CopyActive(upgradeSource)
 	if err != nil {
 		u.Error("Error copying active: %s", err)
 		return u.cleanup(cleanup, err)
@@ -256,13 +247,19 @@ func (u *UpgradeAction) Run() error {
 	_ = ele.SelinuxRelabel(constants.UpgradeTempDir, false)
 
 	// Only run rebrand on non recovery+squash
-	err = u.upgradeHook("after-upgrade-chroot", true, true)
+	err = upgradeHook(u.Config, "after-upgrade-chroot", true)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
 		return u.cleanup(cleanup, err)
 	}
 
-	err = u.upgradeHook("after-upgrade", false, false)
+	err = rebrandChroot(u.Config)
+	if err != nil {
+		u.Error("Error running rebrand: %s", err)
+		return u.cleanup(cleanup, err)
+	}
+	err = upgradeHook(u.Config, "after-upgrade", false)
+
 	if err != nil {
 		u.Error("Error running hook after-upgrade: %s", err)
 		return u.cleanup(cleanup, err)
@@ -272,7 +269,7 @@ func (u *UpgradeAction) Run() error {
 		// Copy is done, unmount transition.img
 		err = ele.UnmountImage(&img)
 		if err != nil {
-			u.Error("Error unmounting %s", img.MountPoint)
+			u.Error("Error unmounting %s: %s", img.MountPoint, err)
 			return err
 		}
 	}
@@ -401,8 +398,8 @@ func (u *UpgradeAction) cleanup(cleanup Cleanup, originalError error) error {
 }
 
 // getTargetAndSource finds our the target and source for the upgrade
-func (u *UpgradeAction) getTargetAndSource() (string, UpgradeSource) {
-	upgradeSource := UpgradeSource{source: constants.UpgradeSource, isChannel: true}
+func (u *UpgradeAction) getTargetAndSource() (string, v1.InstallUpgradeSource) {
+	upgradeSource := v1.InstallUpgradeSource{Source: constants.UpgradeSource, IsChannel: true}
 	upgradeTarget := constants.UpgradeActive
 
 	// if upgrade_recovery==true then it upgrades only the recovery
@@ -417,18 +414,18 @@ func (u *UpgradeAction) getTargetAndSource() (string, UpgradeSource) {
 	// this means, it gets the UPGRADE_IMAGE(default system/cos) from the luet repo configured on the system
 	if u.Config.ChannelUpgrades {
 		u.Debug("Source is channel-upgrades")
-		upgradeSource.source = u.Config.UpgradeImage // Loaded from /etc/cos-upgrade-image
+		upgradeSource.Source = u.Config.UpgradeImage // Loaded from /etc/cos-upgrade-image
 	} else {
 		// if channel_upgrades==false then
 		// if docker-image -> upgrade from image directly, ignores release_channel and pulls the given image directly
 		if u.Config.DockerImg != "" {
 			u.Debug("Source is docker image: %s", u.Config.DockerImg)
-			upgradeSource = UpgradeSource{source: u.Config.DockerImg, isDocker: true}
+			upgradeSource = v1.InstallUpgradeSource{Source: u.Config.DockerImg, IsDocker: true}
 		}
 		// if directory -> upgrade from dir directly, ignores release_channel and uses the given directory
 		if u.Config.DirectoryUpgrade != "" {
 			u.Debug("Source is directory: %s", u.Config.DirectoryUpgrade)
-			upgradeSource = UpgradeSource{source: u.Config.DirectoryUpgrade, isDir: true}
+			upgradeSource = v1.InstallUpgradeSource{Source: u.Config.DirectoryUpgrade, IsDir: true}
 		}
 	}
 	return upgradeTarget, upgradeSource

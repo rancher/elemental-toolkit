@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"github.com/docker/docker/api/types"
-	"github.com/mudler/luet/pkg/api/core/context"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
@@ -58,7 +57,6 @@ var pullImage = &cobra.Command{
 		registryToken, _ := cmd.Flags().GetString("auth-registry-token")
 		plugins, _ := cmd.Flags().GetStringArray("plugin")
 
-		context := context.NewContext()
 		auth := &types.AuthConfig{
 			Username:      user,
 			Password:      pass,
@@ -68,7 +66,7 @@ var pullImage = &cobra.Command{
 			RegistryToken: registryToken,
 		}
 
-		luet := v1.NewLuet(cfg.Logger, context, auth, plugins...)
+		luet := v1.NewLuet(v1.WithLuetLogger(cfg.Logger), v1.WithLuetAuth(auth), v1.WithLuetPlugins(plugins...))
 		luet.VerifyImageUnpack = verify
 		err = luet.Unpack(destination, image, local)
 

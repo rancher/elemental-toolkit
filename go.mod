@@ -32,6 +32,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	gopkg.in/ini.v1 v1.66.3 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/mount-utils v0.23.0
 	pault.ag/go/topsort v0.1.1 // indirect
 )

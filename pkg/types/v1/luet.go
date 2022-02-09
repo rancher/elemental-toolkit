@@ -21,11 +21,19 @@ import (
 	"github.com/docker/go-units"
 	"github.com/mudler/luet/pkg/api/core/bus"
 	"github.com/mudler/luet/pkg/api/core/context"
+	luetTypes "github.com/mudler/luet/pkg/api/core/types"
+	"github.com/mudler/luet/pkg/database"
 	"github.com/mudler/luet/pkg/helpers/docker"
+	"github.com/mudler/luet/pkg/installer"
+	"gopkg.in/yaml.v3"
+	"os"
+	"runtime"
+	"strings"
 )
 
 type LuetInterface interface {
 	Unpack(string, string, bool) error
+	UnpackFromChannel(string, string) error
 }
 
 type Luet struct {
@@ -35,20 +43,70 @@ type Luet struct {
 	VerifyImageUnpack bool
 }
 
-func NewLuet(log Logger, context *context.Context, auth *dockTypes.AuthConfig, plugins ...string) *Luet {
-	bus.Manager.Initialize(context, plugins...)
-	if len(bus.Manager.Plugins) != 0 {
-		log.Infof("Enabled plugins:")
-		for _, p := range bus.Manager.Plugins {
-			log.Infof("* %s (at %s)", p.Name, p.Executable)
+type LuetOptions func(l *Luet) error
+
+func WithLuetPlugins(plugins ...string) func(r *Luet) error {
+	return func(l *Luet) error {
+		if len(plugins) != 0 {
+			bus.Manager.Initialize(l.context, plugins...)
+			l.log.Infof("Enabled plugins:")
+			for _, p := range bus.Manager.Plugins {
+				l.log.Infof("* %s (at %s)", p.Name, p.Executable)
+			}
+		}
+		return nil
+	}
+}
+
+func WithLuetConfig(cfg *luetTypes.LuetConfig) func(r *Luet) error {
+	return func(l *Luet) error {
+		ctx := context.NewContext(
+			context.WithConfig(cfg),
+		)
+		l.context = ctx
+		return nil
+	}
+}
+
+func WithLuetAuth(auth *dockTypes.AuthConfig) func(r *Luet) error {
+	return func(l *Luet) error {
+		l.auth = auth
+		return nil
+	}
+}
+
+func WithLuetLogger(log Logger) func(r *Luet) error {
+	return func(l *Luet) error {
+		l.log = log
+		return nil
+	}
+}
+
+func NewLuet(opts ...LuetOptions) *Luet {
+
+	luet := &Luet{}
+
+	for _, o := range opts {
+		err := o(luet)
+		if err != nil {
+			return nil
 		}
 	}
 
-	return &Luet{
-		log:     log,
-		context: context,
-		auth:    auth,
+	if luet.log == nil {
+		luet.log = NewLogger()
 	}
+
+	if luet.context == nil {
+		luetConfig := createLuetConfig(luet.log)
+		luet.context = context.NewContext(context.WithConfig(luetConfig))
+	}
+
+	if luet.auth == nil {
+		luet.auth = &dockTypes.AuthConfig{}
+	}
+
+	return luet
 }
 
 func (l Luet) Unpack(target string, image string, local bool) error {
@@ -68,4 +126,93 @@ func (l Luet) Unpack(target string, image string, local bool) error {
 		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
 	}
 	return nil
+}
+
+// UnpackFromChannel unpacks/installs a package from the release channel into the target dir by leveraging the
+// luet install action to install to a local dir
+func (l Luet) UnpackFromChannel(target string, pkg string) error {
+	var toInstall luetTypes.Packages
+	toInstall = append(toInstall, l.parsePackage(pkg))
+	l.log.Debugf("Luet config: %+v", l.context.Config)
+
+	inst := installer.NewLuetInstaller(installer.LuetInstallerOptions{
+		Concurrency:                 l.context.Config.General.Concurrency,
+		SolverOptions:               l.context.Config.Solver,
+		NoDeps:                      false,
+		Force:                       true,
+		OnlyDeps:                    false,
+		PreserveSystemEssentialData: true,
+		DownloadOnly:                false,
+		Ask:                         false,
+		Relaxed:                     false,
+		PackageRepositories:         l.context.Config.SystemRepositories,
+		Context:                     l.context,
+	})
+	system := &installer.System{
+		Database: database.NewInMemoryDatabase(true),
+		Target:   target,
+	}
+	_, err := inst.SyncRepositories()
+	if err != nil {
+		return err
+	}
+	err = inst.Install(toInstall, system)
+	return err
+}
+
+func (l Luet) parsePackage(p string) *luetTypes.Package {
+	var cat, name string
+	ver := ">=0"
+
+	if strings.Contains(p, "@") {
+		packageinfo := strings.Split(p, "@")
+		ver = packageinfo[1]
+		cat, name = packageData(packageinfo[0])
+	} else {
+		cat, name = packageData(p)
+	}
+	return &luetTypes.Package{Name: name, Category: cat, Version: ver, Uri: make([]string, 0)}
+}
+
+func packageData(p string) (string, string) {
+	cat := ""
+	name := ""
+	if strings.Contains(p, "/") {
+		packagedata := strings.Split(p, "/")
+		cat = packagedata[0]
+		name = packagedata[1]
+	} else {
+		name = p
+	}
+	return cat, name
+}
+
+func createLuetConfig(log Logger) *luetTypes.LuetConfig {
+	config := &luetTypes.LuetConfig{}
+
+	// if there is a luet.yaml file, load the data from there
+	if _, err := os.Stat("/etc/luet/luet.yaml"); err == nil {
+		log.Debugf("Loading luet config from /etc/luet/luet.yaml")
+		config = &luetTypes.LuetConfig{}
+		f, err := os.ReadFile("/etc/luet/luet.yaml")
+		if err != nil {
+			log.Errorf("Error reading luet.yaml file: %s", err)
+		}
+		err = yaml.Unmarshal(f, config)
+		if err != nil {
+			log.Errorf("Error unmarshalling luet.yaml file: %s", err)
+		}
+	} else {
+		log.Debugf("Creating empty luet config")
+	}
+
+	err := config.Init()
+	if err != nil {
+		log.Debug("Error running init on luet config: %s", err)
+	}
+	// This is set on luet CLI to runtime.NumCPU but on here we have to manually set it
+	if config.General.Concurrency == 0 {
+		config.General.Concurrency = runtime.NumCPU()
+	}
+	return config
 }

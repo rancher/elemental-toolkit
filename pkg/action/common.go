@@ -17,18 +17,20 @@ limitations under the License.
 package action
 
 import (
-	dockTypes "github.com/docker/docker/api/types"
-	"github.com/mudler/luet/pkg/api/core/context"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/sirupsen/logrus"
 )
 
 // ActionHook is RunStage wrapper that only adds logic to ignore errors
 // in case v1.RunConfig.Strict is set to false
 func ActionHook(config *v1.RunConfig, hook string) error {
 	config.Logger.Infof("Running %s hook", hook)
+	oldLevel := config.Logger.GetLevel()
+	config.Logger.SetLevel(logrus.ErrorLevel)
 	err := utils.RunStage(hook, config)
+	config.Logger.SetLevel(oldLevel)
 	if !config.Strict {
 		err = nil
 	}
@@ -47,13 +49,13 @@ func ActionChrootHook(config *v1.RunConfig, hook string, chrootDir string, bindM
 
 // SetupLuet sets the Luet object with the appropriate plugins
 func SetupLuet(config *v1.RunConfig) {
+	var plugins []string
 	if config.DockerImg != "" {
-		plugins := []string{}
 		if !config.NoVerify {
 			plugins = append(plugins, constants.LuetMtreePlugin)
 		}
-		config.Luet = v1.NewLuet(config.Logger, context.NewContext(), &dockTypes.AuthConfig{}, plugins...)
 	}
+	config.Luet = v1.NewLuet(v1.WithLuetLogger(config.Logger), v1.WithLuetPlugins(plugins...))
 }
 
 // SetPartitionsFromScratch initiates all defaults partitions in order is they

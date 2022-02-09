@@ -438,6 +438,10 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("CopyActive", Label("CopyActive", "active_label"), func() {
+		var source v1.InstallUpgradeSource
+		BeforeEach(func() {
+			source = v1.InstallUpgradeSource{}
+		})
 		It("Copies all files from source to target", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
@@ -448,19 +452,25 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			config.ActiveImage.RootTree = sourceDir
 			config.ActiveImage.MountPoint = destDir
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).To(BeNil())
+			source.Source = sourceDir
+			source.IsDir = true
+			Expect(c.CopyActive(source)).To(BeNil())
 		})
 		It("should fail if source does not exist", func() {
 			config.ActiveImage.RootTree = "/welp"
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).ToNot(BeNil())
+			source.Source = config.ActiveImage.RootTree
+			source.IsDir = true
+			Expect(c.CopyActive(source)).ToNot(BeNil())
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
 			config.DockerImg = "myimage"
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).To(BeNil())
+			source.Source = config.DockerImg
+			source.IsDocker = true
+			Expect(c.CopyActive(source)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
@@ -471,7 +481,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).To(BeNil())
+			source.Source = config.DockerImg
+			source.IsDocker = true
+			Expect(c.CopyActive(source)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
 		})
@@ -482,7 +494,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			config.Runner = runner
 			config.Cosign = true
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).NotTo(BeNil())
+			source.Source = config.DockerImg
+			source.IsDocker = true
+			Expect(c.CopyActive(source)).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
@@ -491,7 +505,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet.OnUnpackError = true
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			Expect(c.CopyActive()).NotTo(BeNil())
+			source.Source = config.DockerImg
+			source.IsDocker = true
+			Expect(c.CopyActive(source)).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 	})

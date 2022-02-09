@@ -61,6 +61,15 @@ func InstallSetup(config *v1.RunConfig) error {
 // Run will install the system from a given configuration
 func InstallRun(config *v1.RunConfig) (err error) {
 	newElemental := elemental.NewElemental(config)
+	installSource := v1.InstallUpgradeSource{}
+
+	if config.DockerImg != "" {
+		installSource.Source = config.DockerImg
+		installSource.IsDocker = true
+	} else if config.ActiveImage.RootTree != "" {
+		installSource.Source = config.ActiveImage.RootTree
+		installSource.IsDir = true
+	}
 
 	disk := partitioner.NewDisk(
 		config.Target,
@@ -137,7 +146,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	}()
 
 	// install Active
-	err = newElemental.CopyActive()
+	err = newElemental.CopyActive(installSource)
 	if err != nil {
 		return err
 	}

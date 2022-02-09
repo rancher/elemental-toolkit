@@ -272,11 +272,11 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 }
 
 // CopyActive will place the system root tree into the Active image
-func (c *Elemental) CopyActive() error {
+func (c *Elemental) CopyActive(source v1.InstallUpgradeSource) error {
 	c.config.Logger.Infof("Copying Active image...")
 	var err error
 
-	if c.config.DockerImg != "" {
+	if source.IsDocker && c.config.DockerImg != "" {
 		if c.config.Cosign {
 			c.config.Logger.Infof("Running cosing verification for %s", c.config.DockerImg)
 			out, err := utils.CosignVerify(
@@ -292,9 +292,17 @@ func (c *Elemental) CopyActive() error {
 		if err != nil {
 			return err
 		}
-	} else {
+	}
+	if source.IsDir {
 		excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
 		err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+		if err != nil {
+			return err
+		}
+	}
+
+	if source.IsChannel {
+		err = c.config.Luet.UnpackFromChannel(c.config.ActiveImage.MountPoint, source.Source)
 		if err != nil {
 			return err
 		}

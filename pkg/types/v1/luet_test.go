@@ -20,7 +20,6 @@ import (
 	"context"
 	dockTypes "github.com/docker/docker/api/types"
 	dockClient "github.com/docker/docker/client"
-	context2 "github.com/mudler/luet/pkg/api/core/context"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -36,9 +35,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		var err error
 		target, err = os.MkdirTemp("", "elemental")
 		Expect(err).To(BeNil())
-		context := context2.NewContext()
-		auth := &dockTypes.AuthConfig{}
-		luet = v1.NewLuet(v1.NewNullLogger(), context, auth, []string{}...)
+		luet = v1.NewLuet(v1.WithLuetLogger(v1.NewNullLogger()))
 	})
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())

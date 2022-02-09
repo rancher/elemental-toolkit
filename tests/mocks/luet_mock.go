@@ -16,11 +16,16 @@ limitations under the License.
 
 package mocks
 
-import "errors"
+import (
+	"errors"
+	luetTypes "github.com/mudler/luet/pkg/api/core/types"
+)
 
 type FakeLuet struct {
-	OnUnpackError bool
-	unpackCalled  bool
+	OnUnpackError            bool
+	OnUnpackFromChannelError bool
+	unpackCalled             bool
+	unpackFromChannelCalled  bool
 }
 
 func NewFakeLuet() *FakeLuet {
@@ -38,6 +43,20 @@ func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 	return nil
 }
 
+func (l *FakeLuet) UnpackFromChannel(target string, pkg string) error {
+	l.unpackFromChannelCalled = true
+	if l.OnUnpackFromChannelError == true {
+		return errors.New("Luet install error")
+	}
+	return nil
+}
+
 func (l FakeLuet) UnpackCalled() bool {
 	return l.unpackCalled
 }
+
+func (l FakeLuet) UnpackChannelCalled() bool {
+	return l.unpackFromChannelCalled
+}
+
+func (l FakeLuet) OverrideConfig(config *luetTypes.LuetConfig) {}

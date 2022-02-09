@@ -105,10 +105,11 @@ func (c *Chroot) Close() error {
 	failures := []string{}
 	for len(c.activeMounts) > 0 {
 		curr := c.activeMounts[len(c.activeMounts)-1]
+		c.config.Logger.Debugf("Unmounting %s from chroot", curr)
 		c.activeMounts = c.activeMounts[:len(c.activeMounts)-1]
 		err := c.config.Mounter.Unmount(curr)
 		if err != nil {
-			c.config.Logger.Errorf("Error unmounting %s", curr)
+			c.config.Logger.Errorf("Error unmounting %s: %s", curr, err)
 			failures = append(failures, curr)
 		}
 	}
