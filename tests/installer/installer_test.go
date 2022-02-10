@@ -2,7 +2,6 @@ package cos_test
 
 import (
 	"fmt"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -202,30 +201,6 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("testhostname"))
 
-			})
-			It("uses a wrong config file", func() {
-				err := s.SendFile("../assets/broken-config.yaml", "/tmp/config.yaml", "0770")
-				By("Running the cos-installer with a broken config file")
-				Expect(err).To(BeNil())
-				By("Running the installer")
-				out, err := s.Command("cos-installer --cloud-init /tmp/config.yaml /dev/sda")
-				Expect(err).To(BeNil())
-				Expect(out).To(ContainSubstring("Copying Active image..."))
-				Expect(out).To(ContainSubstring("Installing GRUB.."))
-				Expect(out).To(ContainSubstring("Copying Passive image..."))
-				Expect(out).To(ContainSubstring("Copying Recovery image..."))
-				Expect(out).To(ContainSubstring("Mounting disk partitions"))
-				Expect(out).To(ContainSubstring("Partitioning device..."))
-				Expect(out).To(ContainSubstring("Some errors found but were ignored"))
-				s.Reboot()
-				By("Checking we booted from the installed cOS")
-				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-				By("Checking config file is there")
-				out, err = s.Command("stat /oem/99_custom.yaml")
-				Expect(err).To(BeNil())
-				By("Check that elemental fails to load it")
-				out, err = s.Command("elemental cloud-init /oem/99_custom.yaml")
-				Expect(err).ToNot(BeNil())
 			})
 		})
 	})

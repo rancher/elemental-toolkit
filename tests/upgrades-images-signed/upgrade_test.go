@@ -30,8 +30,8 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 			It("upgrades to latest available (master) and reset", func() {
 				out, err := s.Command("cos-upgrade")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(out).Should(ContainSubstring("Upgrade target: active.img"))
+				Expect(out).Should(ContainSubstring("Upgrade completed"))
+				Expect(out).Should(ContainSubstring("Upgrading active partition"))
 				By("rebooting")
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))
@@ -54,10 +54,8 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(
 					And(
-						ContainSubstring("Upgrade done, now you might want to reboot"),
-						ContainSubstring("/usr/local/.cos-upgrade/tmp/rootfs"),
-						ContainSubstring("Upgrade target: active.img"),
-						ContainSubstring("Pulled"),
+						ContainSubstring("Upgrade completed"),
+						ContainSubstring("Upgrading active partition"),
 					),
 				)
 

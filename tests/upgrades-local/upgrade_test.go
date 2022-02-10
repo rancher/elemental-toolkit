@@ -48,8 +48,8 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-				Expect(out).Should(ContainSubstring("Upgrade target: active.img"))
+				Expect(out).Should(ContainSubstring("Upgrade completed"))
+				Expect(out).Should(ContainSubstring("Upgrading active partition"))
 				By("rebooting")
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))

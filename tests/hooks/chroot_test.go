@@ -20,8 +20,8 @@ var _ = Describe("cOS Feature tests", func() {
 
 			out, err := s.Command("cos-upgrade")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-			Expect(out).Should(ContainSubstring("Upgrade target: active.img"))
+			Expect(out).Should(ContainSubstring("Upgrade completed"))
+			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 			By("rebooting")
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))

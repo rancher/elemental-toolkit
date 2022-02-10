@@ -49,11 +49,11 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				Expect(currentName).To(Equal(recoveryName))
 			}
 
-			By("upgrade with CURRENT=active.img")
-			out, err := s.Command("CURRENT=active.img cos-upgrade")
+			By("upgrade active")
+			out, err := s.Command("cos-upgrade")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-			Expect(out).Should(ContainSubstring("Upgrading system"))
+			Expect(out).Should(ContainSubstring("Upgrade completed"))
+			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 
 			By("Reboot to upgraded active")
 			s.Reboot()
@@ -75,10 +75,10 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command(fmt.Sprintf("CURRENT=active.img cos-upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+			out, err := s.Command(fmt.Sprintf("cos-upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
-
+			Expect(out).Should(ContainSubstring("Upgrade completed"))
+			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 			err = s.ChangeBoot(sut.Active)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -99,7 +99,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
 				out, err := s.Command(fmt.Sprintf("cos-upgrade --recovery --docker-image %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
 
 				By("booting into recovery to check the OS version")
@@ -125,7 +125,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				By("upgrading recovery")
 				out, err := s.Command("cos-upgrade --recovery")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade done, now you might want to reboot"))
+				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
 
 				By("Reboot to upgraded recovery")

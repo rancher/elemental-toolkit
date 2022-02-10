@@ -43,7 +43,7 @@ requires:
   version: ">=0"
 - name: "elemental-cli"
   category: "toolchain"
-  version: ">0.20220124"
+  version: ">0.20220216"
 - name: "luet"
   category: "toolchain"
   version: ">=0"
