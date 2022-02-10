@@ -681,3 +681,6 @@ jobs:
           path: |
             cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-arm64.tar.gz
           if-no-files-found: error
+      - name: cleanup leftovers
+        if: always()
+        run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
