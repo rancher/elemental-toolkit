@@ -28,6 +28,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install Go
         run: |
@@ -49,6 +50,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -102,6 +104,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
   iso-squashfs-green:
     runs-on: ubuntu-latest
@@ -123,6 +126,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -400,6 +404,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -706,6 +711,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install Go
         run: |
@@ -727,6 +733,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -782,6 +789,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install OS deps
         run: |
@@ -832,6 +840,9 @@ jobs:
           path: |
             cOS-Vanilla-GCE-green-${{ env.COS_VERSION }}-x86_64.tar.gz
           if-no-files-found: error
+      - name: cleanup leftovers
+        if: always()
+        run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
   tests-raw-disk-deploy-green:
     runs-on: macos-10.15
     needs: raw-images-green
@@ -903,6 +914,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -939,6 +951,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -975,6 +988,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
@@ -1028,6 +1042,7 @@ jobs:
           sudo rm -Rf /etc/luet/ || true
           sudo rm -Rf /var/tmp/luet || true
           sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |

@@ -8,6 +8,10 @@ set -ex
 export LUET_NOLOCK=true
 
 LUET_VERSION=$(curl -s https://api.github.com/repos/mudler/luet/releases/latest | grep tag_name | awk '{ print $2 }' | sed -e 's/\"//g' -e 's/,//g' || echo "0.9.24" )
+if [[ -z "${LUET_VERSION}" ]]; then
+    LUET_VERSION="0.22.7"
+fi
+
 LUET_ROOTFS=${LUET_ROOTFS:-/}
 LUET_DATABASE_PATH=${LUET_DATABASE_PATH:-/var/luet/db}
 LUET_DATABASE_ENGINE=${LUET_DATABASE_ENGINE:-boltdb}
