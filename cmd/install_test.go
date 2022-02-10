@@ -44,7 +44,7 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
 		Expect(buf).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+		Expect(err.Error()).To(ContainSubstring("'reboot' and 'poweroff' are mutually exclusive options"))
 	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		buf := new(bytes.Buffer)
@@ -56,6 +56,6 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
 		Expect(buf).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
 	})
 })

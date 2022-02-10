@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
@@ -53,13 +52,8 @@ var upgradeCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		// Init luet
-		action.SetupLuet(cfg)
-
-		// docker-image and directory are mutually exclusive. Can't have your cake and eat it too.
-		if viper.GetString("docker-image") != "" && viper.GetString("directory") != "" {
-			msg := "flags docker-image and directory are mutually exclusive, please only set one of them"
-			return errors.New(msg)
+		if err := validateUpgradeFlags(cfg.Logger); err != nil {
+			return err
 		}
 
 		if cfg.DockerImg != "" || cfg.DirectoryUpgrade != "" {
@@ -71,6 +65,8 @@ var upgradeCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 		cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
+		// Init luet
+		action.SetupLuet(cfg)
 		upgrade := action.NewUpgradeAction(cfg)
 		err = upgrade.Run()
 		if err != nil {
@@ -82,12 +78,9 @@ var upgradeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
-	upgradeCmd.Flags().String("docker-image", "", "Install a specified container image")
 	upgradeCmd.Flags().String("directory", "", "Use directory as source to install from")
 	upgradeCmd.Flags().Bool("recovery", false, "Upgrade the recovery")
-	upgradeCmd.Flags().Bool("no-verify", false, "Disable mtree verification")
-	upgradeCmd.Flags().Bool("cosign", false, "Disable cosign verification")
-	upgradeCmd.Flags().Bool("strict", false, "Fail on any errors")
-	upgradeCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
-	upgradeCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
+	addSharedInstallUpgradeFlags(upgradeCmd)
+	addCosignFlags(upgradeCmd)
+	addPowerFlags(upgradeCmd)
 }

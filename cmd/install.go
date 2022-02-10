@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
@@ -46,19 +45,8 @@ var installCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		err = errors.New("Invalid options")
-		if viper.GetBool("reboot") && viper.GetBool("poweroff") {
-			cfg.Logger.Errorf("'reboot' and 'poweroff' are mutually exclusive options")
+		if err := validateInstallFlags(cfg.Logger); err != nil {
 			return err
-		}
-
-		if viper.GetString("cosign-key") != "" && !viper.GetBool("cosign") {
-			cfg.Logger.Errorf("'cosign-key' requires 'cosing' option to be enabled")
-			return err
-		}
-
-		if viper.GetBool("cosign") && viper.GetString("cosign-key") == "" {
-			cfg.Logger.Warnf("No 'cosign-key' option set, keyless cosign verification is experimental")
 		}
 
 		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
@@ -83,19 +71,15 @@ var installCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
 	installCmd.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
 	installCmd.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
 	installCmd.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
-	installCmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
-	installCmd.Flags().BoolP("cosign", "", false, "Enable cosign verification (requires images with signatures)")
-	installCmd.Flags().StringP("cosign-key", "", "", "Sets the URL of the public key to be used by cosign validation")
 	installCmd.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
 	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
 	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
-	installCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	installCmd.Flags().BoolP("force", "", false, "Force install")
-	installCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
-	installCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
+	addSharedInstallUpgradeFlags(installCmd)
+	addCosignFlags(installCmd)
+	addPowerFlags(installCmd)
 }
