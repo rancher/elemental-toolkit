@@ -668,4 +668,78 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+	Describe("CleanStack", Label("CleanStack"), func() {
+		var cleaner *utils.CleanStack
+		BeforeEach(func() {
+			cleaner = utils.NewCleanStack()
+		})
+		It("Adds a callback to the stack and pops it", func() {
+			var flag bool
+			callback := func() error {
+				flag = true
+				return nil
+			}
+			Expect(cleaner.Pop()).To(BeNil())
+			cleaner.Push(callback)
+			poppedJob := cleaner.Pop()
+			Expect(poppedJob).NotTo(BeNil())
+			poppedJob()
+			Expect(flag).To(BeTrue())
+		})
+		It("On Cleanup runs callback stack in reverse order", func() {
+			result := ""
+			callback1 := func() error {
+				result = result + "one "
+				return nil
+			}
+			callback2 := func() error {
+				result = result + "two "
+				return nil
+			}
+			callback3 := func() error {
+				result = result + "three "
+				return nil
+			}
+			cleaner.Push(callback1)
+			cleaner.Push(callback2)
+			cleaner.Push(callback3)
+			cleaner.Cleanup(nil)
+			Expect(result).To(Equal("three two one "))
+		})
+		It("On Cleanup keeps former error and all callbacks are executed", func() {
+			err := errors.New("Former error")
+			count := 0
+			callback := func() error {
+				count++
+				if count == 2 {
+					return errors.New("Cleanup Error")
+				}
+				return nil
+			}
+			cleaner.Push(callback)
+			cleaner.Push(callback)
+			cleaner.Push(callback)
+			err = cleaner.Cleanup(err)
+			Expect(count).To(Equal(3))
+			Expect(err.Error()).To(ContainSubstring("Former error"))
+		})
+		It("On Cleanup error reports first error and all callbacks are executed", func() {
+			var err error
+			count := 0
+			callback := func() error {
+				count++
+				if count >= 2 {
+					return errors.New(fmt.Sprintf("Cleanup error %d", count))
+				}
+				return nil
+			}
+			cleaner.Push(callback)
+			cleaner.Push(callback)
+			cleaner.Push(callback)
+			err = cleaner.Cleanup(err)
+			Expect(count).To(Equal(3))
+			Expect(err.Error()).To(ContainSubstring("Cleanup error 2"))
+			Expect(err.Error()).To(ContainSubstring("Cleanup error 3"))
+		})
+	})
 })

@@ -129,6 +129,8 @@ func ResetSetup(config *v1.RunConfig) error {
 // ResetRun will reset the cos system to by following several steps
 func ResetRun(config *v1.RunConfig) (err error) {
 	ele := elemental.NewElemental(config)
+	cleanup := utils.NewCleanStack()
+	defer func() { err = cleanup.Cleanup(err) }()
 
 	err = resetHook(config, cnst.BeforeResetHook, false)
 	if err != nil {
@@ -169,11 +171,7 @@ func ResetRun(config *v1.RunConfig) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if tmpErr := ele.UnmountPartitions(); tmpErr != nil && err == nil {
-			err = tmpErr
-		}
-	}()
+	cleanup.Push(func() error { return ele.UnmountPartitions() })
 
 	// install Active
 	// TODO all this logic should be part` of the CopyImage(img *v1.Image) refactor up to
@@ -201,11 +199,7 @@ func ResetRun(config *v1.RunConfig) (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if tmpErr := ele.UnmountImage(&config.ActiveImage); tmpErr != nil && err == nil {
-				err = tmpErr
-			}
-		}()
+		cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
 	}
 	err = ele.CopyActive(source)
 	if err != nil {
@@ -216,11 +210,7 @@ func ResetRun(config *v1.RunConfig) (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if tmpErr := ele.UnmountImage(&config.ActiveImage); tmpErr != nil && err == nil {
-				err = tmpErr
-			}
-		}()
+		cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
 	}
 	// TODO: here ends the CopyImage(img *v1.Image)
 
@@ -257,6 +247,12 @@ func ResetRun(config *v1.RunConfig) (err error) {
 
 	// installation rebrand (only grub for now)
 	err = ele.Rebrand()
+	if err != nil {
+		return err
+	}
+
+	// Do not reboot/poweroff on cleanup errors
+	err = cleanup.Cleanup(err)
 	if err != nil {
 		return err
 	}

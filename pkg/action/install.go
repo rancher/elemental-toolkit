@@ -65,6 +65,8 @@ func InstallSetup(config *v1.RunConfig) error {
 func InstallRun(config *v1.RunConfig) (err error) {
 	newElemental := elemental.NewElemental(config)
 	installSource := v1.InstallUpgradeSource{}
+	cleanup := utils.NewCleanStack()
+	defer func() { err = cleanup.Cleanup(err) }()
 
 	if config.DockerImg != "" {
 		installSource.Source = config.DockerImg
@@ -91,13 +93,11 @@ func InstallRun(config *v1.RunConfig) (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() {
+		cleanup.Push(func() error {
 			config.Logger.Infof("Unmounting downloaded ISO")
-			if tmpErr := config.Mounter.Unmount(config.IsoMnt); tmpErr != nil && err == nil {
-				err = tmpErr
-			}
 			config.Fs.RemoveAll(tmpDir)
-		}()
+			return config.Mounter.Unmount(config.IsoMnt)
+		})
 	}
 
 	// Check device valid
@@ -125,11 +125,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if tmpErr := newElemental.UnmountPartitions(); tmpErr != nil && err == nil {
-			err = tmpErr
-		}
-	}()
+	cleanup.Push(func() error { return newElemental.UnmountPartitions() })
 
 	// create active file system image
 	err = newElemental.CreateFileSystemImage(config.ActiveImage)
@@ -142,11 +138,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if tmpErr := newElemental.UnmountImage(&config.ActiveImage); tmpErr != nil && err == nil {
-			err = tmpErr
-		}
-	}()
+	cleanup.Push(func() error { return newElemental.UnmountImage(&config.ActiveImage) })
 
 	// install Active
 	err = newElemental.CopyActive(installSource)
@@ -195,6 +187,12 @@ func InstallRun(config *v1.RunConfig) (err error) {
 
 	// installation rebrand (only grub for now)
 	err = newElemental.Rebrand()
+	if err != nil {
+		return err
+	}
+
+	// Do not reboot/poweroff on cleanup errors
+	err = cleanup.Cleanup(err)
 	if err != nil {
 		return err
 	}

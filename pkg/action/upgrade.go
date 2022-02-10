@@ -18,7 +18,6 @@ package action
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-multierror"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -32,13 +31,6 @@ import (
 // UpgradeAction represents the struct that will run the upgrade from start to finish
 type UpgradeAction struct {
 	Config *v1.RunConfig
-}
-
-// Cleanup is the struct that will be passed to the cleanup function at the end of the upgrade or at any error before returning
-type Cleanup struct {
-	Unmount []string
-	Remove  []string
-	Remount []mount.MountPoint
 }
 
 func NewUpgradeAction(config *v1.RunConfig) *UpgradeAction {
@@ -76,12 +68,13 @@ func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
 	return ActionHook(config, hook)
 }
 
-func (u *UpgradeAction) Run() error {
+func (u *UpgradeAction) Run() (err error) {
 	var statePart v1.Partition
-	var err error
 	var transitionImg string
-	cleanup := Cleanup{Remove: []string{constants.UpgradeTempDir}}
 	upgradeStateDir := constants.RunningStateDir
+
+	cleanup := utils.NewCleanStack()
+	defer func() { err = cleanup.Cleanup(err) }()
 
 	// if upgrading the recovery we mount the state in a different place as its already mounted RO, we need to remount it
 	if u.Config.RecoveryUpgrade {
@@ -95,22 +88,21 @@ func (u *UpgradeAction) Run() error {
 	err = u.Config.Fs.MkdirAll(constants.UpgradeTempDir, os.ModeDir)
 	if err != nil {
 		u.Error("Error creating target dir %s: %s", constants.UpgradeTempDir, err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
-
-	cleanup.Remove = append(cleanup.Remove, constants.UpgradeTempDir)
+	cleanup.Push(func() error { return u.remove(constants.UpgradeTempDir) })
 
 	if u.Config.RecoveryUpgrade {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 5)
 		if err != nil {
 			u.Error("Could not find state partition to mount with label %s", u.Config.RecoveryLabel)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 	} else {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 5)
 		if err != nil {
 			u.Error("Could not find state partition to mount with label %s", u.Config.StateLabel)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 	}
 
@@ -120,7 +112,7 @@ func (u *UpgradeAction) Run() error {
 
 		if err != nil {
 			u.Error("Error creating statedir %s: %s", upgradeStateDir, err)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 	}
 
@@ -129,23 +121,25 @@ func (u *UpgradeAction) Run() error {
 	// If we want to upgrade the active but are booting from recovery, the statedir is not mounted, so dont remount
 	if !u.Config.RecoveryUpgrade && utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
 		statePartMountOptions = []string{"rw"}
-		cleanup.Unmount = append(cleanup.Unmount, upgradeStateDir)
+		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
 	}
 
 	// If we want to upgrade the recovery but are not booting from recovery, the stateDir is not mounted, so dont try to remount
 	if u.Config.RecoveryUpgrade && !utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
 		statePartMountOptions = []string{"rw"}
-		cleanup.Unmount = append(cleanup.Unmount, upgradeStateDir)
+		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
 	}
 
 	err = u.Config.Mounter.Mount(statePart.Path, upgradeStateDir, statePart.FS, statePartMountOptions)
 	if err != nil {
 		u.Error("Error mounting %s: %s", upgradeStateDir, err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 
 	if !utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
-		cleanup.Remount = append(cleanup.Remount, mount.MountPoint{Device: statePart.Path, Path: upgradeStateDir, Type: statePart.FS})
+		cleanup.Push(func() error {
+			return u.remount(mount.MountPoint{Device: statePart.Path, Path: upgradeStateDir, Type: statePart.FS}, "ro")
+		})
 	}
 
 	// Track if recovery.squash file exists which indeicates that the recovery is squash
@@ -160,7 +154,7 @@ func (u *UpgradeAction) Run() error {
 
 	u.Debug("Using transition img: %s", transitionImg)
 
-	cleanup.Remove = append(cleanup.Remove, transitionImg)
+	cleanup.Push(func() error { return u.remove(transitionImg) })
 
 	// create transition.img
 	img := v1.Image{
@@ -184,7 +178,7 @@ func (u *UpgradeAction) Run() error {
 		err = ele.CreateFileSystemImage(img)
 		if err != nil {
 			u.Error("Failed to create %s img: %s", transitionImg, err)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 
 		// mount the transition img on targetDir, so we can install the upgraded files into targetDir, and they end up on the img
@@ -198,14 +192,14 @@ func (u *UpgradeAction) Run() error {
 	err = upgradeHook(u.Config, "before-upgrade", false)
 	if err != nil {
 		u.Error("Error while running hook before-upgrade: %s", err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 	// Setting the activeImg to our img, tricks CopyActive into doing it anyway even if it's a recovery img
 	u.Config.ActiveImage = img
 	err = ele.CopyActive(upgradeSource)
 	if err != nil {
 		u.Error("Error copying active: %s", err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 	// Selinux relabel
 	// In the original script, any errors are ignored
@@ -216,7 +210,7 @@ func (u *UpgradeAction) Run() error {
 	err = upgradeHook(u.Config, "after-upgrade-chroot", true)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 
 	// Load the os-release file from the new upgraded system
@@ -228,13 +222,13 @@ func (u *UpgradeAction) Run() error {
 
 	if err != nil {
 		u.Error("Error running rebrand: %s", err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 	err = upgradeHook(u.Config, "after-upgrade", false)
 
 	if err != nil {
 		u.Error("Error running hook after-upgrade: %s", err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 
 	if !isSquashRecovery {
@@ -256,7 +250,7 @@ func (u *UpgradeAction) Run() error {
 		_, err := u.Config.Runner.Run("mv", "-f", source, destination)
 		if err != nil {
 			u.Error("Failed to move %s to %s: %s", source, destination, err)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 		u.Info("Finished moving %s to %s", source, destination)
 		// Label the image to passive!
@@ -264,7 +258,7 @@ func (u *UpgradeAction) Run() error {
 		if err != nil {
 			u.Error("Error while labeling the passive image %s: %s", destination, err)
 			u.Debug("Error while labeling the passive image %s, command output: %s", out)
-			return u.cleanup(cleanup, err)
+			return err
 		}
 		_, _ = u.Config.Runner.Run("sync")
 	}
@@ -277,7 +271,7 @@ func (u *UpgradeAction) Run() error {
 		u.Info("Creating %s", constants.RecoverySquashFile)
 		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, constants.UpgradeTempDir, transitionImg, options)
 		if err != nil {
-			return u.cleanup(cleanup, err)
+			return err
 		}
 	}
 
@@ -285,7 +279,7 @@ func (u *UpgradeAction) Run() error {
 	_, err = u.Config.Runner.Run("mv", "-f", transitionImg, finalDestination)
 	if err != nil {
 		u.Error("Failed to move %s to %s: %s", transitionImg, finalDestination, err)
-		return u.cleanup(cleanup, err)
+		return err
 	}
 	u.Info("Finished moving %s to %s", transitionImg, finalDestination)
 
@@ -293,80 +287,46 @@ func (u *UpgradeAction) Run() error {
 
 	u.Info("Upgrade completed")
 
-	if u.Config.Reboot {
-		err = u.cleanup(cleanup, err)
-		if err != nil {
-			// If cleanup fails, do not reboot
-			return err
-		} else {
-			u.Info("Rebooting in 5 seconds")
-			return utils.Reboot(u.Config.Runner, 5)
-		}
-	} else if u.Config.PowerOff {
-		err = u.cleanup(cleanup, err)
-		if err != nil {
-			// If cleanup fails, do not shut down
-			return err
-		} else {
-			u.Info("Shutting down in 5 seconds")
-			return utils.Shutdown(u.Config.Runner, 5)
-		}
+	// Do not reboot/poweroff on cleanup errors
+	err = cleanup.Cleanup(err)
+	if err != nil {
+		return err
 	}
-	return u.cleanup(cleanup, err)
+	if u.Config.Reboot {
+		u.Info("Rebooting in 5 seconds")
+		return utils.Reboot(u.Config.Runner, 5)
+	} else if u.Config.PowerOff {
+		u.Info("Shutting down in 5 seconds")
+		return utils.Shutdown(u.Config.Runner, 5)
+	}
+	return err
 }
 
-func (u *UpgradeAction) cleanup(cleanup Cleanup, originalError error) error {
-	// first try to unmount
-	var errs error
-
-	for _, m := range cleanup.Unmount {
-		if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(m); !notMounted {
-			u.Debug("[Cleanup] Unmounting %s", m)
-			err := u.Config.Mounter.Unmount(m)
-			if err != nil {
-				// Save errors and continue
-				errs = multierror.Append(errs, err)
-			}
-		}
+// unmount attempts to unmount the given path. Does nothing if not mounted
+func (u *UpgradeAction) unmount(path string) error {
+	if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(path); !notMounted {
+		u.Debug("[Cleanup] Unmounting %s", path)
+		return u.Config.Mounter.Unmount(path)
 	}
+	return nil
+}
 
-	// Then cleanup dirs/files
-	for _, f := range cleanup.Remove {
-		if exists, _ := afero.Exists(u.Config.Fs, f); exists {
-			u.Debug("[Cleanup] Removing %s", f)
-			err := u.Config.Fs.RemoveAll(f)
-			if err != nil {
-				// Save errors and continue
-				errs = multierror.Append(errs, err)
-			}
-		}
+// remove attempts to remove the given path. Does nothing if it doesn't exist
+func (u *UpgradeAction) remove(path string) error {
+	if exists, _ := afero.Exists(u.Config.Fs, path); exists {
+		u.Debug("[Cleanup] Removing %s", path)
+		return u.Config.Fs.RemoveAll(path)
 	}
+	return nil
+}
 
-	// Then remount as RO
-	for _, r := range cleanup.Remount {
-		if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(r.Path); !notMounted {
-			u.Debug("[Cleanup] Remount %s", r.Path)
-			err := u.Config.Mounter.Mount(r.Device, r.Path, r.Type, []string{"remount", "ro"})
-			if err != nil {
-				// Save errors and continue
-				errs = multierror.Append(errs, err)
-			}
-		}
+// remount attemps to remount the given mountpoint with the provided options. Does nothing if not mounted
+func (u *UpgradeAction) remount(m mount.MountPoint, opts ...string) error {
+	if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(m.Path); !notMounted {
+		u.Debug("[Cleanup] Remount %s", m.Path)
+		return u.Config.Mounter.Mount(m.Device, m.Path, m.Type, append([]string{"remount"}, opts...))
 	}
-
-	if errs != nil {
-		if originalError != nil {
-			// Log errors but return the original error
-			u.Error("Found errors while cleaning up: %s", errs)
-			return originalError
-		}
-		return errs
-	} else {
-		if originalError != nil {
-			return originalError
-		}
-		return nil
-	}
+	return nil
 }
 
 // getTargetAndSource finds our the target and source for the upgrade
