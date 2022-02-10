@@ -132,7 +132,7 @@ var _ = Describe("Actions", func() {
 			Expect(action.ResetSetup(config)).NotTo(BeNil())
 		})
 	})
-	Describe("Reset Action", Label("reset"), Focus, func() {
+	Describe("Reset Action", Label("reset"), func() {
 		var activeImg v1.Image
 		var statePart, persistentPart, oemPart *v1.Partition
 		var cmdFail, activeTree, activeMount string
