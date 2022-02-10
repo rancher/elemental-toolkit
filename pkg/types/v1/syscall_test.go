@@ -38,4 +38,10 @@ var _ = Describe("Syscall", Label("types", "syscall", "chroot"), func() {
 		// We need elevated privs to chroot so this should fail
 		Expect(err).To(BeNil())
 	})
+
+	It("Calling chroot on the real syscall should not fail", Label("root"), func() {
+		r := v1.RealSyscall{}
+		err := r.Chroot("/")
+		Expect(err).ToNot(HaveOccurred())
+	})
 })

@@ -25,8 +25,8 @@ import (
 	"github.com/mudler/luet/pkg/database"
 	"github.com/mudler/luet/pkg/helpers/docker"
 	"github.com/mudler/luet/pkg/installer"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
-	"os"
 	"runtime"
 	"strings"
 )
@@ -40,6 +40,7 @@ type Luet struct {
 	log               Logger
 	context           *context.Context
 	auth              *dockTypes.AuthConfig
+	fs                afero.Fs
 	VerifyImageUnpack bool
 }
 
@@ -49,9 +50,11 @@ func WithLuetPlugins(plugins ...string) func(r *Luet) error {
 	return func(l *Luet) error {
 		if len(plugins) != 0 {
 			bus.Manager.Initialize(l.context, plugins...)
-			l.log.Infof("Enabled plugins:")
-			for _, p := range bus.Manager.Plugins {
-				l.log.Infof("* %s (at %s)", p.Name, p.Executable)
+			if l.log != nil {
+				l.log.Infof("Enabled plugins:")
+				for _, p := range bus.Manager.Plugins {
+					l.log.Infof("* %s (at %s)", p.Name, p.Executable)
+				}
 			}
 		}
 		return nil
@@ -82,6 +85,13 @@ func WithLuetLogger(log Logger) func(r *Luet) error {
 	}
 }
 
+func WithLuetFs(fs afero.Fs) func(r *Luet) error {
+	return func(l *Luet) error {
+		l.fs = fs
+		return nil
+	}
+}
+
 func NewLuet(opts ...LuetOptions) *Luet {
 
 	luet := &Luet{}
@@ -94,11 +104,15 @@ func NewLuet(opts ...LuetOptions) *Luet {
 	}
 
 	if luet.log == nil {
-		luet.log = NewLogger()
+		luet.log = NewNullLogger()
+	}
+
+	if luet.fs == nil {
+		luet.fs = afero.NewOsFs()
 	}
 
 	if luet.context == nil {
-		luetConfig := createLuetConfig(luet.log)
+		luetConfig := luet.createLuetConfig()
 		luet.context = context.NewContext(context.WithConfig(luetConfig))
 	}
 
@@ -187,28 +201,28 @@ func packageData(p string) (string, string) {
 	return cat, name
 }
 
-func createLuetConfig(log Logger) *luetTypes.LuetConfig {
+func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 	config := &luetTypes.LuetConfig{}
 
 	// if there is a luet.yaml file, load the data from there
-	if _, err := os.Stat("/etc/luet/luet.yaml"); err == nil {
-		log.Debugf("Loading luet config from /etc/luet/luet.yaml")
+	if exists, _ := afero.Exists(l.fs, "/etc/luet/luet.yaml"); exists {
+		l.log.Debugf("Loading luet config from /etc/luet/luet.yaml")
 		config = &luetTypes.LuetConfig{}
-		f, err := os.ReadFile("/etc/luet/luet.yaml")
+		f, err := afero.ReadFile(l.fs, "/etc/luet/luet.yaml")
 		if err != nil {
-			log.Errorf("Error reading luet.yaml file: %s", err)
+			l.log.Errorf("Error reading luet.yaml file: %s", err)
 		}
 		err = yaml.Unmarshal(f, config)
 		if err != nil {
-			log.Errorf("Error unmarshalling luet.yaml file: %s", err)
+			l.log.Errorf("Error unmarshalling luet.yaml file: %s", err)
 		}
 	} else {
-		log.Debugf("Creating empty luet config")
+		l.log.Debugf("Creating empty luet config")
 	}
 
 	err := config.Init()
 	if err != nil {
-		log.Debug("Error running init on luet config: %s", err)
+		l.log.Debug("Error running init on luet config: %s", err)
 	}
 	// This is set on luet CLI to runtime.NumCPU but on here we have to manually set it
 	if config.General.Concurrency == 0 {

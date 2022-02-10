@@ -13,6 +13,7 @@ require (
 	github.com/itchyny/gojq v0.12.6 // indirect
 	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
+	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e // indirect
 	github.com/mudler/luet v0.0.0-20220127164253-6f77fa2b3a72
 	github.com/mudler/yip v0.0.0-20220127115532-dd6192ae26bf
 	github.com/onsi/ginkgo/v2 v2.1.1
