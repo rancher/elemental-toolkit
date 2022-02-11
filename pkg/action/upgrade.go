@@ -54,12 +54,12 @@ func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
 		mountPoints := map[string]string{}
 
 		oemDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.OEMLabel, 5)
-		if err == nil {
+		if err == nil && oemDevice.MountPoint != "" {
 			mountPoints[oemDevice.MountPoint] = "/oem"
 		}
 
 		persistentDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 5)
-		if err == nil {
+		if err == nil && persistentDevice.MountPoint != "" {
 			mountPoints[persistentDevice.MountPoint] = "/usr/local"
 		}
 
@@ -122,6 +122,31 @@ func (u *UpgradeAction) Run() (err error) {
 	if !u.Config.RecoveryUpgrade && utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
 		statePartMountOptions = []string{"rw"}
 		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
+		// Also mount oem and persistent as they are not mounted on recovery
+		oemPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.OEMLabel, 5)
+		if err == nil {
+			err := u.Config.Fs.MkdirAll(constants.OEMDir, os.ModeDir)
+			if err == nil {
+				err = u.Config.Mounter.Mount(oemPart.Path, constants.OEMDir, oemPart.FS, []string{})
+				if err != nil {
+					u.Config.Logger.Warnf("Could not mount oem partition: %s", err)
+				} else {
+					cleanup.Push(func() error { return u.unmount(constants.OEMDir) })
+				}
+			}
+		}
+		persistentPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.PersistentLabel, 5)
+		if err == nil {
+			err := u.Config.Fs.MkdirAll(constants.PersistentDir, os.ModeDir)
+			if err == nil {
+				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, persistentPart.FS, []string{})
+				if err != nil {
+					u.Config.Logger.Warnf("Could not mount persistent partition: %s", err)
+				} else {
+					cleanup.Push(func() error { return u.unmount(constants.PersistentDir) })
+				}
+			}
+		}
 	}
 
 	// If we want to upgrade the recovery but are not booting from recovery, the stateDir is not mounted, so dont try to remount
@@ -142,7 +167,7 @@ func (u *UpgradeAction) Run() (err error) {
 		})
 	}
 
-	// Track if recovery.squash file exists which indeicates that the recovery is squash
+	// Track if recovery.squash file exists which indicates that the recovery is squash
 	isSquashRecovery, _ := afero.Exists(u.Config.Fs, filepath.Join(upgradeStateDir, "cOS", constants.RecoverySquashFile))
 
 	if isSquashRecovery {
@@ -240,8 +265,8 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	// If booted from active and not updating recovery, backup active into passive
-	if utils.BootedFrom(u.Config.Runner, u.Config.ActiveLabel) && !u.Config.RecoveryUpgrade {
+	// If booted from active or recovery and not updating recovery, backup active into passive
+	if utils.BootedFrom(u.Config.Runner, u.Config.ActiveLabel) || utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) && !u.Config.RecoveryUpgrade {
 		// backup current active.img to passive.img before overwriting the active.img
 		u.Info("Backing up current active image")
 		source := filepath.Join(upgradeStateDir, "cOS", constants.ActiveImgFile)
