@@ -125,7 +125,8 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				v1.NewLuet(v1.WithLuetLogger(log))
+				fs := afero.NewMemMapFs()
+				v1.NewLuet(v1.WithLuetFs(fs), v1.WithLuetLogger(log))
 				// Check if the debug stuff was logged to the buffer
 				Expect(memLog.String()).To(ContainSubstring("Creating empty luet config"))
 			})

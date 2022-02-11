@@ -41,6 +41,7 @@ type Luet struct {
 	context           *context.Context
 	auth              *dockTypes.AuthConfig
 	fs                afero.Fs
+	plugins           []string
 	VerifyImageUnpack bool
 }
 
@@ -49,13 +50,7 @@ type LuetOptions func(l *Luet) error
 func WithLuetPlugins(plugins ...string) func(r *Luet) error {
 	return func(l *Luet) error {
 		if len(plugins) != 0 {
-			bus.Manager.Initialize(l.context, plugins...)
-			if l.log != nil {
-				l.log.Infof("Enabled plugins:")
-				for _, p := range bus.Manager.Plugins {
-					l.log.Infof("* %s (at %s)", p.Name, p.Executable)
-				}
-			}
+			l.plugins = plugins
 		}
 		return nil
 	}
@@ -118,6 +113,14 @@ func NewLuet(opts ...LuetOptions) *Luet {
 
 	if luet.auth == nil {
 		luet.auth = &dockTypes.AuthConfig{}
+	}
+
+	if len(luet.plugins) > 0 {
+		bus.Manager.Initialize(luet.context, luet.plugins...)
+		luet.log.Infof("Enabled plugins:")
+		for _, p := range bus.Manager.Plugins {
+			luet.log.Infof("* %s (at %s)", p.Name, p.Executable)
+		}
 	}
 
 	return luet
