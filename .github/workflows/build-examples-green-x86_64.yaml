@@ -125,7 +125,7 @@ jobs:
       - name: Build standard 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
-          cd examples/standard
+          cd examples/standard/opensuse
           docker build . -t standard:latest
       - name: Dump standard image
         shell: 'script -q -e -c "bash {0}"'
