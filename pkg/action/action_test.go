@@ -537,7 +537,8 @@ var _ = Describe("Actions", func() {
 			config.PassiveLabel = constants.PassiveLabel
 			config.RecoveryLabel = constants.RecoveryLabel
 			config.ActiveLabel = constants.ActiveLabel
-			config.UpgradeImage = "system/cos-setup"
+			config.UpgradeImage = "system/cos-config"
+			config.RecoveryImage = "system/cos-config"
 			config.ImgSize = 10
 			// Create fake /etc/os-release
 			_ = afero.WriteFile(fs, filepath.Join(constants.UpgradeTempDir, "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
@@ -931,17 +932,13 @@ var _ = Describe("Actions", func() {
 
 					config.ChannelUpgrades = true
 					// Required paths
-					tmpDirBase, _ := os.MkdirTemp("", "elemental")
-					pkgCache, _ := os.MkdirTemp("", "elemental")
-					dbPath, _ := os.MkdirTemp("", "elemental")
+					tmpDirBase := filepath.Join(os.TempDir(), "tmpluet")
 					defer os.RemoveAll(tmpDirBase)
-					defer os.RemoveAll(pkgCache)
-					defer os.RemoveAll(dbPath)
 					// create new config here to add system repos
 					luetSystemConfig := luetTypes.LuetSystemConfig{
-						DatabasePath:   dbPath,
-						PkgsCachePath:  pkgCache,
-						DatabaseEngine: "memory",
+						DatabasePath:   filepath.Join(tmpDirBase, "db"),
+						PkgsCachePath:  filepath.Join(tmpDirBase, "cache"),
+						DatabaseEngine: "",
 						TmpDirBase:     tmpDirBase,
 					}
 					luetGeneralConfig := luetTypes.LuetGeneralConfig{Debug: false, Quiet: true, Concurrency: runtime.NumCPU()}
@@ -1052,8 +1049,9 @@ var _ = Describe("Actions", func() {
 					// Should have created recovery image
 					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
-					// Should have default image size
-					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+					// Should not be empty
+					Expect(info.Size()).To(BeNumerically(">", 0))
+					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
@@ -1079,8 +1077,9 @@ var _ = Describe("Actions", func() {
 					// This should be the new image
 					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
-					// Image size should be empty
-					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+					// Image size should not be empty
+					Expect(info.Size()).To(BeNumerically(">", 0))
+					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 					Expect(info.IsDir()).To(BeFalse())
 
 					// Transition squash should not exist

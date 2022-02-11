@@ -166,7 +166,7 @@ func (l Luet) UnpackFromChannel(target string, pkg string) error {
 		Context:                     l.context,
 	})
 	system := &installer.System{
-		Database: database.NewInMemoryDatabase(true),
+		Database: database.NewInMemoryDatabase(false),
 		Target:   target,
 	}
 	_, err := inst.SyncRepositories()
