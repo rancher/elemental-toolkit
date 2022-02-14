@@ -27,6 +27,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -227,4 +228,21 @@ func LoadEnvFile(fs afero.Fs, file string) (map[string]string, error) {
 	}
 
 	return envMap, err
+}
+
+// GetUpgradeTempDir returns the dir for storing upgrade related temporal files
+// It will respect TMPDIR and use that if exists, fallback to try the persistent partition if its mounted
+// and finally the default /tmp/ dir
+func GetUpgradeTempDir(config *v1.RunConfig) string {
+	// if we got a TMPDIR var, respect and use that
+	dir := os.Getenv("TMPDIR")
+	if dir != "" {
+		return filepath.Join(dir, "elemental-upgrade")
+	}
+	// Check persistent and if its mounted
+	persistent, err := GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 5)
+	if err == nil && persistent.MountPoint != "" {
+		return filepath.Join(persistent.MountPoint, "elemental-upgrade")
+	}
+	return filepath.Join("/", "tmp", "elemental-upgrade")
 }

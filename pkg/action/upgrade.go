@@ -74,6 +74,7 @@ func (u *UpgradeAction) Run() (err error) {
 	upgradeStateDir := constants.RunningStateDir
 	// When booting from recovery the label can be the recovery or the system, depending on the recovery img type (squshs/non-squash)
 	bootedFromRecovery := utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) || utils.BootedFrom(u.Config.Runner, u.Config.SystemLabel)
+	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
 
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
@@ -87,12 +88,12 @@ func (u *UpgradeAction) Run() (err error) {
 
 	u.Config.Logger.Infof("Upgrading %s partition", upgradeTarget)
 
-	err = u.Config.Fs.MkdirAll(constants.UpgradeTempDir, os.ModeDir)
+	err = u.Config.Fs.MkdirAll(upgradeTempDir, os.ModeDir)
 	if err != nil {
-		u.Error("Error creating target dir %s: %s", constants.UpgradeTempDir, err)
+		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
 		return err
 	}
-	cleanup.Push(func() error { return u.remove(constants.UpgradeTempDir) })
+	cleanup.Push(func() error { return u.remove(upgradeTempDir) })
 
 	if u.Config.RecoveryUpgrade {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 5)
@@ -189,7 +190,7 @@ func (u *UpgradeAction) Run() (err error) {
 		Size:       u.Config.ImgSize,
 		Label:      u.Config.ActiveLabel,
 		FS:         constants.LinuxImgFs,
-		MountPoint: constants.UpgradeTempDir,
+		MountPoint: upgradeTempDir,
 		Source:     upgradeSource, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
 	}
 
@@ -213,7 +214,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	for _, d := range []string{"proc", "boot", "dev", "sys", "tmp", "usr/local", "oem"} {
-		_ = u.Config.Fs.MkdirAll(filepath.Join(constants.UpgradeTempDir, d), os.ModeDir)
+		_ = u.Config.Fs.MkdirAll(filepath.Join(upgradeTempDir, d), os.ModeDir)
 	}
 
 	err = upgradeHook(u.Config, "before-upgrade", false)
@@ -230,8 +231,8 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 	// Selinux relabel
 	// In the original script, any errors are ignored
-	_, _ = u.Config.Runner.Run("chmod", "755", constants.UpgradeTempDir)
-	_ = ele.SelinuxRelabel(constants.UpgradeTempDir, false)
+	_, _ = u.Config.Runner.Run("chmod", "755", upgradeTempDir)
+	_ = ele.SelinuxRelabel(upgradeTempDir, false)
 
 	// Only run rebrand on non recovery+squash
 	err = upgradeHook(u.Config, "after-upgrade-chroot", true)
@@ -241,7 +242,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Load the os-release file from the new upgraded system
-	osRelease, err := utils.LoadEnvFile(u.Config.Fs, filepath.Join(constants.UpgradeTempDir, "etc", "os-release"))
+	osRelease, err := utils.LoadEnvFile(u.Config.Fs, filepath.Join(upgradeTempDir, "etc", "os-release"))
 	// override grub vars with the new system vars
 	u.Config.GrubDefEntry = osRelease["GRUB_ENTRY_NAME"]
 
@@ -296,7 +297,7 @@ func (u *UpgradeAction) Run() (err error) {
 		finalDestination = filepath.Join(upgradeStateDir, "cOS", constants.RecoverySquashFile)
 		options := constants.GetDefaultSquashfsOptions()
 		u.Info("Creating %s", constants.RecoverySquashFile)
-		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, constants.UpgradeTempDir, transitionImg, options)
+		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, upgradeTempDir, transitionImg, options)
 		if err != nil {
 			return err
 		}

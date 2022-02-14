@@ -16,7 +16,9 @@ limitations under the License.
 
 package constants
 
-import "runtime"
+import (
+	"runtime"
+)
 
 const (
 	GrubConf               = "/etc/cos/grub.cfg"
@@ -74,7 +76,6 @@ const (
 	UpgradeActive          = "active"
 	UpgradeRecovery        = "recovery"
 	UpgradeSource          = "system/cos"
-	UpgradeTempDir         = "/tmp/upgrade"
 	UpgradeRecoveryDir     = "/run/initramfs/live"
 	TransitionImgFile      = "transition.img"
 	TransitionSquashFile   = "transition.squashfs"

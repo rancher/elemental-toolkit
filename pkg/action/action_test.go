@@ -26,6 +26,7 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -562,7 +563,7 @@ var _ = Describe("Actions", func() {
 			config.RecoveryImage = "system/cos-config"
 			config.ImgSize = 10
 			// Create fake /etc/os-release
-			_ = afero.WriteFile(fs, filepath.Join(constants.UpgradeTempDir, "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
+			_ = afero.WriteFile(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
 		})
 		It("Fails if some hook fails and strict is set", func() {
 			runner = v1mock.NewTestRunnerV2()
