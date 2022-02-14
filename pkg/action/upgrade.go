@@ -72,6 +72,8 @@ func (u *UpgradeAction) Run() (err error) {
 	var statePart v1.Partition
 	var transitionImg string
 	upgradeStateDir := constants.RunningStateDir
+	// When booting from recovery the label can be the recovery or the system, depending on the recovery img type (squshs/non-squash)
+	bootedFromRecovery := utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) || utils.BootedFrom(u.Config.Runner, u.Config.SystemLabel)
 
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
@@ -119,7 +121,7 @@ func (u *UpgradeAction) Run() (err error) {
 	statePartMountOptions := []string{"remount", "rw"}
 
 	// If we want to upgrade the active but are booting from recovery, the statedir is not mounted, so dont remount
-	if !u.Config.RecoveryUpgrade && utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
+	if !u.Config.RecoveryUpgrade && bootedFromRecovery {
 		statePartMountOptions = []string{"rw"}
 		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
 		// Also mount oem and persistent as they are not mounted on recovery
@@ -150,7 +152,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// If we want to upgrade the recovery but are not booting from recovery, the stateDir is not mounted, so dont try to remount
-	if u.Config.RecoveryUpgrade && !utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
+	if u.Config.RecoveryUpgrade && !bootedFromRecovery {
 		statePartMountOptions = []string{"rw"}
 		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
 	}
