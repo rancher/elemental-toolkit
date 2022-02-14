@@ -245,7 +245,14 @@ var _ = Describe("cOS Installer tests", func() {
 			s.EmptyDisk("/dev/sda")
 			_, _ = s.Command("sync")
 		})
-		AfterEach(func() {
+		AfeterEach(func() {
+			if CurrentGinkgoTestDescription().Failed {
+				s.GatherAllLogs()
+			}
+		})
+		// Marked as pending to reduce the number of efi tests. VBox efi support is
+		// not good enough to run extensive tests
+		PAfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				s.GatherAllLogs()
 			}
@@ -307,7 +314,9 @@ var _ = Describe("cOS Installer tests", func() {
 						CheckPartitionValues(disk, part)
 					}
 				})
-				It("Not forcing GPT", func() {
+				// Marked as pending to reduce the number of efi tests. VBox efi support is
+				// not good enough to run extensive tests
+				PIt("Not forcing GPT", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
@@ -357,7 +366,9 @@ var _ = Describe("cOS Installer tests", func() {
 				})
 			})
 		})
-		Context("install source tests", func() {
+		// Marked as pending to reduce the number of efi tests. VBox efi support is
+		// not good enough to run extensive tests
+		PContext("install source tests", func() {
 			It("from iso", func() {
 				By("Running the cos-installer")
 				out, err := s.Command("cos-installer /dev/sda")
@@ -394,7 +405,9 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
 			})
 		})
-		Context("efi/gpt tests", func() {
+		// Marked as pending to reduce the number of efi tests. VBox efi support is
+		// not good enough to run extensive tests
+		PContext("efi/gpt tests", func() {
 			It("forces gpt", func() {
 				By("Running the installer")
 				out, err := s.Command("cos-installer --force-gpt /dev/sda")
