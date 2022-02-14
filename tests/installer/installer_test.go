@@ -245,14 +245,14 @@ var _ = Describe("cOS Installer tests", func() {
 			s.EmptyDisk("/dev/sda")
 			_, _ = s.Command("sync")
 		})
-		AfeterEach(func() {
+		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				s.GatherAllLogs()
 			}
 		})
-		// Marked as pending to reduce the number of efi tests. VBox efi support is
-		// not good enough to run extensive tests
-		PAfterEach(func() {
+		// Commented because there is only a single active test, hence restoring CD before
+		// after rebooting is not needed.
+		/*AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
 				s.GatherAllLogs()
 			}
@@ -262,7 +262,7 @@ var _ = Describe("cOS Installer tests", func() {
 			s.RestoreCOSCD()
 			By("Reboot to make sure we boot from CD")
 			s.Reboot()
-		})
+		})*/
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
 				It("Forcing GPT", func() {
