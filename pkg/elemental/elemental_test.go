@@ -209,7 +209,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Creates a new file system image", func() {
 			_, err := fs.Stat(config.ActiveImage.File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(config.ActiveImage)
+			err = el.CreateFileSystemImage(&config.ActiveImage)
 			Expect(err).To(BeNil())
 			stat, err := fs.Stat(config.ActiveImage.File)
 			Expect(err).To(BeNil())
@@ -221,7 +221,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner.ErrorOnCommand = true
 			_, err := fs.Stat(config.ActiveImage.File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(config.ActiveImage)
+			err = el.CreateFileSystemImage(&config.ActiveImage)
 			Expect(err).NotTo(BeNil())
 			_, err = fs.Stat(config.ActiveImage.File)
 			Expect(err).NotTo(BeNil())
@@ -449,11 +449,94 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			})
 		})
 	})
-
-	Describe("CopyActive", Label("CopyActive", "active_label"), func() {
-		var source v1.InstallUpgradeSource
+	Describe("DeployImage", Label("DeployImage"), func() {
+		var el *elemental.Elemental
+		var runner *v1mock.TestRunnerV2
+		var img *v1.Image
+		var destDir, sourceDir, cmdFail string
 		BeforeEach(func() {
-			source = v1.InstallUpgradeSource{}
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			runner = v1mock.NewTestRunnerV2()
+			config.Runner = runner
+			el = elemental.NewElemental(config)
+			img = &v1.Image{
+				FS:         "ext2",
+				Size:       16,
+				Source:     v1.ImageSource{Source: sourceDir, IsDir: true},
+				MountPoint: destDir,
+				File:       filepath.Join(destDir, "image.img"),
+			}
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmdFail == cmd {
+					return []byte{}, errors.New("Command failed")
+				}
+				switch cmd {
+				case "losetup":
+					return []byte("/dev/loop"), nil
+				default:
+					return []byte{}, nil
+				}
+			}
+		})
+		AfterEach(func() {
+			os.RemoveAll(sourceDir)
+			os.RemoveAll(destDir)
+		})
+		It("Deploys an image from a directory and leaves it mounted", func() {
+			Expect(el.DeployImage(img, true)).To(BeNil())
+		})
+		It("Deploys an image from a directory and leaves it unmounted", func() {
+			Expect(el.DeployImage(img, false)).To(BeNil())
+		})
+		It("Deploys a file image and mounts it", func() {
+			sourceImg := "source.img"
+			_, err := fs.Create(sourceImg)
+			Expect(err).To(BeNil())
+			destDir, err := afero.TempDir(fs, "", "elemental")
+			Expect(err).To(BeNil())
+			img.Source = v1.ImageSource{Source: sourceImg, IsFile: true}
+			img.MountPoint = destDir
+			Expect(el.DeployImage(img, true)).To(BeNil())
+		})
+		It("Deploys a file image and fails to mount it", func() {
+			sourceImg := "source.img"
+			_, err := fs.Create(sourceImg)
+			Expect(err).To(BeNil())
+			destDir, err := afero.TempDir(fs, "", "elemental")
+			Expect(err).To(BeNil())
+			img.Source.Source = sourceImg
+			img.Source.IsFile = true
+			img.MountPoint = destDir
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnMount = true
+			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+		})
+		It("Fails formatting the image", func() {
+			cmdFail = "mkfs.ext2"
+			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+		})
+		It("Fails mounting the image", func() {
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnMount = true
+			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+		})
+		It("Fails copying the image if source does not exist", func() {
+			img.Source.Source = "/welp"
+			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+		})
+		It("Fails unmounting the image after copying", func() {
+			mounter := mounter.(*v1mock.ErrorMounter)
+			mounter.ErrorOnUnmount = true
+			Expect(el.DeployImage(img, false)).NotTo(BeNil())
+		})
+	})
+	Describe("CopyImage", Label("CopyImage"), func() {
+		var img *v1.Image
+		BeforeEach(func() {
+			img = &v1.Image{}
 		})
 		It("Copies files from a directory source", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
@@ -462,65 +545,59 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			config.ActiveImage.RootTree = sourceDir
-			config.ActiveImage.MountPoint = destDir
+			img.Source.Source = sourceDir
+			img.Source.IsDir = true
+			img.MountPoint = destDir
 			c := elemental.NewElemental(config)
-			source.Source = sourceDir
-			source.IsDir = true
-			Expect(c.CopyActive(source)).To(BeNil())
+			Expect(c.CopyImage(img)).To(BeNil())
 		})
 		It("Fails if source directory does not exist", func() {
-			config.ActiveImage.RootTree = "/welp"
 			c := elemental.NewElemental(config)
-			source.Source = config.ActiveImage.RootTree
-			source.IsDir = true
-			Expect(c.CopyActive(source)).ToNot(BeNil())
+			img.Source.Source = "/welp"
+			img.Source.IsDir = true
+			Expect(c.CopyImage(img)).ToNot(BeNil())
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
-			config.DockerImg = "myimage"
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			source.Source = config.DockerImg
-			source.IsDocker = true
-			Expect(c.CopyActive(source)).To(BeNil())
+			img.Source.Source = "docker/image:latest"
+			img.Source.IsDocker = true
+			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
-			config.DockerImg = "myimage"
 			runner := v1mock.NewTestRunnerV2()
 			config.Runner = runner
 			config.Cosign = true
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			source.Source = config.DockerImg
-			source.IsDocker = true
-			Expect(c.CopyActive(source)).To(BeNil())
+			img.Source.Source = "docker/image:latest"
+			img.Source.IsDocker = true
+			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
-			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
+			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
-			config.DockerImg = "myimage"
 			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnError = errors.New("cosign error")
 			config.Runner = runner
 			config.Cosign = true
 			c := elemental.NewElemental(config)
-			source.Source = config.DockerImg
-			source.IsDocker = true
-			Expect(c.CopyActive(source)).NotTo(BeNil())
-			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "myimage"}}))
+			img.Source.Source = "docker/image:latest"
+			img.Source.IsDocker = true
+			Expect(c.CopyImage(img)).NotTo(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
-			config.DockerImg = "myimage"
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			source.Source = config.DockerImg
-			source.IsDocker = true
-			Expect(c.CopyActive(source)).NotTo(BeNil())
+			img.Source.Source = "docker/image:latest"
+			img.Source.IsDocker = true
+			Expect(c.CopyImage(img)).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Copies image file to target", func() {
@@ -529,29 +606,27 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			config.ActiveImage.RootTree = sourceImg
-			config.ActiveImage.MountPoint = destDir
-			config.ActiveImage.File = filepath.Join(destDir, "active.img")
+			img.Source.Source = sourceImg
+			img.Source.IsFile = true
+			img.MountPoint = destDir
+			img.File = filepath.Join(destDir, "active.img")
 			c := elemental.NewElemental(config)
-			source.Source = sourceImg
-			source.IsFile = true
-			_, err = fs.Stat(config.ActiveImage.File)
+			_, err = fs.Stat(img.File)
 			Expect(err).NotTo(BeNil())
-			Expect(c.CopyActive(source)).To(BeNil())
-			_, err = fs.Stat(config.ActiveImage.File)
+			Expect(c.CopyImage(img)).To(BeNil())
+			_, err = fs.Stat(img.File)
 			Expect(err).To(BeNil())
 		})
 		It("Fails to copy, source file is not present", func() {
 			sourceImg := "source.img"
 			destDir := "whatever"
-			config.ActiveImage.RootTree = sourceImg
-			config.ActiveImage.MountPoint = destDir
+			img.Source.Source = sourceImg
+			img.Source.IsFile = true
+			img.MountPoint = destDir
 			c := elemental.NewElemental(config)
-			source.Source = sourceImg
-			source.IsFile = true
-			Expect(c.CopyActive(source)).NotTo(BeNil())
+			Expect(c.CopyImage(img)).NotTo(BeNil())
 		})
-		It("Fails to set the active label", func() {
+		It("Fails to set the label", func() {
 			runner := runner.(*v1mock.FakeRunner)
 			runner.ErrorOnCommand = true
 			sourceImg := "source.img"
@@ -559,21 +634,20 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			config.ActiveImage.RootTree = sourceImg
-			config.ActiveImage.MountPoint = destDir
-			config.ActiveImage.File = filepath.Join(destDir, "active.img")
-			source.Source = sourceImg
-			source.IsFile = true
+			img.Source.Source = sourceImg
+			img.Source.IsFile = true
+			img.MountPoint = destDir
+			img.File = filepath.Join(destDir, "active.img")
 			el := elemental.NewElemental(config)
-			Expect(el.CopyActive(source)).NotTo(BeNil())
+			Expect(el.CopyImage(img)).NotTo(BeNil())
 		})
 		It("Unpacks from channel to target", func() {
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			source.Source = "somechannel"
-			source.IsChannel = true
-			Expect(c.CopyActive(source)).To(BeNil())
+			img.Source.Source = "somechannel"
+			img.Source.IsChannel = true
+			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails to unpack from channel to target", func() {
@@ -581,9 +655,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet.OnUnpackFromChannelError = true
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			source.Source = "somechannel"
-			source.IsChannel = true
-			Expect(c.CopyActive(source)).NotTo(BeNil())
+			img.Source.Source = "somechannel"
+			img.Source.IsChannel = true
+			Expect(c.CopyImage(img)).NotTo(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 	})

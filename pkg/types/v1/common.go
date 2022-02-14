@@ -16,8 +16,8 @@ limitations under the License.
 
 package v1
 
-// InstallUpgradeSource represents the source from where the installation or upgrade is being done for easy identification
-type InstallUpgradeSource struct {
+// ImageSource represents the source from where an image is created for easy identification
+type ImageSource struct {
 	Source    string
 	IsDir     bool
 	IsChannel bool

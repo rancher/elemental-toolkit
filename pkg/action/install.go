@@ -54,8 +54,19 @@ func InstallSetup(config *v1.RunConfig) error {
 		Size:       cnst.ImgSize,
 		File:       filepath.Join(cnst.StateDir, "cOS", cnst.ActiveImgFile),
 		FS:         cnst.LinuxImgFs,
-		RootTree:   cnst.IsoBaseTree,
 		MountPoint: cnst.ActiveDir,
+	}
+
+	//TODO add installation from channel
+	if config.DockerImg != "" {
+		config.ActiveImage.Source.Source = config.DockerImg
+		config.ActiveImage.Source.IsDocker = true
+	} else if config.Directory != "" {
+		config.ActiveImage.Source.Source = config.Directory
+		config.ActiveImage.Source.IsDir = true
+	} else {
+		config.ActiveImage.Source.Source = cnst.IsoBaseTree
+		config.ActiveImage.Source.IsDir = true
 	}
 
 	return nil
@@ -64,17 +75,8 @@ func InstallSetup(config *v1.RunConfig) error {
 // Run will install the system from a given configuration
 func InstallRun(config *v1.RunConfig) (err error) {
 	newElemental := elemental.NewElemental(config)
-	installSource := v1.InstallUpgradeSource{}
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
-
-	if config.DockerImg != "" {
-		installSource.Source = config.DockerImg
-		installSource.IsDocker = true
-	} else if config.ActiveImage.RootTree != "" {
-		installSource.Source = config.ActiveImage.RootTree
-		installSource.IsDir = true
-	}
 
 	disk := partitioner.NewDisk(
 		config.Target,
@@ -127,24 +129,13 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	}
 	cleanup.Push(func() error { return newElemental.UnmountPartitions() })
 
-	// create active file system image
-	err = newElemental.CreateFileSystemImage(config.ActiveImage)
-	if err != nil {
-		return err
-	}
-
-	//mount file system image
-	err = newElemental.MountImage(&config.ActiveImage, "rw")
+	// Deploy active image
+	err = newElemental.DeployImage(&config.ActiveImage, true)
 	if err != nil {
 		return err
 	}
 	cleanup.Push(func() error { return newElemental.UnmountImage(&config.ActiveImage) })
 
-	// install Active
-	err = newElemental.CopyActive(installSource)
-	if err != nil {
-		return err
-	}
 	// Copy cloud-init if any
 	err = newElemental.CopyCloudConfig()
 	if err != nil {

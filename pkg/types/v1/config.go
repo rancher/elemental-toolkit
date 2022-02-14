@@ -241,12 +241,11 @@ type PartitionList []*Partition
 
 // Image struct represents a file system image with its commonly configurable values, size in MiB
 type Image struct {
-	File  string
-	Label string
-	Size  uint
-	FS    string
-	// Path of the root tree
-	RootTree   string
+	File       string
+	Label      string
+	Size       uint
+	FS         string
+	Source     ImageSource
 	MountPoint string
 	LoopDevice string
 }

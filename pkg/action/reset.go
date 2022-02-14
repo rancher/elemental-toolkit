@@ -52,17 +52,21 @@ func ResetSetup(config *v1.RunConfig) error {
 
 	SetupLuet(config)
 
-	var rootTree string
-	// TODO Properly set image souce here
+	var imgSource v1.ImageSource
+	// TODO add reset from channel
 	// TODO execute rootTree sanity checks
 	if config.Directory != "" {
-		rootTree = config.Directory
+		imgSource.Source = config.Directory
+		imgSource.IsDir = true
 	} else if config.DockerImg != "" {
-		rootTree = config.DockerImg
+		imgSource.Source = config.DockerImg
+		imgSource.IsDocker = true
 	} else if utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) {
-		rootTree = cnst.IsoBaseTree
+		imgSource.Source = cnst.IsoBaseTree
+		imgSource.IsDir = true
 	} else {
-		rootTree = filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile)
+		imgSource.Source = filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile)
+		imgSource.IsFile = true
 	}
 
 	efiExists, _ := afero.Exists(config.Fs, cnst.EfiDevice)
@@ -119,7 +123,7 @@ func ResetSetup(config *v1.RunConfig) error {
 		Size:       cnst.ImgSize,
 		File:       filepath.Join(partState.MountPoint, "cOS", cnst.ActiveImgFile),
 		FS:         cnst.LinuxImgFs,
-		RootTree:   rootTree,
+		Source:     imgSource,
 		MountPoint: cnst.ActiveDir,
 	}
 
@@ -173,46 +177,12 @@ func ResetRun(config *v1.RunConfig) (err error) {
 	}
 	cleanup.Push(func() error { return ele.UnmountPartitions() })
 
-	// install Active
-	// TODO all this logic should be part` of the CopyImage(img *v1.Image) refactor up to
-	// TODO setting source should be part of ResetSetup
-	source := v1.InstallUpgradeSource{Source: config.ActiveImage.RootTree}
-	if config.Directory != "" {
-		source.IsDir = true
-	} else if config.DockerImg != "" {
-		source.IsDocker = true
-	} else if config.ActiveImage.RootTree != "" {
-		source.IsDir = true
-	} else {
-		source.Source = filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile)
-		source.IsFile = true
-	}
-
-	if !source.IsFile {
-		err = ele.CreateFileSystemImage(config.ActiveImage)
-		if err != nil {
-			return err
-		}
-
-		//mount file system image
-		err = ele.MountImage(&config.ActiveImage, "rw")
-		if err != nil {
-			return err
-		}
-		cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
-	}
-	err = ele.CopyActive(source)
+	// Depoly active image
+	err = ele.DeployImage(&config.ActiveImage, true)
 	if err != nil {
 		return err
 	}
-	if source.IsFile {
-		err = ele.MountImage(&config.ActiveImage, "rw")
-		if err != nil {
-			return err
-		}
-		cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
-	}
-	// TODO: here ends the CopyImage(img *v1.Image)
+	cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
 
 	// install grub
 	grub := utils.NewGrub(config)

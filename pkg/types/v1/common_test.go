@@ -25,7 +25,7 @@ import (
 var _ = Describe("Types", Label("types", "common"), func() {
 	FDescribe("Common", func() {
 		It("Can create it?? Like what is expected to be test of a simple struct?", func() {
-			o := v1.InstallUpgradeSource{}
+			o := v1.ImageSource{}
 			Expect(o).ToNot(BeNil())
 		})
 	})

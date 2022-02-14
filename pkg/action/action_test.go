@@ -109,19 +109,22 @@ var _ = Describe("Actions", func() {
 		It("Configures reset command", func() {
 			Expect(action.ResetSetup(config)).To(BeNil())
 			Expect(config.Target).To(Equal("/dev/device"))
-			Expect(config.ActiveImage.RootTree).To(Equal(constants.IsoBaseTree))
+			Expect(config.ActiveImage.Source.Source).To(Equal(constants.IsoBaseTree))
+			Expect(config.ActiveImage.Source.IsDir).To(BeTrue())
 		})
 		It("Configures reset command with --docker-image", func() {
 			config.DockerImg = "some-image"
 			Expect(action.ResetSetup(config)).To(BeNil())
 			Expect(config.Target).To(Equal("/dev/device"))
-			Expect(config.ActiveImage.RootTree).To(Equal("some-image"))
+			Expect(config.ActiveImage.Source.Source).To(Equal("some-image"))
+			Expect(config.ActiveImage.Source.IsDocker).To(BeTrue())
 		})
 		It("Configures reset command with --directory", func() {
 			config.Directory = "/some/local/dir"
 			Expect(action.ResetSetup(config)).To(BeNil())
 			Expect(config.Target).To(Equal("/dev/device"))
-			Expect(config.ActiveImage.RootTree).To(Equal("/some/local/dir"))
+			Expect(config.ActiveImage.Source.Source).To(Equal("/some/local/dir"))
+			Expect(config.ActiveImage.Source.IsDir).To(BeTrue())
 		})
 		It("Fails if not booting from recovery", func() {
 			bootedFrom = ""
@@ -201,7 +204,8 @@ var _ = Describe("Actions", func() {
 		})
 		It("Successfully resets on squashfs recovery", func() {
 			config.PowerOff = true
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			Expect(action.ResetRun(config)).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {
@@ -209,8 +213,8 @@ var _ = Describe("Actions", func() {
 			Expect(action.ResetRun(config)).To(BeNil())
 		})
 		It("Successfully resets from a docker image", func() {
-			config.DockerImg = "my/image:latest"
-			config.ActiveImage.RootTree = config.DockerImg
+			config.ActiveImage.Source.Source = "my/image:latest"
+			config.ActiveImage.Source.IsDocker = true
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			Expect(action.ResetRun(config)).To(BeNil())
@@ -230,22 +234,25 @@ var _ = Describe("Actions", func() {
 		})
 		It("Fails setting the passive label on squashfs recovery", func() {
 			cmdFail = "tune2fs"
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails mounting partitions", func() {
 			mounter.ErrorOnMount = true
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails unmounting partitions", func() {
 			mounter.ErrorOnUnmount = true
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails unpacking docker image ", func() {
-			config.DockerImg = "my/image:latest"
-			config.ActiveImage.RootTree = config.DockerImg
+			config.ActiveImage.Source.Source = "my/image:latest"
+			config.ActiveImage.Source.IsDocker = true
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
 			config.Luet = luet
@@ -344,7 +351,9 @@ var _ = Describe("Actions", func() {
 		It("Successfully installs", func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
+
 			config.ActiveImage.MountPoint = activeMount
 			config.Reboot = true
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -355,7 +364,8 @@ var _ = Describe("Actions", func() {
 			cloudInit.Error = true
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			config.PowerOff = true
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -367,7 +377,8 @@ var _ = Describe("Actions", func() {
 			config.Iso = "cOS.iso"
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			Expect(action.InstallRun(config)).To(BeNil())
 		})
@@ -377,7 +388,8 @@ var _ = Describe("Actions", func() {
 			config.Force = true
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			Expect(action.InstallRun(config)).To(BeNil())
 		})
@@ -385,9 +397,9 @@ var _ = Describe("Actions", func() {
 		It("Successfully installs a docker image", Label("docker"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = "my/image:latest"
+			config.ActiveImage.Source.IsDocker = true
 			config.ActiveImage.MountPoint = activeMount
-			config.DockerImg = "my/image:latest"
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -397,7 +409,8 @@ var _ = Describe("Actions", func() {
 		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -427,7 +440,8 @@ var _ = Describe("Actions", func() {
 			config.Force = false
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
@@ -441,7 +455,8 @@ var _ = Describe("Actions", func() {
 		It("Fails on parted errors", Label("disk", "partitions"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "parted"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
@@ -450,7 +465,9 @@ var _ = Describe("Actions", func() {
 		It("Fails to unmount partitions", Label("disk", "partitions"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
+
 			config.ActiveImage.MountPoint = activeMount
 			mounter.ErrorOnUnmount = true
 			Expect(action.InstallRun(config)).NotTo(BeNil())
@@ -465,9 +482,9 @@ var _ = Describe("Actions", func() {
 		It("Fails if luet fails to unpack image", Label("image", "luet", "unpack"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = "my/image:latest"
+			config.ActiveImage.Source.IsDocker = true
 			config.ActiveImage.MountPoint = activeMount
-			config.DockerImg = "my/image:latest"
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
 			config.Luet = luet
@@ -478,7 +495,8 @@ var _ = Describe("Actions", func() {
 		It("Fails if requested remote cloud config can't be downloaded", Label("cloud-config"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
 			client.Error = true
@@ -489,7 +507,8 @@ var _ = Describe("Actions", func() {
 		It("Fails on grub2-install errors", Label("grub"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "grub2-install"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
@@ -498,7 +517,8 @@ var _ = Describe("Actions", func() {
 		It("Fails copying Passive image", Label("copy", "active"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "tune2fs"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
@@ -507,7 +527,8 @@ var _ = Describe("Actions", func() {
 		It("Fails setting the grub default entry", Label("grub"), func() {
 			config.Target = device
 			config.ActiveImage.Size = activeSize
-			config.ActiveImage.RootTree = activeTree
+			config.ActiveImage.Source.Source = activeTree
+			config.ActiveImage.Source.IsDir = true
 			config.ActiveImage.MountPoint = activeMount
 			cmdFail = "grub2-editenv"
 			Expect(action.InstallRun(config)).NotTo(BeNil())

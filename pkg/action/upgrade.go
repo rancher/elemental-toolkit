@@ -190,7 +190,7 @@ func (u *UpgradeAction) Run() (err error) {
 		Label:      u.Config.ActiveLabel,
 		FS:         constants.LinuxImgFs,
 		MountPoint: constants.UpgradeTempDir,
-		RootTree:   upgradeSource.Source, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
+		Source:     upgradeSource, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
 	}
 
 	// If on recovery, set the label to the RecoveryLabel instead
@@ -202,7 +202,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	if !isSquashRecovery {
 		// Only on recovery+squash we dont use the img file
-		err = ele.CreateFileSystemImage(img)
+		err = ele.CreateFileSystemImage(&img)
 		if err != nil {
 			u.Error("Failed to create %s img: %s", transitionImg, err)
 			return err
@@ -223,7 +223,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 	// Setting the activeImg to our img, tricks CopyActive into doing it anyway even if it's a recovery img
 	u.Config.ActiveImage = img
-	err = ele.CopyActive(upgradeSource)
+	err = ele.CopyImage(&img)
 	if err != nil {
 		u.Error("Error copying active: %s", err)
 		return err
@@ -357,8 +357,8 @@ func (u *UpgradeAction) remount(m mount.MountPoint, opts ...string) error {
 }
 
 // getTargetAndSource finds our the target and source for the upgrade
-func (u *UpgradeAction) getTargetAndSource() (string, v1.InstallUpgradeSource) {
-	upgradeSource := v1.InstallUpgradeSource{Source: constants.UpgradeSource, IsChannel: true}
+func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
+	upgradeSource := v1.ImageSource{Source: constants.UpgradeSource, IsChannel: true}
 	upgradeTarget := constants.UpgradeActive
 
 	// if channel_upgrades==true then it picks the default image from /etc/cos-upgrade-image
@@ -387,12 +387,12 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.InstallUpgradeSource) {
 		// if docker-image -> upgrade from image directly, ignores release_channel and pulls the given image directly
 		if u.Config.DockerImg != "" {
 			u.Debug("Source is docker image: %s", u.Config.DockerImg)
-			upgradeSource = v1.InstallUpgradeSource{Source: u.Config.DockerImg, IsDocker: true}
+			upgradeSource = v1.ImageSource{Source: u.Config.DockerImg, IsDocker: true}
 		}
 		// if directory -> upgrade from dir directly, ignores release_channel and uses the given directory
 		if u.Config.DirectoryUpgrade != "" {
 			u.Debug("Source is directory: %s", u.Config.DirectoryUpgrade)
-			upgradeSource = v1.InstallUpgradeSource{Source: u.Config.DirectoryUpgrade, IsDir: true}
+			upgradeSource = v1.ImageSource{Source: u.Config.DirectoryUpgrade, IsDir: true}
 		}
 	}
 	return upgradeTarget, upgradeSource

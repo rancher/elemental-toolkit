@@ -245,7 +245,7 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 }
 
 // CreateFileSystemImage creates the image file for config.target
-func (c Elemental) CreateFileSystemImage(img v1.Image) error {
+func (c Elemental) CreateFileSystemImage(img *v1.Image) error {
 	c.config.Logger.Infof("Creating file system image %s", img.File)
 	err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
 	if err != nil {
@@ -277,16 +277,53 @@ func (c Elemental) CreateFileSystemImage(img v1.Image) error {
 	return nil
 }
 
-// CopyActive will place the system root tree into the Active image
-func (c *Elemental) CopyActive(source v1.InstallUpgradeSource) error {
-	c.config.Logger.Infof("Copying Active image...")
+// DeployImage will deploay the given image into the target. This method
+// creates the filesystem image file, mounts it and unmounts it as needed.
+func (c *Elemental) DeployImage(img *v1.Image, leaveMounted bool) error {
 	var err error
 
-	if source.IsDocker {
+	if !img.Source.IsFile {
+		//TODO add support for squashfs images
+		err = c.CreateFileSystemImage(img)
+		if err != nil {
+			return err
+		}
+
+		err = c.MountImage(img, "rw")
+		if err != nil {
+			return err
+		}
+	}
+	err = c.CopyImage(img)
+	if err != nil {
+		c.UnmountImage(img)
+		return err
+	}
+	if leaveMounted && img.Source.IsFile {
+		err = c.MountImage(img, "rw")
+		if err != nil {
+			return err
+		}
+	}
+	if !leaveMounted {
+		err = c.UnmountImage(img)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Copies the given filesystem image into the target
+func (c *Elemental) CopyImage(img *v1.Image) error {
+	c.config.Logger.Infof("Copying %s image...", img.Label)
+	var err error
+
+	if img.Source.IsDocker {
 		if c.config.Cosign {
-			c.config.Logger.Infof("Running cosing verification for %s", source.Source)
+			c.config.Logger.Infof("Running cosing verification for %s", img.Source.Source)
 			out, err := utils.CosignVerify(
-				c.config.Fs, c.config.Runner, source.Source,
+				c.config.Fs, c.config.Runner, img.Source.Source,
 				c.config.CosignPubKey, v1.IsDebugLevel(c.config.Logger),
 			)
 			if err != nil {
@@ -294,42 +331,43 @@ func (c *Elemental) CopyActive(source v1.InstallUpgradeSource) error {
 				return err
 			}
 		}
-		err = c.config.Luet.Unpack(c.config.ActiveImage.MountPoint, source.Source, false)
+		err = c.config.Luet.Unpack(img.MountPoint, img.Source.Source, false)
 		if err != nil {
 			return err
 		}
-	} else if source.IsDir {
+	} else if img.Source.IsDir {
 		excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
-		err = utils.SyncData(c.config.ActiveImage.RootTree, c.config.ActiveImage.MountPoint, excludes...)
+		err = utils.SyncData(img.Source.Source, img.MountPoint, excludes...)
 		if err != nil {
 			return err
 		}
-	} else if source.IsChannel {
-		err = c.config.Luet.UnpackFromChannel(c.config.ActiveImage.MountPoint, source.Source)
+	} else if img.Source.IsChannel {
+		err = c.config.Luet.UnpackFromChannel(img.MountPoint, img.Source.Source)
 		if err != nil {
 			return err
 		}
-	} else if source.IsFile {
-		err := c.config.Fs.MkdirAll(filepath.Dir(c.config.ActiveImage.File), os.ModeDir)
+	} else if img.Source.IsFile {
+		err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
 		if err != nil {
 			return err
 		}
-		err = utils.CopyFile(c.config.Fs, source.Source, c.config.ActiveImage.File)
+		err = utils.CopyFile(c.config.Fs, img.Source.Source, img.File)
 		if err != nil {
 			return err
 		}
-		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.ActiveLabel, c.config.ActiveImage.File)
+		//TODO do not run tune2fs on squashfs images
+		_, err = c.config.Runner.Run("tune2fs", "-L", img.Label, img.File)
 		if err != nil {
-			c.config.Logger.Errorf("Failed to apply label %s to $s", c.config.ActiveLabel, c.config.ActiveImage.File)
-			c.config.Fs.Remove(c.config.ActiveImage.File)
+			c.config.Logger.Errorf("Failed to apply label %s to $s", img.Label, img.File)
+			c.config.Fs.Remove(img.File)
 			return err
 		}
 	}
-	err = utils.CreateDirStructure(c.config.Fs, c.config.ActiveImage.MountPoint)
+	err = utils.CreateDirStructure(c.config.Fs, img.MountPoint)
 	if err != nil {
 		return err
 	}
-	c.config.Logger.Infof("Finished copying Active...")
+	c.config.Logger.Infof("Finished copying %s...", img.Label)
 	return nil
 }
 
@@ -468,6 +506,7 @@ func (c *Elemental) GetUrl(url string, destination string) error {
 	return nil
 }
 
+//TODO drop this method in favor of CopyImage
 // CopyRecovery will
 // Check if we are booting from squash -> false? return
 // true? -> :
@@ -519,6 +558,7 @@ func (c *Elemental) CopyRecovery() error {
 	return nil
 }
 
+//TODO drop this method in favor of CopyImage
 // CopyPassive writes the passive image to target device by copying Active image.
 func (c Elemental) CopyPassive() error {
 	passImgFile := filepath.Join(cnst.StateDir, "cOS", cnst.PassiveImgFile)
