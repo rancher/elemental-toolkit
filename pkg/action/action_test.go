@@ -857,7 +857,7 @@ var _ = Describe("Actions", func() {
 							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
 						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
-							return []byte(constants.RecoverySquashFile), nil
+							return []byte(constants.RecoveryLabel), nil
 						}
 						if command == "mksquashfs" && args[0] == "/tmp/upgrade" && args[1] == "/run/initramfs/live/cOS/transition.squashfs" {
 							// create the transition img for squash to fake it
@@ -902,6 +902,15 @@ var _ = Describe("Actions", func() {
 					// Check that the rebrand worked with our os-release value
 					Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
 
+					// Expect cos-state to have been remounted back on RO
+					fakeMounted := mount.MountPoint{
+						Device: "/dev/fake1",
+						Path:   "/run/initramfs/live",
+						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
+					}
+					Expect(mounter.List()).To(ContainElement(fakeMounted))
+
 					// This should be the new image
 					info, err = fs.Stat(recoveryImgSquash)
 					Expect(err).ToNot(HaveOccurred())
@@ -929,6 +938,15 @@ var _ = Describe("Actions", func() {
 
 					// Check that the rebrand worked with our os-release value
 					Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
+
+					// Expect cos-state to have been remounted back on RO
+					fakeMounted := mount.MountPoint{
+						Device: "/dev/fake1",
+						Path:   "/run/initramfs/live",
+						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
+					}
+					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
 					// This should be the new image
 					info, err := fs.Stat(recoveryImgSquash)
@@ -989,8 +1007,14 @@ var _ = Describe("Actions", func() {
 					// Check that the rebrand worked with our os-release value
 					Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
 
-					// Check that the rebrand worked with our os-release value
-					Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
+					// Expect cos-state to have been remounted back on RO
+					fakeMounted := mount.MountPoint{
+						Device: "/dev/fake1",
+						Path:   "/run/initramfs/live",
+						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
+					}
+					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
 					// This should be the new image
 					info, err = fs.Stat(recoveryImgSquash)
@@ -1063,8 +1087,9 @@ var _ = Describe("Actions", func() {
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
-						Path:   "/run/initramfs/live",
+						Path:   "/run/initramfs/cos-state",
 						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1095,6 +1120,15 @@ var _ = Describe("Actions", func() {
 
 					// Check that the rebrand worked with our os-release value
 					Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
+
+					// Expect cos-state to have been remounted back on RO
+					fakeMounted := mount.MountPoint{
+						Device: "/dev/fake1",
+						Path:   "/run/initramfs/cos-state",
+						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
+					}
+					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
 					// This should be the new image
 					info, err := fs.Stat(recoveryImg)
@@ -1163,8 +1197,9 @@ var _ = Describe("Actions", func() {
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
-						Path:   "/run/initramfs/live",
+						Path:   "/run/initramfs/cos-state",
 						Type:   "fakefs",
+						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1172,7 +1207,8 @@ var _ = Describe("Actions", func() {
 					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Should have default image size
-					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
+					Expect(info.Size()).To(BeNumerically(">", 0))
+					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {

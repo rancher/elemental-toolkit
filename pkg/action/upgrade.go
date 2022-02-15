@@ -74,26 +74,29 @@ func (u *UpgradeAction) Run() (err error) {
 	upgradeStateDir := constants.RunningStateDir
 	// When booting from recovery the label can be the recovery or the system, depending on the recovery img type (squshs/non-squash)
 	bootedFromRecovery := utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) || utils.BootedFrom(u.Config.Runner, u.Config.SystemLabel)
-	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
+	isSquashRecovery := false
 
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	// if upgrading the recovery we mount the state in a different place as its already mounted RO, we need to remount it
-	if u.Config.RecoveryUpgrade {
-		upgradeStateDir = constants.UpgradeRecoveryDir
+	// if booting from recovery we need to check if we are booting from squash
+	// If booting from recovery+squash, the cos state is mounted on /run/initramfs/live, so we need to set that as the upgradeStateDir
+	if bootedFromRecovery {
+		exists, err := afero.Exists(u.Config.Fs, filepath.Join(constants.UpgradeRecoveryDir, "cOS", constants.RecoverySquashFile))
+		if exists && err == nil {
+			isSquashRecovery = true
+			upgradeStateDir = constants.UpgradeRecoveryDir
+		}
 	}
+
+	// Some debug info just in case
+	u.Debug("Upgrade state dir: %s", upgradeStateDir)
+	u.Debug("Booted from recovery: %v", bootedFromRecovery)
+	u.Debug("Is squash recovery: %v", isSquashRecovery)
 
 	upgradeTarget, upgradeSource := u.getTargetAndSource()
 
 	u.Config.Logger.Infof("Upgrading %s partition", upgradeTarget)
-
-	err = u.Config.Fs.MkdirAll(upgradeTempDir, os.ModeDir)
-	if err != nil {
-		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
-		return err
-	}
-	cleanup.Push(func() error { return u.remove(upgradeTempDir) })
 
 	if u.Config.RecoveryUpgrade {
 		statePart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 5)
@@ -121,23 +124,8 @@ func (u *UpgradeAction) Run() (err error) {
 
 	statePartMountOptions := []string{"remount", "rw"}
 
-	// If we want to upgrade the active but are booting from recovery, the statedir is not mounted, so dont remount
-	if !u.Config.RecoveryUpgrade && bootedFromRecovery {
-		statePartMountOptions = []string{"rw"}
-		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
-		// Also mount oem and persistent as they are not mounted on recovery
-		oemPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.OEMLabel, 5)
-		if err == nil {
-			err := u.Config.Fs.MkdirAll(constants.OEMDir, os.ModeDir)
-			if err == nil {
-				err = u.Config.Mounter.Mount(oemPart.Path, constants.OEMDir, oemPart.FS, []string{})
-				if err != nil {
-					u.Config.Logger.Warnf("Could not mount oem partition: %s", err)
-				} else {
-					cleanup.Push(func() error { return u.unmount(constants.OEMDir) })
-				}
-			}
-		}
+	// Both Recoveries do not mount persistent, so try to mount it. Ignore errors, as its not mandatory.
+	if bootedFromRecovery {
 		persistentPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.PersistentLabel, 5)
 		if err == nil {
 			err := u.Config.Fs.MkdirAll(constants.PersistentDir, os.ModeDir)
@@ -152,29 +140,16 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	// If we want to upgrade the recovery but are not booting from recovery, the stateDir is not mounted, so dont try to remount
-	if u.Config.RecoveryUpgrade && !bootedFromRecovery {
-		statePartMountOptions = []string{"rw"}
-		cleanup.Push(func() error { return u.unmount(upgradeStateDir) })
-	}
-
 	err = u.Config.Mounter.Mount(statePart.Path, upgradeStateDir, statePart.FS, statePartMountOptions)
 	if err != nil {
 		u.Error("Error mounting %s: %s", upgradeStateDir, err)
 		return err
 	}
-
-	if !utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
-		cleanup.Push(func() error {
-			return u.remount(mount.MountPoint{Device: statePart.Path, Path: upgradeStateDir, Type: statePart.FS}, "ro")
-		})
-	}
-
-	// Track if recovery.squash file exists which indicates that the recovery is squash
-	isSquashRecovery, _ := afero.Exists(u.Config.Fs, filepath.Join(upgradeStateDir, "cOS", constants.RecoverySquashFile))
+	cleanup.Push(func() error {
+		return u.remount(mount.MountPoint{Device: statePart.Path, Path: upgradeStateDir, Type: statePart.FS}, "ro")
+	})
 
 	if isSquashRecovery {
-		u.Debug("Recovery is squash")
 		transitionImg = filepath.Join(upgradeStateDir, "cOS", constants.TransitionSquashFile)
 	} else {
 		transitionImg = filepath.Join(upgradeStateDir, "cOS", constants.TransitionImgFile)
@@ -183,6 +158,17 @@ func (u *UpgradeAction) Run() (err error) {
 	u.Debug("Using transition img: %s", transitionImg)
 
 	cleanup.Push(func() error { return u.remove(transitionImg) })
+
+	// Get the upgradeTempDir here, so we use the persistent partition if mounted
+	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
+	u.Debug("Upgrade temp dir: %s", upgradeTempDir)
+
+	err = u.Config.Fs.MkdirAll(upgradeTempDir, os.ModeDir)
+	if err != nil {
+		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
+		return err
+	}
+	cleanup.Push(func() error { return u.remove(upgradeTempDir) })
 
 	// create transition.img
 	img := v1.Image{
@@ -396,5 +382,6 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
 			upgradeSource = v1.ImageSource{Source: u.Config.DirectoryUpgrade, IsDir: true}
 		}
 	}
+	u.Debug("Upgrade target: %s Upgrade source: %+v", upgradeTarget, upgradeSource)
 	return upgradeTarget, upgradeSource
 }
