@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"bytes"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -32,7 +33,10 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
-		Expect(buf).To(ContainSubstring("Usage:"))
+		Expect(buf.String()).To(And(
+			ContainSubstring("Usage:"),
+			ContainSubstring("at least a target device must be supplied"),
+		))
 	})
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		buf := new(bytes.Buffer)
@@ -43,7 +47,7 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
-		Expect(buf).To(ContainSubstring("Usage:"))
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("'reboot' and 'poweroff' are mutually exclusive options"))
 	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
@@ -55,7 +59,7 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
-		Expect(buf).To(ContainSubstring("Usage:"))
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
 	})
 })

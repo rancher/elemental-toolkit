@@ -17,19 +17,21 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
+	"os/exec"
+
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os/exec"
 )
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		viper.BindPFlags(cmd.Flags())
 	},
@@ -49,9 +51,15 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		// Should probably load whatever env vars we want to overload here and merge them into the viper configs
-		// Note that vars with ELEMENTAL in front and that match entries in the config (only one level deep) are overwritten automatically
-		cfg.Target = args[0]
+		// Override target installation device with arguments from cli
+		// TODO: this needs proper validation, see https://github.com/rancher-sandbox/elemental/issues/33
+		if len(args) == 1 {
+			cfg.Target = args[0]
+		}
+
+		if cfg.Target == "" {
+			return errors.New("at least a target device must be supplied")
+		}
 
 		err = action.InstallSetup(cfg)
 		if err != nil {
