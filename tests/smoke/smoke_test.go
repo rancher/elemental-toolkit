@@ -67,7 +67,7 @@ var _ = Describe("cOS Smoke tests", func() {
 		It("fails running cos-reset from COS_ACTIVE", func() {
 			out, err := s.Command("cos-reset")
 			Expect(err).To(HaveOccurred())
-			Expect(out).Should(ContainSubstring("cos-reset can be run only from recovery"))
+			Expect(out).Should(ContainSubstring("Reset can only be called from the recovery system"))
 		})
 	})
 
