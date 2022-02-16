@@ -589,6 +589,8 @@ func (c Elemental) SetDefaultGrubEntry() error {
 		p, err := utils.GetFullDeviceByLabel(c.config.Runner, c.config.StateLabel, 5)
 		if err != nil {
 			return errors.New("state partition not found. Cannot set grub env file")
+		} else if p.MountPoint == "" {
+			return errors.New("state partition not mounted. Cannot set grub env file")
 		} else {
 			part = &p
 		}

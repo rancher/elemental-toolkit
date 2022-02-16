@@ -571,6 +571,9 @@ var _ = Describe("Actions", func() {
 				if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 					return []byte("/dev/active"), nil
 				}
+				if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
+					return []byte("/dev/passive"), nil
+				}
 				if command == "lsblk" {
 					return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
 				}
@@ -596,8 +599,12 @@ var _ = Describe("Actions", func() {
 					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 						return []byte("/dev/active"), nil
 					}
+					if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
+						return []byte("/dev/passive"), nil
+					}
+
 					if command == "lsblk" {
-						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint": "/run/initramfs/cos-state", "path": "/dev/fake1"}]}`), nil
 					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.ActiveLabel), nil
@@ -780,8 +787,12 @@ var _ = Describe("Actions", func() {
 					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 						return []byte("/dev/active"), nil
 					}
+					if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
+						return []byte("/dev/passive"), nil
+					}
+
 					if command == "lsblk" {
-						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/cos-state", "path": "/dev/fake1"}]}`), nil
 					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.PassiveLabel), nil
@@ -853,8 +864,12 @@ var _ = Describe("Actions", func() {
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
 							return []byte("/dev/active"), nil
 						}
+						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
+							return []byte("/dev/passive"), nil
+						}
+
 						if command == "lsblk" {
-							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/live", "path": "/dev/fake1"}]}`), nil
 						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
@@ -907,7 +922,6 @@ var _ = Describe("Actions", func() {
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -944,7 +958,6 @@ var _ = Describe("Actions", func() {
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1012,7 +1025,6 @@ var _ = Describe("Actions", func() {
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1037,8 +1049,11 @@ var _ = Describe("Actions", func() {
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
 							return []byte("/dev/active"), nil
 						}
+						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
+							return []byte("/dev/passive"), nil
+						}
 						if command == "lsblk" {
-							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/live", "path": "/dev/fake1"}]}`), nil
 						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
@@ -1087,9 +1102,8 @@ var _ = Describe("Actions", func() {
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
-						Path:   "/run/initramfs/cos-state",
+						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1124,9 +1138,8 @@ var _ = Describe("Actions", func() {
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
-						Path:   "/run/initramfs/cos-state",
+						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1197,9 +1210,8 @@ var _ = Describe("Actions", func() {
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
-						Path:   "/run/initramfs/cos-state",
+						Path:   "/run/initramfs/live",
 						Type:   "fakefs",
-						Opts:   []string{"remount", "ro"},
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1207,8 +1219,7 @@ var _ = Describe("Actions", func() {
 					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Should have default image size
-					Expect(info.Size()).To(BeNumerically(">", 0))
-					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
