@@ -235,8 +235,8 @@ func (u *UpgradeAction) Run() (err error) {
 		Source:     upgradeSource, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
 	}
 
-	// If on recovery, set the label to the RecoveryLabel instead
-	if utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) {
+	// If upgrading recovery, set the label to the RecoveryLabel instead
+	if u.Config.RecoveryUpgrade {
 		img.Label = u.Config.SystemLabel
 	}
 
@@ -284,11 +284,11 @@ func (u *UpgradeAction) Run() (err error) {
 		return err
 	}
 
-	// If we boot from recovery the real statedir may not mounted, we mount the recovery "state" dir.
-	// for the grub rebrand to work, we need to mount the state partition, so it can write into it
-	if bootedFromRecovery {
-		statePartForRecovery, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-		if err == nil {
+	// for the grub rebrand to work, we need to mount the state partition RW, so it can write into it
+	statePartForRecovery, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
+	if err == nil {
+		// If its not mounted, mount it so we can rebrand then unmount it
+		if statePartForRecovery.MountPoint == "" {
 			_ = u.Config.Fs.MkdirAll(constants.StateDir, os.ModeDir)
 			if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(constants.StateDir); notMounted {
 				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, statePartForRecovery.FS, []string{"rw"})
@@ -299,6 +299,13 @@ func (u *UpgradeAction) Run() (err error) {
 				cleanup.Push(func() error {
 					return u.unmount(constants.StateDir)
 				})
+			}
+		} else {
+			// if mounted it may be RO only, so remount it RW?
+			err = u.Config.Mounter.Mount(statePartForRecovery.Path, statePartForRecovery.MountPoint, statePartForRecovery.FS, []string{"remount", "rw"})
+			if err != nil {
+				u.Error("Could not remount state partition with label %s for rebrand: %s", u.Config.StateLabel, err)
+				return err
 			}
 		}
 	}
@@ -426,14 +433,15 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
 	upgradeSource := v1.ImageSource{Source: constants.UpgradeSource, IsChannel: true}
 	upgradeTarget := constants.UpgradeActive
 
+	if u.Config.RecoveryUpgrade {
+		u.Debug("Upgrading recovery")
+		upgradeTarget = constants.UpgradeRecovery
+	}
 	// if channel_upgrades==true then it picks the default image from /etc/cos-upgrade-image
 	// this means, it gets the UPGRADE_IMAGE(default system/cos)/RECOVERY_IMAGE from the luet repo configured on the system
 	if u.Config.ChannelUpgrades {
 		u.Debug("Source is channel-upgrades")
-
 		if u.Config.RecoveryUpgrade {
-			u.Debug("Upgrading recovery")
-			upgradeTarget = constants.UpgradeRecovery
 			if u.Config.RecoveryImage == "" {
 				if u.Config.UpgradeImage != "" {
 					upgradeSource.Source = u.Config.UpgradeImage

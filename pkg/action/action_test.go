@@ -1110,9 +1110,8 @@ var _ = Describe("Actions", func() {
 					// Should have created recovery image
 					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
-					// Should not be empty
-					Expect(info.Size()).To(BeNumerically(">", 0))
-					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+					// Image size should be default size
+					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
@@ -1146,9 +1145,8 @@ var _ = Describe("Actions", func() {
 					// This should be the new image
 					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
-					// Image size should not be empty
-					Expect(info.Size()).To(BeNumerically(">", 0))
-					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
+					// Image size should be default size
+					Expect(info.Size()).To(BeNumerically("==", int64(config.ImgSize*1024*1024)))
 					Expect(info.IsDir()).To(BeFalse())
 
 					// Transition squash should not exist
