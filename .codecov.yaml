@@ -1,2 +1,15 @@
 github_checks:
   annotations: false
+coverage:
+  status:
+    project:
+      default: false
+      cli:
+        paths:
+         - "cmd/"
+        target: 75%
+        informational: true
+      pkg:
+        paths:
+          - "pkg/"
+        target: 75%
