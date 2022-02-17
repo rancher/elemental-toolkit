@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-cos upgrade $@
+elemental --logfile /tmp/elemental.log upgrade $@
