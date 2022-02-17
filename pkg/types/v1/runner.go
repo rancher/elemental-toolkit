@@ -21,12 +21,22 @@ import (
 )
 
 type Runner interface {
+	InitCmd(string, ...string) *exec.Cmd
 	Run(string, ...string) ([]byte, error)
+	RunCmd(cmd *exec.Cmd) ([]byte, error)
 }
 
 type RealRunner struct{}
 
+func (r RealRunner) InitCmd(command string, args ...string) *exec.Cmd {
+	return exec.Command(command, args...)
+}
+
+func (r RealRunner) RunCmd(cmd *exec.Cmd) ([]byte, error) {
+	return cmd.CombinedOutput()
+}
+
 func (r RealRunner) Run(command string, args ...string) ([]byte, error) {
-	out, err := exec.Command(command, args...).CombinedOutput()
-	return out, err
+	cmd := r.InitCmd(command, args...)
+	return r.RunCmd(cmd)
 }

@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
@@ -50,7 +51,7 @@ func TestCommonSuite(t *testing.T) {
 
 var _ = Describe("Utils", Label("utils"), func() {
 	var config *v1.RunConfig
-	var runner v1.Runner
+	var runner *v1mock.FakeRunner
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
 	var client v1.HTTPClient
@@ -59,13 +60,13 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var memLog *bytes.Buffer
 
 	BeforeEach(func() {
-		runner = &v1mock.FakeRunner{}
+		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHttpClient{}
 		logger = v1.NewNullLogger()
 		fs = afero.NewMemMapFs()
-		config = v1.NewRunConfig(
+		config = conf.NewRunConfig(
 			v1.WithFs(fs),
 			v1.WithRunner(runner),
 			v1.WithLogger(logger),
@@ -112,8 +113,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 		Describe("on failure", func() {
 			It("should return error if chroot-command fails", func() {
-				runner := runner.(*v1mock.FakeRunner)
-				runner.ErrorOnCommand = true
+				runner.ReturnError = errors.New("run error")
 				_, err := chroot.Run("chroot-command")
 				Expect(err).NotTo(BeNil())
 				Expect(syscall.WasChrootCalledWith("/whatever")).To(BeTrue())
@@ -159,21 +159,17 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("TestBootedFrom", Label("BootedFrom"), func() {
 		It("returns true if we are booting from label FAKELABEL", func() {
-			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte("")
 			Expect(utils.BootedFrom(runner, "FAKELABEL")).To(BeFalse())
 		})
 		It("returns false if we are not booting from label FAKELABEL", func() {
-			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte("FAKELABEL")
 			Expect(utils.BootedFrom(runner, "FAKELABEL")).To(BeTrue())
 		})
 	})
 	Describe("GetDeviceByLabel", Label("GetDeviceByLabel"), func() {
-		var runner *v1mock.TestRunnerV2
 		var cmds [][]string
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
 			cmds = [][]string{
 				{"udevadm", "settle"},
 				{"blkid", "--label", "FAKE"},
@@ -200,10 +196,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("CosignVerify", Label("cosign"), func() {
-		var runner *v1mock.TestRunnerV2
-		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
-		})
 		It("runs a keyless verification", func() {
 			_, err := utils.CosignVerify(fs, runner, "some/image:latest", "", true)
 			Expect(err).To(BeNil())
@@ -222,10 +214,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("Reboot and shutdown", Label("reboot", "shutdown"), func() {
-		var runner *v1mock.TestRunnerV2
-		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
-		})
 		It("reboots", func() {
 			start := time.Now()
 			utils.Reboot(runner, 2)
@@ -242,10 +230,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("GetFullDeviceByLabel", Label("GetFullDeviceByLabel", "partition", "types"), func() {
-		var runner *v1mock.TestRunnerV2
 		var cmds [][]string
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
 			cmds = [][]string{
 				{"udevadm", "settle"},
 				{"blkid", "--label", "FAKE"},
@@ -506,8 +492,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 		Describe("SetPersistentVariables", func() {
 			It("Sets the grub environment file", func() {
-				runner := v1mock.NewTestRunnerV2()
-				config.Runner = runner
 				grub := utils.NewGrub(config)
 				Expect(grub.SetPersistentVariables(
 					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
@@ -518,9 +502,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				})).To(BeNil())
 			})
 			It("Fails running grub2-editenv", func() {
-				runner := v1mock.NewTestRunnerV2()
 				runner.ReturnError = errors.New("grub error")
-				config.Runner = runner
 				grub := utils.NewGrub(config)
 				Expect(grub.SetPersistentVariables(
 					"somefile", map[string]string{"key1": "value1"},
@@ -538,7 +520,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			memLog = &bytes.Buffer{}
 			logger = v1.NewBufferLogger(memLog)
 			fs = afero.NewOsFs()
-			config = v1.NewRunConfig(
+			config = conf.NewRunConfig(
 				v1.WithFs(fs),
 				v1.WithRunner(runner),
 				v1.WithLogger(logger),
@@ -550,17 +532,13 @@ var _ = Describe("Utils", Label("utils"), func() {
 		It("fails if strict mode is enabled", Label("strict"), func() {
 			config.Logger.SetLevel(log.DebugLevel)
 			config.Strict = true
-			r := v1mock.NewTestRunnerV2()
-			r.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
-			config.Runner = r
+			runner.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
 			Expect(utils.RunStage("c3po", config)).ToNot(BeNil())
 		})
 		It("does not fail but prints errors by default", Label("strict"), func() {
 			config.Logger.SetLevel(log.DebugLevel)
 			config.Strict = false
-			r := v1mock.NewTestRunnerV2()
-			r.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
-			config.Runner = r
+			runner.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
 			out := utils.RunStage("c3po", config)
 			Expect(out).To(BeNil())
 			Expect(memLog).To(ContainSubstring("Some errors found but were ignored"))
@@ -582,36 +560,29 @@ var _ = Describe("Utils", Label("utils"), func() {
 			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
 			defer os.RemoveAll(d)
 
-			r := v1mock.NewTestRunnerV2()
-			r.ReturnValue = []byte(fmt.Sprintf("cos.setup=%s/test.yaml", d))
-			config.Runner = r
+			runner.ReturnValue = []byte(fmt.Sprintf("cos.setup=%s/test.yaml", d))
 			Expect(utils.RunStage("padme", config)).To(BeNil())
 			Expect(memLog).To(ContainSubstring("padme"))
 			Expect(memLog).To(ContainSubstring(fmt.Sprintf("%s/test.yaml", d)))
 		})
 		It("parses cmdline uri with dotnotation", func() {
 			config.Logger.SetLevel(log.DebugLevel)
-			r := v1mock.NewTestRunnerV2()
-			r.ReturnValue = []byte("stages.leia[0].commands[0]='echo beepboop'")
-			config.Runner = r
+			runner.ReturnValue = []byte("stages.leia[0].commands[0]='echo beepboop'")
 			Expect(utils.RunStage("leia", config)).To(BeNil())
 			Expect(memLog).To(ContainSubstring("leia"))
 			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
-			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
+			Expect(memLog).To(ContainSubstring("Command output: stages.leia[0].commands[0]='echo beepboop'"))
 
-			r = v1mock.NewTestRunnerV2()
 			// try with a non-clean cmdline
-			r.ReturnValue = []byte("BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'")
-			config.Runner = r
+			runner.ReturnValue = []byte("BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'")
 			Expect(utils.RunStage("leia", config)).To(BeNil())
 			Expect(memLog).To(ContainSubstring("leia"))
 			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
-			Expect(memLog).To(ContainSubstring("Command output: beepboop"))
+			Expect(memLog).To(ContainSubstring("Command output: BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'"))
 		})
 	})
 	Describe("CreateSquashFS", Label("CreateSquashFS"), func() {
 		It("runs with no options if none given", func() {
-			runner := v1mock.NewTestRunnerV2()
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
 			Expect(runner.IncludesCmds([][]string{
 				{"mksquashfs", "source", "dest"},
@@ -619,7 +590,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("runs with options if given", func() {
-			runner := v1mock.NewTestRunnerV2()
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", constants.GetDefaultSquashfsOptions())
 			cmd := []string{"mksquashfs", "source", "dest"}
 			cmd = append(cmd, constants.GetDefaultSquashfsOptions()...)
@@ -629,7 +599,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("returns an error if it fails", func() {
-			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnError = errors.New("error")
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
 			Expect(runner.IncludesCmds([][]string{

@@ -19,64 +19,49 @@ package mocks
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 )
 
 type FakeRunner struct {
-	ErrorOnCommand bool
-}
-
-func (r *FakeRunner) Run(command string, args ...string) ([]byte, error) {
-	if r.ErrorOnCommand {
-		return []byte{}, errors.New("run error")
-	}
-	var cs []string
-	// If the command is trying to get the cmdline call the TestHelperBootedFrom test
-	// Maybe a switch statement would be better here??
-	if command == "cat" && len(args) > 0 && args[0] == "/proc/cmdline" {
-		cs = []string{"-test.run=TestHelperBootedFrom", "--"}
-		cs = append(cs, args...)
-	} else if command == "blkid" && len(args) == 2 && args[1] == "EXISTS" {
-		cs = []string{"-test.run=TestHelperFindLabel", "--"}
-		cs = append(cs, args...)
-	} else {
-		return make([]byte, 0), nil
-	}
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	out, err := cmd.CombinedOutput()
-	return out, err
-}
-
-type TestRunnerV2 struct {
 	cmds        [][]string
 	ReturnValue []byte
 	SideEffect  func(command string, args ...string) ([]byte, error)
 	ReturnError error
 }
 
-func NewTestRunnerV2() *TestRunnerV2 {
-	return &TestRunnerV2{cmds: [][]string{}, ReturnValue: []byte{}, SideEffect: nil, ReturnError: nil}
+func NewFakeRunner() *FakeRunner {
+	return &FakeRunner{cmds: [][]string{}, ReturnValue: []byte{}, SideEffect: nil, ReturnError: nil}
 }
 
-func (r *TestRunnerV2) Run(command string, args ...string) ([]byte, error) {
-	r.cmds = append(r.cmds, append([]string{command}, args...))
+func (r *FakeRunner) Run(command string, args ...string) ([]byte, error) {
+	r.InitCmd(command, args...)
+	return r.RunCmd(nil)
+}
+
+func (r *FakeRunner) RunCmd(cmd *exec.Cmd) ([]byte, error) {
 	if r.SideEffect != nil {
-		return r.SideEffect(command, args...)
+		if len(r.cmds) > 0 {
+			lastCmd := len(r.cmds) - 1
+			return r.SideEffect(r.cmds[lastCmd][0], r.cmds[lastCmd][1:]...)
+		}
 	}
 	return r.ReturnValue, r.ReturnError
 }
 
-func (r *TestRunnerV2) ClearCmds() {
+func (r *FakeRunner) InitCmd(command string, args ...string) *exec.Cmd {
+	r.cmds = append(r.cmds, append([]string{command}, args...))
+	return nil
+}
+
+func (r *FakeRunner) ClearCmds() {
 	r.cmds = [][]string{}
 }
 
 // CmdsMatch matches the commands list in order. Note HasPrefix is being used to evaluate the
 // match, so expecting initial part of the command is enough to get a match.
 // It facilitates testing commands with dynamic arguments (aka temporary files)
-func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
+func (r FakeRunner) CmdsMatch(cmdList [][]string) error {
 	if len(cmdList) != len(r.cmds) {
 		return errors.New(fmt.Sprintf("Number of calls mismatch, expected %d calls but got %d", len(cmdList), len(r.cmds)))
 	}
@@ -92,7 +77,7 @@ func (r TestRunnerV2) CmdsMatch(cmdList [][]string) error {
 
 // IncludesCmds checks the given commands were executed in any order.
 // Note it uses HasPrefix to match commands, see CmdsMatch.
-func (r TestRunnerV2) IncludesCmds(cmdList [][]string) error {
+func (r FakeRunner) IncludesCmds(cmdList [][]string) error {
 	for _, cmd := range cmdList {
 		expect := strings.Join(cmd[:], " ")
 		found := false
@@ -112,7 +97,7 @@ func (r TestRunnerV2) IncludesCmds(cmdList [][]string) error {
 
 // MatchMilestones matches all the given commands were executed in the provided
 // order. Note it uses HasPrefix to match commands, see CmdsMatch.
-func (r TestRunnerV2) MatchMilestones(cmdList [][]string) error {
+func (r FakeRunner) MatchMilestones(cmdList [][]string) error {
 	var match string
 	for _, cmd := range r.cmds {
 		if len(cmdList) == 0 {

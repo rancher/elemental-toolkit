@@ -39,9 +39,9 @@ func TestElementalSuite(t *testing.T) {
 }
 
 var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func() {
-	var runner *mocks.TestRunnerV2
+	var runner *mocks.FakeRunner
 	BeforeEach(func() {
-		runner = mocks.NewTestRunnerV2()
+		runner = mocks.NewFakeRunner()
 	})
 	Describe("Parted tests", Label("parted"), func() {
 		var pc *part.PartedCall

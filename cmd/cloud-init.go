@@ -23,7 +23,6 @@ import (
 	"os"
 
 	"github.com/mudler/yip/pkg/schema"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -44,11 +43,10 @@ var cloudInit = &cobra.Command{
 		stage, _ := cmd.Flags().GetString("stage")
 		dot, _ := cmd.Flags().GetBool("dotnotation")
 
-		runner := v1.NewYipCloudInitRunner(cfg.Logger)
 		fromStdin := len(args) == 1 && args[0] == "-"
 
 		if dot {
-			runner.SetModifier(schema.DotNotationModifier)
+			cfg.CloudInitRunner.SetModifier(schema.DotNotationModifier)
 		}
 
 		if fromStdin {
@@ -60,7 +58,7 @@ var cloudInit = &cobra.Command{
 			args = []string{string(std)}
 		}
 
-		return runner.Run(stage, args...)
+		return cfg.CloudInitRunner.Run(stage, args...)
 	},
 }
 

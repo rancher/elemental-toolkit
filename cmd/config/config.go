@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -50,7 +51,7 @@ func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
 }
 
 func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, error) {
-	cfg := v1.NewRunConfig(
+	cfg := config.NewRunConfig(
 		v1.WithLogger(v1.NewLogger()),
 		v1.WithMounter(mounter),
 	)

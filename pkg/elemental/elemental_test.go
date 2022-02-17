@@ -22,10 +22,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
@@ -46,7 +47,7 @@ func TestElementalSuite(t *testing.T) {
 
 var _ = Describe("Elemental", Label("elemental"), func() {
 	var config *v1.RunConfig
-	var runner v1.Runner
+	var runner *v1mock.FakeRunner
 	var logger v1.Logger
 	var syscall v1.SyscallInterface
 	var client v1.HTTPClient
@@ -54,13 +55,13 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	var fs afero.Fs
 
 	BeforeEach(func() {
-		runner = &v1mock.FakeRunner{}
+		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHttpClient{}
 		logger = v1.NewNullLogger()
 		fs = afero.NewMemMapFs()
-		config = v1.NewRunConfig(
+		config = conf.NewRunConfig(
 			v1.WithFs(fs),
 			v1.WithRunner(runner),
 			v1.WithLogger(logger),
@@ -71,11 +72,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("MountPartitions", Label("MountPartitions", "disk", "partition", "mount"), func() {
-		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
-			config.Runner = runner
 			fs.Create(cnst.EfiDevice)
 			action.InstallSetup(config)
 			Expect(config.PartTable).To(Equal(v1.GPT))
@@ -110,11 +108,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("UnmountPartitions", Label("UnmountPartitions", "disk", "partition", "unmount"), func() {
-		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
-			config.Runner = runner
 			runner.ReturnValue = []byte("/some/device")
 			fs.Create(cnst.EfiDevice)
 			action.InstallSetup(config)
@@ -138,11 +133,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("MountImage", Label("MountImage", "mount", "image"), func() {
-		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
-			config.Runner = runner
 			el = elemental.NewElemental(config)
 			config.ActiveImage.MountPoint = "/some/mountpoint"
 		})
@@ -169,12 +161,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("UnmountImage", Label("MountImage", "mount", "image"), func() {
-		var runner *v1mock.TestRunnerV2
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte("/dev/loop")
-			config.Runner = runner
 			el = elemental.NewElemental(config)
 			config.ActiveImage.MountPoint = "/some/mountpoint"
 			Expect(el.MountImage(&config.ActiveImage)).To(BeNil())
@@ -217,8 +206,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Fails formatting a file system image", Label("format"), func() {
-			runner := runner.(*v1mock.FakeRunner)
-			runner.ErrorOnCommand = true
+			runner.ReturnError = errors.New("run error")
 			_, err := fs.Stat(config.ActiveImage.File)
 			Expect(err).NotTo(BeNil())
 			err = el.CreateFileSystemImage(&config.ActiveImage)
@@ -243,16 +231,13 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("PartitionAndFormatDevice", Label("PartitionAndFormatDevice", "partition", "format"), func() {
 		var el *elemental.Elemental
 		var dev *part.Disk
-		var runner *v1mock.TestRunnerV2
 		var cInit *v1mock.FakeCloudInitRunner
 		var partNum, errPart int
 		var printOut string
 		var failEfiFormat bool
 
 		BeforeEach(func() {
-			runner = v1mock.NewTestRunnerV2()
 			cInit = &v1mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
-			config.Runner = runner
 			config.CloudInitRunner = cInit
 			fs.Create(cnst.EfiDevice)
 			el = elemental.NewElemental(config)
@@ -426,14 +411,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				Expect(partNum).To(Equal(1))
 			})
 
-			It("Fails creating custom partitions on non gpt disks", func() {
-				fs.Remove(cnst.EfiDevice)
-				action.InstallSetup(config)
-				config.PartLayout = "partitioning.yaml"
-				err := el.PartitionAndFormatDevice(dev)
-				Expect(err).NotTo(BeNil())
-			})
-
 			It("Fails creating a data partition", func() {
 				action.InstallSetup(config)
 				errPart, failEfiFormat = 2, false
@@ -451,7 +428,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 	Describe("DeployImage", Label("DeployImage"), func() {
 		var el *elemental.Elemental
-		var runner *v1mock.TestRunnerV2
 		var img *v1.Image
 		var destDir, sourceDir, cmdFail string
 		BeforeEach(func() {
@@ -459,8 +435,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
-			runner = v1mock.NewTestRunnerV2()
-			config.Runner = runner
 			el = elemental.NewElemental(config)
 			img = &v1.Image{
 				FS:         "ext2",
@@ -567,8 +541,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
-			runner := v1mock.NewTestRunnerV2()
-			config.Runner = runner
 			config.Cosign = true
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
@@ -580,9 +552,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
-			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnError = errors.New("cosign error")
-			config.Runner = runner
 			config.Cosign = true
 			c := elemental.NewElemental(config)
 			img.Source.Source = "docker/image:latest"
@@ -627,8 +597,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(c.CopyImage(img)).NotTo(BeNil())
 		})
 		It("Fails to set the label", func() {
-			runner := runner.(*v1mock.FakeRunner)
-			runner.ErrorOnCommand = true
+			runner.ReturnError = errors.New("run error")
 			sourceImg := "source.img"
 			_, err := fs.Create(sourceImg)
 			Expect(err).To(BeNil())
@@ -666,9 +635,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Describe("Force is disabled", func() {
 				It("Should error out", func() {
 					config.NoFormat = true
-					runner := v1mock.NewTestRunnerV2()
 					runner.ReturnValue = []byte("/dev/fake")
-					config.Runner = runner
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).ToNot(BeNil())
@@ -679,9 +646,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				It("Should not error out", func() {
 					config.NoFormat = true
 					config.Force = true
-					runner := v1mock.NewTestRunnerV2()
 					runner.ReturnValue = []byte("/dev/fake")
-					config.Runner = runner
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).To(BeNil())
@@ -691,9 +656,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		Describe("Labels dont exist", func() {
 			It("Should not error out", func() {
 				config.NoFormat = true
-				runner := v1mock.NewTestRunnerV2()
 				runner.ReturnValue = []byte("")
-				config.Runner = runner
 				e := elemental.NewElemental(config)
 				err := e.CheckNoFormat()
 				Expect(err).To(BeNil())
@@ -713,9 +676,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("BootedFromSquash", Label("BootedFromSquash", "squashfs"), func() {
 		It("Returns true if booted from squashfs", func() {
 			action.InstallSetup(config)
-			runner := v1mock.NewTestRunnerV2()
 			runner.ReturnValue = []byte(cnst.RecoveryLabel)
-			config.Runner = runner
 			e := elemental.NewElemental(config)
 			Expect(e.BootedFromSquash()).To(BeTrue())
 		})
@@ -834,9 +795,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		Describe("Squashfs boot", func() {
 			It("should not do anything", func() {
 				action.InstallSetup(config)
-				runner := v1mock.NewTestRunnerV2()
 				runner.ReturnValue = []byte(cnst.RecoveryLabel)
-				config.Runner = runner
 				e := elemental.NewElemental(config)
 				Expect(e.CopyRecovery()).To(BeNil())
 				// Target file should not be there
@@ -873,8 +832,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Fails to set the passive label", func() {
-			runner := runner.(*v1mock.FakeRunner)
-			runner.ErrorOnCommand = true
+			runner.ReturnError = errors.New("run error")
 			_, err := fs.Create(config.ActiveImage.File)
 			Expect(err).To(BeNil())
 			_, err = fs.Stat(passImgFile)

@@ -17,10 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
-	"net/http"
 )
 
 const (
@@ -87,86 +85,6 @@ func WithLuet(luet LuetInterface) func(r *RunConfig) error {
 		r.Luet = luet
 		return nil
 	}
-}
-
-func NewRunConfig(opts ...RunConfigOptions) *RunConfig {
-	log := NewLogger()
-	r := &RunConfig{
-		Fs:      afero.NewOsFs(),
-		Logger:  log,
-		Runner:  &RealRunner{},
-		Syscall: &RealSyscall{},
-		Client:  &http.Client{},
-	}
-	for _, o := range opts {
-		err := o(r)
-		if err != nil {
-			return nil
-		}
-	}
-
-	// Delay the yip runner creation, so we set the proper logger instead of blindly setting it to the logger we create
-	// at the start of NewRunConfig, as WithLogger can be passed on init, and that would result in 2 different logger
-	// instances, on on the config.Logger and the other on config.CloudInitRunner
-	if r.CloudInitRunner == nil {
-		r.CloudInitRunner = NewYipCloudInitRunner(r.Logger)
-	}
-
-	if r.Mounter == nil {
-		r.Mounter = mount.New(cnst.MountBinary)
-	}
-
-	if r.CloudInitRunner == nil {
-		r.CloudInitRunner = NewYipCloudInitRunner(r.Logger)
-	}
-
-	// Set defaults if empty
-	if r.GrubConf == "" {
-		r.GrubConf = cnst.GrubConf
-	}
-
-	if r.ActiveLabel == "" {
-		r.ActiveLabel = cnst.ActiveLabel
-	}
-
-	if r.PassiveLabel == "" {
-		r.PassiveLabel = cnst.PassiveLabel
-	}
-
-	if r.SystemLabel == "" {
-		r.SystemLabel = cnst.SystemLabel
-	}
-
-	if r.RecoveryLabel == "" {
-		r.RecoveryLabel = cnst.RecoveryLabel
-	}
-
-	if r.PersistentLabel == "" {
-		r.PersistentLabel = cnst.PersistentLabel
-	}
-
-	if r.OEMLabel == "" {
-		r.OEMLabel = cnst.OEMLabel
-	}
-
-	if r.StateLabel == "" {
-		r.StateLabel = cnst.StateLabel
-	}
-
-	r.Partitions = PartitionList{}
-
-	if r.IsoMnt == "" {
-		r.IsoMnt = cnst.IsoMnt
-	}
-
-	if r.GrubDefEntry == "" {
-		r.GrubDefEntry = cnst.GrubDefEntry
-	}
-
-	if r.ImgSize == 0 {
-		r.ImgSize = cnst.ImgSize
-	}
-	return r
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.

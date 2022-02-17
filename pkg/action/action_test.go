@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
@@ -49,7 +50,7 @@ func TestElementalSuite(t *testing.T) {
 
 var _ = Describe("Actions", func() {
 	var config *v1.RunConfig
-	var runner *v1mock.TestRunnerV2
+	var runner *v1mock.FakeRunner
 	var fs afero.Fs
 	var logger v1.Logger
 	var mounter *v1mock.ErrorMounter
@@ -58,14 +59,14 @@ var _ = Describe("Actions", func() {
 	var cloudInit *v1mock.FakeCloudInitRunner
 
 	BeforeEach(func() {
-		runner = v1mock.NewTestRunnerV2()
+		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHttpClient{}
 		logger = v1.NewNullLogger()
 		fs = afero.NewMemMapFs()
 		cloudInit = &v1mock.FakeCloudInitRunner{}
-		config = v1.NewRunConfig(
+		config = conf.NewRunConfig(
 			v1.WithFs(fs),
 			v1.WithRunner(runner),
 			v1.WithLogger(logger),
@@ -566,7 +567,6 @@ var _ = Describe("Actions", func() {
 			_ = afero.WriteFile(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
 		})
 		It("Fails if some hook fails and strict is set", func() {
-			runner = v1mock.NewTestRunnerV2()
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 					return []byte("/dev/active"), nil
@@ -594,7 +594,6 @@ var _ = Describe("Actions", func() {
 		})
 		Describe(fmt.Sprintf("Booting from %s", constants.ActiveLabel), Label("active_label"), func() {
 			BeforeEach(func() {
-				runner = v1mock.NewTestRunnerV2()
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 						return []byte("/dev/active"), nil
@@ -782,7 +781,6 @@ var _ = Describe("Actions", func() {
 		})
 		Describe(fmt.Sprintf("Booting from %s", constants.PassiveLabel), Label("passive_label"), func() {
 			BeforeEach(func() {
-				runner = v1mock.NewTestRunnerV2()
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
 						return []byte("/dev/active"), nil
@@ -859,7 +857,6 @@ var _ = Describe("Actions", func() {
 			})
 			Describe("Using squashfs", Label("squashfs"), func() {
 				BeforeEach(func() {
-					runner = v1mock.NewTestRunnerV2()
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
 							return []byte("/dev/active"), nil
@@ -1044,7 +1041,6 @@ var _ = Describe("Actions", func() {
 			})
 			Describe("Not using squashfs", Label("non-squashfs"), func() {
 				BeforeEach(func() {
-					runner = v1mock.NewTestRunnerV2()
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
 							return []byte("/dev/active"), nil

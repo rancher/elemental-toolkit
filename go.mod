@@ -17,7 +17,7 @@ require (
 	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e // indirect
 	github.com/mudler/luet v0.0.0-20220127164253-6f77fa2b3a72
 	github.com/mudler/yip v0.0.0-20220127115532-dd6192ae26bf
-	github.com/onsi/ginkgo/v2 v2.1.1
+	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.18.0
 	github.com/packethost/packngo v0.21.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect

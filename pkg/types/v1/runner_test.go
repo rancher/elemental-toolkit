@@ -29,13 +29,8 @@ var _ = Describe("Runner", Label("types", "runner"), func() {
 		_, err := r.Run("pwd")
 		Expect(err).To(BeNil())
 	})
-	It("Runs commands on the fake RunnerV1", func() {
-		r := v1mock.FakeRunner{}
-		_, err := r.Run("pwd")
-		Expect(err).To(BeNil())
-	})
-	It("Runs commands on the fake RunnerV2", func() {
-		r := v1mock.TestRunnerV2{}
+	It("Runs commands on the fake runner", func() {
+		r := v1mock.NewFakeRunner()
 		_, err := r.Run("pwd")
 		Expect(err).To(BeNil())
 	})
