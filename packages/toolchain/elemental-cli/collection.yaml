@@ -3,7 +3,7 @@ packages:
     name: "elemental-cli"
     bin_name: "elemental"
     category: "toolchain"
-    version: "0.20220217-1"
+    version: "0.20220218"
     fips: false
     labels:
       github.repo: "elemental"
@@ -11,7 +11,7 @@ packages:
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
       autobump.git.branch: "main"
-      git.hash: "adea0565b69d9eaa5874acb6e56736d10c964763"
+      git.hash: "9f1859e038c3bccead793862f640986ceb58ffcb"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
