@@ -101,12 +101,13 @@ stages:
 		var runner *v1mock.FakeRunner
 		var cloudRunner *YipCloudInitRunner
 		var afs afero.Fs
-		var cmdFail string
+		var tmpf, cmdFail string
 		var partNum int
 		BeforeEach(func() {
 			afs = afero.NewOsFs()
-			_, err := afs.Create("/tmp/device")
+			f, err := afero.TempFile(afs, "", "cloudinit-test")
 			Expect(err).To(BeNil())
+			tmpf = f.Name()
 			runner = v1mock.NewFakeRunner()
 			logger := logrus.New()
 			logger.SetOutput(ioutil.Discard)
@@ -119,29 +120,31 @@ stages:
 				case "parted":
 					return []byte(printOutput), nil
 				case "blkid":
-					if args[0] == "/tmp/device3" {
+					if args[0] == fmt.Sprintf("%s3", tmpf) {
 						return []byte("ext4"), nil
 					}
 					if args[0] == "--label" && args[1] == "DEV_LABEL" {
-						return []byte("/tmp/device"), nil
+						return []byte(tmpf), nil
 					}
 					return []byte{}, nil
 				case "lsblk":
 					if args[0] == "-ltnpo" {
-						return []byte(fmt.Sprintf("/tmp/device%d part", partNum)), nil
+						return []byte(fmt.Sprintf("%s%d part", tmpf, partNum)), nil
 					}
-					return []byte(`{"blockdevices":[{"label":"DEV_LABEL","size":1,"partlabel":"pfake", "pkname": "/tmp/device"}]}`), nil
+					return []byte(
+						fmt.Sprintf(`{"blockdevices":[{"label":"DEV_LABEL","size":1,"partlabel":"pfake", "pkname": "%s"}]}`, tmpf),
+					), nil
 				default:
 					return []byte{}, nil
 				}
 			}
 		})
 		AfterEach(func() {
-			afs.Remove("/tmp/device")
+			afs.Remove(tmpf)
 		})
 		It("Does nothing if no changes are defined", func() {
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+				"/some/yip/layout.yaml": fmt.Sprintf(`
 stages:
   test:
   - name: Nothing to do
@@ -154,7 +157,7 @@ stages:
   - name: Defined device without partitions, does nothing
     layout:
       device:
-        path: /tmp/device
+        path: %s
   - name: Defined already existing partition, does nothing
     layout:
       device:
@@ -162,7 +165,7 @@ stages:
       add_partitions:
       - fsLabel: DEV_LABEL
         pLabel: partLabel
-`,
+`, tmpf),
 			})
 			defer cleanup()
 			cloudRunner.SetFs(fs)
@@ -171,16 +174,16 @@ stages:
 		It("Expands last partition on a MSDOS disk", func() {
 			partNum = 3
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+				"/some/yip/layout.yaml": fmt.Sprintf(`
 stages:
   test:
   - name: Expanding last partition
     layout:
       device:
-        path: /tmp/device
+        path: %s
       expand_partition:
         size: 0
-`,
+`, tmpf),
 			})
 			defer cleanup()
 			cloudRunner.SetFs(fs)
@@ -189,17 +192,17 @@ stages:
 		It("Adds a partition on a MSDOS disk", func() {
 			partNum = 4
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+				"/some/yip/layout.yaml": fmt.Sprintf(`
 stages:
   test:
   - name: Adding new partition
     layout:
       device:
-        path: /tmp/device
+        path: %s
       add_partitions: 
       - fsLabel: SOMELABEL
         pLabel: somelabel
-`,
+`, tmpf),
 			})
 			defer cleanup()
 			cloudRunner.SetFs(fs)
@@ -209,17 +212,17 @@ stages:
 			cmdFail = "mkfs.ext4"
 			partNum = 4
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+				"/some/yip/layout.yaml": fmt.Sprintf(`
 stages:
   test:
   - name: Adding new partition
     layout:
       device:
-        path: /tmp/device
+        path: %s
       add_partitions: 
       - fsLabel: SOMELABEL
         pLabel: somelabel
-`,
+`, tmpf),
 			})
 			defer cleanup()
 			cloudRunner.SetFs(fs)
@@ -229,16 +232,16 @@ stages:
 			partNum = 3
 			cmdFail = "resize2fs"
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+				"/some/yip/layout.yaml": fmt.Sprintf(`
 stages:
   test:
   - name: Expanding last partition
     layout:
       device:
-        path: /tmp/device
+        path: %s
       expand_partition:
         size: 0
-`,
+`, tmpf),
 			})
 			defer cleanup()
 			cloudRunner.SetFs(fs)
