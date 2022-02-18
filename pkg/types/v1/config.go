@@ -118,7 +118,7 @@ type RunConfig struct {
 	Reboot           bool   `yaml:"reboot,omitempty" mapstructure:"reboot"`
 	PowerOff         bool   `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
 	DirectoryUpgrade string // configured only via flag, no need to map it to any config
-	ChannelUpgrades  bool   `yaml:"CHANNEL_UPGRADES, omitempty" mapstructure:"CHANNEL_UPGRADES"`
+	ChannelUpgrades  bool   `yaml:"CHANNEL_UPGRADES,omitempty" mapstructure:"CHANNEL_UPGRADES"`
 	UpgradeImage     string `yaml:"UPGRADE_IMAGE,omitempty" mapstructure:"UPGRADE_IMAGE"`
 	RecoveryImage    string `yaml:"RECOVERY_IMAGE,omitempty" mapstructure:"RECOVERY_IMAGE"`
 	RecoveryUpgrade  bool   // configured only via flag, no need to map it to any config

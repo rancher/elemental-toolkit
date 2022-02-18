@@ -33,6 +33,7 @@ var installCmd = &cobra.Command{
 	Short: "elemental installer",
 	Args:  cobra.MaximumNArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindEnv("target", "ELEMENTAL_TARGET")
 		viper.BindPFlags(cmd.Flags())
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
