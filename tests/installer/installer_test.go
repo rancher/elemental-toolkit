@@ -111,22 +111,22 @@ var _ = Describe("cOS Installer tests", func() {
 						{
 							Label:  "COS_STATE",
 							Size:   8192,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_OEM",
 							Size:   10,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_RECOVERY",
 							Size:   4000,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 						{
 							Label:  "COS_PERSISTENT",
 							Size:   100,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 					} {
 						CheckPartitionValues(disk, part)
@@ -137,9 +137,47 @@ var _ = Describe("cOS Installer tests", func() {
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
 					out, err := s.Command("cos-installer --partition-layout /usr/local/layout.yaml /dev/sda")
-					Expect(err).ToNot(BeNil())
+					Expect(err).To(BeNil())
+					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
+					Expect(out).To(ContainSubstring("Installing GRUB.."))
+					Expect(out).To(ContainSubstring("Copying Passive image..."))
+					Expect(out).To(ContainSubstring("Copying Recovery image..."))
+					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
-					Expect(err.Error()).To(ContainSubstring("Custom partitioning is only supported for GPT disks"))
+					Expect(out).To(ContainSubstring("Unmounting disk partitions"))
+					s.Reboot()
+					By("Checking we booted from the installed cOS")
+					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+
+					// check partition values
+					// Values have to match the yaml under ../assets/layout.yaml
+					// That is the file that the installer uses so partitions should match those values
+					disk := s.GetDiskLayout("/dev/sda")
+
+					for _, part := range []sut.PartitionEntry{
+						{
+							Label:  "COS_STATE",
+							Size:   8192,
+							FsType: sut.Ext4,
+						},
+						{
+							Label:  "COS_OEM",
+							Size:   10,
+							FsType: sut.Ext4,
+						},
+						{
+							Label:  "COS_RECOVERY",
+							Size:   4000,
+							FsType: sut.Ext2,
+						},
+						{
+							Label:  "COS_PERSISTENT",
+							Size:   100,
+							FsType: sut.Ext2,
+						},
+					} {
+						CheckPartitionValues(disk, part)
+					}
 				})
 			})
 		})
@@ -268,22 +306,22 @@ var _ = Describe("cOS Installer tests", func() {
 						{
 							Label:  "COS_STATE",
 							Size:   8192,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_OEM",
 							Size:   10,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_RECOVERY",
 							Size:   4000,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 						{
 							Label:  "COS_PERSISTENT",
 							Size:   100,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 					} {
 						CheckPartitionValues(disk, part)
@@ -318,22 +356,22 @@ var _ = Describe("cOS Installer tests", func() {
 						{
 							Label:  "COS_STATE",
 							Size:   8192,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_OEM",
 							Size:   10,
-							FsType: sut.Ext2,
+							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_RECOVERY",
 							Size:   4000,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 						{
 							Label:  "COS_PERSISTENT",
 							Size:   100,
-							FsType: sut.Ext4,
+							FsType: sut.Ext2,
 						},
 					} {
 						CheckPartitionValues(disk, part)
