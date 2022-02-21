@@ -134,56 +134,58 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 	Describe("MountImage", Label("MountImage", "mount", "image"), func() {
 		var el *elemental.Elemental
+		var img *v1.Image
 		BeforeEach(func() {
 			el = elemental.NewElemental(config)
-			config.ActiveImage.MountPoint = "/some/mountpoint"
+			img = &v1.Image{MountPoint: "/some/mountpoint"}
 		})
 
 		It("Mounts file system image", func() {
 			runner.ReturnValue = []byte("/dev/loop")
-			Expect(el.MountImage(&config.ActiveImage)).To(BeNil())
-			Expect(config.ActiveImage.LoopDevice).To(Equal("/dev/loop"))
+			Expect(el.MountImage(img)).To(BeNil())
+			Expect(img.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Fails to set a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to set a loop device")
-			Expect(el.MountImage(&config.ActiveImage)).NotTo(BeNil())
-			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
+			Expect(el.MountImage(img)).NotTo(BeNil())
+			Expect(img.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to mount a loop device", Label("loop"), func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
-			Expect(el.MountImage(&config.ActiveImage)).NotTo(BeNil())
-			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
+			Expect(el.MountImage(img)).NotTo(BeNil())
+			Expect(img.LoopDevice).To(Equal(""))
 		})
 	})
 
-	Describe("UnmountImage", Label("MountImage", "mount", "image"), func() {
+	Describe("UnmountImage", Label("UnmountImage", "mount", "image"), func() {
 		var el *elemental.Elemental
+		var img *v1.Image
 		BeforeEach(func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			el = elemental.NewElemental(config)
-			config.ActiveImage.MountPoint = "/some/mountpoint"
-			Expect(el.MountImage(&config.ActiveImage)).To(BeNil())
-			Expect(config.ActiveImage.LoopDevice).To(Equal("/dev/loop"))
+			img = &v1.Image{MountPoint: "/some/mountpoint"}
+			Expect(el.MountImage(img)).To(BeNil())
+			Expect(img.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Unmounts file system image", func() {
-			Expect(el.UnmountImage(&config.ActiveImage)).To(BeNil())
-			Expect(config.ActiveImage.LoopDevice).To(Equal(""))
+			Expect(el.UnmountImage(img)).To(BeNil())
+			Expect(img.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to unmount a mountpoint", func() {
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnUnmount = true
-			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
+			Expect(el.UnmountImage(img)).NotTo(BeNil())
 		})
 
 		It("Fails to unset a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to unset a loop device")
-			Expect(el.UnmountImage(&config.ActiveImage)).NotTo(BeNil())
+			Expect(el.UnmountImage(img)).NotTo(BeNil())
 		})
 	})
 
@@ -192,26 +194,26 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			action.InstallSetup(config)
 			el = elemental.NewElemental(config)
-			config.ActiveImage.Size = 32
+			config.Images.GetActive().Size = 32
 		})
 
 		It("Creates a new file system image", func() {
-			_, err := fs.Stat(config.ActiveImage.File)
+			_, err := fs.Stat(config.Images.GetActive().File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(&config.ActiveImage)
+			err = el.CreateFileSystemImage(config.Images.GetActive())
 			Expect(err).To(BeNil())
-			stat, err := fs.Stat(config.ActiveImage.File)
+			stat, err := fs.Stat(config.Images.GetActive().File)
 			Expect(err).To(BeNil())
 			Expect(stat.Size()).To(Equal(int64(32 * 1024 * 1024)))
 		})
 
 		It("Fails formatting a file system image", Label("format"), func() {
 			runner.ReturnError = errors.New("run error")
-			_, err := fs.Stat(config.ActiveImage.File)
+			_, err := fs.Stat(config.Images.GetActive().File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(&config.ActiveImage)
+			err = el.CreateFileSystemImage(config.Images.GetActive())
 			Expect(err).NotTo(BeNil())
-			_, err = fs.Stat(config.ActiveImage.File)
+			_, err = fs.Stat(config.Images.GetActive().File)
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -439,9 +441,10 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			img = &v1.Image{
 				FS:         "ext2",
 				Size:       16,
-				Source:     v1.ImageSource{Source: sourceDir, IsDir: true},
+				Source:     v1.NewDirSrc(sourceDir),
 				MountPoint: destDir,
 				File:       filepath.Join(destDir, "image.img"),
+				Label:      "some_label",
 			}
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmdFail == cmd {
@@ -471,7 +474,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			img.Source = v1.ImageSource{Source: sourceImg, IsFile: true}
+			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			Expect(el.DeployImage(img, true)).To(BeNil())
 		})
@@ -481,8 +484,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			img.Source.Source = sourceImg
-			img.Source.IsFile = true
+			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
@@ -498,7 +500,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(el.DeployImage(img, true)).NotTo(BeNil())
 		})
 		It("Fails copying the image if source does not exist", func() {
-			img.Source.Source = "/welp"
+			img.Source = v1.NewDirSrc("/welp")
 			Expect(el.DeployImage(img, true)).NotTo(BeNil())
 		})
 		It("Fails unmounting the image after copying", func() {
@@ -519,24 +521,21 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			img.Source.Source = sourceDir
-			img.Source.IsDir = true
+			img.Source = v1.NewDirSrc(sourceDir)
 			img.MountPoint = destDir
 			c := elemental.NewElemental(config)
 			Expect(c.CopyImage(img)).To(BeNil())
 		})
 		It("Fails if source directory does not exist", func() {
 			c := elemental.NewElemental(config)
-			img.Source.Source = "/welp"
-			img.Source.IsDir = true
+			img.Source = v1.NewDirSrc("/welp")
 			Expect(c.CopyImage(img)).ToNot(BeNil())
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			img.Source.Source = "docker/image:latest"
-			img.Source.IsDocker = true
+			img.Source = v1.NewDockerSrc("docker/image:latest")
 			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
@@ -545,8 +544,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			img.Source.Source = "docker/image:latest"
-			img.Source.IsDocker = true
+			img.Source = v1.NewDockerSrc("docker/image:latest")
 			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
@@ -555,8 +553,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner.ReturnError = errors.New("cosign error")
 			config.Cosign = true
 			c := elemental.NewElemental(config)
-			img.Source.Source = "docker/image:latest"
-			img.Source.IsDocker = true
+			img.Source = v1.NewDockerSrc("docker/image:latest")
 			Expect(c.CopyImage(img)).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
@@ -565,8 +562,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet.OnUnpackError = true
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			img.Source.Source = "docker/image:latest"
-			img.Source.IsDocker = true
+			img.Source = v1.NewDockerSrc("docker/image:latest")
 			Expect(c.CopyImage(img)).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
@@ -576,8 +572,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			img.Source.Source = sourceImg
-			img.Source.IsFile = true
+			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			img.File = filepath.Join(destDir, "active.img")
 			c := elemental.NewElemental(config)
@@ -590,22 +585,22 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Fails to copy, source file is not present", func() {
 			sourceImg := "source.img"
 			destDir := "whatever"
-			img.Source.Source = sourceImg
-			img.Source.IsFile = true
+			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			c := elemental.NewElemental(config)
 			Expect(c.CopyImage(img)).NotTo(BeNil())
 		})
-		It("Fails to set the label", func() {
+		It("Fails to set the label", Label("fails"), func() {
 			runner.ReturnError = errors.New("run error")
 			sourceImg := "source.img"
 			_, err := fs.Create(sourceImg)
 			Expect(err).To(BeNil())
 			destDir, err := afero.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			img.Source.Source = sourceImg
-			img.Source.IsFile = true
+			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
+			img.Label = "some_label"
+			img.FS = cnst.LinuxFs
 			img.File = filepath.Join(destDir, "active.img")
 			el := elemental.NewElemental(config)
 			Expect(el.CopyImage(img)).NotTo(BeNil())
@@ -614,8 +609,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			img.Source.Source = "somechannel"
-			img.Source.IsChannel = true
+			img.Source = v1.NewChannelSrc("somechannel")
 			Expect(c.CopyImage(img)).To(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
@@ -624,13 +618,15 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			luet.OnUnpackFromChannelError = true
 			config.Luet = luet
 			c := elemental.NewElemental(config)
-			img.Source.Source = "somechannel"
-			img.Source.IsChannel = true
+			img.Source = v1.NewChannelSrc("somechannel")
 			Expect(c.CopyImage(img)).NotTo(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 	})
-	Describe("NoFormat", Label("NoFormat", "format"), func() {
+	Describe("CheckNoFormat", Label("NoFormat", "format"), func() {
+		BeforeEach(func() {
+			config.Images.SetActive(&v1.Image{})
+		})
 		Describe("Labels exist", func() {
 			Describe("Force is disabled", func() {
 				It("Should error out", func() {
@@ -673,21 +669,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(c.SelinuxRelabel("/", false)).To(BeNil())
 		})
 	})
-	Describe("BootedFromSquash", Label("BootedFromSquash", "squashfs"), func() {
-		It("Returns true if booted from squashfs", func() {
-			action.InstallSetup(config)
-			runner.ReturnValue = []byte(cnst.RecoveryLabel)
-			e := elemental.NewElemental(config)
-			Expect(e.BootedFromSquash()).To(BeTrue())
-		})
-		It("Returns false if not booted from squashfs", func() {
-			e := elemental.NewElemental(config)
-			Expect(e.BootedFromSquash()).To(BeFalse())
-		})
-	})
 	Describe("GetIso", Label("GetIso", "iso"), func() {
-		It("Modifies the IsoMnt var to point to the mounted iso", func() {
-			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
+		It("Gets the iso and returns the temporary where it is stored", func() {
 			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
 			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
@@ -695,12 +678,12 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
-			_, err = e.GetIso()
+			isoDir, err := e.GetIso()
 			Expect(err).To(BeNil())
-			// Confirm that the isomnt value was set to a new path
-			Expect(config.IsoMnt).ToNot(Equal(cnst.IsoMnt))
+			// Confirm that the iso is stored in isoDir
+			afero.Exists(fs, filepath.Join(isoDir, "cOs.iso"))
 			// Confirm that we tried to mount it properly
-			Expect(pathInMountPoints(mounter, config.IsoMnt)).To(BeTrue())
+			Expect(pathInMountPoints(mounter, cnst.DownloadedIsoMnt)).To(BeTrue())
 
 		})
 		It("Fails if it cant find the iso", func() {
@@ -712,7 +695,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		It("Fails if it cannot mount the iso", func() {
 			config.Mounter = v1mock.ErrorMounter{ErrorOnMount: true}
-			Expect(config.IsoMnt).To(Equal(cnst.IsoMnt))
 			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
 			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
@@ -762,88 +744,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(exists).To(BeTrue())
 		})
 	})
-	Describe("CopyRecovery", Label("CopyRecovery", "recovery_label"), func() {
-		Describe("Non-Squashfs boot", func() {
-			Describe(fmt.Sprintf("squash file %s exists", cnst.RecoverySquashFile), Label("squashfs"), func() {
-				It("should copy squash file", func() {
-					// Create recovery.squashfs file
-					squashfile := fmt.Sprintf("%s/%s", config.IsoMnt, cnst.RecoverySquashFile)
-					_, _ = config.Fs.Create(squashfile)
-					e := elemental.NewElemental(config)
-					Expect(e.CopyRecovery()).To(BeNil())
-					// Target should be there
-					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile))
-					Expect(exists).To(BeTrue())
-					Expect(err).To(BeNil())
-				})
-			})
-			Describe(fmt.Sprintf("squash file %s does not exists", cnst.RecoverySquashFile), Label("non-squashfs"), func() {
-				It(fmt.Sprintf("should copy img file %s", cnst.ActiveImgFile), func() {
-					// Create active image file
-					imgfile := config.ActiveImage.File
-					_, _ = config.Fs.Create(imgfile)
-					e := elemental.NewElemental(config)
-					Expect(e.CopyRecovery()).To(BeNil())
-					// Target should be there
-					exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoveryImgFile))
-					Expect(exists).To(BeTrue())
-					Expect(err).To(BeNil())
-				})
-			})
-
-		})
-		Describe("Squashfs boot", func() {
-			It("should not do anything", func() {
-				action.InstallSetup(config)
-				runner.ReturnValue = []byte(cnst.RecoveryLabel)
-				e := elemental.NewElemental(config)
-				Expect(e.CopyRecovery()).To(BeNil())
-				// Target file should not be there
-				exists, err := afero.Exists(fs, fmt.Sprintf("%s/cOS/%s", cnst.RecoveryDir, cnst.RecoverySquashFile))
-				Expect(exists).To(BeFalse())
-				Expect(err).To(BeNil())
-			})
-		})
-	})
-
-	Describe("CopyPassive", Label("CopyPassive", "passive_label"), func() {
-		var passImgFile string
-		BeforeEach(func() {
-			action.InstallSetup(config)
-			passImgFile = fmt.Sprintf("%s/cOS/%s", cnst.StateDir, cnst.PassiveImgFile)
-		})
-
-		It("Copies active image to passive", func() {
-			_, err := fs.Create(config.ActiveImage.File)
-			Expect(err).To(BeNil())
-			_, err = fs.Stat(passImgFile)
-			Expect(err).NotTo(BeNil())
-			el := elemental.NewElemental(config)
-			Expect(el.CopyPassive()).To(BeNil())
-			_, err = fs.Stat(passImgFile)
-			Expect(err).To(BeNil())
-		})
-
-		It("Fails to copy, active file is not present", func() {
-			_, err := fs.Stat(passImgFile)
-			Expect(err).NotTo(BeNil())
-			el := elemental.NewElemental(config)
-			Expect(el.CopyPassive()).NotTo(BeNil())
-		})
-
-		It("Fails to set the passive label", func() {
-			runner.ReturnError = errors.New("run error")
-			_, err := fs.Create(config.ActiveImage.File)
-			Expect(err).To(BeNil())
-			_, err = fs.Stat(passImgFile)
-			Expect(err).NotTo(BeNil())
-			el := elemental.NewElemental(config)
-			Expect(el.CopyPassive()).NotTo(BeNil())
-			_, err = fs.Stat(passImgFile)
-			Expect(err).NotTo(BeNil())
-		})
-	})
-
 	Describe("SetDefaultGrubEntry", Label("SetDefaultGrubEntry", "grub"), func() {
 		It("Sets the default grub entry without issues", func() {
 			config.Partitions = append(config.Partitions, &v1.Partition{Name: cnst.StatePartName})

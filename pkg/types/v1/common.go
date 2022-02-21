@@ -18,9 +18,49 @@ package v1
 
 // ImageSource represents the source from where an image is created for easy identification
 type ImageSource struct {
-	Source    string
-	IsDir     bool
-	IsChannel bool
-	IsDocker  bool
-	IsFile    bool
+	source    string
+	isDir     bool
+	isChannel bool
+	isDocker  bool
+	isFile    bool
+}
+
+func (i ImageSource) Value() string {
+	return i.source
+}
+
+func (i ImageSource) IsDocker() bool {
+	return i.isDocker
+}
+
+func (i ImageSource) IsChannel() bool {
+	return i.isChannel
+}
+
+func (i ImageSource) IsDir() bool {
+	return i.isDir
+}
+
+func (i ImageSource) IsFile() bool {
+	return i.isFile
+}
+
+func NewEmptySrc() ImageSource {
+	return ImageSource{}
+}
+
+func NewDockerSrc(src string) ImageSource {
+	return ImageSource{source: src, isDocker: true}
+}
+
+func NewFileSrc(src string) ImageSource {
+	return ImageSource{source: src, isFile: true}
+}
+
+func NewChannelSrc(src string) ImageSource {
+	return ImageSource{source: src, isChannel: true}
+}
+
+func NewDirSrc(src string) ImageSource {
+	return ImageSource{source: src, isDir: true}
 }

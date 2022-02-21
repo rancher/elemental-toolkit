@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 )
@@ -129,7 +130,6 @@ type RunConfig struct {
 	PartTable string
 	BootFlag  string
 	GrubConf  string
-	IsoMnt    string // /run/initramfs/live by default, can be set to a different dir if --iso flag is set
 	// Interfaces used around by methods
 	Logger          Logger
 	Fs              afero.Fs
@@ -139,8 +139,8 @@ type RunConfig struct {
 	CloudInitRunner CloudInitRunner
 	Luet            LuetInterface
 	Partitions      PartitionList
+	Images          ImageMap
 	Client          HTTPClient
-	ActiveImage     Image
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
@@ -166,6 +166,34 @@ type Image struct {
 	Source     ImageSource
 	MountPoint string
 	LoopDevice string
+}
+
+type ImageMap map[string]*Image
+
+// ImageMap setters and getters are just shortcut for accesses using constants
+
+func (im ImageMap) SetActive(img *Image) {
+	im[constants.ActiveImgName] = img
+}
+
+func (im ImageMap) SetPassive(img *Image) {
+	im[constants.PassiveImgName] = img
+}
+
+func (im ImageMap) SetRecovery(img *Image) {
+	im[constants.RecoveryImgName] = img
+}
+
+func (im ImageMap) GetActive() *Image {
+	return im[constants.ActiveImgName]
+}
+
+func (im ImageMap) GetPassive() *Image {
+	return im[constants.PassiveImgName]
+}
+
+func (im ImageMap) GetRecovery() *Image {
+	return im[constants.RecoveryImgName]
 }
 
 func (pl PartitionList) GetByName(name string) *Partition {

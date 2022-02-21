@@ -63,7 +63,7 @@ func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
 			mountPoints[persistentDevice.MountPoint] = "/usr/local"
 		}
 
-		return ActionChrootHook(config, hook, config.ActiveImage.MountPoint, mountPoints)
+		return ActionChrootHook(config, hook, config.Images[constants.ActiveImgName].MountPoint, mountPoints)
 	}
 	return ActionHook(config, hook)
 }
@@ -266,7 +266,7 @@ func (u *UpgradeAction) Run() (err error) {
 		return err
 	}
 	// Setting the activeImg to our img, tricks CopyActive into doing it anyway even if it's a recovery img
-	u.Config.ActiveImage = img
+	u.Config.Images[constants.ActiveImgName] = &img
 	err = ele.CopyImage(&img)
 	if err != nil {
 		u.Error("Error copying active: %s", err)
@@ -430,7 +430,7 @@ func (u *UpgradeAction) remount(m mount.MountPoint, opts ...string) error {
 
 // getTargetAndSource finds our the target and source for the upgrade
 func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
-	upgradeSource := v1.ImageSource{Source: constants.UpgradeSource, IsChannel: true}
+	upgradeSource := v1.NewChannelSrc(constants.UpgradeSource)
 	upgradeTarget := constants.UpgradeActive
 
 	if u.Config.RecoveryUpgrade {
@@ -444,15 +444,15 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
 		if u.Config.RecoveryUpgrade {
 			if u.Config.RecoveryImage == "" {
 				if u.Config.UpgradeImage != "" {
-					upgradeSource.Source = u.Config.UpgradeImage
+					upgradeSource = v1.NewChannelSrc(u.Config.UpgradeImage)
 				}
 			} else {
-				upgradeSource.Source = u.Config.RecoveryImage
+				upgradeSource = v1.NewChannelSrc(u.Config.RecoveryImage)
 			}
 		} else {
 			if u.Config.UpgradeImage != "" { // I don't think it's possible to have an empty UpgradeImage....
 				// Only override the source if we have a valid UpgradeImage, otherwise use the default
-				upgradeSource.Source = u.Config.UpgradeImage // Loaded from /etc/cos-upgrade-image
+				upgradeSource = v1.NewChannelSrc(u.Config.UpgradeImage) // Loaded from /etc/cos-upgrade-image
 			}
 		}
 	} else {
@@ -460,14 +460,14 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
 		// if docker-image -> upgrade from image directly, ignores release_channel and pulls the given image directly
 		if u.Config.DockerImg != "" {
 			u.Debug("Source is docker image: %s", u.Config.DockerImg)
-			upgradeSource = v1.ImageSource{Source: u.Config.DockerImg, IsDocker: true}
+			upgradeSource = v1.NewDockerSrc(u.Config.DockerImg)
 		}
 		// if directory -> upgrade from dir directly, ignores release_channel and uses the given directory
 		if u.Config.DirectoryUpgrade != "" {
 			u.Debug("Source is directory: %s", u.Config.DirectoryUpgrade)
-			upgradeSource = v1.ImageSource{Source: u.Config.DirectoryUpgrade, IsDir: true}
+			upgradeSource = v1.NewDirSrc(u.Config.DirectoryUpgrade)
 		}
 	}
-	u.Debug("Upgrade target: %s Upgrade source: %+v", upgradeTarget, upgradeSource)
+	u.Debug("Upgrade target: %s Upgrade source: %s", upgradeTarget, upgradeSource.Value())
 	return upgradeTarget, upgradeSource
 }

@@ -23,10 +23,23 @@ import (
 )
 
 var _ = Describe("Types", Label("types", "common"), func() {
-	FDescribe("Common", func() {
-		It("Can create it?? Like what is expected to be test of a simple struct?", func() {
+	Describe("Source", func() {
+		It("Initiates each type as expected", func() {
 			o := v1.ImageSource{}
-			Expect(o).ToNot(BeNil())
+			Expect(o.Value()).To(Equal(""))
+			Expect(o.IsDir()).To(BeFalse())
+			Expect(o.IsChannel()).To(BeFalse())
+			Expect(o.IsDocker()).To(BeFalse())
+			Expect(o.IsFile()).To(BeFalse())
+			o = v1.NewDirSrc("dir")
+			Expect(o.IsDir()).To(BeTrue())
+			o = v1.NewFileSrc("file")
+			Expect(o.IsFile()).To(BeTrue())
+			o = v1.NewDockerSrc("image")
+			Expect(o.IsDocker()).To(BeTrue())
+			o = v1.NewChannelSrc("channel")
+			Expect(o.IsChannel()).To(BeTrue())
+
 		})
 	})
 

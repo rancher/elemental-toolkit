@@ -445,6 +445,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			BeforeEach(func() {
 				config.Target = "/dev/test"
 				action.SetPartitionsFromScratch(config)
+				action.InstallImagesSetup(config)
 			})
 			It("installs with default values", func() {
 				buf := &bytes.Buffer{}
@@ -533,7 +534,12 @@ var _ = Describe("Utils", Label("utils"), func() {
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 
 			})
-
+			It("Fails active image is unset", func() {
+				config.Images.SetActive(nil)
+				grub := utils.NewGrub(config)
+				err := grub.Install()
+				Expect(err).NotTo(BeNil())
+			})
 		})
 		Describe("SetPersistentVariables", func() {
 			It("Sets the grub environment file", func() {

@@ -24,6 +24,7 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/spf13/afero"
 	"path/filepath"
 )
 
@@ -38,36 +39,87 @@ func installHook(config *v1.RunConfig, hook string, chroot bool) error {
 		if oem != nil {
 			extraMounts[oem.MountPoint] = "/oem"
 		}
-		return ActionChrootHook(config, hook, config.ActiveImage.MountPoint, extraMounts)
+		return ActionChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
 	}
 	return ActionHook(config, hook)
 }
 
-// InstallSetup will set installation parameters according to
-// the given configuration flags
-func InstallSetup(config *v1.RunConfig) error {
-	SetPartitionsFromScratch(config)
-	SetupLuet(config)
-
-	config.ActiveImage = v1.Image{
+// InstallImagesSetup defines the parameters of active, passive and recovery
+// images of an installation
+func InstallImagesSetup(config *v1.RunConfig) error {
+	partState := config.Partitions.GetByName(cnst.StatePartName)
+	if partState == nil {
+		config.Logger.Errorf("State partition not configured")
+		return errors.New("Error setting Active image")
+	}
+	// Set active image
+	activeImg := v1.Image{
 		Label:      config.ActiveLabel,
 		Size:       cnst.ImgSize,
-		File:       filepath.Join(cnst.StateDir, "cOS", cnst.ActiveImgFile),
+		File:       filepath.Join(partState.MountPoint, "cOS", cnst.ActiveImgFile),
 		FS:         cnst.LinuxImgFs,
 		MountPoint: cnst.ActiveDir,
 	}
 
 	//TODO add installation from channel
 	if config.DockerImg != "" {
-		config.ActiveImage.Source.Source = config.DockerImg
-		config.ActiveImage.Source.IsDocker = true
+		activeImg.Source = v1.NewDockerSrc(config.DockerImg)
 	} else if config.Directory != "" {
-		config.ActiveImage.Source.Source = config.Directory
-		config.ActiveImage.Source.IsDir = true
+		activeImg.Source = v1.NewDirSrc(config.Directory)
 	} else {
-		config.ActiveImage.Source.Source = cnst.IsoBaseTree
-		config.ActiveImage.Source.IsDir = true
+		activeImg.Source = v1.NewDirSrc(cnst.IsoBaseTree)
 	}
+
+	// Set passive image
+	passiveImg := v1.Image{
+		File:   filepath.Join(partState.MountPoint, "cOS", cnst.PassiveImgFile),
+		Label:  config.PassiveLabel,
+		Source: v1.NewFileSrc(activeImg.File),
+		FS:     cnst.LinuxImgFs,
+	}
+
+	// Set recovery image
+	partRecovery := config.Partitions.GetByName(cnst.RecoveryPartName)
+	if partState == nil {
+		config.Logger.Errorf("Recovery partition not configured")
+		return errors.New("Error setting Recovery image")
+	}
+
+	// TODO use iso for all images? Formerly it was only for recovery, but
+	// I think this was a regression from former cos.sh script refactor
+	isoMnt := cnst.IsoMnt
+	if config.Iso != "" {
+		isoMnt = cnst.DownloadedIsoMnt
+	}
+	recoveryDirCos := filepath.Join(partRecovery.MountPoint, "cOS")
+	squashedImgSource := filepath.Join(isoMnt, cnst.RecoverySquashFile)
+
+	recoveryImg := v1.Image{}
+	if exists, _ := afero.Exists(config.Fs, squashedImgSource); exists {
+		recoveryImg.File = filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
+		recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
+		recoveryImg.FS = cnst.SquashFs
+	} else {
+		recoveryImg.File = filepath.Join(recoveryDirCos, cnst.RecoveryImgFile)
+		recoveryImg.Source = v1.NewFileSrc(activeImg.File)
+		recoveryImg.FS = cnst.LinuxImgFs
+		recoveryImg.Label = config.SystemLabel
+	}
+
+	// Add images to config
+	config.Images.SetActive(&activeImg)
+	config.Images.SetPassive(&passiveImg)
+	config.Images.SetRecovery(&recoveryImg)
+
+	return nil
+}
+
+// InstallSetup will set installation parameters according to
+// the given configuration flags
+func InstallSetup(config *v1.RunConfig) error {
+	SetPartitionsFromScratch(config)
+	InstallImagesSetup(config)
+	SetupLuet(config)
 
 	return nil
 }
@@ -90,6 +142,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 		return err
 	}
 
+	// Make config.Iso to also install active from downloaded ISO
 	if config.Iso != "" {
 		tmpDir, err := newElemental.GetIso()
 		if err != nil {
@@ -98,7 +151,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 		cleanup.Push(func() error {
 			config.Logger.Infof("Unmounting downloaded ISO")
 			config.Fs.RemoveAll(tmpDir)
-			return config.Mounter.Unmount(config.IsoMnt)
+			return config.Mounter.Unmount(cnst.DownloadedIsoMnt)
 		})
 	}
 
@@ -130,18 +183,18 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	cleanup.Push(func() error { return newElemental.UnmountPartitions() })
 
 	// Deploy active image
-	err = newElemental.DeployImage(&config.ActiveImage, true)
+	err = newElemental.DeployImage(config.Images.GetActive(), true)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return newElemental.UnmountImage(&config.ActiveImage) })
+	cleanup.Push(func() error { return newElemental.UnmountImage(config.Images.GetActive()) })
 
 	// Copy cloud-init if any
 	err = newElemental.CopyCloudConfig()
 	if err != nil {
 		return err
 	}
-	// install grub
+	// Install grub
 	grub := utils.NewGrub(config)
 	err = grub.Install()
 	if err != nil {
@@ -156,17 +209,17 @@ func InstallRun(config *v1.RunConfig) (err error) {
 	}
 
 	// Unmount active image
-	err = newElemental.UnmountImage(&config.ActiveImage)
+	err = newElemental.UnmountImage(config.Images.GetActive())
 	if err != nil {
 		return err
 	}
-	// install Recovery
-	err = newElemental.CopyRecovery()
+	// Install Recovery
+	err = newElemental.DeployImage(config.Images.GetRecovery(), false)
 	if err != nil {
 		return err
 	}
-	// install Passive
-	err = newElemental.CopyPassive()
+	// Install Passive
+	err = newElemental.DeployImage(config.Images.GetPassive(), false)
 	if err != nil {
 		return err
 	}
@@ -176,7 +229,7 @@ func InstallRun(config *v1.RunConfig) (err error) {
 		return err
 	}
 
-	// installation rebrand (only grub for now)
+	// Installation rebrand (only grub for now)
 	err = newElemental.Rebrand()
 	if err != nil {
 		return err

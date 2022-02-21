@@ -86,10 +86,7 @@ func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 	}
 
 	r.Partitions = v1.PartitionList{}
-
-	if r.IsoMnt == "" {
-		r.IsoMnt = cnst.IsoMnt
-	}
+	r.Images = v1.ImageMap{}
 
 	if r.GrubDefEntry == "" {
 		r.GrubDefEntry = cnst.GrubDefEntry

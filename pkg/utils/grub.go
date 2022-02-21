@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"errors"
 	"fmt"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -76,10 +77,15 @@ func (g Grub) Install() (err error) {
 	}
 
 	statePart := g.config.Partitions.GetByName(cnst.StatePartName)
+	activeImg := g.config.Images.GetActive()
+	if statePart == nil || activeImg == nil {
+		g.config.Logger.Errorf("State partition and/or Active image configuration is missing")
+		return errors.New("Failed setting grub arguments")
+	}
 
 	grubargs = append(
 		grubargs,
-		fmt.Sprintf("--root-directory=%s", g.config.ActiveImage.MountPoint),
+		fmt.Sprintf("--root-directory=%s", activeImg.MountPoint),
 		fmt.Sprintf("--boot-directory=%s", statePart.MountPoint),
 		"--removable", g.config.Target,
 	)

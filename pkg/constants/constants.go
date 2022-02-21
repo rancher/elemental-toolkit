@@ -42,6 +42,7 @@ const (
 	EfiDevice              = "/sys/firmware/efi"
 	LinuxFs                = "ext4"
 	LinuxImgFs             = "ext2"
+	SquashFs               = "squashfs"
 	EfiFs                  = "vfat"
 	BiosFs                 = ""
 	EfiSize                = uint(64)
@@ -59,6 +60,7 @@ const (
 	PersistentDir          = "/run/cos/persistent"
 	ActiveDir              = "/run/cos/active"
 	EfiDir                 = "/run/cos/efi"
+	DownloadedIsoMnt       = "/run/cos/iso"
 	RecoverySquashFile     = "recovery.squashfs"
 	ActiveImgFile          = "active.img"
 	PassiveImgFile         = "passive.img"
@@ -81,6 +83,9 @@ const (
 	TransitionSquashFile   = "transition.squashfs"
 	// TODO converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
 	RunningStateDir = "/run/initramfs/cos-state"
+	ActiveImgName   = "active"
+	PassiveImgName  = "passive"
+	RecoveryImgName = "recovery"
 )
 
 func GetCloudInitPaths() []string {

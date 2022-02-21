@@ -279,7 +279,7 @@ func (c Elemental) CreateFileSystemImage(img *v1.Image) error {
 func (c *Elemental) DeployImage(img *v1.Image, leaveMounted bool) error {
 	var err error
 
-	if !img.Source.IsFile {
+	if !img.Source.IsFile() {
 		//TODO add support for squashfs images
 		err = c.CreateFileSystemImage(img)
 		if err != nil {
@@ -296,7 +296,7 @@ func (c *Elemental) DeployImage(img *v1.Image, leaveMounted bool) error {
 		c.UnmountImage(img)
 		return err
 	}
-	if leaveMounted && img.Source.IsFile {
+	if leaveMounted && img.Source.IsFile() {
 		err = c.MountImage(img, "rw")
 		if err != nil {
 			return err
@@ -311,16 +311,16 @@ func (c *Elemental) DeployImage(img *v1.Image, leaveMounted bool) error {
 	return nil
 }
 
-// Copies the given filesystem image into the target
+// CopyImage sets the image data according to the image source type
 func (c *Elemental) CopyImage(img *v1.Image) error {
 	c.config.Logger.Infof("Copying %s image...", img.Label)
 	var err error
 
-	if img.Source.IsDocker {
+	if img.Source.IsDocker() {
 		if c.config.Cosign {
-			c.config.Logger.Infof("Running cosing verification for %s", img.Source.Source)
+			c.config.Logger.Infof("Running cosing verification for %s", img.Source.Value())
 			out, err := utils.CosignVerify(
-				c.config.Fs, c.config.Runner, img.Source.Source,
+				c.config.Fs, c.config.Runner, img.Source.Value(),
 				c.config.CosignPubKey, v1.IsDebugLevel(c.config.Logger),
 			)
 			if err != nil {
@@ -328,36 +328,37 @@ func (c *Elemental) CopyImage(img *v1.Image) error {
 				return err
 			}
 		}
-		err = c.config.Luet.Unpack(img.MountPoint, img.Source.Source, false)
+		err = c.config.Luet.Unpack(img.MountPoint, img.Source.Value(), false)
 		if err != nil {
 			return err
 		}
-	} else if img.Source.IsDir {
+	} else if img.Source.IsDir() {
 		excludes := []string{"mnt", "proc", "sys", "dev", "tmp", "host", "run"}
-		err = utils.SyncData(img.Source.Source, img.MountPoint, excludes...)
+		err = utils.SyncData(img.Source.Value(), img.MountPoint, excludes...)
 		if err != nil {
 			return err
 		}
-	} else if img.Source.IsChannel {
-		err = c.config.Luet.UnpackFromChannel(img.MountPoint, img.Source.Source)
+	} else if img.Source.IsChannel() {
+		err = c.config.Luet.UnpackFromChannel(img.MountPoint, img.Source.Value())
 		if err != nil {
 			return err
 		}
-	} else if img.Source.IsFile {
+	} else if img.Source.IsFile() {
 		err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
 		if err != nil {
 			return err
 		}
-		err = utils.CopyFile(c.config.Fs, img.Source.Source, img.File)
+		err = utils.CopyFile(c.config.Fs, img.Source.Value(), img.File)
 		if err != nil {
 			return err
 		}
-		//TODO do not run tune2fs on squashfs images
-		_, err = c.config.Runner.Run("tune2fs", "-L", img.Label, img.File)
-		if err != nil {
-			c.config.Logger.Errorf("Failed to apply label %s to $s", img.Label, img.File)
-			c.config.Fs.Remove(img.File)
-			return err
+		if img.Label != "" && img.FS != cnst.SquashFs {
+			_, err = c.config.Runner.Run("tune2fs", "-L", img.Label, img.File)
+			if err != nil {
+				c.config.Logger.Errorf("Failed to apply label %s to $s", img.Label, img.File)
+				c.config.Fs.Remove(img.File)
+				return err
+			}
 		}
 	}
 	err = utils.CreateDirStructure(c.config.Fs, img.MountPoint)
@@ -415,7 +416,7 @@ func (c *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
 func (c *Elemental) CheckNoFormat() error {
 	c.config.Logger.Infof("Checking no-format condition")
 	// User asked for no format, lets check if there are already those labeled file systems in the disk
-	for _, label := range []string{c.config.ActiveImage.Label, c.config.PassiveLabel} {
+	for _, label := range []string{c.config.ActiveLabel, c.config.PassiveLabel} {
 		found, _ := utils.GetDeviceByLabel(c.config.Runner, label, 1)
 		if found != "" {
 			if c.config.Force {
@@ -432,19 +433,9 @@ func (c *Elemental) CheckNoFormat() error {
 	return nil
 }
 
-// BootedFromSquash will check if we are booting from squashfs
-func (c Elemental) BootedFromSquash() bool {
-	part := c.config.Partitions.GetByName(cnst.RecoveryPartName)
-	if part != nil && utils.BootedFrom(c.config.Runner, part.Label) {
-		return true
-	}
-	return false
-}
-
 // GetIso will try to:
 // download the iso into a temporary folder
-// and mount the iso file as loop in a subfolder
-// and modify the IsoMnt var to point to the newly mounted dir
+// and mount the iso file as loop in cnst.DownloadedIsoMnt
 func (c *Elemental) GetIso() (tmpDir string, err error) {
 	tmpDir, err = afero.TempDir(c.config.Fs, "", "elemental")
 	if err != nil {
@@ -456,21 +447,18 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
 	}
-	tmpIsoMount := filepath.Join(tmpDir, "iso-mounted")
-	err = c.config.Fs.MkdirAll(tmpIsoMount, os.ModeDir)
+	err = c.config.Fs.MkdirAll(cnst.DownloadedIsoMnt, os.ModeDir)
 	if err != nil {
 		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
 	}
 	var mountOptions []string
-	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, tmpIsoMount)
-	err = c.config.Mounter.Mount(tmpFile, tmpIsoMount, "loop", mountOptions)
+	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, cnst.DownloadedIsoMnt)
+	err = c.config.Mounter.Mount(tmpFile, cnst.DownloadedIsoMnt, "loop", mountOptions)
 	if err != nil {
 		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
 	}
-	// Store the new mounted dir into IsoMnt, so we can use it down the line
-	c.config.IsoMnt = tmpIsoMount
 	return tmpDir, nil
 }
 
@@ -501,78 +489,6 @@ func (c *Elemental) GetUrl(url string, destination string) error {
 		return err
 	}
 	return nil
-}
-
-//TODO drop this method in favor of CopyImage
-// CopyRecovery will
-// Check if we are booting from squash -> false? return
-// true? -> :
-// mkdir -p  RECOVERYDIR/cOS
-// if squash -> cp -a RECOVERYSQUASHFS to RECOVERYDIR/cOS/recovery.squashfs
-// if not -> cp -a STATEDIR/cOS/active.img to RECOVERYDIR/cOS/recovery.img
-// Where:
-// RECOVERYDIR is cnst.RecoveryDir
-// ISOMNT is /run/initramfs/live by default, can be set to a different dir if COS_INSTALL_ISO_URL is set
-// RECOVERYSQUASHFS is $ISOMNT/recovery.squashfs
-// RECOVERY is GetDeviceByLabel(cnst.RecoveryLabel)
-// either is get from the system if NoFormat is enabled (searching for label COS_RECOVERY) or is a newly generated partition
-func (c *Elemental) CopyRecovery() error {
-	var err error
-	if c.BootedFromSquash() {
-		return nil
-	}
-	c.config.Logger.Infof("Copying Recovery image...")
-	recoveryDirCos := filepath.Join(cnst.RecoveryDir, "cOS")
-
-	imgSource := c.config.ActiveImage.File
-	squashedImgSource := filepath.Join(c.config.IsoMnt, cnst.RecoverySquashFile)
-
-	imgTarget := filepath.Join(recoveryDirCos, cnst.RecoveryImgFile)
-	squashedImgTarget := filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
-
-	err = c.config.Fs.MkdirAll(recoveryDirCos, os.ModeDir)
-	if err != nil {
-		return err
-	}
-	if exists, _ := afero.Exists(c.config.Fs, squashedImgSource); exists {
-		c.config.Logger.Infof("Copying squashfs..")
-		err = utils.CopyFile(c.config.Fs, squashedImgSource, squashedImgTarget)
-		if err != nil {
-			return err
-		}
-	} else {
-		c.config.Logger.Infof("Copying image file..")
-		err = utils.CopyFile(c.config.Fs, imgSource, imgTarget)
-		if err != nil {
-			return err
-		}
-		_, err = c.config.Runner.Run("tune2fs", "-L", c.config.SystemLabel, imgTarget)
-		if err != nil {
-			return err
-		}
-	}
-	c.config.Logger.Infof("Finished copying Recovery...")
-	return nil
-}
-
-//TODO drop this method in favor of CopyImage
-// CopyPassive writes the passive image to target device by copying Active image.
-func (c Elemental) CopyPassive() error {
-	passImgFile := filepath.Join(cnst.StateDir, "cOS", cnst.PassiveImgFile)
-
-	c.config.Logger.Infof("Copying Passive image...")
-	err := utils.CopyFile(c.config.Fs, c.config.ActiveImage.File, passImgFile)
-	if err != nil {
-		return err
-	}
-	_, err = c.config.Runner.Run("tune2fs", "-L", c.config.PassiveLabel, passImgFile)
-	if err != nil {
-		c.config.Logger.Errorf("Failed to apply label %s to $s", c.config.PassiveLabel, passImgFile)
-		c.config.Fs.Remove(passImgFile)
-		return err
-	}
-	c.config.Logger.Infof("Finished copying Passive...")
-	return err
 }
 
 // Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in

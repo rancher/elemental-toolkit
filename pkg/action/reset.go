@@ -37,7 +37,7 @@ func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
 		if oem != nil {
 			extraMounts[oem.MountPoint] = "/oem"
 		}
-		return ActionChrootHook(config, hook, config.ActiveImage.MountPoint, extraMounts)
+		return ActionChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
 	}
 	return ActionHook(config, hook)
 }
@@ -51,23 +51,6 @@ func ResetSetup(config *v1.RunConfig) error {
 	}
 
 	SetupLuet(config)
-
-	var imgSource v1.ImageSource
-	// TODO add reset from channel
-	// TODO execute rootTree sanity checks
-	if config.Directory != "" {
-		imgSource.Source = config.Directory
-		imgSource.IsDir = true
-	} else if config.DockerImg != "" {
-		imgSource.Source = config.DockerImg
-		imgSource.IsDocker = true
-	} else if utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) {
-		imgSource.Source = cnst.IsoBaseTree
-		imgSource.IsDir = true
-	} else {
-		imgSource.Source = filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile)
-		imgSource.IsFile = true
-	}
 
 	efiExists, _ := afero.Exists(config.Fs, cnst.EfiDevice)
 
@@ -118,14 +101,49 @@ func ResetSetup(config *v1.RunConfig) error {
 		config.Logger.Warnf("No Persistent partition found")
 	}
 
-	config.ActiveImage = v1.Image{
+	ResetImagesSetup(config)
+
+	return nil
+}
+
+// ResetImagesSetup defines the parameters of active and passive images
+// as they are used during the reset.
+func ResetImagesSetup(config *v1.RunConfig) error {
+	var imgSource v1.ImageSource
+	// TODO add reset from channel
+	// TODO execute rootTree sanity checks?
+	if config.Directory != "" {
+		imgSource = v1.NewDirSrc(config.Directory)
+	} else if config.DockerImg != "" {
+		imgSource = v1.NewDockerSrc(config.DockerImg)
+	} else if utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) {
+		imgSource = v1.NewDirSrc(cnst.IsoBaseTree)
+	} else {
+		imgSource = v1.NewFileSrc(filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile))
+	}
+
+	// Set Active Image
+	partState := config.Partitions.GetByName(cnst.StatePartName)
+	if partState == nil {
+		config.Logger.Errorf("State partition not configured")
+		return errors.New("Error setting Active image")
+	}
+	config.Images.SetActive(&v1.Image{
 		Label:      config.ActiveLabel,
 		Size:       cnst.ImgSize,
 		File:       filepath.Join(partState.MountPoint, "cOS", cnst.ActiveImgFile),
 		FS:         cnst.LinuxImgFs,
 		Source:     imgSource,
 		MountPoint: cnst.ActiveDir,
-	}
+	})
+
+	// Set Passive image
+	config.Images.SetPassive(&v1.Image{
+		File:   filepath.Join(partState.MountPoint, "cOS", cnst.PassiveImgFile),
+		Label:  config.PassiveLabel,
+		Source: v1.NewFileSrc(config.Images.GetActive().File),
+		FS:     cnst.LinuxImgFs,
+	})
 
 	return nil
 }
@@ -178,11 +196,11 @@ func ResetRun(config *v1.RunConfig) (err error) {
 	cleanup.Push(func() error { return ele.UnmountPartitions() })
 
 	// Depoly active image
-	err = ele.DeployImage(&config.ActiveImage, true)
+	err = ele.DeployImage(config.Images.GetActive(), true)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return ele.UnmountImage(&config.ActiveImage) })
+	cleanup.Push(func() error { return ele.UnmountImage(config.Images.GetActive()) })
 
 	// install grub
 	grub := utils.NewGrub(config)
@@ -199,13 +217,13 @@ func ResetRun(config *v1.RunConfig) (err error) {
 	}
 
 	// Unmount active image
-	err = ele.UnmountImage(&config.ActiveImage)
+	err = ele.UnmountImage(config.Images.GetActive())
 	if err != nil {
 		return err
 	}
 
-	// install Passive
-	err = ele.CopyPassive()
+	// Install Passive
+	err = ele.DeployImage(config.Images.GetPassive(), false)
 	if err != nil {
 		return err
 	}
