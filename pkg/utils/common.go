@@ -20,16 +20,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/joho/godotenv"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
-	"github.com/zloylos/grsync"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/spf13/afero"
+	"github.com/zloylos/grsync"
 )
 
 // tmpBlockdevices is a temporal struct to extract the output of lsblk json
@@ -116,7 +117,7 @@ func CopyFile(fs afero.Fs, source string, target string) (err error) {
 
 // Copies source file to target file using afero.Fs interface
 func CreateDirStructure(fs afero.Fs, target string) error {
-	for _, dir := range []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
+	for _, dir := range []string{"run", "sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
 		err := fs.MkdirAll(fmt.Sprintf("%s/%s", target, dir), 0755)
 		if err != nil {
 			return err
@@ -148,7 +149,12 @@ func SyncData(source string, target string, excludes ...string) error {
 		},
 	)
 
-	return task.Run()
+	err := task.Run()
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, strings.Join([]string{task.Log().Stderr, task.Log().Stdout}, "\n"))
+	}
+
+	return nil
 }
 
 // Reboot reboots the system afater the given delay (in seconds) time passed.

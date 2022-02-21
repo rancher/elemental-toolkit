@@ -32,6 +32,11 @@ else
 endif
 
 test_deps:
+	go get github.com/onsi/ginkgo/v2
+	go get github.com/onsi/gomega/...
+	go get github.com/onsi/ginkgo/v2/ginkgo/internal@v2.1.3
+	go get github.com/onsi/ginkgo/v2/ginkgo/generators@v2.1.3
+	go get github.com/onsi/ginkgo/v2/ginkgo/labels@v2.1.3
 	go install github.com/onsi/ginkgo/v2/ginkgo
 
 test: $(GINKGO)

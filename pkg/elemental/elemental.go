@@ -19,14 +19,15 @@ package elemental
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/afero"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux
@@ -332,7 +333,7 @@ func (c *Elemental) CopyImage(img *v1.Image) error {
 			return err
 		}
 	} else if img.Source.IsDir {
-		excludes := []string{"mnt", "proc", "sys", "dev", "tmp"}
+		excludes := []string{"mnt", "proc", "sys", "dev", "tmp", "host", "run"}
 		err = utils.SyncData(img.Source.Source, img.MountPoint, excludes...)
 		if err != nil {
 			return err

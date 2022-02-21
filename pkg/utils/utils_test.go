@@ -20,20 +20,22 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"io/ioutil"
-	"os"
-	"testing"
-	"time"
 )
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
@@ -366,13 +368,56 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.SyncData(sourceDir, destDir)).To(BeNil())
 
 			filesDest, err := ioutil.ReadDir(destDir)
+			Expect(err).To(BeNil())
+
 			destNames := getNamesFromListFiles(filesDest)
 			filesSource, err := ioutil.ReadDir(sourceDir)
+			Expect(err).To(BeNil())
+
 			SourceNames := getNamesFromListFiles(filesSource)
 
 			// Should be the same files in both dirs now
 			Expect(destNames).To(Equal(SourceNames))
 		})
+
+		It("Copies all files from source to target respecting excludes", func() {
+			sourceDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(sourceDir)
+			destDir, err := os.MkdirTemp("", "elemental")
+			Expect(err).To(BeNil())
+			defer os.RemoveAll(destDir)
+
+			os.MkdirAll(filepath.Join(sourceDir, "host"), os.ModePerm)
+			os.MkdirAll(filepath.Join(sourceDir, "run"), os.ModePerm)
+			for i := 0; i < 5; i++ {
+				_, _ = os.CreateTemp(sourceDir, "file*")
+			}
+
+			Expect(utils.SyncData(sourceDir, destDir, "host", "run")).To(BeNil())
+
+			filesDest, err := ioutil.ReadDir(destDir)
+			Expect(err).To(BeNil())
+
+			destNames := getNamesFromListFiles(filesDest)
+
+			filesSource, err := ioutil.ReadDir(sourceDir)
+			Expect(err).To(BeNil())
+
+			SourceNames := getNamesFromListFiles(filesSource)
+
+			// Shouldn't be the same
+			Expect(destNames).ToNot(Equal(SourceNames))
+			expected := []string{}
+
+			for _, s := range SourceNames {
+				if s != "host" && s != "run" {
+					expected = append(expected, s)
+				}
+			}
+			Expect(destNames).To(Equal(expected))
+		})
+
 		It("should not fail if dirs are empty", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
