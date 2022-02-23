@@ -670,28 +670,52 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 	Describe("GetIso", Label("GetIso", "iso"), func() {
-		It("Gets the iso and returns the temporary where it is stored", func() {
+		It("Gets the iso and returns the temporary where it is stored and no image sources are set", func() {
 			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
 			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
 			Expect(err).To(BeNil())
-
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
 			isoDir, err := e.GetIso()
 			Expect(err).To(BeNil())
 			// Confirm that the iso is stored in isoDir
 			afero.Exists(fs, filepath.Join(isoDir, "cOs.iso"))
-			// Confirm that we tried to mount it properly
-			Expect(pathInMountPoints(mounter, cnst.DownloadedIsoMnt)).To(BeTrue())
-
+			Expect(config.Images.GetActive()).To(BeNil())
+			Expect(config.Images.GetRecovery()).To(BeNil())
+		})
+		It("Gets the iso and sets active and recovery images", func() {
+			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
+			Expect(err).To(BeNil())
+			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			Expect(err).To(BeNil())
+			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
+			config.Images[cnst.ActiveImgName] = &v1.Image{File: "activeimagefile"}
+			config.Images[cnst.RecoveryImgName] = &v1.Image{}
+			e := elemental.NewElemental(config)
+			isoDir, err := e.GetIso()
+			Expect(err).To(BeNil())
+			// Confirm that the iso is stored in isoDir
+			afero.Exists(fs, filepath.Join(isoDir, "cOs.iso"))
+			Expect(config.Images.GetActive().Source.Value()).To(ContainSubstring("/rootfs"))
+			Expect(config.Images.GetRecovery().Source.Value()).To(Equal("activeimagefile"))
+		})
+		It("Fails if attemps to set recovery from active but no active is defined", func() {
+			tmpDir, err := afero.TempDir(fs, "", "elemental-test")
+			Expect(err).To(BeNil())
+			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			Expect(err).To(BeNil())
+			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
+			config.Images[cnst.RecoveryImgName] = &v1.Image{}
+			e := elemental.NewElemental(config)
+			_, err = e.GetIso()
+			Expect(err).NotTo(BeNil())
 		})
 		It("Fails if it cant find the iso", func() {
 			config.Iso = "whatever"
 			e := elemental.NewElemental(config)
 			_, err := e.GetIso()
 			Expect(err).ToNot(BeNil())
-
 		})
 		It("Fails if it cannot mount the iso", func() {
 			config.Mounter = v1mock.ErrorMounter{ErrorOnMount: true}
@@ -699,7 +723,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			err = afero.WriteFile(fs, fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
 			Expect(err).To(BeNil())
-
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
 			_, err = e.GetIso()

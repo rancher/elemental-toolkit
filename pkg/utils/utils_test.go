@@ -453,8 +453,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger.SetOutput(buf)
 
 				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
-				_ = fs.MkdirAll("/etc/cos/", 0666)
-				err := afero.WriteFile(fs, "/etc/cos/grub.cfg", []byte("console=tty1"), 0644)
+				err := afero.WriteFile(fs, filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
 				Expect(err).To(BeNil())
 
 				config.Logger = logger
@@ -479,7 +478,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
-				_, _ = fs.Create("/etc/cos/grub.cfg")
+				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
 				_, _ = fs.Create(constants.EfiDevice)
 
 				config.Logger = logger
@@ -497,7 +496,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
-				_, _ = fs.Create("/etc/cos/grub.cfg")
+				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
 
 				config.Logger = logger
 				config.ForceEfi = true
@@ -515,14 +514,12 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
-				_ = fs.MkdirAll("/etc/cos/", 0666)
-				err := afero.WriteFile(fs, "/etc/cos/grub.cfg", []byte("console=tty1"), 0644)
+				err := afero.WriteFile(fs, filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
 				Expect(err).To(BeNil())
 				_, _ = fs.Create("/dev/serial")
 
 				config.Logger = logger
 				config.Tty = "serial"
-				config.GrubConf = "/etc/cos/grub.cfg"
 
 				grub := utils.NewGrub(config)
 				err = grub.Install()
@@ -532,13 +529,26 @@ var _ = Describe("Utils", Label("utils"), func() {
 				targetGrub, err := afero.ReadFile(fs, fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
 				Expect(err).To(BeNil())
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
-
 			})
-			It("Fails active image is unset", func() {
+			It("Fails if active image is unset", func() {
 				config.Images.SetActive(nil)
 				grub := utils.NewGrub(config)
 				err := grub.Install()
 				Expect(err).NotTo(BeNil())
+			})
+			It("Fails if it can't read grub config file", func() {
+				buf := &bytes.Buffer{}
+				logger := log.New()
+				logger.SetOutput(buf)
+
+				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+
+				config.Logger = logger
+
+				grub := utils.NewGrub(config)
+				Expect(grub.Install()).NotTo(BeNil())
+
+				Expect(buf).To(ContainSubstring("Failed reading grub config file"))
 			})
 		})
 		Describe("SetPersistentVariables", func() {

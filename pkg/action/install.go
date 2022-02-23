@@ -85,14 +85,8 @@ func InstallImagesSetup(config *v1.RunConfig) error {
 		return errors.New("Error setting Recovery image")
 	}
 
-	// TODO use iso for all images? Formerly it was only for recovery, but
-	// I think this was a regression from former cos.sh script refactor
-	isoMnt := cnst.IsoMnt
-	if config.Iso != "" {
-		isoMnt = cnst.DownloadedIsoMnt
-	}
 	recoveryDirCos := filepath.Join(partRecovery.MountPoint, "cOS")
-	squashedImgSource := filepath.Join(isoMnt, cnst.RecoverySquashFile)
+	squashedImgSource := filepath.Join(cnst.IsoMnt, cnst.RecoverySquashFile)
 
 	recoveryImg := v1.Image{}
 	if exists, _ := afero.Exists(config.Fs, squashedImgSource); exists {
@@ -148,11 +142,9 @@ func InstallRun(config *v1.RunConfig) (err error) {
 		if err != nil {
 			return err
 		}
-		cleanup.Push(func() error {
-			config.Logger.Infof("Unmounting downloaded ISO")
-			config.Fs.RemoveAll(tmpDir)
-			return config.Mounter.Unmount(cnst.DownloadedIsoMnt)
-		})
+		cleanup.Push(func() error { return config.Fs.RemoveAll(tmpDir) })
+		cleanup.Push(func() error { return config.Mounter.Unmount(filepath.Join(tmpDir, "iso")) })
+		cleanup.Push(func() error { return config.Mounter.Unmount(filepath.Join(tmpDir, "rootfs")) })
 	}
 
 	// Check device valid

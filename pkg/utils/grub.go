@@ -109,7 +109,11 @@ func (g Grub) Install() (err error) {
 	}
 	g.config.Logger.Infof("Found grub config dir %s", grubdir)
 
-	grubConf, err := afero.ReadFile(g.config.Fs, g.config.GrubConf)
+	grubConf, err := afero.ReadFile(g.config.Fs, filepath.Join(activeImg.MountPoint, g.config.GrubConf))
+	if err != nil {
+		g.config.Logger.Errorf("Failed reading grub config file: %s", filepath.Join(activeImg.MountPoint, g.config.GrubConf))
+		return err
+	}
 
 	grubConfTarget, err := g.config.Fs.Create(fmt.Sprintf("%s/grub.cfg", grubdir))
 	defer grubConfTarget.Close()

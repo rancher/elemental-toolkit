@@ -147,6 +147,7 @@ var _ = Describe("Actions", func() {
 			activeMount, err = os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
+			fs.Create(filepath.Join(activeMount, constants.GrubConf))
 			statePart = &v1.Partition{
 				Label:      constants.StateLabel,
 				Path:       "/dev/device1",
@@ -287,15 +288,6 @@ var _ = Describe("Actions", func() {
 				Expect(config.PartTable).To(Equal(v1.MSDOS))
 				Expect(config.BootFlag).To(Equal(v1.BOOT))
 			})
-			Describe("On downloaded ISO", func() {
-				It("Sets the appropriate recovery image", func() {
-					config.Iso = "someiso"
-					fs.Create("/run/cos/iso/recovery.squashfs")
-					err := action.InstallSetup(config)
-					Expect(err).To(BeNil())
-					Expect(config.Images.GetRecovery().Source.Value()).To(Equal("/run/cos/iso/recovery.squashfs"))
-				})
-			})
 			Describe("Setting images", func() {
 				It("Set a docker source type if requested", func() {
 					config.DockerImg = "someimage"
@@ -329,6 +321,7 @@ var _ = Describe("Actions", func() {
 			Expect(err).To(BeNil())
 			activeMount, err = os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
+			fs.Create(filepath.Join(activeMount, constants.GrubConf))
 			activeSize = 16
 			device = "/disk/device"
 			fs.Create(device)
@@ -391,16 +384,6 @@ var _ = Describe("Actions", func() {
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})
 
-		It("Successfully installs from ISO", Label("iso"), func() {
-			fs.Create("cOS.iso")
-			config.Iso = "cOS.iso"
-			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
-			Expect(action.InstallRun(config)).To(BeNil())
-		})
-
 		It("Successfully installs without formatting despite detecting a previous installation", Label("no-format", "disk"), func() {
 			config.NoFormat = true
 			config.Force = true
@@ -448,6 +431,17 @@ var _ = Describe("Actions", func() {
 			config.Iso = "nonexistingiso"
 			config.Target = device
 			Expect(action.InstallRun(config)).NotTo(BeNil())
+		})
+
+		It("Fails to install from ISO as rsync can't find the temporary root tree", Label("iso"), func() {
+			fs.Create("cOS.iso")
+			config.Iso = "cOS.iso"
+			config.Target = device
+			config.Images.GetActive().Size = activeSize
+			config.Images.GetActive().MountPoint = activeMount
+			Expect(action.InstallRun(config)).NotTo(BeNil())
+			Expect(config.Images.GetActive().Source.Value()).To(ContainSubstring("/rootfs"))
+			Expect(config.Images.GetActive().Source.IsDir()).To(BeTrue())
 		})
 
 		It("Fails to install without formatting if a previous install is detected", Label("no-format", "disk"), func() {

@@ -434,30 +434,78 @@ func (c *Elemental) CheckNoFormat() error {
 }
 
 // GetIso will try to:
-// download the iso into a temporary folder
-// and mount the iso file as loop in cnst.DownloadedIsoMnt
+// download the iso into a temporary folder, mount the iso file as loop
+// in cnst.DownloadedIsoMnt and update recovery and active image sources if
+// they are already configured.
 func (c *Elemental) GetIso() (tmpDir string, err error) {
+	//TODO support ISO download in persistent storage?
 	tmpDir, err = afero.TempDir(c.config.Fs, "", "elemental")
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		if err != nil {
+			c.config.Fs.RemoveAll(tmpDir)
+		}
+	}()
+
+	isoMnt := filepath.Join(tmpDir, "iso")
+	rootfsMnt := filepath.Join(tmpDir, "rootfs")
+
 	tmpFile := filepath.Join(tmpDir, "cOs.iso")
 	err = c.GetUrl(c.config.Iso, tmpFile)
 	if err != nil {
-		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
 	}
-	err = c.config.Fs.MkdirAll(cnst.DownloadedIsoMnt, os.ModeDir)
+
+	err = c.config.Fs.MkdirAll(isoMnt, os.ModeDir)
 	if err != nil {
-		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
 	}
 	var mountOptions []string
-	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, cnst.DownloadedIsoMnt)
-	err = c.config.Mounter.Mount(tmpFile, cnst.DownloadedIsoMnt, "loop", mountOptions)
+	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, isoMnt)
+	err = c.config.Mounter.Mount(tmpFile, isoMnt, "auto", mountOptions)
 	if err != nil {
-		c.config.Fs.RemoveAll(tmpDir)
 		return "", err
+	}
+	defer func() {
+		if err != nil {
+			c.config.Mounter.Unmount(isoMnt)
+		}
+	}()
+
+	c.config.Logger.Infof("Mounting squashfs image from iso into %s", rootfsMnt)
+	err = c.config.Fs.MkdirAll(rootfsMnt, os.ModeDir)
+	if err != nil {
+		return "", err
+	}
+	err = c.config.Mounter.Mount(filepath.Join(isoMnt, cnst.IsoRootFile), rootfsMnt, "auto", mountOptions)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if err != nil {
+			c.config.Mounter.Unmount(rootfsMnt)
+		}
+	}()
+
+	activeImg := c.config.Images.GetActive()
+	if activeImg != nil {
+		activeImg.Source = v1.NewDirSrc(rootfsMnt)
+	}
+	recoveryImg := c.config.Images.GetRecovery()
+	if recoveryImg != nil {
+		squashedImgSource := filepath.Join(isoMnt, cnst.RecoverySquashFile)
+		if exists, _ := afero.Exists(c.config.Fs, squashedImgSource); exists {
+			recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
+			recoveryImg.FS = cnst.SquashFs
+		} else if activeImg != nil {
+			recoveryImg.Source = v1.NewFileSrc(activeImg.File)
+			recoveryImg.FS = cnst.LinuxImgFs
+			recoveryImg.Label = c.config.SystemLabel
+		} else {
+			return "", errors.New("Can't set recovery image from ISO, source image is missing")
+		}
 	}
 	return tmpDir, nil
 }
