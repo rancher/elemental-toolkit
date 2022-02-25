@@ -35,11 +35,15 @@ func addPowerFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
 }
 
-// addSharedInstallUpgradeFlags add flags shared between install and upgrade
+// addSharedInstallUpgradeFlags add flags shared between install, upgrade and reset
 func addSharedInstallUpgradeFlags(cmd *cobra.Command) {
+	cmd.Flags().String("directory", "", "Use directory as source to install from")
 	cmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
 	cmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
 	cmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
+
+	addCosignFlags(cmd)
+	addPowerFlags(cmd)
 }
 
 func validateCosignFlags(log v1.Logger) error {
@@ -53,7 +57,7 @@ func validateCosignFlags(log v1.Logger) error {
 	return nil
 }
 
-func validateUpgradeSourceFlags(log v1.Logger) error {
+func validateSourceFlags(log v1.Logger) error {
 	// docker-image and directory are mutually exclusive. Can't have your cake and eat it too.
 	if viper.GetString("docker-image") != "" && viper.GetString("directory") != "" {
 		msg := "flags docker-image and directory are mutually exclusive, please only set one of them"
@@ -70,21 +74,10 @@ func validatePowerFlags(log v1.Logger) error {
 }
 
 // validateUpgradeFlags is a helper call to check all the flags for the upgrade command
-func validateUpgradeFlags(log v1.Logger) error {
-	if err := validateUpgradeSourceFlags(log); err != nil {
+func validateInstallUpgradeFlags(log v1.Logger) error {
+	if err := validateSourceFlags(log); err != nil {
 		return err
 	}
-	if err := validateCosignFlags(log); err != nil {
-		return err
-	}
-	if err := validatePowerFlags(log); err != nil {
-		return err
-	}
-	return nil
-}
-
-// validateInstallFlags is a helper call to check all the flags for the upgrade command
-func validateInstallFlags(log v1.Logger) error {
 	if err := validateCosignFlags(log); err != nil {
 		return err
 	}

@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
@@ -47,26 +46,15 @@ var resetCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		err = errors.New("Invalid options")
-		if viper.GetBool("reboot") && viper.GetBool("poweroff") {
-			cfg.Logger.Errorf("'reboot' and 'poweroff' are mutually exclusive options")
+		if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
 			return err
 		}
 
-		if viper.GetString("cosign-key") != "" && !viper.GetBool("cosign") {
-			cfg.Logger.Errorf("'cosign-key' requires 'cosing' option to be enabled")
-			return err
-		}
-
-		if viper.GetBool("cosign") && viper.GetString("cosign-key") == "" {
-			cfg.Logger.Warnf("No 'cosign-key' option set, keyless cosign verification is experimental")
-		}
-
-		cmd.SilenceUsage = true
 		err = action.ResetSetup(cfg)
 		if err != nil {
 			return err
 		}
+		cmd.SilenceUsage = true
 
 		cfg.Logger.Infof("Reset called")
 
@@ -76,14 +64,7 @@ var resetCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(resetCmd)
-	resetCmd.Flags().StringP("docker-image", "", "", "Reset using a specified container image")
-	resetCmd.Flags().StringP("directory", "d", "", "Reset from a local root tree")
-	resetCmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
-	resetCmd.Flags().BoolP("cosign", "", false, "Enable cosign verification (requires images with signatures)")
-	resetCmd.Flags().StringP("cosign-key", "", "", "Sets the URL of the public key to be used by cosign validation")
-	resetCmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
 	resetCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	resetCmd.Flags().BoolP("reset-persistent", "", false, "Clear persistent partitions")
-	resetCmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
-	resetCmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
+	addSharedInstallUpgradeFlags(resetCmd)
 }

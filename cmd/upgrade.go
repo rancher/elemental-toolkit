@@ -31,8 +31,6 @@ var upgradeCmd = &cobra.Command{
 	Short: "upgrade the system",
 	Args:  cobra.ExactArgs(0),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		// We bind the --directory into the DirectoryUpgrade value directly to have a more explicit var in the config
-		viper.BindPFlag("DirectoryUpgrade", cmd.Flags().Lookup("directory"))
 		// We bind the --recovery flag into RecoveryUpgrade value to have a more explicit var in the config
 		viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
 		// bind the rest of the flags into their direct values as they are mapped 1to1
@@ -52,11 +50,11 @@ var upgradeCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		if err := validateUpgradeFlags(cfg.Logger); err != nil {
+		if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
 			return err
 		}
 
-		if cfg.DockerImg != "" || cfg.DirectoryUpgrade != "" {
+		if cfg.DockerImg != "" || cfg.Directory != "" {
 			// Force channel upgrades to be false, because as its loaded from the config files,
 			// it will probably always be set to true due to it being the default value
 			cfg.ChannelUpgrades = false
@@ -78,9 +76,6 @@ var upgradeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(upgradeCmd)
-	upgradeCmd.Flags().String("directory", "", "Use directory as source to install from")
 	upgradeCmd.Flags().Bool("recovery", false, "Upgrade the recovery")
 	addSharedInstallUpgradeFlags(upgradeCmd)
-	addCosignFlags(upgradeCmd)
-	addPowerFlags(upgradeCmd)
 }

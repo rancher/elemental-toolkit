@@ -463,9 +463,9 @@ func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
 			upgradeSource = v1.NewDockerSrc(u.Config.DockerImg)
 		}
 		// if directory -> upgrade from dir directly, ignores release_channel and uses the given directory
-		if u.Config.DirectoryUpgrade != "" {
-			u.Debug("Source is directory: %s", u.Config.DirectoryUpgrade)
-			upgradeSource = v1.NewDirSrc(u.Config.DirectoryUpgrade)
+		if u.Config.Directory != "" {
+			u.Debug("Source is directory: %s", u.Config.Directory)
+			upgradeSource = v1.NewDirSrc(u.Config.Directory)
 		}
 	}
 	u.Debug("Upgrade target: %s Upgrade source: %s", upgradeTarget, upgradeSource.Value())

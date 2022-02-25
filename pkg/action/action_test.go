@@ -670,11 +670,11 @@ var _ = Describe("Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 			It("Successfully upgrades from directory", Label("directory", "root"), func() {
-				config.DirectoryUpgrade, _ = os.MkdirTemp("", "elemental")
+				config.Directory, _ = os.MkdirTemp("", "elemental")
 				// Create the dir on real os as rsync works on the real os
-				defer os.RemoveAll(config.DirectoryUpgrade)
+				defer os.RemoveAll(config.Directory)
 				// create a random file on it
-				err := os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+				err := os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 				Expect(err).ToNot(HaveOccurred())
 
 				upgrade = action.NewUpgradeAction(config)
@@ -936,11 +936,11 @@ var _ = Describe("Actions", func() {
 
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
-					config.DirectoryUpgrade, _ = os.MkdirTemp("", "elemental")
+					config.Directory, _ = os.MkdirTemp("", "elemental")
 					// Create the dir on real os as rsync works on the real os
-					defer os.RemoveAll(config.DirectoryUpgrade)
+					defer os.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()
@@ -1116,11 +1116,11 @@ var _ = Describe("Actions", func() {
 
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
-					config.DirectoryUpgrade, _ = os.MkdirTemp("", "elemental")
+					config.Directory, _ = os.MkdirTemp("", "elemental")
 					// Create the dir on real os as rsync works on the real os
-					defer os.RemoveAll(config.DirectoryUpgrade)
+					defer os.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.DirectoryUpgrade), []byte("something"), os.ModePerm)
+					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()

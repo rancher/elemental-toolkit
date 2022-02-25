@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
+var _ = Describe("Reset", Label("reset", "cmd", "systemctl"), func() {
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)
@@ -32,8 +32,8 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
-		Expect(buf).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("'reboot' and 'poweroff' are mutually exclusive options"))
 	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		buf := new(bytes.Buffer)
@@ -44,7 +44,19 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		rootCmd.SetOut(nil)
 		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
-		Expect(buf).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("Invalid options"))
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
+	})
+	It("Errors out setting directory and docker-image at the same time", Label("flags"), func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "reset", "--directory", "dir", "--docker-image", "image")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).ToNot(BeNil())
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("docker-image and directory are mutually exclusive"))
 	})
 })

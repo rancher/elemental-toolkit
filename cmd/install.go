@@ -48,7 +48,7 @@ var installCmd = &cobra.Command{
 			cfg.Logger.Errorf("Error reading config: %s\n", err)
 		}
 
-		if err := validateInstallFlags(cfg.Logger); err != nil {
+		if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
 			return err
 		}
 
@@ -89,6 +89,4 @@ func init() {
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	installCmd.Flags().BoolP("force", "", false, "Force install")
 	addSharedInstallUpgradeFlags(installCmd)
-	addCosignFlags(installCmd)
-	addPowerFlags(installCmd)
 }

@@ -62,4 +62,16 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
 		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
 	})
+	It("Errors out setting directory and docker-image at the same time", Label("flags"), func() {
+		buf := new(bytes.Buffer)
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		_, _, err := executeCommandC(rootCmd, "install", "--directory", "dir", "--docker-image", "image", "/dev/whatever")
+		// Restore cobra output
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		Expect(err).ToNot(BeNil())
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("docker-image and directory are mutually exclusive"))
+	})
 })
