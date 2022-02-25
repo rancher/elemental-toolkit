@@ -457,14 +457,12 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	if err != nil {
 		return "", err
 	}
-
 	err = c.config.Fs.MkdirAll(isoMnt, os.ModeDir)
 	if err != nil {
 		return "", err
 	}
-	var mountOptions []string
 	c.config.Logger.Infof("Mounting iso %s into %s", tmpFile, isoMnt)
-	err = c.config.Mounter.Mount(tmpFile, isoMnt, "auto", mountOptions)
+	err = c.config.Mounter.Mount(tmpFile, isoMnt, "auto", []string{"loop"})
 	if err != nil {
 		return "", err
 	}
@@ -479,7 +477,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	if err != nil {
 		return "", err
 	}
-	err = c.config.Mounter.Mount(filepath.Join(isoMnt, cnst.IsoRootFile), rootfsMnt, "auto", mountOptions)
+	err = c.config.Mounter.Mount(filepath.Join(isoMnt, cnst.IsoRootFile), rootfsMnt, "auto", []string{})
 	if err != nil {
 		return "", err
 	}
