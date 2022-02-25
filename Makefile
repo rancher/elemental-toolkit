@@ -1,5 +1,5 @@
-GIT_COMMIT = $(shell git rev-parse HEAD)
-GIT_TAG = $(shell git describe --tags 2>/dev/null || echo "v0.0.1" )
+GIT_COMMIT ?= $(shell git rev-parse HEAD)
+GIT_TAG ?= $(shell git describe --tags 2>/dev/null || echo "v0.0.1" )
 
 PKG        := ./...
 LDFLAGS    := -w -s
