@@ -19,10 +19,10 @@ package config
 import (
 	"github.com/rancher-sandbox/elemental/pkg/cloudinit"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/http"
 	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
-	"net/http"
 )
 
 func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
@@ -32,7 +32,7 @@ func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 		Logger:  log,
 		Runner:  &v1.RealRunner{},
 		Syscall: &v1.RealSyscall{},
-		Client:  &http.Client{},
+		Client:  http.NewClient(),
 	}
 	for _, o := range opts {
 		err := o(r)

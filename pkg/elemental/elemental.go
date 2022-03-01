@@ -370,16 +370,14 @@ func (c *Elemental) CopyImage(img *v1.Image) error {
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
-func (c *Elemental) CopyCloudConfig() error {
+func (c *Elemental) CopyCloudConfig() (err error) {
 	if c.config.CloudInit != "" {
 		customConfig := filepath.Join(cnst.OEMDir, "99_custom.yaml")
-		c.config.Logger.Infof("Trying to copy cloud config file %s to %s", c.config.CloudInit, customConfig)
-
-		if err := c.GetUrl(c.config.CloudInit, customConfig); err != nil {
+		err = utils.GetSource(c.config, c.config.CloudInit, customConfig)
+		if err != nil {
 			return err
 		}
-
-		if err := c.config.Fs.Chmod(customConfig, os.ModePerm); err != nil {
+		if err = c.config.Fs.Chmod(customConfig, os.ModePerm); err != nil {
 			return err
 		}
 		c.config.Logger.Infof("Finished copying cloud config file %s to %s", c.config.CloudInit, customConfig)
@@ -453,7 +451,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	rootfsMnt := filepath.Join(tmpDir, "rootfs")
 
 	tmpFile := filepath.Join(tmpDir, "cOs.iso")
-	err = c.GetUrl(c.config.Iso, tmpFile)
+	err = utils.GetSource(c.config, c.config.Iso, tmpFile)
 	if err != nil {
 		return "", err
 	}
@@ -506,35 +504,6 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 		}
 	}
 	return tmpDir, nil
-}
-
-// GetUrl is a simple method that will try to get an url to a destination, no matter if its an http url, ftp, tftp or a file
-func (c *Elemental) GetUrl(url string, destination string) error {
-	var source []byte
-	var err error
-
-	switch {
-	case strings.HasPrefix(url, "http"), strings.HasPrefix(url, "ftp"), strings.HasPrefix(url, "tftp"):
-		c.config.Logger.Infof("Downloading from %s to %s", url, destination)
-		resp, err := c.config.Client.Get(url)
-		if err != nil {
-			return err
-		}
-		_, err = resp.Body.Read(source)
-		defer resp.Body.Close()
-	default:
-		c.config.Logger.Infof("Copying from %s to %s", url, destination)
-		source, err = afero.ReadFile(c.config.Fs, url)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = afero.WriteFile(c.config.Fs, destination, source, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in

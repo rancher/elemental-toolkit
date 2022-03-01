@@ -750,23 +750,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 		})
 	})
-	Describe("GetUrl", Label("GetUrl"), func() {
-		It("Gets an http url", Label("http"), func() {
-			e := elemental.NewElemental(config)
-			Expect(e.GetUrl("http://fake.com/file.txt", "/file.txt")).To(BeNil())
-			exists, err := afero.Exists(fs, "/file.txt")
-			Expect(err).To(BeNil())
-			Expect(exists).To(BeTrue())
-		})
-		It("Gets a file url", func() {
-			e := elemental.NewElemental(config)
-			Expect(afero.WriteFile(fs, "file1.txt", []byte("welcome to the jungle"), os.ModePerm)).To(BeNil())
-			Expect(e.GetUrl("file1.txt", "/file.txt")).To(BeNil())
-			exists, err := afero.Exists(fs, "/file.txt")
-			Expect(err).To(BeNil())
-			Expect(exists).To(BeTrue())
-		})
-	})
 	Describe("SetDefaultGrubEntry", Label("SetDefaultGrubEntry", "grub"), func() {
 		It("Sets the default grub entry without issues", func() {
 			config.Partitions = append(config.Partitions, &v1.Partition{Name: cnst.StatePartName})

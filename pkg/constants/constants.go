@@ -52,6 +52,7 @@ const (
 	PersistentSize         = uint(0)
 	BiosSize               = uint(1)
 	ImgSize                = uint(3072)
+	HttpTimeout            = 60
 	PartStage              = "partitioning"
 	IsoMnt                 = "/run/initramfs/live"
 	RecoveryDir            = "/run/cos/recovery"

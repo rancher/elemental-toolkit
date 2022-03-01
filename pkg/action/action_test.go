@@ -411,6 +411,7 @@ var _ = Describe("Actions", func() {
 			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			config.Images.GetActive().MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
+			fs.Create(filepath.Join(constants.OEMDir, "99_custom.yaml"))
 			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})

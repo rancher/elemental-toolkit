@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	uri "net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -251,4 +252,45 @@ func GetUpgradeTempDir(config *v1.RunConfig) string {
 		return filepath.Join(persistent.MountPoint, "elemental-upgrade")
 	}
 	return filepath.Join("/", "tmp", "elemental-upgrade")
+}
+
+// IsLocalUrl returns true if the url has no scheme or it has "file" scheme
+// and returns false otherwise. Error is not nil if the url can't be parsed.
+func IsLocalUrl(url string) (bool, error) {
+	u, err := uri.Parse(url)
+	if err != nil {
+		return false, err
+	}
+	if u.Scheme == "file" || u.Scheme == "" {
+		return true, nil
+	}
+	return false, nil
+}
+
+// GetSource copies given source to destination, if source is a local path it simply
+// copies files, if source is a remote URL it tries to download URL to destination.
+func GetSource(config *v1.RunConfig, source string, destination string) error {
+	local, err := IsLocalUrl(source)
+	if err != nil {
+		config.Logger.Errorf("Not a valid url: %s", source)
+		return err
+	}
+
+	err = config.Fs.MkdirAll(filepath.Dir(destination), os.ModeDir)
+	if err != nil {
+		return err
+	}
+	if local {
+		u, _ := uri.Parse(source)
+		err = CopyFile(config.Fs, u.Path, destination)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = config.Client.GetUrl(config.Logger, source, destination)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

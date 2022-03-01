@@ -47,7 +47,7 @@ ifneq ($(shell id -u), 0)
 	@echo "This tests require root/sudo to run."
 	@exit 1
 else
-	ginkgo run --label-filter root --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage_root.txt -p -r ${PKG}
+	ginkgo run --label-filter root --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage_root.txt -procs=1 -r ${PKG}
 endif
 
 # Useful test run for local dev. It does not run tests that require root and it does not run tests that require systemctl checks

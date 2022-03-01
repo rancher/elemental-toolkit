@@ -18,20 +18,8 @@ package mocks
 
 import (
 	"errors"
-	"io"
-	"net/http"
+	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
-
-type FakeHttpBody struct{}
-
-// Read will just return like it has read 1024 bytes, and it reached the end of file like the real http.Client
-func (m *FakeHttpBody) Read(p []byte) (n int, err error) {
-	return 1024, io.EOF
-}
-
-func (m *FakeHttpBody) Close() error {
-	return nil
-}
 
 // FakeHttpClient is an implementation of HTTPClient interface used for testing
 // It stores Get calls into ClientCalls for easy checking of what was called
@@ -41,13 +29,13 @@ type FakeHttpClient struct {
 }
 
 // Get will return a FakeHttpBody and store the url call into ClientCalls
-func (m *FakeHttpClient) Get(url string) (*http.Response, error) {
+func (m *FakeHttpClient) GetUrl(log v1.Logger, url string, destination string) error {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
 	if m.Error {
-		return nil, errors.New("fake http error")
+		return errors.New("fake http error")
 	}
-	return &http.Response{Body: &FakeHttpBody{}}, nil
+	return nil
 }
 
 // WasGetCalledWith is a helper method to confirm that the client wazs called with the give url

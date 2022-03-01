@@ -56,7 +56,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var runner *v1mock.FakeRunner
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
-	var client v1.HTTPClient
+	var client *v1mock.FakeHttpClient
 	var mounter *v1mock.ErrorMounter
 	var fs afero.Fs
 	var memLog *bytes.Buffer
@@ -438,6 +438,52 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
 			Expect(utils.SyncData("/welp", destDir)).NotTo(BeNil())
+		})
+	})
+	Describe("IsLocalUrl", Label("IsLocalUrl"), func() {
+		It("Detects a local url", func() {
+			local, err := utils.IsLocalUrl("file://some/path")
+			Expect(err).To(BeNil())
+			Expect(local).To(BeTrue())
+		})
+		It("Detects a local path", func() {
+			local, err := utils.IsLocalUrl("/some/path")
+			Expect(err).To(BeNil())
+			Expect(local).To(BeTrue())
+		})
+		It("Detects a remote url", func() {
+			local, err := utils.IsLocalUrl("http://something.org")
+			Expect(err).To(BeNil())
+			Expect(local).To(BeFalse())
+		})
+		It("Fails on invalid URL", func() {
+			local, err := utils.IsLocalUrl("$htt:|//insane.stuff")
+			Expect(err).NotTo(BeNil())
+			Expect(local).To(BeFalse())
+		})
+	})
+	Describe("GetSource", Label("GetSource"), func() {
+		It("Fails on invalid url", func() {
+			Expect(utils.GetSource(config, "$htt:|//insane.stuff", "/tmp/dest")).NotTo(BeNil())
+		})
+		It("Fails on readonly destination", func() {
+			config.Fs = afero.NewReadOnlyFs(fs)
+			Expect(utils.GetSource(config, "http://something.org", "/tmp/dest")).NotTo(BeNil())
+		})
+		It("Fails on non existing local source", func() {
+			Expect(utils.GetSource(config, "/some/missing/file", "/tmp/dest")).NotTo(BeNil())
+		})
+		It("Fails on http client error", func() {
+			client.Error = true
+			url := "https://missing.io"
+			Expect(utils.GetSource(config, url, "/tmp/dest")).NotTo(BeNil())
+			client.WasGetCalledWith(url)
+		})
+		It("Copies local file to destination", func() {
+			fs.Create("/tmp/file")
+			Expect(utils.GetSource(config, "file:///tmp/file", "/tmp/dest")).To(BeNil())
+			_, err := fs.Stat("/tmp/dest")
+			Expect(err).To(BeNil())
 		})
 	})
 	Describe("Grub", Label("grub"), func() {
