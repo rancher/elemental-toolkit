@@ -9,11 +9,6 @@ name: "Default network configuration"
 stages:
    initramfs:
      - name: "Setup network"
-       dns:
-         path: /etc/resolv.conf
-         nameservers:
-         - 8.8.8.8
-         - 1.1.1.1
        files:
        - path: /etc/sysconfig/network/ifcfg-eth0
          content: |

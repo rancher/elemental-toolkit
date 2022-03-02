@@ -1,7 +1,0 @@
-name: cloud-config
-category: system
-version: 0.11-2
-requires:
-  - name: "cos-setup"
-    category: "system"
-    version: ">=0"
