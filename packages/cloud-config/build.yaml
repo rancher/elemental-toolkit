@@ -7,23 +7,23 @@ requires:
   version: ">=0"
 
 steps:
-- mkdir -p /system/oem
-- cp -rfv oem/{{.Values.oem_file}} /system/oem
-- chmod -R 600 /system/oem
+- mkdir -p {{.Values.oem_dir}}
+- cp -rfv oem/{{.Values.oem_file}} {{.Values.oem_dir}}
+- chmod -R 600 {{.Values.oem_dir}}
 {{ if .Values.templated }}
-- cos-tmpl-render /system/oem/{{.Values.oem_file}}
+- cos-tmpl-render {{.Values.oem_dir}}/{{.Values.oem_file}}
 {{ end }}
 
 {{ if eq .Values.oem_file "02_upgrades.yaml" }}
 {{ if .Values.codename }}
-- sed -i 's/:FLAVOR:/{{.Values.codename}}/g' /system/oem/02_upgrades.yaml
+- sed -i 's/:FLAVOR:/{{.Values.codename}}/g' {{.Values.oem_dir}}/02_upgrades.yaml
 {{end}}
 {{ if .Values.arch }}
   {{if eq .Values.arch "x86_64"}}
-- sed -i 's/:ARCH://g' /system/oem/02_upgrades.yaml
+- sed -i 's/:ARCH://g' {{.Values.oem_dir}}/02_upgrades.yaml
   {{end}}
   {{if eq .Values.arch "aarch64"}}
-- sed -i 's/:ARCH:/-arm64/g' /system/oem/02_upgrades.yaml
+- sed -i 's/:ARCH:/-arm64/g' {{.Values.oem_dir}}/02_upgrades.yaml
   {{end}}
 {{end}}
 {{ end }}

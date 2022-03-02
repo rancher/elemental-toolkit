@@ -1,18 +1,19 @@
 packages:
 - &base
-  name: defaults
+  name: "rootfs"
+  oem_file: "00_rootfs.yaml.tmpl"
+  oem_dir: "/system/oem"
+  templated: true
   category: cloud-config
   version: "0.1"
-  oem_file: "01_defaults.yaml"
-  templated: false
   requires:
   - name: "cos-setup"
     category: "system"
     version: ">=0"
 - <<: *base
-  name: "rootfs"
-  oem_file: "00_rootfs.yaml.tmpl"
-  templated: true
+  name: "defaults"
+  oem_file: "01_defaults.yaml"
+  templated: false
 - <<: *base
   name: "upgrades"
   oem_file: "02_upgrades.yaml"
