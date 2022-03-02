@@ -9,9 +9,6 @@ requires:
 - name: "installer"
   category: "utils"
   version: ">0.28.0"
-- name: "cloud-config"
-  category: "system"
-  version: ">=0"
 - name: "immutable-rootfs"
   category: "system"
   version: ">0.3-1"
@@ -56,6 +53,24 @@ requires:
 - name: "luet-cosign"
   category: "toolchain"
   version: ">=0"
+- &cc
+  name: "rootfs"
+  category: cloud-config
+  version: ">=0"
+- <<: *cc
+  name: "defaults"
+- <<: *cc
+  name: "upgrades"
+- <<: *cc
+  name: "branding"
+- <<: *cc
+  name: "accounting"
+- <<: *cc
+  name: "network"
+- <<: *cc
+  name: "recovery"
+- <<: *cc
+  name: "live"
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:

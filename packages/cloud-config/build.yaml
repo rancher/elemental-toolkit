@@ -7,11 +7,14 @@ requires:
   version: ">=0"
 
 steps:
-- mkdir -p /system /oem
-- cp -rfv oem /system
+- mkdir -p /system/oem
+- cp -rfv oem/{{.Values.oem_file}} /system/oem
 - chmod -R 600 /system/oem
-- cos-tmpl-render /system/oem/00_rootfs.yaml.tmpl
-- cos-tmpl-render /system/oem/06_recovery.yaml.tmpl
+{{ if .Values.templated }}
+- cos-tmpl-render /system/oem/{{.Values.oem_file}}
+{{ end }}
+
+{{ if eq .Values.oem_file "02_upgrades.yaml" }}
 {{ if .Values.codename }}
 - sed -i 's/:FLAVOR:/{{.Values.codename}}/g' /system/oem/02_upgrades.yaml
 {{end}}
@@ -23,3 +26,4 @@ steps:
 - sed -i 's/:ARCH:/-arm64/g' /system/oem/02_upgrades.yaml
   {{end}}
 {{end}}
+{{ end }}
