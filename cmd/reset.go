@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@ limitations under the License.
 package cmd
 
 import (
+	"os/exec"
+
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os/exec"
 )
 
 // resetCmd represents the install command
@@ -31,7 +32,7 @@ var resetCmd = &cobra.Command{
 	Short: "elemental reset OS",
 	Args:  cobra.ExactArgs(0),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		_ = viper.BindPFlags(cmd.Flags())
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := exec.LookPath("mount")

@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ var runStage = &cobra.Command{
 	Short: "elemental run-stage",
 	Args:  cobra.MinimumNArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		_ = viper.BindPFlags(cmd.Flags())
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})

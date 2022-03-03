@@ -19,15 +19,16 @@ package cloudinit
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/mudler/yip/pkg/logger"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/twpayne/go-vfs"
-	"strings"
 )
 
 // layoutPlugin is the elemental's implementation of Layout yip's plugin based
@@ -40,12 +41,12 @@ func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins
 	var dev *partitioner.Disk
 	elemConsole, ok := console.(*cloudInitConsole)
 	if !ok {
-		return errors.New("Provided console is not an instance of 'cloudInitConsole' type!")
+		return errors.New("provided console is not an instance of 'cloudInitConsole' type")
 	}
 	runner := elemConsole.getRunner()
 	log, ok := l.(v1.Logger)
 	if !ok {
-		return errors.New("Provided logger is not implementing v1.Logger interface!")
+		return errors.New("provided logger is not implementing v1.Logger interface")
 	}
 
 	if len(strings.TrimSpace(s.Layout.Device.Label)) > 0 {

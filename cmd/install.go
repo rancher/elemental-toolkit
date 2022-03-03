@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ var installCmd = &cobra.Command{
 	Short: "elemental installer",
 	Args:  cobra.MaximumNArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		viper.BindEnv("target", "ELEMENTAL_TARGET")
-		viper.BindPFlags(cmd.Flags())
+		_ = viper.BindEnv("target", "ELEMENTAL_TARGET")
+		_ = viper.BindPFlags(cmd.Flags())
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := exec.LookPath("mount")

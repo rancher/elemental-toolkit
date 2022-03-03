@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package mocks
 
 import (
 	"errors"
+
 	"k8s.io/mount-utils"
 )
 
@@ -35,15 +36,8 @@ func NewErrorMounter() *ErrorMounter {
 	}
 }
 
-func (e ErrorMounter) prepare() {
-	if e.FakeMounter == nil {
-		e.FakeMounter = &mount.FakeMounter{}
-	}
-}
-
 // Mount will return an error if ErrorOnMount is true
 func (e ErrorMounter) Mount(source string, target string, fstype string, options []string) error {
-	e.prepare()
 	if e.ErrorOnMount {
 		return errors.New("mount error")
 	}
@@ -52,7 +46,6 @@ func (e ErrorMounter) Mount(source string, target string, fstype string, options
 
 // Unmount will return an error if ErrorOnUnmount is true
 func (e ErrorMounter) Unmount(target string) error {
-	e.prepare()
 	if e.ErrorOnUnmount {
 		return errors.New("unmount error")
 	}
@@ -60,12 +53,10 @@ func (e ErrorMounter) Unmount(target string) error {
 }
 
 func (e ErrorMounter) List() ([]mount.MountPoint, error) {
-	e.prepare()
 	return e.FakeMounter.List()
 }
 
 func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) {
-	e.prepare()
 	mnts, _ := e.List()
 	for _, mnt := range mnts {
 		if file == mnt.Path {

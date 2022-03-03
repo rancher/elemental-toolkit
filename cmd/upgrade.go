@@ -17,12 +17,13 @@ limitations under the License.
 package cmd
 
 import (
+	"os/exec"
+
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"os/exec"
 )
 
 // upgradeCmd represents the upgrade command
@@ -32,9 +33,9 @@ var upgradeCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// We bind the --recovery flag into RecoveryUpgrade value to have a more explicit var in the config
-		viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
+		_ = viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
 		// bind the rest of the flags into their direct values as they are mapped 1to1
-		viper.BindPFlags(cmd.Flags())
+		_ = viper.BindPFlags(cmd.Flags())
 	},
 
 	RunE: func(cmd *cobra.Command, args []string) error {

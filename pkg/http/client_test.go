@@ -45,7 +45,7 @@ var _ = Describe("HTTPClient", Label("http"), func() {
 		// Download a public elemental release
 		_, err := os.Stat(filepath.Join(destDir, "elemental-v0.0.13-Linux-x86_64.tar.gz"))
 		Expect(err).NotTo(BeNil())
-		Expect(client.GetUrl(log, source, destDir)).To(BeNil())
+		Expect(client.GetURL(log, source, destDir)).To(BeNil())
 		_, err = os.Stat(filepath.Join(destDir, "elemental-v0.0.13-Linux-x86_64.tar.gz"))
 		Expect(err).To(BeNil())
 	})
@@ -53,12 +53,12 @@ var _ = Describe("HTTPClient", Label("http"), func() {
 		// Download a public elemental release
 		_, err := os.Stat(filepath.Join(destDir, "testfile"))
 		Expect(err).NotTo(BeNil())
-		Expect(client.GetUrl(log, source, filepath.Join(destDir, "testfile"))).To(BeNil())
+		Expect(client.GetURL(log, source, filepath.Join(destDir, "testfile"))).To(BeNil())
 		_, err = os.Stat(filepath.Join(destDir, "testfile"))
 		Expect(err).To(BeNil())
 	})
 	It("Fails to download a non existing url", func() {
 		source := "http://nonexisting.stuff"
-		Expect(client.GetUrl(log, source, destDir)).NotTo(BeNil())
+		Expect(client.GetURL(log, source, destDir)).NotTo(BeNil())
 	})
 })

@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@ package mocks
 
 import (
 	"errors"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
-// FakeHttpClient is an implementation of HTTPClient interface used for testing
+// FakeHTTPClient is an implementation of HTTPClient interface used for testing
 // It stores Get calls into ClientCalls for easy checking of what was called
-type FakeHttpClient struct {
+type FakeHTTPClient struct {
 	ClientCalls []string
 	Error       bool
 }
 
-// Get will return a FakeHttpBody and store the url call into ClientCalls
-func (m *FakeHttpClient) GetUrl(log v1.Logger, url string, destination string) error {
+// GetURL will return a FakeHttpBody and store the url call into ClientCalls
+func (m *FakeHTTPClient) GetURL(log v1.Logger, url string, destination string) error {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
 	if m.Error {
@@ -39,7 +40,7 @@ func (m *FakeHttpClient) GetUrl(log v1.Logger, url string, destination string) e
 }
 
 // WasGetCalledWith is a helper method to confirm that the client wazs called with the give url
-func (m *FakeHttpClient) WasGetCalledWith(url string) bool {
+func (m *FakeHTTPClient) WasGetCalledWith(url string) bool {
 	for _, c := range m.ClientCalls {
 		if c == url {
 			return true

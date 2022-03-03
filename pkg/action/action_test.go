@@ -55,14 +55,14 @@ var _ = Describe("Actions", func() {
 	var logger v1.Logger
 	var mounter *v1mock.ErrorMounter
 	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHttpClient
+	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
-		client = &v1mock.FakeHttpClient{}
+		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
 		fs = afero.NewMemMapFs()
 		cloudInit = &v1mock.FakeCloudInitRunner{}

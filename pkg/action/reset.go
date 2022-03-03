@@ -18,12 +18,13 @@ package action
 
 import (
 	"errors"
+	"path/filepath"
+
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/afero"
-	"path/filepath"
 )
 
 func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
@@ -37,9 +38,9 @@ func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
 		if oem != nil {
 			extraMounts[oem.MountPoint] = "/oem"
 		}
-		return ActionChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
+		return ChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
 	}
-	return ActionHook(config, hook)
+	return Hook(config, hook)
 }
 
 // ResetSetup will set installation parameters according to
@@ -47,7 +48,7 @@ func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
 func ResetSetup(config *v1.RunConfig) error {
 	if !utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) &&
 		!utils.BootedFrom(config.Runner, config.SystemLabel) {
-		return errors.New("Reset can only be called from the recovery system")
+		return errors.New("reset can only be called from the recovery system")
 	}
 
 	SetupLuet(config)
@@ -101,7 +102,7 @@ func ResetSetup(config *v1.RunConfig) error {
 		config.Logger.Warnf("No Persistent partition found")
 	}
 
-	ResetImagesSetup(config)
+	_ = ResetImagesSetup(config)
 
 	return nil
 }
@@ -149,7 +150,7 @@ func ResetImagesSetup(config *v1.RunConfig) error {
 }
 
 // ResetRun will reset the cos system to by following several steps
-func ResetRun(config *v1.RunConfig) (err error) {
+func ResetRun(config *v1.RunConfig) (err error) { // nolint:gocyclo
 	ele := elemental.NewElemental(config)
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()

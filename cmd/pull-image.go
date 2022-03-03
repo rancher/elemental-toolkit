@@ -17,13 +17,14 @@ limitations under the License.
 package cmd
 
 import (
+	"path/filepath"
+
 	"github.com/docker/docker/api/types"
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
-	"path/filepath"
 )
 
 // pullImage represents the pull-image command

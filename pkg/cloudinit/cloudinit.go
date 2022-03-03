@@ -20,7 +20,7 @@ import (
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/twpayne/go-vfs"
 )
 
@@ -30,7 +30,7 @@ type YipCloudInitRunner struct {
 	console plugins.Console
 }
 
-// CloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
+// NewYipCloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
 func NewYipCloudInitRunner(l v1.Logger, r v1.Runner) *YipCloudInitRunner {
 	exec := executor.NewExecutor(

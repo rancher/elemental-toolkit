@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"errors"
+
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

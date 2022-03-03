@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ limitations under the License.
 package mocks
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -63,13 +62,13 @@ func (r *FakeRunner) ClearCmds() {
 // It facilitates testing commands with dynamic arguments (aka temporary files)
 func (r FakeRunner) CmdsMatch(cmdList [][]string) error {
 	if len(cmdList) != len(r.cmds) {
-		return errors.New(fmt.Sprintf("Number of calls mismatch, expected %d calls but got %d", len(cmdList), len(r.cmds)))
+		return fmt.Errorf("number of calls mismatch, expected %d calls but got %d", len(cmdList), len(r.cmds))
 	}
 	for i, cmd := range cmdList {
 		expect := strings.Join(cmd[:], " ")
 		got := strings.Join(r.cmds[i][:], " ")
 		if !strings.HasPrefix(got, expect) {
-			return errors.New(fmt.Sprintf("Expected command: '%s.*' got: '%s'", expect, got))
+			return fmt.Errorf("Expected command: '%s.*' got: '%s'", expect, got)
 		}
 	}
 	return nil
@@ -89,7 +88,7 @@ func (r FakeRunner) IncludesCmds(cmdList [][]string) error {
 			}
 		}
 		if !found {
-			return errors.New(fmt.Sprintf("Command '%s.*' not found", expect))
+			return fmt.Errorf("command '%s.*' not found", expect)
 		}
 	}
 	return nil
@@ -113,7 +112,7 @@ func (r FakeRunner) MatchMilestones(cmdList [][]string) error {
 	}
 
 	if len(cmdList) > 0 {
-		return errors.New(fmt.Sprintf("Command '%s' not executed", match))
+		return fmt.Errorf("command '%s' not executed", match)
 	}
 
 	return nil

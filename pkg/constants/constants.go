@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ const (
 	PersistentSize         = uint(0)
 	BiosSize               = uint(1)
 	ImgSize                = uint(3072)
-	HttpTimeout            = 60
+	HTTPTimeout            = 60
 	PartStage              = "partitioning"
 	IsoMnt                 = "/run/initramfs/live"
 	RecoveryDir            = "/run/cos/recovery"
@@ -87,6 +87,7 @@ const (
 	ActiveImgName   = "active"
 	PassiveImgName  = "passive"
 	RecoveryImgName = "recovery"
+	GPT             = "gpt"
 )
 
 func GetCloudInitPaths() []string {

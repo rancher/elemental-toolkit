@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@ limitations under the License.
 package http
 
 import (
-	"github.com/cavaliergopher/grab/v3"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"net/http"
 	"time"
+
+	"github.com/cavaliergopher/grab/v3"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
 type Client struct {
@@ -30,12 +31,12 @@ type Client struct {
 
 func NewClient() *Client {
 	client := grab.NewClient()
-	client.HTTPClient = &http.Client{Timeout: time.Second * constants.HttpTimeout}
+	client.HTTPClient = &http.Client{Timeout: time.Second * constants.HTTPTimeout}
 	return &Client{client: client}
 }
 
-// GetUrl attempts to download the contents of the given URL to the given destination
-func (c Client) GetUrl(log v1.Logger, url string, destination string) error {
+// GetURL attempts to download the contents of the given URL to the given destination
+func (c Client) GetURL(log v1.Logger, url string, destination string) error { // nolint:revive
 	req, err := grab.NewRequest(destination, url)
 	if err != nil {
 		log.Errorf("Failed creating a request to '%s'", url)

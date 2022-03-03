@@ -56,7 +56,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var runner *v1mock.FakeRunner
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHttpClient
+	var client *v1mock.FakeHTTPClient
 	var mounter *v1mock.ErrorMounter
 	var fs afero.Fs
 	var memLog *bytes.Buffer
@@ -65,7 +65,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
-		client = &v1mock.FakeHttpClient{}
+		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
 		fs = afero.NewMemMapFs()
 		config = conf.NewRunConfig(
@@ -155,7 +155,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				mounter.ErrorOnUnmount = true
 				_, err := chroot.Run("chroot-command")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("Failed closing chroot"))
+				Expect(err.Error()).To(ContainSubstring("failed closing chroot"))
 			})
 		})
 	})
@@ -442,22 +442,22 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("IsLocalUrl", Label("IsLocalUrl"), func() {
 		It("Detects a local url", func() {
-			local, err := utils.IsLocalUrl("file://some/path")
+			local, err := utils.IsLocalURL("file://some/path")
 			Expect(err).To(BeNil())
 			Expect(local).To(BeTrue())
 		})
 		It("Detects a local path", func() {
-			local, err := utils.IsLocalUrl("/some/path")
+			local, err := utils.IsLocalURL("/some/path")
 			Expect(err).To(BeNil())
 			Expect(local).To(BeTrue())
 		})
 		It("Detects a remote url", func() {
-			local, err := utils.IsLocalUrl("http://something.org")
+			local, err := utils.IsLocalURL("http://something.org")
 			Expect(err).To(BeNil())
 			Expect(local).To(BeFalse())
 		})
 		It("Fails on invalid URL", func() {
-			local, err := utils.IsLocalUrl("$htt:|//insane.stuff")
+			local, err := utils.IsLocalURL("$htt:|//insane.stuff")
 			Expect(err).NotTo(BeNil())
 			Expect(local).To(BeFalse())
 		})

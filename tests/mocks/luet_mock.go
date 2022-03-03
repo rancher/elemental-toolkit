@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package mocks
 
 import (
 	"errors"
+
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 )
 
@@ -37,7 +38,7 @@ func NewFakeLuet() *FakeLuet {
 
 func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 	l.unpackCalled = true
-	if l.OnUnpackError == true {
+	if l.OnUnpackError {
 		return errors.New("Luet install error")
 	}
 	return nil
@@ -45,7 +46,7 @@ func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 
 func (l *FakeLuet) UnpackFromChannel(target string, pkg string) error {
 	l.unpackFromChannelCalled = true
-	if l.OnUnpackFromChannelError == true {
+	if l.OnUnpackFromChannelError {
 		return errors.New("Luet install error")
 	}
 	return nil

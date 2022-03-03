@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"os"
 	"sort"
 	"strings"
+
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
 // Chroot represents the struct that will allow us to run commands inside a given chroot
@@ -115,7 +116,7 @@ func (c *Chroot) Close() error {
 	}
 	if len(failures) > 0 {
 		c.activeMounts = failures
-		return errors.New(fmt.Sprintf("Failed closing chroot environment. Unmount failures: %v", failures))
+		return fmt.Errorf("failed closing chroot environment. Unmount failures: %v", failures)
 	}
 	return nil
 }

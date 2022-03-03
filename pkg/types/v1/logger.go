@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package v1
 
 import (
 	"bytes"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Logger is the interface we want for our logger, so we can plug different ones easily
@@ -51,10 +52,7 @@ func DebugLevel() log.Level {
 }
 
 func IsDebugLevel(l Logger) bool {
-	if l.GetLevel() == DebugLevel() {
-		return true
-	}
-	return false
+	return l.GetLevel() == DebugLevel()
 }
 
 type LoggerOptions func(l Logger) error

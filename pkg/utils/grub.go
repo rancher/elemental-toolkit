@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ package utils
 import (
 	"errors"
 	"fmt"
-	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/spf13/afero"
 )
 
 // Grub is the struct that will allow us to install grub to the target device
 type Grub struct {
-	disk   string
 	config *v1.RunConfig
 }
 
@@ -42,7 +42,7 @@ func NewGrub(config *v1.RunConfig) *Grub {
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install() (err error) {
+func (g Grub) Install() (err error) { // nolint:gocyclo
 	var grubargs []string
 	var arch, grubdir, tty, finalContent string
 
@@ -116,7 +116,12 @@ func (g Grub) Install() (err error) {
 	}
 
 	grubConfTarget, err := g.config.Fs.Create(fmt.Sprintf("%s/grub.cfg", grubdir))
-	defer grubConfTarget.Close()
+	if err != nil {
+		return err
+	}
+	defer func(grubConfTarget afero.File) {
+		_ = grubConfTarget.Close()
+	}(grubConfTarget)
 
 	ttyExists, _ := afero.Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
 

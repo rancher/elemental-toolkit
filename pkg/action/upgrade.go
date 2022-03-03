@@ -18,14 +18,14 @@ package action
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/afero"
-	"k8s.io/mount-utils"
-	"os"
-	"path/filepath"
 )
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
@@ -63,12 +63,12 @@ func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
 			mountPoints[persistentDevice.MountPoint] = "/usr/local"
 		}
 
-		return ActionChrootHook(config, hook, config.Images[constants.ActiveImgName].MountPoint, mountPoints)
+		return ChrootHook(config, hook, config.Images[constants.ActiveImgName].MountPoint, mountPoints)
 	}
-	return ActionHook(config, hook)
+	return Hook(config, hook)
 }
 
-func (u *UpgradeAction) Run() (err error) {
+func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	var transitionImg string
 	var isSquashRecovery bool
 	var upgradeStateDir string
@@ -415,15 +415,6 @@ func (u *UpgradeAction) remove(path string) error {
 	if exists, _ := afero.Exists(u.Config.Fs, path); exists {
 		u.Debug("[Cleanup] Removing %s", path)
 		return u.Config.Fs.RemoveAll(path)
-	}
-	return nil
-}
-
-// remount attemps to remount the given mountpoint with the provided options. Does nothing if not mounted
-func (u *UpgradeAction) remount(m mount.MountPoint, opts ...string) error {
-	if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(m.Path); !notMounted {
-		u.Debug("[Cleanup] Remount %s", m.Path)
-		return u.Config.Mounter.Mount(m.Device, m.Path, m.Type, append([]string{"remount"}, opts...))
 	}
 	return nil
 }

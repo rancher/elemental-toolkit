@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package mocks
 
 import (
 	"errors"
+
 	"github.com/mudler/yip/pkg/schema"
 )
 
@@ -35,5 +36,4 @@ func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
 }
 
 func (ci *FakeCloudInitRunner) SetModifier(modifier schema.Modifier) {
-	return
 }

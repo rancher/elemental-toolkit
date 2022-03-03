@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ limitations under the License.
 package partitioner
 
 import (
-	"errors"
 	"fmt"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"regexp"
+
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
 type MkfsCall struct {
@@ -61,7 +61,7 @@ func (mkfs MkfsCall) buildOptions() ([]string, error) {
 		}
 		opts = append(opts, mkfs.dev)
 	default:
-		return []string{}, errors.New(fmt.Sprintf("Unsupported filesystem: %s", mkfs.fileSystem))
+		return []string{}, fmt.Errorf("unsupported filesystem: %s", mkfs.fileSystem)
 	}
 	return opts, nil
 }

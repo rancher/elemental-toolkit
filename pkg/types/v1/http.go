@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,5 +17,5 @@ limitations under the License.
 package v1
 
 type HTTPClient interface {
-	GetUrl(log Logger, url string, destination string) error
+	GetURL(log Logger, url string, destination string) error
 }
