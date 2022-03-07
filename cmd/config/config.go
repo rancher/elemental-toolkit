@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/rancher-sandbox/elemental/pkg/config"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
@@ -93,6 +94,9 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		}
 	}
 
+	v := version.Get()
+	cfg.Logger.Infof("Starting elemental version %s", v.Version)
+
 	cfgDefault := []string{"/etc/os-release", "/etc/cos/config", "/etc/cos-upgrade-image"}
 
 	for _, c := range cfgDefault {
@@ -103,13 +107,15 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		}
 	}
 
-	viper.AddConfigPath(configDir)
-	viper.SetConfigType("yaml")
-	viper.SetConfigName("config.yaml")
-	// If a config file is found, read it in.
-	err := viper.MergeInConfig()
-	if err != nil {
-		cfg.Logger.Warnf("error merging config files: %s", err)
+	if _, err := os.Stat(configDir); err == nil {
+		viper.AddConfigPath(configDir)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("config.yaml")
+		// If a config file is found, read it in.
+		err = viper.MergeInConfig()
+		if err != nil {
+			cfg.Logger.Warnf("error merging config files: %s", err)
+		}
 	}
 
 	// Load extra config files on configdir/config.d/ so we can override config values
@@ -139,10 +145,12 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// unmarshal all the vars into the config object
-	err = viper.Unmarshal(cfg)
+	err := viper.Unmarshal(cfg)
 	if err != nil {
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}
+
+	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
 
 	return cfg, nil
 }
