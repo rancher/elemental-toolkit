@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Install", Label("install", "cmd", "systemctl"), func() {
+var _ = Describe("Install", Label("install", "cmd", "systemctl", "root"), func() {
 	It("outputs usage if no DEVICE param", Label("args"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)

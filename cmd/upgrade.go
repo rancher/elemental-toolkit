@@ -31,11 +31,12 @@ var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "upgrade the system",
 	Args:  cobra.ExactArgs(0),
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		// We bind the --recovery flag into RecoveryUpgrade value to have a more explicit var in the config
 		_ = viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
 		// bind the rest of the flags into their direct values as they are mapped 1to1
 		_ = viper.BindPFlags(cmd.Flags())
+		return CheckRoot()
 	},
 
 	RunE: func(cmd *cobra.Command, args []string) error {

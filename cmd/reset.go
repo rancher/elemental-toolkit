@@ -31,8 +31,9 @@ var resetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "elemental reset OS",
 	Args:  cobra.ExactArgs(0),
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		_ = viper.BindPFlags(cmd.Flags())
+		return CheckRoot()
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := exec.LookPath("mount")

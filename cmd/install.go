@@ -32,9 +32,10 @@ var installCmd = &cobra.Command{
 	Use:   "install DEVICE",
 	Short: "elemental installer",
 	Args:  cobra.MaximumNArgs(1),
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		_ = viper.BindEnv("target", "ELEMENTAL_TARGET")
 		_ = viper.BindPFlags(cmd.Flags())
+		return CheckRoot()
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := exec.LookPath("mount")

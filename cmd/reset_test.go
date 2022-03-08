@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Reset", Label("reset", "cmd", "systemctl"), func() {
+var _ = Describe("Reset", Label("reset", "cmd", "systemctl", "root"), func() {
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		buf := new(bytes.Buffer)
 		rootCmd.SetOut(buf)

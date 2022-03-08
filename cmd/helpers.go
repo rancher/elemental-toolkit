@@ -17,20 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"errors"
+	"os"
 )
 
-var _ = Describe("Upgrade", Label("upgrade", "cmd", "systemctl", "root"), func() {
-	It("Returns error if both --docker-image and --directory flags are used", Label("flags"), func() {
-		buf := new(bytes.Buffer)
-		rootCmd.SetOut(buf)
-		rootCmd.SetErr(buf)
-		_, _, err := executeCommandC(rootCmd, "upgrade", "--docker-image", "img", "--directory", "/tmp")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
-		Expect(err).To(HaveOccurred())
-	})
-})
+// CheckRoot is a helper to return on PreRunE, so we can add it to commands that require root
+func CheckRoot() error {
+	if os.Geteuid() != 0 {
+		return errors.New("this command requires root privileges")
+	}
+	return nil
+}

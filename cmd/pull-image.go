@@ -29,11 +29,12 @@ import (
 
 // pullImage represents the pull-image command
 var pullImage = &cobra.Command{
-	Use:           "pull-image IMAGE DESTINATION",
-	Short:         "elemental pull-image",
-	Args:          cobra.ExactArgs(2),
-	SilenceUsage:  true, // Do not show usage on error
-	SilenceErrors: true, // Do not propagate errors down the line, we control them
+	Use:   "pull-image IMAGE DESTINATION",
+	Short: "elemental pull-image",
+	Args:  cobra.ExactArgs(2),
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return CheckRoot()
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
@@ -47,6 +48,10 @@ var pullImage = &cobra.Command{
 			cfg.Logger.Errorf("Invalid path %s", destination)
 			return err
 		}
+
+		// Set this after parsing of the flags, so it fails on parsing and prints usage properly
+		cmd.SilenceUsage = true
+		cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
 		verify, _ := cmd.Flags().GetBool("verify")
 		user, _ := cmd.Flags().GetString("auth-username")

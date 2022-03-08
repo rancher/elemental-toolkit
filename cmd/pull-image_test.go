@@ -22,9 +22,9 @@ import (
 	"os"
 )
 
-var _ = Describe("pull-image", Label("pull-image", "cmd"), func() {
+var _ = Describe("pull-image", Label("pull-image", "cmd", "root"), func() {
 	Describe("execution", func() {
-		It("executes command correctly", Label("root"), func() {
+		It("executes command correctly", func() {
 			d, err := os.MkdirTemp("", "elemental")
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(d)
@@ -44,28 +44,11 @@ var _ = Describe("pull-image", Label("pull-image", "cmd"), func() {
 			)
 			Expect(err).To(HaveOccurred())
 		})
-		It("fails when destination is missing", Label("args"), func() {
-			_, _, err := executeCommandC(
-				rootCmd,
-				"pull-image",
-				"fakeImage",
-			)
-			Expect(err).To(HaveOccurred())
-		})
 		It("fails when image is not an image", Label("args"), func() {
 			_, _, err := executeCommandC(
 				rootCmd,
 				"pull-image",
 				"fakeImage",
-				"fakeDest",
-			)
-			Expect(err).To(HaveOccurred())
-		})
-		It("fails when destination does not exists", Label("args"), func() {
-			_, _, err := executeCommandC(
-				rootCmd,
-				"pull-image",
-				"alpine",
 				"fakeDest",
 			)
 			Expect(err).To(HaveOccurred())
