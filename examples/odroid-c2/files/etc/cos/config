@@ -1,8 +1,8 @@
 # cOS configuration file
 # This file allows to tweak cOS configuration such as: default upgrade/recovery image and GRUB menu entry
 
-# Disable/enable image verification during upgrades ( default: true )
-VERIFY=false
+# Disable/enable image verification during upgrades ( default: false )
+NO_VERIFY=true
 
 # Disable cosign by default
 COSIGN=false
