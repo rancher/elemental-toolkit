@@ -59,7 +59,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var client *v1mock.FakeHTTPClient
 	var mounter *v1mock.ErrorMounter
 	var fs afero.Fs
-	var memLog *bytes.Buffer
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -621,6 +620,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("RunStage", Label("RunStage"), func() {
+		var memLog *bytes.Buffer
 		BeforeEach(func() {
 			// Use a different config with a buffer for logger, so we can check the output
 			// We also use the real fs

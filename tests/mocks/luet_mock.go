@@ -30,10 +30,7 @@ type FakeLuet struct {
 }
 
 func NewFakeLuet() *FakeLuet {
-	return &FakeLuet{
-		OnUnpackError: false,
-		unpackCalled:  false,
-	}
+	return &FakeLuet{}
 }
 
 func (l *FakeLuet) Unpack(target string, image string, local bool) error {

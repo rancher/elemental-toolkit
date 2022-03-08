@@ -437,6 +437,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
+			cmdFail = ""
 			el = elemental.NewElemental(config)
 			img = &v1.Image{
 				FS:         "ext2",

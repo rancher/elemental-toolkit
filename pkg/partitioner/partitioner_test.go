@@ -199,19 +199,19 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		var dev *part.Disk
 		var cmds [][]string
 		var printCmd []string
-		It("Creates a default disk", func() {
-			dev = part.NewDisk("/some/device")
-		})
 		BeforeEach(func() {
 			dev = part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(afero.NewMemMapFs()))
 			printCmd = []string{
 				"parted", "--script", "--machine", "--", "/some/device",
 				"unit", "s", "print",
 			}
+			cmds = [][]string{printCmd}
+		})
+		It("Creates a default disk", func() {
+			dev = part.NewDisk("/some/device")
 		})
 		Describe("Load data without changes", func() {
 			BeforeEach(func() {
-				cmds = [][]string{printCmd}
 				runner.ReturnValue = []byte(printOutput)
 			})
 			It("Loads disk layout data", func() {

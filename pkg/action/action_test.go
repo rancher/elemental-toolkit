@@ -80,6 +80,8 @@ var _ = Describe("Actions", func() {
 	Describe("Reset Setup", Label("resetsetup"), func() {
 		var lsblkTmpl, bootedFrom, blkidOut, label, cmdFail string
 		BeforeEach(func() {
+			label = ""
+			cmdFail = ""
 			fs.Create(constants.EfiDevice)
 			bootedFrom = constants.RecoverySquashFile
 			blkidOut = "/dev/device1"
@@ -142,6 +144,7 @@ var _ = Describe("Actions", func() {
 		var cmdFail, activeTree, activeMount string
 		var err error
 		BeforeEach(func() {
+			cmdFail = ""
 			activeTree, err = os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			activeMount, err = os.MkdirTemp("", "elemental")
@@ -201,7 +204,7 @@ var _ = Describe("Actions", func() {
 			config.ResetPersistent = true
 			Expect(action.ResetRun(config)).To(BeNil())
 		})
-		It("Successfully resets on squashfs recovery", func() {
+		It("Successfully resets on squashfs recovery", Label("squashfs"), func() {
 			config.PowerOff = true
 			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			Expect(action.ResetRun(config)).To(BeNil())
@@ -210,7 +213,7 @@ var _ = Describe("Actions", func() {
 			cloudInit.Error = true
 			Expect(action.ResetRun(config)).To(BeNil())
 		})
-		It("Successfully resets from a docker image", func() {
+		It("Successfully resets from a docker image", Label("docker"), func() {
 			config.Images.GetActive().Source = v1.NewDockerSrc("my/image:latest")
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
