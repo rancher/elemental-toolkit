@@ -21,9 +21,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs/vfst"
 	"k8s.io/mount-utils"
 )
 
@@ -31,7 +31,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("Config", func() {
 		Describe("ConfigOptions", func() {
 			It("Sets the proper interfaces in the config struct", func() {
-				fs := afero.NewMemMapFs()
+				fs, cleanup, err := vfst.NewTestFS(nil)
+				defer cleanup()
+				Expect(err).ToNot(HaveOccurred())
 				mounter := mount.NewFakeMounter([]mount.MountPoint{})
 				runner := v1mock.NewFakeRunner()
 				sysc := &v1mock.FakeSyscall{}
@@ -55,12 +57,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("ConfigOptions no mounter specified", Label("mount", "mounter"), func() {
 			It("should use the default mounter", Label("systemctl"), func() {
-				fs := afero.NewMemMapFs()
 				runner := v1mock.NewFakeRunner()
 				sysc := &v1mock.FakeSyscall{}
 				logger := v1.NewNullLogger()
 				c := config.NewRunConfig(
-					v1.WithFs(fs),
 					v1.WithRunner(runner),
 					v1.WithSyscall(sysc),
 					v1.WithLogger(logger),
@@ -72,7 +72,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			var c *v1.RunConfig
 
 			BeforeEach(func() {
-				fs := afero.NewMemMapFs()
+				fs, cleanup, err := vfst.NewTestFS(nil)
+				defer cleanup()
+				Expect(err).ToNot(HaveOccurred())
+
 				_, _ = fs.Create(constants.EfiDevice)
 
 				c = config.NewRunConfig(
@@ -81,7 +84,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					v1.WithRunner(v1mock.NewFakeRunner()),
 					v1.WithSyscall(&v1mock.FakeSyscall{}))
 				c.Partitions = []*v1.Partition{
-					&v1.Partition{
+					{
 						Label:      constants.StateLabel,
 						Size:       constants.StateSize,
 						Name:       constants.StatePartName,

@@ -30,7 +30,7 @@ import (
 
 	"github.com/joho/godotenv"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
 	"github.com/zloylos/grsync"
 )
 
@@ -90,8 +90,8 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (v1.Part
 	return v1.Partition{}, errors.New("no device found")
 }
 
-// CopyFile Copies source file to target file using afero.Fs interface
-func CopyFile(fs afero.Fs, source string, target string) (err error) {
+// CopyFile Copies source file to target file using Fs interface
+func CopyFile(fs v1.FS, source string, target string) (err error) {
 	sourceFile, err := fs.Open(source)
 	if err != nil {
 		return err
@@ -116,10 +116,10 @@ func CopyFile(fs afero.Fs, source string, target string) (err error) {
 	return err
 }
 
-// Copies source file to target file using afero.Fs interface
-func CreateDirStructure(fs afero.Fs, target string) error {
+// Copies source file to target file using Fs interface
+func CreateDirStructure(fs v1.FS, target string) error {
 	for _, dir := range []string{"run", "sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
-		err := fs.MkdirAll(fmt.Sprintf("%s/%s", target, dir), 0755)
+		err := MkdirAll(fs, fmt.Sprintf("%s/%s", target, dir), 0755)
 		if err != nil {
 			return err
 		}
@@ -129,13 +129,22 @@ func CreateDirStructure(fs afero.Fs, target string) error {
 
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
-func SyncData(source string, target string, excludes ...string) error {
+func SyncData(fs v1.FS, source string, target string, excludes ...string) error {
 	if !strings.HasSuffix(source, "/") {
 		source = fmt.Sprintf("%s/", source)
 	}
 
 	if !strings.HasSuffix(target, "/") {
 		target = fmt.Sprintf("%s/", target)
+	}
+
+	if fs != nil {
+		if s, err := fs.RawPath(source); err == nil {
+			source = s
+		}
+		if t, err := fs.RawPath(target); err == nil {
+			target = t
+		}
 	}
 
 	task := grsync.NewTask(
@@ -174,7 +183,7 @@ func Shutdown(runner v1.Runner, delay time.Duration) error {
 
 // CosignVerify runs a cosign validation for the give image and given public key. If no
 // key is provided then it attempts a keyless validation (experimental feature).
-func CosignVerify(fs afero.Fs, runner v1.Runner, image string, publicKey string, debug bool) (string, error) {
+func CosignVerify(fs v1.FS, runner v1.Runner, image string, publicKey string, debug bool) (string, error) {
 	args := []string{}
 
 	if debug {
@@ -189,12 +198,12 @@ func CosignVerify(fs afero.Fs, runner v1.Runner, image string, publicKey string,
 	args = append(args, image)
 
 	// Give each cosign its own tuf dir so it doesnt collide with others accessing the same files at the same time
-	tmpDir, err := afero.TempDir(fs, "", "cosign-tuf-")
+	tmpDir, err := TempDir(fs, "", "cosign-tuf-")
 	if err != nil {
 		return "", err
 	}
 	_ = os.Setenv("TUF_ROOT", tmpDir)
-	defer func(fs afero.Fs, path string) {
+	defer func(fs v1.FS, path string) {
 		_ = fs.RemoveAll(path)
 	}(fs, tmpDir)
 	defer func() {
@@ -223,7 +232,7 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 }
 
 // LoadEnvFile will try to parse the file given and return a map with the kye/values
-func LoadEnvFile(fs afero.Fs, file string) (map[string]string, error) {
+func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 	var envMap map[string]string
 	var err error
 
@@ -280,7 +289,7 @@ func GetSource(config *v1.RunConfig, source string, destination string) error {
 		return err
 	}
 
-	err = config.Fs.MkdirAll(filepath.Dir(destination), os.ModeDir)
+	err = vfs.MkdirAll(config.Fs, filepath.Dir(destination), os.ModeDir)
 	if err != nil {
 		return err
 	}

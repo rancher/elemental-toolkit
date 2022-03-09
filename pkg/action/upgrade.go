@@ -25,7 +25,6 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/spf13/afero"
 )
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
@@ -78,7 +77,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	// To check if we are on squash recovery we need to check different depending on where we are
 	if bootedFromRecovery {
 		// Here is simple, we just check if the file is there
-		if exists, _ := afero.Exists(u.Config.Fs, filepath.Join(constants.UpgradeRecoveryDir, "cOS", constants.RecoverySquashFile)); exists {
+		if exists, _ := utils.Exists(u.Config.Fs, filepath.Join(constants.UpgradeRecoveryDir, "cOS", constants.RecoverySquashFile)); exists {
 			isSquashRecovery = true
 		}
 	} else {
@@ -88,12 +87,12 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 			u.Error("Could not find device for %s label: %s", u.Config.RecoveryLabel, err)
 			return err
 		}
-		tmpMountDir, _ := afero.TempDir(u.Config.Fs, "", "elemental")
+		tmpMountDir, _ := utils.TempDir(u.Config.Fs, "", "elemental")
 		err = u.Config.Mounter.Mount(recoveryPart.Path, tmpMountDir, recoveryPart.FS, []string{})
 		if err != nil {
 			return err
 		}
-		if exists, _ := afero.Exists(u.Config.Fs, filepath.Join(tmpMountDir, "cOS", constants.RecoverySquashFile)); exists {
+		if exists, _ := utils.Exists(u.Config.Fs, filepath.Join(tmpMountDir, "cOS", constants.RecoverySquashFile)); exists {
 			isSquashRecovery = true
 		}
 		// Cleanup
@@ -127,7 +126,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		} else {
 			// We are upgrading the active so we need to mount the state label partition on /run/cos/state
 			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-			err = u.Config.Fs.MkdirAll(constants.StateDir, os.ModeDir)
+			err = utils.MkdirAll(u.Config.Fs, constants.StateDir, os.ModeDir)
 			if err != nil {
 				u.Error("Error creating dir %s: %s", constants.StateDir, err)
 				return err
@@ -152,7 +151,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 				// Failure to get the system label, fallback tor recovery label
 				recoveryPart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
 			}
-			err = u.Config.Fs.MkdirAll(constants.RecoveryDir, os.ModeDir)
+			err = utils.MkdirAll(u.Config.Fs, constants.RecoveryDir, os.ModeDir)
 			if err != nil {
 				u.Error("Error creating dir %s: %s", constants.RecoveryDir, err)
 				return err
@@ -191,7 +190,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	if bootedFromRecovery {
 		persistentPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.PersistentLabel, 2)
 		if err == nil {
-			err := u.Config.Fs.MkdirAll(constants.PersistentDir, os.ModeDir)
+			err := utils.MkdirAll(u.Config.Fs, constants.PersistentDir, os.ModeDir)
 			if err == nil {
 				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, persistentPart.FS, []string{})
 				if err != nil {
@@ -218,7 +217,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
 	u.Debug("Upgrade temp dir: %s", upgradeTempDir)
 
-	err = u.Config.Fs.MkdirAll(upgradeTempDir, os.ModeDir)
+	err = utils.MkdirAll(u.Config.Fs, upgradeTempDir, os.ModeDir)
 	if err != nil {
 		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
 		return err
@@ -257,7 +256,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	}
 
 	for _, d := range []string{"proc", "boot", "dev", "sys", "tmp", "usr/local", "oem"} {
-		_ = u.Config.Fs.MkdirAll(filepath.Join(upgradeTempDir, d), os.ModeDir)
+		_ = utils.MkdirAll(u.Config.Fs, filepath.Join(upgradeTempDir, d), os.ModeDir)
 	}
 
 	err = upgradeHook(u.Config, "before-upgrade", false)
@@ -289,7 +288,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	if err == nil {
 		// If its not mounted, mount it so we can rebrand then unmount it
 		if statePartForRecovery.MountPoint == "" {
-			_ = u.Config.Fs.MkdirAll(constants.StateDir, os.ModeDir)
+			_ = utils.MkdirAll(u.Config.Fs, constants.StateDir, os.ModeDir)
 			if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(constants.StateDir); notMounted {
 				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, statePartForRecovery.FS, []string{"rw"})
 				if err != nil {
@@ -412,7 +411,7 @@ func (u *UpgradeAction) unmount(path string) error {
 
 // remove attempts to remove the given path. Does nothing if it doesn't exist
 func (u *UpgradeAction) remove(path string) error {
-	if exists, _ := afero.Exists(u.Config.Fs, path); exists {
+	if exists, _ := utils.Exists(u.Config.Fs, path); exists {
 		u.Debug("[Cleanup] Removing %s", path)
 		return u.Config.Fs.RemoveAll(path)
 	}

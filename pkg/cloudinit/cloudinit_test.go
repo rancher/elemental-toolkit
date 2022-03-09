@@ -26,9 +26,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	. "github.com/rancher-sandbox/elemental/pkg/cloudinit"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
-	"github.com/spf13/afero"
 	"github.com/twpayne/go-vfs/vfst"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -42,13 +42,11 @@ const printOutput = `BYT;
 2:98304s:29394943s:29296640s:ext4::boot, type=83;
 3:29394944s:45019135s:15624192s:ext4::type=83;`
 
-var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
+var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init", "root"), func() {
 	// unit test stolen from yip
 	Describe("loading yaml files", func() {
 		logger := logrus.New()
 		logger.SetOutput(ioutil.Discard)
-
-		runner := NewYipCloudInitRunner(logger, &v1.RealRunner{})
 
 		It("executes commands", func() {
 
@@ -83,7 +81,8 @@ stages:
 			err = fs2.WriteFile("/tmp/test/bar", []byte(`boo`), os.ModePerm)
 			Expect(err).Should(BeNil())
 
-			runner.SetFs(fs)
+			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+
 			err = runner.Run("test", "/some/yip")
 			Expect(err).Should(BeNil())
 			file, err := os.Open(temp + "/tmp/test/bar")
@@ -99,19 +98,20 @@ stages:
 	})
 	Describe("layout plugin execution", func() {
 		var runner *v1mock.FakeRunner
-		var cloudRunner *YipCloudInitRunner
-		var afs afero.Fs
+		var afs v1.FS
 		var tmpf, cmdFail string
 		var partNum int
+		var cleanup func()
+		logger := logrus.New()
+		logger.SetOutput(ioutil.Discard)
 		BeforeEach(func() {
-			afs = afero.NewOsFs()
-			f, err := afero.TempFile(afs, "", "cloudinit-test")
+			afs, cleanup, _ = vfst.NewTestFS(nil)
+			afs.Mkdir("/tmp", os.ModePerm)
+			f, err := utils.TempFile(afs, "", "cloudinit-test")
 			Expect(err).To(BeNil())
 			tmpf = f.Name()
 			runner = v1mock.NewFakeRunner()
-			logger := logrus.New()
-			logger.SetOutput(ioutil.Discard)
-			cloudRunner = NewYipCloudInitRunner(logger, runner)
+
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == cmdFail {
 					return []byte{}, errors.New("command error")
@@ -141,6 +141,7 @@ stages:
 		})
 		AfterEach(func() {
 			afs.Remove(tmpf)
+			cleanup()
 		})
 		It("Does nothing if no changes are defined", func() {
 			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
@@ -168,7 +169,7 @@ stages:
 `, tmpf),
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Expands last partition on a MSDOS disk", func() {
@@ -186,7 +187,7 @@ stages:
 `, tmpf),
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Adds a partition on a MSDOS disk", func() {
@@ -205,7 +206,7 @@ stages:
 `, tmpf),
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Fails to add a partition on a MSDOS disk", func() {
@@ -225,7 +226,7 @@ stages:
 `, tmpf),
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to expand last partition", func() {
@@ -244,7 +245,7 @@ stages:
 `, tmpf),
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to find device by path", func() {
@@ -259,7 +260,7 @@ stages:
 `,
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to find device by label", func() {
@@ -274,7 +275,7 @@ stages:
 `,
 			})
 			defer cleanup()
-			cloudRunner.SetFs(fs)
+			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 	})

@@ -32,7 +32,7 @@ type YipCloudInitRunner struct {
 
 // NewYipCloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
-func NewYipCloudInitRunner(l v1.Logger, r v1.Runner) *YipCloudInitRunner {
+func NewYipCloudInitRunner(l v1.Logger, r v1.Runner, fs vfs.FS) *YipCloudInitRunner {
 	exec := executor.NewExecutor(
 		executor.WithConditionals(
 			plugins.NodeConditional,
@@ -63,7 +63,7 @@ func NewYipCloudInitRunner(l v1.Logger, r v1.Runner) *YipCloudInitRunner {
 		),
 	)
 	return &YipCloudInitRunner{
-		exec: exec, fs: vfs.OSFS,
+		exec: exec, fs: fs,
 		console: newCloudInitConsole(l, r),
 	}
 }

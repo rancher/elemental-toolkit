@@ -20,22 +20,24 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"testing"
+
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
 	"k8s.io/mount-utils"
-	"os"
-	"path/filepath"
-	"runtime"
-	"testing"
 )
 
 const printOutput = `BYT;
@@ -48,15 +50,16 @@ func TestElementalSuite(t *testing.T) {
 	RunSpecs(t, "Actions test suite")
 }
 
-var _ = Describe("Actions", func() {
+var _ = Describe("Actions", Label("root"), func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
-	var fs afero.Fs
+	var fs vfs.FS
 	var logger v1.Logger
 	var mounter *v1mock.ErrorMounter
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
+	var cleanup func()
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -64,7 +67,10 @@ var _ = Describe("Actions", func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
-		fs = afero.NewMemMapFs()
+		var err error
+		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
+		Expect(err).Should(BeNil())
+
 		cloudInit = &v1mock.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			v1.WithFs(fs),
@@ -76,6 +82,8 @@ var _ = Describe("Actions", func() {
 			v1.WithCloudInitRunner(cloudInit),
 		)
 	})
+
+	AfterEach(func() { cleanup() })
 
 	Describe("Reset Setup", Label("resetsetup"), func() {
 		var lsblkTmpl, bootedFrom, blkidOut, label, cmdFail string
@@ -145,12 +153,23 @@ var _ = Describe("Actions", func() {
 		var err error
 		BeforeEach(func() {
 			cmdFail = ""
-			activeTree, err = os.MkdirTemp("", "elemental")
+			activeTree, err = utils.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			activeMount, err = os.MkdirTemp("", "elemental")
+			activeMount, err = utils.TempDir(fs, "", "elemental")
 			Expect(err).To(BeNil())
-			fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
-			fs.Create(filepath.Join(activeMount, constants.GrubConf))
+
+			utils.MkdirAll(fs, filepath.Join(constants.RunningStateDir, "cOS"), os.ModePerm)
+			_, e := fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
+			Expect(e).ShouldNot(HaveOccurred())
+			_, e = fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
+			Expect(e).ShouldNot(HaveOccurred())
+
+			utils.MkdirAll(fs, activeMount, os.ModePerm)
+			utils.MkdirAll(fs, filepath.Join(activeMount, filepath.Dir(constants.GrubConf)), os.ModePerm)
+
+			_, err := fs.Create(filepath.Join(activeMount, constants.GrubConf))
+			Expect(err).ShouldNot(HaveOccurred())
+
 			statePart = &v1.Partition{
 				Label:      constants.StateLabel,
 				Path:       "/dev/device1",
@@ -259,9 +278,10 @@ var _ = Describe("Actions", func() {
 	Describe("Install Setup", Label("installsetup"), func() {
 		Describe("On efi system", Label("efi"), func() {
 			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
-				_, _ = fs.Create(constants.EfiDevice)
-				err := action.InstallSetup(config)
-				Expect(err).To(BeNil())
+				utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), os.ModePerm)
+				_, err := fs.Create(constants.EfiDevice)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(action.InstallSetup(config)).ShouldNot(HaveOccurred())
 				Expect(config.PartTable).To(Equal(v1.GPT))
 				Expect(config.BootFlag).To(Equal(v1.ESP))
 			})
@@ -320,14 +340,33 @@ var _ = Describe("Actions", func() {
 		var err error
 
 		BeforeEach(func() {
-			activeTree, err = os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			activeMount, err = os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			fs.Create(filepath.Join(activeMount, constants.GrubConf))
+			activeTree, err = utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			activeMount, err = utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			utils.MkdirAll(fs, filepath.Join(constants.RunningStateDir, "cOS"), os.ModePerm)
+			_, e := fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
+			Expect(e).ShouldNot(HaveOccurred())
+			_, e = fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
+			Expect(e).ShouldNot(HaveOccurred())
+
+			utils.MkdirAll(fs, activeMount, os.ModePerm)
+			utils.MkdirAll(fs, filepath.Join(activeMount, filepath.Dir(constants.GrubConf)), os.ModePerm)
+
+			_, err := fs.Create(filepath.Join(activeMount, constants.GrubConf))
+			Expect(err).ShouldNot(HaveOccurred())
+
+			utils.MkdirAll(fs, activeMount, os.ModePerm)
+			utils.MkdirAll(fs, "/disk", os.ModePerm)
+
+			_, err = fs.Create(filepath.Join(activeMount, constants.GrubConf))
+			Expect(err).ShouldNot(HaveOccurred())
+
 			activeSize = 16
 			device = "/disk/device"
-			fs.Create(device)
+			_, err = fs.Create(device)
+			Expect(err).ShouldNot(HaveOccurred())
 
 			partNum := 0
 			partedOut := printOutput
@@ -414,7 +453,9 @@ var _ = Describe("Actions", func() {
 			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			config.Images.GetActive().MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
-			fs.Create(filepath.Join(constants.OEMDir, "99_custom.yaml"))
+			utils.MkdirAll(fs, constants.OEMDir, os.ModePerm)
+			_, err := fs.Create(filepath.Join(constants.OEMDir, "99_custom.yaml"))
+			Expect(err).ShouldNot(HaveOccurred())
 			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
@@ -485,7 +526,7 @@ var _ = Describe("Actions", func() {
 
 		It("Fails to create a filesystem image", Label("disk", "image"), func() {
 			config.Target = device
-			config.Fs = afero.NewReadOnlyFs(fs)
+			config.Fs = vfs.NewReadOnlyFS(fs)
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
@@ -567,7 +608,14 @@ var _ = Describe("Actions", func() {
 			config.RecoveryImage = "system/cos-config"
 			config.ImgSize = 10
 			// Create fake /etc/os-release
-			_ = afero.WriteFile(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc"), os.ModePerm)
+
+			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			// Create paths used by tests
+			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), os.ModePerm)
+			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.UpgradeRecoveryDir), os.ModePerm)
 		})
 		It("Fails if some hook fails and strict is set", func() {
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -613,22 +661,22 @@ var _ = Describe("Actions", func() {
 					}
 					if command == "mv" && args[0] == "-f" && args[1] == activeImg && args[2] == passiveImg {
 						// we doing backup, do the "move"
-						source, _ := afero.ReadFile(fs, activeImg)
-						_ = afero.WriteFile(fs, passiveImg, source, os.ModePerm)
+						source, _ := fs.ReadFile(activeImg)
+						_ = fs.WriteFile(passiveImg, source, os.ModePerm)
 						_ = fs.RemoveAll(activeImg)
 					}
 					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
 						// we doing the image substitution, do the "move"
-						source, _ := afero.ReadFile(fs, transitionImg)
-						_ = afero.WriteFile(fs, activeImg, source, os.ModePerm)
+						source, _ := fs.ReadFile(transitionImg)
+						_ = fs.WriteFile(activeImg, source, os.ModePerm)
 						_ = fs.RemoveAll(transitionImg)
 					}
 					return []byte{}, nil
 				}
 				config.Runner = runner
 				// Create fake active/passive files
-				_ = afero.WriteFile(fs, activeImg, []byte("active"), os.ModePerm)
-				_ = afero.WriteFile(fs, passiveImg, []byte("passive"), os.ModePerm)
+				_ = fs.WriteFile(activeImg, []byte("active"), os.ModePerm)
+				_ = fs.WriteFile(passiveImg, []byte("passive"), os.ModePerm)
 			})
 			AfterEach(func() {
 				_ = fs.RemoveAll(activeImg)
@@ -665,7 +713,7 @@ var _ = Describe("Actions", func() {
 				// As this was generated by us at the start test and moved by the upgrade from active.iomg
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
-				f, _ := afero.ReadFile(fs, passiveImg)
+				f, _ := fs.ReadFile(passiveImg)
 				// This should be a backup so it should read active
 				Expect(f).To(ContainSubstring("active"))
 
@@ -674,11 +722,11 @@ var _ = Describe("Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 			It("Successfully upgrades from directory", Label("directory", "root"), func() {
-				config.Directory, _ = os.MkdirTemp("", "elemental")
+				config.Directory, _ = utils.TempDir(fs, "", "elemental")
 				// Create the dir on real os as rsync works on the real os
-				defer os.RemoveAll(config.Directory)
+				defer fs.RemoveAll(config.Directory)
 				// create a random file on it
-				err := os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+				err := fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 				Expect(err).ToNot(HaveOccurred())
 
 				upgrade = action.NewUpgradeAction(config)
@@ -703,7 +751,7 @@ var _ = Describe("Actions", func() {
 				// As this was generated by us at the start test and moved by the upgrade from active.iomg
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
-				f, _ := afero.ReadFile(fs, passiveImg)
+				f, _ := fs.ReadFile(passiveImg)
 				// This should be a backup so it should read active
 				Expect(f).To(ContainSubstring("active"))
 
@@ -770,7 +818,7 @@ var _ = Describe("Actions", func() {
 				// As this was generated by us at the start test and moved by the upgrade from active.iomg
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
-				f, _ := afero.ReadFile(fs, passiveImg)
+				f, _ := fs.ReadFile(passiveImg)
 				// This should be a backup so it should read active
 				Expect(f).To(ContainSubstring("active"))
 
@@ -800,16 +848,16 @@ var _ = Describe("Actions", func() {
 					}
 					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
 						// we doing the image substitution, do the "move"
-						source, _ := afero.ReadFile(fs, transitionImg)
-						_ = afero.WriteFile(fs, activeImg, source, os.ModePerm)
+						source, _ := fs.ReadFile(transitionImg)
+						_ = fs.WriteFile(activeImg, source, os.ModePerm)
 						_ = fs.RemoveAll(transitionImg)
 					}
 					return []byte{}, nil
 				}
 				config.Runner = runner
 				// Create fake active/passive files
-				_ = afero.WriteFile(fs, activeImg, []byte("active"), os.ModePerm)
-				_ = afero.WriteFile(fs, passiveImg, []byte("passive"), os.ModePerm)
+				_ = fs.WriteFile(activeImg, []byte("active"), os.ModePerm)
+				_ = fs.WriteFile(passiveImg, []byte("passive"), os.ModePerm)
 			})
 			AfterEach(func() {
 				_ = fs.RemoveAll(activeImg)
@@ -845,7 +893,7 @@ var _ = Describe("Actions", func() {
 				// As this was generated by us at the start test and moved by the upgrade from active.iomg
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
-				f, _ := afero.ReadFile(fs, passiveImg)
+				f, _ := fs.ReadFile(passiveImg)
 				Expect(f).To(ContainSubstring("passive"))
 
 				// Expect transition image to be gone
@@ -880,8 +928,8 @@ var _ = Describe("Actions", func() {
 						}
 						if command == "mv" && args[0] == "-f" && args[1] == transitionImgSquash && args[2] == recoveryImgSquash {
 							// fake "move"
-							f, _ := afero.ReadFile(fs, transitionImgSquash)
-							_ = afero.WriteFile(fs, recoveryImgSquash, f, os.ModePerm)
+							f, _ := fs.ReadFile(transitionImgSquash)
+							_ = fs.WriteFile(recoveryImgSquash, f, os.ModePerm)
 							_ = fs.RemoveAll(transitionImgSquash)
 						}
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
@@ -893,7 +941,7 @@ var _ = Describe("Actions", func() {
 					}
 					config.Runner = runner
 					// Create recoveryImgSquash so ti identifies that we are using squash recovery
-					_ = afero.WriteFile(fs, recoveryImgSquash, []byte("recovery"), os.ModePerm)
+					_ = fs.WriteFile(recoveryImgSquash, []byte("recovery"), os.ModePerm)
 				})
 				AfterEach(func() {
 					_ = fs.RemoveAll(activeImg)
@@ -906,7 +954,7 @@ var _ = Describe("Actions", func() {
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := afero.ReadFile(fs, recoveryImgSquash)
+					f, _ := fs.ReadFile(recoveryImgSquash)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.DockerImg = "alpine"
@@ -931,7 +979,7 @@ var _ = Describe("Actions", func() {
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically("==", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ = afero.ReadFile(fs, recoveryImgSquash)
+					f, _ = fs.ReadFile(recoveryImgSquash)
 					Expect(f).ToNot(ContainSubstring("recovery"))
 
 					// Transition squash should not exist
@@ -940,11 +988,11 @@ var _ = Describe("Actions", func() {
 
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
-					config.Directory, _ = os.MkdirTemp("", "elemental")
+					config.Directory, _ = utils.TempDir(fs, "", "elemental")
 					// Create the dir on real os as rsync works on the real os
-					defer os.RemoveAll(config.Directory)
+					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()
@@ -980,7 +1028,7 @@ var _ = Describe("Actions", func() {
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := afero.ReadFile(fs, recoveryImgSquash)
+					f, _ := fs.ReadFile(recoveryImgSquash)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.ChannelUpgrades = true
@@ -1034,7 +1082,7 @@ var _ = Describe("Actions", func() {
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically("==", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ = afero.ReadFile(fs, recoveryImgSquash)
+					f, _ = fs.ReadFile(recoveryImgSquash)
 					Expect(f).ToNot(ContainSubstring("recovery"))
 
 					// Transition squash should not exist
@@ -1059,8 +1107,8 @@ var _ = Describe("Actions", func() {
 						}
 						if command == "mv" && args[0] == "-f" && args[1] == transitionImgRecovery && args[2] == recoveryImg {
 							// fake "move"
-							f, _ := afero.ReadFile(fs, transitionImgRecovery)
-							_ = afero.WriteFile(fs, recoveryImg, f, os.ModePerm)
+							f, _ := fs.ReadFile(transitionImgRecovery)
+							_ = fs.WriteFile(recoveryImg, f, os.ModePerm)
 							_ = fs.RemoveAll(transitionImgRecovery)
 						}
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
@@ -1070,7 +1118,7 @@ var _ = Describe("Actions", func() {
 						return []byte{}, nil
 					}
 					config.Runner = runner
-					_ = afero.WriteFile(fs, recoveryImg, []byte("recovery"), os.ModePerm)
+					_ = fs.WriteFile(recoveryImg, []byte("recovery"), os.ModePerm)
 
 				})
 				AfterEach(func() {
@@ -1086,7 +1134,7 @@ var _ = Describe("Actions", func() {
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := afero.ReadFile(fs, recoveryImg)
+					f, _ := fs.ReadFile(recoveryImg)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.DockerImg = "alpine"
@@ -1114,17 +1162,17 @@ var _ = Describe("Actions", func() {
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
-						exists, _ := afero.Exists(fs, img)
-						Expect(exists).To(BeFalse())
+						_, err := fs.Stat(img)
+						Expect(err).To(HaveOccurred())
 					}
 
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
-					config.Directory, _ = os.MkdirTemp("", "elemental")
+					config.Directory, _ = utils.TempDir(fs, "", "elemental")
 					// Create the dir on real os as rsync works on the real os
-					defer os.RemoveAll(config.Directory)
+					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = os.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()
@@ -1160,7 +1208,7 @@ var _ = Describe("Actions", func() {
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := afero.ReadFile(fs, recoveryImg)
+					f, _ := fs.ReadFile(recoveryImg)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.ChannelUpgrades = true
@@ -1220,8 +1268,8 @@ var _ = Describe("Actions", func() {
 
 					// Expect the rest of the images to not be there
 					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
-						exists, _ := afero.Exists(fs, img)
-						Expect(exists).To(BeFalse())
+						_, err := fs.Stat(img)
+						Expect(err).To(HaveOccurred())
 					}
 				})
 			})

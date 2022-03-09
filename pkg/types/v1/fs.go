@@ -14,31 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package partitioner
+package v1
 
 import (
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"io/fs"
+	"os"
 )
 
-type DiskOptions func(d *Disk) error
-
-func WithFS(fs v1.FS) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.fs = fs
-		return nil
-	}
-}
-
-func WithRunner(runner v1.Runner) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.runner = runner
-		return nil
-	}
-}
-
-func WithLogger(logger v1.Logger) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.logger = logger
-		return nil
-	}
+type FS interface {
+	Open(name string) (*os.File, error)
+	Chmod(name string, mode os.FileMode) error
+	Create(name string) (*os.File, error)
+	Mkdir(name string, perm os.FileMode) error
+	Stat(name string) (os.FileInfo, error)
+	RemoveAll(path string) error
+	ReadFile(filename string) ([]byte, error)
+	RawPath(name string) (string, error)
+	Remove(name string) error
+	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
+	WriteFile(filename string, data []byte, perm os.FileMode) error
 }

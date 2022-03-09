@@ -18,12 +18,14 @@ package partitioner_test
 
 import (
 	"errors"
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
 	mocks "github.com/rancher-sandbox/elemental/tests/mocks"
-	"github.com/spf13/afero"
-	"testing"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
 )
 
 const printOutput = `BYT;
@@ -199,8 +201,13 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		var dev *part.Disk
 		var cmds [][]string
 		var printCmd []string
+		var fs vfs.FS
+		var cleanup func()
+
 		BeforeEach(func() {
-			dev = part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(afero.NewMemMapFs()))
+			fs, cleanup, _ = vfst.NewTestFS(nil)
+
+			dev = part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(fs))
 			printCmd = []string{
 				"parted", "--script", "--machine", "--", "/some/device",
 				"unit", "s", "print",
@@ -210,6 +217,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		It("Creates a default disk", func() {
 			dev = part.NewDisk("/some/device")
 		})
+		AfterEach(func() { cleanup() })
 		Describe("Load data without changes", func() {
 			BeforeEach(func() {
 				runner.ReturnValue = []byte(printOutput)

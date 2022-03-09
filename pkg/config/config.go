@@ -21,14 +21,14 @@ import (
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/http"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
 )
 
 func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 	log := v1.NewLogger()
 	r := &v1.RunConfig{
-		Fs:      afero.NewOsFs(),
+		Fs:      vfs.OSFS,
 		Logger:  log,
 		Runner:  &v1.RealRunner{},
 		Syscall: &v1.RealSyscall{},
@@ -45,7 +45,7 @@ func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 	// at the start of NewRunConfig, as WithLogger can be passed on init, and that would result in 2 different logger
 	// instances, on on the config.Logger and the other on config.CloudInitRunner
 	if r.CloudInitRunner == nil {
-		r.CloudInitRunner = cloudinit.NewYipCloudInitRunner(r.Logger, r.Runner)
+		r.CloudInitRunner = cloudinit.NewYipCloudInitRunner(r.Logger, r.Runner, vfs.OSFS)
 	}
 
 	if r.Mounter == nil {

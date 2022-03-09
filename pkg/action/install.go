@@ -26,7 +26,6 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/spf13/afero"
 )
 
 func installHook(config *v1.RunConfig, hook string, chroot bool) error {
@@ -90,7 +89,7 @@ func InstallImagesSetup(config *v1.RunConfig) error {
 	squashedImgSource := filepath.Join(cnst.IsoMnt, cnst.RecoverySquashFile)
 
 	recoveryImg := v1.Image{}
-	if exists, _ := afero.Exists(config.Fs, squashedImgSource); exists {
+	if exists, _ := utils.Exists(config.Fs, squashedImgSource); exists {
 		recoveryImg.File = filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
 		recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
 		recoveryImg.FS = cnst.SquashFs

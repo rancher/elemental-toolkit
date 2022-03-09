@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -35,7 +34,8 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
 )
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
@@ -46,11 +46,6 @@ func getNamesFromListFiles(list []os.FileInfo) []string {
 	return names
 }
 
-func TestCommonSuite(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Elemental utils suite")
-}
-
 var _ = Describe("Utils", Label("utils"), func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
@@ -58,7 +53,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var mounter *v1mock.ErrorMounter
-	var fs afero.Fs
+	var fs vfs.FS
+	var cleanup func()
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -66,7 +62,12 @@ var _ = Describe("Utils", Label("utils"), func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
-		fs = afero.NewMemMapFs()
+		// Ensure /tmp exists in the VFS
+		fs, cleanup, _ = vfst.NewTestFS(nil)
+		fs.Mkdir("/tmp", os.ModePerm)
+		fs.Mkdir("/run", os.ModePerm)
+		fs.Mkdir("/etc", os.ModePerm)
+
 		config = conf.NewRunConfig(
 			v1.WithFs(fs),
 			v1.WithRunner(runner),
@@ -76,6 +77,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 			v1.WithClient(client),
 		)
 	})
+	AfterEach(func() { cleanup() })
+
 	Describe("Chroot", Label("chroot"), func() {
 		var chroot *utils.Chroot
 		BeforeEach(func() {
@@ -210,7 +213,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			)).To(BeNil())
 		})
 		It("Fails to to create temporary directories", func() {
-			_, err := utils.CosignVerify(afero.NewReadOnlyFs(fs), runner, "some/image:latest", "", true)
+			_, err := utils.CosignVerify(vfs.NewReadOnlyFS(fs), runner, "some/image:latest", "", true)
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -316,23 +319,33 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("CopyFile", Label("CopyFile"), func() {
 		It("Copies source to target", func() {
-			fs.Create("/some/file")
-			_, err := fs.Stat("/some/otherfile")
-			Expect(err).NotTo(BeNil())
-			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).To(BeNil())
+			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create("/some/file")
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Stat("/some/otherfile")
+			Expect(err).Should(HaveOccurred())
+			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).ShouldNot(HaveOccurred())
 			_, err = fs.Stat("/some/otherfile")
 			Expect(err).To(BeNil())
+			e, err := utils.Exists(fs, "/some/otherfile")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(e).To(BeTrue())
 		})
 		It("Fails to open non existing file", func() {
+			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			Expect(err).ShouldNot(HaveOccurred())
 			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).NotTo(BeNil())
-			_, err := fs.Stat("/some/otherfile")
+			_, err = fs.Stat("/some/otherfile")
 			Expect(err).NotTo(BeNil())
 		})
 		It("Fails to copy on non writable target", func() {
+			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			Expect(err).ShouldNot(HaveOccurred())
 			fs.Create("/some/file")
-			_, err := fs.Stat("/some/otherfile")
+			_, err = fs.Stat("/some/otherfile")
 			Expect(err).NotTo(BeNil())
-			fs = afero.NewReadOnlyFs(fs)
+			fs = vfs.NewReadOnlyFS(fs)
 			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).NotTo(BeNil())
 			_, err = fs.Stat("/some/otherfile")
 			Expect(err).NotTo(BeNil())
@@ -347,7 +360,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			}
 		})
 		It("Fails on non writable target", func() {
-			fs = afero.NewReadOnlyFs(fs)
+			fs = vfs.NewReadOnlyFS(fs)
 			Expect(utils.CreateDirStructure(fs, "/my/root")).NotTo(BeNil())
 		})
 	})
@@ -364,7 +377,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = os.CreateTemp(sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(nil, sourceDir, destDir)).To(BeNil())
 
 			filesDest, err := ioutil.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -393,7 +406,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = os.CreateTemp(sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(sourceDir, destDir, "host", "run")).To(BeNil())
+			Expect(utils.SyncData(nil, sourceDir, destDir, "host", "run")).To(BeNil())
 
 			filesDest, err := ioutil.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -424,19 +437,19 @@ var _ = Describe("Utils", Label("utils"), func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			Expect(utils.SyncData(sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(nil, sourceDir, destDir)).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(sourceDir)
-			Expect(utils.SyncData(sourceDir, "/welp")).NotTo(BeNil())
+			Expect(utils.SyncData(nil, sourceDir, "/welp")).NotTo(BeNil())
 		})
 		It("should fail if source does not exist", func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			Expect(utils.SyncData("/welp", destDir)).NotTo(BeNil())
+			Expect(utils.SyncData(nil, "/welp", destDir)).NotTo(BeNil())
 		})
 	})
 	Describe("IsLocalUrl", Label("IsLocalUrl"), func() {
@@ -466,7 +479,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.GetSource(config, "$htt:|//insane.stuff", "/tmp/dest")).NotTo(BeNil())
 		})
 		It("Fails on readonly destination", func() {
-			config.Fs = afero.NewReadOnlyFs(fs)
+			config.Fs = vfs.NewReadOnlyFS(fs)
 			Expect(utils.GetSource(config, "http://something.org", "/tmp/dest")).NotTo(BeNil())
 		})
 		It("Fails on non existing local source", func() {
@@ -485,7 +498,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(BeNil())
 		})
 	})
-	Describe("Grub", Label("grub"), func() {
+	Describe("Grub", Label("grub", "root"), func() {
 		Describe("Install", func() {
 			BeforeEach(func() {
 				config.Target = "/dev/test"
@@ -497,9 +510,14 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
-				err := afero.WriteFile(fs, filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
-				Expect(err).To(BeNil())
+				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
+				Expect(err).ShouldNot(HaveOccurred())
 
 				config.Logger = logger
 				config.GrubConf = "/etc/cos/grub.cfg"
@@ -512,7 +530,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				Expect(buf).To(ContainSubstring("Grub install to device /dev/test complete"))
 				Expect(buf).ToNot(ContainSubstring("efi"))
 				Expect(buf.String()).ToNot(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := afero.ReadFile(fs, fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
+				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
 				Expect(err).To(BeNil())
 				// Should not be modified at all
 				Expect(targetGrub).To(ContainSubstring("console=tty1"))
@@ -523,14 +541,21 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
+
+				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), os.ModePerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
 				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
 				_, _ = fs.Create(constants.EfiDevice)
 
 				config.Logger = logger
 
 				grub := utils.NewGrub(config)
-				err := grub.Install()
-				Expect(err).To(BeNil())
+				err = grub.Install()
+				Expect(err).ShouldNot(HaveOccurred())
 
 				Expect(buf.String()).To(ContainSubstring("--target=x86_64-efi"))
 				Expect(buf.String()).To(ContainSubstring("--efi-directory"))
@@ -541,13 +566,17 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
+
+				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
 				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
 
 				config.Logger = logger
 				config.ForceEfi = true
 
 				grub := utils.NewGrub(config)
-				err := grub.Install()
+				err = grub.Install()
 				Expect(err).To(BeNil())
 
 				Expect(buf.String()).To(ContainSubstring("--target=x86_64-efi"))
@@ -558,10 +587,20 @@ var _ = Describe("Utils", Label("utils"), func() {
 				buf := &bytes.Buffer{}
 				logger := log.New()
 				logger.SetOutput(buf)
-				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
-				err := afero.WriteFile(fs, filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
-				Expect(err).To(BeNil())
-				_, _ = fs.Create("/dev/serial")
+
+				fs.Mkdir("/dev", os.ModePerm)
+
+				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				_, err = fs.Create("/dev/serial")
+				Expect(err).ShouldNot(HaveOccurred())
 
 				config.Logger = logger
 				config.Tty = "serial"
@@ -571,7 +610,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				Expect(err).To(BeNil())
 
 				Expect(buf.String()).To(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := afero.ReadFile(fs, fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
+				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
 				Expect(err).To(BeNil())
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 			})
@@ -586,7 +625,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				_ = fs.MkdirAll(fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				_ = utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
 
 				config.Logger = logger
 
@@ -619,75 +658,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})
 		})
 	})
-	Describe("RunStage", Label("RunStage"), func() {
-		var memLog *bytes.Buffer
-		BeforeEach(func() {
-			// Use a different config with a buffer for logger, so we can check the output
-			// We also use the real fs
-			memLog = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(memLog)
-			fs = afero.NewOsFs()
-			config = conf.NewRunConfig(
-				v1.WithFs(fs),
-				v1.WithRunner(runner),
-				v1.WithLogger(logger),
-				v1.WithMounter(mounter),
-				v1.WithSyscall(syscall),
-				v1.WithClient(client),
-			)
-		})
-		It("fails if strict mode is enabled", Label("strict"), func() {
-			config.Logger.SetLevel(log.DebugLevel)
-			config.Strict = true
-			runner.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
-			Expect(utils.RunStage("c3po", config)).ToNot(BeNil())
-		})
-		It("does not fail but prints errors by default", Label("strict"), func() {
-			config.Logger.SetLevel(log.DebugLevel)
-			config.Strict = false
-			runner.ReturnValue = []byte("stages.c3po[0].datasource") // this should fail as its wrong data
-			out := utils.RunStage("c3po", config)
-			Expect(out).To(BeNil())
-			Expect(memLog).To(ContainSubstring("Some errors found but were ignored"))
-		})
-		It("Goes over extra paths", func() {
-			d, _ := afero.TempDir(fs, "", "elemental")
-			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
-			defer os.RemoveAll(d)
-			config.Logger.SetLevel(log.DebugLevel)
-			config.CloudInitPaths = d
-			Expect(utils.RunStage("luke", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring(fmt.Sprintf("Adding extra paths: %s", d)))
-			Expect(memLog).To(ContainSubstring("luke"))
-			Expect(memLog).To(ContainSubstring("luke.before"))
-			Expect(memLog).To(ContainSubstring("luke.after"))
-		})
-		It("parses cmdline uri", func() {
-			d, _ := afero.TempDir(fs, "", "elemental")
-			_ = afero.WriteFile(fs, fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
-			defer os.RemoveAll(d)
 
-			runner.ReturnValue = []byte(fmt.Sprintf("cos.setup=%s/test.yaml", d))
-			Expect(utils.RunStage("padme", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring("padme"))
-			Expect(memLog).To(ContainSubstring(fmt.Sprintf("%s/test.yaml", d)))
-		})
-		It("parses cmdline uri with dotnotation", func() {
-			config.Logger.SetLevel(log.DebugLevel)
-			runner.ReturnValue = []byte("stages.leia[0].commands[0]='echo beepboop'")
-			Expect(utils.RunStage("leia", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring("leia"))
-			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
-			Expect(memLog).To(ContainSubstring("Command output: stages.leia[0].commands[0]='echo beepboop'"))
-
-			// try with a non-clean cmdline
-			runner.ReturnValue = []byte("BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'")
-			Expect(utils.RunStage("leia", config)).To(BeNil())
-			Expect(memLog).To(ContainSubstring("leia"))
-			Expect(memLog).To(ContainSubstring("running command `echo beepboop`"))
-			Expect(memLog).To(ContainSubstring("Command output: BOOT=death-star single stages.leia[0].commands[0]='echo beepboop'"))
-		})
-	})
 	Describe("CreateSquashFS", Label("CreateSquashFS"), func() {
 		It("runs with no options if none given", func() {
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
@@ -725,8 +696,11 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("LoadEnvFile", Label("LoadEnvFile"), func() {
+		BeforeEach(func() {
+			fs.Mkdir("/etc", os.ModePerm)
+		})
 		It("returns proper map if file exists", func() {
-			err := afero.WriteFile(fs, "/etc/envfile", []byte("TESTKEY=TESTVALUE"), os.ModePerm)
+			err := fs.WriteFile("/etc/envfile", []byte("TESTKEY=TESTVALUE"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
 			envData, err := utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).ToNot(HaveOccurred())
@@ -738,7 +712,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("returns error if it cant unmarshall the env file", func() {
-			err := afero.WriteFile(fs, "/etc/envfile", []byte("WHATWHAT"), os.ModePerm)
+			err := fs.WriteFile("/etc/envfile", []byte("WHATWHAT"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).To(HaveOccurred())

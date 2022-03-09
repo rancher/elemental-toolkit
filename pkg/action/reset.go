@@ -24,7 +24,6 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/spf13/afero"
 )
 
 func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
@@ -53,7 +52,7 @@ func ResetSetup(config *v1.RunConfig) error {
 
 	SetupLuet(config)
 
-	efiExists, _ := afero.Exists(config.Fs, cnst.EfiDevice)
+	efiExists, _ := utils.Exists(config.Fs, cnst.EfiDevice)
 
 	if efiExists {
 		partEfi, err := utils.GetFullDeviceByLabel(config.Runner, cnst.EfiLabel, 1)
@@ -196,7 +195,7 @@ func ResetRun(config *v1.RunConfig) (err error) { // nolint:gocyclo
 	}
 	cleanup.Push(func() error { return ele.UnmountPartitions() })
 
-	// Depoly active image
+	// Deploy active image
 	err = ele.DeployImage(config.Images.GetActive(), true)
 	if err != nil {
 		return err

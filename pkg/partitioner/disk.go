@@ -24,7 +24,8 @@ import (
 	"time"
 
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/twpayne/go-vfs"
 )
 
 const (
@@ -38,7 +39,7 @@ type Disk struct {
 	parts   []Partition
 	label   string
 	runner  v1.Runner
-	fs      afero.Fs
+	fs      v1.FS
 	logger  v1.Logger
 }
 
@@ -60,7 +61,7 @@ func NewDisk(device string, opts ...DiskOptions) *Disk {
 	}
 
 	if dev.fs == nil {
-		dev.fs = afero.NewOsFs()
+		dev.fs = vfs.OSFS
 	}
 
 	if dev.logger == nil {
@@ -94,7 +95,7 @@ func (dev Disk) GetLabel() string {
 }
 
 func (dev Disk) Exists() bool {
-	exists, _ := afero.Exists(dev.fs, dev.device)
+	exists, _ := utils.Exists(dev.fs, dev.device)
 	return exists
 }
 
@@ -360,8 +361,8 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 		}
 	case "xfs":
 		// to grow an xfs fs it needs to be mounted :/
-		tmpDir, err := afero.TempDir(dev.fs, "", "yip")
-		defer func(fs afero.Fs, path string) {
+		tmpDir, err := utils.TempDir(dev.fs, "", "yip")
+		defer func(fs v1.FS, path string) {
 			_ = fs.RemoveAll(path)
 		}(dev.fs, tmpDir)
 

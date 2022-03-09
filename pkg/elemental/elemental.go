@@ -27,7 +27,6 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
-	"github.com/spf13/afero"
 )
 
 // Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux
@@ -171,7 +170,7 @@ func (c Elemental) UnmountPartitions() error {
 // MountPartitions mounts a partition with the given mount options
 func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	c.config.Logger.Debugf("Mounting partition %s", part.Label)
-	err := c.config.Fs.MkdirAll(part.MountPoint, os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, part.MountPoint, os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -204,7 +203,7 @@ func (c Elemental) UnmountPartition(part *v1.Partition) error {
 // MountImage mounts an image with the given mount options
 func (c Elemental) MountImage(img *v1.Image, opts ...string) error {
 	c.config.Logger.Debugf("Mounting image %s", img.Label)
-	err := c.config.Fs.MkdirAll(img.MountPoint, os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, img.MountPoint, os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -244,7 +243,7 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 // CreateFileSystemImage creates the image file for config.target
 func (c Elemental) CreateFileSystemImage(img *v1.Image) error {
 	c.config.Logger.Infof("Creating file system image %s", img.File)
-	err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), os.ModeDir)
 	if err != nil {
 		return err
 	}
@@ -334,7 +333,7 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 		}
 	} else if img.Source.IsDir() {
 		excludes := []string{"mnt", "proc", "sys", "dev", "tmp", "host", "run"}
-		err = utils.SyncData(img.Source.Value(), img.MountPoint, excludes...)
+		err = utils.SyncData(c.config.Fs, img.Source.Value(), img.MountPoint, excludes...)
 		if err != nil {
 			return err
 		}
@@ -344,7 +343,7 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 			return err
 		}
 	} else if img.Source.IsFile() {
-		err := c.config.Fs.MkdirAll(filepath.Dir(img.File), os.ModeDir)
+		err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), os.ModeDir)
 		if err != nil {
 			return err
 		}
@@ -435,7 +434,7 @@ func (c *Elemental) CheckNoFormat() error {
 // they are already configured.
 func (c *Elemental) GetIso() (tmpDir string, err error) {
 	//TODO support ISO download in persistent storage?
-	tmpDir, err = afero.TempDir(c.config.Fs, "", "elemental")
+	tmpDir, err = utils.TempDir(c.config.Fs, "", "elemental")
 	if err != nil {
 		return "", err
 	}
@@ -453,7 +452,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	if err != nil {
 		return "", err
 	}
-	err = c.config.Fs.MkdirAll(isoMnt, os.ModeDir)
+	err = utils.MkdirAll(c.config.Fs, isoMnt, os.ModeDir)
 	if err != nil {
 		return "", err
 	}
@@ -469,7 +468,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	}()
 
 	c.config.Logger.Infof("Mounting squashfs image from iso into %s", rootfsMnt)
-	err = c.config.Fs.MkdirAll(rootfsMnt, os.ModeDir)
+	err = utils.MkdirAll(c.config.Fs, rootfsMnt, os.ModeDir)
 	if err != nil {
 		return "", err
 	}
@@ -490,7 +489,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	recoveryImg := c.config.Images.GetRecovery()
 	if recoveryImg != nil {
 		squashedImgSource := filepath.Join(isoMnt, cnst.RecoverySquashFile)
-		if exists, _ := afero.Exists(c.config.Fs, squashedImgSource); exists {
+		if exists, _ := utils.Exists(c.config.Fs, squashedImgSource); exists {
 			recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
 			recoveryImg.FS = cnst.SquashFs
 		} else if activeImg != nil {

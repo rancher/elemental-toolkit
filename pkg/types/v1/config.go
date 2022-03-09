@@ -18,7 +18,6 @@ package v1
 
 import (
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 )
 
@@ -32,7 +31,7 @@ const (
 
 type RunConfigOptions func(a *RunConfig) error
 
-func WithFs(fs afero.Fs) func(r *RunConfig) error {
+func WithFs(fs FS) func(r *RunConfig) error {
 	return func(r *RunConfig) error {
 		r.Fs = fs
 		return nil
@@ -131,7 +130,7 @@ type RunConfig struct {
 	GrubConf  string
 	// Interfaces used around by methods
 	Logger          Logger
-	Fs              afero.Fs
+	Fs              FS
 	Mounter         mount.Interface
 	Runner          Runner
 	Syscall         SyscallInterface

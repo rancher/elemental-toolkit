@@ -19,33 +19,43 @@ package v1_test
 import (
 	"bytes"
 	"context"
+
 	dockTypes "github.com/docker/docker/api/types"
 	dockClient "github.com/docker/docker/client"
 	"github.com/mudler/go-pluggable"
 	"github.com/mudler/luet/pkg/api/core/bus"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
+	"io"
+	"io/ioutil"
+	"os"
 
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
-	"io"
-	"io/ioutil"
-	"os"
 )
 
 var _ = Describe("Types", Label("luet", "types"), func() {
 	var luet *v1.Luet
 	var target string
+	var fs vfs.FS
+	var cleanup func()
+
 	BeforeEach(func() {
 		var err error
+		fs, cleanup, _ = vfst.NewTestFS(nil)
+		fs.Mkdir("/etc", os.ModePerm)
+		fs.Mkdir("/etc/luet", os.ModePerm)
 		target, err = os.MkdirTemp("", "elemental")
 		Expect(err).To(BeNil())
 		luet = v1.NewLuet(v1.WithLuetLogger(v1.NewNullLogger()))
 	})
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())
+		cleanup()
 	})
 	Describe("Luet", func() {
 		It("Fails to unpack without root privileges", Label("unpack"), func() {
@@ -69,7 +79,6 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				fs := afero.NewMemMapFs()
 				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Creating empty luet config"))
 			})
@@ -77,8 +86,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				fs := afero.NewMemMapFs()
-				_ = afero.WriteFile(fs, "/etc/luet/luet.yaml", []byte("not valid I think? Maybe yes, who knows, only the yaml gods"), os.ModePerm)
+				Expect(fs.WriteFile("/etc/luet/luet.yaml", []byte("not valid I think? Maybe yes, who knows, only the yaml gods"), os.ModePerm)).ShouldNot(HaveOccurred())
 				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 				Expect(memLog.String()).To(ContainSubstring("Error unmarshalling luet.yaml"))
@@ -87,8 +95,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				fs := afero.NewMemMapFs()
-				_ = afero.WriteFile(fs, "/etc/luet/luet.yaml", []byte("general:\n  debug: false\n  enable_emoji: false"), os.ModePerm)
+				_ = fs.WriteFile("/etc/luet/luet.yaml", []byte("general:\n  debug: false\n  enable_emoji: false"), os.ModePerm)
 				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 			})
@@ -96,8 +103,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				fs := afero.NewMemMapFs()
-				_ = afero.WriteFile(fs, "/etc/luet/luet.yaml", []byte("system:\n  rootfs: /naranjas"), os.ModePerm)
+				_ = fs.WriteFile("/etc/luet/luet.yaml", []byte("system:\n  rootfs: /naranjas"), os.ModePerm)
 				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 				Expect(memLog.String()).To(ContainSubstring("Error running init on luet config"))
@@ -125,7 +131,6 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				fs := afero.NewMemMapFs()
 				v1.NewLuet(v1.WithLuetFs(fs), v1.WithLuetLogger(log))
 				// Check if the debug stuff was logged to the buffer
 				Expect(memLog.String()).To(ContainSubstring("Creating empty luet config"))
@@ -139,7 +144,6 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				v1.NewLuet(v1.WithLuetAuth(&auth))
 			})
 			It("Sets FS", func() {
-				fs := afero.NewMemMapFs()
 				v1.NewLuet(v1.WithLuetFs(fs))
 			})
 

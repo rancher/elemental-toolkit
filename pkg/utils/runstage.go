@@ -24,12 +24,42 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"gopkg.in/yaml.v3"
 )
+
+func onlyYAMLPartialErrors(er error) bool {
+	if merr, ok := er.(*multierror.Error); ok {
+		for _, e := range merr.Errors {
+			// Skip partial unmarshalling errors
+			// TypeError is throwed when it is possible to read the yaml partially
+			// XXX: Seems errors.Is and errors.As are not working as expected here.
+			// Even if the underlying type is yaml.TypeError.
+			var d *yaml.TypeError
+			if fmt.Sprintf("%T", e) != fmt.Sprintf("%T", d) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func checkYAMLError(cfg *v1.RunConfig, allErrors, err error) error {
+	if !onlyYAMLPartialErrors(err) {
+		// here we absorb errors only if are related to YAML unmarshalling
+		// As cmdline is parsed out as a yaml file
+		allErrors = multierror.Append(allErrors, err)
+	} else {
+		cfg.Logger.Debug("/proc/cmdline parsing returned errors while unmarshalling. Ignoring as /proc/cmdline fields are turned to a YAML document, and partial failures are valid")
+		cfg.Logger.Debug(err)
+	}
+
+	return allErrors
+}
 
 // RunStage will run yip
 func RunStage(stage string, cfg *v1.RunConfig) error {
 	var cmdLineYipURI string
-	var errors error
+	var allErrors error
 	CloudInitPaths := constants.GetCloudInitPaths()
 
 	// Check if we have extra cloud init
@@ -40,14 +70,23 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 		CloudInitPaths = append(CloudInitPaths, extraCloudInitPathsSplit...)
 	}
 
+	// Make sure cloud init path specified are existing in the system
+	for _, cp := range CloudInitPaths {
+		err := MkdirAll(cfg.Fs, cp, 0600)
+		if err != nil {
+			cfg.Logger.Debugf("Failed creating cloud-init config path: %s %s", cp, err.Error())
+		}
+	}
+
 	stageBefore := fmt.Sprintf("%s.before", stage)
 	stageAfter := fmt.Sprintf("%s.after", stage)
 
 	// Check if the cmdline has the cos.setup key and extract its value to run yip on that given uri
-	cmdLineOut, err := cfg.Runner.Run("cat", "/proc/cmdline")
+	cmdLineOut, err := cfg.Fs.ReadFile("/proc/cmdline")
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		allErrors = multierror.Append(allErrors, err)
 	}
+
 	cmdLine := strings.Split(string(cmdLineOut), " ")
 	for _, line := range cmdLine {
 		if strings.Contains(line, "=") {
@@ -59,60 +98,45 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 		}
 	}
 
-	// Run the stage.before if cmdline contains the cos.setup stanza
-	if cmdLineYipURI != "" {
-		cmdLineArgs := []string{cmdLineYipURI}
-		err = cfg.CloudInitRunner.Run(stageBefore, cmdLineArgs...)
-		if err != nil {
-			errors = multierror.Append(errors, err)
-		}
-	}
-
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
-	err = cfg.CloudInitRunner.Run(stageBefore, CloudInitPaths...)
-	if err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	err = cfg.CloudInitRunner.Run(stage, CloudInitPaths...)
-	if err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	err = cfg.CloudInitRunner.Run(stageAfter, CloudInitPaths...)
-	if err != nil {
-		errors = multierror.Append(errors, err)
-	}
-
-	// Run the stage.after if cmdline contains the cos.setup stanza
-	if cmdLineYipURI != "" {
-		cmdLineArgs := []string{cmdLineYipURI}
-		err = cfg.CloudInitRunner.Run(stageAfter, cmdLineArgs...)
+	for _, s := range []string{stageBefore, stage, stageAfter} {
+		err = cfg.CloudInitRunner.Run(s, CloudInitPaths...)
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			allErrors = multierror.Append(allErrors, err)
 		}
 	}
 
+	// Run the stages if cmdline contains the cos.setup stanza
+	if cmdLineYipURI != "" {
+		cmdLineArgs := []string{cmdLineYipURI}
+		for _, s := range []string{stageBefore, stage, stageAfter} {
+			err = cfg.CloudInitRunner.Run(s, cmdLineArgs...)
+			if err != nil {
+				allErrors = multierror.Append(allErrors, err)
+			}
+		}
+	}
+
+	// Run stages encoded from /proc/cmdlines
 	cfg.CloudInitRunner.SetModifier(schema.DotNotationModifier)
-	// After RunStage reset the modifier
-	defer cfg.CloudInitRunner.SetModifier(nil)
 
-	err = cfg.CloudInitRunner.Run(stageBefore, string(cmdLineOut))
-	if err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	err = cfg.CloudInitRunner.Run(stage, string(cmdLineOut))
-	if err != nil {
-		errors = multierror.Append(errors, err)
-	}
-	err = cfg.CloudInitRunner.Run(stageAfter, string(cmdLineOut))
-	if err != nil {
-		errors = multierror.Append(errors, err)
+	for _, s := range []string{stageBefore, stage, stageAfter} {
+		err = cfg.CloudInitRunner.Run(s, string(cmdLineOut))
+		if err != nil {
+			allErrors = checkYAMLError(cfg, allErrors, err)
+		}
 	}
 
-	if errors != nil && !cfg.Strict {
+	cfg.CloudInitRunner.SetModifier(nil)
+
+	// We return error here only if we have been running in strict mode.
+	// Cloud configs are being loaded and executed on a best-effort, so every step/config
+	// gets a chance to be executed and error is being appended and reported.
+	if allErrors != nil && !cfg.Strict {
 		cfg.Logger.Info("Some errors found but were ignored. Enable --strict mode to fail on those or --debug to see them in the log")
-		cfg.Logger.Warn(errors)
+		cfg.Logger.Warn(allErrors)
 		return nil
 	}
 
-	return errors
+	return allErrors
 }

@@ -70,7 +70,7 @@ func (c *Chroot) Prepare() error {
 
 	for _, mnt := range c.defaultMounts {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt)
-		err = c.config.Fs.MkdirAll(mountPoint, 0755)
+		err = MkdirAll(c.config.Fs, mountPoint, 0755)
 		if err != nil {
 			return err
 		}
@@ -87,7 +87,7 @@ func (c *Chroot) Prepare() error {
 	sort.Strings(keys)
 	for _, k := range keys {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), c.extraMounts[k])
-		err = c.config.Fs.MkdirAll(mountPoint, 0755)
+		err = MkdirAll(c.config.Fs, mountPoint, 0755)
 		if err != nil {
 			return err
 		}

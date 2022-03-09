@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 SUSE LLC
+Copyright © 2021 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package partitioner
+package utils_test
 
 import (
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-type DiskOptions func(d *Disk) error
-
-func WithFS(fs v1.FS) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.fs = fs
-		return nil
-	}
-}
-
-func WithRunner(runner v1.Runner) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.runner = runner
-		return nil
-	}
-}
-
-func WithLogger(logger v1.Logger) func(d *Disk) error {
-	return func(d *Disk) error {
-		d.logger = logger
-		return nil
-	}
+func TestWhitebox(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Utils test suite")
 }

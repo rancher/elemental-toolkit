@@ -25,7 +25,6 @@ import (
 
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/spf13/afero"
 )
 
 // Grub is the struct that will allow us to install grub to the target device
@@ -65,7 +64,7 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 		tty = g.config.Tty
 	}
 
-	efiExists, _ := afero.Exists(g.config.Fs, cnst.EfiDevice)
+	efiExists, _ := Exists(g.config.Fs, cnst.EfiDevice)
 
 	if g.config.ForceEfi || efiExists {
 		g.config.Logger.Infof("Installing grub efi for arch %s", arch)
@@ -101,15 +100,15 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 	grub2dir := filepath.Join(statePart.MountPoint, "grub2")
 
 	// Select the proper dir for grub
-	if ok, _ := afero.IsDir(g.config.Fs, grub1dir); ok {
+	if ok, _ := IsDir(g.config.Fs, grub1dir); ok {
 		grubdir = grub1dir
 	}
-	if ok, _ := afero.IsDir(g.config.Fs, grub2dir); ok {
+	if ok, _ := IsDir(g.config.Fs, grub2dir); ok {
 		grubdir = grub2dir
 	}
 	g.config.Logger.Infof("Found grub config dir %s", grubdir)
 
-	grubConf, err := afero.ReadFile(g.config.Fs, filepath.Join(activeImg.MountPoint, g.config.GrubConf))
+	grubConf, err := g.config.Fs.ReadFile(filepath.Join(activeImg.MountPoint, g.config.GrubConf))
 	if err != nil {
 		g.config.Logger.Errorf("Failed reading grub config file: %s", filepath.Join(activeImg.MountPoint, g.config.GrubConf))
 		return err
@@ -119,11 +118,10 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 	if err != nil {
 		return err
 	}
-	defer func(grubConfTarget afero.File) {
-		_ = grubConfTarget.Close()
-	}(grubConfTarget)
 
-	ttyExists, _ := afero.Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
+	defer grubConfTarget.Close()
+
+	ttyExists, _ := Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
 
 	if ttyExists && tty != "" && tty != "console" && tty != "tty1" {
 		// We need to add a tty to the grub file

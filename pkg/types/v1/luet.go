@@ -28,7 +28,7 @@ import (
 	"github.com/mudler/luet/pkg/database"
 	"github.com/mudler/luet/pkg/helpers/docker"
 	"github.com/mudler/luet/pkg/installer"
-	"github.com/spf13/afero"
+	"github.com/twpayne/go-vfs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,7 +41,7 @@ type Luet struct {
 	log               Logger
 	context           *context.Context
 	auth              *dockTypes.AuthConfig
-	fs                afero.Fs
+	fs                FS
 	plugins           []string
 	VerifyImageUnpack bool
 }
@@ -81,7 +81,7 @@ func WithLuetLogger(log Logger) func(r *Luet) error {
 	}
 }
 
-func WithLuetFs(fs afero.Fs) func(r *Luet) error {
+func WithLuetFs(fs FS) func(r *Luet) error {
 	return func(l *Luet) error {
 		l.fs = fs
 		return nil
@@ -104,7 +104,7 @@ func NewLuet(opts ...LuetOptions) *Luet {
 	}
 
 	if luet.fs == nil {
-		luet.fs = afero.NewOsFs()
+		luet.fs = vfs.OSFS
 	}
 
 	if luet.context == nil {
@@ -209,10 +209,10 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 	config := &luetTypes.LuetConfig{}
 
 	// if there is a luet.yaml file, load the data from there
-	if exists, _ := afero.Exists(l.fs, "/etc/luet/luet.yaml"); exists {
+	if _, err := l.fs.Stat("/etc/luet/luet.yaml"); err == nil {
 		l.log.Debugf("Loading luet config from /etc/luet/luet.yaml")
 		config = &luetTypes.LuetConfig{}
-		f, err := afero.ReadFile(l.fs, "/etc/luet/luet.yaml")
+		f, err := l.fs.ReadFile("/etc/luet/luet.yaml")
 		if err != nil {
 			l.log.Errorf("Error reading luet.yaml file: %s", err)
 		}
