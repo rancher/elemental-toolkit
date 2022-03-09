@@ -66,7 +66,7 @@ mkfs.ext2 -L "${RECOVERY_LABEL}" -d root rootfs.part
 # Create the EFI partition FAT16 and include the EFI image and a basic grub.cfg
 truncate -s $((20*1024*1024)) efi.part
 
-mkfs.fat -F16 -n EFI efi.part
+mkfs.fat -F16 -n COS_GRUB efi.part
 mcopy -s -i efi.part efi/EFI ::EFI
 
 # Create the grubenv forcing first boot to be on recovery system

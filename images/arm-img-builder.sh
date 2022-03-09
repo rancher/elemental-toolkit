@@ -414,7 +414,7 @@ persistent=${device}p4
 
 # Create partitions (RECOVERY, STATE, COS_PERSISTENT)
 mkfs.vfat -F 32 ${efi}
-fatlabel ${efi} EFI
+fatlabel ${efi} COS_GRUB
 
 mkfs.ext4 -F -L ${RECOVERY_LABEL} $recovery
 mkfs.ext4 -F -L ${STATE_LABEL} $state
