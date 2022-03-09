@@ -52,11 +52,11 @@ var resetCmd = &cobra.Command{
 			return err
 		}
 
+		cmd.SilenceUsage = true
 		err = action.ResetSetup(cfg)
 		if err != nil {
 			return err
 		}
-		cmd.SilenceUsage = true
 
 		cfg.Logger.Infof("Reset called")
 

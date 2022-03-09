@@ -57,6 +57,7 @@ func ResetSetup(config *v1.RunConfig) error {
 	if efiExists {
 		partEfi, err := utils.GetFullDeviceByLabel(config.Runner, cnst.EfiLabel, 1)
 		if err != nil {
+			config.Logger.Errorf("EFI partition not found!")
 			return err
 		}
 		if partEfi.MountPoint == "" {
@@ -67,7 +68,7 @@ func ResetSetup(config *v1.RunConfig) error {
 	}
 
 	// Only add it if it exists, not a hard requirement
-	partOEM, err := utils.GetFullDeviceByLabel(config.Runner, cnst.OEMLabel, 1)
+	partOEM, err := utils.GetFullDeviceByLabel(config.Runner, config.OEMLabel, 1)
 	if err == nil {
 		if partOEM.MountPoint == "" {
 			partOEM.MountPoint = cnst.OEMDir
@@ -78,8 +79,9 @@ func ResetSetup(config *v1.RunConfig) error {
 		config.Logger.Warnf("No OEM partition found")
 	}
 
-	partState, err := utils.GetFullDeviceByLabel(config.Runner, cnst.StateLabel, 1)
+	partState, err := utils.GetFullDeviceByLabel(config.Runner, config.StateLabel, 1)
 	if err != nil {
+		config.Logger.Errorf("State partition '%s' not found", config.StateLabel)
 		return err
 	}
 	if partState.MountPoint == "" {
@@ -90,7 +92,7 @@ func ResetSetup(config *v1.RunConfig) error {
 	config.Target = partState.Disk
 
 	// Only add it if it exists, not a hard requirement
-	partPersistent, err := utils.GetFullDeviceByLabel(config.Runner, cnst.PersistentLabel, 1)
+	partPersistent, err := utils.GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 1)
 	if err == nil {
 		if partPersistent.MountPoint == "" {
 			partPersistent.MountPoint = cnst.PersistentDir
