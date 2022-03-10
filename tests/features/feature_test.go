@@ -24,10 +24,7 @@ var _ = Describe("cOS Feature tests", func() {
 	Context("After install", func() {
 		It("can enable a persistent k3s install", func() {
 
-			_, err := s.Command("mkdir /usr/local/cloud-config/")
-			Expect(err).ToNot(HaveOccurred())
-
-			err = s.SendFile("../assets/features-config.yaml", "/usr/local/cloud-config/features-config.yaml", "0770")
+			err := s.SendFile("../assets/features-config.yaml", "/usr/local/cloud-config/features-config.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = s.Command("mkdir /usr/local/features")
