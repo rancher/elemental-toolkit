@@ -78,16 +78,15 @@ const (
 	LuetMtreePlugin        = "luet-mtree"
 	UpgradeActive          = "active"
 	UpgradeRecovery        = "recovery"
-	UpgradeSource          = "system/cos"
+	ChannelSource          = "system/cos"
 	UpgradeRecoveryDir     = "/run/initramfs/live"
 	TransitionImgFile      = "transition.img"
 	TransitionSquashFile   = "transition.squashfs"
-	// TODO converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
-	RunningStateDir = "/run/initramfs/cos-state"
-	ActiveImgName   = "active"
-	PassiveImgName  = "passive"
-	RecoveryImgName = "recovery"
-	GPT             = "gpt"
+	RunningStateDir        = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
+	ActiveImgName          = "active"
+	PassiveImgName         = "passive"
+	RecoveryImgName        = "recovery"
+	GPT                    = "gpt"
 )
 
 func GetCloudInitPaths() []string {

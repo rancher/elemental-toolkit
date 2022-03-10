@@ -276,6 +276,9 @@ var _ = Describe("Actions", Label("root"), func() {
 		})
 	})
 	Describe("Install Setup", Label("installsetup"), func() {
+		BeforeEach(func() {
+			_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
+		})
 		Describe("On efi system", Label("efi"), func() {
 			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
 				utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), os.ModePerm)
@@ -330,8 +333,35 @@ var _ = Describe("Actions", Label("root"), func() {
 					err := action.InstallImagesSetup(config)
 					Expect(err).NotTo(BeNil())
 				})
+				It("Sets the source to channel upgrades if nothing else is set and IsoBaseTree does not exists", Label("source"), func() {
+					_ = fs.RemoveAll(constants.IsoBaseTree)
+					config.ChannelUpgrades = true
+					err := action.InstallSetup(config)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(config.Images.GetActive().Source.IsChannel()).To(BeTrue())
+					Expect(config.Images.GetActive().Source.Value()).To(Equal(constants.ChannelSource))
+				})
+				It("Sets the source to iso even if channel upgrades are set to true", Label("source"), func() {
+					config.ChannelUpgrades = true
+					err := action.InstallSetup(config)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(config.Images.GetActive().Source.IsDir()).To(BeTrue())
+					Expect(config.Images.GetActive().Source.Value()).To(Equal(constants.IsoBaseTree))
+				})
+				It("Sets the source to the iso if nothing else is set and IsoBaseTree exists", Label("source"), func() {
+					err := action.InstallSetup(config)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(config.Images.GetActive().Source.IsDir()).To(BeTrue())
+					Expect(config.Images.GetActive().Source.Value()).To(Equal(constants.IsoBaseTree))
+				})
+				It("Fails to find the source if we are not booting from iso and channel upgrades are set to false", Label("source"), func() {
+					_ = fs.RemoveAll(constants.IsoBaseTree)
+					err := action.InstallSetup(config)
+					Expect(err).To(HaveOccurred())
+				})
 			})
 		})
+
 	})
 
 	Describe("Install Action", Label("install"), func() {
@@ -395,7 +425,8 @@ var _ = Describe("Actions", Label("root"), func() {
 					return []byte{}, nil
 				}
 			}
-
+			// Need to create the IsoBaseTree, like if we are booting from iso
+			_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
 			action.InstallSetup(config)
 		})
 

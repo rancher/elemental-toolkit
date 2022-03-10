@@ -61,13 +61,24 @@ func InstallImagesSetup(config *v1.RunConfig) error {
 		MountPoint: cnst.ActiveDir,
 	}
 
-	//TODO add installation from channel
 	if config.DockerImg != "" {
 		activeImg.Source = v1.NewDockerSrc(config.DockerImg)
 	} else if config.Directory != "" {
 		activeImg.Source = v1.NewDirSrc(config.Directory)
-	} else {
+	} else if _, err := config.Fs.Stat(cnst.IsoBaseTree); err == nil {
+		// If cnst.IsoBaseTree exists we are booting from iso, use that as source
 		activeImg.Source = v1.NewDirSrc(cnst.IsoBaseTree)
+	} else {
+		// We cannot fall back to channel upgrades always as they may be disabled, so check before setting it as source
+		if config.ChannelUpgrades {
+			activeImg.Source = v1.NewChannelSrc(cnst.ChannelSource)
+		}
+	}
+
+	// Error out if we could not find the source and we haven't set the iso file, which fill the source later
+	if activeImg.Source.Value() == "" && config.Iso == "" {
+		config.Logger.Error("Could not find source for the install")
+		return &v1.SourceNotFound{}
 	}
 
 	// Set passive image
@@ -112,9 +123,14 @@ func InstallImagesSetup(config *v1.RunConfig) error {
 // the given configuration flags
 func InstallSetup(config *v1.RunConfig) error {
 	SetPartitionsFromScratch(config)
-	_ = InstallImagesSetup(config)
-	SetupLuet(config)
+	err := InstallImagesSetup(config)
 
+	// Only error out if we can't find the source
+	switch e := err.(type) {
+	case *v1.SourceNotFound:
+		return e
+	}
+	SetupLuet(config)
 	return nil
 }
 

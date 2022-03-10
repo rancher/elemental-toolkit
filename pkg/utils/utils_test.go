@@ -501,6 +501,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 	Describe("Grub", Label("grub", "root"), func() {
 		Describe("Install", func() {
 			BeforeEach(func() {
+				// Create iso dir so InstallImagesSetup does not fail to get a source
+				_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
 				config.Target = "/dev/test"
 				action.SetPartitionsFromScratch(config)
 				action.InstallImagesSetup(config)

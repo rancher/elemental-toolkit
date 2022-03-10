@@ -202,6 +202,7 @@ var _ = Describe("Elemental", Label("elemental", "root"), func() {
 	Describe("CreateFileSystemImage", Label("CreateFileSystemImage", "image"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
+			_ = utils.MkdirAll(fs, cnst.IsoBaseTree, os.ModeDir)
 			action.InstallSetup(config)
 			el = elemental.NewElemental(config)
 			config.Images.GetActive().Size = 32
