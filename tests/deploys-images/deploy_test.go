@@ -21,11 +21,14 @@ var _ = Describe("cOS Deploy tests", func() {
 		if CurrentGinkgoTestDescription().Failed {
 			s.GatherAllLogs()
 		}
+		if CurrentGinkgoTestDescription().Failed == false {
+			s.Reset()
+		}
 	})
 
 	Context("From recovery", func() {
 		When("deploying again", func() {
-			It("deploys/resets the system", func() {
+			It("deploys the system", func() {
 				err := s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()
