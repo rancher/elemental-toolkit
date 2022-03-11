@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
@@ -70,7 +71,7 @@ func (c *Chroot) Prepare() error {
 
 	for _, mnt := range c.defaultMounts {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), mnt)
-		err = MkdirAll(c.config.Fs, mountPoint, 0755)
+		err = MkdirAll(c.config.Fs, mountPoint, constants.DirPerm)
 		if err != nil {
 			return err
 		}
@@ -87,7 +88,7 @@ func (c *Chroot) Prepare() error {
 	sort.Strings(keys)
 	for _, k := range keys {
 		mountPoint := fmt.Sprintf("%s%s", strings.TrimSuffix(c.path, "/"), c.extraMounts[k])
-		err = MkdirAll(c.config.Fs, mountPoint, 0755)
+		err = MkdirAll(c.config.Fs, mountPoint, constants.DirPerm)
 		if err != nil {
 			return err
 		}
