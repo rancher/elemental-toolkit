@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/twpayne/go-vfs"
 	"github.com/zloylos/grsync"
@@ -119,7 +120,7 @@ func CopyFile(fs v1.FS, source string, target string) (err error) {
 // Copies source file to target file using Fs interface
 func CreateDirStructure(fs v1.FS, target string) error {
 	for _, dir := range []string{"run", "sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
-		err := MkdirAll(fs, fmt.Sprintf("%s/%s", target, dir), 0755)
+		err := MkdirAll(fs, fmt.Sprintf("%s/%s", target, dir), cnst.DirPerm)
 		if err != nil {
 			return err
 		}
@@ -289,7 +290,7 @@ func GetSource(config *v1.RunConfig, source string, destination string) error {
 		return err
 	}
 
-	err = vfs.MkdirAll(config.Fs, filepath.Dir(destination), os.ModeDir)
+	err = vfs.MkdirAll(config.Fs, filepath.Dir(destination), cnst.DirPerm)
 	if err != nil {
 		return err
 	}

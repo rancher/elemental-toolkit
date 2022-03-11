@@ -17,6 +17,7 @@ limitations under the License.
 package constants
 
 import (
+	"os"
 	"runtime"
 )
 
@@ -87,6 +88,10 @@ const (
 	PassiveImgName         = "passive"
 	RecoveryImgName        = "recovery"
 	GPT                    = "gpt"
+
+	// Default directory and file fileModes
+	DirPerm  = os.ModeDir | os.ModePerm
+	FilePerm = 0666
 )
 
 func GetCloudInitPaths() []string {

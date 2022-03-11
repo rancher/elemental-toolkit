@@ -19,7 +19,6 @@ package elemental
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -170,7 +169,7 @@ func (c Elemental) UnmountPartitions() error {
 // MountPartitions mounts a partition with the given mount options
 func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	c.config.Logger.Debugf("Mounting partition %s", part.Label)
-	err := utils.MkdirAll(c.config.Fs, part.MountPoint, os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, part.MountPoint, cnst.DirPerm)
 	if err != nil {
 		return err
 	}
@@ -203,7 +202,7 @@ func (c Elemental) UnmountPartition(part *v1.Partition) error {
 // MountImage mounts an image with the given mount options
 func (c Elemental) MountImage(img *v1.Image, opts ...string) error {
 	c.config.Logger.Debugf("Mounting image %s", img.Label)
-	err := utils.MkdirAll(c.config.Fs, img.MountPoint, os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, img.MountPoint, cnst.DirPerm)
 	if err != nil {
 		return err
 	}
@@ -243,7 +242,7 @@ func (c Elemental) UnmountImage(img *v1.Image) error {
 // CreateFileSystemImage creates the image file for config.target
 func (c Elemental) CreateFileSystemImage(img *v1.Image) error {
 	c.config.Logger.Infof("Creating file system image %s", img.File)
-	err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), os.ModeDir)
+	err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
 		return err
 	}
@@ -343,7 +342,7 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 			return err
 		}
 	} else if img.Source.IsFile() {
-		err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), os.ModeDir)
+		err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 		if err != nil {
 			return err
 		}
@@ -376,7 +375,7 @@ func (c *Elemental) CopyCloudConfig() (err error) {
 		if err != nil {
 			return err
 		}
-		if err = c.config.Fs.Chmod(customConfig, os.ModePerm); err != nil {
+		if err = c.config.Fs.Chmod(customConfig, cnst.FilePerm); err != nil {
 			return err
 		}
 		c.config.Logger.Infof("Finished copying cloud config file %s to %s", c.config.CloudInit, customConfig)
@@ -452,7 +451,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	if err != nil {
 		return "", err
 	}
-	err = utils.MkdirAll(c.config.Fs, isoMnt, os.ModeDir)
+	err = utils.MkdirAll(c.config.Fs, isoMnt, cnst.DirPerm)
 	if err != nil {
 		return "", err
 	}
@@ -468,7 +467,7 @@ func (c *Elemental) GetIso() (tmpDir string, err error) {
 	}()
 
 	c.config.Logger.Infof("Mounting squashfs image from iso into %s", rootfsMnt)
-	err = utils.MkdirAll(c.config.Fs, rootfsMnt, os.ModeDir)
+	err = utils.MkdirAll(c.config.Fs, rootfsMnt, cnst.DirPerm)
 	if err != nil {
 		return "", err
 	}

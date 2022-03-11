@@ -18,7 +18,6 @@ package action
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -126,7 +125,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		} else {
 			// We are upgrading the active so we need to mount the state label partition on /run/cos/state
 			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-			err = utils.MkdirAll(u.Config.Fs, constants.StateDir, os.ModeDir)
+			err = utils.MkdirAll(u.Config.Fs, constants.StateDir, constants.DirPerm)
 			if err != nil {
 				u.Error("Error creating dir %s: %s", constants.StateDir, err)
 				return err
@@ -151,7 +150,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 				// Failure to get the system label, fallback tor recovery label
 				recoveryPart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
 			}
-			err = utils.MkdirAll(u.Config.Fs, constants.RecoveryDir, os.ModeDir)
+			err = utils.MkdirAll(u.Config.Fs, constants.RecoveryDir, constants.DirPerm)
 			if err != nil {
 				u.Error("Error creating dir %s: %s", constants.RecoveryDir, err)
 				return err
@@ -190,7 +189,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	if bootedFromRecovery {
 		persistentPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.PersistentLabel, 2)
 		if err == nil {
-			err := utils.MkdirAll(u.Config.Fs, constants.PersistentDir, os.ModeDir)
+			err := utils.MkdirAll(u.Config.Fs, constants.PersistentDir, constants.DirPerm)
 			if err == nil {
 				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, persistentPart.FS, []string{})
 				if err != nil {
@@ -217,7 +216,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
 	u.Debug("Upgrade temp dir: %s", upgradeTempDir)
 
-	err = utils.MkdirAll(u.Config.Fs, upgradeTempDir, os.ModeDir)
+	err = utils.MkdirAll(u.Config.Fs, upgradeTempDir, constants.DirPerm)
 	if err != nil {
 		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
 		return err
@@ -255,9 +254,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		err = ele.MountImage(&img, "rw")
 	}
 
-	for _, d := range []string{"proc", "boot", "dev", "sys", "tmp", "usr/local", "oem"} {
-		_ = utils.MkdirAll(u.Config.Fs, filepath.Join(upgradeTempDir, d), os.ModeDir)
-	}
+	_ = utils.CreateDirStructure(u.Config.Fs, upgradeTempDir)
 
 	err = upgradeHook(u.Config, "before-upgrade", false)
 	if err != nil {
@@ -288,7 +285,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	if err == nil {
 		// If its not mounted, mount it so we can rebrand then unmount it
 		if statePartForRecovery.MountPoint == "" {
-			_ = utils.MkdirAll(u.Config.Fs, constants.StateDir, os.ModeDir)
+			_ = utils.MkdirAll(u.Config.Fs, constants.StateDir, constants.DirPerm)
 			if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(constants.StateDir); notMounted {
 				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, statePartForRecovery.FS, []string{"rw"})
 				if err != nil {
