@@ -48,7 +48,7 @@ func TestElementalSuite(t *testing.T) {
 	RunSpecs(t, "Elemental test suite")
 }
 
-var _ = Describe("Elemental", Label("elemental", "root"), func() {
+var _ = Describe("Elemental", Label("elemental"), func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
 	var logger v1.Logger
@@ -202,8 +202,9 @@ var _ = Describe("Elemental", Label("elemental", "root"), func() {
 	Describe("CreateFileSystemImage", Label("CreateFileSystemImage", "image"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			_ = utils.MkdirAll(fs, cnst.IsoBaseTree, os.ModeDir)
-			action.InstallSetup(config)
+			_ = utils.MkdirAll(fs, cnst.IsoBaseTree, cnst.DirPerm)
+			err := action.InstallSetup(config)
+			Expect(err).To(BeNil())
 			el = elemental.NewElemental(config)
 			config.Images.GetActive().Size = 32
 		})
