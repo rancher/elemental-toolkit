@@ -3,4 +3,4 @@ set -e
 
 export INTERACTIVE=true
 
-cos install --no-format $@
+elemental --debug --logfile /tmp/elemental.log reset $@

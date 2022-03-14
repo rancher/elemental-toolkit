@@ -152,12 +152,12 @@ variable "azure_user_data_file" {
 }
 
 variable "azure_cos_deploy_args" {
-  default = "sudo /usr/sbin/cos-deploy"
+  default = "sudo /usr/bin/elemental reset"
 }
 
 variable "aws_cos_deploy_args" {
   type = string
-  default = "cos-deploy"
+  default = "elemental reset"
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
 }
 
@@ -199,7 +199,7 @@ variable "gcp_user_data_file" {
 
 variable "gcp_cos_deploy_args" {
   type = string
-  default = "cos-deploy"
+  default = "elemental reset"
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
 }
 

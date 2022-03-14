@@ -27,6 +27,6 @@ stages:
        name: "Deploy cos-system"
        commands:
          - |
-             # Use `cos-deploy --docker-image <img-ref>` to deploy a custom image
-             # By default latest cOS gets deployed
-             cos-deploy && shutdown -r now
+             # Use `elemental reset --reboot --docker-image <img-ref>` to deploy a custom image
+             # By default the recovery image gets deployed
+             elemental reset --reboot
