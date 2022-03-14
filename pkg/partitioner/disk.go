@@ -261,13 +261,8 @@ func (dev Disk) FormatPartition(partNum int, fileSystem string, label string) (s
 	return mkfs.Apply()
 }
 
-func (dev Disk) WipeFsOnPartition(partNum int) error {
-	pDev, err := dev.FindPartitionDevice(partNum)
-	if err != nil {
-		return err
-	}
-
-	_, err = dev.runner.Run("wipefs", "--all", pDev)
+func (dev Disk) WipeFsOnPartition(device string) error {
+	_, err := dev.runner.Run("wipefs", "--all", device)
 	return err
 }
 

@@ -89,21 +89,26 @@ func (c *Elemental) createAndFormatPartition(disk *partitioner.Disk, part *v1.Pa
 		c.config.Logger.Errorf("Failed creating %s partition", part.Name)
 		return err
 	}
+	partDev, err := disk.FindPartitionDevice(num)
+	if err != nil {
+		return err
+	}
 	if part.FS != "" {
 		c.config.Logger.Debugf("Formatting partition with label %s", part.Label)
-		out, err := disk.FormatPartition(num, part.FS, part.Label)
+		err = partitioner.FormatDevice(c.config.Runner, partDev, part.FS, part.Label)
 		if err != nil {
-			c.config.Logger.Errorf("Failed formatting partition: %s", out)
+			c.config.Logger.Errorf("Failed formatting partition %s", part.Name)
 			return err
 		}
 	} else {
 		c.config.Logger.Debugf("Wipe file system on %s", part.Name)
-		err = disk.WipeFsOnPartition(num)
+		err = disk.WipeFsOnPartition(partDev)
 		if err != nil {
-			c.config.Logger.Errorf("Failed to wipe filesystem of partition %d", num)
+			c.config.Logger.Errorf("Failed to wipe filesystem of partition %s", partDev)
 			return err
 		}
 	}
+	part.Path = partDev
 	return nil
 }
 
@@ -166,22 +171,25 @@ func (c Elemental) UnmountPartitions() error {
 	return nil
 }
 
-// MountPartitions mounts a partition with the given mount options
+// MountPartition mounts a partition with the given mount options
 func (c Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 	c.config.Logger.Debugf("Mounting partition %s", part.Label)
 	err := utils.MkdirAll(c.config.Fs, part.MountPoint, cnst.DirPerm)
 	if err != nil {
 		return err
 	}
-	// Lets error out only after 10 attempts to find the device
-	device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label, 10)
-	if err != nil {
-		c.config.Logger.Errorf("Could not find a device with label %s", part.Label)
-		return err
+	if part.Path == "" {
+		// Lets error out only after 10 attempts to find the device
+		device, err := utils.GetDeviceByLabel(c.config.Runner, part.Label, 10)
+		if err != nil {
+			c.config.Logger.Errorf("Could not find a device with label %s", part.Label)
+			return err
+		}
+		part.Path = device
 	}
-	err = c.config.Mounter.Mount(device, part.MountPoint, "auto", opts)
+	err = c.config.Mounter.Mount(part.Path, part.MountPoint, "auto", opts)
 	if err != nil {
-		c.config.Logger.Errorf("Failed mounting device %s with label %s", device, part.Label)
+		c.config.Logger.Errorf("Failed mounting device %s with label %s", part.Path, part.Label)
 		return err
 	}
 	return nil

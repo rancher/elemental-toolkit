@@ -334,18 +334,15 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Clears filesystem header from a partition", func() {
 				cmds = [][]string{
-					{"udevadm", "settle"},
-					{"lsblk", "-ltnpo", "name,type", "/some/device"},
 					{"wipefs", "--all", "/some/device1"},
 				}
 				runner.ReturnValue = []byte("/some/device1 part")
-				Expect(dev.WipeFsOnPartition(1)).To(BeNil())
+				Expect(dev.WipeFsOnPartition("/some/device1")).To(BeNil())
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Fails while removing file system header", func() {
-				runner.ReturnValue = []byte("/some/device1 part")
 				runner.ReturnError = errors.New("some error")
-				Expect(dev.WipeFsOnPartition(1)).NotTo(BeNil())
+				Expect(dev.WipeFsOnPartition("/some/device1")).NotTo(BeNil())
 			})
 			Describe("Expanding partitions", func() {
 				var fileSystem string
