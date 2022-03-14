@@ -341,7 +341,9 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 		if err != nil {
 			return err
 		}
-	} else if img.Source.IsFile() {
+	}
+
+	if img.Source.IsFile() {
 		err := utils.MkdirAll(c.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 		if err != nil {
 			return err
@@ -358,10 +360,12 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 				return err
 			}
 		}
-	}
-	err = utils.CreateDirStructure(c.config.Fs, img.MountPoint)
-	if err != nil {
-		return err
+	} else {
+		err = utils.CreateDirStructure(c.config.Fs, img.MountPoint)
+		if err != nil {
+			fmt.Println("failed creating dir structure")
+			return err
+		}
 	}
 	c.config.Logger.Infof("Finished copying %s...", img.Label)
 	return nil

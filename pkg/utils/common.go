@@ -119,8 +119,8 @@ func CopyFile(fs v1.FS, source string, target string) (err error) {
 
 // Copies source file to target file using Fs interface
 func CreateDirStructure(fs v1.FS, target string) error {
-	for _, dir := range []string{"run", "sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
-		err := MkdirAll(fs, fmt.Sprintf("%s/%s", target, dir), cnst.DirPerm)
+	for _, dir := range []string{"/run", "/sys", "/proc", "/dev", "/tmp", "/boot", "/usr/local", "/oem"} {
+		err := MkdirAll(fs, filepath.Join(target, dir), cnst.DirPerm)
 		if err != nil {
 			return err
 		}

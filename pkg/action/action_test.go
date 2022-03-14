@@ -50,7 +50,7 @@ func TestElementalSuite(t *testing.T) {
 	RunSpecs(t, "Actions test suite")
 }
 
-var _ = Describe("Actions", Label("root"), func() {
+var _ = Describe("Actions", func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS
@@ -149,26 +149,15 @@ var _ = Describe("Actions", Label("root"), func() {
 	})
 	Describe("Reset Action", Label("reset"), func() {
 		var statePart, persistentPart, oemPart *v1.Partition
-		var cmdFail, activeTree, activeMount string
+		var cmdFail string
 		var err error
 		BeforeEach(func() {
 			cmdFail = ""
-			activeTree, err = utils.TempDir(fs, "", "elemental")
+			recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+			err = utils.MkdirAll(fs, filepath.Dir(recoveryImg), constants.DirPerm)
 			Expect(err).To(BeNil())
-			activeMount, err = utils.TempDir(fs, "", "elemental")
+			_, err = fs.Create(recoveryImg)
 			Expect(err).To(BeNil())
-
-			utils.MkdirAll(fs, filepath.Join(constants.RunningStateDir, "cOS"), os.ModePerm)
-			_, e := fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
-			Expect(e).ShouldNot(HaveOccurred())
-			_, e = fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
-			Expect(e).ShouldNot(HaveOccurred())
-
-			utils.MkdirAll(fs, activeMount, os.ModePerm)
-			utils.MkdirAll(fs, filepath.Join(activeMount, filepath.Dir(constants.GrubConf)), os.ModePerm)
-
-			_, err := fs.Create(filepath.Join(activeMount, constants.GrubConf))
-			Expect(err).ShouldNot(HaveOccurred())
 
 			statePart = &v1.Partition{
 				Label:      constants.StateLabel,
@@ -195,10 +184,17 @@ var _ = Describe("Actions", Label("root"), func() {
 				MountPoint: constants.OEMDir,
 			}
 			config.Partitions = append(config.Partitions, statePart, oemPart, persistentPart)
+
 			action.ResetImagesSetup(config)
-			config.Images.GetActive().MountPoint = activeMount
 			config.Images.GetActive().Size = 16
 			config.Target = statePart.Disk
+
+			grubCfg := filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)
+			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
+			Expect(err).To(BeNil())
+			_, err = fs.Create(grubCfg)
+			Expect(err).To(BeNil())
+
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmdFail == cmd {
 					return []byte{}, errors.New("Command failed")
@@ -211,10 +207,6 @@ var _ = Describe("Actions", Label("root"), func() {
 				}
 			}
 		})
-		AfterEach(func() {
-			os.RemoveAll(activeTree)
-			os.RemoveAll(activeMount)
-		})
 		It("Successfully resets on non-squashfs recovery", func() {
 			config.Reboot = true
 			Expect(action.ResetRun(config)).To(BeNil())
@@ -225,7 +217,6 @@ var _ = Describe("Actions", Label("root"), func() {
 		})
 		It("Successfully resets on squashfs recovery", Label("squashfs"), func() {
 			config.PowerOff = true
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			Expect(action.ResetRun(config)).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {
@@ -253,17 +244,14 @@ var _ = Describe("Actions", Label("root"), func() {
 		})
 		It("Fails setting the passive label on squashfs recovery", func() {
 			cmdFail = "tune2fs"
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails mounting partitions", func() {
 			mounter.ErrorOnMount = true
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails unmounting partitions", func() {
 			mounter.ErrorOnUnmount = true
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
 			Expect(action.ResetRun(config)).NotTo(BeNil())
 		})
 		It("Fails unpacking docker image ", func() {
@@ -277,11 +265,12 @@ var _ = Describe("Actions", Label("root"), func() {
 	})
 	Describe("Install Setup", Label("installsetup"), func() {
 		BeforeEach(func() {
-			_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
+			err := utils.MkdirAll(fs, constants.IsoBaseTree, constants.DirPerm)
+			Expect(err).To(BeNil())
 		})
 		Describe("On efi system", Label("efi"), func() {
 			It(fmt.Sprintf("sets part to %s and boot to %s", v1.GPT, v1.ESP), func() {
-				utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), os.ModePerm)
+				utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), constants.DirPerm)
 				_, err := fs.Create(constants.EfiDevice)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(action.InstallSetup(config)).ShouldNot(HaveOccurred())
@@ -365,36 +354,13 @@ var _ = Describe("Actions", Label("root"), func() {
 	})
 
 	Describe("Install Action", Label("install"), func() {
-		var device, activeTree, activeMount, cmdFail string
-		var activeSize uint
+		var device, cmdFail string
 		var err error
 
 		BeforeEach(func() {
-			activeTree, err = utils.TempDir(fs, "", "elemental")
-			Expect(err).ShouldNot(HaveOccurred())
-			activeMount, err = utils.TempDir(fs, "", "elemental")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			utils.MkdirAll(fs, filepath.Join(constants.RunningStateDir, "cOS"), os.ModePerm)
-			_, e := fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
-			Expect(e).ShouldNot(HaveOccurred())
-			_, e = fs.Create(filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile))
-			Expect(e).ShouldNot(HaveOccurred())
-
-			utils.MkdirAll(fs, activeMount, os.ModePerm)
-			utils.MkdirAll(fs, filepath.Join(activeMount, filepath.Dir(constants.GrubConf)), os.ModePerm)
-
-			_, err := fs.Create(filepath.Join(activeMount, constants.GrubConf))
-			Expect(err).ShouldNot(HaveOccurred())
-
-			utils.MkdirAll(fs, activeMount, os.ModePerm)
-			utils.MkdirAll(fs, "/disk", os.ModePerm)
-
-			_, err = fs.Create(filepath.Join(activeMount, constants.GrubConf))
-			Expect(err).ShouldNot(HaveOccurred())
-
-			activeSize = 16
 			device = "/disk/device"
+			err = utils.MkdirAll(fs, filepath.Dir(device), constants.DirPerm)
+			Expect(err).To(BeNil())
 			_, err = fs.Create(device)
 			Expect(err).ShouldNot(HaveOccurred())
 
@@ -426,21 +392,21 @@ var _ = Describe("Actions", Label("root"), func() {
 				}
 			}
 			// Need to create the IsoBaseTree, like if we are booting from iso
-			_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
+			err = utils.MkdirAll(fs, constants.IsoBaseTree, constants.DirPerm)
+			Expect(err).To(BeNil())
 			action.InstallSetup(config)
-		})
 
-		AfterEach(func() {
-			os.RemoveAll(activeTree)
-			os.RemoveAll(activeMount)
+			config.Images.GetActive().Size = 16
+
+			grubCfg := filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)
+			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
+			Expect(err).To(BeNil())
+			_, err = fs.Create(grubCfg)
+			Expect(err).To(BeNil())
 		})
 
 		It("Successfully installs", func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-
-			config.Images.GetActive().MountPoint = activeMount
 			config.Reboot = true
 			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
@@ -449,9 +415,6 @@ var _ = Describe("Actions", Label("root"), func() {
 		It("Successfully installs despite hooks failure", Label("hooks"), func() {
 			cloudInit.Error = true
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			config.PowerOff = true
 			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
@@ -461,17 +424,12 @@ var _ = Describe("Actions", Label("root"), func() {
 			config.NoFormat = true
 			config.Force = true
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			Expect(action.InstallRun(config)).To(BeNil())
 		})
 
 		It("Successfully installs a docker image", Label("docker"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
 			config.Images.GetActive().Source = v1.NewDockerSrc("my/image:latest")
-			config.Images.GetActive().MountPoint = activeMount
 			luet := v1mock.NewFakeLuet()
 			config.Luet = luet
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -480,11 +438,8 @@ var _ = Describe("Actions", Label("root"), func() {
 
 		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
-			utils.MkdirAll(fs, constants.OEMDir, os.ModePerm)
+			utils.MkdirAll(fs, constants.OEMDir, constants.DirPerm)
 			_, err := fs.Create(filepath.Join(constants.OEMDir, "99_custom.yaml"))
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(action.InstallRun(config)).To(BeNil())
@@ -513,8 +468,6 @@ var _ = Describe("Actions", Label("root"), func() {
 			fs.Create("cOS.iso")
 			config.Iso = "cOS.iso"
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().MountPoint = activeMount
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 			Expect(config.Images.GetActive().Source.Value()).To(ContainSubstring("/rootfs"))
 			Expect(config.Images.GetActive().Source.IsDir()).To(BeTrue())
@@ -524,9 +477,6 @@ var _ = Describe("Actions", Label("root"), func() {
 			config.NoFormat = true
 			config.Force = false
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
@@ -538,19 +488,12 @@ var _ = Describe("Actions", Label("root"), func() {
 
 		It("Fails on parted errors", Label("disk", "partitions"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			cmdFail = "parted"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails to unmount partitions", Label("disk", "partitions"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-
-			config.Images.GetActive().MountPoint = activeMount
 			mounter.ErrorOnUnmount = true
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
@@ -563,9 +506,7 @@ var _ = Describe("Actions", Label("root"), func() {
 
 		It("Fails if luet fails to unpack image", Label("image", "luet", "unpack"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
 			config.Images.GetActive().Source = v1.NewDockerSrc("my/image:latest")
-			config.Images.GetActive().MountPoint = activeMount
 			luet := v1mock.NewFakeLuet()
 			luet.OnUnpackError = true
 			config.Luet = luet
@@ -575,9 +516,6 @@ var _ = Describe("Actions", Label("root"), func() {
 
 		It("Fails if requested remote cloud config can't be downloaded", Label("cloud-config"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			config.CloudInit = "http://my.config.org"
 			client.Error = true
 			Expect(action.InstallRun(config)).NotTo(BeNil())
@@ -586,27 +524,18 @@ var _ = Describe("Actions", Label("root"), func() {
 
 		It("Fails on grub2-install errors", Label("grub"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			cmdFail = "grub2-install"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails copying Passive image", Label("copy", "active"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			cmdFail = "tune2fs"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
 
 		It("Fails setting the grub default entry", Label("grub"), func() {
 			config.Target = device
-			config.Images.GetActive().Size = activeSize
-			config.Images.GetActive().Source = v1.NewDirSrc(activeTree)
-			config.Images.GetActive().MountPoint = activeMount
 			cmdFail = "grub2-editenv"
 			Expect(action.InstallRun(config)).NotTo(BeNil())
 		})
@@ -639,9 +568,9 @@ var _ = Describe("Actions", Label("root"), func() {
 			config.RecoveryImage = "system/cos-config"
 			config.ImgSize = 10
 			// Create fake /etc/os-release
-			utils.MkdirAll(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc"), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc"), constants.DirPerm)
 
-			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), os.ModePerm)
+			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			// Create paths used by tests
@@ -693,21 +622,21 @@ var _ = Describe("Actions", Label("root"), func() {
 					if command == "mv" && args[0] == "-f" && args[1] == activeImg && args[2] == passiveImg {
 						// we doing backup, do the "move"
 						source, _ := fs.ReadFile(activeImg)
-						_ = fs.WriteFile(passiveImg, source, os.ModePerm)
+						_ = fs.WriteFile(passiveImg, source, constants.FilePerm)
 						_ = fs.RemoveAll(activeImg)
 					}
 					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
 						// we doing the image substitution, do the "move"
 						source, _ := fs.ReadFile(transitionImg)
-						_ = fs.WriteFile(activeImg, source, os.ModePerm)
+						_ = fs.WriteFile(activeImg, source, constants.FilePerm)
 						_ = fs.RemoveAll(transitionImg)
 					}
 					return []byte{}, nil
 				}
 				config.Runner = runner
 				// Create fake active/passive files
-				_ = fs.WriteFile(activeImg, []byte("active"), os.ModePerm)
-				_ = fs.WriteFile(passiveImg, []byte("passive"), os.ModePerm)
+				_ = fs.WriteFile(activeImg, []byte("active"), constants.FilePerm)
+				_ = fs.WriteFile(passiveImg, []byte("passive"), constants.FilePerm)
 			})
 			AfterEach(func() {
 				_ = fs.RemoveAll(activeImg)
@@ -757,7 +686,7 @@ var _ = Describe("Actions", Label("root"), func() {
 				// Create the dir on real os as rsync works on the real os
 				defer fs.RemoveAll(config.Directory)
 				// create a random file on it
-				err := fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+				err := fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
 				Expect(err).ToNot(HaveOccurred())
 
 				upgrade = action.NewUpgradeAction(config)
@@ -880,15 +809,15 @@ var _ = Describe("Actions", Label("root"), func() {
 					if command == "mv" && args[0] == "-f" && args[1] == transitionImg && args[2] == activeImg {
 						// we doing the image substitution, do the "move"
 						source, _ := fs.ReadFile(transitionImg)
-						_ = fs.WriteFile(activeImg, source, os.ModePerm)
+						_ = fs.WriteFile(activeImg, source, constants.FilePerm)
 						_ = fs.RemoveAll(transitionImg)
 					}
 					return []byte{}, nil
 				}
 				config.Runner = runner
 				// Create fake active/passive files
-				_ = fs.WriteFile(activeImg, []byte("active"), os.ModePerm)
-				_ = fs.WriteFile(passiveImg, []byte("passive"), os.ModePerm)
+				_ = fs.WriteFile(activeImg, []byte("active"), constants.FilePerm)
+				_ = fs.WriteFile(passiveImg, []byte("passive"), constants.FilePerm)
 			})
 			AfterEach(func() {
 				_ = fs.RemoveAll(activeImg)
@@ -960,7 +889,7 @@ var _ = Describe("Actions", Label("root"), func() {
 						if command == "mv" && args[0] == "-f" && args[1] == transitionImgSquash && args[2] == recoveryImgSquash {
 							// fake "move"
 							f, _ := fs.ReadFile(transitionImgSquash)
-							_ = fs.WriteFile(recoveryImgSquash, f, os.ModePerm)
+							_ = fs.WriteFile(recoveryImgSquash, f, constants.FilePerm)
 							_ = fs.RemoveAll(transitionImgSquash)
 						}
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
@@ -972,7 +901,7 @@ var _ = Describe("Actions", Label("root"), func() {
 					}
 					config.Runner = runner
 					// Create recoveryImgSquash so ti identifies that we are using squash recovery
-					_ = fs.WriteFile(recoveryImgSquash, []byte("recovery"), os.ModePerm)
+					_ = fs.WriteFile(recoveryImgSquash, []byte("recovery"), constants.FilePerm)
 				})
 				AfterEach(func() {
 					_ = fs.RemoveAll(activeImg)
@@ -1023,7 +952,7 @@ var _ = Describe("Actions", Label("root"), func() {
 					// Create the dir on real os as rsync works on the real os
 					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()
@@ -1139,7 +1068,7 @@ var _ = Describe("Actions", Label("root"), func() {
 						if command == "mv" && args[0] == "-f" && args[1] == transitionImgRecovery && args[2] == recoveryImg {
 							// fake "move"
 							f, _ := fs.ReadFile(transitionImgRecovery)
-							_ = fs.WriteFile(recoveryImg, f, os.ModePerm)
+							_ = fs.WriteFile(recoveryImg, f, constants.FilePerm)
 							_ = fs.RemoveAll(transitionImgRecovery)
 						}
 						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
@@ -1149,7 +1078,7 @@ var _ = Describe("Actions", Label("root"), func() {
 						return []byte{}, nil
 					}
 					config.Runner = runner
-					_ = fs.WriteFile(recoveryImg, []byte("recovery"), os.ModePerm)
+					_ = fs.WriteFile(recoveryImg, []byte("recovery"), constants.FilePerm)
 
 				})
 				AfterEach(func() {
@@ -1203,7 +1132,7 @@ var _ = Describe("Actions", Label("root"), func() {
 					// Create the dir on real os as rsync works on the real os
 					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
-					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), os.ModePerm)
+					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
 
 					upgrade = action.NewUpgradeAction(config)
 					err := upgrade.Run()

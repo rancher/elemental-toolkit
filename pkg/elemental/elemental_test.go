@@ -77,7 +77,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("MountPartitions", Label("MountPartitions", "disk", "partition", "mount"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), cnst.DirPerm)
 			_, err := fs.Create(cnst.EfiDevice)
 			Expect(err).ToNot(HaveOccurred())
 			action.InstallSetup(config)
@@ -116,9 +116,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
 			runner.ReturnValue = []byte("/some/device")
-			utils.MkdirAll(fs, filepath.Dir("/some"), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Dir("/some"), cnst.DirPerm)
 
-			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), cnst.DirPerm)
 			_, err := fs.Create(cnst.EfiDevice)
 			Expect(err).ShouldNot(HaveOccurred())
 
@@ -253,7 +253,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			cInit = &v1mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
 			config.CloudInitRunner = cInit
-			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), os.ModePerm)
+			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), cnst.DirPerm)
 			_, err := fs.Create(cnst.EfiDevice)
 			Expect(err).ToNot(HaveOccurred())
 			el = elemental.NewElemental(config)
@@ -686,7 +686,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Gets the iso and returns the temporary where it is stored and no image sources are set", func() {
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
@@ -700,7 +700,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Gets the iso and sets active and recovery images", func() {
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			config.Images[cnst.ActiveImgName] = &v1.Image{File: "activeimagefile"}
@@ -716,7 +716,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Fails if attemps to set recovery from active but no active is defined", func() {
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			config.Images[cnst.RecoveryImgName] = &v1.Image{}
@@ -734,7 +734,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			config.Mounter = v1mock.ErrorMounter{ErrorOnMount: true}
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), os.ModePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			config.Iso = fmt.Sprintf("%s/fake.iso", tmpDir)
 			e := elemental.NewElemental(config)
@@ -746,7 +746,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("CloudConfig", Label("CloudConfig", "cloud-config"), func() {
 		It("Copies the cloud config file", func() {
 			testString := "In a galaxy far far away..."
-			err := fs.WriteFile("/config.yaml", []byte(testString), os.ModePerm)
+			err := fs.WriteFile("/config.yaml", []byte(testString), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 			config.CloudInit = "/config.yaml"

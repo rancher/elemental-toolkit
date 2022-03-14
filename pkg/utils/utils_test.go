@@ -64,9 +64,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		logger = v1.NewNullLogger()
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
-		fs.Mkdir("/tmp", os.ModePerm)
-		fs.Mkdir("/run", os.ModePerm)
-		fs.Mkdir("/etc", os.ModePerm)
+		fs.Mkdir("/tmp", constants.DirPerm)
+		fs.Mkdir("/run", constants.DirPerm)
+		fs.Mkdir("/etc", constants.DirPerm)
 
 		config = conf.NewRunConfig(
 			v1.WithFs(fs),
@@ -319,7 +319,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("CopyFile", Label("CopyFile"), func() {
 		It("Copies source to target", func() {
-			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
 			_, err = fs.Create("/some/file")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -333,14 +333,14 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(e).To(BeTrue())
 		})
 		It("Fails to open non existing file", func() {
-			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).NotTo(BeNil())
 			_, err = fs.Stat("/some/otherfile")
 			Expect(err).NotTo(BeNil())
 		})
 		It("Fails to copy on non writable target", func() {
-			err := utils.MkdirAll(fs, "/some", os.ModePerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
 			fs.Create("/some/file")
 			_, err = fs.Stat("/some/otherfile")
@@ -400,8 +400,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
 
-			os.MkdirAll(filepath.Join(sourceDir, "host"), os.ModePerm)
-			os.MkdirAll(filepath.Join(sourceDir, "run"), os.ModePerm)
+			os.MkdirAll(filepath.Join(sourceDir, "host"), constants.DirPerm)
+			os.MkdirAll(filepath.Join(sourceDir, "run"), constants.DirPerm)
 			for i := 0; i < 5; i++ {
 				_, _ = os.CreateTemp(sourceDir, "file*")
 			}
@@ -515,7 +515,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
@@ -544,10 +544,10 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
 
-				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), os.ModePerm)
+				err = utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
@@ -569,7 +569,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger.SetOutput(buf)
 				logger.SetLevel(log.DebugLevel)
 
-				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
@@ -590,12 +590,12 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				fs.Mkdir("/dev", os.ModePerm)
+				fs.Mkdir("/dev", constants.DirPerm)
 
 				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), os.ModePerm)
+				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
@@ -699,10 +699,10 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("LoadEnvFile", Label("LoadEnvFile"), func() {
 		BeforeEach(func() {
-			fs.Mkdir("/etc", os.ModePerm)
+			fs.Mkdir("/etc", constants.DirPerm)
 		})
 		It("returns proper map if file exists", func() {
-			err := fs.WriteFile("/etc/envfile", []byte("TESTKEY=TESTVALUE"), os.ModePerm)
+			err := fs.WriteFile("/etc/envfile", []byte("TESTKEY=TESTVALUE"), constants.FilePerm)
 			Expect(err).ToNot(HaveOccurred())
 			envData, err := utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).ToNot(HaveOccurred())
@@ -714,7 +714,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("returns error if it cant unmarshall the env file", func() {
-			err := fs.WriteFile("/etc/envfile", []byte("WHATWHAT"), os.ModePerm)
+			err := fs.WriteFile("/etc/envfile", []byte("WHATWHAT"), constants.FilePerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).To(HaveOccurred())
