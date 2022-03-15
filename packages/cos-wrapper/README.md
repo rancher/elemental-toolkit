@@ -1,4 +1,4 @@
-This package provides the following utilities:
+This package provides the following wrappers around `cos-*` binaries to facilitate transitioning to the elemental cli:
 
 - `cos-installer` ( wrapper of `elemental install` )
 - `cos-deploy` ( wrapper of `elemental reset` )
