@@ -1,5 +1,5 @@
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
-GIT_TAG ?= $(shell git describe --tags 2>/dev/null || echo "v0.0.1" )
+GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
 
 PKG        := ./...
 LDFLAGS    := -w -s
@@ -18,6 +18,9 @@ $(GINKGO):
 
 build:
 	go build -ldflags '$(LDFLAGS)' -o bin/
+
+docker_build:
+	DOCKER_BUILDKIT=1 docker build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t elemental:${GIT_TAG}-${GIT_COMMIT} .
 
 vet:
 	go vet ${PKG}

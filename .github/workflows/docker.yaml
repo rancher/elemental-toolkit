@@ -1,6 +1,8 @@
 name: Docker build and push
 on:
   pull_request:
+    paths:
+      - Dockerfile
   push:
     branches:
       - main
@@ -12,6 +14,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Export tag
+        id: export_tag
+        run: |
+          git describe --abbrev=0 --tags
+          TAG=`git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.1"`
+          echo "::set-output name=elemental_tag::$TAG"
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
@@ -20,7 +30,7 @@ jobs:
             quay.io/costoolkit/elemental
           tags: |
             type=semver,pattern=v{{version}}
-            type=sha,format=long
+            type=sha,format=short,prefix=${{ steps.export_tag.outputs.elemental_tag }}-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -37,4 +47,17 @@ jobs:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
+          load: true # loads it locally, so it can be used from docker client
           target: elemental
+          build-args: |
+            ELEMENTAL_VERSION=${{ steps.export_tag.outputs.elemental_tag }}
+            ELEMENTAL_COMMIT=${{ github.sha }}
+      - name: Test docker image
+        run: |
+          # create a 30Gb file
+          # qemu-img create -f raw disk.img 30G
+          # mount loop device and get the device
+          #LOOP=`sudo losetup -fP --show disk.img`
+          # unfortunately loop devices are not properly refreshed under a container :/
+          #docker run --privileged ${{ steps.meta.outputs.tags }} install --debug -d quay.io/costoolkit/releases-green:cos-system-0.8.6 $LOOP
+          docker run ${{ steps.meta.outputs.tags }} version --long
