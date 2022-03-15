@@ -87,7 +87,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 			return err
 		}
 		tmpMountDir, _ := utils.TempDir(u.Config.Fs, "", "elemental")
-		err = u.Config.Mounter.Mount(recoveryPart.Path, tmpMountDir, recoveryPart.FS, []string{})
+		err = u.Config.Mounter.Mount(recoveryPart.Path, tmpMountDir, "auto", []string{})
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		// We are updating recovery
 		if u.Config.RecoveryUpgrade {
 			recoveryPart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
-			err = u.Config.Mounter.Mount(recoveryPart.Path, recoveryPart.MountPoint, recoveryPart.FS, []string{"remount", "rw"})
+			err = u.Config.Mounter.Mount(recoveryPart.Path, recoveryPart.MountPoint, "auto", []string{"remount", "rw"})
 			if err != nil {
 				u.Error("Error mounting %s: %s", recoveryPart.MountPoint, err)
 				return err
@@ -130,7 +130,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 				u.Error("Error creating dir %s: %s", constants.StateDir, err)
 				return err
 			}
-			err = u.Config.Mounter.Mount(statePart.Path, constants.StateDir, statePart.FS, []string{})
+			err = u.Config.Mounter.Mount(statePart.Path, constants.StateDir, "auto", []string{})
 			if err != nil {
 				u.Error("Error mounting %s: %s", constants.StateDir, err)
 				return err
@@ -156,7 +156,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 				return err
 			}
 			// set upgradeStateDir to /run/cos/recovery
-			err = u.Config.Mounter.Mount(recoveryPart.Path, constants.RecoveryDir, recoveryPart.FS, []string{})
+			err = u.Config.Mounter.Mount(recoveryPart.Path, constants.RecoveryDir, "auto", []string{})
 			if err != nil {
 				u.Error("Error mounting %s: %s", constants.RecoveryDir, err)
 				return err
@@ -168,7 +168,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		} else { // We are updating active
 			// Remount state partition RW
 			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-			err = u.Config.Mounter.Mount(statePart.Path, statePart.MountPoint, statePart.FS, []string{"remount", "rw"})
+			err = u.Config.Mounter.Mount(statePart.Path, statePart.MountPoint, "auto", []string{"remount", "rw"})
 			if err != nil {
 				u.Error("Error mounting %s: %s", statePart.MountPoint, err)
 				return err
@@ -191,7 +191,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		if err == nil {
 			err := utils.MkdirAll(u.Config.Fs, constants.PersistentDir, constants.DirPerm)
 			if err == nil {
-				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, persistentPart.FS, []string{})
+				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, "auto", []string{})
 				if err != nil {
 					u.Config.Logger.Warnf("Could not mount persistent partition: %s", err)
 				} else {
@@ -287,7 +287,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		if statePartForRecovery.MountPoint == "" {
 			_ = utils.MkdirAll(u.Config.Fs, constants.StateDir, constants.DirPerm)
 			if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(constants.StateDir); notMounted {
-				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, statePartForRecovery.FS, []string{"rw"})
+				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, "auto", []string{"rw"})
 				if err != nil {
 					u.Error("Could not mount state partition with label %s for rebrand: %s", u.Config.StateLabel, err)
 					return err
@@ -298,7 +298,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 			}
 		} else {
 			// if mounted it may be RO only, so remount it RW?
-			err = u.Config.Mounter.Mount(statePartForRecovery.Path, statePartForRecovery.MountPoint, statePartForRecovery.FS, []string{"remount", "rw"})
+			err = u.Config.Mounter.Mount(statePartForRecovery.Path, statePartForRecovery.MountPoint, "auto", []string{"remount", "rw"})
 			if err != nil {
 				u.Error("Could not remount state partition with label %s for rebrand: %s", u.Config.StateLabel, err)
 				return err

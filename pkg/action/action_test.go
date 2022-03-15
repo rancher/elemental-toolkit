@@ -655,7 +655,7 @@ var _ = Describe("Actions", func() {
 				fakeMounted := mount.MountPoint{
 					Device: "/dev/fake1",
 					Path:   "/run/initramfs/cos-state",
-					Type:   "fakefs",
+					Type:   "auto",
 				}
 				Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -835,7 +835,7 @@ var _ = Describe("Actions", func() {
 				fakeMounted := mount.MountPoint{
 					Device: "/dev/fake1",
 					Path:   "/run/initramfs/cos-state",
-					Type:   "fakefs",
+					Type:   "auto",
 				}
 				Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -929,7 +929,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -965,7 +965,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1032,7 +1032,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1110,7 +1110,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1145,7 +1145,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
@@ -1216,7 +1216,7 @@ var _ = Describe("Actions", func() {
 					fakeMounted := mount.MountPoint{
 						Device: "/dev/fake1",
 						Path:   "/run/initramfs/live",
-						Type:   "fakefs",
+						Type:   "auto",
 					}
 					Expect(mounter.List()).To(ContainElement(fakeMounted))
 
