@@ -18,15 +18,20 @@ package v1
 
 import (
 	"os/exec"
+	"strings"
 )
 
 type Runner interface {
 	InitCmd(string, ...string) *exec.Cmd
 	Run(string, ...string) ([]byte, error)
 	RunCmd(cmd *exec.Cmd) ([]byte, error)
+	GetLogger() Logger
+	SetLogger(logger Logger)
 }
 
-type RealRunner struct{}
+type RealRunner struct {
+	Logger Logger
+}
 
 func (r RealRunner) InitCmd(command string, args ...string) *exec.Cmd {
 	return exec.Command(command, args...)
@@ -38,5 +43,16 @@ func (r RealRunner) RunCmd(cmd *exec.Cmd) ([]byte, error) {
 
 func (r RealRunner) Run(command string, args ...string) ([]byte, error) {
 	cmd := r.InitCmd(command, args...)
+	if r.Logger != nil {
+		r.Logger.Debugf("Running cmd: '%s %s'", command, strings.Join(args, " "))
+	}
 	return r.RunCmd(cmd)
+}
+
+func (r RealRunner) GetLogger() Logger {
+	return r.Logger
+}
+
+func (r *RealRunner) SetLogger(logger Logger) {
+	r.Logger = logger
 }

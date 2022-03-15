@@ -30,7 +30,6 @@ func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 	r := &v1.RunConfig{
 		Fs:      vfs.OSFS,
 		Logger:  log,
-		Runner:  &v1.RealRunner{},
 		Syscall: &v1.RealSyscall{},
 		Client:  http.NewClient(),
 	}
@@ -41,9 +40,20 @@ func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
 		}
 	}
 
+	// delay runner creation after we have run over the options in case we use WithRunner
+	if r.Runner == nil {
+		r.Runner = &v1.RealRunner{Logger: r.Logger}
+	}
+
+	// Now check if the runner has a logger inside, otherwise point our logger into it
+	// This can happen if we set the WithRunner option as that doesn't set a logger
+	if r.Runner.GetLogger() == nil {
+		r.Runner.SetLogger(r.Logger)
+	}
+
 	// Delay the yip runner creation, so we set the proper logger instead of blindly setting it to the logger we create
 	// at the start of NewRunConfig, as WithLogger can be passed on init, and that would result in 2 different logger
-	// instances, on on the config.Logger and the other on config.CloudInitRunner
+	// instances, on the config.Logger and the other on config.CloudInitRunner
 	if r.CloudInitRunner == nil {
 		r.CloudInitRunner = cloudinit.NewYipCloudInitRunner(r.Logger, r.Runner, vfs.OSFS)
 	}
