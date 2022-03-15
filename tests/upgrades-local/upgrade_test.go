@@ -46,7 +46,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				out, err = s.Command("elemental upgrade --no-verify --directory /run/update")
 				if err != nil {
-					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
+					fmt.Fprintf(GinkgoWriter, "Error from elemental upgrade: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
