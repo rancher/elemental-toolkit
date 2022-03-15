@@ -38,11 +38,8 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				out, err = s.Command(fmt.Sprintf("cos-upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-				if err != nil {
-					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
-				}
-				Expect(err).ToNot(HaveOccurred())
+				out, err = s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+				Expect(err).ToNot(HaveOccurred(), out)
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				Expect(out).Should(ContainSubstring("Upgrading active partition"))
 				By("rebooting")

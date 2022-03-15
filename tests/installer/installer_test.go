@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -50,7 +51,7 @@ var _ = Describe("cOS Installer tests", func() {
 		Context("install source tests", func() {
 			It("from iso", func() {
 				By("Running the cos-installer")
-				out, err := s.Command("cos-installer /dev/sda")
+				out, err := s.Command("elemental install /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -66,7 +67,7 @@ var _ = Describe("cOS Installer tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the cos-installer")
-				out, err := s.Command(fmt.Sprintf("cos-installer --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("elemental install --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -85,9 +86,9 @@ var _ = Describe("cOS Installer tests", func() {
 			Context("with partition layout", func() {
 				It("Forcing GPT", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
-					By("Running the cos-installer with a layout file")
+					By("Running the elemental installer with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental install --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -133,7 +134,7 @@ var _ = Describe("cOS Installer tests", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("cos-installer --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental install --partition-layout /usr/local/layout.yaml /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -180,7 +181,7 @@ var _ = Describe("cOS Installer tests", func() {
 		Context("efi/gpt tests", func() {
 			It("forces gpt", func() {
 				By("Running the installer")
-				out, err := s.Command("cos-installer --force-gpt /dev/sda")
+				out, err := s.Command("elemental install --force-gpt /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -194,7 +195,7 @@ var _ = Describe("cOS Installer tests", func() {
 			})
 			It("forces efi", func() {
 				By("Running the installer")
-				out, err := s.Command("cos-installer --force-efi /dev/sda")
+				out, err := s.Command("elemental install --force-efi /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -214,7 +215,7 @@ var _ = Describe("cOS Installer tests", func() {
 				By("Running the cos-installer with a config file")
 				Expect(err).To(BeNil())
 				By("Running the installer")
-				out, err := s.Command("cos-installer --cloud-init /tmp/config.yaml /dev/sda")
+				out, err := s.Command("elemental install --cloud-init /tmp/config.yaml /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -275,7 +276,7 @@ var _ = Describe("cOS Installer tests", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("cos-installer --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental install --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
@@ -325,7 +326,7 @@ var _ = Describe("cOS Installer tests", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the cos-installer with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("cos-installer --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental install --partition-layout /usr/local/layout.yaml /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -375,7 +376,7 @@ var _ = Describe("cOS Installer tests", func() {
 		PContext("install source tests", func() {
 			It("from iso", func() {
 				By("Running the cos-installer")
-				out, err := s.Command("cos-installer /dev/sda")
+				out, err := s.Command("elemental install /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -393,7 +394,7 @@ var _ = Describe("cOS Installer tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the cos-installer")
-				out, err := s.Command(fmt.Sprintf("cos-installer --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("elemental install --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -413,7 +414,7 @@ var _ = Describe("cOS Installer tests", func() {
 		PContext("efi/gpt tests", func() {
 			It("forces gpt", func() {
 				By("Running the installer")
-				out, err := s.Command("cos-installer --force-gpt /dev/sda")
+				out, err := s.Command("elemental install --force-gpt /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -429,7 +430,7 @@ var _ = Describe("cOS Installer tests", func() {
 			})
 			It("forces efi", func() {
 				By("Running the installer")
-				out, err := s.Command("cos-installer --force-efi /dev/sda")
+				out, err := s.Command("elemental install --force-efi /dev/sda")
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))

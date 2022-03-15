@@ -2,6 +2,7 @@ package cos_test
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/cOS/tests/sut"
@@ -43,7 +44,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
-				out, err = s.Command("cos-upgrade --no-verify --directory /run/update")
+				out, err = s.Command("elemental upgrade --no-verify --directory /run/update")
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from cos-upgrade: %v\n", err)
 				}

@@ -139,7 +139,7 @@ func (s *SUT) ChangeBootOnce(b int) error {
 	return nil
 }
 
-// Reset runs reboots cOS into Recovery and runs cos-reset.
+// Reset runs reboots cOS into Recovery and runs elemental reset.
 // It will boot back the system from the Active partition afterwards
 func (s *SUT) Reset() {
 	if s.BootFrom() != Recovery {
@@ -150,12 +150,12 @@ func (s *SUT) Reset() {
 		Expect(s.BootFrom()).To(Equal(Recovery))
 	}
 
-	By("Running cos-reset")
-	out, err := s.command("cos-reset", false)
+	By("Running elemental reset")
+	out, err := s.command("elemental reset", false)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(out).Should(ContainSubstring("Installing"))
 
-	By("Reboot to active after cos-reset")
+	By("Reboot to active after elemental reset")
 	s.Reboot()
 	ExpectWithOffset(1, s.BootFrom()).To(Equal(Active))
 }
