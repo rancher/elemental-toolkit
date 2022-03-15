@@ -45,9 +45,10 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
+          # push and load can't be used at the same time
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          load: true # loads it locally, so it can be used from docker client
+          load: ${{ github.event_name == 'pull_request' }} # loads it locally, so it can be used from docker client
           target: elemental
           build-args: |
             ELEMENTAL_VERSION=${{ steps.export_tag.outputs.elemental_tag }}
