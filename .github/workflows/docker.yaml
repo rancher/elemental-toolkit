@@ -7,7 +7,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*.*.*'
+      - 'v*'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,7 +44,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: .
           # push and load can't be used at the same time
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
