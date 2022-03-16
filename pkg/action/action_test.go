@@ -86,18 +86,24 @@ var _ = Describe("Actions", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Reset Setup", Label("resetsetup"), func() {
-		var lsblkTmpl, bootedFrom, blkidOut, label, cmdFail string
+		var lsblkOut, bootedFrom, cmdFail string
 		BeforeEach(func() {
-			label = ""
 			cmdFail = ""
 			fs.Create(constants.EfiDevice)
 			bootedFrom = constants.RecoverySquashFile
-			blkidOut = "/dev/device1"
-			lsblkTmpl = `{
+			lsblkOut = `{
   "blockdevices": [
     {
-      "label": "%s", "size": 0, "fstype": "ext4", "mountpoint":"",
-      "path":"/dev/device1", "pkname":"/dev/device"
+      "label": "COS_STATE", "size": 0, "fstype": "ext4", "mountpoint":"",
+      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
+    },
+    {
+      "label": "COS_PERSISTENT", "size": 0, "fstype": "ext4", "mountpoint":"",
+      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
+    },
+    {
+      "label": "COS_OEM", "size": 0, "fstype": "ext4", "mountpoint":"",
+      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
     }
   ]
 }`
@@ -109,10 +115,7 @@ var _ = Describe("Actions", func() {
 				case "cat":
 					return []byte(bootedFrom), nil
 				case "lsblk":
-					return []byte(fmt.Sprintf(lsblkTmpl, label)), nil
-				case "blkid":
-					label = args[1]
-					return []byte(blkidOut), nil
+					return []byte(lsblkOut), nil
 				default:
 					return []byte{}, nil
 				}
@@ -143,7 +146,7 @@ var _ = Describe("Actions", func() {
 			Expect(action.ResetSetup(config)).NotTo(BeNil())
 		})
 		It("Fails if partitions are not found", func() {
-			cmdFail = "blkid"
+			cmdFail = "lsblk"
 			Expect(action.ResetSetup(config)).NotTo(BeNil())
 		})
 	})
@@ -199,12 +202,7 @@ var _ = Describe("Actions", func() {
 				if cmdFail == cmd {
 					return []byte{}, errors.New("Command failed")
 				}
-				switch cmd {
-				case "blkid":
-					return []byte("/dev/device"), nil
-				default:
-					return []byte{}, nil
-				}
+				return []byte{}, nil
 			}
 		})
 		It("Successfully resets on non-squashfs recovery", func() {
@@ -358,7 +356,7 @@ var _ = Describe("Actions", func() {
 		var err error
 
 		BeforeEach(func() {
-			device = "/disk/device"
+			device = "/some/device"
 			err = utils.MkdirAll(fs, filepath.Dir(device), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(device)
@@ -383,10 +381,20 @@ var _ = Describe("Actions", func() {
 					if idx > 0 {
 						partNum++
 						partedOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
+						_, _ = fs.Create(fmt.Sprintf("/some/device%d", partNum))
 					}
 					return []byte(partedOut), nil
-				case "lsblk", "blkid":
-					return []byte(fmt.Sprintf("/some/device%d part", partNum)), nil
+				case "lsblk":
+					return []byte(`{
+"blockdevices":
+    [
+        {"label": "COS_ACTIVE", "type": "loop", "path": "/some/loop0"},
+        {"label": "COS_OEM", "type": "part", "path": "/some/device1"},
+        {"label": "COS_RECOVERY", "type": "part", "path": "/some/device2"},
+        {"label": "COS_STATE", "type": "part", "path": "/some/device3"},
+        {"label": "COS_PERSISTENT", "type": "part", "path": "/some/device4"}
+    ]
+}`), nil
 				default:
 					return []byte{}, nil
 				}
@@ -570,23 +578,20 @@ var _ = Describe("Actions", func() {
 			// Create fake /etc/os-release
 			utils.MkdirAll(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc"), constants.DirPerm)
 
-			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), constants.DirPerm)
+			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), constants.FilePerm)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			// Create paths used by tests
-			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), os.ModePerm)
-			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.UpgradeRecoveryDir), os.ModePerm)
+			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), constants.DirPerm)
+			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.UpgradeRecoveryDir), constants.DirPerm)
 		})
 		It("Fails if some hook fails and strict is set", func() {
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-				if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-					return []byte("/dev/active"), nil
-				}
-				if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
-					return []byte("/dev/passive"), nil
-				}
 				if command == "lsblk" {
-					return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "path": "/dev/fake1"}]}`), nil
+					return []byte(`{"blockdevices": [
+    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/state","type":"part"},
+    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/recovery","type":"part"}
+]}`), nil
 				}
 				if command == "cat" && args[0] == "/proc/cmdline" {
 					return []byte(constants.ActiveLabel), nil
@@ -606,15 +611,11 @@ var _ = Describe("Actions", func() {
 		Describe(fmt.Sprintf("Booting from %s", constants.ActiveLabel), Label("active_label"), func() {
 			BeforeEach(func() {
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-						return []byte("/dev/active"), nil
-					}
-					if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
-						return []byte("/dev/passive"), nil
-					}
-
 					if command == "lsblk" {
-						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint": "/run/initramfs/cos-state", "path": "/dev/fake1"}]}`), nil
+						return []byte(`{"blockdevices": [
+    {"label":"COS_STATE","size":1,"mountpoint":"/run/initramfs/cos-state","path":"/dev/fake1","type":"part"},
+    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
+]}`), nil
 					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.ActiveLabel), nil
@@ -793,15 +794,11 @@ var _ = Describe("Actions", func() {
 		Describe(fmt.Sprintf("Booting from %s", constants.PassiveLabel), Label("passive_label"), func() {
 			BeforeEach(func() {
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-					if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-						return []byte("/dev/active"), nil
-					}
-					if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
-						return []byte("/dev/passive"), nil
-					}
-
 					if command == "lsblk" {
-						return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/cos-state", "path": "/dev/fake1"}]}`), nil
+						return []byte(`{"blockdevices": [
+    {"label":"COS_STATE","size":1,"mountpoint":"/run/initramfs/cos-state","path":"/dev/fake1","type":"part"},
+    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
+]}`), nil
 					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.PassiveLabel), nil
@@ -869,15 +866,11 @@ var _ = Describe("Actions", func() {
 			Describe("Using squashfs", Label("squashfs"), func() {
 				BeforeEach(func() {
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
-							return []byte("/dev/active"), nil
-						}
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-							return []byte("/dev/passive"), nil
-						}
-
 						if command == "lsblk" {
-							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/live", "path": "/dev/fake1"}]}`), nil
+							return []byte(`{"blockdevices": [
+    {"label":"COS_RECOVERY","size":1,"mountpoint":"/run/initramfs/live","path":"/dev/fake1","type":"part"},
+    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
+]}`), nil
 						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
@@ -892,20 +885,11 @@ var _ = Describe("Actions", func() {
 							_ = fs.WriteFile(recoveryImgSquash, f, constants.FilePerm)
 							_ = fs.RemoveAll(transitionImgSquash)
 						}
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-							// rebrand looks for this
-							return []byte("/dev/state"), nil
-						}
-
 						return []byte{}, nil
 					}
 					config.Runner = runner
 					// Create recoveryImgSquash so ti identifies that we are using squash recovery
 					_ = fs.WriteFile(recoveryImgSquash, []byte("recovery"), constants.FilePerm)
-				})
-				AfterEach(func() {
-					_ = fs.RemoveAll(activeImg)
-					_ = fs.RemoveAll(passiveImg)
 				})
 				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
 					// This should be the old image
@@ -949,8 +933,6 @@ var _ = Describe("Actions", func() {
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
 					config.Directory, _ = utils.TempDir(fs, "", "elemental")
-					// Create the dir on real os as rsync works on the real os
-					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
 					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
 
@@ -993,8 +975,7 @@ var _ = Describe("Actions", func() {
 
 					config.ChannelUpgrades = true
 					// Required paths
-					tmpDirBase := filepath.Join(os.TempDir(), "tmpluet")
-					defer os.RemoveAll(tmpDirBase)
+					tmpDirBase, _ := utils.TempDir(fs, "", "tmpluet")
 					// create new config here to add system repos
 					luetSystemConfig := luetTypes.LuetSystemConfig{
 						DatabasePath:   filepath.Join(tmpDirBase, "db"),
@@ -1053,14 +1034,11 @@ var _ = Describe("Actions", func() {
 			Describe("Not using squashfs", Label("non-squashfs"), func() {
 				BeforeEach(func() {
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.RecoveryLabel {
-							return []byte("/dev/active"), nil
-						}
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-							return []byte("/dev/passive"), nil
-						}
 						if command == "lsblk" {
-							return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/run/initramfs/live", "path": "/dev/fake1"}]}`), nil
+							return []byte(`{"blockdevices": [
+    {"label":"COS_RECOVERY","size":1,"mountpoint":"/run/initramfs/live","path":"/dev/fake1","type":"part"},
+    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
+]}`), nil
 						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
@@ -1071,20 +1049,11 @@ var _ = Describe("Actions", func() {
 							_ = fs.WriteFile(recoveryImg, f, constants.FilePerm)
 							_ = fs.RemoveAll(transitionImgRecovery)
 						}
-						if command == "blkid" && args[0] == "--label" && args[1] == constants.StateLabel {
-							// rebrand looks for this
-							return []byte("/dev/state"), nil
-						}
 						return []byte{}, nil
 					}
 					config.Runner = runner
 					_ = fs.WriteFile(recoveryImg, []byte("recovery"), constants.FilePerm)
 
-				})
-				AfterEach(func() {
-					_ = fs.RemoveAll(activeImg)
-					_ = fs.RemoveAll(passiveImg)
-					_ = fs.RemoveAll(recoveryImg)
 				})
 				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
 					// This should be the old image
@@ -1129,8 +1098,6 @@ var _ = Describe("Actions", func() {
 				})
 				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
 					config.Directory, _ = utils.TempDir(fs, "", "elemental")
-					// Create the dir on real os as rsync works on the real os
-					defer fs.RemoveAll(config.Directory)
 					// create a random file on it
 					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
 
@@ -1173,12 +1140,9 @@ var _ = Describe("Actions", func() {
 
 					config.ChannelUpgrades = true
 					// Required paths
-					tmpDirBase, _ := os.MkdirTemp("", "elemental")
-					pkgCache, _ := os.MkdirTemp("", "elemental")
-					dbPath, _ := os.MkdirTemp("", "elemental")
-					defer os.RemoveAll(tmpDirBase)
-					defer os.RemoveAll(pkgCache)
-					defer os.RemoveAll(dbPath)
+					tmpDirBase, _ := utils.TempDir(fs, "", "elemental")
+					pkgCache, _ := utils.TempDir(fs, "", "elemental")
+					dbPath, _ := utils.TempDir(fs, "", "elemental")
 					// create new config here to add system repos
 					luetSystemConfig := luetTypes.LuetSystemConfig{
 						DatabasePath:   dbPath,

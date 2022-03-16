@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,11 +34,6 @@ import (
 	"github.com/zloylos/grsync"
 )
 
-// tmpBlockdevices is a temporal struct to extract the output of lsblk json
-type tmpBlockdevices struct {
-	Blockdevices []v1.Partition `json:"blockdevices,omitempty"`
-}
-
 func CommandExists(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
@@ -55,40 +49,43 @@ func BootedFrom(runner v1.Runner, label string) bool {
 // attempts value sets the number of attempts to find the device, it
 // waits a second between attempts.
 func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, error) {
-	for tries := 0; tries < attempts; tries++ {
-		_, _ = runner.Run("udevadm", "settle")
-		out, err := runner.Run("blkid", "--label", label)
-		if err == nil && strings.TrimSpace(string(out)) != "" {
-			return strings.TrimSpace(string(out)), nil
-		}
-		time.Sleep(1 * time.Second)
+	part, err := GetFullDeviceByLabel(runner, label, attempts)
+	if err != nil {
+		return "", err
 	}
-	return "", errors.New("no device found")
+	return part.Path, nil
 }
 
 // GetFullDeviceByLabel works like GetDeviceByLabel, but it will try to get as much info as possible from the existing
 // partition and return a v1.Partition object
-func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (v1.Partition, error) {
+func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Partition, error) {
 	for tries := 0; tries < attempts; tries++ {
 		_, _ = runner.Run("udevadm", "settle")
-		out, err := runner.Run("blkid", "--label", label)
-		device := strings.TrimSpace(string(out))
-		if err == nil && device != "" {
-			out, err = runner.Run("lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", device)
-			if err == nil && strings.TrimSpace(string(out)) != "" {
-				a := tmpBlockdevices{}
-				err = json.Unmarshal(out, &a)
-				if err != nil {
-					return v1.Partition{}, err
-				}
-				return a.Blockdevices[0], nil
-			} else if err != nil {
-				return v1.Partition{}, err
+		parts, err := GetAllPartitions(runner)
+		if err != nil {
+			return nil, err
+		}
+		for _, part := range parts {
+			if part.Label == label {
+				return part, nil
 			}
 		}
 		time.Sleep(1 * time.Second)
 	}
-	return v1.Partition{}, errors.New("no device found")
+	return nil, errors.New("no device found")
+}
+
+// GetPartitionFS returns the partition filesystem for the given device.
+// If the device is not a partition returns an error.
+func GetPartitionFS(runner v1.Runner, device string) (string, error) {
+	dev, err := GetDevicePartitions(runner, device)
+	if err != nil {
+		return "", err
+	}
+	if len(dev) != 1 {
+		return "", fmt.Errorf("%s does not hold a partition", device)
+	}
+	return dev[0].FS, nil
 }
 
 // CopyFile Copies source file to target file using Fs interface

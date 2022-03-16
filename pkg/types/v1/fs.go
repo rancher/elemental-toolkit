@@ -29,6 +29,7 @@ type FS interface {
 	Stat(name string) (os.FileInfo, error)
 	RemoveAll(path string) error
 	ReadFile(filename string) ([]byte, error)
+	Readlink(name string) (string, error)
 	RawPath(name string) (string, error)
 	Remove(name string) error
 	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)

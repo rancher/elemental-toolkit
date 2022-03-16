@@ -55,9 +55,19 @@ func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins
 			l.Errorf("Exiting, disk not found:\n %s", err.Error())
 			return err
 		}
-		dev = partitioner.NewDisk(partDevice.Disk, partitioner.WithRunner(runner), partitioner.WithLogger(log))
+		dev = partitioner.NewDisk(
+			partDevice.Disk,
+			partitioner.WithRunner(runner),
+			partitioner.WithLogger(log),
+			partitioner.WithFS(fs),
+		)
 	} else if len(strings.TrimSpace(s.Layout.Device.Path)) > 0 {
-		dev = partitioner.NewDisk(s.Layout.Device.Path, partitioner.WithRunner(runner), partitioner.WithLogger(log))
+		dev = partitioner.NewDisk(
+			s.Layout.Device.Path,
+			partitioner.WithRunner(runner),
+			partitioner.WithLogger(log),
+			partitioner.WithFS(fs),
+		)
 	} else {
 		l.Warnf("No target device defined, nothing to do")
 		return nil

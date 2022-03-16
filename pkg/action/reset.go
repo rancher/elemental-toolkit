@@ -64,7 +64,7 @@ func ResetSetup(config *v1.RunConfig) error {
 			partEfi.MountPoint = cnst.EfiDir
 		}
 		partEfi.Name = cnst.EfiPartName
-		config.Partitions = append(config.Partitions, &partEfi)
+		config.Partitions = append(config.Partitions, partEfi)
 	}
 
 	// Only add it if it exists, not a hard requirement
@@ -74,7 +74,7 @@ func ResetSetup(config *v1.RunConfig) error {
 			partOEM.MountPoint = cnst.OEMDir
 		}
 		partOEM.Name = cnst.OEMPartName
-		config.Partitions = append(config.Partitions, &partOEM)
+		config.Partitions = append(config.Partitions, partOEM)
 	} else {
 		config.Logger.Warnf("No OEM partition found")
 	}
@@ -88,7 +88,7 @@ func ResetSetup(config *v1.RunConfig) error {
 		partState.MountPoint = cnst.StateDir
 	}
 	partState.Name = cnst.StatePartName
-	config.Partitions = append(config.Partitions, &partState)
+	config.Partitions = append(config.Partitions, partState)
 	config.Target = partState.Disk
 
 	// Only add it if it exists, not a hard requirement
@@ -98,7 +98,7 @@ func ResetSetup(config *v1.RunConfig) error {
 			partPersistent.MountPoint = cnst.PersistentDir
 		}
 		partPersistent.Name = cnst.PersistentPartName
-		config.Partitions = append(config.Partitions, &partPersistent)
+		config.Partitions = append(config.Partitions, partPersistent)
 	} else {
 		config.Logger.Warnf("No Persistent partition found")
 	}

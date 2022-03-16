@@ -19,7 +19,6 @@ package elemental_test
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -83,17 +82,25 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			action.InstallSetup(config)
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
+
+			err = utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			Expect(err).To(BeNil())
+			_, err = fs.Create("/some/device")
+			Expect(err).To(BeNil())
+
+			for _, part := range config.Partitions {
+				part.Path = "/some/device"
+			}
+
 			el = elemental.NewElemental(config)
 		})
 
 		It("Mounts disk partitions", func() {
-			runner.ReturnValue = []byte("/some/device")
 			err := el.MountPartitions()
 			Expect(err).To(BeNil())
 		})
 
 		It("Fails if some partition resists to mount ", func() {
-			runner.ReturnValue = []byte("/some/device")
 			mounter := mounter.(*v1mock.ErrorMounter)
 			mounter.ErrorOnMount = true
 			err := el.MountPartitions()
@@ -101,12 +108,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Fails if oem partition is not found ", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if len(args) >= 2 && args[1] == cnst.OEMLabel {
-					return []byte{}, nil
-				}
-				return []byte("/some/device"), nil
-			}
+			// 2nd partition is OEM
+			config.Partitions[1].Path = ""
 			err := el.MountPartitions()
 			Expect(err).NotTo(BeNil())
 		})
@@ -115,16 +118,21 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("UnmountPartitions", Label("UnmountPartitions", "disk", "partition", "unmount"), func() {
 		var el *elemental.Elemental
 		BeforeEach(func() {
-			runner.ReturnValue = []byte("/some/device")
-			utils.MkdirAll(fs, filepath.Dir("/some"), cnst.DirPerm)
+			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			Expect(err).To(BeNil())
+			_, err = fs.Create("/some/device")
+			Expect(err).To(BeNil())
 
 			utils.MkdirAll(fs, filepath.Dir(cnst.EfiDevice), cnst.DirPerm)
-			_, err := fs.Create(cnst.EfiDevice)
+			_, err = fs.Create(cnst.EfiDevice)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			action.InstallSetup(config)
 			Expect(config.PartTable).To(Equal(v1.GPT))
 			Expect(config.BootFlag).To(Equal(v1.ESP))
+			for _, part := range config.Partitions {
+				part.Path = "/some/device"
+			}
 			el = elemental.NewElemental(config)
 			Expect(el.MountPartitions()).To(BeNil())
 		})
@@ -270,6 +278,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			var efiPartCmds, partCmds, biosPartCmds [][]string
 			BeforeEach(func() {
 				partNum, printOut = 0, printOutput
+				err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+				Expect(err).To(BeNil())
 				efiPartCmds = [][]string{
 					{
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
@@ -318,10 +328,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 						if idx > 0 {
 							partNum++
 							printOut += fmt.Sprintf(partTmpl, partNum, args[idx+3], args[idx+4])
+							_, _ = fs.Create(fmt.Sprintf("/some/device%d", partNum))
 						}
 						return []byte(printOut), nil
-					case "lsblk":
-						return []byte(fmt.Sprintf("/some/device%d part", partNum)), nil
 					default:
 						return []byte{}, nil
 					}
@@ -358,6 +367,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		Describe("Run with failures", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			BeforeEach(func() {
+				err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+				Expect(err).To(BeNil())
 				partNum, printOut = 0, printOutput
 				runFunc = func(cmd string, args ...string) ([]byte, error) {
 					switch cmd {
@@ -375,10 +386,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 							if errPart == partNum {
 								return []byte{}, errors.New("Failure")
 							}
+							_, _ = fs.Create(fmt.Sprintf("/some/device%d", partNum))
 						}
 						return []byte(printOut), nil
-					case "lsblk":
-						return []byte(fmt.Sprintf("/some/device%d part", partNum)), nil
 					case "mkfs.ext4", "wipefs":
 						return []byte{}, errors.New("Failure")
 					case "mkfs.vfat":
@@ -445,7 +455,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("DeployImage", Label("DeployImage"), func() {
 		var el *elemental.Elemental
 		var img *v1.Image
-		var destDir, sourceDir, cmdFail string
+		var cmdFail string
 		BeforeEach(func() {
 			sourceDir, err := utils.TempDir(fs, "", "elemental")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -472,10 +482,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 					return []byte{}, nil
 				}
 			}
-		})
-		AfterEach(func() {
-			os.RemoveAll(sourceDir)
-			os.RemoveAll(destDir)
 		})
 		It("Deploys an image from a directory and leaves it mounted", func() {
 			Expect(el.DeployImage(img, true)).To(BeNil())
@@ -644,7 +650,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Describe("Force is disabled", func() {
 				It("Should error out", func() {
 					config.NoFormat = true
-					runner.ReturnValue = []byte("/dev/fake")
+					runner.ReturnValue = []byte(`{"blockdevices": [{"label": "COS_ACTIVE", "type": "loop", "path": "/some/device"}]}`)
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).ToNot(BeNil())
@@ -655,7 +661,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				It("Should not error out", func() {
 					config.NoFormat = true
 					config.Force = true
-					runner.ReturnValue = []byte("/dev/fake")
+					runner.ReturnValue = []byte(`{"blockdevices": [{"label": "COS_ACTIVE", "type": "loop", "path": "/some/device"}]}`)
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).To(BeNil())

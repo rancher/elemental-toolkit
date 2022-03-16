@@ -528,7 +528,7 @@ func (c Elemental) SetDefaultGrubEntry() error {
 		} else if p.MountPoint == "" {
 			return errors.New("state partition not mounted. Cannot set grub env file")
 		} else {
-			part = &p
+			part = p
 		}
 	}
 	grub := utils.NewGrub(c.config)

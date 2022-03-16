@@ -144,7 +144,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 		//  We are updating recovery
 		if u.Config.RecoveryUpgrade {
 			// Try to mount SYSTEM partition, only exists if recovery is squash
-			var recoveryPart v1.Partition
+			var recoveryPart *v1.Partition
 			recoveryPart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.SystemLabel, 2)
 			if err != nil {
 				// Failure to get the system label, fallback tor recovery label

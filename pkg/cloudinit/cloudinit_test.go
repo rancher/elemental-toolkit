@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	. "github.com/rancher-sandbox/elemental/pkg/cloudinit"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
@@ -42,7 +43,7 @@ const printOutput = `BYT;
 2:98304s:29394943s:29296640s:ext4::boot, type=83;
 3:29394944s:45019135s:15624192s:ext4::type=83;`
 
-var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init", "root"), func() {
+var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
 	// unit test stolen from yip
 	Describe("loading yaml files", func() {
 		logger := logrus.New()
@@ -98,18 +99,20 @@ stages:
 	})
 	Describe("layout plugin execution", func() {
 		var runner *v1mock.FakeRunner
-		var afs v1.FS
-		var tmpf, cmdFail string
+		var afs *vfst.TestFS
+		var device, cmdFail string
 		var partNum int
 		var cleanup func()
 		logger := logrus.New()
 		logger.SetOutput(ioutil.Discard)
 		BeforeEach(func() {
 			afs, cleanup, _ = vfst.NewTestFS(nil)
-			afs.Mkdir("/tmp", os.ModePerm)
-			f, err := utils.TempFile(afs, "", "cloudinit-test")
+			err := utils.MkdirAll(afs, "/some/yip", constants.DirPerm)
 			Expect(err).To(BeNil())
-			tmpf = f.Name()
+			device = "/some/device"
+			_, err = afs.Create(device)
+			Expect(err).To(BeNil())
+
 			runner = v1mock.NewFakeRunner()
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
@@ -119,20 +122,9 @@ stages:
 				switch cmd {
 				case "parted":
 					return []byte(printOutput), nil
-				case "blkid":
-					if args[0] == fmt.Sprintf("%s3", tmpf) {
-						return []byte("ext4"), nil
-					}
-					if args[0] == "--label" && args[1] == "DEV_LABEL" {
-						return []byte(tmpf), nil
-					}
-					return []byte{}, nil
 				case "lsblk":
-					if args[0] == "-ltnpo" {
-						return []byte(fmt.Sprintf("%s%d part", tmpf, partNum)), nil
-					}
 					return []byte(
-						fmt.Sprintf(`{"blockdevices":[{"label":"DEV_LABEL","size":1,"partlabel":"pfake", "pkname": "%s"}]}`, tmpf),
+						fmt.Sprintf(`{"blockdevices":[{"label":"DEV_LABEL","pkname": "%s", "type": "part", "fstype": "ext4"}]}`, device),
 					), nil
 				default:
 					return []byte{}, nil
@@ -140,12 +132,10 @@ stages:
 			}
 		})
 		AfterEach(func() {
-			afs.Remove(tmpf)
 			cleanup()
 		})
 		It("Does nothing if no changes are defined", func() {
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": fmt.Sprintf(`
+			err := afs.WriteFile("/some/yip/layout.yaml", []byte(fmt.Sprintf(`
 stages:
   test:
   - name: Nothing to do
@@ -166,16 +156,16 @@ stages:
       add_partitions:
       - fsLabel: DEV_LABEL
         pLabel: partLabel
-`, tmpf),
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`, device)), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Expands last partition on a MSDOS disk", func() {
 			partNum = 3
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": fmt.Sprintf(`
+			_, err := afs.Create(fmt.Sprintf("%s%d", device, partNum))
+			Expect(err).To(BeNil())
+			err = afs.WriteFile("/some/yip/layout.yaml", []byte(fmt.Sprintf(`
 stages:
   test:
   - name: Expanding last partition
@@ -184,16 +174,16 @@ stages:
         path: %s
       expand_partition:
         size: 0
-`, tmpf),
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`, device)), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Adds a partition on a MSDOS disk", func() {
 			partNum = 4
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": fmt.Sprintf(`
+			_, err := afs.Create(fmt.Sprintf("%s%d", device, partNum))
+			Expect(err).To(BeNil())
+			err = afs.WriteFile("/some/yip/layout.yaml", []byte(fmt.Sprintf(`
 stages:
   test:
   - name: Adding new partition
@@ -203,17 +193,17 @@ stages:
       add_partitions: 
       - fsLabel: SOMELABEL
         pLabel: somelabel
-`, tmpf),
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`, device)), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
 		It("Fails to add a partition on a MSDOS disk", func() {
 			cmdFail = "mkfs.ext4"
 			partNum = 4
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": fmt.Sprintf(`
+			_, err := afs.Create(fmt.Sprintf("%s%d", device, partNum))
+			Expect(err).To(BeNil())
+			err = afs.WriteFile("/some/yip/layout.yaml", []byte(fmt.Sprintf(`
 stages:
   test:
   - name: Adding new partition
@@ -223,17 +213,17 @@ stages:
       add_partitions: 
       - fsLabel: SOMELABEL
         pLabel: somelabel
-`, tmpf),
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`, device)), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to expand last partition", func() {
 			partNum = 3
 			cmdFail = "resize2fs"
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": fmt.Sprintf(`
+			_, err := afs.Create(fmt.Sprintf("%s%d", device, partNum))
+			Expect(err).To(BeNil())
+			err = afs.WriteFile("/some/yip/layout.yaml", []byte(fmt.Sprintf(`
 stages:
   test:
   - name: Expanding last partition
@@ -242,40 +232,35 @@ stages:
         path: %s
       expand_partition:
         size: 0
-`, tmpf),
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`, device)), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to find device by path", func() {
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+			err := afs.WriteFile("/some/yip/layout.yaml", []byte(`
 stages:
   test:
   - name: Missing device path
     layout:
       device:
         path: /whatever
-`,
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 		It("Fails to find device by label", func() {
-			fs, cleanup, _ := vfst.NewTestFS(map[string]interface{}{
-				"/some/yip/layout.yaml": `
+			err := afs.WriteFile("/some/yip/layout.yaml", []byte(`
 stages:
   test:
   - name: Missing device label
     layout:
       device:
         label: IM_NOT_THERE
-`,
-			})
-			defer cleanup()
-			cloudRunner := NewYipCloudInitRunner(logger, runner, fs)
+`), constants.FilePerm)
+			Expect(err).To(BeNil())
+			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
 	})

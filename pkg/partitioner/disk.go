@@ -19,6 +19,7 @@ package partitioner
 import (
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -94,9 +95,20 @@ func (dev Disk) GetLabel() string {
 	return dev.label
 }
 
-func (dev Disk) Exists() bool {
-	exists, _ := utils.Exists(dev.fs, dev.device)
-	return exists
+func (dev *Disk) Exists() bool {
+	fi, err := dev.fs.Stat(dev.device)
+	if err != nil {
+		return false
+	}
+	// resolve symlink if any
+	if fi.Mode()&os.ModeSymlink != 0 {
+		d, err := dev.fs.Readlink(dev.device)
+		if err != nil {
+			return false
+		}
+		dev.device = d
+	}
+	return true
 }
 
 func (dev *Disk) Reload() error {
@@ -267,25 +279,24 @@ func (dev Disk) WipeFsOnPartition(device string) error {
 }
 
 func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
-	re, _ := regexp.Compile(fmt.Sprintf("(?m)^(/.*%d) part$", partNum))
+	re := regexp.MustCompile(`.*\d+$`)
+	var device string
+
+	if match := re.Match([]byte(dev.device)); match {
+		device = fmt.Sprintf("%sp%d", dev.device, partNum)
+	} else {
+		device = fmt.Sprintf("%s%d", dev.device, partNum)
+	}
 
 	for tries := 0; tries <= partitionTries; tries++ {
 		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
 		_, _ = dev.runner.Run("udevadm", "settle")
-		out, err := dev.runner.Run("lsblk", "-ltnpo", "name,type", dev.device)
-		dev.logger.Debugf("Output of lsblk: %s", out)
-		if err != nil && tries == (partitionTries-1) {
-			dev.logger.Debugf("Error of lsblk: %s", err)
-			return "", fmt.Errorf("could not list device partition nodes: %s", out)
-		} else if err == nil {
-			matched := re.FindStringSubmatch(string(out))
-			if matched != nil {
-				return matched[1], nil
-			}
+		if exists, _ := utils.Exists(dev.fs, device); exists {
+			return device, nil
 		}
 		time.Sleep(1 * time.Second)
 	}
-	return "", fmt.Errorf("could not find partition device path for partition %d", partNum)
+	return "", fmt.Errorf("could not find partition device '%s' for partition %d", device, partNum)
 }
 
 //Size is expressed in MiB here
@@ -341,7 +352,7 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 	var out []byte
 	var err error
 
-	fs, _ := dev.runner.Run("blkid", device, "-s", "TYPE", "-o", "value")
+	fs, _ := utils.GetPartitionFS(dev.runner, device)
 
 	switch strings.TrimSpace(string(fs)) {
 	case "ext2", "ext3", "ext4":
@@ -356,7 +367,7 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 		}
 	case "xfs":
 		// to grow an xfs fs it needs to be mounted :/
-		tmpDir, err := utils.TempDir(dev.fs, "", "yip")
+		tmpDir, err := utils.TempDir(dev.fs, "", "partitioner")
 		defer func(fs v1.FS, path string) {
 			_ = fs.RemoveAll(path)
 		}(dev.fs, tmpDir)

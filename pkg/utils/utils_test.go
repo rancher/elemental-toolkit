@@ -171,32 +171,135 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.BootedFrom(runner, "FAKELABEL")).To(BeTrue())
 		})
 	})
-	Describe("GetDeviceByLabel", Label("GetDeviceByLabel"), func() {
+	Describe("GetDeviceByLabel", Label("lsblk", "partitions"), func() {
 		var cmds [][]string
 		BeforeEach(func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
-				{"blkid", "--label", "FAKE"},
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
 			}
 		})
 		It("returns found device", func() {
-			runner.ReturnValue = []byte("/some/device")
+			runner.ReturnValue = []byte(`{"blockdevices": [{"label": "FAKE", "type": "loop", "path": "/some/loop0"}]}`)
 			out, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).To(BeNil())
-			Expect(out).To(Equal("/some/device"))
+			Expect(out).To(Equal("/some/loop0"))
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
-		It("fails to run blkid", func() {
-			runner.ReturnError = errors.New("failed running blkid")
+		It("fails to run lsblk", func() {
+			runner.ReturnError = errors.New("failed running lsblk")
 			_, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("fails if no device is found in two attempts", func() {
-			runner.ReturnValue = []byte("")
+			runner.ReturnValue = []byte(`{"blockdevices": [{"type": "disk", "path": "/some/disk"}]}`)
 			_, err := utils.GetDeviceByLabel(runner, "FAKE", 2)
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
+		})
+	})
+	Describe("GetAllPartitions", Label("lsblk", "partitions"), func() {
+		var cmds [][]string
+		BeforeEach(func() {
+			cmds = [][]string{
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
+			}
+		})
+		It("returns all found partitions", func() {
+			runner.ReturnValue = []byte(`{
+"blockdevices":
+    [
+        {"label": "COS_ACTIVE", "type": "loop", "path": "/some/loop0"},
+        {"label": "COS_OEM", "type": "part", "path": "/some/device1"},
+        {"label": "COS_RECOVERY", "type": "part", "path": "/some/device2"},
+        {"label": "COS_STATE", "type": "part", "path": "/some/device3"},
+        {"label": "COS_PERSISTENT", "type": "part", "path": "/some/device4"}
+    ]
+}`)
+			parts, err := utils.GetAllPartitions(runner)
+			Expect(err).To(BeNil())
+			Expect(len(parts)).To(Equal(5))
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to run lsblk", func() {
+			runner.ReturnError = errors.New("failed running lsblk")
+			_, err := utils.GetAllPartitions(runner)
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails on invalid lsblk output", func() {
+			runner.ReturnValue = []byte("invalid")
+			_, err := utils.GetAllPartitions(runner)
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+
+			runner.ClearCmds()
+			runner.ReturnValue = []byte(`{"invalidjson": []}`)
+			_, err = utils.GetAllPartitions(runner)
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+
+			runner.ClearCmds()
+			runner.ReturnValue = []byte(`{"blockdevices": "invalidlist"}`)
+			_, err = utils.GetAllPartitions(runner)
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+	})
+	Describe("GetDevicePartitions", Label("lsblk", "partitions"), func() {
+		var cmds [][]string
+		BeforeEach(func() {
+			cmds = [][]string{
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE", "/some/disk"},
+			}
+		})
+		It("returns all found partitions", func() {
+			runner.ReturnValue = []byte(`{
+"blockdevices":
+    [
+        {"type": "disk", "path": "/some/disk"},
+        {"label": "COS_OEM", "type": "part", "path": "/some/disk1"},
+        {"label": "COS_RECOVERY", "type": "part", "path": "/some/disk2"}
+    ]
+}`)
+			parts, err := utils.GetDevicePartitions(runner, "/some/disk")
+			Expect(err).To(BeNil())
+			Expect(len(parts)).To(Equal(2))
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+	})
+	Describe("GetPartitionFS", Label("lsblk", "partitions"), func() {
+		var cmds [][]string
+		BeforeEach(func() {
+			cmds = [][]string{
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE", "/some/device"},
+			}
+		})
+		It("returns found device", func() {
+			runner.ReturnValue = []byte(`{"blockdevices": [{"fstype": "xfs", "type": "part"}]}`)
+			pFS, err := utils.GetPartitionFS(runner, "/some/device")
+			Expect(err).To(BeNil())
+			Expect(pFS).To(Equal("xfs"))
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails to run lsblk", func() {
+			runner.ReturnError = errors.New("failed running lsblk")
+			_, err := utils.GetPartitionFS(runner, "/some/device")
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails if more than one partition is found", func() {
+			runner.ReturnValue = []byte(`{"blockdevices": [{"fstype": "xfs", "type": "part"}, {"fstype": "ext4", "type": "part"}]}`)
+			_, err := utils.GetPartitionFS(runner, "/some/device")
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("fails if no partition is found", func() {
+			runner.ReturnValue = []byte(`{"blockdevices": []}`)
+			_, err := utils.GetPartitionFS(runner, "/some/device")
+			Expect(err).NotTo(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 	})
 	Describe("CosignVerify", Label("cosign"), func() {
@@ -233,85 +336,40 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(duration.Seconds() >= 3).To(BeTrue())
 		})
 	})
-	Describe("GetFullDeviceByLabel", Label("GetFullDeviceByLabel", "partition", "types"), func() {
+	Describe("GetFullDeviceByLabel", Label("lsblk", "partitions"), func() {
 		var cmds [][]string
 		BeforeEach(func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
-				{"blkid", "--label", "FAKE"},
+				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
 			}
 		})
 		It("returns found v1.Partition", func() {
-			cmds = [][]string{
-				{"udevadm", "settle"},
-				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
-			}
-			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
-					return []byte("/dev/fake"), nil
-				}
-				if command == "lsblk" {
-					return []byte(`{"blockdevices":[{"label":"fake","size":1,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake"}]}`), nil
-				}
-				return nil, nil
-			}
+			runner.ReturnValue = []byte(`{"blockdevices":[{"label":"FAKE","size":1048576,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "type": "part"}]}`)
 			out, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
-			var flags []string
+			flags := []string{}
 			Expect(err).To(BeNil())
-			Expect(out.Label).To(Equal("fake"))
+			Expect(out.Label).To(Equal("FAKE"))
 			Expect(out.Size).To(Equal(uint(1)))
 			Expect(out.FS).To(Equal("fakefs"))
 			Expect(out.MountPoint).To(Equal("/mnt/fake"))
 			Expect(out.Flags).To(Equal(flags))
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
-		It("fails to run blkid", func() {
-			runner.ReturnError = errors.New("failed running blkid")
-			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
-			Expect(err).To(HaveOccurred())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
 		It("fails to run lsblk", func() {
-			cmds = [][]string{
-				{"udevadm", "settle"},
-				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
-			}
-			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
-					return []byte("/dev/fake"), nil
-				}
-				if command == "lsblk" {
-					return nil, errors.New("error")
-				}
-				return nil, nil
-			}
+			runner.ReturnError = errors.New("failed running lsblk")
 			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).To(HaveOccurred())
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("fails to parse json output", func() {
-			cmds = [][]string{
-				{"udevadm", "settle"},
-				{"blkid", "--label", "FAKE"},
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME", "/dev/fake"},
-			}
-			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-				if command == "blkid" && args[0] == "--label" && args[1] == "FAKE" {
-					return []byte("/dev/fake"), nil
-				}
-				if command == "lsblk" {
-					return []byte("output changed"), nil
-				}
-				return nil, nil
-			}
+			runner.ReturnValue = []byte(`{"invalidobject": []}`)
 			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).To(HaveOccurred())
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("fails if no device is found in two attempts", func() {
-			runner.ReturnValue = []byte("")
+			runner.ReturnValue = []byte(`{"blockdevices":[{"label":"something","type": "part"}]}`)
 			_, err := utils.GetFullDeviceByLabel(runner, "FAKE", 2)
 			Expect(err).To(HaveOccurred())
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())

@@ -143,14 +143,14 @@ type RunConfig struct {
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
-	Label      string `json:"label,omitempty"`
+	Label      string
 	Size       uint
 	Name       string
-	FS         string `json:"fstype,omitempty"`
+	FS         string
 	Flags      []string
-	MountPoint string `json:"mountpoint,omitempty"`
-	Path       string `json:"path,omitempty"`
-	Disk       string `json:"pkname,omitempty"`
+	MountPoint string
+	Path       string
+	Disk       string
 }
 
 type PartitionList []*Partition
