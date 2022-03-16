@@ -54,8 +54,8 @@ func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
 
 func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, error) {
 	cfg := config.NewRunConfig(
-		v1.WithLogger(v1.NewLogger()),
-		v1.WithMounter(mounter),
+		config.WithLogger(v1.NewLogger()),
+		config.WithMounter(mounter),
 	)
 
 	// Set debug level

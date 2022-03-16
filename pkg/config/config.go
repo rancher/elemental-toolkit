@@ -25,7 +25,65 @@ import (
 	"k8s.io/mount-utils"
 )
 
-func NewRunConfig(opts ...v1.RunConfigOptions) *v1.RunConfig {
+type RunConfigOptions func(a *v1.RunConfig) error
+
+func WithFs(fs v1.FS) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Fs = fs
+		return nil
+	}
+}
+
+func WithLogger(logger v1.Logger) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Logger = logger
+		return nil
+	}
+}
+
+func WithSyscall(syscall v1.SyscallInterface) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Syscall = syscall
+		return nil
+	}
+}
+
+func WithMounter(mounter mount.Interface) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Mounter = mounter
+		return nil
+	}
+}
+
+func WithRunner(runner v1.Runner) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Runner = runner
+		return nil
+	}
+}
+
+func WithClient(client v1.HTTPClient) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Client = client
+		return nil
+	}
+}
+
+func WithCloudInitRunner(ci v1.CloudInitRunner) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.CloudInitRunner = ci
+		return nil
+	}
+}
+
+func WithLuet(luet v1.LuetInterface) func(r *v1.RunConfig) error {
+	return func(r *v1.RunConfig) error {
+		r.Luet = luet
+		return nil
+	}
+}
+
+func NewRunConfig(opts ...RunConfigOptions) *v1.RunConfig {
 	log := v1.NewLogger()
 	r := &v1.RunConfig{
 		Fs:      vfs.OSFS,

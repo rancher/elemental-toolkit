@@ -42,5 +42,47 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 		})
 	})
+	Describe("Partitionlist", func() {
+		var p v1.PartitionList
+		BeforeEach(func() {
+			p = v1.PartitionList{
+				&v1.Partition{
+					Label:      "",
+					Size:       0,
+					Name:       "one",
+					FS:         "",
+					Flags:      nil,
+					MountPoint: "",
+					Path:       "",
+					Disk:       "",
+				},
+				&v1.Partition{
+					Label:      "",
+					Size:       0,
+					Name:       "two",
+					FS:         "",
+					Flags:      nil,
+					MountPoint: "",
+					Path:       "",
+					Disk:       "",
+				},
+			}
+		})
+		It("returns partitions by name", func() {
+			Expect(p.GetByName("two")).To(Equal(&v1.Partition{
+				Label:      "",
+				Size:       0,
+				Name:       "two",
+				FS:         "",
+				Flags:      nil,
+				MountPoint: "",
+				Path:       "",
+				Disk:       "",
+			}))
+		})
+		It("returns nil if partiton not found", func() {
+			Expect(p.GetByName("nonexistent")).To(BeNil())
+		})
+	})
 
 })

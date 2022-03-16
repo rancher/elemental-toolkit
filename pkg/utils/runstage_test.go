@@ -61,12 +61,12 @@ var _ = Describe("run stage", Label("RunStage", "root"), func() {
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 
 		config = conf.NewRunConfig(
-			v1.WithFs(fs),
-			v1.WithRunner(runner),
-			v1.WithLogger(logger),
-			v1.WithMounter(mounter),
-			v1.WithSyscall(syscall),
-			v1.WithClient(client),
+			conf.WithFs(fs),
+			conf.WithRunner(runner),
+			conf.WithLogger(logger),
+			conf.WithMounter(mounter),
+			conf.WithSyscall(syscall),
+			conf.WithClient(client),
 		)
 
 		config.CloudInitRunner = cloudinit.NewYipCloudInitRunner(config.Logger, config.Runner, fs)

@@ -73,13 +73,13 @@ var _ = Describe("Actions", func() {
 
 		cloudInit = &v1mock.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
-			v1.WithFs(fs),
-			v1.WithRunner(runner),
-			v1.WithLogger(logger),
-			v1.WithMounter(mounter),
-			v1.WithSyscall(syscall),
-			v1.WithClient(client),
-			v1.WithCloudInitRunner(cloudInit),
+			conf.WithFs(fs),
+			conf.WithRunner(runner),
+			conf.WithLogger(logger),
+			conf.WithMounter(mounter),
+			conf.WithSyscall(syscall),
+			conf.WithClient(client),
+			conf.WithCloudInitRunner(cloudInit),
 		)
 	})
 

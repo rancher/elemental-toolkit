@@ -29,64 +29,6 @@ const (
 	BOOT  = "boot"
 )
 
-type RunConfigOptions func(a *RunConfig) error
-
-func WithFs(fs FS) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Fs = fs
-		return nil
-	}
-}
-
-func WithLogger(logger Logger) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Logger = logger
-		return nil
-	}
-}
-
-func WithSyscall(syscall SyscallInterface) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Syscall = syscall
-		return nil
-	}
-}
-
-func WithMounter(mounter mount.Interface) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Mounter = mounter
-		return nil
-	}
-}
-
-func WithRunner(runner Runner) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Runner = runner
-		return nil
-	}
-}
-
-func WithClient(client HTTPClient) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Client = client
-		return nil
-	}
-}
-
-func WithCloudInitRunner(ci CloudInitRunner) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.CloudInitRunner = ci
-		return nil
-	}
-}
-
-func WithLuet(luet LuetInterface) func(r *RunConfig) error {
-	return func(r *RunConfig) error {
-		r.Luet = luet
-		return nil
-	}
-}
-
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
 // Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
