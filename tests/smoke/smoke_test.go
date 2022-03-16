@@ -64,8 +64,8 @@ var _ = Describe("cOS Smoke tests", func() {
 			Expect(out).Should(ContainSubstring("/dev/loop0"))
 		})
 
-		It("fails running cos-reset from COS_ACTIVE", func() {
-			out, err := s.Command("cos-reset")
+		It("fails running elemental reset from COS_ACTIVE", func() {
+			out, err := s.Command("elemental reset")
 			Expect(err).To(HaveOccurred())
 			Expect(out).Should(ContainSubstring("reset can only be called from the recovery system"))
 		})

@@ -33,10 +33,22 @@ var _ = Describe("cOS Deploy tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
-				_, err = s.Command(fmt.Sprintf("cos-deploy --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+
+				out := s.GetOSRelease("VERSION")
+				Expect(out).ToNot(Equal(""))
+
+				version := out
+
+				_, err = s.Command(fmt.Sprintf("elemental reset --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).NotTo(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+
+				out = s.GetOSRelease("VERSION")
+				Expect(out).ToNot(Equal(""))
+
+				Expect(out).ToNot(Equal(version))
+				Expect(out).To(Equal(s.TestVersion))
 			})
 		})
 	})
