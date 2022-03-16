@@ -34,6 +34,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-test-go-${{ hashFiles('**/go.sum') }}
       - name: Deps
+        if: steps.changed-docker-files.outputs.only_changed == 'false'
         run: make test_deps
       - name: Run tests
         if: steps.changed-docker-files.outputs.only_changed == 'false'
