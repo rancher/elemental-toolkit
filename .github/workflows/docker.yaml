@@ -49,6 +49,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v2
         with:
+          context: .
           tags: ${{ steps.meta.outputs.tags }}
           load: true # loads it locally, so it can be used from docker client
           # cache into GitHub actions cache, nice
@@ -82,6 +83,7 @@ jobs:
         uses: docker/build-push-action@v2
         if: ${{ github.event_name != 'pull_request' }}
         with:
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           # cache into GitHub actions cache, nice
