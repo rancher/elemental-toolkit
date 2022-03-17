@@ -7,12 +7,7 @@ FROM quay.io/costoolkit/releases-green:cosign-toolchain-$COSIGN_VERSION AS cosig
 
 
 FROM golang:$GOLANG_IMAGE_VERSION as elemental-bin
-ARG ELEMENTAL_VERSION=0.0.1
-ARG ELEMENTAL_COMMIT=""
-
 ENV CGO_ENABLED=0
-ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
-ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 WORKDIR /src/
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
 ADD go.mod .
@@ -23,6 +18,11 @@ ADD internal internal
 ADD tests tests
 ADD pkg pkg
 ADD main.go .
+# Set arg/env after go mod download, otherwise we invalidate the cached layers due to the commit changing easily
+ARG ELEMENTAL_VERSION=0.0.1
+ARG ELEMENTAL_COMMIT=""
+ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
+ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 RUN go build \
     -ldflags "-w -s \
     -X github.com/rancher-sandbox/elemental/internal/version.version=$ELEMENTAL_VERSION \
