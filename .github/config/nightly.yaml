@@ -28,6 +28,7 @@ flavors:
         run_installer_test: true
         release_flavor: ["green"]
         arch: "x86_64"
+        luet_override: ""
 
         on:
           schedule:

@@ -24,6 +24,7 @@ flavors:
         build_raw_image: false
         run_raw_image_test: false
         release_flavor: []
+        luet_override: ""
         build_examples_dir: ["cos-official", "scratch", "standard"]
         arch: "x86_64"
 

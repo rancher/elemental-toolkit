@@ -73,6 +73,13 @@
       - name: Run make {{{ $target }}}
         run: |
           sudo -E make {{{ $target }}}
+  {{{ if eq $target "deps" }}}
+  {{{- if ne $config.luet_override "" }}}
+      - name: Override luet version at toolchain/luet@{{{ $config.luet_override }}} 🔧
+        run: |
+          sudo luet replace --force --yes toolchain/luet --for toolchain/luet@{{{ $config.luet_override }}}
+  {{{  end }}}
+  {{{  end }}}
 {{{end}}}
 
 {{{define "runner"}}}
