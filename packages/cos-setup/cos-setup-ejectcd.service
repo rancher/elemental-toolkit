@@ -1,0 +1,20 @@
+[Unit]
+Description=Eject the DVD
+After=shutdown.target reboot.target
+DefaultDependencies=no
+# check the ejectcd file was created
+ConditionPathExists=/run/cos/ejectcd
+# also check if we booted from CD
+# probably both work, but if we change the cdlabel then the first fails
+#ConditionKernelCommandLine=root=live:CDLABEL=COS_LIVE
+ConditionKernelCommandLine=cdroot
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/bin/eject -r
+StandardInput=tty-force
+StandardOutput=inherit
+StandardError=inherit
+
+[Install]
+WantedBy=shutdown.target

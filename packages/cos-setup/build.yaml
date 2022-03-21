@@ -14,3 +14,4 @@ steps:
 - systemctl enable cos-setup-fs.service
 - systemctl enable cos-setup-boot.service
 - systemctl enable cos-setup-network.service
+- systemctl enable cos-setup-ejectcd.service
