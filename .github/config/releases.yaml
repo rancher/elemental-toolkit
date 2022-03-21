@@ -24,6 +24,7 @@ flavors:
         skip_tests_flavor: ["blue","orange"]
         skip_images_flavor: ["blue","orange"]
         build_image_qemu: true
+        luet_override: ""
         build_image_vbox: true
         build_raw_image: true
         run_raw_image_test: true
@@ -42,6 +43,7 @@ flavors:
         push_cache: true
         skip_build: false
         skip_docker_build: true
+        luet_override: ""
 
         pipeline: "release"
         publishing_pipeline: true

@@ -62,6 +62,9 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
+      - name: Override luet version at toolchain/luet@0.22.7 🔧
+        run: |
+          sudo luet install --force --yes toolchain/luet@0.22.7
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -116,6 +119,9 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
+      - name: Override luet version at toolchain/luet@0.22.7 🔧
+        run: |
+          sudo luet install --force --yes toolchain/luet@0.22.7
       - name: Generate link for blue
         run: |
             source .github/helpers.sh
@@ -195,6 +201,9 @@ jobs:
       - name: Run make deps
         run: |
           sudo -E make deps
+      - name: Override luet version at toolchain/luet@0.22.7 🔧
+        run: |
+          sudo luet install --force --yes toolchain/luet@0.22.7
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
