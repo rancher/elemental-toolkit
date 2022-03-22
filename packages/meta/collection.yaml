@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.9-4
+    version: 0.9-5
     requires:
       - category: toolchain
         name: elemental-cli
