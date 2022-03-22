@@ -116,7 +116,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools
+          sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Run make deps
         run: |
           sudo -E make deps
@@ -388,7 +388,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools
+          sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Run make deps
         run: |
           sudo -E make deps
