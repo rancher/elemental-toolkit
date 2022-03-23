@@ -77,7 +77,7 @@
   {{{- if ne $config.luet_override "" }}}
       - name: Override luet version at toolchain/luet@{{{ $config.luet_override }}} 🔧
         run: |
-          sudo luet install --force --yes toolchain/luet@{{{ $config.luet_override }}}
+          sudo luet replace --yes toolchain/luet --for toolchain/luet@{{{ $config.luet_override }}}
   {{{  end }}}
   {{{  end }}}
 {{{end}}}
