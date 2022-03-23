@@ -2,7 +2,7 @@ packages:
   - &luet
     category: "toolchain"
     name: "luet"
-    version: "0.30.0"
+    version: "0.30.2"
     branch: ""
     upx: false
     fips: false
@@ -13,7 +13,7 @@ packages:
   - &luet-fips
     category: "toolchain-fips"
     name: "luet"
-    version: "0.30.0"
+    version: "0.30.2"
     branch: ""
     upx: false
     fips: true

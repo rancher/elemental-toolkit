@@ -15,7 +15,7 @@ flavors:
         publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: true
-        luet_override: "0.22.7"
+        luet_override: ""
 
         repository: "releases"
         cache_repository: "build"
@@ -42,7 +42,7 @@ flavors:
         push_cache: true
         skip_build: false
         skip_docker_build: true
-        luet_override: "0.22.7"
+        luet_override: ""
 
         pipeline: "master"
         publishing_pipeline: true
