@@ -19,9 +19,19 @@ LUET_CONFIG_PROTECT=${LUET_CONFIG_PROTECT:-1}
 LUET_PACKAGE="${LUET_PACKAGE:-toolchain/luet}"
 LUET_ARCH="${LUET_ARCH:-x86_64}"
 LUET_INSTALL_FROM_COS_REPO="${LUET_INSTALL_FROM_COS_REPO:-true}"
-if [[ "$LUET_ARCH" == "x86_64" ]]; then
-  LUET_ARCH="amd64" # stupid golang and their names for arches ¬_¬
+
+if [ -z "$LUET_ARCH" ]; then
+    LUET_ARCH=$(uname -m)
 fi
+
+case $LUET_ARCH in
+    amd64|x86_64)
+        LUET_ARCH=amd64
+        ;;
+    arm64|aarch64)
+        LUET_ARCH=arm64
+        ;;
+esac
 
 curl -L https://github.com/mudler/luet/releases/download/${LUET_VERSION}/luet-${LUET_VERSION}-linux-${LUET_ARCH} --output luet
 chmod +x luet
