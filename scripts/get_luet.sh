@@ -41,6 +41,7 @@ if [[ "$DOCKER_INSTALL" == "true" ]]; then
   echo "Using luet bootstrap version from docker image: ${_DOCKER_IMAGE}"
   docker run --entrypoint /usr/bin/luet --name luet ${_DOCKER_IMAGE} --version
   docker cp luet:/usr/bin/luet ./
+  docker rm luet
 else
   _LUET="luet-${LUET_VERSION}-linux-${LUET_ARCH}"
   _LUET_URL="https://github.com/mudler/luet/releases/download/${LUET_VERSION}/${_LUET}"
