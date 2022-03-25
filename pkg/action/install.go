@@ -249,6 +249,15 @@ func InstallRun(config *v1.RunConfig) (err error) { //nolint:gocyclo
 		return err
 	}
 
+	// If we want to eject the cd, create the required executable so the cd is ejected at shutdown
+	if config.EjectCD && utils.BootedFrom(config.Runner, "cdroot") {
+		config.Logger.Infof("Writing eject script")
+		err = config.Fs.WriteFile("/usr/lib/systemd/system-shutdown/eject", []byte(cnst.EjectScript), 0744)
+		if err != nil {
+			config.Logger.Warnf("Could not write eject script, cdrom wont be ejected automatically: %s", err)
+		}
+	}
+
 	// Reboot, poweroff or nothing
 	if config.Reboot {
 		config.Logger.Infof("Rebooting in 5 seconds")

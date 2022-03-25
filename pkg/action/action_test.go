@@ -354,6 +354,7 @@ var _ = Describe("Actions", func() {
 	Describe("Install Action", Label("install"), func() {
 		var device, cmdFail string
 		var err error
+		var cmdline func() ([]byte, error)
 
 		BeforeEach(func() {
 			device = "/some/device"
@@ -395,6 +396,11 @@ var _ = Describe("Actions", func() {
         {"label": "COS_PERSISTENT", "type": "part", "path": "/some/device4"}
     ]
 }`), nil
+				case "cat":
+					if args[0] == "/proc/cmdline" {
+						return cmdline()
+					}
+					return []byte{}, nil
 				default:
 					return []byte{}, nil
 				}
@@ -411,6 +417,11 @@ var _ = Describe("Actions", func() {
 			Expect(err).To(BeNil())
 			_, err = fs.Create(grubCfg)
 			Expect(err).To(BeNil())
+
+			// Set default cmdline function so we dont panic :o
+			cmdline = func() ([]byte, error) {
+				return []byte{}, nil
+			}
 		})
 
 		It("Successfully installs", func() {
@@ -418,6 +429,35 @@ var _ = Describe("Actions", func() {
 			config.Reboot = true
 			Expect(action.InstallRun(config)).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
+		})
+
+		It("Sets the executable /run/cos/ejectcd so systemd can eject the cd on restart", func() {
+			_ = utils.MkdirAll(fs, "/usr/lib/systemd/system-shutdown", constants.DirPerm)
+			_, err := fs.Stat("/usr/lib/systemd/system-shutdown/eject")
+			Expect(err).To(HaveOccurred())
+			// Override cmdline to return like we are booting from cd
+			cmdline = func() ([]byte, error) {
+				return []byte("cdroot"), nil
+			}
+			config.Target = device
+			config.EjectCD = true
+			Expect(action.InstallRun(config)).To(BeNil())
+			_, err = fs.Stat("/usr/lib/systemd/system-shutdown/eject")
+			Expect(err).ToNot(HaveOccurred())
+			file, err := fs.ReadFile("/usr/lib/systemd/system-shutdown/eject")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(file).To(ContainSubstring(constants.EjectScript))
+		})
+
+		It("ejectcd does nothing if we are not booting from cd", func() {
+			_ = utils.MkdirAll(fs, "/usr/lib/systemd/system-shutdown", constants.DirPerm)
+			_, err := fs.Stat("/usr/lib/systemd/system-shutdown/eject")
+			Expect(err).To(HaveOccurred())
+			config.Target = device
+			config.EjectCD = true
+			Expect(action.InstallRun(config)).To(BeNil())
+			_, err = fs.Stat("/usr/lib/systemd/system-shutdown/eject")
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("Successfully installs despite hooks failure", Label("hooks"), func() {

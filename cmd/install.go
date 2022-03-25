@@ -89,5 +89,6 @@ func init() {
 	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
 	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	installCmd.Flags().BoolP("force", "", false, "Force install")
+	installCmd.Flags().BoolP("eject-cd", "", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	addSharedInstallUpgradeFlags(installCmd)
 }

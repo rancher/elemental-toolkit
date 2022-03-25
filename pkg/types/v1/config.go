@@ -66,6 +66,7 @@ type RunConfig struct {
 	ImgSize         uint   `yaml:"DEFAULT_IMAGE_SIZE,omitempty" mapstructure:"DEFAULT_IMAGE_SIZE"`
 	Directory       string `yaml:"directory,omitempty" mapstructure:"directory"`
 	ResetPersistent bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
+	EjectCD         bool   `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
 	// Internally used to track stuff around
 	PartTable string
 	BootFlag  string

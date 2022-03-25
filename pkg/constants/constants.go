@@ -92,6 +92,9 @@ const (
 	// Default directory and file fileModes
 	DirPerm  = os.ModeDir | os.ModePerm
 	FilePerm = 0666
+
+	// Eject script
+	EjectScript = "#!/bin/sh\n/usr/bin/eject -rmF"
 )
 
 func GetCloudInitPaths() []string {
