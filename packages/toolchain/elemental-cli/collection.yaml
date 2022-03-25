@@ -11,7 +11,7 @@ packages:
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
       autobump.git.branch: "main"
-      git.hash: "5a19aab68231ae0b6446052319501e05f00de856"
+      git.hash: "c6d431821ef2a0a5b1ffcc37addd76f19b9bb89c"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
