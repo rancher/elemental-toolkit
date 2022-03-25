@@ -31,7 +31,11 @@ import (
 
 const (
 	partitionTries = 10
+	// Parted warning substring for expanded disks without fixing GPT headers
+	partedWarn = "Not all of the space available"
 )
+
+var unallocatedRegexp = regexp.MustCompile(partedWarn)
 
 type Disk struct {
 	device  string
@@ -116,6 +120,26 @@ func (dev *Disk) Reload() error {
 	prnt, err := pc.Print()
 	if err != nil {
 		return err
+	}
+
+	// if the unallocated space warning is found it is assumed GPT headers
+	// are not properly located to match disk size, so we use sgdisk
+	// to expand the partition table to fully match disk size.
+	// It is expected that in upcoming parted releases (>3.4) there will be
+	// --fix flag to solve this issue transparently on the fly on any parted call.
+	// However this option is not yet present in all major distros.
+	if unallocatedRegexp.Match([]byte(prnt)) {
+		// Parted has not a proper way to doing it in non interactive mode,
+		// because of that we use sgdisk for that...
+		_, err = dev.runner.Run("sgdisk", "-e", dev.device)
+		if err != nil {
+			return err
+		}
+		// Reload disk data with fixed headers
+		prnt, err = pc.Print()
+		if err != nil {
+			return err
+		}
 	}
 
 	sectorS, err := pc.GetSectorSize(prnt)

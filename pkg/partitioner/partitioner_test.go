@@ -253,6 +253,15 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				dev.Reload()
 				Expect(dev.GetLabel()).To(Equal("msdos"))
 			})
+			It("It fixes GPT headers if the disk was expanded", func() {
+				runner.ReturnValue = []byte("Warning: Not all of the space available to /dev/loop0...\n" + printOutput)
+				Expect(dev.Reload()).To(BeNil())
+				Expect(runner.MatchMilestones([][]string{
+					{"parted", "--script", "--machine", "--", "/some/device", "unit", "s", "print"},
+					{"sgdisk", "-e", "/some/device"},
+					{"parted", "--script", "--machine", "--", "/some/device", "unit", "s", "print"},
+				})).To(BeNil())
+			})
 		})
 		Describe("Modify disk", func() {
 			It("Format an already existing partition", func() {
