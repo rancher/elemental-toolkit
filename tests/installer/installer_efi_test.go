@@ -50,9 +50,25 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			By("Reboot to make sure we boot from CD")
 			s.Reboot()
 		})*/
+
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
-				It("Forcing GPT", func() {
+				It("performs a standard install", func() {
+					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					By("Running the elemental install with a layout file")
+					Expect(err).To(BeNil())
+					out, err := s.Command("elemental install --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					fmt.Printf(out)
+					Expect(err).To(BeNil())
+					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
+					Expect(out).To(ContainSubstring("Installing GRUB.."))
+					Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
+					Expect(out).To(ContainSubstring("Mounting disk partitions"))
+					Expect(out).To(ContainSubstring("Partitioning device..."))
+				})
+
+				// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
+				PIt("Forcing GPT", func() {
 					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
@@ -65,44 +81,41 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 
-					// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
-					PContext("reboots successfully into installed system", func() {
-						// Remove iso so we boot directly from the disk
-						s.EjectCOSCD()
-						// Reboot so we boot into the just installed cos
-						s.Reboot()
-						By("Checking we booted from the installed cOS")
-						ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-						// check partition values
-						// Values have to match the yaml under ../assets/layout.yaml
-						// That is the file that the installer uses so partitions should match those values
-						disk := s.GetDiskLayout("/dev/sda")
+					// Remove iso so we boot directly from the disk
+					s.EjectCOSCD()
+					// Reboot so we boot into the just installed cos
+					s.Reboot()
+					By("Checking we booted from the installed cOS")
+					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+					// check partition values
+					// Values have to match the yaml under ../assets/layout.yaml
+					// That is the file that the installer uses so partitions should match those values
+					disk := s.GetDiskLayout("/dev/sda")
 
-						for _, part := range []sut.PartitionEntry{
-							{
-								Label:  "COS_STATE",
-								Size:   8192,
-								FsType: sut.Ext4,
-							},
-							{
-								Label:  "COS_OEM",
-								Size:   10,
-								FsType: sut.Ext4,
-							},
-							{
-								Label:  "COS_RECOVERY",
-								Size:   4000,
-								FsType: sut.Ext2,
-							},
-							{
-								Label:  "COS_PERSISTENT",
-								Size:   100,
-								FsType: sut.Ext2,
-							},
-						} {
-							CheckPartitionValues(disk, part)
-						}
-					})
+					for _, part := range []sut.PartitionEntry{
+						{
+							Label:  "COS_STATE",
+							Size:   8192,
+							FsType: sut.Ext4,
+						},
+						{
+							Label:  "COS_OEM",
+							Size:   10,
+							FsType: sut.Ext4,
+						},
+						{
+							Label:  "COS_RECOVERY",
+							Size:   4000,
+							FsType: sut.Ext2,
+						},
+						{
+							Label:  "COS_PERSISTENT",
+							Size:   100,
+							FsType: sut.Ext2,
+						},
+					} {
+						CheckPartitionValues(disk, part)
+					}
 				})
 				// Marked as pending to reduce the number of efi tests. VBox efi support is
 				// not good enough to run extensive tests
