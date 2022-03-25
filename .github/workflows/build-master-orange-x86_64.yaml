@@ -59,6 +59,7 @@ jobs:
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Run make validate
         run: |
@@ -113,6 +114,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Generate link for orange
         run: |
@@ -192,6 +194,7 @@ jobs:
             password: ${{ secrets.QUAY_PASSWORD }}
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Download result for build
         uses: actions/download-artifact@v2

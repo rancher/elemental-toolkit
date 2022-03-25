@@ -41,6 +41,7 @@ jobs:
             go-version: '^1.16'
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Build cos-official 🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -81,6 +82,7 @@ jobs:
             go-version: '^1.16'
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Build scratch 🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -121,6 +123,7 @@ jobs:
             go-version: '^1.16'
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Build standard 🔧
         shell: 'script -q -e -c "bash {0}"'

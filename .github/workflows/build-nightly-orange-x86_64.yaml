@@ -61,6 +61,7 @@ jobs:
             sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Run make validate
         run: |
@@ -113,6 +114,7 @@ jobs:
           path: build
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Export cos version
         run: |
