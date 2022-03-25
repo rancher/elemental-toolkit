@@ -60,6 +60,7 @@ jobs:
             sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Run make validate
         run: |
@@ -130,6 +131,7 @@ jobs:
           sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Export cos version
         run: |
@@ -295,6 +297,7 @@ jobs:
           sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Tweak manifest and drop squashfs recovery
         run: |
@@ -458,6 +461,7 @@ jobs:
           path: build
       - name: Run make deps
         run: |
+          export DOCKER_INSTALL=true
           sudo -E make deps
       - name: Export cos version
         run: |

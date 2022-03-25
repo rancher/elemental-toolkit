@@ -72,6 +72,7 @@
   {{{ $target := . }}}
       - name: Run make {{{ $target }}}
         run: |
+          {{{ if eq $target "deps" }}}export DOCKER_INSTALL=true{{{end}}}
           sudo -E make {{{ $target }}}
   {{{ if eq $target "deps" }}}
   {{{- if ne $config.luet_override "" }}}
