@@ -4,6 +4,7 @@ on:
    paths:
      - conf/**
      - packages/**
+     - tests/**
      - make/**
      - .github/**
      - Makefile
