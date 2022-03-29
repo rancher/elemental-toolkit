@@ -3,7 +3,7 @@ packages:
     name: "elemental-cli"
     bin_name: "elemental"
     category: "toolchain"
-    version: "0.20220325"
+    version: "0.20220328"
     fips: false
     labels:
       github.repo: "elemental"
