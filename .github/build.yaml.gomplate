@@ -847,9 +847,7 @@
       - name: Build AMI for {{{ $flavor }}}
         run: |
             source .github/helpers.sh
-            PACKAGE_VERSION=$(cos_package_version)
-            export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_cos_version=$(cos_package_version)
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             make packer

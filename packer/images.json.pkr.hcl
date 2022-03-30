@@ -1,7 +1,7 @@
 source "amazon-ebs" "cos" {
   access_key      = var.aws_access_key
-  ami_name        = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
-  ami_description = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
+  ami_name        = "${var.name}-${var.cos_version}-${var.flavor}"
+  ami_description = "${var.name}-${var.cos_version}-${var.flavor}"
   ami_groups      = var.aws_ami_groups
   instance_type   = var.aws_instance_type
   region          = var.aws_region

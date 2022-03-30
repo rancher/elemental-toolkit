@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 YQ="${YQ:-/usr/bin/yq}"
 
