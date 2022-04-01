@@ -66,14 +66,12 @@ cat > /etc/luet/luet.yaml <<EOF
 general:
   debug: false
   enable_emoji: false
+  spinner_charset: 9
 system:
   rootfs: ${LUET_ROOTFS}
   database_path: "${LUET_DATABASE_PATH}"
   database_engine: "${LUET_DATABASE_ENGINE}"
   tmpdir_base: "/var/tmp/luet"
-general:
-   debug: false
-   spinner_charset: 9
 repositories:
 - name: "cos"
   description: "cOS official"
