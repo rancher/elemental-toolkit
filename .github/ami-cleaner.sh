@@ -1,3 +1,4 @@
+#!/bin/bash
 DO_CLEANUP=${DO_CLEANUP:-false}
 AMI_OWNER=${AMI_OWNER:-"053594193760"}
 MAX_AMI_NUMBER=${MAX_AMI_NUMBER:-20}
@@ -20,6 +21,12 @@ echo "------------------------------------------------------------------"
 
 touch removed.txt
 
+containsElement () {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
 
 for region in "${regions[@]}"; do
   printf "\xE2\x86\x92 Checking AMIS on region %s for owner %s\n" "${region}" "${AMI_OWNER}"
@@ -54,4 +61,25 @@ for region in "${regions[@]}"; do
   else
     printf "\xE2\x9C\x85 Ami number is equal or lower to max number allowed, skipping.\n"
   fi
+  if [[ $snapshots_number > $ami_number ]]; then
+    printf "\U2757 snapshots(%s) and AMIs(%s) do not match! Checking....\n" "$snapshots_number" "$ami_number"
+    ami_snapshots=( $(aws ec2 describe-images --owners $AMI_OWNER |jq -r ".Images | .[].BlockDeviceMappings[].Ebs.SnapshotId") )
+    snapshots=( $( aws ec2 describe-snapshots --owner-id $AMI_OWNER | jq -r '.Snapshots| .[].SnapshotId' ) )
+    for snap in "${snapshots[@]}"; do
+        if containsElement $snap "${ami_snapshots[@]}"; then
+            printf "\U1F44D snapshot %s appears to be linked to an AMI\n" "$snap"
+        else
+            printf "\U274c snapshot %s does not appear to be linked to an AMI\n" "$snap"
+            if [[ "${DO_CLEANUP}"  == "true" ]]; then
+                aws ec2 delete-snapshot --snapshot-id ${snap}
+                 printf "\U274c snapshot %s deleted\n" "$snap"
+                 echo "Removed Snapshot ${snapshot} on region ${region}" >> removed.txt
+            else
+                printf "\U274c Would have erased snap %s\n" $snap
+            fi
+        fi
+    done
+  fi
 done
+
+
