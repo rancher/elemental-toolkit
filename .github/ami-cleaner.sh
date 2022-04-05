@@ -16,7 +16,7 @@ if [[ "${DO_CLEANUP}"  == "true" ]]; then
 else
   printf "\xF0\x9F\x93\x84 Reporting mode activated\n"
 fi
-echo "Maximun number of AMIs allowed: $MAX_AMI_NUMBER"
+echo "Maximum number of AMIs allowed: $MAX_AMI_NUMBER"
 echo "Owner of the AMIs: $AMI_OWNER"
 echo "Regions: ${regions[@]}"
 echo "------------------------------------------------------------------"

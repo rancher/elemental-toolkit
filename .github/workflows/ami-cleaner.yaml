@@ -1,4 +1,4 @@
-name: Cloud cleaner
+name: AMI cleaner
 
 on:
   schedule:
@@ -10,7 +10,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      DO_CLEANUP: "false"
+      DO_CLEANUP: "true"
     steps:
       - uses: actions/checkout@v2
       - name: Get instances
