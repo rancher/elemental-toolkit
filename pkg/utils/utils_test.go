@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/jaypipes/ghw/pkg/block"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -176,130 +177,104 @@ var _ = Describe("Utils", Label("utils"), func() {
 		BeforeEach(func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
 			}
 		})
 		It("returns found device", func() {
-			runner.ReturnValue = []byte(`{"blockdevices": [{"label": "FAKE", "type": "loop", "path": "/some/loop0"}]}`)
+			ghwTest := v1mock.GhwMock{}
+			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+				{
+					Name:  "device1",
+					Label: "FAKE",
+				},
+			}}
+			ghwTest.AddDisk(disk)
+			ghwTest.CreateDevices()
+			defer ghwTest.Clean()
 			out, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
 			Expect(err).To(BeNil())
-			Expect(out).To(Equal("/some/loop0"))
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
-		It("fails to run lsblk", func() {
-			runner.ReturnError = errors.New("failed running lsblk")
-			_, err := utils.GetDeviceByLabel(runner, "FAKE", 1)
-			Expect(err).NotTo(BeNil())
+			Expect(out).To(Equal("/dev/device1"))
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("fails if no device is found in two attempts", func() {
-			runner.ReturnValue = []byte(`{"blockdevices": [{"type": "disk", "path": "/some/disk"}]}`)
 			_, err := utils.GetDeviceByLabel(runner, "FAKE", 2)
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch(append(cmds, cmds...))).To(BeNil())
 		})
 	})
 	Describe("GetAllPartitions", Label("lsblk", "partitions"), func() {
-		var cmds [][]string
+		var ghwTest v1mock.GhwMock
 		BeforeEach(func() {
-			cmds = [][]string{
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
+			ghwTest = v1mock.GhwMock{}
+			disk1 := block.Disk{
+				Name: "sda",
+				Partitions: []*block.Partition{
+					{
+						Name: "sda1Test",
+					},
+					{
+						Name: "sda2Test",
+					},
+				},
 			}
+			disk2 := block.Disk{
+				Name: "sdb",
+				Partitions: []*block.Partition{
+					{
+						Name: "sdb1Test",
+					},
+				},
+			}
+			ghwTest.AddDisk(disk1)
+			ghwTest.AddDisk(disk2)
+			ghwTest.CreateDevices()
+		})
+		AfterEach(func() {
+			ghwTest.Clean()
 		})
 		It("returns all found partitions", func() {
-			runner.ReturnValue = []byte(`{
-"blockdevices":
-    [
-        {"label": "COS_ACTIVE", "type": "loop", "path": "/some/loop0"},
-        {"label": "COS_OEM", "type": "part", "path": "/some/device1"},
-        {"label": "COS_RECOVERY", "type": "part", "path": "/some/device2"},
-        {"label": "COS_STATE", "type": "part", "path": "/some/device3"},
-        {"label": "COS_PERSISTENT", "type": "part", "path": "/some/device4"}
-    ]
-}`)
-			parts, err := utils.GetAllPartitions(runner)
+			parts, err := utils.GetAllPartitions()
 			Expect(err).To(BeNil())
-			Expect(len(parts)).To(Equal(5))
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
-		It("fails to run lsblk", func() {
-			runner.ReturnError = errors.New("failed running lsblk")
-			_, err := utils.GetAllPartitions(runner)
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
-		It("fails on invalid lsblk output", func() {
-			runner.ReturnValue = []byte("invalid")
-			_, err := utils.GetAllPartitions(runner)
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-
-			runner.ClearCmds()
-			runner.ReturnValue = []byte(`{"invalidjson": []}`)
-			_, err = utils.GetAllPartitions(runner)
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-
-			runner.ClearCmds()
-			runner.ReturnValue = []byte(`{"blockdevices": "invalidlist"}`)
-			_, err = utils.GetAllPartitions(runner)
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
-	})
-	Describe("GetDevicePartitions", Label("lsblk", "partitions"), func() {
-		var cmds [][]string
-		BeforeEach(func() {
-			cmds = [][]string{
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE", "/some/disk"},
+			var partNames []string
+			for _, p := range parts {
+				partNames = append(partNames, p.Name)
 			}
-		})
-		It("returns all found partitions", func() {
-			runner.ReturnValue = []byte(`{
-"blockdevices":
-    [
-        {"type": "disk", "path": "/some/disk"},
-        {"label": "COS_OEM", "type": "part", "path": "/some/disk1"},
-        {"label": "COS_RECOVERY", "type": "part", "path": "/some/disk2"}
-    ]
-}`)
-			parts, err := utils.GetDevicePartitions(runner, "/some/disk")
-			Expect(err).To(BeNil())
-			Expect(len(parts)).To(Equal(2))
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+			Expect(partNames).To(ContainElement("sda1Test"))
+			Expect(partNames).To(ContainElement("sda1Test"))
+			Expect(partNames).To(ContainElement("sdb1Test"))
 		})
 	})
 	Describe("GetPartitionFS", Label("lsblk", "partitions"), func() {
-		var cmds [][]string
+		var ghwTest v1mock.GhwMock
 		BeforeEach(func() {
-			cmds = [][]string{
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE", "/some/device"},
-			}
+			ghwTest = v1mock.GhwMock{}
+			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+				{
+					Name: "device1",
+					Type: "xfs",
+				},
+				{
+					Name: "device2",
+				},
+			}}
+			ghwTest.AddDisk(disk)
+			ghwTest.CreateDevices()
 		})
-		It("returns found device", func() {
-			runner.ReturnValue = []byte(`{"blockdevices": [{"fstype": "xfs", "type": "part"}]}`)
-			pFS, err := utils.GetPartitionFS(runner, "/some/device")
+		AfterEach(func() {
+			ghwTest.Clean()
+		})
+		It("returns found device with plain partition device", func() {
+			pFS, err := utils.GetPartitionFS("device1")
 			Expect(err).To(BeNil())
 			Expect(pFS).To(Equal("xfs"))
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
-		It("fails to run lsblk", func() {
-			runner.ReturnError = errors.New("failed running lsblk")
-			_, err := utils.GetPartitionFS(runner, "/some/device")
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
-		})
-		It("fails if more than one partition is found", func() {
-			runner.ReturnValue = []byte(`{"blockdevices": [{"fstype": "xfs", "type": "part"}, {"fstype": "ext4", "type": "part"}]}`)
-			_, err := utils.GetPartitionFS(runner, "/some/device")
-			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		It("returns found device with full partition device", func() {
+			pFS, err := utils.GetPartitionFS("/dev/device1")
+			Expect(err).To(BeNil())
+			Expect(pFS).To(Equal("xfs"))
 		})
 		It("fails if no partition is found", func() {
-			runner.ReturnValue = []byte(`{"blockdevices": []}`)
-			_, err := utils.GetPartitionFS(runner, "/some/device")
+			_, err := utils.GetPartitionFS("device2")
 			Expect(err).NotTo(BeNil())
-			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 	})
 	Describe("CosignVerify", Label("cosign"), func() {
@@ -341,16 +316,27 @@ var _ = Describe("Utils", Label("utils"), func() {
 		BeforeEach(func() {
 			cmds = [][]string{
 				{"udevadm", "settle"},
-				{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE"},
 			}
 		})
 		It("returns found v1.Partition", func() {
-			runner.ReturnValue = []byte(`{"blockdevices":[{"label":"FAKE","size":1048576,"partlabel":"pfake","fstype":"fakefs","partflags":null,"mountpoint":"/mnt/fake", "type": "part"}]}`)
+			var flags []string
+			ghwTest := v1mock.GhwMock{}
+			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+				{
+					Name:       "device1",
+					Label:      "FAKE",
+					Type:       "fakefs",
+					MountPoint: "/mnt/fake",
+					SizeBytes:  0,
+				},
+			}}
+			ghwTest.AddDisk(disk)
+			ghwTest.CreateDevices()
+			defer ghwTest.Clean()
 			out, err := utils.GetFullDeviceByLabel(runner, "FAKE", 1)
-			flags := []string{}
 			Expect(err).To(BeNil())
 			Expect(out.Label).To(Equal("FAKE"))
-			Expect(out.Size).To(Equal(uint(1)))
+			Expect(out.Size).To(Equal(uint(0)))
 			Expect(out.FS).To(Equal("fakefs"))
 			Expect(out.MountPoint).To(Equal("/mnt/fake"))
 			Expect(out.Flags).To(Equal(flags))
@@ -570,7 +556,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
@@ -650,7 +636,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 
 				fs.Mkdir("/dev", constants.DirPerm)
 
-				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
@@ -685,7 +671,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				logger := log.New()
 				logger.SetOutput(buf)
 
-				_ = utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), 0666)
+				_ = utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
 
 				config.Logger = logger
 

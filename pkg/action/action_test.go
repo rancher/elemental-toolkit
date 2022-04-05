@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/jaypipes/ghw/pkg/block"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -60,13 +61,16 @@ var _ = Describe("Actions", func() {
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
 	var cleanup func()
+	var memLog *bytes.Buffer
+	var ghwTest v1mock.GhwMock
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
-		logger = v1.NewNullLogger()
+		memLog = &bytes.Buffer{}
+		logger = v1.NewBufferLogger(memLog)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
@@ -86,27 +90,11 @@ var _ = Describe("Actions", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Reset Setup", Label("resetsetup"), func() {
-		var lsblkOut, bootedFrom, cmdFail string
+		var bootedFrom, cmdFail string
 		BeforeEach(func() {
 			cmdFail = ""
 			fs.Create(constants.EfiDevice)
 			bootedFrom = constants.RecoverySquashFile
-			lsblkOut = `{
-  "blockdevices": [
-    {
-      "label": "COS_STATE", "size": 0, "fstype": "ext4", "mountpoint":"",
-      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
-    },
-    {
-      "label": "COS_PERSISTENT", "size": 0, "fstype": "ext4", "mountpoint":"",
-      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
-    },
-    {
-      "label": "COS_OEM", "size": 0, "fstype": "ext4", "mountpoint":"",
-      "path":"/dev/device1", "pkname":"/dev/device", "type": "part"
-    }
-  ]
-}`
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == cmdFail {
 					return []byte{}, errors.New("Command failed")
@@ -114,12 +102,38 @@ var _ = Describe("Actions", func() {
 				switch cmd {
 				case "cat":
 					return []byte(bootedFrom), nil
-				case "lsblk":
-					return []byte(lsblkOut), nil
 				default:
 					return []byte{}, nil
 				}
 			}
+			// This creates a fake disk for ghw to read from
+			// we only need this 3 partitions for the reset tests
+			mainDisk := block.Disk{
+				Name: "device",
+				Partitions: []*block.Partition{
+					{
+						Name:  "device1",
+						Label: "COS_GRUB",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device2",
+						Label: "COS_STATE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device3",
+						Label: "COS_PERSISTENT",
+						Type:  "ext4",
+					},
+				},
+			}
+			ghwTest = v1mock.GhwMock{}
+			ghwTest.AddDisk(mainDisk)
+			ghwTest.CreateDevices()
+		})
+		AfterEach(func() {
+			ghwTest.Clean()
 		})
 		It("Configures reset command", func() {
 			Expect(action.ResetSetup(config)).To(BeNil())
@@ -146,7 +160,8 @@ var _ = Describe("Actions", func() {
 			Expect(action.ResetSetup(config)).NotTo(BeNil())
 		})
 		It("Fails if partitions are not found", func() {
-			cmdFail = "lsblk"
+			// remove the disk
+			ghwTest.RemoveDisk("device")
 			Expect(action.ResetSetup(config)).NotTo(BeNil())
 		})
 	})
@@ -422,6 +437,52 @@ var _ = Describe("Actions", func() {
 			cmdline = func() ([]byte, error) {
 				return []byte{}, nil
 			}
+			mainDisk := block.Disk{
+				Name: "device",
+				Partitions: []*block.Partition{
+					{
+						Name:  "device1",
+						Label: "COS_GRUB",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device2",
+						Label: "COS_STATE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device3",
+						Label: "COS_PERSISTENT",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device4",
+						Label: "COS_ACTIVE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device5",
+						Label: "COS_PASSIVE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device5",
+						Label: "COS_RECOVERY",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device6",
+						Label: "COS_OEM",
+						Type:  "ext4",
+					},
+				},
+			}
+			ghwTest = v1mock.GhwMock{}
+			ghwTest.AddDisk(mainDisk)
+			ghwTest.CreateDevices()
+		})
+		AfterEach(func() {
+			ghwTest.Clean()
 		})
 
 		It("Successfully installs", func() {
@@ -624,15 +685,52 @@ var _ = Describe("Actions", func() {
 			// Create paths used by tests
 			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), constants.DirPerm)
 			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.UpgradeRecoveryDir), constants.DirPerm)
+
+			mainDisk := block.Disk{
+				Name: "device",
+				Partitions: []*block.Partition{
+					{
+						Name:  "device1",
+						Label: "COS_GRUB",
+						Type:  "ext4",
+					},
+					{
+						Name:       "device2",
+						Label:      "COS_STATE",
+						Type:       "ext4",
+						MountPoint: constants.RunningStateDir,
+					},
+					{
+						Name:  "device4",
+						Label: "COS_ACTIVE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device5",
+						Label: "COS_PASSIVE",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device5",
+						Label: "COS_RECOVERY",
+						Type:  "ext4",
+					},
+					{
+						Name:  "device6",
+						Label: "COS_OEM",
+						Type:  "ext4",
+					},
+				},
+			}
+			ghwTest = v1mock.GhwMock{}
+			ghwTest.AddDisk(mainDisk)
+			ghwTest.CreateDevices()
+		})
+		AfterEach(func() {
+			ghwTest.Clean()
 		})
 		It("Fails if some hook fails and strict is set", func() {
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-				if command == "lsblk" {
-					return []byte(`{"blockdevices": [
-    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/state","type":"part"},
-    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/recovery","type":"part"}
-]}`), nil
-				}
 				if command == "cat" && args[0] == "/proc/cmdline" {
 					return []byte(constants.ActiveLabel), nil
 				}
@@ -651,12 +749,6 @@ var _ = Describe("Actions", func() {
 		Describe(fmt.Sprintf("Booting from %s", constants.ActiveLabel), Label("active_label"), func() {
 			BeforeEach(func() {
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-					if command == "lsblk" {
-						return []byte(`{"blockdevices": [
-    {"label":"COS_STATE","size":1,"mountpoint":"/run/initramfs/cos-state","path":"/dev/fake1","type":"part"},
-    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
-]}`), nil
-					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.ActiveLabel), nil
 					}
@@ -694,7 +786,7 @@ var _ = Describe("Actions", func() {
 
 				// Expect cos-state to have been mounted with our fake lsblk values
 				fakeMounted := mount.MountPoint{
-					Device: "/dev/fake1",
+					Device: "/dev/device2",
 					Path:   "/run/initramfs/cos-state",
 					Type:   "auto",
 				}
@@ -748,8 +840,8 @@ var _ = Describe("Actions", func() {
 				// Should have backed up active to passive
 				info, err = fs.Stat(passiveImg)
 				Expect(err).ToNot(HaveOccurred())
-				// Should be an really small image as it should only contain our text
-				// As this was generated by us at the start test and moved by the upgrade from active.iomg
+				// Should be a tiny image as it should only contain our text
+				// As this was generated by us at the start test and moved by the upgrade from active.img
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.Size()).To(BeNumerically("<", int64(config.ImgSize*1024*1024)))
 				f, _ := fs.ReadFile(passiveImg)
@@ -834,12 +926,6 @@ var _ = Describe("Actions", func() {
 		Describe(fmt.Sprintf("Booting from %s", constants.PassiveLabel), Label("passive_label"), func() {
 			BeforeEach(func() {
 				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-					if command == "lsblk" {
-						return []byte(`{"blockdevices": [
-    {"label":"COS_STATE","size":1,"mountpoint":"/run/initramfs/cos-state","path":"/dev/fake1","type":"part"},
-    {"label":"COS_RECOVERY","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
-]}`), nil
-					}
 					if command == "cat" && args[0] == "/proc/cmdline" {
 						return []byte(constants.PassiveLabel), nil
 					}
@@ -870,7 +956,7 @@ var _ = Describe("Actions", func() {
 
 				// Expect cos-state to have been mounted with our fake lsblk values
 				fakeMounted := mount.MountPoint{
-					Device: "/dev/fake1",
+					Device: "/dev/device2",
 					Path:   "/run/initramfs/cos-state",
 					Type:   "auto",
 				}
@@ -902,16 +988,52 @@ var _ = Describe("Actions", func() {
 		Describe(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), Label("recovery_label"), func() {
 			BeforeEach(func() {
 				config.RecoveryUpgrade = true
+
+				// Clean fake disks and generate a new one based on recovery boot,
+				// i.e COS_RECOVERY mounted on its proper dir
+				ghwTest.Clean()
+				recoveryDisk := block.Disk{
+					Name: "device",
+					Partitions: []*block.Partition{
+						{
+							Name:  "device1",
+							Label: "COS_GRUB",
+							Type:  "ext4",
+						},
+						{
+							Name:  "device2",
+							Label: "COS_STATE",
+							Type:  "ext4",
+						},
+						{
+							Name:  "device4",
+							Label: "COS_ACTIVE",
+							Type:  "ext4",
+						},
+						{
+							Name:  "device5",
+							Label: "COS_PASSIVE",
+							Type:  "ext4",
+						},
+						{
+							Name:       "device5",
+							Label:      "COS_RECOVERY",
+							Type:       "ext4",
+							MountPoint: constants.UpgradeRecoveryDir,
+						},
+						{
+							Name:  "device6",
+							Label: "COS_OEM",
+							Type:  "ext4",
+						},
+					},
+				}
+				ghwTest.AddDisk(recoveryDisk)
+				ghwTest.CreateDevices()
 			})
 			Describe("Using squashfs", Label("squashfs"), func() {
 				BeforeEach(func() {
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-						if command == "lsblk" {
-							return []byte(`{"blockdevices": [
-    {"label":"COS_RECOVERY","size":1,"mountpoint":"/run/initramfs/live","path":"/dev/fake1","type":"part"},
-    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
-]}`), nil
-						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
 						}
@@ -951,7 +1073,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}
@@ -985,7 +1107,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}
@@ -1051,7 +1173,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}
@@ -1074,12 +1196,6 @@ var _ = Describe("Actions", func() {
 			Describe("Not using squashfs", Label("non-squashfs"), func() {
 				BeforeEach(func() {
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-						if command == "lsblk" {
-							return []byte(`{"blockdevices": [
-    {"label":"COS_RECOVERY","size":1,"mountpoint":"/run/initramfs/live","path":"/dev/fake1","type":"part"},
-    {"label":"COS_STATE","size":1,"mountpoint":"/mnt/fake","path":"/dev/fake2","type":"part"}
-]}`), nil
-						}
 						if command == "cat" && args[0] == "/proc/cmdline" {
 							return []byte(constants.RecoveryLabel), nil
 						}
@@ -1117,7 +1233,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}
@@ -1150,7 +1266,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}
@@ -1218,7 +1334,7 @@ var _ = Describe("Actions", func() {
 
 					// Expect cos-state to have been remounted back on RO
 					fakeMounted := mount.MountPoint{
-						Device: "/dev/fake1",
+						Device: "/dev/device5",
 						Path:   "/run/initramfs/live",
 						Type:   "auto",
 					}

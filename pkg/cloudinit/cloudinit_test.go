@@ -19,11 +19,11 @@ package cloudinit_test
 import (
 	"errors"
 	"fmt"
+	"github.com/jaypipes/ghw/pkg/block"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"log"
 	"os"
-
-	"github.com/sirupsen/logrus"
 
 	. "github.com/rancher-sandbox/elemental/pkg/cloudinit"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -109,7 +109,8 @@ stages:
 			afs, cleanup, _ = vfst.NewTestFS(nil)
 			err := utils.MkdirAll(afs, "/some/yip", constants.DirPerm)
 			Expect(err).To(BeNil())
-			device = "/some/device"
+			_ = utils.MkdirAll(afs, "/dev", constants.DirPerm)
+			device = "/dev/device"
 			_, err = afs.Create(device)
 			Expect(err).To(BeNil())
 
@@ -122,10 +123,6 @@ stages:
 				switch cmd {
 				case "parted":
 					return []byte(printOutput), nil
-				case "lsblk":
-					return []byte(
-						fmt.Sprintf(`{"blockdevices":[{"label":"DEV_LABEL","pkname": "%s", "type": "part", "fstype": "ext4"}]}`, device),
-					), nil
 				default:
 					return []byte{}, nil
 				}
@@ -158,6 +155,16 @@ stages:
         pLabel: partLabel
 `, device)), constants.FilePerm)
 			Expect(err).To(BeNil())
+			ghwTest := v1mock.GhwMock{}
+			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+				{
+					Name:  "device1",
+					Label: "DEV_LABEL",
+				},
+			}}
+			ghwTest.AddDisk(disk)
+			ghwTest.CreateDevices()
+			defer ghwTest.Clean()
 			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})
@@ -176,6 +183,16 @@ stages:
         size: 0
 `, device)), constants.FilePerm)
 			Expect(err).To(BeNil())
+			ghwTest := v1mock.GhwMock{}
+			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+				{
+					Name: fmt.Sprintf("device%d", partNum),
+					Type: "ext4",
+				},
+			}}
+			ghwTest.AddDisk(disk)
+			ghwTest.CreateDevices()
+			defer ghwTest.Clean()
 			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).To(BeNil())
 		})

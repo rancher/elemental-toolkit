@@ -18,7 +18,7 @@ package partitioner_test
 
 import (
 	"errors"
-	"fmt"
+	"github.com/jaypipes/ghw/pkg/block"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -51,16 +51,16 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 	Describe("Parted tests", Label("parted"), func() {
 		var pc *part.PartedCall
 		BeforeEach(func() {
-			pc = part.NewPartedCall("/some/dev", runner)
+			pc = part.NewPartedCall("/dev/device", runner)
 		})
 		It("Write changes does nothing with empty setup", func() {
-			pc := part.NewPartedCall("/some/dev", runner)
+			pc := part.NewPartedCall("/dev/device", runner)
 			_, err := pc.WriteChanges()
 			Expect(err).To(BeNil())
 		})
 		It("Runs complex command", func() {
 			cmds := [][]string{{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "gpt", "mkpart", "p.efi", "fat32",
 				"2048", "206847", "mkpart", "p.root", "ext4", "206848", "100%",
 			}}
@@ -81,7 +81,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Set a new partition label", func() {
 			cmds := [][]string{{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "msdos",
 			}}
 			pc.SetPartitionTableLabel("msdos")
@@ -92,10 +92,10 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Creates a new partition", func() {
 			cmds := [][]string{{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mkpart", "p.root", "ext4", "2048", "206847",
 			}, {
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mkpart", "p.root", "ext4", "2048", "100%",
 			}}
 			partition := part.Partition{
@@ -116,7 +116,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Deletes a partition", func() {
 			cmd := []string{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "rm", "1", "rm", "2",
 			}
 			pc.DeletePartition(1)
@@ -127,7 +127,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Set a partition flag", func() {
 			cmds := [][]string{{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "set", "1", "flag", "on", "set", "2", "flag", "off",
 			}}
 			pc.SetPartitionFlag(1, "flag", true)
@@ -138,7 +138,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Wipes partition table creating a new one", func() {
 			cmd := []string{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "gpt",
 			}
 			pc.WipeTable(true)
@@ -148,7 +148,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Prints partitin table info", func() {
 			cmd := []string{
-				"parted", "--script", "--machine", "--", "/some/dev",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "print",
 			}
 			_, err := pc.Print()
@@ -181,21 +181,21 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 	})
 	Describe("Mkfs tests", Label("mkfs", "filesystem"), func() {
 		It("Successfully formats a partition with xfs", func() {
-			mkfs := part.NewMkfsCall("/some/device", "xfs", "OEM", runner)
+			mkfs := part.NewMkfsCall("/dev/device", "xfs", "OEM", runner)
 			_, err := mkfs.Apply()
 			Expect(err).To(BeNil())
-			cmds := [][]string{{"mkfs.xfs", "-L", "OEM", "/some/device"}}
+			cmds := [][]string{{"mkfs.xfs", "-L", "OEM", "/dev/device"}}
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Successfully formats a partition with vfat", func() {
-			mkfs := part.NewMkfsCall("/some/device", "vfat", "EFI", runner)
+			mkfs := part.NewMkfsCall("/dev/device", "vfat", "EFI", runner)
 			_, err := mkfs.Apply()
 			Expect(err).To(BeNil())
-			cmds := [][]string{{"mkfs.vfat", "-n", "EFI", "/some/device"}}
+			cmds := [][]string{{"mkfs.vfat", "-n", "EFI", "/dev/device"}}
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Fails for unsupported filesystem", func() {
-			mkfs := part.NewMkfsCall("/some/device", "btrfs", "OEM", runner)
+			mkfs := part.NewMkfsCall("/dev/device", "btrfs", "OEM", runner)
 			_, err := mkfs.Apply()
 			Expect(err).NotTo(BeNil())
 		})
@@ -210,21 +210,21 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		BeforeEach(func() {
 			fs, cleanup, _ = vfst.NewTestFS(nil)
 
-			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
+			err := utils.MkdirAll(fs, "/dev", constants.DirPerm)
 			Expect(err).To(BeNil())
-			_, err = fs.Create("/some/device")
+			_, err = fs.Create("/dev/device")
 			Expect(err).To(BeNil())
 
-			dev = part.NewDisk("/some/device", part.WithRunner(runner), part.WithFS(fs))
+			dev = part.NewDisk("/dev/device", part.WithRunner(runner), part.WithFS(fs))
 			printCmd = []string{
-				"parted", "--script", "--machine", "--", "/some/device",
+				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "print",
 			}
 			cmds = [][]string{printCmd}
 		})
 		AfterEach(func() { cleanup() })
 		It("Creates a default disk", func() {
-			dev = part.NewDisk("/some/device")
+			dev = part.NewDisk("/dev/device")
 		})
 		Describe("Load data without changes", func() {
 			BeforeEach(func() {
@@ -232,7 +232,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Loads disk layout data", func() {
 				Expect(dev.Reload()).To(BeNil())
-				Expect(dev.String()).To(Equal("/some/device"))
+				Expect(dev.String()).To(Equal("/dev/device"))
 				Expect(dev.GetSectorSize()).To(Equal(uint(512)))
 				Expect(dev.GetLastSector()).To(Equal(uint(50593792)))
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
@@ -257,9 +257,9 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				runner.ReturnValue = []byte("Warning: Not all of the space available to /dev/loop0...\n" + printOutput)
 				Expect(dev.Reload()).To(BeNil())
 				Expect(runner.MatchMilestones([][]string{
-					{"parted", "--script", "--machine", "--", "/some/device", "unit", "s", "print"},
-					{"sgdisk", "-e", "/some/device"},
-					{"parted", "--script", "--machine", "--", "/some/device", "unit", "s", "print"},
+					{"parted", "--script", "--machine", "--", "/dev/device", "unit", "s", "print"},
+					{"sgdisk", "-e", "/dev/device"},
+					{"parted", "--script", "--machine", "--", "/dev/device", "unit", "s", "print"},
 				})).To(BeNil())
 			})
 		})
@@ -278,7 +278,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Creates new partition table label", func() {
 				cmds = [][]string{{
-					"parted", "--script", "--machine", "--", "/some/device",
+					"parted", "--script", "--machine", "--", "/dev/device",
 					"unit", "s", "mklabel", "gpt",
 				}, printCmd}
 				runner.ReturnValue = []byte(printOutput)
@@ -288,7 +288,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Adds a new partition", func() {
 				cmds = [][]string{printCmd, {
-					"parted", "--script", "--machine", "--", "/some/device",
+					"parted", "--script", "--machine", "--", "/dev/device",
 					"unit", "s", "mkpart", "primary", "ext4", "50331648", "100%",
 					"set", "5", "boot", "on",
 				}, printCmd}
@@ -306,23 +306,23 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Finds device for a given partition number", func() {
-				_, err := fs.Create("/some/device4")
+				_, err := fs.Create("/dev/device4")
 				Expect(err).To(BeNil())
 				cmds = [][]string{{"udevadm", "settle"}}
-				Expect(dev.FindPartitionDevice(4)).To(Equal("/some/device4"))
+				Expect(dev.FindPartitionDevice(4)).To(Equal("/dev/device4"))
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Does not find device for a given partition number", func() {
-				dev := part.NewDisk("/some/loop0")
+				dev := part.NewDisk("/dev/loop0")
 				_, err := dev.FindPartitionDevice(4)
 				Expect(err).NotTo(BeNil())
 			})
 			It("Formats a partition", func() {
-				_, err := fs.Create("/some/device4")
+				_, err := fs.Create("/dev/device4")
 				Expect(err).To(BeNil())
 				cmds = [][]string{
 					{"udevadm", "settle"},
-					{"mkfs.xfs", "-L", "OEM", "/some/device4"},
+					{"mkfs.xfs", "-L", "OEM", "/dev/device4"},
 				}
 				_, err = dev.FormatPartition(4, "xfs", "OEM")
 				Expect(err).To(BeNil())
@@ -330,31 +330,27 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Clears filesystem header from a partition", func() {
 				cmds = [][]string{
-					{"wipefs", "--all", "/some/device1"},
+					{"wipefs", "--all", "/dev/device1"},
 				}
-				Expect(dev.WipeFsOnPartition("/some/device1")).To(BeNil())
+				Expect(dev.WipeFsOnPartition("/dev/device1")).To(BeNil())
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Fails while removing file system header", func() {
 				runner.ReturnError = errors.New("some error")
-				Expect(dev.WipeFsOnPartition("/some/device1")).NotTo(BeNil())
+				Expect(dev.WipeFsOnPartition("/dev/device1")).NotTo(BeNil())
 			})
 			Describe("Expanding partitions", func() {
-				var fileSystem string
 				BeforeEach(func() {
 					cmds = [][]string{
 						printCmd, {
-							"parted", "--script", "--machine", "--", "/some/device",
+							"parted", "--script", "--machine", "--", "/dev/device",
 							"unit", "s", "rm", "4", "mkpart", "primary", "", "45019136", "100%",
 						}, printCmd, {"udevadm", "settle"},
-						{"lsblk", "-p", "-b", "-n", "-J", "--output", "LABEL,SIZE,FSTYPE,MOUNTPOINT,PATH,PKNAME,TYPE", "/some/device4"},
 					}
 					runFunc := func(cmd string, args ...string) ([]byte, error) {
 						switch cmd {
 						case "parted":
 							return []byte(printOutput), nil
-						case "lsblk":
-							return []byte(fmt.Sprintf(`{"blockdevices": [{"fstype": "%s", "type": "part"}]}`, fileSystem)), nil
 						default:
 							return []byte{}, nil
 						}
@@ -362,23 +358,41 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					runner.SideEffect = runFunc
 				})
 				It("Expands ext4 partition", func() {
-					_, err := fs.Create("/some/device4")
+					_, err := fs.Create("/dev/device4")
 					Expect(err).To(BeNil())
 					extCmds := [][]string{
-						{"e2fsck", "-fy", "/some/device4"}, {"resize2fs", "/some/device4"},
+						{"e2fsck", "-fy", "/dev/device4"}, {"resize2fs", "/dev/device4"},
 					}
-					fileSystem = "ext4"
+					ghwTest := mocks.GhwMock{}
+					disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+						{
+							Name: "device4",
+							Type: "ext4",
+						},
+					}}
+					ghwTest.AddDisk(disk)
+					ghwTest.CreateDevices()
+					defer ghwTest.Clean()
 					_, err = dev.ExpandLastPartition(0)
 					Expect(err).To(BeNil())
 					Expect(runner.CmdsMatch(append(cmds, extCmds...))).To(BeNil())
 				})
 				It("Expands xfs partition", func() {
-					_, err := fs.Create("/some/device4")
+					_, err := fs.Create("/dev/device4")
 					Expect(err).To(BeNil())
 					xfsCmds := [][]string{
 						{"mount", "-t", "xfs"}, {"xfs_growfs"}, {"umount"},
 					}
-					fileSystem = "xfs"
+					ghwTest := mocks.GhwMock{}
+					disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+						{
+							Name: "device4",
+							Type: "xfs",
+						},
+					}}
+					ghwTest.AddDisk(disk)
+					ghwTest.CreateDevices()
+					defer ghwTest.Clean()
 					_, err = dev.ExpandLastPartition(0)
 					Expect(err).To(BeNil())
 					Expect(runner.CmdsMatch(append(cmds, xfsCmds...))).To(BeNil())

@@ -72,7 +72,7 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 
 	// Make sure cloud init path specified are existing in the system
 	for _, cp := range CloudInitPaths {
-		err := MkdirAll(cfg.Fs, cp, 0600)
+		err := MkdirAll(cfg.Fs, cp, constants.DirPerm)
 		if err != nil {
 			cfg.Logger.Debugf("Failed creating cloud-init config path: %s %s", cp, err.Error())
 		}

@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ishidawataru/sctp v0.0.0-20210707070123-9a39160e9062 // indirect
 	github.com/itchyny/gojq v0.12.6 // indirect
+	github.com/jaypipes/ghw v0.9.1-0.20220404152016-2ea05cb6c17c
 	github.com/joho/godotenv v1.4.0
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e

@@ -376,9 +376,12 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 	var out []byte
 	var err error
 
-	fs, _ := utils.GetPartitionFS(dev.runner, device)
+	fs, err := utils.GetPartitionFS(device)
+	if err != nil {
+		return fs, err
+	}
 
-	switch strings.TrimSpace(string(fs)) {
+	switch strings.TrimSpace(fs) {
 	case "ext2", "ext3", "ext4":
 		out, err = dev.runner.Run("e2fsck", "-fy", device)
 		if err != nil {

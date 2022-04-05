@@ -61,7 +61,7 @@ func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, err
 func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Partition, error) {
 	for tries := 0; tries < attempts; tries++ {
 		_, _ = runner.Run("udevadm", "settle")
-		parts, err := GetAllPartitions(runner)
+		parts, err := GetAllPartitions()
 		if err != nil {
 			return nil, err
 		}
@@ -73,19 +73,6 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 		time.Sleep(1 * time.Second)
 	}
 	return nil, errors.New("no device found")
-}
-
-// GetPartitionFS returns the partition filesystem for the given device.
-// If the device is not a partition returns an error.
-func GetPartitionFS(runner v1.Runner, device string) (string, error) {
-	dev, err := GetDevicePartitions(runner, device)
-	if err != nil {
-		return "", err
-	}
-	if len(dev) != 1 {
-		return "", fmt.Errorf("%s does not hold a partition", device)
-	}
-	return dev[0].FS, nil
 }
 
 // CopyFile Copies source file to target file using Fs interface

@@ -19,6 +19,7 @@ package elemental_test
 import (
 	"errors"
 	"fmt"
+	"github.com/jaypipes/ghw/pkg/block"
 	"path/filepath"
 	"testing"
 
@@ -650,7 +651,16 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Describe("Force is disabled", func() {
 				It("Should error out", func() {
 					config.NoFormat = true
-					runner.ReturnValue = []byte(`{"blockdevices": [{"label": "COS_ACTIVE", "type": "loop", "path": "/some/device"}]}`)
+					ghwTest := v1mock.GhwMock{}
+					disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+						{
+							Name:  "device1",
+							Label: "COS_ACTIVE",
+						},
+					}}
+					ghwTest.AddDisk(disk)
+					ghwTest.CreateDevices()
+					defer ghwTest.Clean()
 					e := elemental.NewElemental(config)
 					err := e.CheckNoFormat()
 					Expect(err).ToNot(BeNil())
