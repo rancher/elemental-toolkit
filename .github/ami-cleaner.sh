@@ -3,6 +3,8 @@ DO_CLEANUP=${DO_CLEANUP:-false}
 AMI_OWNER=${AMI_OWNER:-"053594193760"}
 MAX_AMI_NUMBER=${MAX_AMI_NUMBER:-20}
 
+set -e
+
 
 regions=( $( aws ec2 describe-regions | jq '.Regions[].RegionName' -r ) )
 
