@@ -25,101 +25,107 @@ import (
 	"k8s.io/mount-utils"
 )
 
-type RunConfigOptions func(a *v1.RunConfig) error
+type GenericOptions func(a *v1.Config) error
 
-func WithFs(fs v1.FS) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithFs(fs v1.FS) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Fs = fs
 		return nil
 	}
 }
 
-func WithLogger(logger v1.Logger) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithLogger(logger v1.Logger) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Logger = logger
 		return nil
 	}
 }
 
-func WithSyscall(syscall v1.SyscallInterface) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithSyscall(syscall v1.SyscallInterface) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Syscall = syscall
 		return nil
 	}
 }
 
-func WithMounter(mounter mount.Interface) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithMounter(mounter mount.Interface) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Mounter = mounter
 		return nil
 	}
 }
 
-func WithRunner(runner v1.Runner) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithRunner(runner v1.Runner) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Runner = runner
 		return nil
 	}
 }
 
-func WithClient(client v1.HTTPClient) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithClient(client v1.HTTPClient) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Client = client
 		return nil
 	}
 }
 
-func WithCloudInitRunner(ci v1.CloudInitRunner) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithCloudInitRunner(ci v1.CloudInitRunner) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.CloudInitRunner = ci
 		return nil
 	}
 }
 
-func WithLuet(luet v1.LuetInterface) func(r *v1.RunConfig) error {
-	return func(r *v1.RunConfig) error {
+func WithLuet(luet v1.LuetInterface) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
 		r.Luet = luet
 		return nil
 	}
 }
 
-func NewRunConfig(opts ...RunConfigOptions) *v1.RunConfig {
+func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
-	r := &v1.RunConfig{
+	c := &v1.Config{
 		Fs:      vfs.OSFS,
 		Logger:  log,
 		Syscall: &v1.RealSyscall{},
 		Client:  http.NewClient(),
 	}
 	for _, o := range opts {
-		err := o(r)
+		err := o(c)
 		if err != nil {
 			return nil
 		}
 	}
 
 	// delay runner creation after we have run over the options in case we use WithRunner
-	if r.Runner == nil {
-		r.Runner = &v1.RealRunner{Logger: r.Logger}
+	if c.Runner == nil {
+		c.Runner = &v1.RealRunner{Logger: c.Logger}
 	}
 
 	// Now check if the runner has a logger inside, otherwise point our logger into it
 	// This can happen if we set the WithRunner option as that doesn't set a logger
-	if r.Runner.GetLogger() == nil {
-		r.Runner.SetLogger(r.Logger)
+	if c.Runner.GetLogger() == nil {
+		c.Runner.SetLogger(c.Logger)
 	}
 
 	// Delay the yip runner creation, so we set the proper logger instead of blindly setting it to the logger we create
 	// at the start of NewRunConfig, as WithLogger can be passed on init, and that would result in 2 different logger
 	// instances, on the config.Logger and the other on config.CloudInitRunner
-	if r.CloudInitRunner == nil {
-		r.CloudInitRunner = cloudinit.NewYipCloudInitRunner(r.Logger, r.Runner, vfs.OSFS)
+	if c.CloudInitRunner == nil {
+		c.CloudInitRunner = cloudinit.NewYipCloudInitRunner(c.Logger, c.Runner, vfs.OSFS)
 	}
 
-	if r.Mounter == nil {
-		r.Mounter = mount.New(cnst.MountBinary)
+	if c.Mounter == nil {
+		c.Mounter = mount.New(cnst.MountBinary)
 	}
+	return c
+}
 
+func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
+	r := &v1.RunConfig{
+		Config: *NewConfig(opts...),
+	}
 	// Set defaults if empty
 	if r.GrubConf == "" {
 		r.GrubConf = cnst.GrubConf
@@ -164,4 +170,11 @@ func NewRunConfig(opts ...RunConfigOptions) *v1.RunConfig {
 		r.ImgSize = cnst.ImgSize
 	}
 	return r
+}
+
+func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
+	b := &v1.BuildConfig{
+		Config: *NewConfig(opts...),
+	}
+	return b
 }

@@ -29,6 +29,19 @@ const (
 	BOOT  = "boot"
 )
 
+// Config is the struct that includes basic and generic configuration of elemental binary runtime.
+// It mostly includes the interfaces used around many methods in elemental code
+type Config struct {
+	Logger          Logger
+	Fs              FS
+	Mounter         mount.Interface
+	Runner          Runner
+	Syscall         SyscallInterface
+	CloudInitRunner CloudInitRunner
+	Luet            LuetInterface
+	Client          HTTPClient
+}
+
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
 // Basically everything needed to know for all operations in a running system, not related to builds
 type RunConfig struct {
@@ -68,20 +81,13 @@ type RunConfig struct {
 	ResetPersistent bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
 	EjectCD         bool   `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
 	// Internally used to track stuff around
-	PartTable string
-	BootFlag  string
-	GrubConf  string
-	// Interfaces used around by methods
-	Logger          Logger
-	Fs              FS
-	Mounter         mount.Interface
-	Runner          Runner
-	Syscall         SyscallInterface
-	CloudInitRunner CloudInitRunner
-	Luet            LuetInterface
-	Partitions      PartitionList
-	Images          ImageMap
-	Client          HTTPClient
+	PartTable  string
+	BootFlag   string
+	GrubConf   string
+	Partitions PartitionList
+	Images     ImageMap
+	// Generic runtime configuration
+	Config
 }
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
@@ -149,4 +155,6 @@ func (pl PartitionList) GetByName(name string) *Partition {
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
 	Label string `yaml:"label,omitempty" mapstructure:"label"`
+	// Generic runtime configuration
+	Config
 }
