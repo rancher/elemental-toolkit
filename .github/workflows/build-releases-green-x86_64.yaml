@@ -176,7 +176,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -220,7 +220,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -350,7 +350,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -459,7 +459,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -503,7 +503,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -633,7 +633,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -946,7 +946,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -1015,9 +1015,7 @@ jobs:
       - name: Build AMI for green
         run: |
             source .github/helpers.sh
-            PACKAGE_VERSION=$(cos_package_version)
-            export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            export PKR_VAR_cos_version="${COS_VERSION}"
+            export PKR_VAR_cos_version=$(cos_package_version)
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}"
             make packer

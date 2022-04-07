@@ -56,7 +56,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
   {{{- end }}}
   {{{- if $config.local_runner }}}
       - name: Install make
@@ -386,7 +386,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -477,7 +477,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -776,7 +776,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '^1.16'
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
