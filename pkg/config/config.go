@@ -172,9 +172,19 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 	return r
 }
 
+func NewISO() *v1.LiveISO {
+	return &v1.LiveISO{
+		HybridMBR:   cnst.IsoHybridMBR,
+		BootFile:    cnst.IsoBootFile,
+		BootCatalog: cnst.IsoBootCatalog,
+	}
+}
+
 func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	b := &v1.BuildConfig{
 		Config: *NewConfig(opts...),
+		ISO:    NewISO(),
+		Name:   cnst.BuildImgName,
 	}
 	return b
 }

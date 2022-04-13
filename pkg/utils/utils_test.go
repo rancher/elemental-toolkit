@@ -20,11 +20,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/jaypipes/ghw/pkg/block"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/jaypipes/ghw/pkg/block"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -362,7 +362,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("CopyFile", Label("CopyFile"), func() {
-		It("Copies source to target", func() {
+		It("Copies source file to target file", func() {
 			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
 			_, err = fs.Create("/some/file")
@@ -370,9 +370,21 @@ var _ = Describe("Utils", Label("utils"), func() {
 			_, err = fs.Stat("/some/otherfile")
 			Expect(err).Should(HaveOccurred())
 			Expect(utils.CopyFile(fs, "/some/file", "/some/otherfile")).ShouldNot(HaveOccurred())
-			_, err = fs.Stat("/some/otherfile")
-			Expect(err).To(BeNil())
 			e, err := utils.Exists(fs, "/some/otherfile")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(e).To(BeTrue())
+		})
+		It("Copies source file to target folder", func() {
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			err = utils.MkdirAll(fs, "/someotherfolder", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create("/some/file")
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Stat("/someotherfolder/file")
+			Expect(err).Should(HaveOccurred())
+			Expect(utils.CopyFile(fs, "/some/file", "/someotherfolder")).ShouldNot(HaveOccurred())
+			e, err := utils.Exists(fs, "/someotherfolder/file")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(e).To(BeTrue())
 		})
@@ -410,24 +422,22 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("SyncData", Label("SyncData"), func() {
 		It("Copies all files from source to target", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
-			destDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(destDir)
+			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			destDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
 
 			for i := 0; i < 5; i++ {
-				_, _ = os.CreateTemp(sourceDir, "file*")
+				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(nil, sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(fs, sourceDir, destDir)).To(BeNil())
 
-			filesDest, err := ioutil.ReadDir(destDir)
+			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
 
 			destNames := getNamesFromListFiles(filesDest)
-			filesSource, err := ioutil.ReadDir(sourceDir)
+			filesSource, err := fs.ReadDir(sourceDir)
 			Expect(err).To(BeNil())
 
 			SourceNames := getNamesFromListFiles(filesSource)
@@ -437,27 +447,26 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("Copies all files from source to target respecting excludes", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
-			destDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(destDir)
+			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			destDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
 
-			os.MkdirAll(filepath.Join(sourceDir, "host"), constants.DirPerm)
-			os.MkdirAll(filepath.Join(sourceDir, "run"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
+
 			for i := 0; i < 5; i++ {
-				_, _ = os.CreateTemp(sourceDir, "file*")
+				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(nil, sourceDir, destDir, "host", "run")).To(BeNil())
+			Expect(utils.SyncData(fs, sourceDir, destDir, "host", "run")).To(BeNil())
 
-			filesDest, err := ioutil.ReadDir(destDir)
+			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
 
 			destNames := getNamesFromListFiles(filesDest)
 
-			filesSource, err := ioutil.ReadDir(sourceDir)
+			filesSource, err := fs.ReadDir(sourceDir)
 			Expect(err).To(BeNil())
 
 			SourceNames := getNamesFromListFiles(filesSource)
@@ -475,13 +484,11 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("should not fail if dirs are empty", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
-			destDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(destDir)
-			Expect(utils.SyncData(nil, sourceDir, destDir)).To(BeNil())
+			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			destDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(utils.SyncData(fs, sourceDir, destDir)).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
@@ -540,6 +547,91 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.GetSource(config, "file:///tmp/file", "/tmp/dest")).To(BeNil())
 			_, err := fs.Stat("/tmp/dest")
 			Expect(err).To(BeNil())
+		})
+	})
+	Describe("ValidContainerReference", Label("reference"), func() {
+		It("Returns true on valid references", func() {
+			Expect(utils.ValidContainerReference("opensuse/leap:15.3")).To(BeTrue())
+			Expect(utils.ValidContainerReference("opensuse")).To(BeTrue())
+			Expect(utils.ValidContainerReference("registry.suse.com/opensuse/something")).To(BeTrue())
+			Expect(utils.ValidContainerReference("registry.suse.com:8080/something:253")).To(BeTrue())
+		})
+		It("Returns false on invalid references", func() {
+			Expect(utils.ValidContainerReference("opensuse/leap:15+3")).To(BeFalse())
+			Expect(utils.ValidContainerReference("opensusE")).To(BeFalse())
+			Expect(utils.ValidContainerReference("registry.suse.com:8080/Something:253")).To(BeFalse())
+			Expect(utils.ValidContainerReference("http://registry.suse.com:8080/something:253")).To(BeFalse())
+		})
+	})
+	Describe("ValidTaggedContainerReference", Label("reference"), func() {
+		It("Returns true on valid references including explicit tag", func() {
+			Expect(utils.ValidTaggedContainerReference("opensuse/leap:15.3")).To(BeTrue())
+			Expect(utils.ValidTaggedContainerReference("registry.suse.com/opensuse/something:latest")).To(BeTrue())
+			Expect(utils.ValidTaggedContainerReference("registry.suse.com:8080/something:253")).To(BeTrue())
+		})
+		It("Returns false on valid references without explicit tag", func() {
+			Expect(utils.ValidTaggedContainerReference("opensuse")).To(BeFalse())
+			Expect(utils.ValidTaggedContainerReference("registry.suse.com/opensuse/something")).To(BeFalse())
+			Expect(utils.ValidTaggedContainerReference("registry.suse.com:8080/something")).To(BeFalse())
+		})
+	})
+	Describe("DirSize", Label("fs"), func() {
+		BeforeEach(func() {
+			err := utils.MkdirAll(fs, "/folder/subfolder", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			f, err := fs.Create("/folder/file")
+			Expect(err).ShouldNot(HaveOccurred())
+			err = f.Truncate(1024)
+			Expect(err).ShouldNot(HaveOccurred())
+			f, err = fs.Create("/folder/subfolder/file")
+			Expect(err).ShouldNot(HaveOccurred())
+			err = f.Truncate(2048)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("Returns the expected size of a test folder", func() {
+			size, err := utils.DirSize(fs, "/folder")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(size).To(Equal(int64(3072)))
+		})
+		It("Returns the expected size of a test folder", func() {
+			err := fs.Chmod("/folder/subfolder", 0600)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = utils.DirSize(fs, "/folder")
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("NewSourceGuessingType", Label("source"), func() {
+		It("Creates a new Docker source for a tagged reference", func() {
+			src := utils.NewSrcGuessingType(config.Config, "registry.suse.com/elemental/image:v0.1")
+			Expect(src.IsDocker()).To(BeTrue())
+			src = utils.NewSrcGuessingType(config.Config, "registry.suse.com:1906/elemental/image:tag")
+			Expect(src.IsDocker()).To(BeTrue())
+			src = utils.NewSrcGuessingType(config.Config, "elemental/image:tag")
+			Expect(src.IsDocker()).To(BeTrue())
+		})
+		It("Creates a new Directory source from a path only if it exists", func() {
+			err := utils.MkdirAll(fs, "/dir", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			src := utils.NewSrcGuessingType(config.Config, "/dir")
+			Expect(src.IsDir()).To(BeTrue())
+			src = utils.NewSrcGuessingType(config.Config, "/folder")
+			Expect(src.IsDir()).To(BeFalse())
+		})
+		It("Creates a new File source from a path only if it exists", func() {
+			err := utils.MkdirAll(fs, "/dir", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create("/dir/file")
+			Expect(err).ShouldNot(HaveOccurred())
+			src := utils.NewSrcGuessingType(config.Config, "/dir/file")
+			Expect(src.IsFile()).To(BeTrue())
+			src = utils.NewSrcGuessingType(config.Config, "/dir/otherfile")
+			Expect(src.IsFile()).To(BeFalse())
+		})
+		It("Creates a new Channel source", func() {
+			src := utils.NewSrcGuessingType(config.Config, "system/cos")
+			Expect(src.IsChannel()).To(BeTrue())
+			src = utils.NewSrcGuessingType(config.Config, "cos")
+			Expect(src.IsChannel()).To(BeTrue())
 		})
 	})
 	Describe("Grub", Label("grub", "root"), func() {

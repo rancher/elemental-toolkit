@@ -32,6 +32,21 @@ import (
 	"github.com/twpayne/go-vfs"
 )
 
+// DirSize returns the accumulated size of all files in folder
+func DirSize(fs v1.FS, path string) (int64, error) {
+	var size int64
+	err := vfs.Walk(fs, path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
+}
+
 // Check if a file or directory exists.
 func Exists(fs v1.FS, path string) (bool, error) {
 	_, err := fs.Stat(path)

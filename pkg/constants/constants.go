@@ -17,8 +17,11 @@ limitations under the License.
 package constants
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 const (
@@ -64,6 +67,7 @@ const (
 	EfiDir                 = "/run/cos/efi"
 	RecoverySquashFile     = "recovery.squashfs"
 	IsoRootFile            = "rootfs.squashfs"
+	IsoEFIPath             = "/boot/uefi.img"
 	ActiveImgFile          = "active.img"
 	PassiveImgFile         = "passive.img"
 	RecoveryImgFile        = "recovery.img"
@@ -88,6 +92,18 @@ const (
 	PassiveImgName         = "passive"
 	RecoveryImgName        = "recovery"
 	GPT                    = "gpt"
+	BuildImgName           = "elemental"
+
+	//TODO these paths are abitrary, coupled to package live/grub2 and assuming xz
+	// I'd suggest using `/boot/kernel` and `/boot/initrd`
+	IsoKernelPath = "/boot/kernel.xz"
+	IsoInitrdPath = "/boot/rootfs.xz"
+
+	// TODO would be nice to discover these ISO loader values instead of hardcoding them
+	// These values are coupled with package live/grub2
+	IsoHybridMBR   = "/boot/x86_64/loader/boot_hybrid.img"
+	IsoBootCatalog = "/boot/x86_64/boot.catalog"
+	IsoBootFile    = "/boot/x86_64/loader/eltorito.img"
 
 	// Default directory and file fileModes
 	DirPerm  = os.ModeDir | os.ModePerm
@@ -111,4 +127,40 @@ func GetDefaultSquashfsOptions() []string {
 		options = append(options, "x86")
 	}
 	return options
+}
+
+func GetDefaultXorrisoBooloaderArgs(root, bootFile, bootCatalog, hybridMBR string) []string {
+	args := []string{}
+	// TODO: make this detection more robust or explicit
+	// Assume ISOLINUX bootloader is used if boot file is includes 'isolinux'
+	// in its name, otherwise assume an eltorito based grub2 setup
+	if strings.Contains(bootFile, "isolinux") {
+		args = append(args, []string{
+			"-boot_image", "isolinux", fmt.Sprintf("bin_path=%s", bootFile),
+			"-boot_image", "isolinux", fmt.Sprintf("system_area=%s/%s", root, hybridMBR),
+			"-boot_image", "isolinux", "partition_table=on",
+		}...)
+	} else {
+		args = append(args, []string{
+			"-boot_image", "grub", fmt.Sprintf("bin_path=%s", bootFile),
+			"-boot_image", "grub", fmt.Sprintf("grub2_mbr=%s/%s", root, hybridMBR),
+			"-boot_image", "grub", "grub2_boot_info=on",
+		}...)
+	}
+
+	args = append(args, []string{
+		"-boot_image", "any", "partition_offset=16",
+		"-boot_image", "any", fmt.Sprintf("cat_path=%s", bootCatalog),
+		"-boot_image", "any", "cat_hidden=on",
+		"-boot_image", "any", "boot_info_table=on",
+		"-boot_image", "any", "platform_id=0x00",
+		"-boot_image", "any", "emul_type=no_emulation",
+		"-boot_image", "any", "load_size=2048",
+		"-append_partition", "2", "0xef", filepath.Join(root, IsoEFIPath),
+		"-boot_image", "any", "next",
+		"-boot_image", "any", "efi_path=--interval:appended_partition_2:all::",
+		"-boot_image", "any", "platform_id=0xef",
+		"-boot_image", "any", "emul_type=no_emulation",
+	}...)
+	return args
 }

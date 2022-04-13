@@ -1,4 +1,4 @@
-packages:
+iso:
   rootfs:
     - system/cos
   uefi:
@@ -7,6 +7,7 @@ packages:
     - live/grub2
     - live/grub2-efi-image
     - recovery/cos-img
+  label: "COS_LIVE"
 
 # Raw disk creation values start
 
@@ -49,26 +50,5 @@ raw_disk:
 
 # Raw disk creation values end
 
-boot_file: "boot/x86_64/loader/eltorito.img"
-boot_catalog: "boot/x86_64/boot.catalog"
-isohybrid_mbr: "boot/x86_64/loader/boot_hybrid.img"
-
-initramfs:
-  kernel_file: "vmlinuz"
-  rootfs_file: "initrd"
-
-
-image_prefix: "cOS-0."
-image_date: true
-label: "COS_LIVE"
-
-# Additional packages to build
-build:
-  - utils/nerdctl
-  - utils/k9s
-  - utils/jq
-  - selinux/rancher
-  - selinux/k3s
-  - recovery/cos
-  - system/grub2-artifacts
-  - system/grub2-efi-image
+name: "cOS-0"
+date: true

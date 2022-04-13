@@ -17,13 +17,15 @@ limitations under the License.
 package config
 
 import (
+	"os"
+	"strings"
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
-	"os"
-	"testing"
 )
 
 func TestConfig(t *testing.T) {
@@ -32,37 +34,40 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("Config", func() {
+	var mounter *v1mock.ErrorMounter
+
+	BeforeEach(func() {
+		mounter = &v1mock.ErrorMounter{}
+	})
+	AfterEach(func() {
+		viper.Reset()
+	})
 	Describe("Build config", Label("config", "build"), func() {
 		It("values empty if config path not valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("/none/")
+			cfg, err := ReadConfigBuild("/none/", mounter)
 			Expect(err).To(BeNil())
-			Expect(viper.GetString("label")).To(Equal(""))
-			Expect(cfg.Label).To(Equal(""))
+			Expect(viper.GetString("name")).To(Equal(""))
+			Expect(cfg.Name).To(Equal("elemental"))
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("config/")
+			cfg, err := ReadConfigBuild("config/", mounter)
 			Expect(err).To(BeNil())
-			Expect(viper.GetString("label")).To(Equal("COS_LIVE"))
-			Expect(cfg.Label).To(Equal("COS_LIVE"))
+			Expect(viper.GetString("name")).To(Equal("cOS-0"))
+			Expect(cfg.Name).To(Equal("cOS-0"))
+			hasSuffix := strings.HasSuffix(viper.ConfigFileUsed(), "config/manifest.yaml")
+			Expect(hasSuffix).To(BeTrue())
 		})
 		It("overrides values with env values", Label("env", "values"), func() {
-			_ = os.Setenv("ELEMENTAL_LABEL", "environment")
-			cfg, err := ReadConfigBuild("config/")
+			_ = os.Setenv("ELEMENTAL_NAME", "environment")
+			cfg, err := ReadConfigBuild("config/", mounter)
 			Expect(err).To(BeNil())
-			source := viper.GetString("label")
+			source := viper.GetString("name")
 			// check that the final value comes from the env var
 			Expect(source).To(Equal("environment"))
-			Expect(cfg.Label).To(Equal("environment"))
+			Expect(cfg.Name).To(Equal("environment"))
 		})
-
 	})
 	Describe("Run config", Label("config", "run"), func() {
-		var mounter mount.Interface
-
-		BeforeEach(func() {
-			mounter = &mount.FakeMounter{}
-		})
-
 		It("values empty if config does not exist", Label("path", "values"), func() {
 			cfg, err := ReadConfigRun("/none/", mounter)
 			Expect(err).To(BeNil())

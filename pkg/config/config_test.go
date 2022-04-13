@@ -87,6 +87,11 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(c.Mounter).To(Equal(mount.New(constants.MountBinary)))
 			})
 		})
+		Describe("BuildConfig", func() {
+			build := config.NewBuildConfig()
+			Expect(build.Name).To(Equal(constants.BuildImgName))
+			Expect(build.ISO.BootCatalog).To(Equal(constants.IsoBootCatalog))
+		})
 	})
 
 })

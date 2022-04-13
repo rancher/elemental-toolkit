@@ -40,6 +40,8 @@ type Config struct {
 	CloudInitRunner CloudInitRunner
 	Luet            LuetInterface
 	Client          HTTPClient
+	Cosign          bool   `yaml:"cosign,omitempty" mapstructure:"cosign"`
+	CosignPubKey    string `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
@@ -65,8 +67,6 @@ type RunConfig struct {
 	Strict          bool   `yaml:"strict,omitempty" mapstructure:"strict"`
 	Iso             string `yaml:"iso,omitempty" mapstructure:"iso"`
 	DockerImg       string `yaml:"docker-image,omitempty" mapstructure:"docker-image"`
-	Cosign          bool   `yaml:"cosign,omitempty" mapstructure:"cosign"`
-	CosignPubKey    string `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
 	NoVerify        bool   `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
 	CloudInitPaths  string `yaml:"CLOUD_INIT_PATHS,omitempty" mapstructure:"CLOUD_INIT_PATHS"`
 	GrubDefEntry    string `yaml:"GRUB_ENTRY_NAME,omitempty" mapstructure:"GRUB_ENTRY_NAME"`
@@ -152,9 +152,22 @@ func (pl PartitionList) GetByName(name string) *Partition {
 	return nil
 }
 
+// LiveISO represents the configurations needed for a live ISO image
+type LiveISO struct {
+	RootFS      []string `yaml:"rootfs,omitempty" mapstructure:"rootfs"`
+	UEFI        []string `yaml:"uefi,omitempty" mapstructure:"uefi"`
+	Image       []string `yaml:"isoimage,omitempty" mapstructure:"isoimage"`
+	Label       string   `yaml:"label,omitempty" mapstructure:"label"`
+	BootCatalog string   `yaml:"boot_catalog,omitempty" mapstructure:"boot_catalog"`
+	BootFile    string   `yaml:"boot_file,omitempty" mapstructure:"boot_file"`
+	HybridMBR   string   `yaml:"hybrid_mbr,omitempty" mapstructure:"hybrid_mbr,omitempty"`
+}
+
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	Label string `yaml:"label,omitempty" mapstructure:"label"`
+	ISO  *LiveISO `yaml:"iso,omitempty" mapstructure:"iso"`
+	Date bool     `yaml:"date,omitempty" mapstructure:"date"`
+	Name string   `yaml:"name,omitempty" mapstructure:"name"`
 	// Generic runtime configuration
 	Config
 }

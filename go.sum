@@ -359,6 +359,8 @@ github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8
 github.com/diskfs/go-diskfs v1.1.1/go.mod h1:afUPxxu+x1snp4aCY2bKR0CoZ/YFJewV3X2UEr2nPZE=
 github.com/diskfs/go-diskfs v1.2.1-0.20211109185859-9509735ba7a4 h1:r3v6uGKwhBghjhxkUPa/T+YuARVY8dDc2tdpLwUfWc0=
 github.com/diskfs/go-diskfs v1.2.1-0.20211109185859-9509735ba7a4/go.mod h1:IoDpuEbpS+D+yCGdoOm6GNfyTeEws77ALvcMQFxmenw=
+github.com/distribution/distribution v2.8.1+incompatible h1:8iXUoOqRPx30bhzIEPUmNIqlmBlWdrieW1bqr6LrX30=
+github.com/distribution/distribution v2.8.1+incompatible/go.mod h1:EgLm2NgWtdKgzF9NpMzUKgzmR7AMmb0VQi2B+ZzDRjc=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/cli v20.10.10+incompatible h1:kcbwdgWbrBOH8QwQzaJmyriHwF7XIl4HT1qh0HTRys4=
 github.com/docker/cli v20.10.10+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=

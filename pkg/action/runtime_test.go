@@ -20,11 +20,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/jaypipes/ghw/pkg/block"
 	"os"
 	"path/filepath"
 	"runtime"
-	"testing"
+
+	"github.com/jaypipes/ghw/pkg/block"
 
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
@@ -46,12 +46,7 @@ const printOutput = `BYT;
 const partTmpl = `
 %d:%ss:%ss:2048s:ext4::type=83;`
 
-func TestElementalSuite(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Actions test suite")
-}
-
-var _ = Describe("Actions", func() {
+var _ = Describe("Runtime Actions", func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS

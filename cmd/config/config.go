@@ -28,27 +28,44 @@ import (
 	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/rancher-sandbox/elemental/pkg/config"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 )
 
-func ReadConfigBuild(configDir string) (*v1.BuildConfig, error) {
-	cfg := &v1.BuildConfig{}
-	viper.AddConfigPath(configDir)
-	viper.SetConfigType("yaml")
-	viper.SetConfigName("manifest.yaml")
+func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig, error) {
+	logger := v1.NewLogger()
+	cfg := config.NewBuildConfig(
+		config.WithLogger(logger),
+		config.WithMounter(mounter),
+		config.WithLuet(v1.NewLuet(v1.WithLuetLogger(logger))),
+	)
 
-	// If a config file is found, read it in.
-	_ = viper.ReadInConfig()
+	configLogger(cfg.Logger, cfg.Fs)
 
-	// Set the prefix for vars so we get only the ones starting with ELEMENTAL
-	viper.SetEnvPrefix("ELEMENTAL")
+	if exists, _ := utils.Exists(cfg.Fs, configDir); exists {
+		viper.AddConfigPath(configDir)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("manifest")
+		// If a config file is found, read it in.
+		err := viper.MergeInConfig()
+		if err != nil {
+			cfg.Logger.Warnf("error merging config files: %s", err)
+		}
+	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	viperReadEnv()
+
 	// unmarshal all the vars into the config object
-	_ = viper.Unmarshal(cfg)
+	err := viper.Unmarshal(cfg)
+	if err != nil {
+		cfg.Logger.Warnf("error unmarshalling config: %s", err)
+	}
+
+	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
+
 	return cfg, nil
 }
 
@@ -58,44 +75,7 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		config.WithMounter(mounter),
 	)
 
-	// Set debug level
-	if viper.GetBool("debug") {
-		cfg.Logger.SetLevel(v1.DebugLevel())
-	}
-
-	// Set formatter so both file and stdout format are equal
-	cfg.Logger.SetFormatter(&logrus.TextFormatter{
-		ForceColors:      true,
-		DisableColors:    false,
-		DisableTimestamp: false,
-		FullTimestamp:    true,
-	})
-
-	// Logfile
-	logfile := viper.GetString("logfile")
-	if logfile != "" {
-		o, err := cfg.Fs.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, fs.ModePerm)
-
-		if err != nil {
-			cfg.Logger.Errorf("Could not open %s for logging to file: %s", logfile, err.Error())
-		}
-
-		if viper.GetBool("quiet") { // if quiet is set, only set the log to the file
-			cfg.Logger.SetOutput(o)
-		} else { // else set it to both stdout and the file
-			mw := io.MultiWriter(os.Stdout, o)
-			cfg.Logger.SetOutput(mw)
-		}
-	} else { // no logfile
-		if viper.GetBool("quiet") { // quiet is enabled so discard all logging
-			cfg.Logger.SetOutput(ioutil.Discard)
-		} else { // default to stdout
-			cfg.Logger.SetOutput(os.Stdout)
-		}
-	}
-
-	v := version.Get()
-	cfg.Logger.Infof("Starting elemental version %s", v.Version)
+	configLogger(cfg.Logger, cfg.Fs)
 
 	cfgDefault := []string{"/etc/os-release", "/etc/cos/config", "/etc/cos-upgrade-image"}
 
@@ -107,12 +87,12 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		}
 	}
 
-	if _, err := os.Stat(configDir); err == nil {
+	if exists, _ := utils.Exists(cfg.Fs, configDir); exists {
 		viper.AddConfigPath(configDir)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName("config.yaml")
+		viper.SetConfigName("config")
 		// If a config file is found, read it in.
-		err = viper.MergeInConfig()
+		err := viper.MergeInConfig()
 		if err != nil {
 			cfg.Logger.Warnf("error merging config files: %s", err)
 		}
@@ -131,6 +111,61 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		})
 	}
 
+	viperReadEnv()
+
+	// unmarshal all the vars into the config object
+	err := viper.Unmarshal(cfg)
+	if err != nil {
+		cfg.Logger.Warnf("error unmarshalling config: %s", err)
+	}
+
+	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
+
+	return cfg, nil
+}
+
+func configLogger(log v1.Logger, vfs v1.FS) {
+	// Set debug level
+	if viper.GetBool("debug") {
+		log.SetLevel(v1.DebugLevel())
+	}
+
+	// Set formatter so both file and stdout format are equal
+	log.SetFormatter(&logrus.TextFormatter{
+		ForceColors:      true,
+		DisableColors:    false,
+		DisableTimestamp: false,
+		FullTimestamp:    true,
+	})
+
+	// Logfile
+	logfile := viper.GetString("logfile")
+	if logfile != "" {
+		o, err := vfs.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, fs.ModePerm)
+
+		if err != nil {
+			log.Errorf("Could not open %s for logging to file: %s", logfile, err.Error())
+		}
+
+		if viper.GetBool("quiet") { // if quiet is set, only set the log to the file
+			log.SetOutput(o)
+		} else { // else set it to both stdout and the file
+			mw := io.MultiWriter(os.Stdout, o)
+			log.SetOutput(mw)
+		}
+	} else { // no logfile
+		if viper.GetBool("quiet") { // quiet is enabled so discard all logging
+			log.SetOutput(ioutil.Discard)
+		} else { // default to stdout
+			log.SetOutput(os.Stdout)
+		}
+	}
+
+	v := version.Get()
+	log.Infof("Starting elemental version %s", v.Version)
+}
+
+func viperReadEnv() {
 	// Set the prefix for vars so we get only the ones starting with ELEMENTAL
 	viper.SetEnvPrefix("ELEMENTAL")
 
@@ -143,14 +178,4 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 	_ = viper.BindEnv("CosingPubKey", "COSIGN_PUBLIC_KEY_LOCATION")
 
 	viper.AutomaticEnv() // read in environment variables that match
-
-	// unmarshal all the vars into the config object
-	err := viper.Unmarshal(cfg)
-	if err != nil {
-		cfg.Logger.Warnf("error unmarshalling config: %s", err)
-	}
-
-	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
-
-	return cfg, nil
 }

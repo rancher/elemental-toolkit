@@ -211,7 +211,6 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 	// if there is a luet.yaml file, load the data from there
 	if _, err := l.fs.Stat("/etc/luet/luet.yaml"); err == nil {
 		l.log.Debugf("Loading luet config from /etc/luet/luet.yaml")
-		config = &luetTypes.LuetConfig{}
 		f, err := l.fs.ReadFile("/etc/luet/luet.yaml")
 		if err != nil {
 			l.log.Errorf("Error reading luet.yaml file: %s", err)

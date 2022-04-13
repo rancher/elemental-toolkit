@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/distribution/distribution/reference"
 	"github.com/joho/godotenv"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
@@ -75,8 +76,12 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 	return nil, errors.New("no device found")
 }
 
-// CopyFile Copies source file to target file using Fs interface
+// CopyFile Copies source file to target file using Fs interface. If target
+// is  directory source is copied into that directory using source name file.
 func CopyFile(fs v1.FS, source string, target string) (err error) {
+	if dir, _ := IsDir(fs, target); dir {
+		target = filepath.Join(target, filepath.Base(source))
+	}
 	sourceFile, err := fs.Open(source)
 	if err != nil {
 		return err
@@ -115,14 +120,6 @@ func CreateDirStructure(fs v1.FS, target string) error {
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
 func SyncData(fs v1.FS, source string, target string, excludes ...string) error {
-	if !strings.HasSuffix(source, "/") {
-		source = fmt.Sprintf("%s/", source)
-	}
-
-	if !strings.HasSuffix(target, "/") {
-		target = fmt.Sprintf("%s/", target)
-	}
-
 	if fs != nil {
 		if s, err := fs.RawPath(source); err == nil {
 			source = s
@@ -130,6 +127,14 @@ func SyncData(fs v1.FS, source string, target string, excludes ...string) error 
 		if t, err := fs.RawPath(target); err == nil {
 			target = t
 		}
+	}
+
+	if !strings.HasSuffix(source, "/") {
+		source = fmt.Sprintf("%s/", source)
+	}
+
+	if !strings.HasSuffix(target, "/") {
+		target = fmt.Sprintf("%s/", target)
 	}
 
 	task := grsync.NewTask(
@@ -206,7 +211,6 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 	args := []string{source, destination}
 	// append options passed to args in order to have the correct order
 	args = append(args, options...)
-	logger.Debug("Running command: mksquashfs with args: %s", args)
 	out, err := runner.Run("mksquashfs", args...)
 	if err != nil {
 		logger.Debugf("Error running squashfs creation, stdout: %s", out)
@@ -291,4 +295,44 @@ func GetSource(config *v1.RunConfig, source string, destination string) error {
 		}
 	}
 	return nil
+}
+
+// ValidContainerReferece returns true if the given string matches
+// a container registry reference, false otherwise
+func ValidContainerReference(ref string) bool {
+	if _, err := reference.ParseNormalizedNamed(ref); err != nil {
+		return false
+	}
+	return true
+}
+
+// ValidTaggedContainerReferece returns true if the given string matches
+// a container registry reference including a tag, false otherwise.
+func ValidTaggedContainerReference(ref string) bool {
+	n, err := reference.ParseNormalizedNamed(ref)
+	if err != nil {
+		return false
+	}
+	if reference.IsNameOnly(n) {
+		return false
+	}
+	return true
+}
+
+// NewSrcGuessingType returns new v1.ImageSource instance guessing its type
+// applying somne heuristic techniques (by order of preference):
+//   1. Assume it is Dir/File if value is found as a path in host
+//	 2. Assume it is a container registry reference if it matches [<domain>/]<repositry>:<tag>
+//      (only domain is optional)
+//	 3. Fallback to a channel source
+func NewSrcGuessingType(c v1.Config, value string) v1.ImageSource {
+	if exists, _ := Exists(c.Fs, value); exists {
+		if dir, _ := IsDir(c.Fs, value); dir {
+			return v1.NewDirSrc(value)
+		}
+		return v1.NewFileSrc(value)
+	} else if ValidTaggedContainerReference(value) {
+		return v1.NewDockerSrc(value)
+	}
+	return v1.NewChannelSrc(value)
 }

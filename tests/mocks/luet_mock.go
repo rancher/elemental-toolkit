@@ -23,10 +23,12 @@ import (
 )
 
 type FakeLuet struct {
-	OnUnpackError            bool
-	OnUnpackFromChannelError bool
-	unpackCalled             bool
-	unpackFromChannelCalled  bool
+	OnUnpackError               bool
+	OnUnpackFromChannelError    bool
+	UnpackSideEffect            func(string, string, bool) error
+	UnpackFromChannelSideEffect func(string, string) error
+	unpackCalled                bool
+	unpackFromChannelCalled     bool
 }
 
 func NewFakeLuet() *FakeLuet {
@@ -38,6 +40,9 @@ func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 	if l.OnUnpackError {
 		return errors.New("Luet install error")
 	}
+	if l.UnpackSideEffect != nil {
+		return l.UnpackSideEffect(target, image, local)
+	}
 	return nil
 }
 
@@ -45,6 +50,9 @@ func (l *FakeLuet) UnpackFromChannel(target string, pkg string) error {
 	l.unpackFromChannelCalled = true
 	if l.OnUnpackFromChannelError {
 		return errors.New("Luet install error")
+	}
+	if l.UnpackFromChannelSideEffect != nil {
+		return l.UnpackFromChannelSideEffect(target, pkg)
 	}
 	return nil
 }
