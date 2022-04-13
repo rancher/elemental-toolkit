@@ -1,0 +1,9 @@
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+output_dir: "/package"
+steps:
+- mkdir /package
+- cp -rfv files/* /package
+- chmod +x /package/usr/bin/cos-setup-reconcile
