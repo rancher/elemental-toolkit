@@ -1,6 +1,6 @@
 name: "cosign"
 category: "toolchain"
-version: 1.4.1-6
+version: 1.4.1-7
 labels:
   github.repo: "cosign"
   github.owner: "sigstore"
