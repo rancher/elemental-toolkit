@@ -2,7 +2,7 @@ requires:
 - name: "base"
   category: "distro"
   version: ">=0"
-output_dir: "/package"
+package_dir: "/package"
 steps:
 - mkdir /package
 - cp -rfv files/* /package
