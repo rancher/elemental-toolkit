@@ -41,3 +41,4 @@ packages:
     name: "live"
     oem_file: "07_live.yaml"
     templated: false
+    version: 0.1-1
