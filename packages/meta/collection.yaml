@@ -40,6 +40,7 @@ packages:
       - name: "base-dracut-modules"
         category: "system"
         version: ">=0"
+    version: 0.10-1
   - !!merge <<: *metabase
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
