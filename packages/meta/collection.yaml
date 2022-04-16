@@ -121,3 +121,4 @@ packages:
         name: "recovery"
       - !!merge <<: *cc
         name: "live"
+    version: 0.10-2
