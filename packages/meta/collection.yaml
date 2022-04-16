@@ -84,6 +84,7 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
+    version: 0.10-1
   - !!merge <<: *metabase
     name: "cos-verify"
     requires:
