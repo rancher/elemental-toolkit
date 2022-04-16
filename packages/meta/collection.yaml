@@ -53,6 +53,7 @@ packages:
       - name: "suc-integration"
         category: "system"
         version: ">=0"
+    version: 0.10-1
   - !!merge <<: *metabase
     name: "cos-core-fips"
     requires:
@@ -96,21 +97,21 @@ packages:
     name: "cloud-config"
     description: "Meta package for pulling all cloud configs"
     requires:
-    - &cc
-      name: defaults
-      category: cloud-config
-      version: ">=0"
-    - <<: *cc
-      name: "rootfs"
-    - <<: *cc
-      name: "upgrades"
-    - <<: *cc
-      name: "branding"
-    - <<: *cc
-      name: "accounting"
-    - <<: *cc
-      name: "network"
-    - <<: *cc
-      name: "recovery"
-    - <<: *cc
-      name: "live"
+      - &cc
+        name: defaults
+        category: cloud-config
+        version: ">=0"
+      - !!merge <<: *cc
+        name: "rootfs"
+      - !!merge <<: *cc
+        name: "upgrades"
+      - !!merge <<: *cc
+        name: "branding"
+      - !!merge <<: *cc
+        name: "accounting"
+      - !!merge <<: *cc
+        name: "network"
+      - !!merge <<: *cc
+        name: "recovery"
+      - !!merge <<: *cc
+        name: "live"
