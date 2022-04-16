@@ -95,6 +95,7 @@ packages:
       - category: toolchain
         name: luet-cosign
         version: ">0.0.10-3"
+    version: 0.10-1
   # Provides backward compatibility
   - !!merge <<: *metabase
     category: "system"
