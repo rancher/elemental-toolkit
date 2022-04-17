@@ -1,13 +1,12 @@
 name: "cos-wrapper"
 category: "system"
-version: "0.32"
+version: 0.32-1
 description: "Installer, Upgrade and reset utilities wrappers for backward compatibility with elemental-cli"
 requires:
-- name: "elemental-cli"
-  category: "toolchain"
-  version: ">0.20220216"
-
+  - name: "elemental-cli"
+    category: "toolchain"
+    version: ">0.20220216"
 provides:
-- name: "installer"
-  category: "utils"
-  version: ">=0"
+  - name: "installer"
+    category: "utils"
+    version: ">=0"
