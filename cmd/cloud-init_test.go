@@ -17,8 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -26,12 +24,9 @@ import (
 var _ = Describe("cloud-init", Label("cloud-init", "cmd"), func() {
 	Describe("execution", func() {
 		When("invoked with inline yaml", Label("inline", "yaml"), func() {
-			buf := new(bytes.Buffer)
-
 			BeforeEach(func() {
-				buf = new(bytes.Buffer)
-				rootCmd.SetOut(buf)
-				rootCmd.SetErr(buf)
+				rootCmd = NewRootCmd()
+				_ = NewCloudInitCmd(rootCmd)
 			})
 
 			It("executes command correctly", func() {

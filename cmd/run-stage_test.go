@@ -17,20 +17,17 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
+	"os"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("run-stage", Label("run-stage", "cmd"), func() {
 	When("execution", func() {
-		buf := new(bytes.Buffer)
-
 		BeforeEach(func() {
-			buf = new(bytes.Buffer)
-			rootCmd.SetOut(buf)
-			rootCmd.SetErr(buf)
+			rootCmd = NewRootCmd()
+			_ = NewRunStage(rootCmd)
 		})
 
 		It("executes command correctly", func() {

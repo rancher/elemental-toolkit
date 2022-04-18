@@ -23,27 +23,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Args:  cobra.ExactArgs(0),
-	Short: "Print the version",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		v := version.Get()
-		commit := v.GitCommit
-		if len(commit) > 7 {
-			commit = v.GitCommit[:7]
-		}
-		if cmd.Flag("long").Changed {
-			fmt.Printf("%#v", v)
-		} else {
-			fmt.Printf("%s+g%s", v.Version, commit)
-		}
+func NewVersionCmd(root *cobra.Command) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "version",
+		Args:  cobra.ExactArgs(0),
+		Short: "Print the version",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := version.Get()
+			commit := v.GitCommit
+			if len(commit) > 7 {
+				commit = v.GitCommit[:7]
+			}
+			if cmd.Flag("long").Changed {
+				fmt.Printf("%#v", v)
+			} else {
+				fmt.Printf("%s+g%s", v.Version, commit)
+			}
 
-		return nil
-	},
+			return nil
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().Bool("long", false, "Show long version info")
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().Bool("long", false, "Show long version info")
-}
+// register the subcommand into rootCmd
+var _ = NewVersionCmd(rootCmd)

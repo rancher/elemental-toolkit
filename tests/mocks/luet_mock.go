@@ -20,13 +20,14 @@ import (
 	"errors"
 
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
 type FakeLuet struct {
 	OnUnpackError               bool
 	OnUnpackFromChannelError    bool
 	UnpackSideEffect            func(string, string, bool) error
-	UnpackFromChannelSideEffect func(string, string) error
+	UnpackFromChannelSideEffect func(string, string, ...v1.Repository) error
 	unpackCalled                bool
 	unpackFromChannelCalled     bool
 }
@@ -46,13 +47,13 @@ func (l *FakeLuet) Unpack(target string, image string, local bool) error {
 	return nil
 }
 
-func (l *FakeLuet) UnpackFromChannel(target string, pkg string) error {
+func (l *FakeLuet) UnpackFromChannel(target string, pkg string, repos ...v1.Repository) error {
 	l.unpackFromChannelCalled = true
 	if l.OnUnpackFromChannelError {
 		return errors.New("Luet install error")
 	}
 	if l.UnpackFromChannelSideEffect != nil {
-		return l.UnpackFromChannelSideEffect(target, pkg)
+		return l.UnpackFromChannelSideEffect(target, pkg, repos...)
 	}
 	return nil
 }

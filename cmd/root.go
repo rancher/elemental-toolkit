@@ -23,11 +23,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "elemental",
-	Short: "elemental",
+func NewRootCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "elemental",
+		Short: "elemental",
+	}
+	cmd.PersistentFlags().Bool("debug", false, "enable debug output")
+	cmd.PersistentFlags().String("config-dir", "", "set config dir (default is empty)")
+	cmd.PersistentFlags().String("logfile", "", "set logfile")
+	cmd.PersistentFlags().Bool("quiet", false, "do not output to stdout")
+	_ = viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
+	_ = viper.BindPFlag("config-dir", cmd.PersistentFlags().Lookup("config-dir"))
+	_ = viper.BindPFlag("logfile", cmd.PersistentFlags().Lookup("logfile"))
+	_ = viper.BindPFlag("quiet", cmd.PersistentFlags().Lookup("quiet"))
+	return cmd
 }
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = NewRootCmd()
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -36,15 +49,4 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func init() {
-	rootCmd.PersistentFlags().Bool("debug", false, "enable debug output")
-	rootCmd.PersistentFlags().String("config-dir", "", "set config dir (default is empty)")
-	rootCmd.PersistentFlags().String("logfile", "", "set logfile")
-	rootCmd.PersistentFlags().Bool("quiet", false, "do not output to stdout")
-	_ = viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	_ = viper.BindPFlag("config-dir", rootCmd.PersistentFlags().Lookup("config-dir"))
-	_ = viper.BindPFlag("logfile", rootCmd.PersistentFlags().Lookup("logfile"))
-	_ = viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
 }

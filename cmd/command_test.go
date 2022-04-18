@@ -17,9 +17,10 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 func executeCommandC(cmd *cobra.Command, args ...string) (c *cobra.Command, output string, err error) {

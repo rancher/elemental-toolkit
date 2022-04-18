@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1_test
+package luet_test
 
 import (
 	"bytes"
 	"context"
+	"testing"
 
 	dockTypes "github.com/docker/docker/api/types"
 	dockClient "github.com/docker/docker/client"
@@ -34,12 +35,18 @@ import (
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 )
 
+func TestElementalSuite(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Actions test suite")
+}
+
 var _ = Describe("Types", Label("luet", "types"), func() {
-	var luet *v1.Luet
+	var l v1.LuetInterface
 	var target string
 	var fs vfs.FS
 	var cleanup func()
@@ -51,7 +58,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		fs.Mkdir("/etc/luet", os.ModePerm)
 		target, err = os.MkdirTemp("", "elemental")
 		Expect(err).To(BeNil())
-		luet = v1.NewLuet(v1.WithLuetLogger(v1.NewNullLogger()))
+		l = luet.NewLuet(luet.WithLogger(v1.NewNullLogger()))
 	})
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())
@@ -60,7 +67,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 	Describe("Luet", func() {
 		It("Fails to unpack without root privileges", Label("unpack"), func() {
 			image := "quay.io/costoolkit/releases-green:cloud-config-system-0.11-1"
-			Expect(luet.Unpack(target, image, false)).NotTo(BeNil())
+			Expect(l.Unpack(target, image, false)).NotTo(BeNil())
 		})
 		It("Check that luet can unpack the local image", Label("unpack", "root"), func() {
 			image := "docker.io/library/alpine"
@@ -72,14 +79,14 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 			defer reader.Close()
 			_, _ = io.Copy(ioutil.Discard, reader)
 			// Check that luet can unpack the local image
-			Expect(luet.Unpack(target, image, true)).To(BeNil())
+			Expect(l.Unpack(target, image, true)).To(BeNil())
 		})
 		Describe("Luet config", Label("config"), func() {
 			It("Create empty config if there is no luet.yaml", func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
+				luet.NewLuet(luet.WithLogger(log), luet.WithFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Creating empty luet config"))
 			})
 			It("Fail to parse wrong luet.yaml", func() {
@@ -87,7 +94,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
 				Expect(fs.WriteFile("/etc/luet/luet.yaml", []byte("not valid I think? Maybe yes, who knows, only the yaml gods"), os.ModePerm)).ShouldNot(HaveOccurred())
-				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
+				luet.NewLuet(luet.WithLogger(log), luet.WithFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 				Expect(memLog.String()).To(ContainSubstring("Error unmarshalling luet.yaml"))
 			})
@@ -96,7 +103,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
 				_ = fs.WriteFile("/etc/luet/luet.yaml", []byte("general:\n  debug: false\n  enable_emoji: false"), os.ModePerm)
-				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
+				luet.NewLuet(luet.WithLogger(log), luet.WithFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 			})
 			It("Fails to init with broken paths", func() {
@@ -104,7 +111,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
 				_ = fs.WriteFile("/etc/luet/luet.yaml", []byte("system:\n  rootfs: /naranjas"), os.ModePerm)
-				v1.NewLuet(v1.WithLuetLogger(log), v1.WithLuetFs(fs))
+				luet.NewLuet(luet.WithLogger(log), luet.WithFs(fs))
 				Expect(memLog.String()).To(ContainSubstring("Loading luet config from /etc/luet/luet.yaml"))
 				Expect(memLog.String()).To(ContainSubstring("Error running init on luet config"))
 			})
@@ -112,7 +119,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		})
 		Describe("Luet options", Label("options"), func() {
 			It("Sets plugins correctly", func() {
-				v1.NewLuet(v1.WithLuetPlugins("mkdir"))
+				luet.NewLuet(luet.WithPlugins("mkdir"))
 				p := pluggable.Plugin{
 					Name:       "mkdir",
 					Executable: "/usr/bin/mkdir",
@@ -120,7 +127,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				Expect(bus.Manager.Plugins).To(ContainElement(p))
 			})
 			It("Sets plugins correctly with log", func() {
-				v1.NewLuet(v1.WithLuetLogger(v1.NewNullLogger()), v1.WithLuetPlugins("cat"))
+				luet.NewLuet(luet.WithLogger(v1.NewNullLogger()), luet.WithPlugins("cat"))
 				p := pluggable.Plugin{
 					Name:       "cat",
 					Executable: "/usr/bin/cat",
@@ -131,20 +138,20 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				memLog := bytes.Buffer{}
 				log := v1.NewBufferLogger(&memLog)
 				log.SetLevel(logrus.DebugLevel)
-				v1.NewLuet(v1.WithLuetFs(fs), v1.WithLuetLogger(log))
+				luet.NewLuet(luet.WithFs(fs), luet.WithLogger(log))
 				// Check if the debug stuff was logged to the buffer
 				Expect(memLog.String()).To(ContainSubstring("Creating empty luet config"))
 			})
 			It("Sets config", func() {
 				cfg := luetTypes.LuetConfig{}
-				v1.NewLuet(v1.WithLuetConfig(&cfg))
+				luet.NewLuet(luet.WithConfig(&cfg))
 			})
 			It("Sets Auth", func() {
 				auth := dockTypes.AuthConfig{}
-				v1.NewLuet(v1.WithLuetAuth(&auth))
+				luet.NewLuet(luet.WithAuth(&auth))
 			})
 			It("Sets FS", func() {
-				v1.NewLuet(v1.WithLuetFs(fs))
+				luet.NewLuet(luet.WithFs(fs))
 			})
 
 		})

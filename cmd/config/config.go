@@ -27,6 +27,7 @@ import (
 
 	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/rancher-sandbox/elemental/pkg/config"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
 		config.WithMounter(mounter),
-		config.WithLuet(v1.NewLuet(v1.WithLuetLogger(logger))),
+		config.WithLuet(luet.NewLuet(luet.WithLogger(logger))),
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)

@@ -23,6 +23,10 @@ import (
 )
 
 var _ = Describe("Version", Label("version", "cmd"), func() {
+	BeforeEach(func() {
+		rootCmd = NewRootCmd()
+		_ = NewVersionCmd(rootCmd)
+	})
 	It("Reports the version", func() {
 		_, output, err := executeCommandC(rootCmd, "version")
 		Expect(err).To(BeNil())

@@ -17,20 +17,17 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Upgrade", Label("upgrade", "cmd", "systemctl", "root"), func() {
+var _ = Describe("Upgrade", Label("upgrade", "cmd"), func() {
+	BeforeEach(func() {
+		rootCmd = NewRootCmd()
+		_ = NewUpgradeCmd(rootCmd, false)
+	})
 	It("Returns error if both --docker-image and --directory flags are used", Label("flags"), func() {
-		buf := new(bytes.Buffer)
-		rootCmd.SetOut(buf)
-		rootCmd.SetErr(buf)
 		_, _, err := executeCommandC(rootCmd, "upgrade", "--docker-image", "img", "--directory", "/tmp")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
 		Expect(err).To(HaveOccurred())
 	})
 })

@@ -156,18 +156,27 @@ func (pl PartitionList) GetByName(name string) *Partition {
 type LiveISO struct {
 	RootFS      []string `yaml:"rootfs,omitempty" mapstructure:"rootfs"`
 	UEFI        []string `yaml:"uefi,omitempty" mapstructure:"uefi"`
-	Image       []string `yaml:"isoimage,omitempty" mapstructure:"isoimage"`
+	Image       []string `yaml:"image,omitempty" mapstructure:"image"`
 	Label       string   `yaml:"label,omitempty" mapstructure:"label"`
 	BootCatalog string   `yaml:"boot_catalog,omitempty" mapstructure:"boot_catalog"`
 	BootFile    string   `yaml:"boot_file,omitempty" mapstructure:"boot_file"`
 	HybridMBR   string   `yaml:"hybrid_mbr,omitempty" mapstructure:"hybrid_mbr,omitempty"`
 }
 
+// Repository represents the basic configuration for a package repository
+type Repository struct {
+	Name     string `yaml:"name,omitempty" mapstructure:"name"`
+	Priority int    `yaml:"priority,omitempty" mapstructure:"priority"`
+	URI      string `yaml:"uri,omitempty" mapstructure:"uri"`
+	Type     string `yaml:"type,omitempty" mapstructure:"type"`
+}
+
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	ISO  *LiveISO `yaml:"iso,omitempty" mapstructure:"iso"`
-	Date bool     `yaml:"date,omitempty" mapstructure:"date"`
-	Name string   `yaml:"name,omitempty" mapstructure:"name"`
+	ISO   *LiveISO     `yaml:"iso,omitempty" mapstructure:"iso"`
+	Date  bool         `yaml:"date,omitempty" mapstructure:"date"`
+	Name  string       `yaml:"name,omitempty" mapstructure:"name"`
+	Repos []Repository `yaml:"repositories,omit" mapstructire:"repositories"`
 	// Generic runtime configuration
 	Config
 }

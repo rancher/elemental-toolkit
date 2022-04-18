@@ -28,48 +28,50 @@ import (
 	"k8s.io/mount-utils"
 )
 
-var newDerivative = &cobra.Command{
-	Use:           "new FLAVOR",
-	Short:         "Create skeleton Dockerfile for a derivative",
-	Args:          cobra.ExactArgs(1),
-	SilenceUsage:  true, // Do not show usage on error
-	SilenceErrors: true, // Do not propagate errors down the line, we control them
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+func NewDerivativeCmd(root *cobra.Command) *cobra.Command {
+	c := &cobra.Command{
+		Use:           "new FLAVOR",
+		Short:         "Create skeleton Dockerfile for a derivative",
+		Args:          cobra.ExactArgs(1),
+		SilenceUsage:  true, // Do not show usage on error
+		SilenceErrors: true, // Do not propagate errors down the line, we control them
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
-		if err != nil {
-			cfg.Logger.Errorf("Error reading config: %s\n", err)
-		}
+			if err != nil {
+				cfg.Logger.Errorf("Error reading config: %s\n", err)
+			}
 
-		flavor := args[0]
-		if flavor != "opensuse" && flavor != "ubuntu" && flavor != "fedora" {
-			cfg.Logger.Errorf("Unsupported flavor")
-			return errors.New("unsupported flavor")
-		}
+			flavor := args[0]
+			if flavor != "opensuse" && flavor != "ubuntu" && flavor != "fedora" {
+				cfg.Logger.Errorf("Unsupported flavor")
+				return errors.New("unsupported flavor")
+			}
 
-		client := &getter.Client{
-			Ctx:  context.Background(),
-			Dst:  fmt.Sprintf("derivatives/%s", flavor),
-			Dir:  true,
-			Src:  "github.com/rancher-sandbox/cOS-toolkit//examples/standard",
-			Mode: getter.ClientModeDir,
-			Detectors: []getter.Detector{
-				&getter.GitHubDetector{},
-			},
-		}
+			client := &getter.Client{
+				Ctx:  context.Background(),
+				Dst:  fmt.Sprintf("derivatives/%s", flavor),
+				Dir:  true,
+				Src:  "github.com/rancher-sandbox/cOS-toolkit//examples/standard",
+				Mode: getter.ClientModeDir,
+				Detectors: []getter.Detector{
+					&getter.GitHubDetector{},
+				},
+			}
 
-		err = client.Get()
-		if err != nil {
-			cfg.Logger.Errorf("Unable to create derivative")
-			return err
-		}
+			err = client.Get()
+			if err != nil {
+				cfg.Logger.Errorf("Unable to create derivative")
+				return err
+			}
 
-		return nil
-	},
+			return nil
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().String("arch", "", "X86_64 or aarch64 architectures")
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(newDerivative)
-	newDerivative.Flags().String("arch", "", "X86_64 or aarch64 architectures")
-
-}
+// register the subcommand into rootCmd
+var _ = NewDerivativeCmd(rootCmd)

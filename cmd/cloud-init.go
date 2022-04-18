@@ -28,43 +28,45 @@ import (
 	"github.com/spf13/viper"
 )
 
-// cloudInit represents the cloud-init command
-var cloudInit = &cobra.Command{
-	Use:   "cloud-init",
-	Short: "elemental cloud-init",
-	Args:  cobra.MinimumNArgs(1),
-	PreRun: func(cmd *cobra.Command, args []string) {
-		_ = viper.BindPFlags(cmd.Flags())
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
-		if err != nil {
-			return err
-		}
-		stage, _ := cmd.Flags().GetString("stage")
-		dot, _ := cmd.Flags().GetBool("dotnotation")
-
-		fromStdin := len(args) == 1 && args[0] == "-"
-
-		if dot {
-			cfg.CloudInitRunner.SetModifier(schema.DotNotationModifier)
-		}
-
-		if fromStdin {
-			std, err := ioutil.ReadAll(os.Stdin)
+func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "cloud-init",
+		Short: "elemental cloud-init",
+		Args:  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			_ = viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 			if err != nil {
 				return err
 			}
+			stage, _ := cmd.Flags().GetString("stage")
+			dot, _ := cmd.Flags().GetBool("dotnotation")
 
-			args = []string{string(std)}
-		}
+			fromStdin := len(args) == 1 && args[0] == "-"
 
-		return cfg.CloudInitRunner.Run(stage, args...)
-	},
+			if dot {
+				cfg.CloudInitRunner.SetModifier(schema.DotNotationModifier)
+			}
+
+			if fromStdin {
+				std, err := ioutil.ReadAll(os.Stdin)
+				if err != nil {
+					return err
+				}
+
+				args = []string{string(std)}
+			}
+
+			return cfg.CloudInitRunner.Run(stage, args...)
+		},
+	}
+	root.AddCommand(c)
+	c.PersistentFlags().StringP("stage", "s", "default", "Stage to apply")
+	c.PersistentFlags().BoolP("dotnotation", "d", false, "Parse input in dotnotation ( e.g. `stages.foo.name=..` ) ")
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(cloudInit)
-	cloudInit.PersistentFlags().StringP("stage", "s", "default", "Stage to apply")
-	cloudInit.PersistentFlags().BoolP("dotnotation", "d", false, "Parse input in dotnotation ( e.g. `stages.foo.name=..` ) ")
-}
+// register the subcommand into rootCmd
+var _ = NewCloudInitCmd(rootCmd)

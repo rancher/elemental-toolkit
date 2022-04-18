@@ -21,79 +21,84 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/rancher-sandbox/elemental/cmd/config"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 )
 
-// pullImage represents the pull-image command
-var pullImage = &cobra.Command{
-	Use:   "pull-image IMAGE DESTINATION",
-	Short: "elemental pull-image",
-	Args:  cobra.ExactArgs(2),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return CheckRoot()
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "pull-image IMAGE DESTINATION",
+		Short: "elemental pull-image",
+		Args:  cobra.ExactArgs(2),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if addCheckRoot {
+				return CheckRoot()
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
-		if err != nil {
-			cfg.Logger.Errorf("Error reading config: %s\n", err)
-		}
+			if err != nil {
+				cfg.Logger.Errorf("Error reading config: %s\n", err)
+			}
 
-		image := args[0]
-		destination, err := filepath.Abs(args[1])
-		if err != nil {
-			cfg.Logger.Errorf("Invalid path %s", destination)
-			return err
-		}
+			image := args[0]
+			destination, err := filepath.Abs(args[1])
+			if err != nil {
+				cfg.Logger.Errorf("Invalid path %s", destination)
+				return err
+			}
 
-		// Set this after parsing of the flags, so it fails on parsing and prints usage properly
-		cmd.SilenceUsage = true
-		cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
+			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-		verify, _ := cmd.Flags().GetBool("verify")
-		user, _ := cmd.Flags().GetString("auth-username")
-		local, _ := cmd.Flags().GetBool("local")
-		pass, _ := cmd.Flags().GetString("auth-password")
-		authType, _ := cmd.Flags().GetString("auth-type")
-		server, _ := cmd.Flags().GetString("auth-server-address")
-		identity, _ := cmd.Flags().GetString("auth-identity-token")
-		registryToken, _ := cmd.Flags().GetString("auth-registry-token")
-		plugins, _ := cmd.Flags().GetStringArray("plugin")
+			verify, _ := cmd.Flags().GetBool("verify")
+			user, _ := cmd.Flags().GetString("auth-username")
+			local, _ := cmd.Flags().GetBool("local")
+			pass, _ := cmd.Flags().GetString("auth-password")
+			authType, _ := cmd.Flags().GetString("auth-type")
+			server, _ := cmd.Flags().GetString("auth-server-address")
+			identity, _ := cmd.Flags().GetString("auth-identity-token")
+			registryToken, _ := cmd.Flags().GetString("auth-registry-token")
+			plugins, _ := cmd.Flags().GetStringArray("plugin")
 
-		auth := &types.AuthConfig{
-			Username:      user,
-			Password:      pass,
-			ServerAddress: server,
-			Auth:          authType,
-			IdentityToken: identity,
-			RegistryToken: registryToken,
-		}
+			auth := &types.AuthConfig{
+				Username:      user,
+				Password:      pass,
+				ServerAddress: server,
+				Auth:          authType,
+				IdentityToken: identity,
+				RegistryToken: registryToken,
+			}
 
-		luet := v1.NewLuet(v1.WithLuetLogger(cfg.Logger), v1.WithLuetAuth(auth), v1.WithLuetPlugins(plugins...))
-		luet.VerifyImageUnpack = verify
-		err = luet.Unpack(destination, image, local)
+			l := luet.NewLuet(luet.WithLogger(cfg.Logger), luet.WithAuth(auth), luet.WithPlugins(plugins...))
+			l.VerifyImageUnpack = verify
+			err = l.Unpack(destination, image, local)
 
-		if err != nil {
-			cfg.Logger.Error(err.Error())
-			return err
-		}
+			if err != nil {
+				cfg.Logger.Error(err.Error())
+				return err
+			}
 
-		return nil
-	},
+			return nil
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().String("auth-username", "", "Username to authenticate to registry/notary")
+	c.Flags().String("auth-password", "", "Password to authenticate to registry")
+	c.Flags().String("auth-type", "", "Auth type")
+	c.Flags().String("auth-server-address", "", "Authentication server address")
+	c.Flags().String("auth-identity-token", "", "Authentication identity token")
+	c.Flags().String("auth-registry-token", "", "Authentication registry token")
+	c.Flags().Bool("verify", false, "Verify signed images to notary before to pull")
+	c.Flags().Bool("local", false, "Use local image")
+	c.Flags().StringArray("plugin", []string{}, "A list of runtime plugins to load. Can be repeated to add more than one plugin")
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(pullImage)
-	pullImage.Flags().String("auth-username", "", "Username to authenticate to registry/notary")
-	pullImage.Flags().String("auth-password", "", "Password to authenticate to registry")
-	pullImage.Flags().String("auth-type", "", "Auth type")
-	pullImage.Flags().String("auth-server-address", "", "Authentication server address")
-	pullImage.Flags().String("auth-identity-token", "", "Authentication identity token")
-	pullImage.Flags().String("auth-registry-token", "", "Authentication registry token")
-	pullImage.Flags().Bool("verify", false, "Verify signed images to notary before to pull")
-	pullImage.Flags().Bool("local", false, "Use local image")
-	pullImage.Flags().StringArray("plugin", []string{}, "A list of runtime plugins to load. Can be repeated to add more than one plugin")
-}
+// register the subcommand into rootCmd
+var _ = NewPullImageCmd(rootCmd, true)

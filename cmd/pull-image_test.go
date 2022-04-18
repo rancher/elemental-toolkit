@@ -17,13 +17,18 @@ limitations under the License.
 package cmd
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("pull-image", Label("pull-image", "cmd", "root"), func() {
 	Describe("execution", func() {
+		BeforeEach(func() {
+			rootCmd = NewRootCmd()
+			_ = NewPullImageCmd(rootCmd, true)
+		})
 		It("executes command correctly", func() {
 			d, err := os.MkdirTemp("", "elemental")
 			Expect(err).ToNot(HaveOccurred())

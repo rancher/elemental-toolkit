@@ -18,6 +18,7 @@ package action
 
 import (
 	"github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/sirupsen/logrus"
@@ -55,7 +56,7 @@ func SetupLuet(config *v1.RunConfig) {
 			plugins = append(plugins, constants.LuetMtreePlugin)
 		}
 	}
-	config.Luet = v1.NewLuet(v1.WithLuetLogger(config.Logger), v1.WithLuetPlugins(plugins...))
+	config.Luet = luet.NewLuet(luet.WithLogger(config.Logger), luet.WithPlugins(plugins...))
 }
 
 // SetPartitionsFromScratch initiates all defaults partitions in order is they

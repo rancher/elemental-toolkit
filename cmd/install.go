@@ -27,68 +27,76 @@ import (
 	"k8s.io/mount-utils"
 )
 
-// installCmd represents the install command
-var installCmd = &cobra.Command{
-	Use:   "install DEVICE",
-	Short: "elemental installer",
-	Args:  cobra.MaximumNArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		_ = viper.BindEnv("target", "ELEMENTAL_TARGET")
-		_ = viper.BindPFlags(cmd.Flags())
-		return CheckRoot()
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		path, err := exec.LookPath("mount")
-		if err != nil {
-			return err
-		}
-		mounter := mount.New(path)
+// NewInstallCmd returns a new instance of the install subcommand and appends it to
+// the root command. requireRoot is to initiate it with or without the CheckRoot
+// pre-run check. This method is mostly used for testing purposes.
+func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "install DEVICE",
+		Short: "elemental installer",
+		Args:  cobra.MaximumNArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			_ = viper.BindEnv("target", "ELEMENTAL_TARGET")
+			_ = viper.BindPFlags(cmd.Flags())
+			if addCheckRoot {
+				return CheckRoot()
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path, err := exec.LookPath("mount")
+			if err != nil {
+				return err
+			}
+			mounter := mount.New(path)
 
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
-		if err != nil {
-			cfg.Logger.Errorf("Error reading config: %s\n", err)
-		}
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
+			if err != nil {
+				cfg.Logger.Errorf("Error reading config: %s\n", err)
+			}
 
-		if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
-			return err
-		}
+			if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
+				return err
+			}
 
-		// Override target installation device with arguments from cli
-		// TODO: this needs proper validation, see https://github.com/rancher-sandbox/elemental/issues/33
-		if len(args) == 1 {
-			cfg.Target = args[0]
-		}
+			// Override target installation device with arguments from cli
+			// TODO: this needs proper validation, see https://github.com/rancher-sandbox/elemental/issues/33
+			if len(args) == 1 {
+				cfg.Target = args[0]
+			}
 
-		if cfg.Target == "" {
-			return errors.New("at least a target device must be supplied")
-		}
+			if cfg.Target == "" {
+				return errors.New("at least a target device must be supplied")
+			}
 
-		err = action.InstallSetup(cfg)
-		if err != nil {
-			return err
-		}
-		cmd.SilenceUsage = true
+			err = action.InstallSetup(cfg)
+			if err != nil {
+				return err
+			}
+			cmd.SilenceUsage = true
 
-		cfg.Logger.Infof("Install called")
+			cfg.Logger.Infof("Install called")
 
-		err = action.InstallRun(cfg)
-		if err != nil {
-			return err
-		}
-		return nil
-	},
+			err = action.InstallRun(cfg)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
+	c.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
+	c.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
+	c.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
+	c.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
+	c.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
+	c.Flags().BoolP("tty", "", false, "Add named tty to grub")
+	c.Flags().BoolP("force", "", false, "Force install")
+	c.Flags().BoolP("eject-cd", "", false, "Try to eject the cd on reboot, only valid if booting from iso")
+	addSharedInstallUpgradeFlags(c)
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(installCmd)
-	installCmd.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
-	installCmd.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
-	installCmd.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
-	installCmd.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
-	installCmd.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
-	installCmd.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
-	installCmd.Flags().BoolP("tty", "", false, "Add named tty to grub")
-	installCmd.Flags().BoolP("force", "", false, "Force install")
-	installCmd.Flags().BoolP("eject-cd", "", false, "Try to eject the cd on reboot, only valid if booting from iso")
-	addSharedInstallUpgradeFlags(installCmd)
-}
+// register the subcommand into rootCmd
+var _ = NewInstallCmd(rootCmd, true)

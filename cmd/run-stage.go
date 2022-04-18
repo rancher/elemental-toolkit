@@ -24,26 +24,28 @@ import (
 	"k8s.io/mount-utils"
 )
 
-// cloudInit represents the cloud-init command
-var runStage = &cobra.Command{
-	Use:   "run-stage STAGE",
-	Short: "elemental run-stage",
-	Args:  cobra.MinimumNArgs(1),
-	PreRun: func(cmd *cobra.Command, args []string) {
-		_ = viper.BindPFlags(cmd.Flags())
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+func NewRunStage(root *cobra.Command) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "run-stage STAGE",
+		Short: "elemental run-stage",
+		Args:  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			_ = viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
 
-		if err != nil {
-			cfg.Logger.Errorf("Error reading config: %s\n", err)
-		}
+			if err != nil {
+				cfg.Logger.Errorf("Error reading config: %s\n", err)
+			}
 
-		return utils.RunStage(args[0], cfg)
-	},
+			return utils.RunStage(args[0], cfg)
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().Bool("strict", false, "Set strict checking for errors, i.e. fail if errors were found")
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(runStage)
-	runStage.Flags().Bool("strict", false, "Set strict checking for errors, i.e. fail if errors were found")
-}
+// register the subcommand into rootCmd
+var _ = NewRunStage(rootCmd)

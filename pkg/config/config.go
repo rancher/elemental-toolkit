@@ -185,6 +185,7 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 		Config: *NewConfig(opts...),
 		ISO:    NewISO(),
 		Name:   cnst.BuildImgName,
+		Repos:  []v1.Repository{},
 	}
 	return b
 }

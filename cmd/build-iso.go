@@ -22,96 +22,125 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 )
 
-// buildISO represents the build-iso command
-var buildISO = &cobra.Command{
-	Use:   "build-iso IMAGE",
-	Short: "elemental build-iso IMAGE",
-	Args:  cobra.MaximumNArgs(1),
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return CheckRoot()
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		path, err := exec.LookPath("mount")
-		if err != nil {
-			return err
-		}
-		mounter := mount.New(path)
-
-		cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), mounter)
-		if err != nil {
-			cfg.Logger.Errorf("Error reading config: %s\n", err)
-		}
-
-		if len(args) == 1 {
-			cfg.ISO.RootFS = []string{args[0]}
-		}
-
-		err = validateCosignFlags(cfg.Logger)
-		if err != nil {
-			return err
-		}
-
-		//TODO validate there is, at least some source for rootfs, uefi and isoimage
-
-		// Set this after parsing of the flags, so it fails on parsing and prints usage properly
-		cmd.SilenceUsage = true
-		cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
-
-		oRootfs, _ := cmd.Flags().GetString("overlay-rootfs")
-		oUEFI, _ := cmd.Flags().GetString("overlay-uefi")
-		oISO, _ := cmd.Flags().GetString("overlay-iso")
-
-		if oRootfs != "" {
-			if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
-				cfg.ISO.RootFS = append(cfg.ISO.RootFS, oRootfs)
-			} else {
-				cfg.Logger.Errorf("Invalid value for overlay-rootfs")
-				return fmt.Errorf("Invalid path '%s': %v", oRootfs, err)
+// NewBuildISO returns a new instance of the buid-iso subcommand and appends it to
+// the root command. requireRoot is to initiate it with or without the CheckRoot
+// pre-run check. This method is mostly used for testing purposes.
+func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "build-iso IMAGE",
+		Short: "elemental build-iso IMAGE",
+		Args:  cobra.MaximumNArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			_ = viper.BindPFlags(cmd.Flags())
+			if addCheckRoot {
+				return CheckRoot()
 			}
-		}
-		if oUEFI != "" {
-			if ok, err := utils.Exists(cfg.Fs, oUEFI); ok {
-				cfg.ISO.UEFI = append(cfg.ISO.UEFI, oUEFI)
-			} else {
-				cfg.Logger.Errorf("Invalid value for overlay-uefi")
-				return fmt.Errorf("Invalid path '%s': %v", oUEFI, err)
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path, err := exec.LookPath("mount")
+			if err != nil {
+				return err
 			}
-		}
-		if oISO != "" {
-			if ok, err := utils.Exists(cfg.Fs, oISO); ok {
-				cfg.ISO.Image = append(cfg.ISO.Image, oISO)
-			} else {
-				cfg.Logger.Errorf("Invalid value for overlay-iso")
-				return fmt.Errorf("Invalid path '%s': %v", oISO, err)
+			mounter := mount.New(path)
+
+			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), mounter)
+			if err != nil {
+				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
-		}
 
-		err = action.BuildISORun(cfg)
-		if err != nil {
-			return err
-		}
+			if len(args) == 1 {
+				cfg.ISO.RootFS = []string{args[0]}
+			}
 
-		return nil
-	},
+			err = validateCosignFlags(cfg.Logger)
+			if err != nil {
+				return err
+			}
+
+			if len(cfg.ISO.RootFS) == 0 {
+				return fmt.Errorf("no rootfs image source provided")
+			}
+
+			if len(cfg.ISO.UEFI) == 0 {
+				return fmt.Errorf("no UEFI image sources provided")
+			}
+
+			if len(cfg.ISO.Image) == 0 {
+				return fmt.Errorf("no ISO image sources provided")
+			}
+
+			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
+
+			oRootfs, _ := cmd.Flags().GetString("overlay-rootfs")
+			oUEFI, _ := cmd.Flags().GetString("overlay-uefi")
+			oISO, _ := cmd.Flags().GetString("overlay-iso")
+			repoURIs, _ := cmd.Flags().GetStringArray("repo")
+
+			if oRootfs != "" {
+				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
+					cfg.ISO.RootFS = append(cfg.ISO.RootFS, oRootfs)
+				} else {
+					cfg.Logger.Errorf("Invalid value for overlay-rootfs")
+					return fmt.Errorf("Invalid path '%s': %v", oRootfs, err)
+				}
+			}
+			if oUEFI != "" {
+				if ok, err := utils.Exists(cfg.Fs, oUEFI); ok {
+					cfg.ISO.UEFI = append(cfg.ISO.UEFI, oUEFI)
+				} else {
+					cfg.Logger.Errorf("Invalid value for overlay-uefi")
+					return fmt.Errorf("Invalid path '%s': %v", oUEFI, err)
+				}
+			}
+			if oISO != "" {
+				if ok, err := utils.Exists(cfg.Fs, oISO); ok {
+					cfg.ISO.Image = append(cfg.ISO.Image, oISO)
+				} else {
+					cfg.Logger.Errorf("Invalid value for overlay-iso")
+					return fmt.Errorf("Invalid path '%s': %v", oISO, err)
+				}
+			}
+
+			repos := []v1.Repository{}
+			for _, u := range repoURIs {
+				repos = append(repos, v1.Repository{URI: u})
+			}
+			cfg.Repos = repos
+
+			err = action.BuildISORun(cfg)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+	root.AddCommand(c)
+	c.Flags().StringP("name", "n", "", "Basename of the generated ISO file")
+	c.Flags().Bool("date", true, "Adds a date suffix into the generated ISO file")
+	c.Flags().String("overlay-rootfs", "", "Path of the overlayed rootfs data")
+	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
+	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
+
+	// The dot notation is used to express nested maps in viper settings which is needed to unmarshal nested structs.
+	c.Flags().String("iso.label", "", "Label of the ISO volume")
+	c.Flags().StringArray("iso.image", []string{}, "A source for the ISO image. Can be repeated to add more than one source.")
+	c.Flags().StringArray("iso.uefi", []string{}, "A source for the UEFI image. Can be repeated to add more than one source.")
+
+	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
+	addCosignFlags(c)
+	return c
 }
 
-func init() {
-	rootCmd.AddCommand(buildISO)
-	buildISO.Flags().String("label", "", "Label of the ISO volume")
-	buildISO.Flags().StringP("name", "n", "", "Basename of the generated ISO file")
-	buildISO.Flags().Bool("date", true, "Adds a date suffix into the generated ISO file")
-	buildISO.Flags().String("overlay-rootfs", "", "Path of the overlayed rootfs data")
-	buildISO.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
-	buildISO.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
-	// TBC expose rootfs as flags?
-	//buildISO.Flags().StringArray("rootfs", []string{}, "A list of sources for the rootfs image. Can be repeated to add more than one source.")
-	buildISO.Flags().StringArray("isoimage", []string{}, "A list of sources for the ISO image. Can be repeated to add more than one source.")
-	buildISO.Flags().StringArray("uefi", []string{}, "A list of sources for the UEFI image. Can be repeated to add more than one source.")
-	addCosignFlags(buildISO)
-}
+// register the subcommand into rootCmd
+var _ = NewBuildISO(rootCmd, true)

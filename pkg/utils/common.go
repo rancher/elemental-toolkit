@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	uri "net/url"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -256,14 +256,35 @@ func GetUpgradeTempDir(config *v1.RunConfig) string {
 	return filepath.Join("/", "tmp", "elemental-upgrade")
 }
 
-// IsLocalURL returns true if the url has no scheme or it has "file" scheme
-// and returns false otherwise. Error is not nil if the url can't be parsed.
-func IsLocalURL(url string) (bool, error) {
-	u, err := uri.Parse(url)
+// IsLocalURI returns true if the uri has "file" scheme or no scheme and URI is
+// not prefixed with a domain (container registry style). Returns false otherwise.
+// Error is not nil only if the url can't be parsed.
+func IsLocalURI(uri string) (bool, error) {
+	u, err := url.Parse(uri)
 	if err != nil {
 		return false, err
 	}
-	if u.Scheme == "file" || u.Scheme == "" {
+	if u.Scheme == "file" {
+		return true, nil
+	}
+	if u.Scheme == "" {
+		// Check first part of the path is not a domain (e.g. registry.suse.com/elemental)
+		// reference.ParsedNamed expects a <domain>[:<port>]/<path>[:<tag>] form.
+		if _, err = reference.ParseNamed(uri); err != nil {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// IsHTTPURI returns true if the uri has "http" or "https" scheme, returns false otherwise.
+// Error is not nil only if the url can't be parsed.
+func IsHTTPURI(uri string) (bool, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return false, err
+	}
+	if u.Scheme == "http" || u.Scheme == "https" {
 		return true, nil
 	}
 	return false, nil
@@ -272,7 +293,7 @@ func IsLocalURL(url string) (bool, error) {
 // GetSource copies given source to destination, if source is a local path it simply
 // copies files, if source is a remote URL it tries to download URL to destination.
 func GetSource(config *v1.RunConfig, source string, destination string) error {
-	local, err := IsLocalURL(source)
+	local, err := IsLocalURI(source)
 	if err != nil {
 		config.Logger.Errorf("Not a valid url: %s", source)
 		return err
@@ -283,7 +304,7 @@ func GetSource(config *v1.RunConfig, source string, destination string) error {
 		return err
 	}
 	if local {
-		u, _ := uri.Parse(source)
+		u, _ := url.Parse(source)
 		err = CopyFile(config.Fs, u.Path, destination)
 		if err != nil {
 			return err

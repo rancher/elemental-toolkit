@@ -32,6 +32,7 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
@@ -647,7 +648,7 @@ var _ = Describe("Runtime Actions", func() {
 	Describe("Upgrade Action", Label("upgrade"), func() {
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
-		var luet *v1.Luet
+		var l v1.LuetInterface
 		activeImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.ActiveImgFile)
 		passiveImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.PassiveImgFile)
 		recoveryImgSquash := fmt.Sprintf("%s/cOS/%s", constants.UpgradeRecoveryDir, constants.RecoverySquashFile)
@@ -661,8 +662,8 @@ var _ = Describe("Runtime Actions", func() {
 			logger = v1.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
-			luet = v1.NewLuet(v1.WithLuetLogger(logger))
-			config.Luet = luet
+			l = luet.NewLuet(luet.WithLogger(logger))
+			config.Luet = l
 			// These values are loaded from /etc/cos/config normally via CMD
 			config.StateLabel = constants.StateLabel
 			config.PassiveLabel = constants.PassiveLabel
@@ -880,8 +881,8 @@ var _ = Describe("Runtime Actions", func() {
 				repos = append(repos, repo)
 
 				cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-				luet = v1.NewLuet(v1.WithLuetLogger(logger), v1.WithLuetConfig(&cfg))
-				config.Luet = luet
+				l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
+				config.Luet = l
 
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -1156,8 +1157,8 @@ var _ = Describe("Runtime Actions", func() {
 					repos = append(repos, repo)
 
 					cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-					luet = v1.NewLuet(v1.WithLuetLogger(logger), v1.WithLuetConfig(&cfg))
-					config.Luet = luet
+					l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
+					config.Luet = l
 
 					upgrade = action.NewUpgradeAction(config)
 					err = upgrade.Run()
@@ -1317,8 +1318,8 @@ var _ = Describe("Runtime Actions", func() {
 					repos = append(repos, repo)
 
 					cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-					luet = v1.NewLuet(v1.WithLuetLogger(logger), v1.WithLuetConfig(&cfg))
-					config.Luet = luet
+					l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
+					config.Luet = l
 
 					upgrade = action.NewUpgradeAction(config)
 					err = upgrade.Run()

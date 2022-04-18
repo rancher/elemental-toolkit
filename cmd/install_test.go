@@ -21,17 +21,35 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
-var _ = Describe("Install", Label("install", "cmd", "systemctl", "root"), func() {
-	It("outputs usage if no DEVICE param", Label("args"), func() {
-		buf := new(bytes.Buffer)
+var _ = Describe("Install", Label("install", "cmd"), func() {
+	var buf *bytes.Buffer
+	BeforeEach(func() {
+		rootCmd = NewRootCmd()
+		_ = NewInstallCmd(rootCmd, false)
+		buf = new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
+	})
+	AfterEach(func() {
+		viper.Reset()
+	})
+	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--cosign-key", "pubKey.url", "/dev/whatever")
+		Expect(err).ToNot(BeNil())
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
+	})
+	It("Errors out setting directory and docker-image at the same time", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--directory", "dir", "--docker-image", "image", "/dev/whatever")
+		Expect(err).ToNot(BeNil())
+		Expect(buf.String()).To(ContainSubstring("Usage:"))
+		Expect(err.Error()).To(ContainSubstring("docker-image and directory are mutually exclusive"))
+	})
+	It("outputs usage if no DEVICE param", Label("args"), func() {
 		_, _, err := executeCommandC(rootCmd, "install")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(And(
 			ContainSubstring("Usage:"),
@@ -39,39 +57,9 @@ var _ = Describe("Install", Label("install", "cmd", "systemctl", "root"), func()
 		))
 	})
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
-		buf := new(bytes.Buffer)
-		rootCmd.SetOut(buf)
-		rootCmd.SetErr(buf)
 		_, _, err := executeCommandC(rootCmd, "install", "--reboot", "--poweroff", "/dev/whatever")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("'reboot' and 'poweroff' are mutually exclusive options"))
-	})
-	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
-		buf := new(bytes.Buffer)
-		rootCmd.SetOut(buf)
-		rootCmd.SetErr(buf)
-		_, _, err := executeCommandC(rootCmd, "install", "--cosign-key", "pubKey.url", "/dev/whatever")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
-		Expect(err).ToNot(BeNil())
-		Expect(buf.String()).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("'cosign-key' requires 'cosign' option to be enabled"))
-	})
-	It("Errors out setting directory and docker-image at the same time", Label("flags"), func() {
-		buf := new(bytes.Buffer)
-		rootCmd.SetOut(buf)
-		rootCmd.SetErr(buf)
-		_, _, err := executeCommandC(rootCmd, "install", "--directory", "dir", "--docker-image", "image", "/dev/whatever")
-		// Restore cobra output
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
-		Expect(err).ToNot(BeNil())
-		Expect(buf.String()).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("docker-image and directory are mutually exclusive"))
 	})
 })
