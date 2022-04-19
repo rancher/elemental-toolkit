@@ -70,7 +70,7 @@ $(DESTINATION)/tree.tar.zst:
 	make create-repo
 
 .PHONY: local-iso
-local-iso: $(LUET) $(MAKEISO) $(DESTINATION) $(MKSQUASHFS) $(DESTINATION)/tree.tar.zst
+local-iso: $(ELEMENTAL) $(DESTINATION) $(MKSQUASHFS) $(DESTINATION)/tree.tar.zst
 ifneq ($(shell id -u), 0)
 	@echo "*** Please run 'make $@' as root"
 	@exit 1
@@ -78,11 +78,11 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST) --local $(DESTINATION)
+	$(ELEMENTAL) --debug --config-dir . build-iso --repo $(DESTINATION)
 endif
 
 .PHONY: iso
-iso: $(LUET) $(YQ) $(MAKEISO) $(MKSQUASHFS)
+iso: $(ELEMENTAL) $(MKSQUASHFS)
 ifneq ($(shell id -u), 0)
 	@echo "*** Please run 'make $@' as root"
 	@exit 1
@@ -90,13 +90,7 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	cp -rf $(MANIFEST) $(MANIFEST).remote
-	$(YQ) e -i '.luet.repositories[0].name="cOS"' $(MANIFEST).remote
-	$(YQ) e -i '.luet.repositories[0].enable=true' $(MANIFEST).remote
-	$(YQ) e -i '.luet.repositories[0].priority=90' $(MANIFEST).remote
-	$(YQ) e -i '.luet.repositories[0].type="docker"' $(MANIFEST).remote
-	$(YQ) e -i ".luet.repositories[0].urls[0]=\"$(FINAL_REPO)\"" $(MANIFEST).remote
-	$(LUET) makeiso -- $(MAKEISO_ARGS) $(MANIFEST).remote
+	$(ELEMENTAL) --debug --config-dir . build-iso --repo $(FINAL_REPO)
 endif
 
 
