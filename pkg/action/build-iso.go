@@ -137,7 +137,10 @@ func findFileWithPrefix(fs v1.FS, path string, prefixes ...string) (string, erro
 				if f.Mode()&os.ModeSymlink == os.ModeSymlink {
 					found, err := fs.Readlink(filepath.Join(path, f.Name()))
 					if err == nil {
-						return filepath.Join(path, found), nil
+						found = filepath.Join(path, found)
+						if exists, _ := utils.Exists(fs, found); exists {
+							return found, nil
+						}
 					}
 				} else {
 					return filepath.Join(path, f.Name()), nil
@@ -290,7 +293,7 @@ func applySource(c v1.Config, target string, src v1.ImageSource) error {
 			return err
 		}
 	} else if src.IsChannel() {
-		err := c.Luet.UnpackFromChannel(target, src.Value())
+		err := c.Luet.UnpackFromChannel(target, src.Value(), c.Repos...)
 		if err != nil {
 			return err
 		}

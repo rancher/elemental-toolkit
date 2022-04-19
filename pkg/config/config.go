@@ -90,6 +90,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 		Logger:  log,
 		Syscall: &v1.RealSyscall{},
 		Client:  http.NewClient(),
+		Repos:   []v1.Repository{},
 	}
 	for _, o := range opts {
 		err := o(c)
@@ -185,7 +186,6 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 		Config: *NewConfig(opts...),
 		ISO:    NewISO(),
 		Name:   cnst.BuildImgName,
-		Repos:  []v1.Repository{},
 	}
 	return b
 }

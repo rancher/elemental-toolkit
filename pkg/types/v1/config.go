@@ -40,8 +40,9 @@ type Config struct {
 	CloudInitRunner CloudInitRunner
 	Luet            LuetInterface
 	Client          HTTPClient
-	Cosign          bool   `yaml:"cosign,omitempty" mapstructure:"cosign"`
-	CosignPubKey    string `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
+	Cosign          bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
+	CosignPubKey    string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
+	Repos           []Repository `yaml:"repositories,omit" mapstructire:"repositories"`
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
@@ -173,10 +174,9 @@ type Repository struct {
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	ISO   *LiveISO     `yaml:"iso,omitempty" mapstructure:"iso"`
-	Date  bool         `yaml:"date,omitempty" mapstructure:"date"`
-	Name  string       `yaml:"name,omitempty" mapstructure:"name"`
-	Repos []Repository `yaml:"repositories,omit" mapstructire:"repositories"`
+	ISO  *LiveISO `yaml:"iso,omitempty" mapstructure:"iso"`
+	Date bool     `yaml:"date,omitempty" mapstructure:"date"`
+	Name string   `yaml:"name,omitempty" mapstructure:"name"`
 	// Generic runtime configuration
 	Config
 }

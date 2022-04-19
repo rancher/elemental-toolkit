@@ -193,6 +193,7 @@ func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Re
 
 	repos := l.context.Config.SystemRepositories
 	if len(repositories) > 0 {
+		repos = luetTypes.LuetRepositories{}
 		for _, r := range repositories {
 			repo, err := l.initLuetRepository(r)
 			if err != nil {
