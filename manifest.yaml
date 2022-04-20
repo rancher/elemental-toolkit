@@ -10,7 +10,6 @@ iso:
   label: "COS_LIVE"
 
 name: "cOS-0"
-date: true
 label: "COS_LIVE"
 
 # Raw disk creation values start
