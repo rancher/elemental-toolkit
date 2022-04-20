@@ -455,6 +455,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
 
+			// /tmp/run would be excluded as well, as we define an exclude without the "/" prefix
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "tmp", "run"), constants.DirPerm)
+
 			for i := 0; i < 5; i++ {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
@@ -481,6 +484,41 @@ var _ = Describe("Utils", Label("utils"), func() {
 				}
 			}
 			Expect(destNames).To(Equal(expected))
+
+			// /tmp/run is not copied over
+			Expect(utils.Exists(fs, filepath.Join(destDir, "tmp", "run"))).To(BeFalse())
+		})
+
+		It("Copies all files from source to target respecting excludes with '/' prefix", func() {
+			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			destDir, err := utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "tmp", "host"), constants.DirPerm)
+
+			Expect(utils.SyncData(fs, sourceDir, destDir, "/host", "/run")).To(BeNil())
+
+			filesDest, err := fs.ReadDir(destDir)
+			Expect(err).To(BeNil())
+
+			destNames := getNamesFromListFiles(filesDest)
+
+			filesSource, err := fs.ReadDir(sourceDir)
+			Expect(err).To(BeNil())
+
+			SourceNames := getNamesFromListFiles(filesSource)
+
+			// Shouldn't be the same
+			Expect(destNames).ToNot(Equal(SourceNames))
+
+			Expect(utils.Exists(fs, filepath.Join(destDir, "var", "run"))).To(BeTrue())
+			Expect(utils.Exists(fs, filepath.Join(destDir, "tmp", "host"))).To(BeTrue())
+			Expect(utils.Exists(fs, filepath.Join(destDir, "host"))).To(BeFalse())
+			Expect(utils.Exists(fs, filepath.Join(destDir, "run"))).To(BeFalse())
 		})
 
 		It("should not fail if dirs are empty", func() {
