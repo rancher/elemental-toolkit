@@ -30,6 +30,7 @@ import (
 
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
 )
 
 // DirSize returns the accumulated size of all files in folder
@@ -117,7 +118,15 @@ func TempDir(fs v1.FS, dir, prefix string) (name string, err error) {
 	if dir == "" {
 		dir = os.TempDir()
 	}
-
+	// This skips adding random stuff to the created temp dir so the temp dir created is predictable for testing
+	if _, isTestFs := fs.(*vfst.TestFS); isTestFs {
+		err = MkdirAll(fs, filepath.Join(dir, prefix), 0700)
+		if err != nil {
+			return "", err
+		}
+		name = filepath.Join(dir, prefix)
+		return
+	}
 	nconflict := 0
 	for i := 0; i < 10000; i++ {
 		try := filepath.Join(dir, prefix+nextRandom())

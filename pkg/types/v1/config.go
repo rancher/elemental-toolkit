@@ -174,9 +174,22 @@ type Repository struct {
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	ISO  *LiveISO `yaml:"iso,omitempty" mapstructure:"iso"`
-	Date bool     `yaml:"date,omitempty" mapstructure:"date"`
-	Name string   `yaml:"name,omitempty" mapstructure:"name"`
+	ISO     *LiveISO                    `yaml:"iso,omitempty" mapstructure:"iso"`
+	Date    bool                        `yaml:"date,omitempty" mapstructure:"date"`
+	Name    string                      `yaml:"name,omitempty" mapstructure:"name"`
+	RawDisk map[string]RawDiskArchEntry `yaml:"raw_disk,omitempty" mapstructure:"raw_disk"`
 	// Generic runtime configuration
 	Config
+}
+
+// RawDiskArchEntry represents an arch entry in raw_disk
+type RawDiskArchEntry struct {
+	Repositories []Repository     `yaml:"repo,omitempty"`
+	Packages     []RawDiskPackage `yaml:"packages,omitempty"`
+}
+
+// RawDiskPackage represents a package entry for raw_disk, with a package name and a target to install to
+type RawDiskPackage struct {
+	Name   string `yaml:"name,omitempty"`
+	Target string `yaml:"target,omitempty"`
 }

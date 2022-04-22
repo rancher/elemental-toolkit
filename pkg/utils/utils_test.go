@@ -422,9 +422,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("SyncData", Label("SyncData"), func() {
 		It("Copies all files from source to target", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
 			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elemental")
+			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
 
 			for i := 0; i < 5; i++ {
@@ -447,9 +447,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("Copies all files from source to target respecting excludes", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
 			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elemental")
+			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
 
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
@@ -490,9 +490,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("Copies all files from source to target respecting excludes with '/' prefix", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
 			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elemental")
+			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
 
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
@@ -522,9 +522,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("should not fail if dirs are empty", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
 			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elemental")
+			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(utils.SyncData(fs, sourceDir, destDir)).To(BeNil())
 		})

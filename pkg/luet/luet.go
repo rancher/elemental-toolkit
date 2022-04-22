@@ -189,7 +189,6 @@ func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, 
 func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Repository) error {
 	var toInstall luetTypes.Packages
 	toInstall = append(toInstall, l.parsePackage(pkg))
-	l.log.Debugf("Luet config: %+v", l.context.Config)
 
 	repos := l.context.Config.SystemRepositories
 	if len(repositories) > 0 {

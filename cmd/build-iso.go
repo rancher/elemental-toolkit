@@ -51,12 +51,12 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			mounter := mount.New(path)
 
-			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), mounter)
+			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), mounter, false)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
 
-			if len(args) == 1 {
+			if len(args) >= 1 {
 				cfg.ISO.RootFS = []string{args[0]}
 			}
 

@@ -17,7 +17,10 @@
 package action_test
 
 import (
+	"bytes"
 	"errors"
+	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -43,12 +46,15 @@ var _ = Describe("Runtime Actions", func() {
 	var cloudInit *v1mock.FakeCloudInitRunner
 	var luet *v1mock.FakeLuet
 	var cleanup func()
+	var memLog *bytes.Buffer
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
-		logger = v1.NewNullLogger()
+		memLog = &bytes.Buffer{}
+		logger = v1.NewBufferLogger(memLog)
+		logger.SetLevel(logrus.DebugLevel)
 		cloudInit = &v1mock.FakeCloudInitRunner{}
 		luet = &v1mock.FakeLuet{}
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
@@ -183,6 +189,80 @@ var _ = Describe("Runtime Actions", func() {
 
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("Build disk", Label("disk", "build"), func() {
+		It("Builds a raw image", func() {
+			// temp dir for output, otherwise we write to .
+			outputDir, _ := utils.TempDir(fs, "", "output")
+			// temp dir for package files, create needed file
+			filesDir, _ := utils.TempDir(fs, "", "elemental-build-disk-files")
+			_ = utils.MkdirAll(fs, filepath.Join(filesDir, "root", "etc", "cos"), constants.DirPerm)
+			_ = fs.WriteFile(filepath.Join(filesDir, "root", "etc", "cos", "grubenv_firstboot"), []byte(""), os.ModePerm)
+
+			// temp dir for part files, create parts
+			partsDir, _ := utils.TempDir(fs, "", "elemental-build-disk-parts")
+			_ = fs.WriteFile(filepath.Join(partsDir, "rootfs.part"), []byte(""), os.ModePerm)
+			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
+			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
+
+			err := action.BuildDiskRun(cfg, "raw", "x86_64", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Check that we copied all needed files to final image
+			Expect(memLog.String()).To(ContainSubstring("efi.part"))
+			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
+			Expect(memLog.String()).To(ContainSubstring("oem.part"))
+			output, err := fs.Stat(filepath.Join(outputDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Even with empty parts, output image should never be zero due to the truncating
+			// it should be exactly 20Mb(efi size) + 64Mb(oem size) + 2048Mb(recovery size) + 3Mb(hybrid boot) + 1Mb(GPT)
+			partsSize := (20 + 64 + 2048 + 3 + 1) * 1024 * 1024
+			Expect(output.Size()).To(BeNumerically("==", partsSize))
+			// Check that mkfs commands set the label properly and copied the proper dirs
+			err = runner.IncludesCmds([][]string{
+				{"mkfs.ext2", "-L", "REC", "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
+				{"mkfs.vfat", "-n", constants.EfiLabel, "/tmp/elemental-build-disk-parts/efi.part"},
+				{"mkfs.ext2", "-L", "OEM", "-d", "/tmp/elemental-build-disk-files/oem", "/tmp/elemental-build-disk-parts/oem.part"},
+				// files should be copied to EFI
+				{"mcopy", "-s", "-i", "/tmp/elemental-build-disk-parts/efi.part", "/tmp/elemental-build-disk-files/efi/EFI", "::EFI"},
+			})
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("Sets default labels if empty", func() {
+			// temp dir for output, otherwise we write to .
+			outputDir, _ := utils.TempDir(fs, "", "output")
+			// temp dir for package files, create needed file
+			filesDir, _ := utils.TempDir(fs, "", "elemental-build-disk-files")
+			_ = utils.MkdirAll(fs, filepath.Join(filesDir, "root", "etc", "cos"), constants.DirPerm)
+			_ = fs.WriteFile(filepath.Join(filesDir, "root", "etc", "cos", "grubenv_firstboot"), []byte(""), os.ModePerm)
+
+			// temp dir for part files, create parts
+			partsDir, _ := utils.TempDir(fs, "", "elemental-build-disk-parts")
+			_ = fs.WriteFile(filepath.Join(partsDir, "rootfs.part"), []byte(""), os.ModePerm)
+			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
+			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
+
+			err := action.BuildDiskRun(cfg, "raw", "x86_64", "", "", filepath.Join(outputDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Check that we copied all needed files to final image
+			Expect(memLog.String()).To(ContainSubstring("efi.part"))
+			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
+			Expect(memLog.String()).To(ContainSubstring("oem.part"))
+			output, err := fs.Stat(filepath.Join(outputDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Even with empty parts, output image should never be zero due to the truncating
+			// it should be exactly 20Mb(efi size) + 64Mb(oem size) + 2048Mb(recovery size) + 3Mb(hybrid boot) + 1Mb(GPT)
+			partsSize := (20 + 64 + 2048 + 3 + 1) * 1024 * 1024
+			Expect(output.Size()).To(BeNumerically("==", partsSize))
+			// Check that mkfs commands set the label properly and copied the proper dirs
+			err = runner.IncludesCmds([][]string{
+				{"mkfs.ext2", "-L", constants.RecoveryLabel, "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
+				{"mkfs.vfat", "-n", constants.EfiLabel, "/tmp/elemental-build-disk-parts/efi.part"},
+				{"mkfs.ext2", "-L", constants.OEMLabel, "-d", "/tmp/elemental-build-disk-files/oem", "/tmp/elemental-build-disk-parts/oem.part"},
+				// files should be copied to EFI
+				{"mcopy", "-s", "-i", "/tmp/elemental-build-disk-parts/efi.part", "/tmp/elemental-build-disk-files/efi/EFI", "::EFI"},
+			})
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

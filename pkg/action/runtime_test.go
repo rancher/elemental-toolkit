@@ -20,19 +20,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-
 	"github.com/jaypipes/ghw/pkg/block"
+	"path/filepath"
 
-	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
 	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
@@ -662,7 +657,7 @@ var _ = Describe("Runtime Actions", func() {
 			logger = v1.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
-			l = luet.NewLuet(luet.WithLogger(logger))
+			l = &v1mock.FakeLuet{}
 			config.Luet = l
 			// These values are loaded from /etc/cos/config normally via CMD
 			config.StateLabel = constants.StateLabel
@@ -811,7 +806,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 			It("Successfully upgrades from directory", Label("directory", "root"), func() {
-				config.Directory, _ = utils.TempDir(fs, "", "elemental")
+				config.Directory, _ = utils.TempDir(fs, "", "elementalupgrade")
 				// Create the dir on real os as rsync works on the real os
 				defer fs.RemoveAll(config.Directory)
 				// create a random file on it
@@ -851,38 +846,6 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			It("Successfully upgrades from channel upgrade", Label("channel", "root"), func() {
 				config.ChannelUpgrades = true
-				// Required paths
-				tmpDirBase, _ := os.MkdirTemp("", "elemental")
-				pkgCache, _ := os.MkdirTemp("", "elemental")
-				dbPath, _ := os.MkdirTemp("", "elemental")
-				defer os.RemoveAll(tmpDirBase)
-				defer os.RemoveAll(pkgCache)
-				defer os.RemoveAll(dbPath)
-				// create new config here to add system repos
-				luetSystemConfig := luetTypes.LuetSystemConfig{
-					DatabasePath:   dbPath,
-					PkgsCachePath:  pkgCache,
-					DatabaseEngine: "memory",
-					TmpDirBase:     tmpDirBase,
-				}
-				luetGeneralConfig := luetTypes.LuetGeneralConfig{Debug: false, Quiet: true, Concurrency: runtime.NumCPU()}
-				luetSolver := luetTypes.LuetSolverOptions{}
-				repos := luetTypes.LuetRepositories{}
-				repo := luetTypes.LuetRepository{
-					Name:           "cos",
-					Description:    "cos official",
-					Urls:           []string{"quay.io/costoolkit/releases-green"},
-					Type:           "docker",
-					Priority:       1,
-					Enable:         true,
-					Cached:         true,
-					Authentication: make(map[string]string),
-				}
-				repos = append(repos, repo)
-
-				cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-				l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
-				config.Luet = l
 
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -1132,33 +1095,6 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.ChannelUpgrades = true
-					// Required paths
-					tmpDirBase, _ := utils.TempDir(fs, "", "tmpluet")
-					// create new config here to add system repos
-					luetSystemConfig := luetTypes.LuetSystemConfig{
-						DatabasePath:   filepath.Join(tmpDirBase, "db"),
-						PkgsCachePath:  filepath.Join(tmpDirBase, "cache"),
-						DatabaseEngine: "",
-						TmpDirBase:     tmpDirBase,
-					}
-					luetGeneralConfig := luetTypes.LuetGeneralConfig{Debug: false, Quiet: true, Concurrency: runtime.NumCPU()}
-					luetSolver := luetTypes.LuetSolverOptions{}
-					repos := luetTypes.LuetRepositories{}
-					repo := luetTypes.LuetRepository{
-						Name:           "cos",
-						Description:    "cos official",
-						Urls:           []string{"quay.io/costoolkit/releases-green"},
-						Type:           "docker",
-						Priority:       1,
-						Enable:         true,
-						Cached:         true,
-						Authentication: make(map[string]string),
-					}
-					repos = append(repos, repo)
-
-					cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-					l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
-					config.Luet = l
 
 					upgrade = action.NewUpgradeAction(config)
 					err = upgrade.Run()
@@ -1291,35 +1227,6 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(f).To(ContainSubstring("recovery"))
 
 					config.ChannelUpgrades = true
-					// Required paths
-					tmpDirBase, _ := utils.TempDir(fs, "", "elemental")
-					pkgCache, _ := utils.TempDir(fs, "", "elemental")
-					dbPath, _ := utils.TempDir(fs, "", "elemental")
-					// create new config here to add system repos
-					luetSystemConfig := luetTypes.LuetSystemConfig{
-						DatabasePath:   dbPath,
-						PkgsCachePath:  pkgCache,
-						DatabaseEngine: "memory",
-						TmpDirBase:     tmpDirBase,
-					}
-					luetGeneralConfig := luetTypes.LuetGeneralConfig{Debug: false, Quiet: true, Concurrency: runtime.NumCPU()}
-					luetSolver := luetTypes.LuetSolverOptions{}
-					repos := luetTypes.LuetRepositories{}
-					repo := luetTypes.LuetRepository{
-						Name:           "cos",
-						Description:    "cos official",
-						Urls:           []string{"quay.io/costoolkit/releases-green"},
-						Type:           "docker",
-						Priority:       1,
-						Enable:         true,
-						Cached:         true,
-						Authentication: make(map[string]string),
-					}
-					repos = append(repos, repo)
-
-					cfg := luetTypes.LuetConfig{System: luetSystemConfig, Solver: luetSolver, General: luetGeneralConfig, SystemRepositories: repos}
-					l = luet.NewLuet(luet.WithLogger(logger), luet.WithConfig(&cfg))
-					config.Luet = l
 
 					upgrade = action.NewUpgradeAction(config)
 					err = upgrade.Run()

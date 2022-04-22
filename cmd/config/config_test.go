@@ -44,13 +44,13 @@ var _ = Describe("Config", func() {
 	})
 	Describe("Build config", Label("config", "build"), func() {
 		It("values empty if config path not valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("/none/", mounter)
+			cfg, err := ReadConfigBuild("/none/", mounter, false)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal(""))
 			Expect(cfg.Name).To(Equal("elemental"))
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("config/", mounter)
+			cfg, err := ReadConfigBuild("config/", mounter, false)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal("cOS-0"))
 			Expect(cfg.Name).To(Equal("cOS-0"))
@@ -59,7 +59,7 @@ var _ = Describe("Config", func() {
 		})
 		It("overrides values with env values", Label("env", "values"), func() {
 			_ = os.Setenv("ELEMENTAL_NAME", "environment")
-			cfg, err := ReadConfigBuild("config/", mounter)
+			cfg, err := ReadConfigBuild("config/", mounter, false)
 			Expect(err).To(BeNil())
 			source := viper.GetString("name")
 			// check that the final value comes from the env var
