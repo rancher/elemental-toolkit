@@ -538,7 +538,9 @@
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: true
       DOWNLOAD_ALL: true
+      DOWNLOAD_ALL_REPO: true
       DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
       {{{- if has $config "luet_install_from_cos_repo" }}}
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
       {{{- end }}}
@@ -563,11 +565,6 @@
             password: ${{ secrets.QUAY_PASSWORD }}
       {{{- end }}}
       {{{ tmpl.Exec "make" "deps" }}}
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-{{{ $flavor }}}-{{{ $config.arch }}}
-          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin

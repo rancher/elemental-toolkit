@@ -133,6 +133,8 @@ func main() {
 
 	missingPackages := []client.Package{}
 
+	fatalErrors := os.Getenv("DOWNLOAD_FATAL_MISSING_PACKAGES") == "true"
+
 	for _, p := range packs.Packages {
 		if !client.Packages(currentPackages.Packages).Exist(p) {
 			missingPackages = append(missingPackages, p)
@@ -197,10 +199,19 @@ func main() {
 				// to cleanups
 				fmt.Println("There were errors while downloading remote images")
 				fmt.Println(err.Error())
-				if os.Getenv("DOWNLOAD_FATAL_MISSING_PACKAGES") == "true" {
+				if fatalErrors {
 					checkErr(err)
 				}
+			}
 
+			// Additionally downloads all meta from the packages listed in the repository
+			if os.Getenv("DOWNLOAD_ALL_REPO") == "true" {
+				for _, p := range packs.Packages {
+					err := downloadMeta(p, op)
+					if fatalErrors {
+						checkErr(err)
+					}
+				}
 			}
 		} else {
 			for _, p := range packs.Packages {

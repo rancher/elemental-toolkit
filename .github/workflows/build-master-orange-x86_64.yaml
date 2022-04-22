@@ -139,7 +139,9 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-orange
       DOWNLOAD_METADATA: true
       DOWNLOAD_ALL: true
+      DOWNLOAD_ALL_REPO: true
       DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-orange
       PUBLISH_ARGS: "--plugin luet-cosign"
@@ -196,11 +198,6 @@ jobs:
         run: |
           export DOCKER_INSTALL=true
           sudo -E make deps
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: build-orange-x86_64
-          path: build
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
