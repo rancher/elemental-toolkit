@@ -34,23 +34,29 @@ func BuildISORun(cfg *v1.BuildConfig) (err error) {
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	rootDir, err := utils.TempDir(cfg.Fs, "", "elemental-iso-rootfs")
+	isoTmpDir, err := utils.TempDir(cfg.Fs, "", "elemental-iso")
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return cfg.Fs.RemoveAll(rootDir) })
+	cleanup.Push(func() error { return cfg.Fs.RemoveAll(isoTmpDir) })
 
-	uefiDir, err := utils.TempDir(cfg.Fs, "", "elemental-iso-uefi")
+	rootDir := filepath.Join(isoTmpDir, "rootfs")
+	err = utils.MkdirAll(cfg.Fs, rootDir, constants.DirPerm)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return cfg.Fs.RemoveAll(uefiDir) })
 
-	isoDir, err := utils.TempDir(cfg.Fs, "", "elemental-iso")
+	uefiDir := filepath.Join(isoTmpDir, "uefi")
+	err = utils.MkdirAll(cfg.Fs, uefiDir, constants.DirPerm)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return cfg.Fs.RemoveAll(isoDir) })
+
+	isoDir := filepath.Join(isoTmpDir, "iso")
+	err = utils.MkdirAll(cfg.Fs, isoDir, constants.DirPerm)
+	if err != nil {
+		return err
+	}
 
 	cfg.Logger.Infof("Preparing squashfs root...")
 	err = applySources(cfg.Config, rootDir, cfg.ISO.RootFS...)
@@ -152,7 +158,7 @@ func findFileWithPrefix(fs v1.FS, path string, prefixes ...string) (string, erro
 }
 
 func findKernelInitrd(c v1.Config, rootDir string) (kernel string, initrd string, err error) {
-	kernelNames := []string{"uImage", "Image", "zImage", "vmlinuz", "image", "vmlinux"}
+	kernelNames := []string{"uImage", "Image", "zImage", "vmlinuz", "image"}
 	initrdNames := []string{"initrd", "initramfs"}
 	kernel, err = findFileWithPrefix(c.Fs, filepath.Join(rootDir, "boot"), kernelNames...)
 	if err != nil {
