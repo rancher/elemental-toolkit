@@ -127,7 +127,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	root.AddCommand(c)
 	c.Flags().StringP("name", "n", "", "Basename of the generated ISO file")
-	c.Flags().Bool("date", true, "Adds a date suffix into the generated ISO file")
+	c.Flags().Bool("date", false, "Adds a date suffix into the generated ISO file")
 	c.Flags().String("overlay-rootfs", "", "Path of the overlayed rootfs data")
 	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
