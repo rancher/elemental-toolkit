@@ -108,11 +108,26 @@ func CopyFile(fs v1.FS, source string, target string) (err error) {
 
 // Copies source file to target file using Fs interface
 func CreateDirStructure(fs v1.FS, target string) error {
-	for _, dir := range []string{"/run", "/sys", "/proc", "/dev", "/tmp", "/boot", "/usr/local", "/oem"} {
+	for _, dir := range []string{"/run", "/dev", "/boot", "/usr/local", "/oem"} {
 		err := MkdirAll(fs, filepath.Join(target, dir), cnst.DirPerm)
 		if err != nil {
 			return err
 		}
+	}
+	for _, dir := range []string{"/proc", "/sys"} {
+		err := MkdirAll(fs, filepath.Join(target, dir), cnst.NoWriteDirPerm)
+		if err != nil {
+			return err
+		}
+	}
+	err := MkdirAll(fs, filepath.Join(target, "/tmp"), cnst.DirPerm)
+	if err != nil {
+		return err
+	}
+	// Set /tmp permissions regardless the umask setup
+	err = fs.Chmod(filepath.Join(target, "/tmp"), cnst.TempDirPerm)
+	if err != nil {
+		return err
 	}
 	return nil
 }

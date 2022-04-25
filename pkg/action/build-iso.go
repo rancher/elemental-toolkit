@@ -64,6 +64,11 @@ func BuildISORun(cfg *v1.BuildConfig) (err error) {
 		cfg.Logger.Errorf("Failed installing OS packages: %v", err)
 		return err
 	}
+	err = utils.CreateDirStructure(cfg.Fs, rootDir)
+	if err != nil {
+		cfg.Logger.Errorf("Failed creating root directory structure: %v", err)
+		return err
+	}
 
 	cfg.Logger.Infof("Preparing EFI image...")
 	err = applySources(cfg.Config, uefiDir, cfg.ISO.UEFI...)

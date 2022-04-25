@@ -106,8 +106,10 @@ const (
 	IsoBootFile    = "/boot/x86_64/loader/eltorito.img"
 
 	// Default directory and file fileModes
-	DirPerm  = os.ModeDir | os.ModePerm
-	FilePerm = 0666
+	DirPerm        = os.ModeDir | os.ModePerm
+	FilePerm       = 0666
+	NoWriteDirPerm = 0555 | os.ModeDir
+	TempDirPerm    = os.ModePerm | os.ModeSticky | os.ModeDir
 
 	// Eject script
 	EjectScript = "#!/bin/sh\n/usr/bin/eject -rmF"

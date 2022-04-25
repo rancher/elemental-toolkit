@@ -409,10 +409,22 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("CreateDirStructure", Label("CreateDirStructure"), func() {
 		It("Creates essential directories", func() {
-			Expect(utils.CreateDirStructure(fs, "/my/root")).To(BeNil())
-			for _, dir := range []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"} {
+			dirList := []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"}
+			for _, dir := range dirList {
 				_, err := fs.Stat(fmt.Sprintf("/my/root/%s", dir))
+				Expect(err).NotTo(BeNil())
+			}
+			Expect(utils.CreateDirStructure(fs, "/my/root")).To(BeNil())
+			for _, dir := range dirList {
+				fi, err := fs.Stat(fmt.Sprintf("/my/root/%s", dir))
 				Expect(err).To(BeNil())
+				if fi.Name() == "tmp" {
+					Expect(fmt.Sprintf("%04o", fi.Mode().Perm())).To(Equal("0777"))
+					Expect(fi.Mode() & os.ModeSticky).NotTo(Equal(0))
+				}
+				if fi.Name() == "sys" {
+					Expect(fmt.Sprintf("%04o", fi.Mode().Perm())).To(Equal("0555"))
+				}
 			}
 		})
 		It("Fails on non writable target", func() {
