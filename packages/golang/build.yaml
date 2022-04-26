@@ -4,6 +4,7 @@ requires:
   version: ">=0"
 
 prelude:
+{{ if ne .Values.codename "teal" }}
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y wget && zypper install -y -t pattern devel_basis
@@ -12,6 +13,7 @@ prelude:
 {{else if eq .Values.distribution "ubuntu" }}
 - apt-get update
 - apt-get install -y build-essential wget
+{{end}}
 {{end}}
 {{end}}
 - |

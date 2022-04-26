@@ -7,6 +7,7 @@ env:
 {{end}}
 {{end}}
 steps:
+{{ if ne .Values.codename "teal" }}
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y --no-recommends {{.Values.packages}}
@@ -20,6 +21,7 @@ steps:
 - apt-get update && apt-get install -y {{.Values.packages}}
 - apt-get clean
 - ln -s /usr/sbin/grub-install /usr/sbin/grub2-install
+{{end}}
 {{end}}
 {{end}}
 - | 
