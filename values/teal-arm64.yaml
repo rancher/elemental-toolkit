@@ -1,57 +1,12 @@
 
 # skopeo inspect docker://registry.suse.com/suse/sle-micro-rancher/5.2:latest --override-arch arm64 | jq '.Digest'
 image: registry.suse.com/suse/sle-micro-rancher/5.2@sha256:27d9b24f7ecdede93a6b6cad87443907a33c6005c0b6495fd7f8804594a4df37
+tool_image: opensuse/leap:15.3@sha256:30e1ea6881aaeefb8419a1295708fa523cdc089d1d38aa715552dc7feabbf8af
+
 distribution: "opensuse"
 codename: "teal"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
-
-packages: >-
-    systemd-sysvinit
-    grub2-arm64-efi
-    iproute2
-    squashfs
-    conntrack-tools
-    findutils
-    haveged
-    lsscsi
-    lvm2
-    mdadm
-    multipath-tools
-    nfs-utils
-    open-iscsi
-    open-vm-tools
-    python-azure-agent
-    qemu-guest-agent
-    rng-tools
-    systemd
-    vim
-    parted
-    dracut
-    e2fsprogs
-    dosfstools
-    kernel-firmware-bnx2
-    kernel-firmware-i915
-    kernel-firmware-intel
-    kernel-firmware-iwlwifi
-    kernel-firmware-mellanox
-    kernel-firmware-network
-    kernel-firmware-platform
-    kernel-firmware-realtek
-    coreutils
-    less
-    device-mapper
-    grub2
-    which
-    curl
-    nano
-    gawk
-    haveged
-    tar
-    rsync
-    timezone
-    jq
-    gptfdisk
 
 kernel_package: kernel-default

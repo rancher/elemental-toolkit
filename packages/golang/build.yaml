@@ -1,8 +1,11 @@
+{{ if ne .Values.codename "teal" }}
 requires:
 - name: "base"
   category: "distro"
   version: ">=0"
-
+{{ else }}
+image: {{.Values.tool_image}}
+{{ end }}
 prelude:
 {{ if ne .Values.codename "teal" }}
 {{ if .Values.distribution }}
@@ -15,6 +18,8 @@ prelude:
 - apt-get install -y build-essential curl
 {{end}}
 {{end}}
+{{else}}
+- zypper in -y curl git && zypper install -y -t pattern devel_basis
 {{end}}
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
