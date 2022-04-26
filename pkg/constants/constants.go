@@ -166,3 +166,15 @@ func GetDefaultXorrisoBooloaderArgs(root, bootFile, bootCatalog, hybridMBR strin
 	}...)
 	return args
 }
+
+func GetDefaultISOImage() []string {
+	return []string{"live/grub2", "live/grub2-efi-image"}
+}
+
+func GetDefaultISOUEFI() []string {
+	return []string{"live/grub2-efi-image"}
+}
+
+func GetDefaultLuetRepos() []string {
+	return []string{"quay.io/costoolkit/releases-green"}
+}

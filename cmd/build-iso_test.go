@@ -44,18 +44,6 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("no rootfs image source provided"))
 	})
-	It("Errors out if no uefi sources are defined", Label("flags"), func() {
-		_, _, err := executeCommandC(rootCmd, "build-iso", "system/cos")
-		Expect(err).ToNot(BeNil())
-		Expect(buf.String()).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("no UEFI image sources provided"))
-	})
-	It("Errors out if no iso sources are defined", Label("flags"), func() {
-		_, _, err := executeCommandC(rootCmd, "build-iso", "--iso.uefi", "live/grub2-efi-image", "system/cos")
-		Expect(err).ToNot(BeNil())
-		Expect(buf.String()).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("no ISO image sources provided"))
-	})
 	It("Errors out if overlay roofs path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
 			rootCmd, "build-iso", "--iso.image", "live/grub2",

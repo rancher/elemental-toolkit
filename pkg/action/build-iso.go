@@ -58,6 +58,14 @@ func BuildISORun(cfg *v1.BuildConfig) (err error) {
 		return err
 	}
 
+	if cfg.OutDir != "" {
+		err = utils.MkdirAll(cfg.Fs, cfg.OutDir, constants.DirPerm)
+		if err != nil {
+			cfg.Logger.Errorf("Failed creating output folder: %s", cfg.OutDir)
+			return err
+		}
+	}
+
 	cfg.Logger.Infof("Preparing squashfs root...")
 	err = applySources(cfg.Config, rootDir, cfg.ISO.RootFS...)
 	if err != nil {
@@ -244,6 +252,10 @@ func burnISO(c *v1.BuildConfig, root string) error {
 		outputFile = fmt.Sprintf("%s.iso", c.Name)
 	}
 
+	if c.OutDir != "" {
+		outputFile = filepath.Join(c.OutDir, outputFile)
+	}
+
 	if exists, _ := utils.Exists(c.Fs, outputFile); exists {
 		c.Logger.Warnf("Overwriting already existing %s", outputFile)
 		err := c.Fs.Remove(outputFile)
@@ -298,7 +310,7 @@ func applySource(c v1.Config, target string, src v1.ImageSource) error {
 			return err
 		}
 	} else if src.IsDir() {
-		excludes := []string{"mnt", "proc", "sys", "dev", "tmp", "host", "run"}
+		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
 		err := utils.SyncData(c.Fs, src.Value(), target, excludes...)
 		if err != nil {
 			return err

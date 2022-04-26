@@ -178,6 +178,7 @@ type BuildConfig struct {
 	Date    bool                        `yaml:"date,omitempty" mapstructure:"date"`
 	Name    string                      `yaml:"name,omitempty" mapstructure:"name"`
 	RawDisk map[string]RawDiskArchEntry `yaml:"raw_disk,omitempty" mapstructure:"raw_disk"`
+	OutDir  string                      `yaml:"output,omitempty" mapstructure:"output"`
 	// Generic runtime configuration
 	Config
 }

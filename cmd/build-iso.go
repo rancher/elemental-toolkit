@@ -22,6 +22,7 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ import (
 func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "build-iso IMAGE",
-		Short: "elemental build-iso IMAGE",
+		Short: "builds bootable installation media ISOs",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			_ = viper.BindPFlags(cmd.Flags())
@@ -70,11 +71,11 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			if len(cfg.ISO.UEFI) == 0 {
-				return fmt.Errorf("no UEFI image sources provided")
+				cfg.ISO.UEFI = constants.GetDefaultISOUEFI()
 			}
 
 			if len(cfg.ISO.Image) == 0 {
-				return fmt.Errorf("no ISO image sources provided")
+				cfg.ISO.Image = constants.GetDefaultISOImage()
 			}
 
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
@@ -85,6 +86,14 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			oUEFI, _ := cmd.Flags().GetString("overlay-uefi")
 			oISO, _ := cmd.Flags().GetString("overlay-iso")
 			repoURIs, _ := cmd.Flags().GetStringArray("repo")
+
+			if len(repoURIs) == 0 {
+				repoURIs = constants.GetDefaultLuetRepos()
+			}
+
+			if cfg.Name == "" {
+				cfg.Name = constants.BuildImgName
+			}
 
 			if oRootfs != "" {
 				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
@@ -127,6 +136,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	root.AddCommand(c)
 	c.Flags().StringP("name", "n", "", "Basename of the generated ISO file")
+	c.Flags().StringP("output", "o", "", "Output directory (defaults to current directory)")
 	c.Flags().Bool("date", false, "Adds a date suffix into the generated ISO file")
 	c.Flags().String("overlay-rootfs", "", "Path of the overlayed rootfs data")
 	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
