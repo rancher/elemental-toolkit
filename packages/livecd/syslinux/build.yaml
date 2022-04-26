@@ -1,10 +1,13 @@
-image: alpine
-# TODO: verify checksum
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
+
 prelude:
-- apk add wget
+{{ template "distro_install" (dict "Values" .Values "Packages" "curl")}}
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
-   wget https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-$PACKAGE_VERSION.tar.xz && \
+   curl -LO https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-$PACKAGE_VERSION.tar.xz && \
    echo "{{ ( index .Values.labels "package.checksum" ) }}  syslinux-$PACKAGE_VERSION.tar.xz" | sha256sum -c && \
    mkdir -p /syslinux && \
    tar -xvf syslinux-$PACKAGE_VERSION.tar.xz -C /syslinux

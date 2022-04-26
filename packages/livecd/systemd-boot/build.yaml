@@ -1,10 +1,11 @@
-# This spec is meant to be consumed only from a root image which ends up being used as uefi image.
-# TODO: verify checksum
-image: alpine
+requires:
+- name: "base"
+  category: "distro"
+  version: ">=0"
 
 prelude:
-- apk add wget
-- wget https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
+{{ template "distro_install" (dict "Values" .Values "Packages" "curl")}}
+- curl -LO https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
 - echo "{{ ( index .Values.labels "package.checksum" ) }}  systemd-boot_{{.Values.package_version}}.tar.xz" | sha256sum -c
 - mkdir -p /systemd-boot
 - tar -xvf systemd-boot_{{.Values.package_version}}.tar.xz -C /systemd-boot

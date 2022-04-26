@@ -1,4 +1,6 @@
 {{ define "distro_install" }}
+## All packages for teal are in the teal image already.
+{{ if ne .Values.codename "teal" }}
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 - zypper in -y --no-recommends {{.Packages}}
@@ -10,6 +12,7 @@
 {{else if eq .Values.distribution "ubuntu" }}
 - apt-get update && apt-get install -y {{.Packages}}
 - apt-get clean
+{{end}}
 {{end}}
 {{end}}
 {{end}}
