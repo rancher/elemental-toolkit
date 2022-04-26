@@ -1,7 +1,11 @@
+{{ if ne .Values.codename "teal" }}
 requires:
 - name: "base"
   category: "distro"
   version: ">=0"
+{{ else }}
+image: {{.Values.tool_image}}
+{{ end }}
 
 package_dir: /{{.Values.name}}
 

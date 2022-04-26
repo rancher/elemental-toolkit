@@ -2,6 +2,7 @@ name: "rancherd"
 category: "utils"
 version: 0.0.1-alpha13-8
 platform: linux
+upx: true
 labels:
   github.repo: "rancherd"
   github.owner: "rancher"
