@@ -7,18 +7,18 @@ prelude:
 {{ if ne .Values.codename "teal" }}
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
-- zypper in -y wget && zypper install -y -t pattern devel_basis
+- zypper in -y curl && zypper install -y -t pattern devel_basis
 {{else if eq .Values.distribution "fedora" }}
-- dnf install -y wget "@Development Tools"
+- dnf install -y curl "@Development Tools"
 {{else if eq .Values.distribution "ubuntu" }}
 - apt-get update
-- apt-get install -y build-essential wget
+- apt-get install -y build-essential curl
 {{end}}
 {{end}}
 {{end}}
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
-  wget {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -O golang.tar.gz
+  curl -L {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -o golang.tar.gz
 {{ template "do_checksum" (dict "values" .Values "filename" "golang.tar.gz")}}
 
 steps:
