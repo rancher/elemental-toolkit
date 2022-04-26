@@ -42,8 +42,10 @@ func repositoryPackages(repo string) (searchResult client.SearchResult) {
 	ctx.Config.GetSystem().Rootfs = "/"
 	ctx.Config.GetSystem().TmpDirBase = tmpdir
 	re, err := d.Sync(ctx, false)
+
 	if err != nil {
-		panic(err)
+		fmt.Println("No packages found")
+		fmt.Println(err)
 	} else {
 		for _, p := range re.GetTree().GetDatabase().World() {
 			searchResult.Packages = append(searchResult.Packages, client.Package{
@@ -52,9 +54,9 @@ func repositoryPackages(repo string) (searchResult client.SearchResult) {
 				Version:  p.GetVersion(),
 			})
 		}
-
-		return
 	}
+
+	return
 }
 
 func retryDownload(img, dest string, t int) error {
