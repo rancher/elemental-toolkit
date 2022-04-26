@@ -19,8 +19,8 @@ flavors:
         organization: "quay.io/costoolkit"
         skip_tests: false
         flavor: "green"
-        skip_tests_flavor: [ "blue","orange" ]
-        skip_images_flavor: [ "blue","orange" ]
+        skip_tests_flavor: [ "blue", "orange", "teal" ]
+        skip_images_flavor: [ "blue", "orange", "teal" ]
         build_image_qemu: true
         luet_override: ""
         build_image_vbox: true
@@ -56,8 +56,8 @@ flavors:
         skip_tests: false
         run_tests: ["test-fallback", "test-smoke", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
         flavor: "green"
-        skip_tests_flavor: [ "blue","orange" ]
-        skip_images_flavor: [ "blue","orange" ]
+        skip_tests_flavor: [ "blue", "orange", "teal"]
+        skip_images_flavor: [ "blue", "orange", "teal" ]
         skip_images_packer: true
         build_image_qemu: true
         luet_override: ""
@@ -100,6 +100,22 @@ flavors:
       arm64:
         <<: *arm64
         flavor: "blue"
+        build_image_qemu: false
+        build_image_vbox: false
+        build_raw_image: false
+        run_raw_image_test: false
+  teal:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "teal"
+        build_image_qemu: false
+        build_image_vbox: false
+        build_raw_image: false
+        run_raw_image_test: false
+      arm64:
+        <<: *arm64
+        flavor: "teal"
         build_image_qemu: false
         build_image_vbox: false
         build_raw_image: false
