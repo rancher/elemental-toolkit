@@ -18,11 +18,14 @@ package action_test
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"strconv"
 
+	dockerArchive "github.com/docker/docker/pkg/archive"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/rancher-sandbox/elemental/pkg/action"
@@ -31,6 +34,7 @@ import (
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
+	"github.com/sirupsen/logrus"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 )
@@ -263,6 +267,97 @@ var _ = Describe("Runtime Actions", func() {
 				{"mcopy", "-s", "-i", "/tmp/elemental-build-disk-parts/efi.part", "/tmp/elemental-build-disk-files/efi/EFI", "::EFI"},
 			})
 			Expect(err).ToNot(HaveOccurred())
+		})
+		It("Transforms raw image into GCE image", Label("gce"), func() {
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Set a non rounded size
+			f.Truncate(34 * 1024 * 1024)
+			f.Close()
+			err = action.Raw2Gce(filepath.Join(tmpDir, "disk.raw"), fs, logger, false)
+			Expect(err).ToNot(HaveOccurred())
+			// Log should have the rounded size (1Gb)
+			Expect(memLog.String()).To(ContainSubstring(strconv.Itoa(1 * 1024 * 1024 * 1024)))
+			// Should be a tar file
+			realPath, _ := fs.RawPath(tmpDir)
+			Expect(dockerArchive.IsArchivePath(filepath.Join(realPath, "disk.raw.tar.gz"))).To(BeTrue())
+		})
+		It("Transforms raw image into Azure image", func() {
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// write something
+			_ = f.Truncate(23 * 1024 * 1024)
+			_ = f.Close()
+			err = action.Raw2Azure(filepath.Join(tmpDir, "disk.raw"), fs, logger, true)
+			Expect(err).ToNot(HaveOccurred())
+			info, err := fs.Stat(filepath.Join(tmpDir, "disk.raw.vhd"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should have be rounded up to the next MB
+			Expect(info.Size()).To(BeNumerically("==", 23*1024*1024))
+
+			// Read the header
+			f, _ = fs.Open(filepath.Join(tmpDir, "disk.raw.vhd"))
+			info, _ = f.Stat()
+			// Dump the header from the file into our VHDHeader
+			buff := make([]byte, 512)
+			_, _ = f.ReadAt(buff, info.Size()-512)
+			_ = f.Close()
+
+			header := utils.VHDHeader{}
+			err = binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+			Expect(err).ToNot(HaveOccurred())
+			// Just check the fields that we know the value of, that should indicate that the header is valid
+			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+		})
+		It("Transforms raw image into Azure image (really small image)", func() {
+			// This tests that the resize works for extreme small images
+			// Not sure if we ever will enconuter them (less than 1 Mb images?) but just in case
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// write something
+			_, _ = f.WriteString("Hi")
+			_ = f.Close()
+			err = action.Raw2Azure(filepath.Join(tmpDir, "disk.raw"), fs, logger, true)
+			Expect(err).ToNot(HaveOccurred())
+			info, err := fs.Stat(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should be smaller than 1Mb
+			Expect(info.Size()).To(BeNumerically("<", 1*1024*1024))
+
+			info, err = fs.Stat(filepath.Join(tmpDir, "disk.raw.vhd"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should have be rounded up to the next MB
+			Expect(info.Size()).To(BeNumerically("==", 1*1024*1024))
+
+			// Read the header
+			f, _ = fs.Open(filepath.Join(tmpDir, "disk.raw.vhd"))
+			info, _ = f.Stat()
+			// Dump the header from the file into our VHDHeader
+			buff := make([]byte, 512)
+			_, _ = f.ReadAt(buff, info.Size()-512)
+			_ = f.Close()
+
+			header := utils.VHDHeader{}
+			err = binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+			Expect(err).ToNot(HaveOccurred())
+			// Just check the fields that we know the value of, that should indicate that the header is valid
+			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
 		})
 	})
 })

@@ -18,6 +18,8 @@ package utils_test
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -879,7 +881,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})
 		})
 	})
-
 	Describe("CreateSquashFS", Label("CreateSquashFS"), func() {
 		It("runs with no options if none given", func() {
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
@@ -1012,5 +1013,155 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err.Error()).To(ContainSubstring("Cleanup error 2"))
 			Expect(err.Error()).To(ContainSubstring("Cleanup error 3"))
 		})
+	})
+	Describe("VHD utils", Label("vhd"), func() {
+		It("creates a valid header", func() {
+			tmpDir, _ := utils.TempDir(fs, "", "")
+			f, _ := fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+			utils.RawDiskToFixedVhd(f)
+			_ = f.Close()
+			f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+			info, _ := f.Stat()
+			// Should only have the footer in teh file, hence 512 bytes
+			Expect(info.Size()).To(BeNumerically("==", 512))
+			// Dump the header from the file into our VHDHeader
+			buff := make([]byte, 512)
+			_, _ = f.ReadAt(buff, info.Size()-512)
+			_ = f.Close()
+
+			header := utils.VHDHeader{}
+			err := binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+
+			Expect(err).ToNot(HaveOccurred())
+			// Just check the fields that we know the value of, that should indicate that the header is valid
+			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+			Expect(hex.EncodeToString(header.CreatorApplication[:])).To(Equal("656c656d"))
+		})
+		Describe("CHS calculation", func() {
+			It("limits the number of sectors", func() {
+				tmpDir, _ := utils.TempDir(fs, "", "")
+				f, _ := fs.Create(filepath.Join(tmpDir, "test.vhd"))
+				// This size would make the chs calculation break, but we have a guard for it
+				f.Truncate(500 * 1024 * 1024 * 1024)
+				f.Close()
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				utils.RawDiskToFixedVhd(f)
+				_ = f.Close()
+				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				info, _ := f.Stat()
+				// Dump the header from the file into our VHDHeader
+				buff := make([]byte, 512)
+				_, _ = f.ReadAt(buff, info.Size()-512)
+				_ = f.Close()
+
+				header := utils.VHDHeader{}
+				err := binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+
+				Expect(err).ToNot(HaveOccurred())
+				// Just check the fields that we know the value of, that should indicate that the header is valid
+				Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+				// cylinders which is (totalSectors / sectorsPerTrack) / heads
+				// and totalsectors is 65535 * 16 * 255 due to hitting the max sector
+				// This turns out to be 65535 or ffff in hex or [2]byte{255,255}
+				Expect(hex.EncodeToString(header.DiskGeometry[:2])).To(Equal("ffff"))
+				Expect(header.DiskGeometry[2]).To(Equal(uint8(16)))  // heads
+				Expect(header.DiskGeometry[3]).To(Equal(uint8(255))) // sectors per track
+			})
+			// The tests below test the different routes that the chs calculation can take to get the disk geometry
+			// it's all based on number of sectors, so we have to try with different known sizes to see if the
+			// geometry changes are properly reflected on the final VHD header
+			It("sets the disk geometry correctly based on sector number", func() {
+				tmpDir, _ := utils.TempDir(fs, "", "")
+				f, _ := fs.Create(filepath.Join(tmpDir, "test.vhd"))
+				// one route of the chs calculation
+				f.Truncate(1 * 1024 * 1024)
+				f.Close()
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				utils.RawDiskToFixedVhd(f)
+				_ = f.Close()
+				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				info, _ := f.Stat()
+				// Dump the header from the file into our VHDHeader
+				buff := make([]byte, 512)
+				_, _ = f.ReadAt(buff, info.Size()-512)
+				_ = f.Close()
+
+				header := utils.VHDHeader{}
+				err := binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+
+				Expect(err).ToNot(HaveOccurred())
+				// Just check the fields that we know the value of, that should indicate that the header is valid
+				Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+				// should not be the max value
+				Expect(hex.EncodeToString(header.DiskGeometry[:2])).ToNot(Equal("ffff"))
+				Expect(header.DiskGeometry[2]).To(Equal(uint8(4)))  // heads
+				Expect(header.DiskGeometry[3]).To(Equal(uint8(17))) // sectors per track
+			})
+			It("sets the disk geometry correctly based on sector number", func() {
+				tmpDir, _ := utils.TempDir(fs, "", "")
+				f, _ := fs.Create(filepath.Join(tmpDir, "test.vhd"))
+				// one route of the chs calculation
+				f.Truncate(1 * 1024 * 1024 * 1024)
+				f.Close()
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				utils.RawDiskToFixedVhd(f)
+				_ = f.Close()
+				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				info, _ := f.Stat()
+				// Dump the header from the file into our VHDHeader
+				buff := make([]byte, 512)
+				_, _ = f.ReadAt(buff, info.Size()-512)
+				_ = f.Close()
+
+				header := utils.VHDHeader{}
+				err := binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+
+				Expect(err).ToNot(HaveOccurred())
+				// Just check the fields that we know the value of, that should indicate that the header is valid
+				Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+				// should not be the max value
+				Expect(hex.EncodeToString(header.DiskGeometry[:2])).ToNot(Equal("ffff"))
+				Expect(header.DiskGeometry[2]).To(Equal(uint8(16))) // heads
+				Expect(header.DiskGeometry[3]).To(Equal(uint8(63))) // sectors per track
+			})
+			It("sets the disk geometry correctly based on sector number", func() {
+				tmpDir, _ := utils.TempDir(fs, "", "")
+				f, _ := fs.Create(filepath.Join(tmpDir, "test.vhd"))
+				// another route of the chs calculation
+				f.Truncate(220 * 1024 * 1024)
+				f.Close()
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+				utils.RawDiskToFixedVhd(f)
+				_ = f.Close()
+				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				info, _ := f.Stat()
+				// Dump the header from the file into our VHDHeader
+				buff := make([]byte, 512)
+				_, _ = f.ReadAt(buff, info.Size()-512)
+				_ = f.Close()
+
+				header := utils.VHDHeader{}
+				err := binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+
+				Expect(err).ToNot(HaveOccurred())
+				// Just check the fields that we know the value of, that should indicate that the header is valid
+				Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+				Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+				// should not be the max value
+				Expect(hex.EncodeToString(header.DiskGeometry[:2])).ToNot(Equal("ffff"))
+				Expect(header.DiskGeometry[2]).To(Equal(uint8(16))) // heads
+				Expect(header.DiskGeometry[3]).To(Equal(uint8(31))) // sectors per track
+			})
+		})
+
 	})
 })

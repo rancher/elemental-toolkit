@@ -356,7 +356,6 @@ var _ = Describe("Runtime Actions", func() {
 		})
 
 	})
-
 	Describe("Install Action", Label("install"), func() {
 		var device, cmdFail string
 		var err error
@@ -766,7 +765,7 @@ var _ = Describe("Runtime Actions", func() {
 				_ = fs.RemoveAll(activeImg)
 				_ = fs.RemoveAll(passiveImg)
 			})
-			It("Successfully upgrades from docker image", Label("docker", "root"), func() {
+			It("Successfully upgrades from docker image", Label("docker"), func() {
 				config.DockerImg = "alpine"
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -805,7 +804,7 @@ var _ = Describe("Runtime Actions", func() {
 				_, err = fs.Stat(transitionImg)
 				Expect(err).To(HaveOccurred())
 			})
-			It("Successfully upgrades from directory", Label("directory", "root"), func() {
+			It("Successfully upgrades from directory", Label("directory"), func() {
 				config.Directory, _ = utils.TempDir(fs, "", "elementalupgrade")
 				// Create the dir on real os as rsync works on the real os
 				defer fs.RemoveAll(config.Directory)
@@ -844,7 +843,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(err).To(HaveOccurred())
 
 			})
-			It("Successfully upgrades from channel upgrade", Label("channel", "root"), func() {
+			It("Successfully upgrades from channel upgrade", Label("channel"), func() {
 				config.ChannelUpgrades = true
 
 				upgrade = action.NewUpgradeAction(config)
@@ -878,9 +877,9 @@ var _ = Describe("Runtime Actions", func() {
 				_, err = fs.Stat(transitionImg)
 				Expect(err).To(HaveOccurred())
 			})
-			It("Successfully upgrades with cosign", Pending, Label("channel", "cosign", "root"), func() {})
-			It("Successfully upgrades with mtree", Pending, Label("channel", "mtree", "root"), func() {})
-			It("Successfully upgrades with strict", Pending, Label("channel", "strict", "root"), func() {})
+			It("Successfully upgrades with cosign", Pending, Label("channel", "cosign"), func() {})
+			It("Successfully upgrades with mtree", Pending, Label("channel", "mtree"), func() {})
+			It("Successfully upgrades with strict", Pending, Label("channel", "strict"), func() {})
 		})
 		Describe(fmt.Sprintf("Booting from %s", constants.PassiveLabel), Label("passive_label"), func() {
 			BeforeEach(func() {
@@ -905,7 +904,7 @@ var _ = Describe("Runtime Actions", func() {
 				_ = fs.RemoveAll(activeImg)
 				_ = fs.RemoveAll(passiveImg)
 			})
-			It("does not backup active img to passive", Label("docker", "root"), func() {
+			It("does not backup active img to passive", Label("docker"), func() {
 				config.DockerImg = "alpine"
 				upgrade = action.NewUpgradeAction(config)
 				err := upgrade.Run()
@@ -1012,7 +1011,7 @@ var _ = Describe("Runtime Actions", func() {
 					// Create recoveryImgSquash so ti identifies that we are using squash recovery
 					_ = fs.WriteFile(recoveryImgSquash, []byte("recovery"), constants.FilePerm)
 				})
-				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
+				It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImgSquash)
 					Expect(err).ToNot(HaveOccurred())
@@ -1052,7 +1051,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(err).To(HaveOccurred())
 
 				})
-				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
+				It("Successfully upgrades recovery from directory", Label("directory"), func() {
 					config.Directory, _ = utils.TempDir(fs, "", "elemental")
 					// create a random file on it
 					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
@@ -1084,7 +1083,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(err).To(HaveOccurred())
 
 				})
-				It("Successfully upgrades recovery from channel upgrade", Label("channel", "root"), func() {
+				It("Successfully upgrades recovery from channel upgrade", Label("channel"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImgSquash)
 					Expect(err).ToNot(HaveOccurred())
@@ -1143,7 +1142,7 @@ var _ = Describe("Runtime Actions", func() {
 					_ = fs.WriteFile(recoveryImg, []byte("recovery"), constants.FilePerm)
 
 				})
-				It("Successfully upgrades recovery from docker image", Label("docker", "root"), func() {
+				It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
@@ -1182,9 +1181,10 @@ var _ = Describe("Runtime Actions", func() {
 						_, err := fs.Stat(img)
 						Expect(err).To(HaveOccurred())
 					}
+					fmt.Printf(memLog.String())
 
 				})
-				It("Successfully upgrades recovery from directory", Label("directory", "root"), func() {
+				It("Successfully upgrades recovery from directory", Label("directory"), func() {
 					config.Directory, _ = utils.TempDir(fs, "", "elemental")
 					// create a random file on it
 					_ = fs.WriteFile(fmt.Sprintf("%s/file.file", config.Directory), []byte("something"), constants.FilePerm)
@@ -1215,7 +1215,7 @@ var _ = Describe("Runtime Actions", func() {
 					info, err = fs.Stat(transitionImgRecovery)
 					Expect(err).To(HaveOccurred())
 				})
-				It("Successfully upgrades recovery from channel upgrade", Label("channel", "root"), func() {
+				It("Successfully upgrades recovery from channel upgrade", Label("channel"), func() {
 					// This should be the old image
 					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())

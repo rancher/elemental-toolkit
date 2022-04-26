@@ -18,24 +18,26 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mountUtils "k8s.io/mount-utils"
 )
 
-// NewBuildDisk returns a new instance of the build-disk subcommand and appends it to
+var outputAllowed = []string{"azure", "gce"}
+
+// NewConvertDisk returns a new instance of the convert-disk subcommand and appends it to
 // the root command. requireRoot is to initiate it with or without the CheckRoot
 // pre-run check. This method is mostly used for testing purposes.
-func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
+func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "build-disk",
-		Short: "Build a raw recovery image",
-		Args:  cobra.NoArgs,
+		Use:   "convert-disk RAW_DISK",
+		Short: fmt.Sprintf("converts between a raw disk and a cloud operator disk image (%s)", strings.Join(outputAllowed, ",")),
+		Args:  cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
@@ -52,12 +54,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				configDir = "."
 			}
 
-			cfg, err := config.ReadConfigBuild(configDir, mounter, true)
-			if err != nil {
-				return err
-			}
-
-			err = validateCosignFlags(cfg.Logger)
+			cfg, err := config.ReadConfigBuild(configDir, mounter, false)
 			if err != nil {
 				return err
 			}
@@ -65,43 +62,32 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
+
 			imgType, _ := cmd.Flags().GetString("type")
-			archType, _ := cmd.Flags().GetString("arch")
-			output, _ := cmd.Flags().GetString("output")
-			oemLabel, _ := cmd.Flags().GetString("oem_label")
-			recoveryLabel, _ := cmd.Flags().GetString("recovery_label")
+			keepImage, _ := cmd.Flags().GetBool("keep-source")
+			rawDisk := args[0]
 
-			// Set the repo depending on the arch we are building for
-			var repos []v1.Repository
-			for _, u := range cfg.RawDisk[archType].Repositories {
-				repos = append(repos, v1.Repository{URI: u.URI})
-			}
-			cfg.Config.Repos = repos
-
-			if exists, _ := utils.Exists(cfg.Fs, output); exists {
-				cfg.Logger.Errorf("Output file %s exists, refusing to continue", output)
-				return fmt.Errorf("output file %s exists, refusing to continue", output)
+			if exists, _ := utils.Exists(cfg.Fs, rawDisk); !exists {
+				cfg.Logger.Errorf("Raw image %s doesnt exist", rawDisk)
+				return fmt.Errorf("raw image %s doesnt exist", rawDisk)
 			}
 
-			err = action.BuildDiskRun(cfg, imgType, archType, oemLabel, recoveryLabel, output)
-			if err != nil {
-				return err
+			switch imgType {
+			case "azure":
+				err = action.Raw2Azure(rawDisk, cfg.Fs, cfg.Logger, keepImage)
+			case "gce":
+				err = action.Raw2Gce(rawDisk, cfg.Fs, cfg.Logger, keepImage)
 			}
 
-			return nil
+			return err
 		},
 	}
 	root.AddCommand(c)
-	imgType := newEnumFlag([]string{"raw", "azure", "gce"}, "raw")
-	archType := newEnumFlag([]string{"x86_64", "aarch64"}, "x86_64")
+	imgType := newEnumFlag(outputAllowed, "azure")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
-	c.Flags().VarP(archType, "arch", "a", "Arch to build the image for")
-	c.Flags().StringP("output", "o", "disk.raw", "Output file (Extension auto changes based of the image type)")
-	c.Flags().String("oem_label", "COS_OEM", "Oem partition label")
-	c.Flags().String("recovery_label", "COS_RECOVERY", "Recovery partition label")
-	addCosignFlags(c)
+	c.Flags().Bool("keep-source", false, "Keep the source image, otherwise it will delete it once transformed.")
 	return c
 }
 
 // register the subcommand into rootCmd
-var _ = NewBuildDisk(rootCmd, true)
+var _ = NewConvertDisk(rootCmd, false)
