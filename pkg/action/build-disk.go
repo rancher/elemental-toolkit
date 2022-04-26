@@ -19,6 +19,7 @@ package action
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -35,6 +36,23 @@ var GB = 1024 * MB
 
 func BuildDiskRun(cfg *v1.BuildConfig, imgType string, arch string, oemLabel string, recoveryLabel string, output string) (err error) {
 	cfg.Logger.Infof("Building disk image type %s for arch %s", imgType, arch)
+	if cfg.RawDisk[arch] == nil {
+		msg := fmt.Sprintf("no values in the config for arch %s", arch)
+		cfg.Logger.Error(msg)
+		return errors.New(msg)
+	}
+
+	if len(cfg.RawDisk[arch].Packages) == 0 {
+		msg := fmt.Sprintf("no packages in the config for arch %s", arch)
+		cfg.Logger.Error(msg)
+		return errors.New(msg)
+	}
+
+	if len(cfg.Config.Repos) == 0 {
+		msg := fmt.Sprintf("no repositories configured for arch %s", arch)
+		cfg.Logger.Error(msg)
+		return errors.New(msg)
+	}
 
 	if oemLabel == "" {
 		oemLabel = constants.OEMLabel

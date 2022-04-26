@@ -196,6 +196,12 @@ var _ = Describe("Runtime Actions", func() {
 		})
 	})
 	Describe("Build disk", Label("disk", "build"), func() {
+		BeforeEach(func() {
+			cfg.RawDisk = map[string]*v1.RawDiskArchEntry{
+				"x86_64": {Repositories: nil, Packages: []v1.RawDiskPackage{{Name: "what", Target: "what"}}},
+			}
+			cfg.Repos = []v1.Repository{{URI: "test"}}
+		})
 		It("Builds a raw image", func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")

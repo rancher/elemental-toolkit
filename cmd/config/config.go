@@ -36,7 +36,7 @@ import (
 	"k8s.io/mount-utils"
 )
 
-func ReadConfigBuild(configDir string, mounter mount.Interface, manifestRequired bool) (*v1.BuildConfig, error) {
+func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig, error) {
 	logger := v1.NewLogger()
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
@@ -50,17 +50,11 @@ func ReadConfigBuild(configDir string, mounter mount.Interface, manifestRequired
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("manifest.yaml")
 	// If a config file is found, read it in.
-	err := viper.MergeInConfig()
-	if err != nil {
-		if manifestRequired {
-			return nil, err
-		}
-	}
-
+	_ = viper.MergeInConfig()
 	viperReadEnv()
 
 	// unmarshal all the vars into the config object
-	err = viper.Unmarshal(cfg)
+	err := viper.Unmarshal(cfg)
 	if err != nil {
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}

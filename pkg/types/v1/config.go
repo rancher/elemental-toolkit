@@ -174,11 +174,11 @@ type Repository struct {
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	ISO     *LiveISO                    `yaml:"iso,omitempty" mapstructure:"iso"`
-	Date    bool                        `yaml:"date,omitempty" mapstructure:"date"`
-	Name    string                      `yaml:"name,omitempty" mapstructure:"name"`
-	RawDisk map[string]RawDiskArchEntry `yaml:"raw_disk,omitempty" mapstructure:"raw_disk"`
-	OutDir  string                      `yaml:"output,omitempty" mapstructure:"output"`
+	ISO     *LiveISO                     `yaml:"iso,omitempty" mapstructure:"iso"`
+	Date    bool                         `yaml:"date,omitempty" mapstructure:"date"`
+	Name    string                       `yaml:"name,omitempty" mapstructure:"name"`
+	RawDisk map[string]*RawDiskArchEntry `yaml:"raw_disk,omitempty" mapstructure:"raw_disk"`
+	OutDir  string                       `yaml:"output,omitempty" mapstructure:"output"`
 	// Generic runtime configuration
 	Config
 }

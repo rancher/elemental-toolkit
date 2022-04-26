@@ -21,6 +21,7 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/spf13/cobra"
@@ -52,7 +53,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				configDir = "."
 			}
 
-			cfg, err := config.ReadConfigBuild(configDir, mounter, true)
+			cfg, err := config.ReadConfigBuild(configDir, mounter)
 			if err != nil {
 				return err
 			}
@@ -71,6 +72,14 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			oemLabel, _ := cmd.Flags().GetString("oem_label")
 			recoveryLabel, _ := cmd.Flags().GetString("recovery_label")
 
+			entry := cfg.RawDisk[archType]
+			if entry == nil {
+				// We didnt load anything from the config file, create empty map
+				cfg.RawDisk = map[string]*v1.RawDiskArchEntry{
+					archType: {Repositories: nil, Packages: nil},
+				}
+			}
+
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
 			for _, u := range cfg.RawDisk[archType].Repositories {
@@ -81,6 +90,30 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if exists, _ := utils.Exists(cfg.Fs, output); exists {
 				cfg.Logger.Errorf("Output file %s exists, refusing to continue", output)
 				return fmt.Errorf("output file %s exists, refusing to continue", output)
+			}
+
+			// Set defaults if they are empty
+			if len(cfg.Config.Repos) == 0 {
+				for _, repo := range constants.GetDefaultLuetRepos() {
+					if archType == "aarch64" {
+						repo = fmt.Sprintf("%s-arm64", repo)
+					}
+					cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
+					cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo})
+				}
+
+				cfg.RawDisk[archType].Repositories = cfg.Config.Repos
+			}
+
+			// Set defaults packages if empty
+			if len(cfg.RawDisk[archType].Packages) == 0 {
+				defaultPackages := constants.GetBuildDiskDefaultPackages()
+				var packages []v1.RawDiskPackage
+				for pkg, target := range defaultPackages {
+					packages = append(packages, v1.RawDiskPackage{Name: pkg, Target: target})
+				}
+				cfg.Logger.Infof("Packages are empty, setting default values: %+v", packages)
+				cfg.RawDisk[archType].Packages = packages
 			}
 
 			err = action.BuildDiskRun(cfg, imgType, archType, oemLabel, recoveryLabel, output)

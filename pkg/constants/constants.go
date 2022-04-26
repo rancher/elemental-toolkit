@@ -178,3 +178,12 @@ func GetDefaultISOUEFI() []string {
 func GetDefaultLuetRepos() []string {
 	return []string{"quay.io/costoolkit/releases-green"}
 }
+
+func GetBuildDiskDefaultPackages() map[string]string {
+	return map[string]string{
+		"system/grub2-efi-image": "efi",
+		"system/grub2-config":    "root",
+		"system/grub2-artifacts": "root/grub2",
+		"recovery/cos-img":       "root/cOS",
+	}
+}
