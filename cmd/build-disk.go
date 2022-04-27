@@ -95,8 +95,8 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set defaults if they are empty
 			if len(cfg.Config.Repos) == 0 {
 				for _, repo := range constants.GetDefaultLuetRepos() {
-					if archType == "aarch64" {
-						repo = fmt.Sprintf("%s-arm64", repo)
+					if archType != "x86_64" {
+						repo = fmt.Sprintf("%s-%s", repo, archType)
 					}
 					cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
 					cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo})
@@ -126,7 +126,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	root.AddCommand(c)
 	imgType := newEnumFlag([]string{"raw", "azure", "gce"}, "raw")
-	archType := newEnumFlag([]string{"x86_64", "aarch64"}, "x86_64")
+	archType := newEnumFlag([]string{"x86_64", "arm64"}, "x86_64")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
 	c.Flags().VarP(archType, "arch", "a", "Arch to build the image for")
 	c.Flags().StringP("output", "o", "disk.raw", "Output file (Extension auto changes based of the image type)")
