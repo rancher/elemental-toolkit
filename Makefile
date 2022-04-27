@@ -132,6 +132,8 @@ include make/Makefile.images
 
 deps: $(LUET) $(YQ) $(JQ) $(MAKEISO) $(MTREE) $(COSIGN) $(ELEMENTAL)
 
+deps_ci: $(LUET) ci_deps
+
 as_root:
 ifneq ($(shell id -u), 0)
 	@echo "Please run 'make $@' as root"
@@ -194,6 +196,9 @@ ifneq ($(shell id -u), 0)
 else
 	$(LUET) install -y toolchain/elemental-cli
 endif
+
+ci_deps: as_root
+	$(LUET) install -y toolchain/elemental-cli meta/cos-verify toolchain/luet-mtree toolchain/luet-makeiso utils/jq toolchain/yq
 
 clean: clean_build clean_iso clean_run clean_test
 	rm -rf $(ROOT_DIR)/*.sha256

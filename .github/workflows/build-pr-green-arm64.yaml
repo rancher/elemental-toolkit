@@ -58,10 +58,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -129,10 +129,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -295,10 +295,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
@@ -459,10 +459,10 @@ jobs:
         with:
           name: build-green-arm64
           path: build
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh

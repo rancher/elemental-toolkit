@@ -57,10 +57,10 @@ jobs:
             sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -141,10 +141,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -420,10 +420,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
@@ -674,10 +674,10 @@ jobs:
     needs: publish-green
     steps:
       - uses: actions/checkout@v2
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Generate link for green
         run: |
             source .github/helpers.sh
@@ -753,10 +753,10 @@ jobs:
             registry: quay.io
             username: ${{ secrets.QUAY_USERNAME }}
             password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -798,10 +798,10 @@ jobs:
       ARCH: x86_64
     steps:
       - uses: actions/checkout@v2
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -896,10 +896,10 @@ jobs:
         with:
           name: build-green-x86_64
           path: build
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -1005,10 +1005,10 @@ jobs:
       PACKER_TARGET: amazon-ebs.cos
     steps:
       - uses: actions/checkout@v2
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Public IP
         id: ip
         uses: haythem/public-ip@v1.2
@@ -1041,10 +1041,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -1079,10 +1079,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -1117,10 +1117,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -1172,10 +1172,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -1212,10 +1212,10 @@ jobs:
     needs: [raw-images-green, tests-squashfs-green]
     steps:
       - uses: actions/checkout@v2
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
