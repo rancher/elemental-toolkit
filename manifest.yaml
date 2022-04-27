@@ -72,3 +72,4 @@ build:
  - recovery/cos
  - system/grub2-artifacts
  - system/grub2-efi-image
+ - toolchain/elemental-cli

@@ -219,6 +219,10 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Install deps
         run: |
           sudo apt-get update
@@ -568,6 +572,10 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
@@ -733,6 +741,10 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       {{{ tmpl.Exec "make" "raw_disk" }}}
