@@ -95,6 +95,7 @@ jobs:
     needs:
     - build-blue-x86_64
     env:
+      ARCH: x86_64
       LUET_ARCH: x86_64
     steps:
       - name: Release space from worker ♻
@@ -105,7 +106,7 @@ jobs:
       - name: Install OS deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc qemu-utils sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2
@@ -132,7 +133,7 @@ jobs:
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-blue-${{ env.COS_VERSION }}-x86_64.raw
-          mv disk.vhd cOS-Vanilla-AZURE-blue-${{ env.COS_VERSION }}-x86_64.vhd
+          mv disk.raw.vhd cOS-Vanilla-AZURE-blue-${{ env.COS_VERSION }}-x86_64.vhd
           mv disk.raw.tar.gz cOS-Vanilla-GCE-blue-${{ env.COS_VERSION }}-x86_64.tar.gz
       - uses: actions/upload-artifact@v2
         with:

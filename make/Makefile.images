@@ -7,11 +7,6 @@ RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
 AWS_DISK_NAME?=cOS-Vanilla
 AWS_DISK_DESC?=cOS Vanilla Image
 
-QEMUIMG?=$(shell which qemu-img 2> /dev/null)
-
-$(QEMUIMG):
-	@echo "'qemu-img' not found"
-	@exit 1
 
 MTOOLS?=$(shell which mcopy 2> /dev/null)
 ifeq ("$(MTOOLS)","")
@@ -59,11 +54,11 @@ $(AWSCLI):
 	@exit 1
 
 .PHONY: raw_disk
-raw_disk: as_root $(YQ) $(JQ) $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS)
+raw_disk: as_root $(YQ) $(JQ) $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS) $(ELEMENTAL)
 ifneq ("$(RAW)","")
 	@echo "'$(RAW)' exists, it will be overwritten"
 endif
-	$(ROOT_DIR)/images/img-builder.sh $(MANIFEST) $(COS_CONFIG)
+	elemental --debug build-disk -a $(ARCH)
 
 .PHONY: aws_vanilla_ami
 aws_vanilla_ami: $(AWSCLI) $(JQ)
@@ -74,17 +69,17 @@ endif
 	$(ROOT_DIR)/images/aws_upload.sh $(RAW)
 
 .PHONY: azure_disk
-azure_disk: as_root $(QEMUIMG)
+azure_disk: $(ELEMENTAL)
 ifeq ("$(RAW)","")
 	@echo "Raw image does not exists, please run make raw_disk first"
 	@exit 1
 endif
-	@$(ROOT_DIR)/images/azure-image.sh $(RAW)
+	elemental --debug convert-disk --keep-source -t azure $(RAW)
 
 .PHONY: gce_disk
-gce_disk: as_root $(QEMUIMG)
+gce_disk: $(ELEMENTAL)
 ifeq ("$(RAW)","")
 	@echo "Raw image does not exists, please run make raw_disk first"
 	@exit 1
 endif
-	@$(ROOT_DIR)/images/gce-image.sh $(RAW)
+	elemental --debug convert-disk --keep-source -t gce $(RAW)

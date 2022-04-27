@@ -720,13 +720,14 @@
     - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     env:
+      ARCH: {{{ $config.arch }}}
       LUET_ARCH: {{{ $config.arch }}}
     steps:
     {{{ tmpl.Exec "runner_cleanup" }}}
       - name: Install OS deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc qemu-utils sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2
@@ -741,7 +742,7 @@
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
-          mv disk.vhd cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
+          mv disk.raw.vhd cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
           mv disk.raw.tar.gz cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.tar.gz
       - uses: actions/upload-artifact@v2
         with:
