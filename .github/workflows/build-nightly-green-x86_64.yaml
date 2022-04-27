@@ -114,6 +114,10 @@ jobs:
         with:
           name: build-green-x86_64
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Install deps
         run: |
           sudo apt-get update
@@ -387,6 +391,10 @@ jobs:
         with:
           name: build-green-x86_64
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Install deps
         run: |
           sudo apt-get update
@@ -662,6 +670,10 @@ jobs:
         with:
           name: build-green-x86_64
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true

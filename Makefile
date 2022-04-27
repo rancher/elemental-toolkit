@@ -140,6 +140,10 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 endif
 
+luet: as_root $(LUET)
+
+add_local_repo: luet
+	$(LUET) repo add local -y --url $(DESTINATION) --type disk --priority 1 --description local-repo
 
 $(LUET):
 ifneq ($(shell id -u), 0)

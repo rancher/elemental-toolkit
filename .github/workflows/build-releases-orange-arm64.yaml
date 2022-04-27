@@ -205,6 +205,10 @@ jobs:
         with:
           name: build-orange-arm64
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin

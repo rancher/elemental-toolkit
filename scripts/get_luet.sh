@@ -78,7 +78,7 @@ repositories:
   type: "docker"
   enable: true
   cached: true
-  priority: 1
+  priority: 90
   verify: false
   urls:
   - ${REPO_URL}
