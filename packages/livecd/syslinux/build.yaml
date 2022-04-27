@@ -1,10 +1,10 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
 
 prelude:
-{{ template "distro_install" (dict "Values" .Values "Packages" "curl")}}
+{{ template "distro_install_tools" (dict "Values" .Values "Packages" "curl")}}
 - |
    PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
    curl -LO https://kernel.org/pub/linux/utils/boot/syslinux/syslinux-$PACKAGE_VERSION.tar.xz && \

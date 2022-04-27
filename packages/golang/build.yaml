@@ -1,18 +1,15 @@
-{{ if ne .Values.codename "teal" }}
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
-{{ else }}
-image: {{.Values.tool_image}}
-{{ end }}
+
 prelude:
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{ if .Values.tool_image_distribution }}
+{{if eq .Values.tool_image_distribution "opensuse" }}
 - zypper in -y curl git && zypper install -y -t pattern devel_basis
-{{else if eq .Values.distribution "fedora" }}
+{{else if eq .Values.tool_image_distribution "fedora" }}
 - dnf install -y curl git "@Development Tools"
-{{else if eq .Values.distribution "ubuntu" }}
+{{else if eq .Values.tool_image_distribution "ubuntu" }}
 - apt-get update
 - apt-get install -y build-essential curl git
 {{end}}

@@ -1,10 +1,10 @@
 {{ define "golang_deps" }}
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{ if .Values.tool_image_distribution }}
+{{if eq .Values.tool_image_distribution "opensuse" }}
 - zypper in -y git {{- if .Values.upx -}} upx {{- end }}
-{{else if eq .Values.distribution "fedora" }}
+{{else if eq .Values.tool_image_distribution "fedora" }}
 - dnf install -y git {{- if .Values.upx -}} upx {{- end }}
-{{else if eq .Values.distribution "ubuntu" }}
+{{else if eq .Values.tool_image_distribution "ubuntu" }}
 - apt-get install -y git {{- if .Values.upx -}} upx {{- end }}
 {{end}}
 {{end}}

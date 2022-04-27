@@ -3,6 +3,8 @@ distribution: "fedora"
 codename: "blue"
 arch: "x86_64"
 golang_arch: "amd64"
+tool_image: opensuse/leap:15.3
+tool_image_distribution: "opensuse"
 
 packages: >-
     grub2-pc
@@ -29,5 +31,12 @@ packages: >-
     haveged
     tar
     rsync
-
+tools_packages: >-
+    grub2-i386-pc
+    grub2-x86_64-efi
+    grub2
+    curl
+    tar
+    xz
+    git
 kernel_package: kernel

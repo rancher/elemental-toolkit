@@ -1,7 +1,8 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
+
 steps:
 {{if eq .Values.name "cos-config-tmpl"}}
 - cp cos-tmpl-render.sh /usr/bin/cos-tmpl-render

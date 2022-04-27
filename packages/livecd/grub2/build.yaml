@@ -1,13 +1,9 @@
-{{if .Values.distribution}}
-  {{if eq .Values.distribution "opensuse"}}
-image: {{ .Values.image }}
-  {{else }}
-image: opensuse/leap:15.3
-  {{end}}
-{{end}}
+requires:
+- name: "tool"
+  category: "distro"
+  version: ">=0"
 prelude:
 {{ if .Values.arch }}
-{{ if ne .Values.codename "teal" }}
   {{if eq .Values.arch "x86_64"}}
 - zypper in -y --no-recommends syslinux grub2-i386-pc grub2-x86_64-efi
   {{end}}
@@ -15,11 +11,9 @@ prelude:
 - zypper in -y --no-recommends syslinux-x86_64 grub2-i386-pc grub2-arm64-efi
   {{end}}
 - zypper cc
-{{end}}
 - grub2-mkimage -O i386-pc -o /usr/share/grub2/i386-pc/core.img -p /boot/grub2 -d /usr/share/grub2/i386-pc ext2 iso9660 linux echo configfile search_label search_fs_file search search_fs_uuid ls normal gzio png fat gettext font minicmd gfxterm gfxmenu all_video xfs btrfs lvm luks gcry_rijndael gcry_sha256 gcry_sha512 crypto cryptodisk test true loadenv part_gpt part_msdos biosdisk vga vbe chain boot
 - cat /usr/share/grub2/i386-pc/cdboot.img /usr/share/grub2/i386-pc/core.img > /usr/share/grub2/i386-pc/eltorito.img
 {{end}}
-
 
 steps:
 {{if eq .Values.name "grub2"}}

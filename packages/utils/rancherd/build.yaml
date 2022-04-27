@@ -6,7 +6,7 @@ env:
 - PATH=$PATH:/usr/local/go/bin
 prelude:
 {{ if .Values.upx }}
-{{ template "distro_install" (dict "Values" .Values "Packages" "upx")}}
+{{ template "distro_install_tools" (dict "Values" .Values "Packages" "upx")}}
 {{ end }}
 - |
    PACKAGE_VERSION=v${PACKAGE_VERSION%\-*} && \

@@ -1,10 +1,10 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
 
 prelude:
-{{ template "distro_install" (dict "Values" .Values "Packages" "curl")}}
+{{ template "distro_install_tools" (dict "Values" .Values "Packages" "curl")}}
 - curl -LO https://github.com/ivandavidov/systemd-boot/releases/download/systemd-boot_{{.Values.package_version}}/systemd-boot_{{.Values.package_version}}.tar.xz
 - echo "{{ ( index .Values.labels "package.checksum" ) }}  systemd-boot_{{.Values.package_version}}.tar.xz" | sha256sum -c
 - mkdir -p /systemd-boot

@@ -16,3 +16,20 @@
 {{end}}
 {{end}}
 {{end}}
+
+{{ define "distro_install_tools" }}
+{{ if .Values.tool_image_distribution }}
+{{if eq .Values.tool_image_distribution "opensuse" }}
+- zypper in -y --no-recommends {{.Packages}}
+- zypper cc
+{{else if eq .Values.tool_image_distribution "fedora" }}
+- echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+- dnf install -y {{.Packages}}
+- dnf clean all
+{{else if eq .Values.tool_image_distribution "ubuntu" }}
+- apt-get update && apt-get install -y {{.Packages}}
+- apt-get clean
+{{end}}
+{{end}}
+
+{{end}}

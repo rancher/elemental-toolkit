@@ -1,4 +1,7 @@
-image: alpine
+requires:
+- name: "tool"
+  category: "distro"
+  version: ">=0"
 # TODO: verify checksum
 prelude:
 - mkdir -p /output
