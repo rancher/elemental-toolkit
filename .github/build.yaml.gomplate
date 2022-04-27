@@ -72,7 +72,7 @@
   {{{ $target := . }}}
       - name: Run make {{{ $target }}}
         run: |
-          {{{ if eq $target "deps" }}}export DOCKER_INSTALL=true{{{end}}}
+          {{{ if eq $target "deps_ci" }}}export DOCKER_INSTALL=true{{{end}}}
           sudo -E make {{{ $target }}}
   {{{ if eq $target "deps" }}}
   {{{- if ne $config.luet_override "" }}}
@@ -162,7 +162,7 @@
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
   {{{- end }}}
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "make" "validate" }}}
       - name: Build packages 🔧
         run: |
@@ -223,7 +223,7 @@
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
   {{{- if eq $subset "nonsquashfs" }}}
       - name: Tweak manifest and drop squashfs recovery
         run: |
@@ -562,7 +562,7 @@
             username: ${{ secrets.QUAY_USERNAME }}
             password: ${{ secrets.QUAY_PASSWORD }}
       {{{- end }}}
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -632,7 +632,7 @@
     {{{- end }}}
     steps:
       - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
       {{{- else }}}
@@ -733,7 +733,7 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       {{{ tmpl.Exec "make" "raw_disk" }}}
       {{{ tmpl.Exec "make" "azure_disk" }}}
@@ -840,7 +840,7 @@
       PACKER_TARGET: amazon-ebs.cos
     steps:
       - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Public IP
         id: ip
         uses: haythem/public-ip@v1.2
@@ -861,7 +861,7 @@
     needs: publish-{{{$flavor}}}
     steps:
       - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Generate link for {{{ $flavor }}}
         run: |
             source .github/helpers.sh
@@ -890,7 +890,7 @@
 
     steps:
       - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
@@ -926,7 +926,7 @@
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{ tmpl.Exec "prepare_build" }}}
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Build {{{ $dir }}} 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -947,7 +947,7 @@
 {{{define "toolchain_images_steps"}}}
 {{{ $tag := . }}}
       {{{ tmpl.Exec "prepare_worker" }}}
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
@@ -982,7 +982,7 @@
 {{{define "framework_images_steps"}}}
 {{{ $tag := . }}}
       {{{ tmpl.Exec "prepare_worker" }}}
-      {{{ tmpl.Exec "make" "deps" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io

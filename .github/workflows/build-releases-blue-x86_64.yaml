@@ -57,10 +57,10 @@ jobs:
             sudo cp -rfv .github/plugins/* /usr/bin/
       - name: Login to Quay Registry
         run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -112,10 +112,10 @@ jobs:
     needs: publish-blue
     steps:
       - uses: actions/checkout@v2
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Generate link for blue
         run: |
             source .github/helpers.sh
@@ -192,10 +192,10 @@ jobs:
             registry: quay.io
             username: ${{ secrets.QUAY_USERNAME }}
             password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:

@@ -39,10 +39,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '1.17'
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Build cos-official 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -80,10 +80,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '1.17'
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Build scratch 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
@@ -121,10 +121,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
             go-version: '1.17'
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
-          sudo -E make deps
+          sudo -E make deps_ci
       - name: Build standard 🔧
         shell: 'script -q -e -c "bash {0}"'
         run: |
