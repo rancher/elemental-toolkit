@@ -60,8 +60,6 @@ mkdir -p /etc/luet/repos.conf.d || true
 mkdir -p $LUET_DATABASE_PATH || true
 mkdir -p /var/tmp/luet || true
 
-if [[ "$LUET_INSTALL_FROM_COS_REPO" == "true" ]]; then
-
 cat > /etc/luet/luet.yaml <<EOF
 general:
   debug: false
@@ -83,6 +81,8 @@ repositories:
   urls:
   - ${REPO_URL}
 EOF
+
+if [[ "$LUET_INSTALL_FROM_COS_REPO" == "true" ]]; then
   ./luet install --no-spinner -y $LUET_PACKAGE
   rm -rf luet
 else

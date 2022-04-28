@@ -72,14 +72,24 @@
   {{{ $target := . }}}
       - name: Run make {{{ $target }}}
         run: |
-          {{{ if eq $target "deps_ci" }}}export DOCKER_INSTALL=true{{{end}}}
+          {{{ if eq $target "deps_ci" }}}
+          export DOCKER_INSTALL=true
+          {{{end}}}
           sudo -E make {{{ $target }}}
-  {{{ if eq $target "deps" }}}
+  {{{ if eq $target "deps_ci" }}}
   {{{- if ne $config.luet_override "" }}}
       - name: Override luet version at toolchain/luet@{{{ $config.luet_override }}} 🔧
         run: |
           sudo luet replace --yes toolchain/luet --for toolchain/luet@{{{ $config.luet_override }}}
   {{{  end }}}
+  {{{ if ne $config.luet_script_override "" }}}
+      - name: Override luet version at {{{ $config.luet_script_override }}} 🔧
+        run: |
+          export DOCKER_INSTALL=false
+          export LUET_INSTALL_FROM_COS_REPO=false
+          export LUET_VERSION={{{$config.luet_script_override}}}
+          sudo -E scripts/get_luet.sh
+  {{{ end }}}
   {{{  end }}}
 {{{end}}}
 
