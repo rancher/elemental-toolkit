@@ -1,3 +1,4 @@
+{{ if .Values.codename  }}
 {{ if ne .Values.codename "teal" }}
 {{if .Values.distribution}}
   {{if eq .Values.distribution "opensuse"}}
@@ -8,6 +9,7 @@ image: opensuse/leap:15.3
 {{end}}
 {{ else }}
 image: {{.Values.tool_image}}
+{{ end }}
 {{ end }}
 
 prelude:
