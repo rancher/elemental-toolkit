@@ -24,6 +24,7 @@ flavors:
         build_image_qemu: true
         build_image_vbox: true
         build_raw_image: true
+        luet_script_override: ""
         run_raw_image_test: true
         run_installer_test: true
         release_flavor: ["green"]
