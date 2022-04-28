@@ -3,11 +3,11 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: 0.10-1
+    version: 0.10-2
     requires:
       - category: toolchain
         name: elemental-cli
-        version: ">0.0.10"
+        version: ">0.20220427-1"
       - category: toolchain
         name: luet
         version: ">=0"
@@ -76,7 +76,6 @@ packages:
       - category: system
         name: cloud-config
         version: ">=0"
-    version: 0.10-1
   - !!merge <<: *metabase
     name: "cos-minimal-fips"
     requires:
