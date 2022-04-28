@@ -46,27 +46,21 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 	})
 	It("Errors out if overlay roofs path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
-			rootCmd, "build-iso", "--iso.image", "live/grub2",
-			"--iso.uefi", "live/grub2-efi-image", "system/cos",
-			"--overlay-rootfs", "/nonexistingpath",
+			rootCmd, "build-iso", "system/cos", "--overlay-rootfs", "/nonexistingpath",
 		)
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("Invalid path"))
 	})
 	It("Errors out if overlay uefi path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
-			rootCmd, "build-iso", "--iso.image", "live/grub2",
-			"--iso.uefi", "live/grub2-efi-image", "system/cos",
-			"--overlay-uefi", "/nonexistingpath",
+			rootCmd, "build-iso", "someimage:latest", "--overlay-uefi", "/nonexistingpath",
 		)
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("Invalid path"))
 	})
 	It("Errors out if overlay iso path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
-			rootCmd, "build-iso", "--iso.image", "live/grub2",
-			"--iso.uefi", "live/grub2-efi-image", "system/cos",
-			"--overlay-iso", "/nonexistingpath",
+			rootCmd, "build-iso", "/my/rootfs", "--overlay-iso", "/nonexistingpath",
 		)
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("Invalid path"))

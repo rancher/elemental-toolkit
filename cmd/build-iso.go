@@ -86,9 +86,10 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			oUEFI, _ := cmd.Flags().GetString("overlay-uefi")
 			oISO, _ := cmd.Flags().GetString("overlay-iso")
 			repoURIs, _ := cmd.Flags().GetStringArray("repo")
+			label, _ := cmd.Flags().GetString("label")
 
-			if len(repoURIs) == 0 {
-				repoURIs = constants.GetDefaultLuetRepos()
+			if label != "" {
+				cfg.ISO.Label = label
 			}
 
 			if cfg.Name == "" {
@@ -120,11 +121,18 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				}
 			}
 
-			repos := []v1.Repository{}
-			for _, u := range repoURIs {
-				repos = append(repos, v1.Repository{URI: u})
+			if len(cfg.Repos) == 0 {
+				cfg.Repos = []v1.Repository{{
+					Name:     "cos",
+					Type:     "docker",
+					URI:      constants.LuetDefaultRepoURI,
+					Priority: constants.LuetDefaultRepoPrio,
+				}}
 			}
-			cfg.Repos = repos
+
+			for _, u := range repoURIs {
+				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio})
+			}
 
 			err = action.BuildISORun(cfg)
 			if err != nil {
@@ -142,11 +150,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
 
-	// The dot notation is used to express nested maps in viper settings which is needed to unmarshal nested structs.
-	c.Flags().String("iso.label", "", "Label of the ISO volume")
-	c.Flags().StringArray("iso.image", []string{}, "A source for the ISO image. Can be repeated to add more than one source.")
-	c.Flags().StringArray("iso.uefi", []string{}, "A source for the UEFI image. Can be repeated to add more than one source.")
-
+	c.Flags().String("label", "", "Label of the ISO volume")
 	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
 	addCosignFlags(c)
 	return c

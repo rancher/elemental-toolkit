@@ -81,6 +81,9 @@ const (
 	BeforeResetHook        = "before-reset"
 	LuetCosignPlugin       = "luet-cosign"
 	LuetMtreePlugin        = "luet-mtree"
+	LuetDefaultRepoURI     = "quay.io/costoolkit/releases-green"
+	LuetRepoMaxPrio        = 1
+	LuetDefaultRepoPrio    = 90
 	UpgradeActive          = "active"
 	UpgradeRecovery        = "recovery"
 	ChannelSource          = "system/cos"
@@ -173,10 +176,6 @@ func GetDefaultISOImage() []string {
 
 func GetDefaultISOUEFI() []string {
 	return []string{"live/grub2-efi-image"}
-}
-
-func GetDefaultLuetRepos() []string {
-	return []string{"quay.io/costoolkit/releases-green"}
 }
 
 func GetBuildDiskDefaultPackages() map[string]string {

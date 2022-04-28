@@ -83,7 +83,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
 			for _, u := range cfg.RawDisk[archType].Repositories {
-				repos = append(repos, v1.Repository{URI: u.URI})
+				repos = append(repos, v1.Repository{URI: u.URI, Priority: constants.LuetDefaultRepoPrio})
 			}
 			cfg.Config.Repos = repos
 
@@ -94,13 +94,12 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			// Set defaults if they are empty
 			if len(cfg.Config.Repos) == 0 {
-				for _, repo := range constants.GetDefaultLuetRepos() {
-					if archType != "x86_64" {
-						repo = fmt.Sprintf("%s-%s", repo, archType)
-					}
-					cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
-					cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo})
+				repo := constants.LuetDefaultRepoURI
+				if archType != "x86_64" {
+					repo = fmt.Sprintf("%s-%s", repo, archType)
 				}
+				cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
+				cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo, Priority: constants.LuetDefaultRepoPrio})
 
 				cfg.RawDisk[archType].Repositories = cfg.Config.Repos
 			}
