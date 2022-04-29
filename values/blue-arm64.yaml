@@ -4,6 +4,7 @@ codename: "blue"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
+
 tool_image: opensuse/leap:15.3@sha256:30e1ea6881aaeefb8419a1295708fa523cdc089d1d38aa715552dc7feabbf8af
 tool_image_distribution: "opensuse"
 tools_packages: >-
@@ -13,6 +14,7 @@ tools_packages: >-
     git
     curl
     grub2
+
 packages: >-
     grub2-efi-aa64
     grub2-efi-aa64-modules

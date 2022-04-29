@@ -4,9 +4,15 @@ codename: "orange"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
+
 tool_image: opensuse/leap:15.3@sha256:30e1ea6881aaeefb8419a1295708fa523cdc089d1d38aa715552dc7feabbf8af
 tool_image_distribution: "opensuse"
-
+tools_packages: >-
+    grub2-arm64-efi
+    grub2
+    tar
+    curl
+    xz
 
 packages: >-
     systemd
@@ -31,9 +37,3 @@ packages: >-
     rsync
 
 kernel_package: linux-image-generic
-tools_packages: >-
-    grub2-arm64-efi
-    grub2
-    tar
-    curl
-    xz

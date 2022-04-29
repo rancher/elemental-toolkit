@@ -1,13 +1,11 @@
 image: registry.suse.com/suse/sle-micro-rancher/5.2
-tool_image: opensuse/leap:15.3
-tool_image_distribution: "opensuse"
-
 distribution: "opensuse"
 codename: "teal"
 arch: "x86_64"
 golang_arch: "amd64"
 
-kernel_package: kernel-default
+tool_image: opensuse/leap:15.3
+tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
@@ -16,3 +14,5 @@ tools_packages: >-
     git
     tar
     xz
+
+kernel_package: ""
