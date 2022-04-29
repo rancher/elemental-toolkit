@@ -4,6 +4,7 @@ requires:
   version: ">=0"
 env:
 - PATH=$PATH:/usr/local/go/bin
+- CGO_ENABLED=0
 prelude:
 - |
    PACKAGE_VERSION=v${PACKAGE_VERSION%\-*} && \

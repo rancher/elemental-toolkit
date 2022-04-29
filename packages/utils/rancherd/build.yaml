@@ -4,6 +4,7 @@ requires:
   version: ">=0"
 env:
 - PATH=$PATH:/usr/local/go/bin
+- CGO_ENABLED=0
 prelude:
 {{ if .Values.upx }}
 {{ template "distro_install_tools" (dict "Values" .Values "Packages" "upx")}}
