@@ -29,14 +29,6 @@ YQ="/usr/bin/yq"
 endif
 
 #
-# Path to luet-makeiso binary
-#
-export MAKEISO?=$(shell which luet-makeiso 2> /dev/null)
-ifeq ("$(MAKEISO)","")
-MAKEISO="/usr/bin/luet-makeiso"
-endif
-
-#
 # Path to luet-mtree binary
 #
 export MTREE?=$(shell which luet-mtree 2> /dev/null)
@@ -169,14 +161,6 @@ else
 	$(LUET) install -y utils/jq
 endif
 
-$(MAKEISO):
-ifneq ($(shell id -u), 0)
-	@echo "'$@' is missing and you must be root to install it."
-	@exit 1
-else
-	$(LUET) install -y toolchain/luet-makeiso
-endif
-
 $(MTREE):
 ifneq ($(shell id -u), 0)
 	@echo "'$@' is missing and you must be root to install it."
@@ -202,7 +186,7 @@ else
 endif
 
 ci_deps: as_root
-	$(LUET) install -y toolchain/elemental-cli meta/cos-verify toolchain/luet-mtree toolchain/luet-makeiso utils/jq toolchain/yq
+	$(LUET) install -y toolchain/elemental-cli meta/cos-verify toolchain/luet-mtree utils/jq toolchain/yq
 
 clean: clean_build clean_iso clean_run clean_test
 	rm -rf $(ROOT_DIR)/*.sha256
