@@ -70,14 +70,6 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return fmt.Errorf("no rootfs image source provided")
 			}
 
-			if len(cfg.ISO.UEFI) == 0 {
-				cfg.ISO.UEFI = constants.GetDefaultISOUEFI()
-			}
-
-			if len(cfg.ISO.Image) == 0 {
-				cfg.ISO.Image = constants.GetDefaultISOImage()
-			}
-
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
@@ -90,10 +82,6 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if label != "" {
 				cfg.ISO.Label = label
-			}
-
-			if cfg.Name == "" {
-				cfg.Name = constants.BuildImgName
 			}
 
 			if oRootfs != "" {

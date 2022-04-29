@@ -56,6 +56,8 @@ var _ = Describe("Config", func() {
 			Expect(cfg.Name).To(Equal("cOS-0"))
 			hasSuffix := strings.HasSuffix(viper.ConfigFileUsed(), "config/manifest.yaml")
 			Expect(hasSuffix).To(BeTrue())
+			Expect(len(cfg.ISO.Image)).To(Equal(1))
+			Expect(cfg.ISO.Image[0]).To(Equal("recovery/cos-img"))
 		})
 		It("overrides values with env values", Label("env", "values"), func() {
 			_ = os.Setenv("ELEMENTAL_NAME", "environment")

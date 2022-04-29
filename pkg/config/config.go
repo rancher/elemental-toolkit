@@ -175,6 +175,9 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 
 func NewISO() *v1.LiveISO {
 	return &v1.LiveISO{
+		Label:       cnst.ISOLabel,
+		UEFI:        cnst.GetDefaultISOUEFI(),
+		Image:       cnst.GetDefaultISOImage(),
 		HybridMBR:   cnst.IsoHybridMBR,
 		BootFile:    cnst.IsoBootFile,
 		BootCatalog: cnst.IsoBootCatalog,

@@ -42,6 +42,7 @@ const (
 	PersistentPartName     = "p.persistent"
 	OEMLabel               = "COS_OEM"
 	OEMPartName            = "p.oem"
+	ISOLabel               = "COS_LIVE"
 	MountBinary            = "/usr/bin/mount"
 	EfiDevice              = "/sys/firmware/efi"
 	LinuxFs                = "ext4"

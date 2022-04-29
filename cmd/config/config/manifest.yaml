@@ -3,9 +3,7 @@ iso:
     - system/cos
   uefi:
     - live/grub2-efi-image
-  isoimage:
-    - live/grub2
-    - live/grub2-efi-image
+  image:
     - recovery/cos-img
   label: "COS_LIVE"
 

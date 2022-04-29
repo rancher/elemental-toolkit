@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/luet"
@@ -54,7 +55,12 @@ func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig
 	viperReadEnv()
 
 	// unmarshal all the vars into the config object
-	err := viper.Unmarshal(cfg)
+	err := viper.Unmarshal(cfg, func(config *mapstructure.DecoderConfig) {
+		// Make sure we zero fields before applying them, this is relevant for slices
+		// so we do not merge with any already present value and directly apply whatever
+		// we got form configs.
+		config.ZeroFields = true
+	})
 	if err != nil {
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}
