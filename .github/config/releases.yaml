@@ -15,7 +15,6 @@ flavors:
         publishing_pipeline: true
         publish_cloud: true
         publish_toolchain: true
-
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
@@ -25,6 +24,7 @@ flavors:
         skip_images_flavor: ["blue","orange", "teal"]
         build_image_qemu: true
         luet_override: ""
+        luet_script_override: ""
         build_image_vbox: true
         build_raw_image: true
         run_raw_image_test: true
@@ -44,6 +44,7 @@ flavors:
         skip_build: false
         skip_docker_build: true
         luet_override: ""
+        luet_script_override: ""
 
         pipeline: "release"
         publishing_pipeline: true

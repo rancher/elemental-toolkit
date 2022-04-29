@@ -11,6 +11,7 @@ flavors:
         publish_cloud: false
         publish_toolchain: false
         skip_build: true
+        luet_script_override: ""
         skip_docker_build: true
         repository: "releases" # releases for prod
         cache_repository: "build"

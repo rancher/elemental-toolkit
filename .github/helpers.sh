@@ -23,5 +23,5 @@ create_remote_manifest() {
 
 drop_recovery() {
     MANIFEST=$1
-    $YQ e -i 'del( .packages.isoimage[] | select(.=="recovery/cos-img") )' $MANIFEST 
+    $YQ e -i 'del( .iso.image[] | select(.=="recovery/cos-img") )' $MANIFEST 
 }
