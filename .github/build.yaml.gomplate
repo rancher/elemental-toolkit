@@ -276,7 +276,7 @@
       PKR_VAR_arch: {{{ $config.arch }}}
       PKR_VAR_flavor: {{{ $flavor }}}
       PKR_VAR_feature: vagrant
-      PKR_VAR_accelerator: none
+      PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
       {{{if eq $config.arch "arm64" }}}
@@ -297,6 +297,10 @@
           sudo -E make deps
           sudo apt-get update
           sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install Packer
+        uses: hashicorp-contrib/setup-packer@v1
+        with:
+            packer-version: 1.7.3
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
