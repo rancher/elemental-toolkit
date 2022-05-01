@@ -38,6 +38,7 @@ RUN zypper in -y \
     mdadm \
     multipath-tools \
     nano \
+    NetworkManager \
     nfs-utils \
     open-iscsi \
     open-vm-tools \
@@ -59,6 +60,11 @@ RUN zypper in -y \
     wpa_supplicant
 
 RUN zypper cc
+
+# Configure NetworkManager as default network management service
+RUN zypper remove -y wicked
+RUN systemctl disable wicked \
+    && systemctl enable NetworkManager
 
 # Copy the luet config file pointing to the upgrade repository
 COPY conf/luet.yaml /etc/luet/luet.yaml
