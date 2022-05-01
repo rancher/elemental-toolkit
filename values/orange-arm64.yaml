@@ -7,25 +7,25 @@ skip_checksum: ["golang", "golang-fips"]
 
 
 packages: >-
-    systemd
-    grub-efi-arm64
-    grub-efi-arm64-bin
-    grub2-common
-    iproute2
-    squashfs-tools
-    parted
+    coreutils
+    curl
+    debianutils
+    dosfstools
     dracut
     dracut-live
     e2fsprogs
-    dosfstools
-    coreutils
-    multipath-tools
-    debianutils
-    curl
-    nano
     gawk
+    grub-efi-arm64
+    grub-efi-arm64-bin
+    grub2-common
     haveged
-    tar
+    iproute2
+    multipath-tools
+    nano
+    parted
     rsync
+    squashfs-tools
+    systemd
+    tar
 
 kernel_package: linux-image-generic

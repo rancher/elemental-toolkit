@@ -5,29 +5,29 @@ arch: "x86_64"
 golang_arch: "amd64"
 
 packages: >-
-    grub2-pc
+    NetworkManager
+    audit
+    coreutils
+    curl
+    device-mapper
+    dosfstools
+    dracut
+    dracut-live
+    e2fsprogs
+    efibootmgr
+    gawk
+    grub2
     grub2-efi-x64
     grub2-efi-x64-modules
-    shim-x64
-    NetworkManager
-    squashfs-tools
-    dracut-live
-    efibootmgr
-    audit
-    systemd
-    parted
-    dracut
-    e2fsprogs
-    dosfstools
-    coreutils
-    device-mapper
-    grub2
-    which
-    curl
-    nano
-    gawk
+    grub2-pc
     haveged
-    tar
+    nano
+    parted
     rsync
+    shim-x64
+    squashfs-tools
+    systemd
+    tar
+    which
 
 kernel_package: kernel

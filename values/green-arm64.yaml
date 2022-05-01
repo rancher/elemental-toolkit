@@ -6,29 +6,21 @@ golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
 packages: >-
-    systemd-sysvinit
-    grub2-arm64-efi
-    iproute2
-    squashfs
     conntrack-tools
-    findutils
-    haveged
-    lsscsi
-    lvm2
-    mdadm
-    multipath-tools
-    nfs-utils
-    open-iscsi
-    open-vm-tools
-    python-azure-agent
-    qemu-guest-agent
-    rng-tools
-    systemd
-    vim
-    parted
+    coreutils
+    curl
+    device-mapper
+    dosfstools
     dracut
     e2fsprogs
-    dosfstools
+    findutils
+    gawk
+    gptfdisk
+    grub2
+    grub2-arm64-efi
+    haveged
+    iproute2
+    jq
     kernel-firmware-bnx2
     kernel-firmware-i915
     kernel-firmware-intel
@@ -37,19 +29,26 @@ packages: >-
     kernel-firmware-network
     kernel-firmware-platform
     kernel-firmware-realtek
-    coreutils
     less
-    device-mapper
-    grub2
-    which
-    curl
+    lsscsi
+    lvm2
+    mdadm
+    multipath-tools
     nano
-    gawk
-    haveged
-    tar
+    nfs-utils
+    open-iscsi
+    open-vm-tools
+    parted
+    python-azure-agent
+    qemu-guest-agent
+    rng-tools
     rsync
+    squashfs
+    systemd
+    systemd-sysvinit
+    tar
     timezone
-    jq
-    gptfdisk
+    vim
+    which
 
 kernel_package: kernel-default
