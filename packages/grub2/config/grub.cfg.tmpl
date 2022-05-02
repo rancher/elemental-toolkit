@@ -12,6 +12,10 @@ search --no-floppy --file --set=oem_blk "${oem_env_file}"
 set custom_menu="/grubmenu"
 search --no-floppy --file --set=menu_blk "${custom_menu}"
 
+# Load custom config file
+set custom="/grubcustom"
+search --no-floppy --file --set=custom_blk "${custom}"
+
 if [ "${oem_blk}" ] ; then
   load_env -f "(${oem_blk})${oem_env_file}"
 fi
@@ -90,4 +94,8 @@ menuentry "${display_name} recovery" --id recovery {
 
 if [ "${menu_blk}" ]; then
   source "(${menu_blk})${custom_menu}"
+fi
+
+if [ "${custom_blk}" ]; then
+  source "(${custom_blk})${custom}"
 fi

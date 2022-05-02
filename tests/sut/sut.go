@@ -65,6 +65,7 @@ type SUT struct {
 	GreenRepo   string
 	TestVersion string
 	CDLocation  string
+	MachineID   string
 }
 
 func NewSUT() *SUT {
@@ -94,6 +95,7 @@ func NewSUT() *SUT {
 		Host:        host,
 		Username:    user,
 		Password:    pass,
+		MachineID:   "test",
 		Timeout:     timeout,
 		GreenRepo:   "quay.io/costoolkit/releases-green",
 		TestVersion: "0.7.11-5",
@@ -440,6 +442,33 @@ func (s *SUT) RestoreCOSCD() {
 	out, err := exec.Command("bash", "-c", fmt.Sprintf("VBoxManage storageattach 'test' --storagectl 'sata controller' --port 1 --device 0 --type dvddrive --medium %s --forceunmount", s.CDLocation)).CombinedOutput()
 	fmt.Printf(string(out))
 	Expect(err).To(BeNil())
+}
+
+func bash(s string) (string, error) {
+	o, err := exec.Command("bash", "-c", s).CombinedOutput()
+	return string(o), err
+}
+
+func (s *SUT) PowerOff() {
+	bash(fmt.Sprintf(`VBoxManage controlvm "%s" poweroff`, s.MachineID))
+}
+
+func (s *SUT) Start() {
+	bash(fmt.Sprintf(`VBoxManage startvm "%s" --type headless`, s.MachineID))
+}
+
+func (s *SUT) Snapshot() error {
+	out, err := bash(fmt.Sprintf(`VBoxManage snapshot "%s" take snap`, s.MachineID))
+	fmt.Println(out)
+	return err
+}
+
+func (s *SUT) RestoreSnapshot() error {
+	s.PowerOff()
+	out, err := bash(fmt.Sprintf(`VBoxManage snapshot "%s" restore snap`, s.MachineID))
+	fmt.Println(out)
+	s.Start()
+	return err
 }
 
 func (s SUT) GetDiskLayout(disk string) DiskLayout {

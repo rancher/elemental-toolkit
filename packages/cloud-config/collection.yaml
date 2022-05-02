@@ -45,3 +45,8 @@ packages:
     oem_file: "07_live.yaml"
     templated: false
     version: 0.1-1
+  - !!merge <<: *base
+    name: "boot-assessment"
+    oem_file: "08_boot_assessment.yaml"
+    templated: false
+    version: 0.1-1
