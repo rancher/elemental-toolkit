@@ -16,28 +16,28 @@ tools_packages: >-
     grub2
 
 packages: >-
+    NetworkManager
+    audit
+    coreutils
+    curl
+    device-mapper
+    dosfstools
+    dracut
+    dracut-live
+    e2fsprogs
+    efibootmgr
+    gawk
+    grub2
     grub2-efi-aa64
     grub2-efi-aa64-modules
-    shim-aa64
-    NetworkManager
-    squashfs-tools
-    dracut-live
-    efibootmgr
-    audit
-    systemd
-    parted
-    dracut
-    e2fsprogs
-    dosfstools
-    coreutils
-    device-mapper
-    grub2
-    which
-    curl
-    nano
-    gawk
     haveged
-    tar
+    nano
+    parted
     rsync
+    shim-aa64
+    squashfs-tools
+    systemd
+    tar
+    which
 
 kernel_package: kernel

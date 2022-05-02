@@ -10,57 +10,55 @@ RUN zypper ar -G https://download.opensuse.org/repositories/devel:/ARM:/Factory:
 RUN zypper ref
 RUN zypper in -y \
     # Odroid
-    kernel-default-extra \
-    systemd-sysvinit \
-    grub2-arm64-efi \
-    iproute2 \
-    squashfs \
+    aaa_base-extras \
     conntrack-tools \
+    coreutils \
+    curl \
+    device-mapper \
+    dosfstools \
+    dracut \
+    dtb-amlogic \
+    e2fsprogs \
     findutils \
+    gawk \
+    gptfdisk \
+    grub2 \
+    grub2-arm64-efi \
     haveged \
+    iproute2 \
+    iputils \
+    iw \
+    jq \
+    kernel-default \
+    kernel-default-extra \
+    kernel-firmware-all \
+    kmod \
+    less \
+    libudev1 \
     lsscsi \
     lvm2 \
     mdadm \
     multipath-tools \
+    nano \
     nfs-utils \
+    odroidc2-firmware \
     open-iscsi \
-    rng-tools \
-    systemd \
-    vim \
-    parted \
-    dracut \
-    e2fsprogs \
-    dosfstools \
-    kernel-default \
-    coreutils \
-    less \
-    device-mapper \
-    grub2 \
-    which \
-    curl \
     open-vm-tools \
+    parted \
     python-azure-agent \
     qemu-guest-agent \
-    wireless-tools \
-    wpa_supplicant \
-    iw \
-    iproute2 \
-    dtb-amlogic \
-    aaa_base-extras \
-    odroidc2-firmware \
-    iputils \
-    kmod \
-    libudev1 \
-    vim-small \
-    kernel-firmware-all \
-    nano \
-    gawk \
-    haveged \
-    tar \
+    rng-tools \
     rsync \
+    squashfs \
+    systemd \
+    systemd-sysvinit \
+    tar \
     timezone \
-    jq \
-    gptfdisk
+    vim \
+    vim-small \
+    which \
+    wireless-tools \
+    wpa_supplicant
 
 RUN zypper cc
 

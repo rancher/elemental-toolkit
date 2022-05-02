@@ -9,56 +9,54 @@ ENV COSIGN_REPOSITORY=raccos/releases-green
 RUN zypper ref
 RUN zypper in -y \
     # RPI
-    raspberrypi-eeprom \
+    aaa_base-extras \
     bcm43xx-firmware \
-    systemd-sysvinit \
-    grub2-arm64-efi \
-    iproute2 \
-    squashfs \
     conntrack-tools \
+    coreutils \
+    curl \
+    device-mapper \
+    dosfstools \
+    dracut \
+    e2fsprogs \
     findutils \
+    gawk \
+    gptfdisk \
+    grub2 \
+    grub2-arm64-efi \
     haveged \
+    iproute2 \
+    iputils \
+    iw \
+    jq \
+    kernel-default \
+    kernel-firmware-all \
+    kmod \
+    less \
+    libudev1 \
     lsscsi \
     lvm2 \
     mdadm \
     multipath-tools \
+    nano \
     nfs-utils \
     open-iscsi \
-    rng-tools \
-    systemd \
-    vim \
-    parted \
-    dracut \
-    e2fsprogs \
-    dosfstools \
-    kernel-default \
-    coreutils \
-    less \
-    device-mapper \
-    grub2 \
-    which \
-    curl \
     open-vm-tools \
+    parted \
     python-azure-agent \
     qemu-guest-agent \
-    wireless-tools \
-    wpa_supplicant \
-    iw \
-    iproute2 \
-    aaa_base-extras \
-    iputils \
-    kmod \
-    libudev1 \
-    vim-small \
-    kernel-firmware-all \
-    nano \
-    gawk \
-    haveged \
-    tar \
+    raspberrypi-eeprom \
+    rng-tools \
     rsync \
+    squashfs \
+    systemd \
+    systemd-sysvinit \
+    tar \
     timezone \
-    jq \
-    gptfdisk
+    vim \
+    vim-small \
+    which \
+    wireless-tools \
+    wpa_supplicant
 
 RUN zypper cc
 
