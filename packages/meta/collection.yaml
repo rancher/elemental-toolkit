@@ -95,6 +95,7 @@ packages:
     category: "system"
     name: "cloud-config"
     description: "Meta package for pulling all cloud configs"
+    version: "0.11"
     requires:
       - &cc
         name: defaults
@@ -114,3 +115,5 @@ packages:
         name: "recovery"
       - !!merge <<: *cc
         name: "live"
+      - !!merge <<: *cc
+        name: "boot-assessment"
