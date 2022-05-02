@@ -7,16 +7,9 @@ package_dir: /{{.Values.name}}
 
 env:
 - PATH=$PATH:/usr/local/go/bin
+- CGO_ENABLED=0
+
 prelude:
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
-- zypper in -y git
-{{else if eq .Values.distribution "fedora" }}
-- dnf install -y git
-{{else if eq .Values.distribution "ubuntu" }}
-- apt-get install -y git
-{{end}}
-{{end}}
 - |
    PACKAGE_VERSION=v${PACKAGE_VERSION%\-*} && \
    git clone --depth=1 --branch ${PACKAGE_VERSION} https://github.com/{{ ( index .Values.labels "github.owner" ) }}/{{ ( index .Values.labels "github.repo" ) }}.git

@@ -1,22 +1,22 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
 
 prelude:
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
-- zypper in -y wget && zypper install -y -t pattern devel_basis
-{{else if eq .Values.distribution "fedora" }}
-- dnf install -y wget "@Development Tools"
-{{else if eq .Values.distribution "ubuntu" }}
+{{ if .Values.tool_image_distribution }}
+{{if eq .Values.tool_image_distribution "opensuse" }}
+- zypper in -y curl git && zypper install -y -t pattern devel_basis
+{{else if eq .Values.tool_image_distribution "fedora" }}
+- dnf install -y curl git "@Development Tools"
+{{else if eq .Values.tool_image_distribution "ubuntu" }}
 - apt-get update
-- apt-get install -y build-essential wget
+- apt-get install -y build-essential curl git
 {{end}}
 {{end}}
 - |
   PACKAGE_VERSION=${PACKAGE_VERSION%\-*} && \
-  wget {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -O golang.tar.gz
+  curl -L {{.Values.base_url}}/go$PACKAGE_VERSION.linux-{{.Values.golang_arch}}.tar.gz -o golang.tar.gz
 {{ template "do_checksum" (dict "values" .Values "filename" "golang.tar.gz")}}
 
 steps:

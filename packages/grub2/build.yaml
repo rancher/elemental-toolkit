@@ -1,14 +1,10 @@
 requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
 - name: "cos-config"
   category: "system"
   version: ">=0"
 - name: "cos-config-tmpl"
   category: "utils"
   version: ">=0"
-
 steps:
 {{if eq .Values.name "grub2-config"}}
 - cp config/grub.cfg.tmpl config/bootargs.cfg.tmpl /etc/cos

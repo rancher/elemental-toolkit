@@ -19,8 +19,8 @@ flavors:
         organization: "quay.io/costoolkit"
         skip_tests: false
         flavor: "green"
-        skip_tests_flavor: ["blue","orange"]
-        skip_images_flavor: ["blue","orange"]
+        skip_tests_flavor: ["blue","orange", "teal"]
+        skip_images_flavor: ["blue","orange", "teal"]
         build_image_qemu: true
         build_image_vbox: true
         build_raw_image: true
@@ -44,3 +44,8 @@ flavors:
       x86_64:
         <<: *x86_64
         flavor: "blue"
+  teal:
+    arches:
+      x86_64:
+        <<: *x86_64
+        flavor: "teal"

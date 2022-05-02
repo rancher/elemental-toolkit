@@ -22,6 +22,10 @@ copy:
   source: "/usr/bin/elemental"
   destination: "/usr/bin/elemental"
 
+prelude:
+# remove if any
+- rm -rf /boot/initrd || true
+
 steps:
 # Create initrd
 - |

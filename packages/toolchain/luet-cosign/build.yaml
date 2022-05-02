@@ -4,11 +4,9 @@ requires:
     version: ">=0"
 
 env:
-  - PATH=$PATH:/usr/local/go/bin
-  - GOPATH=/luetbuild/go
-  - GO111MODULE=on
-  - CGO_ENABLED=0
-  - LDFLAGS="-s -w"
+{{ template "golang_env" }}
+- CGO_ENABLED=0
+- LDFLAGS="-s -w"
 
 prelude:
 {{ template "golang_deps" .}}

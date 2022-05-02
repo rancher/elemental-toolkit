@@ -1,21 +1,12 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
 
 package_dir: /{{.Values.name}}
 
 prelude:
-  {{ if .Values.distribution }}
-  {{if eq .Values.distribution "opensuse" }}
-- zypper install -y autoconf libtool git gcc make
-  {{else if eq .Values.distribution "fedora" }}
-- dnf install -y autoconf libtool git gcc make
-  {{else if eq .Values.distribution "ubuntu" }}
-- apt-get update
-- apt-get install -y autoconf libtool git gcc make
-  {{end}}
-  {{end}}
+{{ template "distro_install_tools" (dict "Values" .Values "Packages" "autoconf libtool git gcc make")}}
 
 steps:
 - |
