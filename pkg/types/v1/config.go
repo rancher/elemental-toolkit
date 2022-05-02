@@ -42,7 +42,7 @@ type Config struct {
 	Client          HTTPClient
 	Cosign          bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
 	CosignPubKey    string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
-	Repos           []Repository `yaml:"repositories,omit" mapstructire:"repositories"`
+	Repos           []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.
