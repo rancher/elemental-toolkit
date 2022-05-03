@@ -224,6 +224,7 @@
       ARCH: {{{ $config.arch }}}
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -237,7 +238,7 @@
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      {{{ tmpl.Exec "make" "deps_ci" }}}
+
   {{{- if eq $subset "nonsquashfs" }}}
       - name: Tweak manifest and drop squashfs recovery
         run: |
