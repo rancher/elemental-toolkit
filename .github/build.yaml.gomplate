@@ -111,13 +111,13 @@
 {{{ $config := (datasource "config") }}}
 {{{if has $config "labels"}}}
   {{{- if $config.local_runner }}}
-    if: contains(fromJson('["mudler", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) {{{- tmpl.Exec "generate_labels" }}}
+    if: contains(fromJson('["mudler", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) {{{- tmpl.Exec "generate_labels" }}}
   {{{else}}}
     if: always() && {{{- tmpl.Exec "generate_labels" }}}
   {{{end}}}
 {{{else}}}
   {{{- if $config.local_runner }}}
-    if: contains(fromJson('["mudler", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
+    if: contains(fromJson('["mudler", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
   {{{end}}}
 {{{end}}}
 {{{end}}}
