@@ -30,6 +30,7 @@ packages: >-
     iproute2
     multipath-tools
     nano
+    network-manager
     parted
     rsync
     squashfs-tools

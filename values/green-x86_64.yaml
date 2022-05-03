@@ -46,6 +46,7 @@ packages: >-
     mdadm
     multipath-tools
     nano
+    NetworkManager
     nfs-utils
     open-iscsi
     open-vm-tools
