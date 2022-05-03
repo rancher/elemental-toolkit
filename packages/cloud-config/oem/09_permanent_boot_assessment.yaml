@@ -1,0 +1,12 @@
+# This enables boot assessment permanently by enabling it explicitly on each boot.
+name: "Permanent boot assessment"
+stages:
+    boot.before:
+    - name: "Enable assessment for next boot"
+      if: |
+          cat /proc/cmdline | grep -q "active.img"
+      commands:
+      - |
+          sudo mount -o rw,remount /run/initramfs/cos-state
+          grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=yes
+          sudo mount -o ro,remount /run/initramfs/cos-state
