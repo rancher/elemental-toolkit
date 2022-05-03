@@ -27,7 +27,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 	})
 
 	Context("image is corrupted", func() {
-		It("boots in fallback when rootfs is damaged", func() {
+		It("boots in fallback when rootfs is damaged, triggering a kernel panic", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
