@@ -17,6 +17,18 @@ Note: The extra GRUB logic is installed and sourced into `/grubcustom` inside `C
 
 When a boot failure is detected and the fallback is automatically selected, it will be created a `/run/cos/upgrade_failure` sentinel file during the boot process, which is accessible under the `boot` cloud-init stage.
 
+To enable boot assessment always, besides upgrades, the package `cloud-config/boot-assessment-always` needs to be installed as well.
+
+## Manually enabling boot assessment
+
+To manually trigger the boot assessment for the next boot, you can run the following in a active/passive booted system:
+
+```
+sudo mount -o rw,remount /run/initramfs/cos-state
+grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=yes
+sudo mount -o ro,remount /run/initramfs/cos-state
+```
+
 ## Maintenance
 
 If the active partition fails, the boot assessment process will bring you back to the fallback partition. This is also the case if the dracut shell is displayed while dropping in emergency mode.
