@@ -80,8 +80,10 @@ stages:
             fi
             if [ "${osupgrade}" = "done" ]; then
               if [ "${tentative}" = "try" ]; then
+               if [ -z "${next_entry}" ]; then
                 set default="fallback"
                 set extra_passive_cmdline="upgrade_failure"
+               fi
               else
                 set tentative="try"
                 save_env -f "(${boot_assessment_blk})${boot_assessment}" tentative
