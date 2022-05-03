@@ -1,9 +1,0 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
-
-package_dir: "/package"
-steps:
-- mkdir -p /package/var/db/cos
-- touch /package/var/db/cos/{{.Values.category}}_{{.Values.name}}_{{.Values.version}}
