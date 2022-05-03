@@ -14,7 +14,7 @@ requires:
   version: ">=0"
 - name: "cos-minimal"
   category: "meta"
-  version: ">=0"
+  version: ">=0.20"
 - name: "cos-verify"
   category: "meta"
   version: ">=0"

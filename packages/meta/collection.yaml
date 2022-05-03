@@ -65,13 +65,14 @@ packages:
   - !!merge <<: *metabase
     name: "cos-minimal"
     description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
+    version: "0.21"
     requires:
       - category: meta
         name: cos-core
         version: ">=0"
       - category: system
         name: cloud-config
-        version: ">=0"
+        version: ">=0.20"
   - !!merge <<: *metabase
     name: "cos-minimal-fips"
     requires:
@@ -94,6 +95,7 @@ packages:
   - !!merge <<: *metabase
     category: "system"
     name: "cloud-config"
+    version: "0.21"
     description: "Meta package for pulling all cloud configs"
     requires:
       - &cc
@@ -104,6 +106,7 @@ packages:
         name: "rootfs"
       - !!merge <<: *cc
         name: "upgrades"
+        version: ">0.1-2"
       - !!merge <<: *cc
         name: "branding"
       - !!merge <<: *cc
