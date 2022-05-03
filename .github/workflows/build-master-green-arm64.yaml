@@ -116,6 +116,7 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       FLAVOR: green
       ARCH: arm64
+      LUET_ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - run: |
@@ -288,6 +289,7 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       FLAVOR: green
       ARCH: arm64
+      LUET_ARCH: arm64
     steps:
       - uses: actions/checkout@v2
       - run: |
