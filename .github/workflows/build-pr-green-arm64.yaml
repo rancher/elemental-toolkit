@@ -120,6 +120,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -133,10 +137,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -292,6 +292,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -305,10 +309,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
       - name: Tweak manifest and drop squashfs recovery
         run: |
           source .github/helpers.sh
