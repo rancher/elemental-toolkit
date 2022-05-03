@@ -46,7 +46,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 
 			out, _ = s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
-			Expect(out).To(ContainSubstring("osupgrade=done"))
+			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
 
 			// Break the upgrade
 			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/cos-state")

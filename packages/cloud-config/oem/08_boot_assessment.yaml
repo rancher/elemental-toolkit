@@ -11,14 +11,19 @@ stages:
     # Remove any grub sentinel and add
     # System sentinel to /run to indicate if we are booting after a failed upgrade.
     # This needs to run only on the active partition.
+    # To note, we could similarly enable boot assessment always, also besides upgrades.
+    # In this case it is enough to reset only boot_assessment_tentative here, and set 
+    # enable_boot_assessment to 'yes'.
+    # This can be then customized easily by having a cloud-config file which always enables boot assessment on 
+    # the boot stage.
     - name: "Remove upgrade sentinels"
       if: |
           cat /proc/cmdline | grep -q "active.img"
       commands:
       - |
           sudo mount -o rw,remount /run/initramfs/cos-state
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set osupgrade=
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set tentative=
+          grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
+          grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
           sudo mount -o ro,remount /run/initramfs/cos-state
     - name: "Create upgrade failure sentinel if necessary"
       if: |
@@ -78,15 +83,15 @@ stages:
             if [ "${boot_assessment_blk}" ]; then
               load_env -f "(${boot_assessment_blk})${boot_assessment}"
             fi
-            if [ "${osupgrade}" = "done" ]; then
-              if [ "${tentative}" = "try" ]; then
+            if [ "${enable_boot_assessment}" = "yes" ]; then
+              if [ "${boot_assessment_tentative}" = "yes" ]; then
                if [ -z "${next_entry}" ]; then
                 set default="fallback"
                 set extra_passive_cmdline="upgrade_failure"
                fi
               else
-                set tentative="try"
-                save_env -f "(${boot_assessment_blk})${boot_assessment}" tentative
+                set boot_assessment_tentative="yes"
+                save_env -f "(${boot_assessment_blk})${boot_assessment}" boot_assessment_tentative
               fi
             fi
     - &stateumount
@@ -95,12 +100,14 @@ stages:
       - |
           umount /tmp/mnt/STATE
 
+    # Here we do enable boot assessment for the next bootup.
+    # Similarly, we could trigger boot assessment in other cases
     after-upgrade:
     - <<: *statemount
     - name: "Set upgrade sentinel"
       commands:
       - |
-          grub2-editenv /tmp/mnt/STATE/boot_assessment set osupgrade=done
+          grub2-editenv /tmp/mnt/STATE/boot_assessment set enable_boot_assessment=yes
     # We do re-install hooks here if needed to track upgrades of boot assessment
     - <<: *customhook
     - <<: *bootgrub

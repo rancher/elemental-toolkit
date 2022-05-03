@@ -25,7 +25,7 @@ If you are planning to do manual intervention and want to hook up with that cons
 
 ```
 sudo mount -o rw,remount /run/initramfs/cos-state
-grub2-editenv /run/initramfs/cos-state/boot_assessment set osupgrade=
-grub2-editenv /run/initramfs/cos-state/boot_assessment set tentative=
+grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
+grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
 sudo mount -o ro,remount /run/initramfs/cos-state
 ```
