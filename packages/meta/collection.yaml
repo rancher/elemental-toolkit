@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.20"
+    version: "0.21"
     requires:
       - category: toolchain
         name: elemental-cli
@@ -95,7 +95,6 @@ packages:
     category: "system"
     name: "cloud-config"
     description: "Meta package for pulling all cloud configs"
-    version: "0.11"
     requires:
       - &cc
         name: defaults
