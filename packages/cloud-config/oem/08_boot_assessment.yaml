@@ -16,7 +16,7 @@ stages:
     # enable_boot_assessment to 'yes'.
     # This can be then customized easily by having a cloud-config file which always enables boot assessment on 
     # the boot stage.
-    - name: "Remove upgrade sentinels"
+    - name: "Remove GRUB sentinels"
       if: |
           cat /proc/cmdline | grep -q "active.img"
       commands:
@@ -83,7 +83,7 @@ stages:
             if [ "${boot_assessment_blk}" ]; then
               load_env -f "(${boot_assessment_blk})${boot_assessment}"
             fi
-            if [ "${enable_boot_assessment}" = "yes" ]; then
+            if [ "${enable_boot_assessment}" = "yes" -o "${enable_boot_assessment_always}" = "yes" ]; then
               if [ "${boot_assessment_tentative}" = "yes" ]; then
                if [ -z "${selected_entry}" ]; then
                 set default="fallback"

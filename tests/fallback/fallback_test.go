@@ -26,16 +26,21 @@ var _ = Describe("cOS booting fallback tests", func() {
 		}
 	})
 
+	bootAssessmentInstalled := func() {
+		// Auto assessment was installed
+		out, _ := s.Command("sudo cat /run/initramfs/cos-state/grubcustom")
+		Expect(out).To(ContainSubstring("bootfile_loc"))
+
+		out, _ = s.Command("sudo cat /run/initramfs/cos-state/grub_boot_assessment")
+		Expect(out).To(ContainSubstring("boot_assessment_blk"))
+	}
+
 	Context("image is corrupted", func() {
 		It("boots in fallback when rootfs is damaged, triggering a kernel panic", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
-			out, _ := s.Command("sudo cat /run/initramfs/cos-state/grubcustom")
-			Expect(out).To(ContainSubstring("bootfile_loc"))
-
-			out, _ = s.Command("sudo cat /run/initramfs/cos-state/grub_boot_assessment")
-			Expect(out).To(ContainSubstring("boot_assessment_blk"))
+			bootAssessmentInstalled()
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
 			Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
@@ -78,6 +83,11 @@ var _ = Describe("cOS booting fallback tests", func() {
 				out, _ := s.Command("sudo ls -liah /run/cos")
 				return out
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
+		})
+
+		It("boot assesment is enabled after reset, and next_entry is respected", func() {
+			Expect(s.BootFrom()).To(Equal(sut.Active))
+			bootAssessmentInstalled()
 		})
 	})
 

@@ -17,7 +17,7 @@ Note: The extra GRUB logic is installed and sourced into `/grubcustom` inside `C
 
 When a boot failure is detected and the fallback is automatically selected, it will be created a `/run/cos/upgrade_failure` sentinel file during the boot process, which is accessible under the `boot` cloud-init stage.
 
-To enable boot assessment always, besides upgrades, the package `cloud-config/boot-assessment-always` needs to be installed as well.
+To enable boot assessment besides upgrades, `enable_boot_assessment_always` can be set to `yes` in the grub environment ( for example in `/oem/grubenv` ).
 
 ## Manually enabling boot assessment
 
