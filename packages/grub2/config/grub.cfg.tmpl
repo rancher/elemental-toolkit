@@ -27,6 +27,7 @@ fi
 # Save default
 if [ "${next_entry}" ]; then
   set default="${next_entry}"
+  set selected_entry="${next_entry}"
   set next_entry=
   save_env -f "(${env_blk})${env_file}" next_entry
 else

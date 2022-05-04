@@ -85,7 +85,7 @@ stages:
             fi
             if [ "${enable_boot_assessment}" = "yes" ]; then
               if [ "${boot_assessment_tentative}" = "yes" ]; then
-               if [ -z "${next_entry}" ]; then
+               if [ -z "${selected_entry}" ]; then
                 set default="fallback"
                 set extra_passive_cmdline="upgrade_failure"
                fi
