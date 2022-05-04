@@ -89,6 +89,61 @@ var _ = Describe("cOS booting fallback tests", func() {
 			Expect(s.BootFrom()).To(Equal(sut.Active))
 			bootAssessmentInstalled()
 		})
+
+		It("boots in fallback when rootfs is damaged, triggering a kernel panic without upgrades", func() {
+			currentVersion := s.GetOSRelease("VERSION")
+
+			// Auto assessment was installed
+			bootAssessmentInstalled()
+
+			cmdline, _ := s.Command("sudo cat /proc/cmdline")
+			Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
+
+			// No manual sentinel enabled
+			out, _ := s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
+			Expect(out).To(ContainSubstring("enable_boot_assessment="))
+
+			// Enable permanent boot assessment
+
+			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/cos-state")
+			fmt.Println(out)
+
+			s.Command("sudo grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment_always=yes")
+
+			// Break the upgrade
+			out, _ = s.Command("sudo mkdir -p /tmp/mnt/STATE")
+			fmt.Println(out)
+
+			s.Command("sudo mount /run/initramfs/cos-state/cOS/active.img /tmp/mnt/STATE")
+
+			for _, d := range []string{"usr/lib/systemd"} {
+				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
+			}
+
+			out, _ = s.Command("sudo ls -liah /tmp/mnt/STATE/")
+			fmt.Println(out)
+
+			out, _ = s.Command("sudo umount /tmp/mnt/STATE")
+
+			s.Reboot(700)
+
+			v := s.GetOSRelease("VERSION")
+			Expect(v).To(Equal(currentVersion))
+
+			cmdline, _ = s.Command("sudo cat /proc/cmdline")
+			Expect(cmdline).To(And(ContainSubstring("passive.img"), ContainSubstring("upgrade_failure")), cmdline)
+
+			Eventually(func() string {
+				out, _ := s.Command("sudo ls -liah /run/cos")
+				return out
+			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
+
+			// Disable boot assessment
+			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/cos-state")
+			fmt.Println(out)
+
+			s.Command("sudo grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment_always=")
+		})
 	})
 
 	Context("GRUB cannot mount image", func() {
@@ -104,6 +159,10 @@ var _ = Describe("cOS booting fallback tests", func() {
 				s.Reboot()
 
 				Expect(s.BootFrom()).To(Equal(sut.Passive))
+
+				// Here we did fallback from grub. boot assessment didn't kicked in here
+				cmdline, _ := s.Command("sudo cat /proc/cmdline")
+				Expect(cmdline).ToNot(And(ContainSubstring("upgrade_failure")), cmdline)
 			})
 		})
 		When("COS_ACTIVE and COS_PASSIVE images are corrupted", func() {
