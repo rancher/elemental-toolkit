@@ -67,22 +67,21 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 			imgType, _ := cmd.Flags().GetString("type")
-			archType, _ := cmd.Flags().GetString("arch")
 			output, _ := cmd.Flags().GetString("output")
 			oemLabel, _ := cmd.Flags().GetString("oem_label")
 			recoveryLabel, _ := cmd.Flags().GetString("recovery_label")
 
-			entry := cfg.RawDisk[archType]
+			entry := cfg.RawDisk[cfg.Arch]
 			if entry == nil {
 				// We didnt load anything from the config file, create empty map
 				cfg.RawDisk = map[string]*v1.RawDiskArchEntry{
-					archType: {Repositories: nil, Packages: nil},
+					cfg.Arch: {Repositories: nil, Packages: nil},
 				}
 			}
 
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
-			for _, u := range cfg.RawDisk[archType].Repositories {
+			for _, u := range cfg.RawDisk[cfg.Arch].Repositories {
 				repos = append(repos, v1.Repository{URI: u.URI, Priority: constants.LuetDefaultRepoPrio})
 			}
 			cfg.Config.Repos = repos
@@ -95,27 +94,27 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set defaults if they are empty
 			if len(cfg.Config.Repos) == 0 {
 				repo := constants.LuetDefaultRepoURI
-				if archType != "x86_64" {
-					repo = fmt.Sprintf("%s-%s", repo, archType)
+				if cfg.Arch != "x86_64" {
+					repo = fmt.Sprintf("%s-%s", repo, cfg.Arch)
 				}
 				cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
 				cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo, Priority: constants.LuetDefaultRepoPrio})
 
-				cfg.RawDisk[archType].Repositories = cfg.Config.Repos
+				cfg.RawDisk[cfg.Arch].Repositories = cfg.Config.Repos
 			}
 
 			// Set defaults packages if empty
-			if len(cfg.RawDisk[archType].Packages) == 0 {
+			if len(cfg.RawDisk[cfg.Arch].Packages) == 0 {
 				defaultPackages := constants.GetBuildDiskDefaultPackages()
 				var packages []v1.RawDiskPackage
 				for pkg, target := range defaultPackages {
 					packages = append(packages, v1.RawDiskPackage{Name: pkg, Target: target})
 				}
 				cfg.Logger.Infof("Packages are empty, setting default values: %+v", packages)
-				cfg.RawDisk[archType].Packages = packages
+				cfg.RawDisk[cfg.Arch].Packages = packages
 			}
 
-			err = action.BuildDiskRun(cfg, imgType, archType, oemLabel, recoveryLabel, output)
+			err = action.BuildDiskRun(cfg, imgType, oemLabel, recoveryLabel, output)
 			if err != nil {
 				return err
 			}
@@ -125,12 +124,11 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	root.AddCommand(c)
 	imgType := newEnumFlag([]string{"raw", "azure", "gce"}, "raw")
-	archType := newEnumFlag([]string{"x86_64", "arm64"}, "x86_64")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
-	c.Flags().VarP(archType, "arch", "a", "Arch to build the image for")
 	c.Flags().StringP("output", "o", "disk.raw", "Output file (Extension auto changes based of the image type)")
 	c.Flags().String("oem_label", "COS_OEM", "Oem partition label")
 	c.Flags().String("recovery_label", "COS_RECOVERY", "Recovery partition label")
+	addArchFlags(c)
 	addCosignFlags(c)
 	return c
 }

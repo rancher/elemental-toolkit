@@ -39,10 +39,16 @@ import (
 
 func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig, error) {
 	logger := v1.NewLogger()
+	arch := viper.GetString("arch")
+	if arch == "" {
+		arch = "x86_64"
+	}
+
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
 		config.WithMounter(mounter),
 		config.WithLuet(luet.NewLuet(luet.WithLogger(logger))),
+		config.WithArch(arch),
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)

@@ -83,6 +83,13 @@ func WithLuet(luet v1.LuetInterface) func(r *v1.Config) error {
 	}
 }
 
+func WithArch(arch string) func(r *v1.Config) error {
+	return func(r *v1.Config) error {
+		r.Arch = arch
+		return nil
+	}
+}
+
 func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
 	c := &v1.Config{
@@ -91,6 +98,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 		Syscall: &v1.RealSyscall{},
 		Client:  http.NewClient(),
 		Repos:   []v1.Repository{},
+		Arch:    "x86_64",
 	}
 	for _, o := range opts {
 		err := o(c)

@@ -216,7 +216,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, "raw", "x86_64", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, "raw", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
@@ -252,7 +252,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, "raw", "x86_64", "", "", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, "raw", "", "", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))

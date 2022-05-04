@@ -110,10 +110,14 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			if len(cfg.Repos) == 0 {
+				repo := constants.LuetDefaultRepoURI
+				if cfg.Arch != "x86_64" {
+					repo = fmt.Sprintf("%s-%s", constants.LuetDefaultRepoURI, cfg.Arch)
+				}
 				cfg.Repos = []v1.Repository{{
 					Name:     "cos",
 					Type:     "docker",
-					URI:      constants.LuetDefaultRepoURI,
+					URI:      repo,
 					Priority: constants.LuetDefaultRepoPrio,
 				}}
 			}
@@ -137,9 +141,9 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-rootfs", "", "Path of the overlayed rootfs data")
 	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
-
 	c.Flags().String("label", "", "Label of the ISO volume")
 	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
+	addArchFlags(c)
 	addCosignFlags(c)
 	return c
 }
