@@ -36,7 +36,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 	}
 
 	Context("image is corrupted", func() {
-		It("boots in fallback when rootfs is damaged, triggering a kernel panic", func() {
+		It("boots in fallback when rootfs is damaged, triggered by a kernel panic", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
@@ -70,6 +70,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			fmt.Println(out)
 
 			out, _ = s.Command("sudo umount /tmp/mnt/STATE")
+			s.Command("sudo sync")
 
 			s.Reboot(700)
 
@@ -85,12 +86,12 @@ var _ = Describe("cOS booting fallback tests", func() {
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
 		})
 
-		It("boot assesment is enabled after reset, and next_entry is respected", func() {
+		It("without upgrades boots in fallback when rootfs is damaged, triggered by a kernel panic", func() {
+			// Note, this double checks also that when we do a reset the boot assessment is re-installed
+			//  elemental reset wipes disks, so the boot-assessment code is re-installed via cloud-init, so we check
+			// also that
 			Expect(s.BootFrom()).To(Equal(sut.Active))
-			bootAssessmentInstalled()
-		})
 
-		It("boots in fallback when rootfs is damaged, triggering a kernel panic without upgrades", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
@@ -101,7 +102,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			// No manual sentinel enabled
 			out, _ := s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
-			Expect(out).To(ContainSubstring("enable_boot_assessment="))
+			Expect(out).ToNot(ContainSubstring("enable_boot_assessment=yes"))
 
 			// Enable permanent boot assessment
 
@@ -124,6 +125,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			fmt.Println(out)
 
 			out, _ = s.Command("sudo umount /tmp/mnt/STATE")
+			s.Command("sudo sync")
 
 			s.Reboot(700)
 
