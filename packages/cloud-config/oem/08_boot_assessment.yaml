@@ -51,7 +51,7 @@ stages:
     - &customhook
       name: "Hook boot assessment grub configuration"
       if: |
-          [ ! -f "/tmp/mnt/STATE/grubcustom" ] || ( cat /tmp/mnt/STATE/grubcustom | grep -v "grub_boot_assessment" )
+           ! grep -q "grub_boot_assessment" /tmp/mnt/STATE/grubcustom
       commands:
       - |
         cat << 'EOF' >> /tmp/mnt/STATE/grubcustom
