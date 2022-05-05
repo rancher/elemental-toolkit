@@ -199,7 +199,7 @@ jobs:
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
-            packer-version: 1.7.3
+            packer-version: 1.8.0
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
@@ -375,7 +375,7 @@ jobs:
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
-            packer-version: 1.7.3
+            packer-version: 1.8.0
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
