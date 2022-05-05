@@ -56,9 +56,9 @@ _VALIDATE_OPTIONS?=-s
 #
 YQ_VERSION=$(shell yq -V | cut -d " " -f 3 | cut -d "." -f 1)
 ifeq ("$(YQ_VERSION)", "3")
-	PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
+	PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.build,.iso[] | .[]' | sort -u)
 else
-	PACKAGES?=$(shell yq e -j $(MANIFEST) | jq -r '.packages[],.build | .[]' | sort -u)
+	PACKAGES?=$(shell yq e -j $(MANIFEST) | jq -r '.build,.iso[] | .[]' | sort -u)
 endif
 
 ifeq ("$(PACKAGES)","")

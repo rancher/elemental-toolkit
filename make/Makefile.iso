@@ -78,7 +78,7 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	$(ELEMENTAL) --debug --config-dir $(ROOT_DIR) build-iso $(MAKEISO_ARGS) --date --repo $(DESTINATION)
+	$(ELEMENTAL) --debug --config-dir $(ROOT_DIR) build-iso $(MAKEISO_ARGS) --arch $(ARCH) --date --repo $(DESTINATION)
 endif
 
 .PHONY: iso
@@ -90,7 +90,7 @@ endif
 ifneq ("$(ISO)","")
 	@echo "'$(ISO) exists, run 'make clean_iso' folled by 'make $@' to recreate"
 else
-	$(ELEMENTAL) --debug --config-dir $(ROOT_DIR) build-iso $(MAKEISO_ARGS) --repo $(FINAL_REPO)
+	$(ELEMENTAL) --debug --config-dir $(ROOT_DIR) build-iso $(MAKEISO_ARGS) --arch $(ARCH) --repo $(FINAL_REPO)
 endif
 
 
