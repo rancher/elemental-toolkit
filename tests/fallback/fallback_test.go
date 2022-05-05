@@ -62,7 +62,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Command("sudo mount /run/initramfs/cos-state/cOS/active.img /tmp/mnt/STATE")
 
-			for _, d := range []string{"usr/lib/systemd"} {
+			for _, d := range []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"} {
 				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
 			}
 
