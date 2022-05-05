@@ -1,3 +1,12 @@
+packer {
+  required_plugins {
+    qemu = {
+      version = ">= 1.0.3"
+      source  = "github.com/hashicorp/qemu"
+    }
+  }
+}
+
 source "amazon-ebs" "cos" {
   access_key      = var.aws_access_key
   ami_name        = "${var.name}-${var.cos_version}-${var.flavor}"

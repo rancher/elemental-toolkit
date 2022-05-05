@@ -118,4 +118,5 @@ ifeq ("$(PACKER)","/usr/sbin/packer")
 	@echo "Please set PACKER to the correct binary before calling make"
 	@exit 1
 endif
+	$(PACKER) init $(ROOT_DIR)/packer
 	export PKR_VAR_iso=$(ISO) && cd $(ROOT_DIR)/packer && $(PACKER) build -only $(PACKER_TARGET) .
