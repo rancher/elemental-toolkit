@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.20"
+    version: "0.21"
     requires:
       - category: toolchain
         name: elemental-cli
@@ -114,3 +114,5 @@ packages:
         name: "recovery"
       - !!merge <<: *cc
         name: "live"
+      - !!merge <<: *cc
+        name: "boot-assessment"

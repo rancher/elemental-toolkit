@@ -10,8 +10,8 @@ steps:
 - cp config/grub.cfg.tmpl config/bootargs.cfg.tmpl /etc/cos
 - cos-tmpl-render /etc/cos/bootargs.cfg.tmpl
 - cos-tmpl-render /etc/cos/grub.cfg.tmpl
-  {{if .Values.distribution}}
-    {{if eq .Values.distribution "ubuntu"}}
+  {{if .Values.tool_image_distribution}}
+    {{if eq .Values.tool_image_distribution "ubuntu"}}
 - grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
     {{else}}
 - grub2-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
@@ -23,8 +23,8 @@ steps:
 - mkdir -p /EFI/BOOT
 - cp config/grub_efi.cfg.tmpl /EFI/BOOT/grub.cfg.tmpl
 - cos-tmpl-render /EFI/BOOT/grub.cfg.tmpl
-  {{if .Values.distribution}}
-    {{if eq .Values.distribution "opensuse"}}
+  {{if .Values.tool_image_distribution}}
+    {{if eq .Values.tool_image_distribution "opensuse"}}
       {{if .Values.arch }}
         {{if eq .Values.arch "x86_64"}}
 - cp /usr/share/grub2/x86_64-efi/grub.efi /EFI/BOOT/bootx64.efi
@@ -33,7 +33,7 @@ steps:
 - cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootaa64.efi
        {{end}}
      {{end}}
-    {{else if eq .Values.distribution "fedora"}}
+    {{else if eq .Values.tool_image_distribution "fedora"}}
       {{if eq .Values.arch "x86_64"}}
 - grub2-mkimage -O x86_64-efi -o /EFI/BOOT/bootx64.efi -c /EFI/BOOT/grub.cfg -p /grub2 -d /usr/lib/grub/x86_64-efi {{.Values.efi_modules}}
     {{else if eq .Values.arch "aarch64"}}
@@ -41,7 +41,7 @@ steps:
 - cp -r /boot/efi/EFI/fedora/* /EFI/fedora/
 - cp -r /boot/efi/EFI/BOOT/* /EFI/BOOT/
   {{end}}
-  {{else if eq .Values.distribution "ubuntu"}}
+  {{else if eq .Values.tool_image_distribution "ubuntu"}}
     {{if eq .Values.arch "x86_64"}}
 - grub-mkimage -O x86_64-efi -o /EFI/BOOT/bootx64.efi -c /EFI/BOOT/grub.cfg -p /grub2 -d /usr/lib/grub/x86_64-efi {{.Values.efi_modules}} linuxefi
       {{else if eq .Values.arch "aarch64"}}
@@ -53,8 +53,8 @@ steps:
 
 {{if eq .Values.name "grub2-artifacts"}}
 - mkdir /grub-artifacts
-  {{if .Values.distribution}}
-    {{if eq .Values.distribution "opensuse"}}
+  {{if .Values.tool_image_distribution}}
+    {{if eq .Values.tool_image_distribution "opensuse"}}
 - cp -rf /usr/share/grub2/* /grub-artifacts
     {{else}}
 - cp -rfL /usr/lib/grub/* /grub-artifacts
