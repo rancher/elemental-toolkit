@@ -77,7 +77,7 @@ stages:
          group: 0
          permsisions: 0600
          content: |
-            set extra_active_cmdline="rd.emergency=reboot rd.shell=0 panic=5"
+            set extra_active_cmdline="rd.emergency=reboot rd.shell=0 panic=5 systemd.crash_reboot"
             set boot_assessment="/boot_assessment"
             search --no-floppy --file --set=boot_assessment_blk "${boot_assessment}"
             if [ "${boot_assessment_blk}" ]; then

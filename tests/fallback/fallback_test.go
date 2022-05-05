@@ -36,7 +36,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 	}
 
 	Context("image is corrupted", func() {
-		It("boots in fallback when rootfs is damaged, triggered by a kernel panic", func() {
+		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
@@ -86,7 +86,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
 		})
 
-		It("without upgrades boots in fallback when rootfs is damaged, triggered by a kernel panic", func() {
+		It("without upgrades boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			// Note, this double checks also that when we do a reset the boot assessment is re-installed
 			//  elemental reset wipes disks, so the boot-assessment code is re-installed via cloud-init, so we check
 			// also that
