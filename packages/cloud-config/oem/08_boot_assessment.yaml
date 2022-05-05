@@ -84,14 +84,14 @@ stages:
               load_env -f "(${boot_assessment_blk})${boot_assessment}"
             fi
             if [ "${enable_boot_assessment}" = "yes" -o "${enable_boot_assessment_always}" = "yes" ]; then
-              if [ "${boot_assessment_tentative}" = "yes" ]; then
-               if [ -z "${selected_entry}" ]; then
-                set default="fallback"
-                set extra_passive_cmdline="upgrade_failure"
-               fi
-              else
-                set boot_assessment_tentative="yes"
-                save_env -f "(${boot_assessment_blk})${boot_assessment}" boot_assessment_tentative
+              if [ -z "${selected_entry}" ]; then
+                if [ "${boot_assessment_tentative}" = "yes" ]; then
+                  set default="fallback"
+                  set extra_passive_cmdline="upgrade_failure"
+                else
+                  set boot_assessment_tentative="yes"
+                  save_env -f "(${boot_assessment_blk})${boot_assessment}" boot_assessment_tentative
+                fi
               fi
             fi
     - &stateumount
