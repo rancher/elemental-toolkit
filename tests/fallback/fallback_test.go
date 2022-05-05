@@ -33,17 +33,18 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 		out, _ = s.Command("sudo cat /run/initramfs/cos-state/grub_boot_assessment")
 		Expect(out).To(ContainSubstring("boot_assessment_blk"))
+
+		cmdline, _ := s.Command("sudo cat /proc/cmdline")
+		Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
 	}
 
 	Context("image is corrupted", func() {
+		breakPaths := []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"}
 		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
 			bootAssessmentInstalled()
-
-			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
 
 			out, err := s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 			Expect(err).ToNot(HaveOccurred(), out)
@@ -62,7 +63,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Command("sudo mount /run/initramfs/cos-state/cOS/active.img /tmp/mnt/STATE")
 
-			for _, d := range []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"} {
+			for _, d := range breakPaths {
 				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
 			}
 
@@ -77,7 +78,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			v := s.GetOSRelease("VERSION")
 			Expect(v).To(Equal(currentVersion))
 
-			cmdline, _ = s.Command("sudo cat /proc/cmdline")
+			cmdline, _ := s.Command("sudo cat /proc/cmdline")
 			Expect(cmdline).To(And(ContainSubstring("passive.img"), ContainSubstring("upgrade_failure")), cmdline)
 
 			Eventually(func() string {
@@ -97,15 +98,17 @@ var _ = Describe("cOS booting fallback tests", func() {
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
-			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
-
 			// No manual sentinel enabled
 			out, _ := s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
 			Expect(out).ToNot(ContainSubstring("enable_boot_assessment=yes"))
 
-			// Enable permanent boot assessment
+			By("Reboot to recovery before reset")
+			err := s.ChangeBootOnce(sut.Passive)
+			Expect(err).ToNot(HaveOccurred())
+			s.Reboot()
+			Expect(s.BootFrom()).To(Equal(sut.Passive))
 
+			// Enable permanent boot assessment, break active.img
 			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/cos-state")
 			fmt.Println(out)
 
@@ -117,8 +120,9 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Command("sudo mount /run/initramfs/cos-state/cOS/active.img /tmp/mnt/STATE")
 
-			for _, d := range []string{"usr/lib/systemd"} {
+			for _, d := range breakPaths {
 				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
+				fmt.Println(out)
 			}
 
 			out, _ = s.Command("sudo ls -liah /tmp/mnt/STATE/")
@@ -132,7 +136,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			v := s.GetOSRelease("VERSION")
 			Expect(v).To(Equal(currentVersion))
 
-			cmdline, _ = s.Command("sudo cat /proc/cmdline")
+			cmdline, _ := s.Command("sudo cat /proc/cmdline")
 			Expect(cmdline).To(And(ContainSubstring("passive.img"), ContainSubstring("upgrade_failure")), cmdline)
 
 			Eventually(func() string {
