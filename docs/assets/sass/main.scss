@@ -1,0 +1,37 @@
+@import  "../../themes/projects-theme/assets/sass/main";
+
+:root {
+    --primary-color   : #72C2CF;
+    --secondary-color : #373B6B;
+    --dark            : #33313b;
+    --light           : #F3F3F3;
+  }
+
+  .navbar-brand {
+    flex: 1;
+  }
+
+  .sub-header span {
+    padding: 0.5rem;
+  }
+
+  .cncf {
+    .cncf-logo {
+      display: block;
+      width: 300px;
+      margin: auto;
+      padding-bottom: 2rem;
+    }
+
+    p {
+      font-size: 22px;
+    }
+  }
+
+  footer .wrap {
+    display: flex;
+
+    > div:first-child {
+      flex: 1;
+    }
+  }
