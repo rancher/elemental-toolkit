@@ -1,0 +1,11 @@
+name: "hugo"
+category: "toolchain"
+version: "0.98.0"
+uri:
+  - https://github.com/gohugoio/hugo
+license: "Apache 2.0"
+labels:
+  autobump.revdeps: "true"
+  github.repo: "hugo"
+  github.owner: "gohugoio"
+  autobump.strategy: "release"
