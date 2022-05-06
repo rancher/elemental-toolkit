@@ -1,0 +1,25 @@
+{{ partial "header.html" . }}
+
+<div class="container">
+  <nav class="tree-nav">
+    {{ partial "tree.html" . }}
+  </nav>
+
+  <main>
+    {{if not .IsHome }}
+      <h1>{{ .Title | markdownify }}</h1>
+    {{ end }}
+
+    {{ .Content }}
+
+  </main>
+
+  <aside>
+    <div class="box">
+      <h4>On this page</h4>
+      {{.TableOfContents}}
+    </div>
+  </aside>
+</div>
+
+{{ partial "footer.html" . }}

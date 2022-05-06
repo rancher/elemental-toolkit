@@ -1,0 +1,27 @@
+{{ if not (in (.Site.BaseURL | string) "localhost") }}{{ if .Site.Params.gtm_id}}  <link href="https://www.googletagmanager.com" rel="preconnect" crossorigin>
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">{{ end }}
+{{- if eq .Site.Params.gtm_datalayer "basic"}}  <script>
+	window.dataLayer = window.dataLayer || [];
+	window.dataLayer.push({
+		{{- if eq .Kind "page" }}'pageReadingTimeMinutes': {{ .ReadingTime }},
+		'pageReadingTimeSeconds': {{- $readTime := mul (div (countwords .Content) 220.0) 60 }}{{- math.Round $readTime}},
+		'pageWordCount': {{- .WordCount }},
+		'pageFuzzyWordCount': {{- .FuzzyWordCount }},{{- else }}{{- end }}
+		'pageKind': '{{ .Kind }}',
+		'pageId': '{{ with .File }}{{ .UniqueID }}{{ end }}',
+		'pageTitle': '{{ .LinkTitle }}',
+		'pagePermalink': '{{ .Permalink }}',
+		'pageType': '{{ .Type }}',
+		'pageTranslated': {{ .IsTranslated }},
+		{{- if .Params.author -}} 'pageAuthor': '{{ if .Params.author -}}{{ .Params.author }}{{- else if .Site.Author.name -}}{{ .Site.Author.name }}{{- end }}',{{- end }}	
+		{{- if .Params.categories}}{{$category := index (.Params.categories) 0}}'pageCategory':'{{ $category }}', {{- end }}
+		{{- if .Params.tags}}'pageTags':'{{ delimit .Params.tags "|" }}', {{- end }}
+		{{- if .IsHome }}'pageType2': 'home',{{- else if eq .Kind "taxonomy" }}'pageType2': 'tag',{{- else if eq .Type "page" }}'pageType2': 'page',{{- else }}'pageType2': 'post',{{- end }}
+		'pageLanguage': '{{ .Language }}'
+	 });
+  </script> {{- end}}
+{{ if .Site.Params.gtm_id}}<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','{{ .Site.Params.gtm_id }}');</script>{{ end }}{{ end }}

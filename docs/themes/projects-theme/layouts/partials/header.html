@@ -1,0 +1,34 @@
+<header>
+  <div class="rancher-header">
+    <a href="https://rancher.com/" target="blank">
+      <img src="../images/rancher-logo-horiz-white.svg" height="20" width="136">
+    </a>
+    <div>
+      <a href="https://rancher.com/" target="blank">See what else Rancher is up to.</a>
+
+      <!-- github stars -->
+      <a class="github-button" href="https://github.com/rancher/{{ .Site.Title }}" data-icon="octicon-star" data-show-count="true" aria-label="Star on GitHub">Star</a>
+      
+      <!-- github button -->
+      <a class="github-button" href="https://github.com/rancher/{{ .Site.Title }}/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork on GitHub">Fork</a>
+    </div>
+  </div>
+	<div class="sub-header">
+    <a href="{{ .Site.BaseURL }}">
+      <img src="../images/logo-{{ .Site.Title }}.svg" alt="{{ .Site.Title }}">
+    </a>
+    
+    <!-- nav -->
+    {{ with .Site.Menus.main }}
+    <nav>
+      <ul class="menu">
+        {{ range . }}
+        <li><a href="{{ .URL | relURL }}" class="btn no-bg">{{ .Name }}</a></li>
+        {{ end }}
+        <!-- github  -->
+        <li><a href="{{ $.Site.Params.github }}" class="btn"><img src="../images/icon-github.svg"><span>Github</span></a></li>
+      </ul>  
+    </nav>
+    {{ end }}
+  </div>
+</header>

@@ -1,0 +1,33 @@
+name: Publish Site
+on:
+  push:
+    branches:
+      - master
+  schedule:
+   - cron: 0 20 * * *
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - name: Install deps
+        run: |
+              npm install postcss-cli
+              npm install autoprefixer
+              sudo bash ./scripts/get_luet.sh
+              sudo luet install -y toolchain/yq
+      - name: Build package docs
+        run: |
+           cd docs
+           make generate-docs build
+           mv public ../
+      - name: Deploy 🚀
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: public
