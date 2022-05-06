@@ -1,0 +1,11 @@
+#
+# cOS-toolkit Makefile.docs
+#
+#
+
+
+docs-serve:
+	$(MAKE) -C docs/ serve
+
+docs-build:
+	$(MAKE) -C docs/ generate-docs build

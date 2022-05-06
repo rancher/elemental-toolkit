@@ -14,9 +14,5 @@ build:
 serve:
 	scripts/serve.sh
 
-.PHONY: publish
-publish:
-	scripts/publish.sh
-
 generate-docs:
 	scripts/generate_packages_docs.sh $(ROOT_DIR)/../packages
