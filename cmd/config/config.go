@@ -94,28 +94,31 @@ func ReadConfigRun(configDir string, mounter mount.Interface) (*v1.RunConfig, er
 		}
 	}
 
-	if exists, _ := utils.Exists(cfg.Fs, configDir); exists {
-		viper.AddConfigPath(configDir)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("config")
-		// If a config file is found, read it in.
-		err := viper.MergeInConfig()
-		if err != nil {
-			cfg.Logger.Warnf("error merging config files: %s", err)
-		}
-	}
-
-	// Load extra config files on configdir/config.d/ so we can override config values
-	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
-	if _, err := os.Stat(cfgExtra); err == nil {
-		viper.AddConfigPath(cfgExtra)
-		_ = filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
-			if !d.IsDir() {
-				viper.SetConfigName(d.Name())
-				cobra.CheckErr(viper.MergeInConfig())
+	if configDir != "" {
+		if exists, _ := utils.Exists(cfg.Fs, configDir); exists {
+			viper.AddConfigPath(configDir)
+			viper.SetConfigType("yaml")
+			viper.SetConfigName("config")
+			// If a config file is found, read it in.
+			err := viper.MergeInConfig()
+			if err != nil {
+				cfg.Logger.Warnf("error merging config files: %s", err)
 			}
-			return nil
-		})
+		}
+
+		// Load extra config files on configdir/config.d/ so we can override config values
+		cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
+		if _, err := os.Stat(cfgExtra); err == nil {
+			viper.AddConfigPath(cfgExtra)
+			_ = filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
+				if !d.IsDir() {
+					viper.SetConfigType("yaml")
+					viper.SetConfigName(d.Name())
+					cobra.CheckErr(viper.MergeInConfig())
+				}
+				return nil
+			})
+		}
 	}
 
 	viperReadEnv()
