@@ -4,7 +4,7 @@ containerOS (**cOS**) is a toolkit to build, ship and maintain cloud-init driven
 
 It is designed to reduce the maintenance surface, with a flexible approach to provide upgrades from container registries. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
 
-Documentation is available at [https://rancher-sandbox.github.io/cos-toolkit-docs/docs](https://rancher-sandbox.github.io/cos-toolkit-docs/docs)
+Documentation is available at [https://rancher-sandbox.github.io/cOS-toolkit/docs](https://rancher-sandbox.github.io/cOS-toolkit/docs)
 
 ## Design goals
 
@@ -19,7 +19,7 @@ Documentation is available at [https://rancher-sandbox.github.io/cos-toolkit-doc
 
 ### Quick start
 
-Check out our [getting-started](https://rancher-sandbox.github.io/cos-toolkit-docs/docs/getting-started/) section in the documentation.
+Check out our [getting-started](https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/) section in the documentation.
 
 ## Build status
 

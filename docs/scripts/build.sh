@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BASE_URL="${BASE_URL:-https://github.com/rancher-sandbox/cOS-toolkit/}"
+BASE_URL="${BASE_URL:-}"
 
 binpath="${ROOT_DIR}/bin"
 publicpath="${ROOT_DIR}/public"

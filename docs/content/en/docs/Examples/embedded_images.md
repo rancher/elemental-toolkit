@@ -154,7 +154,7 @@ COPY cloud-init.yaml /system/oem/
 Create a `cloud-init.yaml` file as the `derivative/cloud-init.yaml` with the following content:
 
 ```yaml
-# See https://rancher-sandbox.github.io/cos-toolkit-docs/docs/reference/cloud_init/ for a full syntax reference
+# See https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/cloud_init/ for a full syntax reference
 name: "Default settings"
 stages:
    initramfs:
@@ -213,7 +213,7 @@ stages:
        commands:
        - passwd -l root
    # Setup persistency so k3s works properly
-   # See also: https://rancher-sandbox.github.io/cos-toolkit-docs/docs/reference/immutable_rootfs/#configuration-with-an-environment-file
+   # See also: https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/immutable_rootfs/#configuration-with-an-environment-file
    rootfs.after:
     - name: "Immutable Layout configuration"
       environment_file: /run/cos/cos-layout.env
