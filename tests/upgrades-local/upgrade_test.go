@@ -37,14 +37,14 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				version := out
 
-				out, err = s.Command(fmt.Sprintf("mkdir /run/update && elemental pull-image %s:cos-system-%s /run/update", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("mkdir /run/update && elemental --debug pull-image %s:cos-system-%s /run/update", s.GreenRepo, s.TestVersion))
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from elemental pull-image: %v\n", err)
 				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
-				out, err = s.Command("elemental upgrade --no-verify --directory /run/update")
+				out, err = s.Command("elemental --debug upgrade --no-verify --directory /run/update")
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from elemental upgrade: %v\n", err)
 				}

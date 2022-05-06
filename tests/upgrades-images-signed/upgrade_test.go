@@ -28,7 +28,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	Context("After install", func() {
 		When("upgrading", func() {
 			It("upgrades to latest available (master) and reset", func() {
-				out, err := s.Command("elemental upgrade")
+				out, err := s.Command("elemental --debug upgrade")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				Expect(out).Should(ContainSubstring("Upgrading active partition"))
@@ -50,7 +50,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 				version := out
 				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-				out, err = s.Command(fmt.Sprintf("elemental upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("elemental --debug upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(
 					And(

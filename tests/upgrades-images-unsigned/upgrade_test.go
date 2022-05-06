@@ -38,7 +38,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				out, err = s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("elemental --debug upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred(), out)
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				Expect(out).Should(ContainSubstring("Upgrading active partition"))
