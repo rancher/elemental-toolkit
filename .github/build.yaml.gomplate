@@ -378,7 +378,7 @@
       ARCH: {{{ $config.arch }}}
       {{{ if eq $config.arch "arm64" }}}
       VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
+      VAGRANT_MEMORY: 4096
       VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
