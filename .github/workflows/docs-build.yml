@@ -18,4 +18,6 @@ jobs:
           sudo luet install -y toolchain/yq
       - name: Build pages
         run: |
-          cd docs && make generate-docs build
+           make docs-build
+           mv docs/public ./
+           ls -liah public/

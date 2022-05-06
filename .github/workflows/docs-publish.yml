@@ -21,9 +21,8 @@ jobs:
               sudo luet install -y toolchain/yq
       - name: Build package docs
         run: |
-           cd docs
-           make generate-docs build
-           mv public ../
+           make docs-build
+           mv docs/public ./
       - name: Deploy 🚀
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: JamesIves/github-pages-deploy-action@releases/v3
