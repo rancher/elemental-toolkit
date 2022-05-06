@@ -280,6 +280,7 @@
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PACKER_GITHUB_API_TOKEN: ${{ github.token }}
       {{{if eq $config.arch "arm64" }}}
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd

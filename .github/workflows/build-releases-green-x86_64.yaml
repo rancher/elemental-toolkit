@@ -268,6 +268,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PACKER_GITHUB_API_TOKEN: ${{ github.token }}
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -557,6 +558,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PACKER_GITHUB_API_TOKEN: ${{ github.token }}
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2

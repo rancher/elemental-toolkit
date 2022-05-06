@@ -56,7 +56,7 @@ flavors:
         cache_repository: "build"
         organization: "quay.io/costoolkit"
         skip_tests: false
-        run_tests: ["test-fallback", "test-smoke", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
+        run_tests: ["test-smoke", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local"]
         flavor: "green"
         skip_tests_flavor: [ "blue", "orange", "teal"]
         skip_images_flavor: [ "blue", "orange", "teal" ]

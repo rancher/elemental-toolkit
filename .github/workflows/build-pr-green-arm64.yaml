@@ -168,6 +168,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PACKER_GITHUB_API_TOKEN: ${{ github.token }}
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
       PACKER_TARGET: qemu.cos-arm64
@@ -215,7 +216,7 @@ jobs:
     needs: qemu-squashfs-green
     strategy:
       matrix:
-        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
+        test: [test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -344,6 +345,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PACKER_GITHUB_API_TOKEN: ${{ github.token }}
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
       PACKER_TARGET: qemu.cos-arm64
@@ -391,7 +393,7 @@ jobs:
     needs: qemu-nonsquashfs-green
     strategy:
       matrix:
-        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
+        test: [test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
