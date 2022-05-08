@@ -1,5 +1,5 @@
 name: "base"
 category: "distro"
-version: "0.20220507"
+version: "0.20220508"
 labels:
   autobump.strategy: "snapshot"
