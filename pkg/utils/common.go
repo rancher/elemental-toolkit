@@ -225,7 +225,12 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 	// create args
 	args := []string{source, destination}
 	// append options passed to args in order to have the correct order
-	args = append(args, options...)
+	// protect against options passed together in the same string , i.e. "-x add" instead of "-x", "add"
+	var optionsExpanded []string
+	for _, op := range options {
+		optionsExpanded = append(optionsExpanded, strings.Split(op, " ")...)
+	}
+	args = append(args, optionsExpanded...)
 	out, err := runner.Run("mksquashfs", args...)
 	if err != nil {
 		logger.Debugf("Error running squashfs creation, stdout: %s", out)
