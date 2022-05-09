@@ -132,3 +132,7 @@ func (a *enum) Set(p string) error {
 func (a *enum) Type() string {
 	return "string"
 }
+
+func addSquashFsCompressionFlags(cmd *cobra.Command) {
+	cmd.Flags().StringArrayP("squash-compression", "x", []string{}, "cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')")
+}

@@ -132,7 +132,13 @@ func prepareISORoot(c v1.Config, isoDir string, rootDir string, uefiDir string) 
 	}
 
 	c.Logger.Info("Creating squashfs...")
-	err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, filepath.Join(isoDir, constants.IsoRootFile), constants.GetDefaultSquashfsOptions())
+	squashOptions := constants.GetDefaultSquashfsOptions()
+	if len(c.SquashFsCompressionConfig) > 0 {
+		squashOptions = append(squashOptions, c.SquashFsCompressionConfig...)
+	} else {
+		squashOptions = append(squashOptions, constants.GetDefaultSquashfsCompressionOptions()...)
+	}
+	err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, filepath.Join(isoDir, constants.IsoRootFile), squashOptions)
 	if err != nil {
 		return err
 	}

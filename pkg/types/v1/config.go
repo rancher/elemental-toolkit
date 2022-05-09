@@ -32,18 +32,19 @@ const (
 // Config is the struct that includes basic and generic configuration of elemental binary runtime.
 // It mostly includes the interfaces used around many methods in elemental code
 type Config struct {
-	Logger          Logger
-	Fs              FS
-	Mounter         mount.Interface
-	Runner          Runner
-	Syscall         SyscallInterface
-	CloudInitRunner CloudInitRunner
-	Luet            LuetInterface
-	Client          HTTPClient
-	Cosign          bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
-	CosignPubKey    string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
-	Repos           []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
-	Arch            string       `yaml:"arch,omitempty" mapstructure:"arch"`
+	Logger                    Logger
+	Fs                        FS
+	Mounter                   mount.Interface
+	Runner                    Runner
+	Syscall                   SyscallInterface
+	CloudInitRunner           CloudInitRunner
+	Luet                      LuetInterface
+	Client                    HTTPClient
+	Cosign                    bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
+	CosignPubKey              string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
+	Repos                     []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
+	Arch                      string       `yaml:"arch,omitempty" mapstructure:"arch"`
+	SquashFsCompressionConfig []string
 }
 
 // RunConfig is the struct that represents the full configuration needed for install, upgrade, reset, rebrand.

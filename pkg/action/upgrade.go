@@ -362,9 +362,14 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	// if we are upgrading the recovery and its squash recovery, we need to create the squash file
 	if isSquashRecovery && u.Config.RecoveryUpgrade {
 		finalDestination = filepath.Join(upgradeStateDir, "cOS", constants.RecoverySquashFile)
-		options := constants.GetDefaultSquashfsOptions()
 		u.Info("Creating %s", constants.RecoverySquashFile)
-		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, upgradeTempDir, transitionImg, options)
+		squashOptions := constants.GetDefaultSquashfsOptions()
+		if len(u.Config.SquashFsCompressionConfig) > 0 {
+			squashOptions = append(squashOptions, u.Config.SquashFsCompressionConfig...)
+		} else {
+			squashOptions = append(squashOptions, constants.GetDefaultSquashfsCompressionOptions()...)
+		}
+		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, upgradeTempDir, transitionImg, squashOptions)
 		if err != nil {
 			return err
 		}

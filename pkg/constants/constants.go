@@ -125,7 +125,11 @@ func GetCloudInitPaths() []string {
 
 // GetDefaultSquashfsOptions returns the default options to use when creating a squashfs
 func GetDefaultSquashfsOptions() []string {
-	options := []string{"-b", "1024k", "-comp", "xz", "-Xbcj"}
+	return []string{"-b", "1024k"}
+}
+
+func GetDefaultSquashfsCompressionOptions() []string {
+	options := []string{"-comp", "xz", "-Xbcj"}
 	// Set the filter based on arch for best compression results
 	if runtime.GOARCH == "arm64" {
 		options = append(options, "arm")

@@ -145,6 +145,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
 	addArchFlags(c)
 	addCosignFlags(c)
+	addSquashFsCompressionFlags(c)
 	return c
 }
 
