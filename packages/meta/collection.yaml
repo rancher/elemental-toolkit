@@ -41,6 +41,25 @@ packages:
         category: "system"
         version: ">=0"
   - !!merge <<: *metabase
+    name: "cos-light"
+    description: |
+        cOS light package. It includes a small selection of cloud-config ready to go for most situations.
+        Note: it doesn't bring any compiled binary, can be used in conjunction with meta/toolchain.
+    requires:
+      - category: meta
+        name: cos-modules
+        version: ">=0"
+      - &config
+        name: network
+        category: cloud-config
+        version: ">=0"
+      - !!merge <<: *config
+        name: "recovery"
+      - !!merge <<: *config
+        name: "live"
+      - !!merge <<: *config
+        name: "boot-assessment"
+  - !!merge <<: *metabase
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
     requires:
