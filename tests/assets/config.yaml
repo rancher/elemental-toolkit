@@ -1,3 +1,14 @@
-stages:
-  network:
-    - hostname: "testhostname"
+install:
+  partitions:
+    state:
+      label: COS_STATE
+      size: 8192
+    recovery:
+      size: 4000
+      label: COS_RECOVERY
+    persistent:
+      size: 100
+      label: COS_PERSISTENT
+    oem:
+      size: 10
+      label: COS_PERSISTENT

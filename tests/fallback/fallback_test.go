@@ -47,7 +47,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			bootAssessmentInstalled()
 
 			out, err := s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-			Expect(err).ToNot(HaveOccurred(), out)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 
