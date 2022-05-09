@@ -215,7 +215,7 @@ jobs:
     needs: qemu-squashfs-green
     strategy:
       matrix:
-        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
+        test: [test-smoke, test-upgrades-images-unsigned]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -391,7 +391,7 @@ jobs:
     needs: qemu-nonsquashfs-green
     strategy:
       matrix:
-        test: [test-fallback, test-smoke, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local]
+        test: [test-smoke, test-upgrades-images-unsigned]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
