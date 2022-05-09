@@ -1,6 +1,6 @@
 name: cos-setup
 category: system
-version: 0.6.2-2
+version: 0.6.2-3
 requires:
   - name: "elemental-cli"
     category: "toolchain"
