@@ -37,6 +37,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// We bind the --recovery flag into RecoveryUpgrade value to have a more explicit var in the config
 			_ = viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
+			bindSquashFsCompressionFlags(cmd)
 			// bind the rest of the flags into their direct values as they are mapped 1to1
 			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {

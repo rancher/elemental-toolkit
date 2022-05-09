@@ -136,3 +136,8 @@ func (a *enum) Type() string {
 func addSquashFsCompressionFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayP("squash-compression", "x", []string{}, "cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')")
 }
+
+func bindSquashFsCompressionFlags(cmd *cobra.Command) {
+	// Flag is under RunConfig.Config so we need to bind it properly
+	_ = viper.BindPFlag("Config.SquashFsCompressionConfig", cmd.Flags().Lookup("squash-compression"))
+}
