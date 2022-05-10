@@ -62,6 +62,9 @@ test_no_root_no_systemctl:
 license-check:
 	@.github/license_check.sh
 
+build_docs:
+	cd docs && go run generate_docs.go
+
 lint: fmt vet
 
-all: lint test build
+all: build_docs lint test build
