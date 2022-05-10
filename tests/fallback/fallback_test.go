@@ -40,7 +40,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 	Context("image is corrupted", func() {
 		breakPaths := []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"}
-		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
+		PIt("boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			currentVersion := s.GetOSRelease("VERSION")
 
 			// Auto assessment was installed
@@ -87,7 +87,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
 		})
 
-		It("without upgrades boots in fallback when rootfs is damaged, triggered by missing files", func() {
+		PIt("without upgrades boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			// Note, this double checks also that when we do a reset the boot assessment is re-installed
 			//  elemental reset wipes disks, so the boot-assessment code is re-installed via cloud-init, so we check
 			// also that
@@ -154,7 +154,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 	Context("GRUB cannot mount image", func() {
 		When("COS_ACTIVE image was corrupted", func() {
-			It("fallbacks by booting into passive", func() {
+			PIt("fallbacks by booting into passive", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
 				_, err := s.Command("mount -o rw,remount /run/initramfs/cos-state")
@@ -172,7 +172,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			})
 		})
 		When("COS_ACTIVE and COS_PASSIVE images are corrupted", func() {
-			It("fallbacks by booting into recovery", func() {
+			PIt("fallbacks by booting into recovery", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
 				_, err := s.Command("mount -o rw,remount /run/initramfs/cos-state")
