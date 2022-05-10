@@ -17,7 +17,7 @@ require (
 	github.com/jaypipes/ghw v0.9.1-0.20220404152016-2ea05cb6c17c
 	github.com/joho/godotenv v1.4.0
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
-	github.com/mitchellh/mapstructure v1.4.3 // indirect
+	github.com/mitchellh/mapstructure v1.4.3
 	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e
 	github.com/mudler/luet v0.0.0-20220127164253-6f77fa2b3a72
 	github.com/mudler/yip v0.0.0-20220321143540-2617d71ea02a
