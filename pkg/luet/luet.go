@@ -43,6 +43,7 @@ type Luet struct {
 	fs                v1.FS
 	plugins           []string
 	VerifyImageUnpack bool
+	TmpDir            string
 }
 
 type Options func(l *Luet) error
@@ -83,6 +84,13 @@ func WithLogger(log v1.Logger) func(r *Luet) error {
 func WithFs(fs v1.FS) func(r *Luet) error {
 	return func(l *Luet) error {
 		l.fs = fs
+		return nil
+	}
+}
+
+func WithLuetTempDir(tmpDir string) func(r *Luet) error {
+	return func(r *Luet) error {
+		r.TmpDir = tmpDir
 		return nil
 	}
 }
@@ -280,6 +288,9 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 	// This is set on luet CLI to runtime.NumCPU but on here we have to manually set it
 	if config.General.Concurrency == 0 {
 		config.General.Concurrency = runtime.NumCPU()
+	}
+	if l.TmpDir != "" {
+		config.System.TmpDirBase = l.TmpDir
 	}
 	return config
 }

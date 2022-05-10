@@ -56,7 +56,8 @@ func SetupLuet(config *v1.RunConfig) {
 			plugins = append(plugins, constants.LuetMtreePlugin)
 		}
 	}
-	config.Luet = luet.NewLuet(luet.WithLogger(config.Logger), luet.WithPlugins(plugins...))
+	tmpDir := utils.GetTempDir(config, "")
+	config.Luet = luet.NewLuet(luet.WithLogger(config.Logger), luet.WithPlugins(plugins...), luet.WithLuetTempDir(tmpDir))
 }
 
 // SetPartitionsFromScratch initiates all defaults partitions in order is they

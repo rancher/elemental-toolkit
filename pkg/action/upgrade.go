@@ -213,7 +213,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	cleanup.Push(func() error { return u.remove(transitionImg) })
 
 	// Get the upgradeTempDir here, so we use the persistent partition if mounted
-	upgradeTempDir := utils.GetUpgradeTempDir(u.Config)
+	upgradeTempDir := utils.GetTempDir(u.Config, "upgrade")
 	u.Debug("Upgrade temp dir: %s", upgradeTempDir)
 
 	err = utils.MkdirAll(u.Config.Fs, upgradeTempDir, constants.DirPerm)

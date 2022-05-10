@@ -667,9 +667,10 @@ var _ = Describe("Runtime Actions", func() {
 			config.RecoveryImage = "system/cos-config"
 			config.ImgSize = 10
 			// Create fake /etc/os-release
-			utils.MkdirAll(fs, filepath.Join(utils.GetUpgradeTempDir(config), "etc"), constants.DirPerm)
+			tmpDir := utils.GetTempDir(config, "upgrade")
+			utils.MkdirAll(fs, filepath.Join(tmpDir, "etc"), constants.DirPerm)
 
-			err := config.Fs.WriteFile(filepath.Join(utils.GetUpgradeTempDir(config), "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), constants.FilePerm)
+			err := config.Fs.WriteFile(filepath.Join(tmpDir, "etc", "os-release"), []byte("GRUB_ENTRY_NAME=TESTOS"), constants.FilePerm)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			// Create paths used by tests
