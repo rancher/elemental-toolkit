@@ -42,10 +42,56 @@ With the config file:
 In the example above, the cos-toolkit parts that are **required** are pulled in by `RUN luet install -y meta/cos-minimal`.
 Afterwards we install k9s and nerdctl packages to create our derivative with those packages on it.
 
+### Meta packages
+
+The toolkit is split into several meta-packages to pull only the individual needed part or a subset of them which are tied to a specific purpose, the meta packages are [documented in their own section](../../reference/packages/meta-packages).
+
 {{<package package="meta/cos-minimal" >}} is a meta-package that will pull {{<package package="toolchain/luet" >}}, {{<package package="toolchain/yip" >}}, {{<package package="utils/installer" >}}, {{<package package="system/cos-setup" >}}, {{<package package="system/immutable-rootfs" >}}, {{<package package="system/base-dracut-modules" >}}, {{<package package="system/grub2-config" >}}, {{<package package="system/cloud-config" >}}. 
 
+{{< tabpane >}}
+  {{< tab header="Minimal" subtitle="foo" >}}
+# This meta package will pull the minimal set to have a bootable system. 
+# This includes default username/password set as well (`root/cos`) during boot
+
+RUN luet install -y meta/cos-minimal
+  {{< /tab >}}
+  {{< tab header="Core">}}
+# The core subset includes the packages needed to have a bootable system. 
+# This does not include any specific system configuration.
+
+RUN luet install -y meta/cos-core
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-core cloud-config/live cloud-config/network
+  {{< /tab >}}
+  {{< tab header="Light" >}}
+# The light subset includes the packages needed to have a bootable system, omitting any compiled binaries.
+# This does not include as well any specific system configuration.
+
+RUN luet install -y meta/cos-light
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-light meta/toolchain cloud-config/live cloud-config/network
+  {{< /tab >}}
+  {{< tab header="Toolchain" >}}
+# The Toolchain subset includes only compiled binaries required into the rootfs image. 
+# This does not include as well any specific system configuration.
+
+RUN luet install -y meta/toolchain
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-light meta/toolchain
+  {{< /tab >}}
+{{< /tabpane >}}
+
+
+
 {{% alert title="Note" %}}
-{{<package package="system/cloud-config" >}} is optional, but provides `cOS` defaults setting, like default user/password and so on. If you are not installing it directly, an equivalent cloud-config has to be provided in order to properly boot and run a system, see [oem configuration](../../customizing/oem_configuration).
+{{<package package="system/cloud-config" >}} is optional, but provides `cOS` defaults setting, for example default user/password, rootfs layout, and more. If you are not installing it directly, an equivalent cloud-config or a set has to be provided in order to properly boot and run a system, see [oem configuration](../../customizing/oem_configuration).
+Individual cloud-configs can be installed as well as are available as standalone packages.
 {{% /alert %}}
 
 #### Using cosign in your derivative

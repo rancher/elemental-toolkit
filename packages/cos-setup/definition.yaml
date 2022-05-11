@@ -1,7 +1,3 @@
 name: cos-setup
 category: system
-version: 0.6.2-3
-requires:
-  - name: "elemental-cli"
-    category: "toolchain"
-    version: ">0.0.10"
+version: "0.6.3"
