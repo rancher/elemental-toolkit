@@ -73,6 +73,7 @@
         # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
         run: |
           sudo git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
 {{{ end }}}
 
 {{{define "make"}}}
