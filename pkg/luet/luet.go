@@ -291,6 +291,7 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 	}
 	if l.TmpDir != "" {
 		config.System.TmpDirBase = l.TmpDir
+		config.System.PkgsCachePath = l.TmpDir
 	}
 	return config
 }
