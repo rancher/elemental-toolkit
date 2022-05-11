@@ -77,6 +77,11 @@ jobs:
           sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
+      - name: Fix git permissions for CVE-2022-24765
+        # This fixes running git commands on our git directory under sudo user
+        # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
+        run: |
+          sudo git config --global --add safe.directory ${{ github.workspace }}
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
