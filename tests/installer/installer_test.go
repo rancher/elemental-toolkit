@@ -125,7 +125,7 @@ var _ = Describe("cOS Installer tests", func() {
 				})
 
 				It("No GPT", func() {
-					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
 					out, err := s.Command("elemental --config-dir /usr/local install /dev/sda")

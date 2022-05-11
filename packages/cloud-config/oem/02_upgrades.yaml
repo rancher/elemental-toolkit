@@ -41,5 +41,7 @@ stages:
          group: 0
          content: |
                   upgrade:
-                    system: channel:system/cos
-                    recovery-system: channel:recovery/cos
+                    system: 
+                      uri: channel:system/cos
+                    recovery-system:
+                      uri: channel:recovery/cos
