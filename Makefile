@@ -106,9 +106,9 @@ ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
 
 # Used by publish-repo and create-repo for the snapshot-id
 # This is the commit of the latest tag
-LAST_TAGGED_COMMIT=$(shell git rev-list --tags --max-count=1)
+LAST_TAGGED_COMMIT=$(shell git rev-list --tags --max-count=1 2> /dev/null)
 # this is the current commit
-CURRENT_COMMIT ?= $(shell git rev-parse HEAD)
+CURRENT_COMMIT ?= $(shell git rev-parse HEAD 2> /dev/null)
 # get the tag
 GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null )
 # if both match, we are on a tag, so use that for snapshot id, otherwise use the current commit
