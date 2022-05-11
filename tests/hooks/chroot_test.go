@@ -18,7 +18,7 @@ var _ = Describe("cOS Feature tests", func() {
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 
-			out, err := s.Command("elemental upgrade --system.uri channel:system/cos")
+			out, err := s.Command("elemental upgrade")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 			By("rebooting")
