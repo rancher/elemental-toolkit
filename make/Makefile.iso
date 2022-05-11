@@ -64,7 +64,9 @@ endif
     --tree-compression $(COMPRESSION) \
     --tree-filename tree.tar \
     --meta-compression $(COMPRESSION) \
-    --type http
+    --type http \
+    --snapshot-id $(SNAPSHOT_ID)
+
 
 $(DESTINATION)/tree.tar.zst:
 	make create-repo

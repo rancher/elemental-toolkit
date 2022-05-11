@@ -104,6 +104,19 @@ PACKER_TARGET?=virtualbox-iso.cos
 #
 ISO?=$(shell ls $(ROOT_DIR)/*.iso 2> /dev/null)
 
+# Used by publish-repo and create-repo for the snapshot-id
+# This is the commit of the latest tag
+LAST_TAGGED_COMMIT=$(shell git rev-list --tags --max-count=1)
+# this is the current commit
+CURRENT_COMMIT ?= $(shell git rev-parse HEAD)
+# get the tag
+GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null )
+# if both match, we are on a tag, so use that for snapshot id, otherwise use the current commit
+ifeq ($(strip $(LAST_TAGGED_COMMIT)), $(strip $(CURRENT_COMMIT)))
+	export SNAPSHOT_ID?=$(GIT_TAG)
+else
+	export SNAPSHOT_ID?=$(CURRENT_COMMIT)
+endif
 
 #----------------------- end global variables -----------------------
 
