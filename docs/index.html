@@ -125,7 +125,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.266880219ad0516d421d42b2549f77ae.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -161,7 +161,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.266880219ad0516d421d42b2549f77ae.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1497,6 +1497,33 @@ if (!doNotTrack) {
   
   
   
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsreferencepackagesmeta-packagesmeta-cos-light-li">
+    
+      <a href="https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/packages/meta-packages/meta-cos-light/" title="meta/cos-light" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docsreferencepackagesmeta-packagesmeta-cos-light"><span class="">cos-light</span></a>
+    
+    
+  </li>
+
+          
+        
+          
+            
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsreferencepackagesmeta-packagesmeta-cos-minimal-li">
     
       <a href="https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/packages/meta-packages/meta-cos-minimal/" title="meta/cos-minimal" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docsreferencepackagesmeta-packagesmeta-cos-minimal"><span class="">cos-minimal</span></a>
@@ -2030,17 +2057,8 @@ if (!doNotTrack) {
 	<h2 id="what-is-cos">What is cOS?</h2>
 <p>cOS is a toolkit which allows container images to be bootable in VMs, baremetals, embedded devices, and much more.</p>
 <p>cOS allows to create meta-Linux derivatives which are configured throughout cloud-init configuration files and are immutable by default.</p>
-<p>cOS and derivatives shares a common feature set, can be upgraded in a <strong>OTA-alike</strong>* style, and upgrades are delivered with standard container registries.</p>
+<p>cOS and derivatives shares a common feature set, can be upgraded with a A/B mechanism, and upgrades are delivered with standard container registries.</p>
 <p>cOS comes also with vanilla images that can be used to boot directly container images built with the toolkit.</p>
-
-
-<div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Note</h4>
-
-    Note here we refer to &ldquo;OTA-alike&rdquo; merely as a method of distributing upgrades. It does not involve any specific setup (either wireless or cabled works) except an network connection to the registry where images are stored. Updates are delivered from one central location (the container registry) which hosts all images available for the clients to pull from.
-
-</div>
-
 <h2 id="why-cos">Why cOS?</h2>
 <p>cOS allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - cOS enables then everyone to build their own derivative and access it in various formats.</p>
 <p>To build a bootable image is as simple as running <code>docker build</code>.</p>
@@ -2055,7 +2073,7 @@ if (!doNotTrack) {
 <li>Cloud-init driven</li>
 <li>Based on systemd</li>
 <li>Built and upgraded from containers - It is a <a href="https://quay.io/repository/costoolkit/releases-green">single image OS</a>!</li>
-<li>OTA updates</li>
+<li>A/B updates</li>
 <li>Easy to customize</li>
 <li>Cryptographically verified</li>
 <li>instant switch from different versions</li>
@@ -2209,7 +2227,7 @@ Anyone can tweak Elemental derivatives from the bottom-up to enable and disable 
 
     Last modified
     May 11, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/7de76b86fa299b464ff17f9e9e9419e489f93459">Drop fallback tests for arm64 (#1303) (7de76b8)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/6140dba3aa0fd1d9dd7ea14febbe9ba24dfac64f">Add meta/cos-light (#1304) (6140dba)</a>
 
 </div>
 

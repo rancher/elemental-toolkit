@@ -128,7 +128,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.266880219ad0516d421d42b2549f77ae.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -303,7 +303,7 @@ This the multi-page printable view of this section.
     
     
 	
-<li>6.3.2: <a href="#pg-20f0dfa30c6acbc13f3bda70a14963b6">meta/cos-minimal</a></li>
+<li>6.3.2: <a href="#pg-1076cfc9c35ffa0e00ffeca1fc20244c">meta/cos-light</a></li>
 
 
     
@@ -311,7 +311,7 @@ This the multi-page printable view of this section.
     
     
 	
-<li>6.3.3: <a href="#pg-936dc212b34efd945dfb5c1c8055923d">meta/cos-modules</a></li>
+<li>6.3.3: <a href="#pg-20f0dfa30c6acbc13f3bda70a14963b6">meta/cos-minimal</a></li>
 
 
     
@@ -319,7 +319,7 @@ This the multi-page printable view of this section.
     
     
 	
-<li>6.3.4: <a href="#pg-cd398c4a96ce6315b3ed8413b9677a10">meta/cos-verify</a></li>
+<li>6.3.4: <a href="#pg-936dc212b34efd945dfb5c1c8055923d">meta/cos-modules</a></li>
 
 
     
@@ -327,7 +327,15 @@ This the multi-page printable view of this section.
     
     
 	
-<li>6.3.5: <a href="#pg-2d0403630e1a722c86e82297c9ab7b8b">meta/toolchain</a></li>
+<li>6.3.5: <a href="#pg-cd398c4a96ce6315b3ed8413b9677a10">meta/cos-verify</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6.3.6: <a href="#pg-2d0403630e1a722c86e82297c9ab7b8b">meta/toolchain</a></li>
 
 
     
@@ -1322,7 +1330,42 @@ is part of the cOS toolkit repository and can be installed with:</p>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-20f0dfa30c6acbc13f3bda70a14963b6">6.3.2 - meta/cos-minimal</h1>
+	<h1 id="pg-1076cfc9c35ffa0e00ffeca1fc20244c">6.3.2 - meta/cos-light</h1>
+    <div class="lead">Documentation for the meta/cos-light package</div>
+	<p>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    <p><a href="https://rancher-sandbox.github.io/cos-toolkit-package-browser/find/meta/cos-light" class="btn btn-sm position-relative rounded-pill bg-light text-dark"
+role="button">
+<i class='fa fa-box'></i> meta/cos-light
+</a>
+is part of the cOS toolkit repository and can be installed with:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">luet install -y meta/cos-light
+</code></pre></div><p>in the derivative&rsquo;s Dockerfile.</p>
+
+
+</div>
+
+This meta collection includes ships an opinionated default set of cloud-configs, and all the static cOS configuration that are meant to be overlayed to the rootfs. No binaries are pulled as part of this meta.</p>
+<p>Can be used in conjuction with <code>meta/toolchain</code> and <code>meta/cos-verify</code> to pull the compiled binaries.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-20f0dfa30c6acbc13f3bda70a14963b6">6.3.3 - meta/cos-minimal</h1>
     <div class="lead">Documentation for the meta/cos-minimal package</div>
 	<p>
 
@@ -1357,7 +1400,7 @@ This meta collection includes the <code>cos-core</code> collection and additiona
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-936dc212b34efd945dfb5c1c8055923d">6.3.3 - meta/cos-modules</h1>
+	<h1 id="pg-936dc212b34efd945dfb5c1c8055923d">6.3.4 - meta/cos-modules</h1>
     <div class="lead">Documentation for the meta/cos-modules package</div>
 	<p>
 
@@ -1397,7 +1440,7 @@ The <code>cos</code> modules pulls the following packages:</p>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-cd398c4a96ce6315b3ed8413b9677a10">6.3.4 - meta/cos-verify</h1>
+	<h1 id="pg-cd398c4a96ce6315b3ed8413b9677a10">6.3.5 - meta/cos-verify</h1>
     <div class="lead">Documentation for the meta/cos-verify package</div>
 	<p>
 
@@ -1431,7 +1474,7 @@ The <code>cos-verify</code> meta package pulls <code>cosign</code> and the <code
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-2d0403630e1a722c86e82297c9ab7b8b">6.3.5 - meta/toolchain</h1>
+	<h1 id="pg-2d0403630e1a722c86e82297c9ab7b8b">6.3.6 - meta/toolchain</h1>
     <div class="lead">Documentation for the meta/toolchain package</div>
 	<p>
 

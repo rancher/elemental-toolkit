@@ -128,7 +128,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.266880219ad0516d421d42b2549f77ae.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -235,35 +235,35 @@ This the multi-page printable view of this section.
 <p>cOS vanilla images are published to allow to deploy user-built derivatives.</p>
 <p>cOS is designed to run, deploy and upgrade derivatives that can be built just as standard OCI container images. cOS assets can be used to either drive unattended deployments of a derivative or used to create custom images (with packer).</p>
 <h2 id="philosophy">Philosophy</h2>
+
+<img style="float: right;" src="https://docs.google.com/drawings/d/e/2PACX-1vRLayrWAJo6g8ssUwKmREIkwcOHWOn_nlUUNgFxkn9HcZkE3RrAXTBWd4gVj1rxPHg559kAzUk_rsqr/pub?w=384&amp;h=255">
 <p>Philosophy behind cos-toolkit is simple: it allows you to create Linux derivatives from container images.</p>
 <ul>
 <li><strong>Container registry as a single source of truth</strong></li>
 <li>Hybrid way to access your image for different scopes (development, debugging, ..)</li>
 <li>No more inconsistent states between nodes. A “Store” to keep your (tagged) shared states where you can rollback and upgrade into.</li>
 <li>“Stateless”: Images with upgrades are rebuilt from scratch instead of applying upgrades.</li>
+<li>A/B upgrades, immutable systems</li>
 </ul>
-<p>A derivative which includes cos-toolkit, in runtime can:</p>
-
-<img style="float: left;" src="https://docs.google.com/drawings/d/e/2PACX-1vRLayrWAJo6g8ssUwKmREIkwcOHWOn_nlUUNgFxkn9HcZkE3RrAXTBWd4gVj1rxPHg559kAzUk_rsqr/pub?w=384&amp;h=255">
+<p>The container image is booted as-is, encapsulating all the needed components (kernel, initrd included) and can be pulled locally for inspection, development and debugging. At the same time it can be used also to create installation medium as ISO, Raw images, OVA or Cloud specific images.</p>
+<p>A derivative automatically inherits the following featureset:</p>
 <ul>
-<li><a href="./upgrading">Upgrade to another container image</a></li>
-<li><a href="./deploy">Deploy a system from scratch from an image</a></li>
-<li><a href="./recovery">Reset or recovery to an Image</a></li>
+<li><a href="./upgrading">Can upgrade to another container image</a></li>
+<li><a href="./deploy">Can deploy a system from scratch from an image</a></li>
+<li><a href="./recovery">Reset or recovery to a specific image</a></li>
 <li><a href="../customizing/runtime_persistent_changes">Customize the image during runtime to persist changes across reboots</a></li>
-<li><a href="./booting">Perform an installation from Live medium</a></li>
+<li><a href="./booting">Perform an installation from the LiveCD medium</a></li>
 </ul>
-<p>The container image, seamlessly:</p>
-<ul>
-<li>is booted as-is, encapsulating all the needed components (kernel, initrd, cos-toolkit, ecc)</li>
-<li>can be pulled locally for inspection, development and debugging</li>
-<li>can be used to create installation medium as ISO, Raw images, OVA, Cloud</li>
-</ul>
-<h2 id="build-cos-derivatives">Build cOS derivatives</h2>
+<h2 id="building-cos-derivatives">Building cOS derivatives</h2>
 <p>The starting point to use cos-toolkit is to check out our <a href="https://github.com/rancher-sandbox/cOS-toolkit/tree/master/examples">examples</a> and our <a href="../creating-derivatives/creating_bootable_images">creating bootable images</a> section.</p>
 <p>The only requirement to build derivatives with <code>cos-toolkit</code> is Docker installed. If you are interested in building cOS-toolkit itself, see <a href="../development">Development notes</a>.</p>
 <p>The toolkit itself is delivered as a set of standalone, re-usable OCI artifacts which are tagged and tracked as standard OCI images and it is installed inside the container image to provide the same featureset among derivatives, see <a href="../creating-derivatives/creating_bootable_images">how to create bootable images</a>.</p>
+<h2 id="vanilla-images">Vanilla images</h2>
+<p><code>cOS</code> releases are composed of vanilla images that are used internally for testing and can be used as a starting point to deploy derivatives in specific environments (e.g. AWS) or just to try out the cOS featureset.</p>
+<p>The vanilla images ships no specific business-logic aside serving as a base for testing and deploying other derivatives.</p>
 <h3 id="what-to-do-next">What to do next?</h3>
 <p>Check out <a href="../creating-derivatives/creating_bootable_images">how to create bootable images</a> or <a href="../getting-started/download">download the cOS vanilla images</a> to give cOS a try!</p>
+<p>Here below you will find the common documentation that applies to any derivative built with cOS and the cOS vanilla images.</p>
 
 </div>
 </div>

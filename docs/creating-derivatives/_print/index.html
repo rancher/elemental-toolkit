@@ -128,7 +128,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.266880219ad0516d421d42b2549f77ae.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -573,6 +573,8 @@ role="button">
 
 <p>In the example above, the cos-toolkit parts that are <strong>required</strong> are pulled in by <code>RUN luet install -y meta/cos-minimal</code>.
 Afterwards we install k9s and nerdctl packages to create our derivative with those packages on it.</p>
+<h3 id="meta-packages">Meta packages</h3>
+<p>The toolkit is split into several meta-packages to pull only the individual needed part or a subset of them which are tied to a specific purpose, the meta packages are <a href="../../reference/packages/meta-packages">documented in their own section</a>.</p>
 <p>
 
 <a href="https://rancher-sandbox.github.io/cos-toolkit-package-browser/find/meta/cos-minimal" class="btn btn-sm position-relative rounded-pill bg-light text-dark"
@@ -629,6 +631,133 @@ Afterwards we install k9s and nerdctl packages to create our derivative with tho
 </a>
 .</p>
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-12" role="tablist"><li class="nav-item">
+      <a class="nav-link active"
+        id="tabs-12-0-tab" data-toggle="tab" href="#tabs-12-0" role="tab"
+        aria-controls="tabs-12-0" aria-selected="true">
+        Minimal
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-12-1-tab" data-toggle="tab" href="#tabs-12-1" role="tab"
+        aria-controls="tabs-12-1" aria-selected="false">
+        Core
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-12-2-tab" data-toggle="tab" href="#tabs-12-2" role="tab"
+        aria-controls="tabs-12-2" aria-selected="false">
+        Light
+      </a>
+    </li><li class="nav-item">
+      <a class="nav-link"
+        id="tabs-12-3-tab" data-toggle="tab" href="#tabs-12-3" role="tab"
+        aria-controls="tabs-12-3" aria-selected="false">
+        Toolchain
+      </a>
+    </li></ul>
+
+
+<div class="tab-content" id="tabs-12-content"><div class="tab-pane fade show active"
+        id="tabs-12-0" role="tabpanel" aria-labelled-by="tabs-12-0-tab"><pre><code class="language-en" data-lang="en"># This meta package will pull the minimal set to have a bootable system. 
+# This includes default username/password set as well (`root/cos`) during boot
+
+RUN luet install -y meta/cos-minimal
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-12-1" role="tabpanel" aria-labelled-by="tabs-12-1-tab"><pre><code class="language-en" data-lang="en"># The core subset includes the packages needed to have a bootable system. 
+# This does not include any specific system configuration.
+
+RUN luet install -y meta/cos-core
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-core cloud-config/live cloud-config/network
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-12-2" role="tabpanel" aria-labelled-by="tabs-12-2-tab"><pre><code class="language-en" data-lang="en"># The light subset includes the packages needed to have a bootable system, omitting any compiled binaries.
+# This does not include as well any specific system configuration.
+
+RUN luet install -y meta/cos-light
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-light meta/toolchain cloud-config/live cloud-config/network
+  </code></pre></div>
+  <div class="tab-pane fade"
+        id="tabs-12-3" role="tabpanel" aria-labelled-by="tabs-12-3-tab"><pre><code class="language-en" data-lang="en"># The Toolchain subset includes only compiled binaries required into the rootfs image. 
+# This does not include as well any specific system configuration.
+
+RUN luet install -y meta/toolchain
+
+# Can be used in conjuction with others, to achieve the desired configuration
+
+RUN luet install -y meta/cos-light meta/toolchain
+  </code></pre></div>
+  
+</div>
+
+
 
 <div class="alert alert-primary" role="alert">
 <h4 class="alert-heading">Note</h4>
@@ -637,7 +766,8 @@ Afterwards we install k9s and nerdctl packages to create our derivative with tho
 role="button">
 <i class='fa fa-box'></i> system/cloud-config
 </a>
-is optional, but provides <code>cOS</code> defaults setting, like default user/password and so on. If you are not installing it directly, an equivalent cloud-config has to be provided in order to properly boot and run a system, see <a href="../../customizing/oem_configuration">oem configuration</a>.
+is optional, but provides <code>cOS</code> defaults setting, for example default user/password, rootfs layout, and more. If you are not installing it directly, an equivalent cloud-config or a set has to be provided in order to properly boot and run a system, see <a href="../../customizing/oem_configuration">oem configuration</a>.
+Individual cloud-configs can be installed as well as are available as standalone packages.
 
 </div>
 
