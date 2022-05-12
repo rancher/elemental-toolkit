@@ -110,3 +110,39 @@ Use `make test-clean` to clean up the vm and its artifacts
 
 NOTE: Currently on qemu, the `test-clean` target is unable to really remove the packer box from libvirt. This is a shortcoming of vagrant-libvirt. 
 To fully remove the box you would need to manually do so with virsh (i.e. `$ virsh vol-delete cos_vagrant_box_image_0_box.img --pool default`)
+
+
+## Auto tags
+
+Currently there is a weekly job at `.github/workflows/autorelease.yaml` that runs each week and compares the current version of the system/cos package to the latest tag available in the repo.
+If there are different, the job auto tags the current commit (master) with that version from system/cos and pushes it to github. That results in the release pipeline auto triggering and creating a new release.
+The job can also be manually run fron the actions tab in github, if a release is needed with the current version, and we need it to be released now.
+
+## Repository tags/commits
+
+We currently use the commit of the branch or the tag if we are triggering the job on a tag, to create the artifacts repo and publish, thus pinpointing the repo contents to the current artifacts.
+tag/commit calculation is done in teh base `Makefile` and passed to create-repo (on `make/Makefile.iso`) and publish-repo (on `make/Makefile.build`)
+
+## AMI auto cleaning
+
+There is a scheduled job at `.github/workflows/ami-cleaner.yaml` that iterates over all the aws zones and checks how many AMIs and snapshots we have, and cleans older ones as to not have an infinity supply of images stored.
+It uses the `.github/ami-cleaner.sh` script to clean up the images and has several options:
+
+ - `DO_CLEANUP` true/false (default: false): Turns on real cleaning mode, otherwise it will act in reporting mode, printing what wactions would have taken.
+ - `AMI_OWNER` string (default: 053594193760): Which AMI owner to look for the images. This should not be changed unless our accounts change.
+ - `MAX_AMI_NUMBER` int (default: 20): Maximum number of AMIs that can be. This emans that anything over this number will be removed, starting with the oldest ones.
+
+This script also checks for discrepancies between teh number of AMIs and snapshots linked to those AMIs, as you can remove an AMI but never remove the backing snapshot. If a discrepancy is found, it will find the orphan snapshots (i.e. has no link to an AMI) and remove those.
+
+## Resigner
+
+The job at `.github/workflows/resigner.yaml` will use the code at `.github/resign.go` to verify the artifacts in a repo and if they are not signed, it will try to sign them and push those signatures to the repo.
+The following environment variables are available:
+
+ - `FINAL_REPO` Repo to check artifacts for signatures
+ - `COSIGN_REPOSITORY` Repo that contains the signatures for the final_repo
+ - `FULCIO_URL` Set a fulcio url for the signing part. Leave empty to use cosign default url
+ - `REFERENCEID` Name of the repository.yaml that will be downloaded.
+ - `DEBUGLOGLEVEL` Set debug log level
+
+Note that this should not be needed to run manually as the ci job can be manually triggered with the above fields pre-filled.
