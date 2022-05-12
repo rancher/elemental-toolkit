@@ -121,7 +121,7 @@ The job can also be manually run fron the actions tab in github, if a release is
 ## Repository tags/commits
 
 We currently use the commit of the branch or the tag if we are triggering the job on a tag, to create the artifacts repo and publish, thus pinpointing the repo contents to the current artifacts.
-tag/commit calculation is done in teh base `Makefile` and passed to create-repo (on `make/Makefile.iso`) and publish-repo (on `make/Makefile.build`)
+tag/commit calculation is done in the base `Makefile` and passed to create-repo (on `make/Makefile.iso`) and publish-repo (on `make/Makefile.build`)
 
 ## AMI auto cleaning
 
@@ -132,7 +132,7 @@ It uses the `.github/ami-cleaner.sh` script to clean up the images and has sever
  - `AMI_OWNER` string (default: 053594193760): Which AMI owner to look for the images. This should not be changed unless our accounts change.
  - `MAX_AMI_NUMBER` int (default: 20): Maximum number of AMIs that can be. This emans that anything over this number will be removed, starting with the oldest ones.
 
-This script also checks for discrepancies between teh number of AMIs and snapshots linked to those AMIs, as you can remove an AMI but never remove the backing snapshot. If a discrepancy is found, it will find the orphan snapshots (i.e. has no link to an AMI) and remove those.
+This script also checks for discrepancies between the number of AMIs and snapshots linked to those AMIs, as you can remove an AMI but never remove the backing snapshot. If a discrepancy is found, it will find the orphan snapshots (i.e. has no link to an AMI) and remove those.
 
 ## Resigner
 
