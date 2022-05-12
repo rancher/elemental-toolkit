@@ -22,7 +22,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-go-
       - name: Build
-        run: make build-docs
+        run: make build_docs
       - name: Create Pull Request
         id: pr
         uses: peter-evans/create-pull-request@v4
