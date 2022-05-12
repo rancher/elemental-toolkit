@@ -115,7 +115,8 @@ endif
     --tree-filename tree.tar \
     --meta-compression $(COMPRESSION) \
     --push-images \
-    --type docker
+    --type docker \
+    --snapshot-id $(SNAPSHOT_ID)
 
 #
 # Start local server at port 8000
