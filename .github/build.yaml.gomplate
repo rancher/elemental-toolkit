@@ -564,7 +564,6 @@
       ARCH: {{{ $config.arch }}}
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
       DOWNLOAD_METADATA: true
-      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
       {{{- if has $config "luet_install_from_cos_repo" }}}
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}

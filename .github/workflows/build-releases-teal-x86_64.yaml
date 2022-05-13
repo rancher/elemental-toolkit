@@ -144,7 +144,6 @@ jobs:
       ARCH: x86_64
       FINAL_REPO: quay.io/costoolkit/releases-teal
       DOWNLOAD_METADATA: true
-      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-teal

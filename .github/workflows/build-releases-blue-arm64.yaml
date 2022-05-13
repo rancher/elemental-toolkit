@@ -146,7 +146,6 @@ jobs:
       ARCH: arm64
       FINAL_REPO: quay.io/costoolkit/releases-blue-arm64
       DOWNLOAD_METADATA: true
-      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-blue
