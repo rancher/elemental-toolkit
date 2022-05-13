@@ -11,4 +11,4 @@ install:
       label: COS_PERSISTENT
     oem:
       size: 10
-      label: COS_PERSISTENT
+      label: COS_OEM

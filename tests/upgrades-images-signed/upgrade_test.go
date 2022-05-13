@@ -31,7 +31,6 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				out, err := s.Command("elemental upgrade")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
-				Expect(out).Should(ContainSubstring("Upgrading active partition"))
 				By("rebooting")
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))
@@ -55,7 +54,6 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(out).Should(
 					And(
 						ContainSubstring("Upgrade completed"),
-						ContainSubstring("Upgrading active partition"),
 					),
 				)
 
