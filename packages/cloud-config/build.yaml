@@ -8,8 +8,9 @@ requires:
 
 steps:
 - mkdir -p {{.Values.oem_dir}}
+- chmod 700 {{.Values.oem_dir}}
 - cp -rfv oem/{{.Values.oem_file}} {{.Values.oem_dir}}
-- chmod -R 600 {{.Values.oem_dir}}
+- chmod 600 {{.Values.oem_dir}}/{{.Values.oem_file}}
 {{ if .Values.templated }}
 - cos-tmpl-render {{.Values.oem_dir}}/{{.Values.oem_file}}
 {{ end }}
