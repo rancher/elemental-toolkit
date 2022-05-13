@@ -14,8 +14,8 @@ repositories:
   # 
   verify: false
   urls:
-  - "quay.io/costoolkit/releases-green"
+  - "quay.io/costoolkit/releases-teal"
 - <<: *cos
   arch: "arm64"
   urls:
-  - "quay.io/costoolkit/releases-green-arm64"
+  - "quay.io/costoolkit/releases-teal-arm64"

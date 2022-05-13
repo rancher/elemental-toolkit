@@ -13,4 +13,4 @@ repositories:
   priority: 1
   verify: false
   urls:
-  - "quay.io/costoolkit/releases-green-arm64"
+  - "quay.io/costoolkit/releases-teal-arm64"

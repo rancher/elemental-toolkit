@@ -96,6 +96,568 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+  iso-squashfs-teal:
+    runs-on: ubuntu-latest
+    needs: build-teal-x86_64
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-teal
+      FLAVOR: teal
+      ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-teal-x86_64
+          path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools mtools
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make local-iso
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-squashfs-teal-x86_64.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  tests-squashfs-teal-installer-efi:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 800
+    runs-on: macos-10.15
+    needs: iso-squashfs-teal
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-teal-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_efi
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-efi
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-efi.record.zip
+          path: capture.webm
+          if-no-files-found: warn
+  tests-squashfs-teal-installer-bios:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 800
+    runs-on: macos-10.15
+    needs: iso-squashfs-teal
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-teal-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_bios
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-bios
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-test-installer-bios.record.zip
+          path: capture.webm
+          if-no-files-found: warn
+  qemu-squashfs-teal:
+    runs-on: ubuntu-latest
+    needs: iso-squashfs-teal
+    env:
+      FLAVOR: teal
+      ARCH: x86_64
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: teal
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: tcg
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
+      PACKER_TARGET: qemu.cos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-teal-x86_64.iso.zip
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install Packer
+        uses: hashicorp-contrib/setup-packer@v1
+        with:
+            packer-version: 1.7.3
+      - name: Build QEMU Image 🔧
+        run: |
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-squashfs-teal-QEMU-x86_64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-squashfs-teal-QEMU-x86_64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-squashfs-teal:
+    runs-on: macos-10.15
+    needs: iso-squashfs-teal
+    env:
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: teal
+      PKR_VAR_feature: vagrant
+      PACKER_TARGET: virtualbox-iso.cos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-squashfs-teal-x86_64.iso.zip
+      - name: Install deps
+        run: |
+            brew install yq
+      - name: Build VBox Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-squashfs-teal-vbox-x86_64.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-squashfs-teal-vbox-x86_64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
+          path: capture.webm
+          if-no-files-found: error
+  tests-squashfs-teal:
+    env:
+      ARCH: x86_64
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+    runs-on: macos-10.15
+    needs: vbox-squashfs-teal
+    strategy:
+      matrix:
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-recovery" ]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Packer-squashfs-teal-vbox-x86_64.box
+          path: packer
+      - name: Prepare tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+      - name: Run tests 🔧
+        run: |
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-squashfs-${{ matrix.test }}.capture.zip
+          path: capture.webm
+          if-no-files-found: warn
+  iso-nonsquashfs-teal:
+    runs-on: ubuntu-latest
+    needs: build-teal-x86_64
+    env:
+      FINAL_REPO: quay.io/costoolkit/releases-teal
+      FLAVOR: teal
+      ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-teal-x86_64
+          path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools mtools
+      - name: Tweak manifest and drop squashfs recovery
+        run: |
+          source .github/helpers.sh
+          drop_recovery manifest.yaml
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Build ISO from local build 🔧
+        if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make local-iso
+      - name: Build ISO from remote repositories 🔧
+        if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+          path: |
+            *.iso
+            *.sha256
+          if-no-files-found: error
+  tests-nonsquashfs-teal-installer-efi:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 800
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-teal
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_efi
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-efi
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-efi.record.zip
+          path: capture.webm
+          if-no-files-found: warn
+  tests-nonsquashfs-teal-installer-bios:
+    env:
+      ARCH: x86_64
+      COS_TIMEOUT: 800
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-teal
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download iso
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+      - name: Prepare tests 🔧
+        run: |
+          make create_vm_from_iso_bios
+      - name: Run tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-installer-bios
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-test-installer-bios.record.zip
+          path: capture.webm
+          if-no-files-found: warn
+  qemu-nonsquashfs-teal:
+    runs-on: ubuntu-latest
+    needs: iso-nonsquashfs-teal
+    env:
+      FLAVOR: teal
+      ARCH: x86_64
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: teal
+      PKR_VAR_feature: vagrant
+      PKR_VAR_accelerator: tcg
+      PKR_VAR_cpus: 2
+      PKR_VAR_memory: 4096
+      PACKER_TARGET: qemu.cos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+      - name: Install deps
+        run: |
+          sudo -E make deps
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install Packer
+        uses: hashicorp-contrib/setup-packer@v1
+        with:
+            packer-version: 1.7.3
+      - name: Build QEMU Image 🔧
+        run: |
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.qcow
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+  vbox-nonsquashfs-teal:
+    runs-on: macos-10.15
+    needs: iso-nonsquashfs-teal
+    env:
+      PKR_VAR_arch: x86_64
+      PKR_VAR_flavor: teal
+      PKR_VAR_feature: vagrant
+      PACKER_TARGET: virtualbox-iso.cos
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+      - name: Install deps
+        run: |
+            brew install yq
+      - name: Build VBox Image 🔧
+        run: |
+          export YQ=/usr/local/bin/yq
+          source .github/helpers.sh
+          export PKR_VAR_build=$(cos_version)
+          make packer
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.ova
+          path: |
+            packer/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.box
+          path: |
+            packer/*.box
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
+          path: capture.webm
+          if-no-files-found: error
+  tests-nonsquashfs-teal:
+    env:
+      ARCH: x86_64
+      VAGRANT_CPU: 3
+      VAGRANT_MEMORY: 10240
+    runs-on: macos-10.15
+    needs: vbox-nonsquashfs-teal
+    strategy:
+      matrix:
+        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-recovery" ]
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - uses: actions/checkout@v2
+      - name: Download vagrant box
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.box
+          path: packer
+      - name: Prepare tests 🔧
+        run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go get -u github.com/onsi/ginkgo/ginkgo
+          go get -u github.com/onsi/gomega/...
+          make test-clean
+          make prepare-test
+      - name: Run tests 🔧
+        run: |
+          make ${{ matrix.test }}
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
+          path: tests/**/logs/*
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
+          path: serial_port1.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cOS-nonsquashfs-${{ matrix.test }}.capture.zip
+          path: capture.webm
+          if-no-files-found: warn
   raw-images-teal:
     runs-on: ubuntu-latest
     needs:

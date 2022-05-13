@@ -31,9 +31,9 @@ case $LUET_ARCH in
 esac
 
 if [[ "$LUET_ARCH" != "amd64" ]]; then
-  REPO_URL="quay.io/costoolkit/releases-green-$LUET_ARCH"
+  REPO_URL="quay.io/costoolkit/releases-teal-$LUET_ARCH"
 else
-  REPO_URL="quay.io/costoolkit/releases-green"
+  REPO_URL="quay.io/costoolkit/releases-teal"
 fi
 
 if [[ "$DOCKER_INSTALL" == "true" ]]; then

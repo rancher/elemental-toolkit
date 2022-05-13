@@ -1,4 +1,4 @@
-# Pick one version from https://quay.io/repository/costoolkit/releases-green?tab=tags
-FROM quay.io/costoolkit/releases-green:cos-system-0.5.8-4
+# Pick one version from https://quay.io/repository/costoolkit/releases-teal?tab=tags
+FROM quay.io/costoolkit/releases-teal:cos-system-0.8.10-1
 
 COPY files/ /

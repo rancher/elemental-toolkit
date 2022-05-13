@@ -40,7 +40,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					s.GreenRepo = "quay.io/costoolkit/releases-green-arm64"
+					s.ArtifactsRepo = "quay.io/costoolkit/releases-teal-arm64"
 				}
 
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
@@ -48,8 +48,8 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-				out, err = s.Command(fmt.Sprintf("elemental upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
+				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("elemental upgrade --docker-image %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(
 					And(

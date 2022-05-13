@@ -1,0 +1,141 @@
+name: Examples-teal-x86_64
+on: 
+ pull_request:
+   paths:
+     - conf/**
+     - packages/**
+     - make/**
+     - .github/**
+     - Makefile
+     - tests/**
+     - examples/**
+ push:
+   branches:
+     - master
+concurrency:
+  group: ci-Examples-teal-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
+jobs:
+  docker-build-example-cos-official:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Build cos-official 🔧
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          cd examples/cos-official
+          docker build . -t cos-official:latest
+      - name: Dump cos-official image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save cos-official:latest -o cos-official.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cos-official.tar
+          path: |
+            cos-official.tar
+  docker-build-example-scratch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Build scratch 🔧
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          cd examples/scratch
+          docker build . -t scratch:latest
+      - name: Dump scratch image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save scratch:latest -o scratch.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: scratch.tar
+          path: |
+            scratch.tar
+  docker-build-example-standard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+            go-version: '1.17'
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Build standard 🔧
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          cd examples/standard
+          docker build . -t standard:latest
+      - name: Dump standard image
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          docker save standard:latest -o standard.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: standard.tar
+          path: |
+            standard.tar

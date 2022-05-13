@@ -71,7 +71,7 @@ export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 #
 # OS flavor to build
 #
-FLAVOR?=green
+FLAVOR?=teal
 
 #
 # Arch to build for

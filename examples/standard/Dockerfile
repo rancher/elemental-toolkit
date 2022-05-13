@@ -1,10 +1,10 @@
 ARG LUET_VERSION=0.20.6
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
-FROM opensuse/leap:15.3
+FROM registry.suse.com/suse/sle-micro-rancher/5.2
 
 ENV COSIGN_EXPERIMENTAL=1
-ENV COSIGN_REPOSITORY=raccos/releases-green
+ENV COSIGN_REPOSITORY=raccos/releases-teal
 
 ARG ARCH=amd64
 ENV ARCH=${ARCH}

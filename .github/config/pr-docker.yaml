@@ -1,7 +1,7 @@
 ---
 
 flavors:
-  green:
+  teal:
     arches:
       x86_64:
         &x86_64
@@ -17,16 +17,16 @@ flavors:
         cache_repository: "build"
         organization: "quay.io/costoolkit"
         skip_tests: true
-        flavor: "green"
-        skip_tests_flavor: ["green","blue","orange", "teal"]
-        skip_images_flavor: ["green","blue","orange", "teal"]
+        flavor: "teal"
+        skip_tests_flavor: ["green","blue","orange", "green"]
+        skip_images_flavor: ["green","blue","orange", "green"]
         build_image_qemu: false
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         luet_override: ""
         luet_script_override: ""
-        release_flavor: ["green"]
+        release_flavor: ["teal"]
         arch: "x86_64"
         on:
           pull_request:
@@ -47,8 +47,8 @@ flavors:
       x86_64:
         <<: *x86_64
         flavor: "blue"
-  teal:
+  green:
     arches:
       x86_64:
         <<: *x86_64
-        flavor: "teal"
+        flavor: "green"
