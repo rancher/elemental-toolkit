@@ -30,8 +30,12 @@ RUN go build \
     -o /usr/bin/elemental
 
 FROM opensuse/leap:$LEAP_VERSION AS elemental
-RUN zypper ref
-RUN zypper in -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso 
+# This helps invalidate the cache on each build so the following steps are really run again getting the latest packages
+# versions, as long as the elemental commit has changed
+ARG ELEMENTAL_COMMIT=""
+ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
+RUN zypper ref && zypper dup -y
+RUN zypper ref && zypper in -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
 COPY --from=cosign-bin /usr/bin/cosign /usr/bin/cosign
 # Fix for blkid only using udev on opensuse
