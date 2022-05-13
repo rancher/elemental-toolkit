@@ -17,7 +17,7 @@ jobs:
       - name: Get current tag
         id: current
         run: |
-          CURRENT_TAG=$(yq '.packages[]|select(.name=="cos" and .category =="system")|.version' packages/cos/collection.yaml)
+          CURRENT_TAG=$(yq '.packages[]|select(.name=="cos" and .category =="system")|.version|split("-")| .[0]' packages/cos/collection.yaml)
           echo "Current Tag: v$CURRENT_TAG"
           echo "::set-output name=tag::v$CURRENT_TAG"
       - name: Get previous tag
@@ -36,8 +36,15 @@ jobs:
             echo "Tag needs bump"
             echo "::set-output name=bumped::true"
           fi
-      - uses: rickstaa/action-create-tag@v1
+      - uses: actions/github-script@v6
         if: steps.check.outputs.bumped == 'true'
         with:
-          tag: ${{steps.current.outputs.tag}}
-          message: "Bump tag"
+          github-token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          script: |
+            console.log("Creating tag " + "${{steps.current.outputs.tag}}")
+            github.rest.git.createRef({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              ref: "refs/tags/${{steps.current.outputs.tag}}",
+              sha: context.sha
+            })
