@@ -1,3 +1,4 @@
+github.com/bramvdbogaerde/go-scp v0.0.0-20210527193300-acf430e39785 h1:HUwKh+QkSVGf3CocZEMNhrLk24yxc8g96jlukhdnUcw=
 github.com/bramvdbogaerde/go-scp v0.0.0-20210527193300-acf430e39785/go.mod h1:s4ZldBoRAOgUg8IrRP2Urmq5qqd2yPXQTPshACY8vQ0=
 github.com/bramvdbogaerde/go-scp v1.2.0 h1:mNF1lCXQ6jQcxCBBuc2g/CQwVy/4QONaoD5Aqg9r+Zg=
 github.com/bramvdbogaerde/go-scp v1.2.0/go.mod h1:s4ZldBoRAOgUg8IrRP2Urmq5qqd2yPXQTPshACY8vQ0=
