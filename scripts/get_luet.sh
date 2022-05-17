@@ -15,7 +15,7 @@ LUET_PACKAGE="${LUET_PACKAGE:-toolchain/luet}"
 LUET_ARCH="${LUET_ARCH:-x86_64}"
 LUET_INSTALL_FROM_COS_REPO="${LUET_INSTALL_FROM_COS_REPO:-true}"
 # This is the luet bootstrap version. The latest available will be pulled later on
-LUET_VERSION="${LUET_VERSION:-0.30.2}"
+LUET_VERSION="${LUET_VERSION:-0.32.0}"
 
 if [ -z "$LUET_ARCH" ]; then
     LUET_ARCH=$(uname -m)
