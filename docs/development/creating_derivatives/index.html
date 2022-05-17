@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.85.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.99.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher-sandbox.github.io/cOS-toolkit/favicons/favicon.ico" >
@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/development/creating_derivatives/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-17T17:11:38+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-17T21:30:05+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Creating derivatives">
 <meta itemprop="description" content="This document summarize references to create derivatives with `cos-toolkit` by using the `luet` toolchain.
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-17T17:11:38+02:00" />
+<meta itemprop="dateModified" content="2022-05-17T21:30:05+02:00" />
 <meta itemprop="wordCount" content="514">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Creating derivatives"/>
@@ -39,8 +39,8 @@
 
 
 
-<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" as="style">
-<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" rel="stylesheet" integrity="">
+<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" as="style">
+<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" rel="stylesheet" integrity="">
 
 
 <script
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1984,8 +1984,6 @@ if (!doNotTrack) {
 
   
   
-    <a id="print" href="https://rancher-sandbox.github.io/cOS-toolkit/docs/development/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
-  
   </div>
 
 
@@ -2101,35 +2099,34 @@ if (!doNotTrack) {
 <p>Derivatives are composed by a combination of specs to form a final package that is consumed as a single image OS.</p>
 <p>The container image during installation and upgrade, is converted to an image file with a backing ext2 fs.</p>
 <p>Packages in luet have <code>runtime</code> and <code>buildtime</code> specifications into <code>definition.yaml</code> and <code>build.yaml</code> respectively, and in the buildtime we set:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">requires</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">category</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;cos&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">version</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;&gt;=0&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">category</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;app&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;sampleOSService&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">version</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;&gt;=0&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></code></pre></div><p>This instruct <code>luet</code> to compose a new image from the results of the compilation of the specified packages, without any version constraints, and use it to run any <code>steps</code> and <code>prelude</code> on top of it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">requires</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">category</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;cos&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">version</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;&gt;=0&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">category</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;app&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;sampleOSService&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">version</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;&gt;=0&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>This instruct <code>luet</code> to compose a new image from the results of the compilation of the specified packages, without any version constraints, and use it to run any <code>steps</code> and <code>prelude</code> on top of it.</p>
 <p>We are interested in the dependencies final images, and not the containers used to build them, so we enable <code>requires_final_images</code>:</p>
-<pre><code>requires_final_images: true
+<pre tabindex="0"><code>requires_final_images: true
 </code></pre><p>We later run arbitrary steps to tweak the image:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">steps</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></code></pre></div><p>And we instruct luet to compose the final artifact as a <code>squash</code> of the resulting container image, composed of all the files:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">unpack</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></code></pre></div><p>A detailed explaination of all the keywords available <a href="https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#keywords">is in the luet docs</a> along with the <a href="https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#building-strategies">supported build strategies</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">steps</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>And we instruct luet to compose the final artifact as a <code>squash</code> of the resulting container image, composed of all the files:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">unpack</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>A detailed explaination of all the keywords available <a href="https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#keywords">is in the luet docs</a> along with the <a href="https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#building-strategies">supported build strategies</a>.</p>
 <p>We exclude then a bunch of file that we don&rsquo;t want to be in the final package (regexp supported):</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">excludes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#000">..</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></code></pre></div><h2 id="templating">Templating</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">excludes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#000">..</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h2 id="templating">Templating</h2>
 <p>The package <code>build</code> definition supports <a href="https://luet-lab.github.io/docs/docs/concepts/packages/templates/">templating</a>, and global interpolation of build files with multiple values files.</p>
 <p>Values file can be specified during build time in luet with the <code>--values</code> flag (also multiple files are allowed) and, if you are familiar with <code>helm</code> it using the same engine under the hood, so all the functions are available as well.</p>
 <p><code>cos-toolkit</code> itself uses <a href="https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values">default values files</a> for every supported distributions.</p>
 <p>Templates uses cases are for: resharing common pieces between flavors, building for different platforms and architectures, &hellip;</p>
 <h2 id="build-iso">Build ISO</h2>
 <p>To build an iso for a derivative image <code>elemental build-iso</code> command can be used:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">elemental build-iso -n <span style="color:#000">$NAME</span> <span style="color:#000">$IMAGE</span>
-</code></pre></div><p>Where <code>$NAME</code> is the name of the ISO and <code>$IMAGE</code> is the reference to the container image we are building the ISO for. See also <a href="../../creating-derivatives/build_iso">building ISOs</a></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental build-iso -n <span style="color:#000">$NAME</span> <span style="color:#000">$IMAGE</span>
+</span></span></code></pre></div><p>Where <code>$NAME</code> is the name of the ISO and <code>$IMAGE</code> is the reference to the container image we are building the ISO for. See also <a href="../../creating-derivatives/build_iso">building ISOs</a></p>
 
 	
 		<style>
@@ -2199,7 +2196,7 @@ if (!doNotTrack) {
 
     Last modified
     May 17, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/cdac02924baacc26a98682c36cc24750d81f7f04">Add docs to run the GH action runner with docker (#1332) (cdac029)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/982d796be29c5af76c9e44c195d309911e93f27f">Use hugo from toolchain (#1331) (982d796)</a>
 
 </div>
 
@@ -2270,7 +2267,7 @@ if (!doNotTrack) {
 
 
 
-<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.ed4d5ba6dd1e553488f282988ee384ef44608aeee43296d0ef373812eab68dc0.js" integrity="sha256-7U1bpt0eVTSI8oKYjuOE70Rgiu7kMpbQ7zc4Euq2jcA=" crossorigin="anonymous"></script>
 
 
 

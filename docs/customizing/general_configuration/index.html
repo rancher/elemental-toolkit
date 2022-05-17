@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.85.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.99.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher-sandbox.github.io/cOS-toolkit/favicons/favicon.ico" >
@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/customizing/general_configuration/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-17T17:11:38+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-17T21:30:05+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="General Configuration">
 <meta itemprop="description" content="Configuring a cOS derivative
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-17T17:11:38+02:00" />
+<meta itemprop="dateModified" content="2022-05-17T21:30:05+02:00" />
 <meta itemprop="wordCount" content="387">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="General Configuration"/>
@@ -39,8 +39,8 @@
 
 
 
-<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" as="style">
-<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" rel="stylesheet" integrity="">
+<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" as="style">
+<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" rel="stylesheet" integrity="">
 
 
 <script
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1984,8 +1984,6 @@ if (!doNotTrack) {
 
   
   
-    <a id="print" href="https://rancher-sandbox.github.io/cOS-toolkit/docs/customizing/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
-  
   </div>
 
 
@@ -2084,73 +2082,73 @@ if (!doNotTrack) {
 
 
 
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># cOS configuration file</span>
-<span style="color:#8f5902;font-style:italic"># This file allows to tweak cOS configuration such as: default upgrade/recovery image and GRUB menu entry</span>
-
-<span style="color:#8f5902;font-style:italic"># Disable/enable image verification during upgrades ( default: false )</span>
-<span style="color:#8f5902;font-style:italic">#NO_VERIFY=false</span>
-
-<span style="color:#8f5902;font-style:italic"># Disable/enable upgrades via release channels instead of container images. ( default: true )</span>
-<span style="color:#8f5902;font-style:italic">#CHANNEL_UPGRADES=false</span>
-
-<span style="color:#8f5902;font-style:italic"># Default container image used for upgrades. ( defaults to system/cos with channel CHANNEL_UPGRADES enabled )</span>
-<span style="color:#8f5902;font-style:italic">#UPGRADE_IMAGE=&#34;quay.io/mudler/cos-test:cos-standard&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Default recovery image to use when upgrading the recovery partition</span>
-<span style="color:#8f5902;font-style:italic"># ( defaults to recovery/cos in vanilla cOS images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).</span>
-<span style="color:#8f5902;font-style:italic">#RECOVERY_IMAGE=&#34;quay.io/mudler/cos-test:cos-standard&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># GRUB entry to display on boot. ( defaults: cOS )</span>
-<span style="color:#8f5902;font-style:italic">#GRUB_ENTRY_NAME=&#34;example&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Space separated list of additional paths that are used to</span>
-<span style="color:#8f5902;font-style:italic"># source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )</span>
-<span style="color:#8f5902;font-style:italic">#CLOUD_INIT_PATHS=&#34;&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># This is the directory that can be used to store cloud-init files that can be enabled/disabled in runtime</span>
-<span style="color:#8f5902;font-style:italic"># by cos-features. ( defaults to /system/features )</span>
-<span style="color:#8f5902;font-style:italic">#COS_FEATURESDIR=&#34;/system/features&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># This is the repository that hosts the signature files used by cosign and luet-cosign plugin during upgrade/deploy to</span>
-<span style="color:#8f5902;font-style:italic"># check the artifact signatures</span>
-<span style="color:#8f5902;font-style:italic">#COSIGN_REPOSITORY=&#34;raccos/releases-green&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># This sets keyless verify on building packages with luet and the luet-cosign plugin.</span>
-<span style="color:#8f5902;font-style:italic"># 1  = enabled keyless, 0 = disabled, uses normal public key verification</span>
-<span style="color:#8f5902;font-style:italic">#COSIGN_EXPERIMENTAL=1</span>
-
-<span style="color:#8f5902;font-style:italic"># This sets the location of the public key to use to verify the packages installed by luet during upgrade/deploy</span>
-<span style="color:#8f5902;font-style:italic"># This can be set to file, URL, KMS URI or Kubernetes Secret</span>
-<span style="color:#8f5902;font-style:italic"># This is only used if COSIGN_EXPERIMENTAL is set to 0</span>
-<span style="color:#8f5902;font-style:italic">#COSIGN_PUBLIC_KEY_LOCATION=&#34;&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Default size (in MB) of disk image files (.img) created during upgrades</span>
-<span style="color:#8f5902;font-style:italic">#DEFAULT_IMAGE_SIZE=3240</span>
-
-<span style="color:#8f5902;font-style:italic"># Path to default configuration grub file</span>
-<span style="color:#8f5902;font-style:italic">#GRUBCONF=&#34;/etc/cos/grub.cfg&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the OEM volume</span>
-<span style="color:#000">OEM_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_OEM&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the PERSISTENT volume</span>
-<span style="color:#000">PERSISTENT_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_PERSISTENT&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the RECOVERY volume</span>
-<span style="color:#000">RECOVERY_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_RECOVERY&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the STATE volume</span>
-<span style="color:#000">STATE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_STATE&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the ACTIVE volume</span>
-<span style="color:#000">ACTIVE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_ACTIVE&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the PASSIVE volume</span>
-<span style="color:#000">PASSIVE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_PASSIVE&#34;</span>
-
-<span style="color:#8f5902;font-style:italic"># Label of the SYSTEM volume</span>
-<span style="color:#000">SYSTEM_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_SYSTEM&#34;</span>
-</code></pre></div>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># cOS configuration file</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This file allows to tweak cOS configuration such as: default upgrade/recovery image and GRUB menu entry</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Disable/enable image verification during upgrades ( default: false )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#NO_VERIFY=false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Disable/enable upgrades via release channels instead of container images. ( default: true )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#CHANNEL_UPGRADES=false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Default container image used for upgrades. ( defaults to system/cos with channel CHANNEL_UPGRADES enabled )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#UPGRADE_IMAGE=&#34;quay.io/mudler/cos-test:cos-standard&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Default recovery image to use when upgrading the recovery partition</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># ( defaults to recovery/cos in vanilla cOS images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#RECOVERY_IMAGE=&#34;quay.io/mudler/cos-test:cos-standard&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># GRUB entry to display on boot. ( defaults: cOS )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#GRUB_ENTRY_NAME=&#34;example&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Space separated list of additional paths that are used to</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># source cloud-config from. ( defaults paths are: /system/oem /oem/ /usr/local/cloud-config/ )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#CLOUD_INIT_PATHS=&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This is the directory that can be used to store cloud-init files that can be enabled/disabled in runtime</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># by cos-features. ( defaults to /system/features )</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#COS_FEATURESDIR=&#34;/system/features&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This is the repository that hosts the signature files used by cosign and luet-cosign plugin during upgrade/deploy to</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># check the artifact signatures</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#COSIGN_REPOSITORY=&#34;raccos/releases-green&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This sets keyless verify on building packages with luet and the luet-cosign plugin.</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># 1  = enabled keyless, 0 = disabled, uses normal public key verification</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#COSIGN_EXPERIMENTAL=1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This sets the location of the public key to use to verify the packages installed by luet during upgrade/deploy</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This can be set to file, URL, KMS URI or Kubernetes Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># This is only used if COSIGN_EXPERIMENTAL is set to 0</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#COSIGN_PUBLIC_KEY_LOCATION=&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Default size (in MB) of disk image files (.img) created during upgrades</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#DEFAULT_IMAGE_SIZE=3240</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Path to default configuration grub file</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#GRUBCONF=&#34;/etc/cos/grub.cfg&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the OEM volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">OEM_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_OEM&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the PERSISTENT volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">PERSISTENT_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_PERSISTENT&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the RECOVERY volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">RECOVERY_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_RECOVERY&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the STATE volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">STATE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_STATE&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the ACTIVE volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">ACTIVE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_ACTIVE&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the PASSIVE volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">PASSIVE_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_PASSIVE&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Label of the SYSTEM volume</span>
+</span></span><span style="display:flex;"><span><span style="color:#000">SYSTEM_LABEL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;COS_SYSTEM&#34;</span>
+</span></span></code></pre></div>
 
 <small> <i class='fab fa-github'></i> <i>Complete source code:  <a target=_blank href="https://github.com/rancher-sandbox/cos-toolkit/blob/master/packages/cos-config/cos-config">https://github.com/rancher-sandbox/cos-toolkit/blob/master/packages/cos-config/cos-config</a></i> </small>
 <hr>
@@ -2224,7 +2222,7 @@ if (!doNotTrack) {
 
     Last modified
     May 17, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/cdac02924baacc26a98682c36cc24750d81f7f04">Add docs to run the GH action runner with docker (#1332) (cdac029)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/982d796be29c5af76c9e44c195d309911e93f27f">Use hugo from toolchain (#1331) (982d796)</a>
 
 </div>
 
@@ -2295,7 +2293,7 @@ if (!doNotTrack) {
 
 
 
-<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.ed4d5ba6dd1e553488f282988ee384ef44608aeee43296d0ef373812eab68dc0.js" integrity="sha256-7U1bpt0eVTSI8oKYjuOE70Rgiu7kMpbQ7zc4Euq2jcA=" crossorigin="anonymous"></script>
 
 
 

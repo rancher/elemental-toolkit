@@ -4,7 +4,7 @@
 	"sourceRoot": "/home/runner/work/cOS-toolkit/cOS-toolkit/docs",
 	"sources": [
 		"assets/sass/main.scss",
-		"themes/projects-theme/assets/sass/main.scss"
+		"docs/themes/projects-theme/assets/sass/main.scss"
 	],
 	"sourcesContent": [
 		"@import  \"../../themes/projects-theme/assets/sass/main\";\n\n:root {\n    --primary-color   : #72C2CF;\n    --secondary-color : #373B6B;\n    --dark            : #33313b;\n    --light           : #F3F3F3;\n  }\n\n  .navbar-brand {\n    flex: 1;\n  }\n\n  .sub-header span {\n    padding: 0.5rem;\n  }\n\n  .cncf {\n    .cncf-logo {\n      display: block;\n      width: 300px;\n      margin: auto;\n      padding-bottom: 2rem;\n    }\n\n    p {\n      font-size: 22px;\n    }\n  }\n\n  footer .wrap {\n    display: flex;\n\n    > div:first-child {\n      flex: 1;\n    }\n  }\n",

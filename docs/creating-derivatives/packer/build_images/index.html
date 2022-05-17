@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.85.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.99.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher-sandbox.github.io/cOS-toolkit/favicons/favicon.ico" >
@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/creating-derivatives/packer/build_images/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-17T17:11:38+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-17T21:30:05+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Build QCOW, VirtualBox and Vagrant images">
 <meta itemprop="description" content="This section documents the procedure to build a custom QCOW, VirtualBox and a Vagrant images with the cOS packer templates
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-17T17:11:38+02:00" />
+<meta itemprop="dateModified" content="2022-05-17T21:30:05+02:00" />
 <meta itemprop="wordCount" content="655">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Build QCOW, VirtualBox and Vagrant images"/>
@@ -39,8 +39,8 @@
 
 
 
-<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" as="style">
-<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" rel="stylesheet" integrity="">
+<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" as="style">
+<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" rel="stylesheet" integrity="">
 
 
 <script
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1984,8 +1984,6 @@ if (!doNotTrack) {
 
   
   
-    <a id="print" href="https://rancher-sandbox.github.io/cOS-toolkit/docs/creating-derivatives/packer/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
-  
   </div>
 
 
@@ -2115,21 +2113,21 @@ and possibilties of Packer check the <a href="https://www.packer.io/guides/hcl">
 <p>To build QCOW and VirtualBox images an ISO file is required. You can either <a href="../../../getting-started/download">Download</a> a cOS ISO or <a href="../../build_iso">build your own from a container image</a>.</p>
 <h3 id="qcow2">QCOW2</h3>
 <p>Consider:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
-
-&gt; <span style="color:#204a87">cd</span> packer
-&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -only qemu.cos .
-</code></pre></div><p>The process should end up by building a <code>.box</code> file (vagrant image) and a <code>.tar.gz</code> file (containing the raw disk) in the same folder:</p>
-<pre><code>...
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&gt; <span style="color:#204a87">cd</span> packer
+</span></span><span style="display:flex;"><span>&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -only qemu.cos .
+</span></span></code></pre></div><p>The process should end up by building a <code>.box</code> file (vagrant image) and a <code>.tar.gz</code> file (containing the raw disk) in the same folder:</p>
+<pre tabindex="0"><code>...
 ==&gt; qemu.cos (compress): Using pgzip compression with 8 cores for cOS_green_dev_amd64.tar.gz
 ==&gt; qemu.cos (compress): Tarring cOS_green_dev_amd64.tar.gz with pgzip
 ==&gt; qemu.cos (compress): Archive cOS_green_dev_amd64.tar.gz completed
-Build 'qemu.cos' finished after 4 minutes 34 seconds.
+Build &#39;qemu.cos&#39; finished after 4 minutes 34 seconds.
 
 ==&gt; Wait completed after 4 minutes 34 seconds
 
 ==&gt; Builds finished. The artifacts of successful builds are:
---&gt; qemu.cos: 'libvirt' provider box: cOS_green_dev_amd64.box
+--&gt; qemu.cos: &#39;libvirt&#39; provider box: cOS_green_dev_amd64.box
 --&gt; qemu.cos: compressed artifacts in: cOS_green_dev_amd64.tar.gz
 
 &gt; ubuntu@jumpbox:~/cOS-toolkit/packer$ ls -liah
@@ -2150,32 +2148,32 @@ to make use for the build. Note the <code>packer/images.json.pkr.hcl</code> file
 few other sources such as <code>amazon-ebs</code> and <code>virtualbox-iso</code>.</p>
 <h3 id="virtualbox">Virtualbox</h3>
 <p>Similarly, to build OVA images we run:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
-
-&gt; <span style="color:#204a87">cd</span> packer
-&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -only virtualbox-iso.cos .
-</code></pre></div><h3 id="vagrant">Vagrant</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&gt; <span style="color:#204a87">cd</span> packer
+</span></span><span style="display:flex;"><span>&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -only virtualbox-iso.cos .
+</span></span></code></pre></div><h3 id="vagrant">Vagrant</h3>
 <p>To build vagrant images, we enable the <code>vagrant</code> feature, which allows the <code>vagrant</code> user to login afterwards:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
-
-&gt; <span style="color:#204a87">cd</span> packer
-&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -var <span style="color:#4e9a06">&#34;feature=vagrant&#34;</span> -only virtualbox-iso.cos .
-</code></pre></div><h2 id="customize-the-build-with-a-variables-file">Customize the build with a variables file</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># From the root of a cOS-toolkit repository checkout</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&gt; <span style="color:#204a87">cd</span> packer
+</span></span><span style="display:flex;"><span>&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -var <span style="color:#4e9a06">&#34;feature=vagrant&#34;</span> -only virtualbox-iso.cos .
+</span></span></code></pre></div><h2 id="customize-the-build-with-a-variables-file">Customize the build with a variables file</h2>
 <p>The packer template can be customized with the variables defined in
 <code>packer/variables.pkr.hcl</code>. These are the variables that can be set on run
 time using the <code>-var key=value</code> or <code>-var-file=path</code> flags. The variable file
 can be a json file including desired varibles. Consider the following example:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic"># From the packer folder of the cOS-toolkit repository checkout</span>
-
-&gt; cat <span style="color:#4e9a06">&lt;&lt; EOF &gt; test.json
-</span><span style="color:#4e9a06">{
-</span><span style="color:#4e9a06">    &#34;root_username&#34;: &#34;root&#34;,
-</span><span style="color:#4e9a06">    &#34;root_password&#34;: &#34;cos&#34;
-</span><span style="color:#4e9a06">}
-</span><span style="color:#4e9a06">EOF</span>
-
-&gt; packer build -only qemu.cos -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -var-file<span style="color:#ce5c00;font-weight:bold">=</span>test.json .
-</code></pre></div><p>The above example runs the build by logging with a different username/password to run the installation.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># From the packer folder of the cOS-toolkit repository checkout</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&gt; cat <span style="color:#4e9a06">&lt;&lt; EOF &gt; test.json
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">{
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">    &#34;root_username&#34;: &#34;root&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">    &#34;root_password&#34;: &#34;cos&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">}
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&gt; packer build -only qemu.cos -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -var-file<span style="color:#ce5c00;font-weight:bold">=</span>test.json .
+</span></span></code></pre></div><p>The above example runs the build by logging with a different username/password to run the installation.</p>
 <h3 id="default-cloud-init">Default cloud-init</h3>
 <p>In the packer folder there is present a <code>config.yaml</code> file which can be used to customize the image. The file is in <a href="../../../references/cloud-init">cloud-init</a> style and will be automatically installed by default when running <code>elemental install</code>.</p>
 <h3 id="available-variables-for-customization">Available variables for customization</h3>
@@ -2277,7 +2275,7 @@ these are some of the relevant ones:</p>
 
     Last modified
     May 17, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/cdac02924baacc26a98682c36cc24750d81f7f04">Add docs to run the GH action runner with docker (#1332) (cdac029)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/982d796be29c5af76c9e44c195d309911e93f27f">Use hugo from toolchain (#1331) (982d796)</a>
 
 </div>
 
@@ -2348,7 +2346,7 @@ these are some of the relevant ones:</p>
 
 
 
-<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.ed4d5ba6dd1e553488f282988ee384ef44608aeee43296d0ef373812eab68dc0.js" integrity="sha256-7U1bpt0eVTSI8oKYjuOE70Rgiu7kMpbQ7zc4Euq2jcA=" crossorigin="anonymous"></script>
 
 
 

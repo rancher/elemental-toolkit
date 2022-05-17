@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.85.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.99.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher-sandbox.github.io/cOS-toolkit/favicons/favicon.ico" >
@@ -39,8 +39,8 @@
 
 
 
-<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" as="style">
-<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" rel="stylesheet" integrity="">
+<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" as="style">
+<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" rel="stylesheet" integrity="">
 
 
 <script
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1984,8 +1984,6 @@ if (!doNotTrack) {
 
   
   
-    <a id="print" href="https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/packages/cloud-config-packages/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
-  
   </div>
 
 
@@ -2102,8 +2100,8 @@ role="button">
 <i class='fa fa-box'></i> cloud-config/boot-assessment
 </a>
 is part of the cOS toolkit repository and can be installed with:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">luet install -y cloud-config/boot-assessment
-</code></pre></div><p>in the derivative&rsquo;s Dockerfile.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>luet install -y cloud-config/boot-assessment
+</span></span></code></pre></div><p>in the derivative&rsquo;s Dockerfile.</p>
 
 
 </div>
@@ -2130,13 +2128,13 @@ sentinels files and a specific cmdline option indicating we failed booting after
 <p>To enable boot assessment besides upgrades, <code>enable_boot_assessment_always</code> can be set to <code>yes</code> in the grub environment ( for example in <code>/oem/grubenv</code> ).</p>
 <h2 id="manually-enabling-boot-assessment">Manually enabling boot assessment</h2>
 <p>To manually trigger the boot assessment for the next boot, you can run the following in a active/passive booted system:</p>
-<pre><code>sudo mount -o rw,remount /run/initramfs/cos-state
+<pre tabindex="0"><code>sudo mount -o rw,remount /run/initramfs/cos-state
 grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=yes
 sudo mount -o ro,remount /run/initramfs/cos-state
 </code></pre><h2 id="maintenance">Maintenance</h2>
 <p>If the active partition fails, the boot assessment process will bring you back to the fallback partition. This is also the case if the dracut shell is displayed while dropping in emergency mode.</p>
 <p>If you are planning to do manual intervention and want to hook up with that console, you can disable the boot assessment process by running in the fallback partition:</p>
-<pre><code>sudo mount -o rw,remount /run/initramfs/cos-state
+<pre tabindex="0"><code>sudo mount -o rw,remount /run/initramfs/cos-state
 grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
 grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
 sudo mount -o ro,remount /run/initramfs/cos-state
@@ -2276,7 +2274,7 @@ sudo mount -o ro,remount /run/initramfs/cos-state
 
 
 
-<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.ed4d5ba6dd1e553488f282988ee384ef44608aeee43296d0ef373812eab68dc0.js" integrity="sha256-7U1bpt0eVTSI8oKYjuOE70Rgiu7kMpbQ7zc4Euq2jcA=" crossorigin="anonymous"></script>
 
 
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.85.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.99.0" /><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher-sandbox.github.io/cOS-toolkit/favicons/favicon.ico" >
@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/booting/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-17T17:11:38+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-17T21:30:05+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Booting">
 <meta itemprop="description" content="Documents various methods for booting cOS vanilla images
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-17T17:11:38+02:00" />
+<meta itemprop="dateModified" content="2022-05-17T21:30:05+02:00" />
 <meta itemprop="wordCount" content="1185">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Booting"/>
@@ -39,8 +39,8 @@
 
 
 
-<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" as="style">
-<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.ce822e1833a5405e77f69584ab31fd4bd422643124926787ea63be001e51b0b2.css" rel="stylesheet" integrity="">
+<link rel="preload" href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" as="style">
+<link href="https://rancher-sandbox.github.io/cOS-toolkit/scss/main.min.a73afbd036f00c4a065d9f7bb0625d9428d2ed1acdf02d2ab63d558281b4b638.css" rel="stylesheet" integrity="">
 
 
 <script
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.be553f1cb919c34ffbac66d0dc644fc3.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1984,8 +1984,6 @@ if (!doNotTrack) {
 
   
   
-    <a id="print" href="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
-  
   </div>
 
 
@@ -2111,11 +2109,11 @@ if (!doNotTrack) {
 <p>here we try to summarize and document how they are meant to be consumed.</p>
 <h2 id="iso">ISO</h2>
 <p>ISO images (e.g. ``cOS-Seed-green-$VERSION-$ARCH.iso.tar.xz` ) are shipping a cOS vanilla image and they feature an installer to perform an automated installation. They can be used to burn USB sticks or CD/DVD used to boot baremetals. Once booted, you can install cOS with:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">elemental install <span style="color:#000">$DEVICE</span>
-</code></pre></div><p>See also [../install] for installation options.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install <span style="color:#000">$DEVICE</span>
+</span></span></code></pre></div><p>See also [../install] for installation options.</p>
 <p>After the first boot you can also switch to a derivative by:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">elemental upgrade --docker-image --no-verify <span style="color:#000">$IMAGE</span>
-</code></pre></div><h2 id="booting-from-network">Booting from network</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental upgrade --docker-image --no-verify <span style="color:#000">$IMAGE</span>
+</span></span></code></pre></div><h2 id="booting-from-network">Booting from network</h2>
 <p>You can boot a cOS squashfs by using a native iPXE implementation on your
 system or by inserting a custom build iPXE iso by using your either your servers
 management web-interface (ILO, iDrac, &hellip;) or using a
@@ -2124,20 +2122,20 @@ management web-interface (ILO, iDrac, &hellip;) or using a
 <a href="https://quay.io/repository/costoolkit/releases-green?tab=tags">images</a> with the <code>cos-img-recovery-</code> prefix.
 By pulling the image, saving it using docker save, then unpack the single layer
 in the file to an extra directory and then run</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$&gt; mksquashfs &lt;path_to_folder&gt; &lt;output_path&gt;/root.squashfs
-</code></pre></div><p><strong>Note:</strong>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; mksquashfs &lt;path_to_folder&gt; &lt;output_path&gt;/root.squashfs
+</span></span></code></pre></div><p><strong>Note:</strong>
 The squashfs file can also be extracted using the following <code>docker</code> command:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$&gt; docker run -v <span style="color:#000">$PWD</span>:/cOS --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-green:cos-img-recovery-&lt;version&gt; .
-</code></pre></div><p>Then copy the <code>boot</code> directory and the squashfs file to your webserver and use
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker run -v <span style="color:#000">$PWD</span>:/cOS --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-green:cos-img-recovery-&lt;version&gt; .
+</span></span></code></pre></div><p>Then copy the <code>boot</code> directory and the squashfs file to your webserver and use
 the following script to boot.</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#8f5902;font-style:italic">#!ipxe
-</span><span style="color:#8f5902;font-style:italic"></span>
-ifconf
-kernel http://&lt;web_server_ip&gt;/boot/vmlinuz <span style="color:#000">ip</span><span style="color:#ce5c00;font-weight:bold">=</span>dhcp rd.cos.disable rd.noverifyssl
-<span style="color:#000">root</span><span style="color:#ce5c00;font-weight:bold">=</span>live:http://&lt;web_server_ip&gt;/root.squashfs <span style="color:#000">console</span><span style="color:#ce5c00;font-weight:bold">=</span>ttyS0 <span style="color:#000">console</span><span style="color:#ce5c00;font-weight:bold">=</span>tty1 cos.setup<span style="color:#ce5c00;font-weight:bold">=</span>http://&lt;web_server_ip&gt;/&lt;path_to_cloud_config.yaml&gt;
-initrd http://&lt;web_server_ip&gt;/boot/initrd
-boot
-</code></pre></div><p>To build a custom iPXE image clone the source from
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#!ipxe
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"></span>
+</span></span><span style="display:flex;"><span>ifconf
+</span></span><span style="display:flex;"><span>kernel http://&lt;web_server_ip&gt;/boot/vmlinuz <span style="color:#000">ip</span><span style="color:#ce5c00;font-weight:bold">=</span>dhcp rd.cos.disable rd.noverifyssl
+</span></span><span style="display:flex;"><span><span style="color:#000">root</span><span style="color:#ce5c00;font-weight:bold">=</span>live:http://&lt;web_server_ip&gt;/root.squashfs <span style="color:#000">console</span><span style="color:#ce5c00;font-weight:bold">=</span>ttyS0 <span style="color:#000">console</span><span style="color:#ce5c00;font-weight:bold">=</span>tty1 cos.setup<span style="color:#ce5c00;font-weight:bold">=</span>http://&lt;web_server_ip&gt;/&lt;path_to_cloud_config.yaml&gt;
+</span></span><span style="display:flex;"><span>initrd http://&lt;web_server_ip&gt;/boot/initrd
+</span></span><span style="display:flex;"><span>boot
+</span></span></code></pre></div><p>To build a custom iPXE image clone the source from
 <a href="https://github.com/ipxe/ipxe">https://github.com/ipxe/ipxe</a>, then traverse into
 the <code>src</code> directory and run <code>make EMBED=&lt;/path/to/your/script.ipxe&gt;</code>. The
 resulting iso can be found in <code>src/bin/ipxe.iso</code> and should be <code>~1MB</code> in size.</p>
@@ -2145,20 +2143,20 @@ resulting iso can be found in <code>src/bin/ipxe.iso</code> and should be <code>
 <p>For booting into Virtual machines we offer QCOW2, OVA, and raw disk recovery images which can be used to bootstrap your booting container.</p>
 <h3 id="qcow2">QCOW2</h3>
 <p>QCOW2 images ( e.g. <code>cOS-Packer-green-$VERSION-QEMU-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via QEMU, e.g:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda cOS -nographic
-</code></pre></div><h3 id="ova">OVA</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda cOS -nographic
+</span></span></code></pre></div><h3 id="ova">OVA</h3>
 <p>Ova images ( e.g. <code>cOS-Packer-green-$VERSION-vbox-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via vbox.
 Please check the virtuabox docs on how to create a new VM with an existing disk.</p>
 <h3 id="vagrant">Vagrant</h3>
 <p>Download the vagrant box artifact ( e.g. <code>cOS-Packer-green-$VERSION-{vbox, QEMU}-$ARCH.box.tar.xz</code> ), extract it and run:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vagrant box add cos &lt;cos-box-image&gt;
-vagrant init cos
-vagrant up
-</code></pre></div><h3 id="raw-disk-images">RAW disk images</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>vagrant box add cos &lt;cos-box-image&gt;
+</span></span><span style="display:flex;"><span>vagrant init cos
+</span></span><span style="display:flex;"><span>vagrant up
+</span></span></code></pre></div><h3 id="raw-disk-images">RAW disk images</h3>
 <p>RAW disk images ( e.g. <code>cOS-Vanilla-RAW-green-$VERSION-$ARCH.raw.tar.xz</code> ) contains only the <code>cOS</code> recovery system. Those are typically used when creating derivatives images based on top of <code>cOS</code>.</p>
 <p>They can be run with QEMU with:</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda &lt;cos-disk-image&gt;.raw -bios /usr/share/qemu/ovmf-x86_64.bin
-</code></pre></div><h2 id="cloud-images">Cloud Images</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda &lt;cos-disk-image&gt;.raw -bios /usr/share/qemu/ovmf-x86_64.bin
+</span></span></code></pre></div><h2 id="cloud-images">Cloud Images</h2>
 <p>Cloud images are <code>vanilla</code> images that boots into <a href="../recovery">recovery mode</a> and can be used to deploy
 whatever image you want to the VM. Then you can snapshot that VM into a VM image ready to deploy with the default cOS
 system or your derivative.</p>
@@ -2175,22 +2173,22 @@ system or your derivative.</p>
 <ol>
 <li>Upload the raw image to an S3 bucket</li>
 </ol>
-<pre><code>aws s3 cp &lt;cos-raw-image&gt; s3://&lt;your_s3_bucket&gt;
+<pre tabindex="0"><code>aws s3 cp &lt;cos-raw-image&gt; s3://&lt;your_s3_bucket&gt;
 </code></pre><ol start="2">
 <li>Created the disk container JSON (<code>container.json</code> file) as:</li>
 </ol>
-<pre><code>{
-  &quot;Description&quot;: &quot;cOS Testing image in RAW format&quot;,
-  &quot;Format&quot;: &quot;raw&quot;,
-  &quot;UserBucket&quot;: {
-    &quot;S3Bucket&quot;: &quot;&lt;your_s3_bucket&gt;&quot;,
-    &quot;S3Key&quot;: &quot;&lt;cos-raw-image&gt;&quot;
+<pre tabindex="0"><code>{
+  &#34;Description&#34;: &#34;cOS Testing image in RAW format&#34;,
+  &#34;Format&#34;: &#34;raw&#34;,
+  &#34;UserBucket&#34;: {
+    &#34;S3Bucket&#34;: &#34;&lt;your_s3_bucket&gt;&#34;,
+    &#34;S3Key&#34;: &#34;&lt;cos-raw-image&gt;&#34;
   }
 }
 </code></pre><ol start="3">
 <li>Import the disk as snapshot</li>
 </ol>
-<pre><code>aws ec2 import-snapshot --description &quot;cOS PoC&quot; --disk-container file://container.json
+<pre tabindex="0"><code>aws ec2 import-snapshot --description &#34;cOS PoC&#34; --disk-container file://container.json
 </code></pre><ol start="4">
 <li>
 <p>Followed the procedure described in <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#creating-launching-ami-from-snapshot">AWS docs</a> to register an AMI from snapshot. Used all default settings unless for the firmware, set to force to UEFI boot.</p>
@@ -2199,10 +2197,10 @@ system or your derivative.</p>
 <p>Launch instance with this simple userdata with at least a 16Gb boot disk:</p>
 </li>
 </ol>
-<pre><code>name: &quot;Default deployment&quot;
+<pre tabindex="0"><code>name: &#34;Default deployment&#34;
 stages:
    rootfs.after:
-     - name: &quot;Repart image&quot;
+     - name: &#34;Repart image&#34;
        layout:
          # It will partition a device including the given filesystem label or part label (filesystem label matches first)
          device:
@@ -2216,22 +2214,21 @@ stages:
              # unset size or 0 size means all available space
              pLabel: persistent
    initramfs:
-     - if: '[ -f &quot;/run/cos/recovery_mode&quot; ]'
-       name: &quot;Set sshd to wait for deployment&quot;
+     - if: &#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;
+       name: &#34;Set sshd to wait for deployment&#34;
        files:
-       - path: &quot;/etc/systemd/system/sshd.service.d/override.conf&quot;
+       - path: &#34;/etc/systemd/system/sshd.service.d/override.conf&#34;
          content: |
              [Unit]
              After=cos-setup-network.service
    network:
-     - if: '[ -f &quot;/run/cos/recovery_mode&quot; ]'
-       name: &quot;Deploy cos-system&quot;
+     - if: &#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;
+       name: &#34;Deploy cos-system&#34;
        commands:
          - |
              # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
              # By default the recovery cOS gets deployed
              elemental reset --reboot
-
 </code></pre><h3 id="importing-a-google-cloud-image-manually">Importing a Google Cloud image manually</h3>
 
 
@@ -2243,98 +2240,97 @@ stages:
 <ol>
 <li>Upload the Google Cloud compressed disk to your bucket</li>
 </ol>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gsutil cp &lt;cos-gce-image&gt; gs://&lt;your_bucket&gt;/
-</code></pre></div><ol start="2">
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gsutil cp &lt;cos-gce-image&gt; gs://&lt;your_bucket&gt;/
+</span></span></code></pre></div><ol start="2">
 <li>Import the disk as an image</li>
 </ol>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gcloud compute images create &lt;new_image_name&gt; --source-uri<span style="color:#ce5c00;font-weight:bold">=</span>&lt;your_bucket&gt;/&lt;cos-gce-image&gt; --guest-os-features<span style="color:#ce5c00;font-weight:bold">=</span>UEFI_COMPATIBLE
-</code></pre></div><ol start="3">
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcloud compute images create &lt;new_image_name&gt; --source-uri<span style="color:#ce5c00;font-weight:bold">=</span>&lt;your_bucket&gt;/&lt;cos-gce-image&gt; --guest-os-features<span style="color:#ce5c00;font-weight:bold">=</span>UEFI_COMPATIBLE
+</span></span></code></pre></div><ol start="3">
 <li>Launch instance with this simple userdata with at least a 16Gb boot disk:</li>
 </ol>
 
 <p style="font-style: italic;"><i class="fa fa-info-circle" aria-hidden="true">&nbsp;</i>See <a href="https://cloud.google.com/container-optimized-os/docs/how-to/create-configure-instance#using_cloud-init_with_the_cloud_config_format">here</a> on how to add user-data to an instance</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">rootfs.after</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart image&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#8f5902;font-style:italic"># It will partition a device including the given filesystem label or part label (filesystem label matches first)</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># 10Gb for COS_STATE, so the disk should have at least 16Gb</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10240</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># unset size or 0 size means all available space</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Set sshd to wait for deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;/etc/systemd/system/sshd.service.d/override.conf&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span><span style="color:#8f5902;font-style:italic">             [Unit]
-</span><span style="color:#8f5902;font-style:italic">             After=cos-setup-network.service</span><span style="color:#f8f8f8;text-decoration:underline">             
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
-</span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
-</span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
-</span></code></pre></div><h3 id="importing-an-azure-image-manually">Importing an Azure image manually</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">rootfs.after</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart image&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#8f5902;font-style:italic"># It will partition a device including the given filesystem label or part label (filesystem label matches first)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># 10Gb for COS_STATE, so the disk should have at least 16Gb</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10240</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># unset size or 0 size means all available space</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Set sshd to wait for deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;/etc/systemd/system/sshd.service.d/override.conf&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             [Unit]
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             After=cos-setup-network.service</span><span style="color:#f8f8f8;text-decoration:underline">             
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
+</span></span></span></code></pre></div><h3 id="importing-an-azure-image-manually">Importing an Azure image manually</h3>
 
 <p style="font-style: italic;"><i class="fa fa-info-circle" aria-hidden="true">&nbsp;</i><p>You need to use the AZURE images ( e.g. <code>cOS-Vanilla-AZURE-green-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing Azure images.</p>
 </p>
 <ol>
 <li>Upload the Azure Cloud VHD disk in <code>.vhda</code> format ( extract e.g. <code>cOS-Vanilla-AZURE-green-0.6.0-g7d04f1db-x86_64.vhd.tar.xz</code> ) to your bucket</li>
 </ol>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">az storage copy --source &lt;cos-azure-image&gt; --destination https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;destination-cos-azure-image&gt;
-
-</code></pre></div><ol start="2">
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az storage copy --source &lt;cos-azure-image&gt; --destination https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;destination-cos-azure-image&gt;
+</span></span></code></pre></div><ol start="2">
 <li>Import the disk as an image</li>
 </ol>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">az image create --resource-group &lt;resource-group&gt; --source https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;cos-azure-image&gt; --os-type linux --hyper-v-generation v2 --name &lt;image-name&gt;
-</code></pre></div><ol start="3">
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az image create --resource-group &lt;resource-group&gt; --source https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;cos-azure-image&gt; --os-type linux --hyper-v-generation v2 --name &lt;image-name&gt;
+</span></span></code></pre></div><ol start="3">
 <li>Launch instance with this simple userdata with at least a 16Gb boot disk:</li>
 </ol>
 <p>Hint: There is currently no way of altering the boot disk of an Azure VM via GUI, use the azure-cli to launch the VM with an expanded OS disk</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">rootfs.after</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart image&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#8f5902;font-style:italic"># It will partition a device including the given filesystem label or part label (filesystem label matches first)</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># 10Gb for COS_STATE, so the disk should have at least 16Gb</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10240</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># unset size or 0 size means all available space</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Set sshd to wait for deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;/etc/systemd/system/sshd.service.d/override.conf&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span><span style="color:#8f5902;font-style:italic">             [Unit]
-</span><span style="color:#8f5902;font-style:italic">             After=cos-setup-network.service</span><span style="color:#f8f8f8;text-decoration:underline">             
-</span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
-</span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
-</span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
-</span></code></pre></div><h2 id="login">Login</h2>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">rootfs.after</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart image&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#8f5902;font-style:italic"># It will partition a device including the given filesystem label or part label (filesystem label matches first)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># 10Gb for COS_STATE, so the disk should have at least 16Gb</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10240</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># unset size or 0 size means all available space</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Set sshd to wait for deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;/etc/systemd/system/sshd.service.d/override.conf&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             [Unit]
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             After=cos-setup-network.service</span><span style="color:#f8f8f8;text-decoration:underline">             
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
+</span></span></span></code></pre></div><h2 id="login">Login</h2>
 <p>By default you can login with the user <code>root</code> and password <code>cos</code>.</p>
 <p>See the <a href="../../customizing/login">customization section</a> for examples on how to persist username and password changes after installation.</p>
 
@@ -2406,7 +2402,7 @@ stages:
 
     Last modified
     May 17, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/cdac02924baacc26a98682c36cc24750d81f7f04">Add docs to run the GH action runner with docker (#1332) (cdac029)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/982d796be29c5af76c9e44c195d309911e93f27f">Use hugo from toolchain (#1331) (982d796)</a>
 
 </div>
 
@@ -2477,7 +2473,7 @@ stages:
 
 
 
-<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.3b172c13b62c2bea8b1c9d2599cddc8cf89718a92d792c680871c81ba43d8c85.js" integrity="sha256-OxcsE7YsK&#43;qLHJ0lmc3cjPiXGKkteSxoCHHIG6Q9jIU=" crossorigin="anonymous"></script>
+<script src="https://rancher-sandbox.github.io/cOS-toolkit/js/main.min.ed4d5ba6dd1e553488f282988ee384ef44608aeee43296d0ef373812eab68dc0.js" integrity="sha256-7U1bpt0eVTSI8oKYjuOE70Rgiu7kMpbQ7zc4Euq2jcA=" crossorigin="anonymous"></script>
 
 
 
