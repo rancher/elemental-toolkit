@@ -8,7 +8,7 @@ if [ -z "$TREE_DIR" ]; then
     exit 1
 fi
 
-GENERATED_DOCS="${2:-content/en/docs/Reference/Packages}"
+GENERATED_DOCS="${2:-docs/content/en/docs/Reference/Packages}"
 
 echo "Generating docs at $GENERATED_DOCS"
 

@@ -21,6 +21,15 @@ JQ="/usr/bin/jq"
 endif
 
 #
+# Path to hugo binary
+#
+export HUGO?=$(shell which hugo 2> /dev/null)
+ifeq ("$(HUGO)","")
+HUGO="/usr/bin/hugo"
+endif
+
+
+#
 # Path to yq binary
 #
 export YQ?=$(shell which yq 2> /dev/null)
@@ -173,6 +182,14 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 else
 	$(LUET) install -y utils/jq
+endif
+
+$(HUGO):
+ifneq ($(shell id -u), 0)
+	@echo "'$@' is missing and you must be root to install it."
+	@exit 1
+else
+	$(LUET) install -y toolchain/hugo
 endif
 
 $(MTREE):
