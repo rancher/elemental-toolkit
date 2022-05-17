@@ -19,3 +19,25 @@ Supported arches are:
 | `CHECKSUM` | checksum for the github runner version | valid checksum |
 ```
 
+## Setup
+
+On the machines running the github the following are required:
+
+- docker (`zypper in -y docker`)
+- a time sync daemon
+
+## Summary
+
+For example, the following steps works for openSUSE:
+
+```bash
+$ zypper in -y docker
+$ systemctl enable --now docker
+$ systemctl enable --now systemd-timesyncd
+```
+
+To run the action runner with docker, for example it is necessary just to specify all the settings with environment variables (and share the docker socket):
+
+```bash
+docker run -e TOKEN=<TOKEN> -e ARCH=<ARCH> -e ORG=<ORG> -e REPO=<REPO> -e VERSION=<VERSION> -e CHECKSUM=<CHECKSUM> -v /var/run:/var/run -d --rm quay.io/costoolkit/ghrunner:latest
+```
