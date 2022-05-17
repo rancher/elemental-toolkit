@@ -50,7 +50,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			}
 
 			By("upgrade active")
-			out, err := s.Command("elemental upgrade")
+			out, err := s.Command("elemental --debug upgrade")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -74,7 +74,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command(fmt.Sprintf("elemental upgrade --docker-image %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+			out, err := s.Command(fmt.Sprintf("elemental --debug upgrade --docker-image %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 			err = s.ChangeBoot(sut.Active)
@@ -95,7 +95,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
 				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
-				out, err := s.Command(fmt.Sprintf("elemental upgrade --recovery --docker-image %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("elemental --debug upgrade --recovery --docker-image %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -120,7 +120,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery")
-				out, err := s.Command("elemental upgrade --recovery")
+				out, err := s.Command("elemental --debug upgrade --recovery")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 
