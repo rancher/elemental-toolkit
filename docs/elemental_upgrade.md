@@ -13,8 +13,8 @@ elemental upgrade [flags]
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --directory string                 Use directory as source to install from
   -d, --docker-image string              Install a specified container image
-      --local                            Use an image from local cache
   -h, --help                             help for upgrade
+      --local                            Use an image from local cache
       --no-verify                        Disable mtree checksum verification (requires images manifests generated with mtree separately)
       --poweroff                         Shutdown the system after install
       --reboot                           Reboot the system after install

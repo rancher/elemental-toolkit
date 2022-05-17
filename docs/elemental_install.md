@@ -14,13 +14,13 @@ elemental install DEVICE [flags]
       --cosign-key string         Sets the URL of the public key to be used by cosign validation
       --directory string          Use directory as source to install from
   -d, --docker-image string       Install a specified container image
-      --local                     Use an image from local cache
       --eject-cd                  Try to eject the cd on reboot, only valid if booting from iso
       --force                     Force install
       --force-efi                 Forces an EFI installation
       --force-gpt                 Forces a GPT partition table
   -h, --help                      help for install
   -i, --iso string                Performs an installation from the ISO url
+      --local                     Use an image from local cache
       --no-format                 Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing
       --no-verify                 Disable mtree checksum verification (requires images manifests generated with mtree separately)
   -p, --partition-layout string   Partitioning layout file
