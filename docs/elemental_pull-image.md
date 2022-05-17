@@ -16,7 +16,7 @@ elemental pull-image IMAGE DESTINATION [flags]
       --auth-type string             Auth type
       --auth-username string         Username to authenticate to registry/notary
   -h, --help                         help for pull-image
-      --local                        Use local image
+      --local                        Use an image from local cache
       --plugin stringArray           A list of runtime plugins to load. Can be repeated to add more than one plugin
       --verify                       Verify signed images to notary before to pull
 ```

@@ -311,7 +311,7 @@ func applySource(c v1.Config, target string, src v1.ImageSource) error {
 				return err
 			}
 		}
-		err := c.Luet.Unpack(target, src.Value(), false)
+		err := c.Luet.Unpack(target, src.Value(), c.LocalImage)
 		if err != nil {
 			return err
 		}

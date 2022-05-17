@@ -95,6 +95,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().BoolP("force", "", false, "Force install")
 	c.Flags().BoolP("eject-cd", "", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	addSharedInstallUpgradeFlags(c)
+	addLocalImageFlag(c)
 	return c
 }
 

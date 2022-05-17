@@ -86,6 +86,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("recovery", false, "Upgrade the recovery")
 	addSharedInstallUpgradeFlags(c)
 	addSquashFsCompressionFlags(c)
+	addLocalImageFlag(c)
 	return c
 }
 

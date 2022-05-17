@@ -49,6 +49,11 @@ func addSharedInstallUpgradeFlags(cmd *cobra.Command) {
 	addPowerFlags(cmd)
 }
 
+// addLocalImageFlag add local image flag shared between install, pull-image, upgrade
+func addLocalImageFlag(cmd *cobra.Command) {
+	cmd.Flags().Bool("local", false, "Use an image from local cache")
+}
+
 func validateCosignFlags(log v1.Logger) error {
 	if viper.GetString("cosign-key") != "" && !viper.GetBool("cosign") {
 		return errors.New("'cosign-key' requires 'cosign' option to be enabled")

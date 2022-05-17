@@ -14,6 +14,7 @@ elemental build-iso IMAGE [flags]
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --date                             Adds a date suffix into the generated ISO file
   -h, --help                             help for build-iso
+      --local                            Use an image from local cache
       --label string                     Label of the ISO volume
   -n, --name string                      Basename of the generated ISO file
   -o, --output string                    Output directory (defaults to current directory)

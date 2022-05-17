@@ -95,8 +95,8 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("auth-identity-token", "", "Authentication identity token")
 	c.Flags().String("auth-registry-token", "", "Authentication registry token")
 	c.Flags().Bool("verify", false, "Verify signed images to notary before to pull")
-	c.Flags().Bool("local", false, "Use local image")
 	c.Flags().StringArray("plugin", []string{}, "A list of runtime plugins to load. Can be repeated to add more than one plugin")
+	addLocalImageFlag(c)
 	return c
 }
 

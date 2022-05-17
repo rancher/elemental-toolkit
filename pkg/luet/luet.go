@@ -18,6 +18,7 @@ package luet
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -135,21 +136,28 @@ func NewLuet(opts ...Options) *Luet {
 }
 
 func (l Luet) Unpack(target string, image string, local bool) error {
-	l.log.Infof("Unpacking docker image: %s", image)
-	if !local {
+	l.log.Infof("Unpacking a container image: %s", image)
+
+	if local {
+		l.log.Infof("Using an image from local cache")
+		info, err := docker.ExtractDockerImage(l.context, image, target)
+		if err != nil {
+			if strings.Contains(err.Error(), "reference does not exist") {
+				return errors.New("Container image does not exist locally")
+			}
+			return err
+		}
+		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
+	} else {
+		l.log.Infof("Pulling an image from remote repository")
 		info, err := docker.DownloadAndExtractDockerImage(l.context, image, target, l.auth, l.VerifyImageUnpack)
 		if err != nil {
 			return err
 		}
 		l.log.Infof("Pulled: %s %s", info.Target.Digest, info.Name)
 		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
-	} else {
-		info, err := docker.ExtractDockerImage(l.context, image, target)
-		if err != nil {
-			return err
-		}
-		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
 	}
+
 	return nil
 }
 

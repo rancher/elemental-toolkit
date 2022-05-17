@@ -42,6 +42,7 @@ type Config struct {
 	Client                    HTTPClient
 	Cosign                    bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
 	CosignPubKey              string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
+	LocalImage                bool         `yaml:"local,omitempty" mapstructure:"local"`
 	Repos                     []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
 	Arch                      string       `yaml:"arch,omitempty" mapstructure:"arch"`
 	SquashFsCompressionConfig []string     `yaml:"squash-compression,omitempty" mapstructure:"SquashFsCompressionConfig"`
@@ -78,6 +79,7 @@ type RunConfig struct {
 	ChannelUpgrades bool   `yaml:"CHANNEL_UPGRADES,omitempty" mapstructure:"CHANNEL_UPGRADES"`
 	UpgradeImage    string `yaml:"UPGRADE_IMAGE,omitempty" mapstructure:"UPGRADE_IMAGE"`
 	RecoveryImage   string `yaml:"RECOVERY_IMAGE,omitempty" mapstructure:"RECOVERY_IMAGE"`
+	LocalImage      bool   `yaml:"local,omitempty" mapstructure:"local"`
 	RecoveryUpgrade bool   // configured only via flag, no need to map it to any config
 	ImgSize         uint   `yaml:"DEFAULT_IMAGE_SIZE,omitempty" mapstructure:"DEFAULT_IMAGE_SIZE"`
 	Directory       string `yaml:"directory,omitempty" mapstructure:"directory"`

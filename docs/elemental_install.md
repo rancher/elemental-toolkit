@@ -14,6 +14,7 @@ elemental install DEVICE [flags]
       --cosign-key string         Sets the URL of the public key to be used by cosign validation
       --directory string          Use directory as source to install from
   -d, --docker-image string       Install a specified container image
+      --local                     Use an image from local cache
       --eject-cd                  Try to eject the cd on reboot, only valid if booting from iso
       --force                     Force install
       --force-efi                 Forces an EFI installation

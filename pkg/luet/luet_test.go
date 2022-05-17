@@ -69,6 +69,11 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 			image := "quay.io/costoolkit/releases-green:cloud-config-system-0.11-1"
 			Expect(l.Unpack(target, image, false)).NotTo(BeNil())
 		})
+		It("Check that luet can unpack the remote image", Label("unpack", "root"), func() {
+			image := "registry.opensuse.org/opensuse/redis"
+			// Check that luet can unpack the remote image
+			Expect(l.Unpack(target, image, false)).To(BeNil())
+		})
 		It("Check that luet can unpack the local image", Label("unpack", "root"), func() {
 			image := "docker.io/library/alpine"
 			ctx := context.Background()

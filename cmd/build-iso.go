@@ -147,6 +147,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	addArchFlags(c)
 	addCosignFlags(c)
 	addSquashFsCompressionFlags(c)
+	addLocalImageFlag(c)
 	return c
 }
 

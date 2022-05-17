@@ -334,7 +334,7 @@ func (c *Elemental) CopyImage(img *v1.Image) error { // nolint:gocyclo
 				return err
 			}
 		}
-		err = c.config.Luet.Unpack(img.MountPoint, img.Source.Value(), false)
+		err = c.config.Luet.Unpack(img.MountPoint, img.Source.Value(), c.config.LocalImage)
 		if err != nil {
 			return err
 		}
