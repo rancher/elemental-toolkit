@@ -184,7 +184,7 @@ type BuildConfig struct {
 	RawDisk map[string]*RawDiskArchEntry `yaml:"raw_disk,omitempty" mapstructure:"raw_disk"`
 	OutDir  string                       `yaml:"output,omitempty" mapstructure:"output"`
 	// Generic runtime configuration
-	Config
+	Config `yaml:",inline" mapstructure:",squash"`
 }
 
 // RawDiskArchEntry represents an arch entry in raw_disk
