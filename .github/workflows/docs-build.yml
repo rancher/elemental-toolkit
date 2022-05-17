@@ -14,10 +14,8 @@ jobs:
         run: |
           npm install postcss-cli
           npm install autoprefixer
-          sudo bash ./scripts/get_luet.sh
-          sudo luet install -y toolchain/yq
+          sudo -E make docs-deps
       - name: Build pages
         run: |
            make docs-build
-           mv docs/public ./
            ls -liah public/

@@ -3,9 +3,15 @@
 #
 #
 
+export BASE_URL?=https://rancher-sandbox.github.io/cOS-toolkit/
 
-docs-serve:
-	$(MAKE) -C docs/ serve
+docs-deps: $(LUET) $(HUGO) $(YQ)
 
-docs-build:
-	$(MAKE) -C docs/ generate-docs build
+docs-serve: docs-deps
+	hugo -s "$(ROOT_DIR)/docs" serve 
+
+docs-generate:
+	scripts/docs-generate-packages.sh $(ROOT_DIR)/packages
+
+docs-build: docs-deps docs-generate
+	scripts/docs-build.sh

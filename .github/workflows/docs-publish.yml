@@ -15,14 +15,12 @@ jobs:
           submodules: recursive
       - name: Install deps
         run: |
-              npm install postcss-cli
-              npm install autoprefixer
-              sudo bash ./scripts/get_luet.sh
-              sudo luet install -y toolchain/yq
+          npm install postcss-cli
+          npm install autoprefixer
+          sudo -E make docs-deps
       - name: Build package docs
         run: |
            make docs-build
-           mv docs/public ./
       - name: Deploy 🚀
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: JamesIves/github-pages-deploy-action@releases/v3
