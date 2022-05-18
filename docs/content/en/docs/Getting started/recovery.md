@@ -27,14 +27,16 @@ elemental upgrade --recovery
 It also supports to specify docker images directly:
 
 ```bash
-elemental upgrade --recovery --docker-image <image>
+elemental upgrade --recovery --recovery-system.uri <image-uri>
 ```
+
+Where `<image-uri>` can be an opaque URI of `docker` scheme (e.g. `docker:registry.org/some/image:tag`). Elemental supports `docker`, `channel` (refers to a Luet package from a repository), `dir` (refers to a local directory) and `file` (refers to a local file).
 
 ### Upgrading the active system from the recovery
 
 The recovery system can upgrade also the active system by running `elemental upgrade`, and it also supports to specify docker images directly:
 
 ```bash
-elemental upgrade --recovery --docker-image <image>
+elemental upgrade --system.uri <image-uri>
 ```
 

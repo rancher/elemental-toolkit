@@ -36,7 +36,7 @@ See also [../install] for installation options.
 After the first boot you can also switch to a derivative by:
 
 ```bash
-elemental upgrade --docker-image --no-verify $IMAGE
+elemental upgrade --no-verify --system.uri $IMAGE
 ```
 
 ## Booting from network
@@ -190,7 +190,7 @@ stages:
        name: "Deploy cos-system"
        commands:
          - |
-             # Use `elemental reset --docker-image <img-ref>` to deploy a custom image
+             # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
              # By default the recovery cOS gets deployed
              elemental reset --reboot
 
@@ -249,7 +249,7 @@ stages:
        name: "Deploy cos-system"
        commands:
          - |
-             # Use `elemental reset --docker-image <img-ref>` to deploy a custom image
+             # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
              # By default recovery cOS gets deployed
              elemental reset --reboot
 ```
@@ -308,7 +308,7 @@ stages:
        name: "Deploy cos-system"
        commands:
          - |
-             # Use `elemental reset --docker-image <img-ref>` to deploy a custom image
+             # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
              # By default recovery cOS gets deployed
              elemental reset --reboot
 ```

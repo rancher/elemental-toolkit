@@ -20,9 +20,9 @@ This will perform an upgrade based on the default derivative configuration for t
 
 ## Upgrade to a specific container image
 
-To specify a specific container image to upgrade to instead of the regular upgrade channels, run `elemental upgrade --docker-image image`.
+To specify a specific container image to upgrade to instead of the regular upgrade channels, run `elemental upgrade --system.uri imagei-uri`.
 
-_Note_ by default `elemental upgrade --docker-image` checks images against the notary registry server for valid signatures for the images tag. To disable image verification, run `elemental upgrade --no-verify --docker-image`.
+_Note_ by default `elemental upgrade --system.uri` runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run `elemental upgrade --no-verify --system.uri`.
 
 ## Integration with System Upgrade Controller
 
