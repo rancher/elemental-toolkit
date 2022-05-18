@@ -9,7 +9,7 @@ elemental install DEVICE [flags]
 ### Options
 
 ```
-       -c, --cloud-init string                Cloud-init config file
+  -c, --cloud-init string                Cloud-init config file
       --cosign                           Enable cosign verification (requires images with signatures)
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --eject-cd                         Try to eject the cd on reboot, only valid if booting from iso
@@ -27,7 +27,7 @@ elemental install DEVICE [flags]
   -x, --squash-compression stringArray   cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')
       --strict                           Enable strict check of hooks (They need to exit with 0)
       --system.uri string                Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
-      --tty string                       Add named tty to grub 
+      --tty string                       Add named tty to grub
 ```
 
 ### Options inherited from parent commands
