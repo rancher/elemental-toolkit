@@ -17,173 +17,72 @@ limitations under the License.
 package action
 
 import (
-	"errors"
-	"path/filepath"
-
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 )
 
-func resetHook(config *v1.RunConfig, hook string, chroot bool) error {
+func (r *ResetAction) resetHook(hook string, chroot bool) error {
 	if chroot {
 		extraMounts := map[string]string{}
-		persistent := config.Partitions.GetByName(cnst.PersistentPartName)
-		if persistent != nil {
-			extraMounts[persistent.MountPoint] = "/usr/local"
+		persistent := r.spec.Partitions.Persistent
+		if persistent != nil && persistent.MountPoint != "" {
+			extraMounts[persistent.MountPoint] = cnst.UsrLocalPath
 		}
-		oem := config.Partitions.GetByName(cnst.OEMPartName)
-		if oem != nil {
-			extraMounts[oem.MountPoint] = "/oem"
+		oem := r.spec.Partitions.OEM
+		if oem != nil && oem.MountPoint != "" {
+			extraMounts[oem.MountPoint] = cnst.OEMPath
 		}
-		return ChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
+		return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, r.spec.Active.MountPoint, extraMounts, r.cfg.CloudInitPaths...)
 	}
-	return Hook(config, hook)
+	return Hook(&r.cfg.Config, hook, r.cfg.Strict, r.cfg.CloudInitPaths...)
 }
 
-// ResetSetup will set installation parameters according to
-// the given configuration flags
-func ResetSetup(config *v1.RunConfig) error {
-	if !utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) &&
-		!utils.BootedFrom(config.Runner, config.SystemLabel) {
-		return errors.New("reset can only be called from the recovery system")
-	}
-
-	SetupLuet(config)
-
-	efiExists, _ := utils.Exists(config.Fs, cnst.EfiDevice)
-
-	if efiExists {
-		partEfi, err := utils.GetFullDeviceByLabel(config.Runner, cnst.EfiLabel, 1)
-		if err != nil {
-			config.Logger.Errorf("EFI partition not found!")
-			return err
-		}
-		if partEfi.MountPoint == "" {
-			partEfi.MountPoint = cnst.EfiDir
-		}
-		partEfi.Name = cnst.EfiPartName
-		config.Partitions = append(config.Partitions, partEfi)
-	}
-
-	// Only add it if it exists, not a hard requirement
-	partOEM, err := utils.GetFullDeviceByLabel(config.Runner, config.OEMLabel, 1)
-	if err == nil {
-		if partOEM.MountPoint == "" {
-			partOEM.MountPoint = cnst.OEMDir
-		}
-		partOEM.Name = cnst.OEMPartName
-		config.Partitions = append(config.Partitions, partOEM)
-	} else {
-		config.Logger.Warnf("No OEM partition found")
-	}
-
-	partState, err := utils.GetFullDeviceByLabel(config.Runner, config.StateLabel, 1)
-	if err != nil {
-		config.Logger.Errorf("State partition '%s' not found", config.StateLabel)
-		return err
-	}
-	if partState.MountPoint == "" {
-		partState.MountPoint = cnst.StateDir
-	}
-	partState.Name = cnst.StatePartName
-	config.Partitions = append(config.Partitions, partState)
-	config.Target = partState.Disk
-
-	// Only add it if it exists, not a hard requirement
-	partPersistent, err := utils.GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 1)
-	if err == nil {
-		if partPersistent.MountPoint == "" {
-			partPersistent.MountPoint = cnst.PersistentDir
-		}
-		partPersistent.Name = cnst.PersistentPartName
-		config.Partitions = append(config.Partitions, partPersistent)
-	} else {
-		config.Logger.Warnf("No Persistent partition found")
-	}
-
-	_ = ResetImagesSetup(config)
-
-	return nil
+type ResetAction struct {
+	cfg  *v1.RunConfig
+	spec *v1.ResetSpec
 }
 
-// ResetImagesSetup defines the parameters of active and passive images
-// as they are used during the reset.
-func ResetImagesSetup(config *v1.RunConfig) error {
-	var imgSource v1.ImageSource
-	// TODO add reset from channel
-	// TODO execute rootTree sanity checks?
-	if config.Directory != "" {
-		imgSource = v1.NewDirSrc(config.Directory)
-	} else if config.DockerImg != "" {
-		imgSource = v1.NewDockerSrc(config.DockerImg)
-	} else if utils.BootedFrom(config.Runner, cnst.RecoverySquashFile) {
-		imgSource = v1.NewDirSrc(cnst.IsoBaseTree)
-	} else {
-		imgSource = v1.NewFileSrc(filepath.Join(cnst.RunningStateDir, "cOS", cnst.RecoveryImgFile))
-	}
-
-	// Set Active Image
-	partState := config.Partitions.GetByName(cnst.StatePartName)
-	if partState == nil {
-		config.Logger.Errorf("State partition not configured")
-		return errors.New("Error setting Active image")
-	}
-	config.Images.SetActive(&v1.Image{
-		Label:      config.ActiveLabel,
-		Size:       cnst.ImgSize,
-		File:       filepath.Join(partState.MountPoint, "cOS", cnst.ActiveImgFile),
-		FS:         cnst.LinuxImgFs,
-		Source:     imgSource,
-		MountPoint: cnst.ActiveDir,
-	})
-
-	// Set Passive image
-	config.Images.SetPassive(&v1.Image{
-		File:   filepath.Join(partState.MountPoint, "cOS", cnst.PassiveImgFile),
-		Label:  config.PassiveLabel,
-		Source: v1.NewFileSrc(config.Images.GetActive().File),
-		FS:     cnst.LinuxImgFs,
-	})
-
-	return nil
+func NewResetAction(cfg *v1.RunConfig, spec *v1.ResetSpec) *ResetAction {
+	return &ResetAction{cfg: cfg, spec: spec}
 }
 
 // ResetRun will reset the cos system to by following several steps
-func ResetRun(config *v1.RunConfig) (err error) { // nolint:gocyclo
-	ele := elemental.NewElemental(config)
+func (r ResetAction) Run() (err error) {
+	e := elemental.NewElemental(&r.cfg.Config)
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	err = resetHook(config, cnst.BeforeResetHook, false)
+	err = r.resetHook(cnst.BeforeResetHook, false)
 	if err != nil {
 		return err
 	}
 
 	// Unmount partitions if any is already mounted before formatting
-	err = ele.UnmountPartitions()
+	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true))
 	if err != nil {
 		return err
 	}
 
 	// Reformat state partition
-	err = ele.FormatPartition(config.Partitions.GetByName(cnst.StatePartName))
+	err = e.FormatPartition(r.spec.Partitions.State)
 	if err != nil {
 		return err
 	}
+
 	// Reformat persistent partitions
-	if config.ResetPersistent {
-		persistent := config.Partitions.GetByName(cnst.PersistentPartName)
+	if r.spec.FormatPersistent {
+		persistent := r.spec.Partitions.Persistent
 		if persistent != nil {
-			err = ele.FormatPartition(persistent)
+			err = e.FormatPartition(persistent)
 			if err != nil {
 				return err
 			}
 		}
-		oem := config.Partitions.GetByName(cnst.OEMPartName)
+		oem := r.spec.Partitions.OEM
 		if oem != nil {
-			err = ele.FormatPartition(oem)
+			err = e.FormatPartition(oem)
 			if err != nil {
 				return err
 			}
@@ -191,52 +90,61 @@ func ResetRun(config *v1.RunConfig) (err error) { // nolint:gocyclo
 	}
 
 	// Mount configured partitions
-	err = ele.MountPartitions()
+	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false))
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return ele.UnmountPartitions() })
+	cleanup.Push(func() error {
+		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true))
+	})
 
 	// Deploy active image
-	err = ele.DeployImage(config.Images.GetActive(), true)
+	err = e.DeployImage(&r.spec.Active, true)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return ele.UnmountImage(config.Images.GetActive()) })
+	cleanup.Push(func() error { return e.UnmountImage(&r.spec.Active) })
 
 	// install grub
-	grub := utils.NewGrub(config)
-	err = grub.Install()
+	grub := utils.NewGrub(&r.cfg.Config)
+	err = grub.Install(
+		r.spec.Target,
+		r.spec.Active.MountPoint,
+		r.spec.Partitions.State.MountPoint,
+		r.spec.GrubConf,
+		r.spec.Tty,
+		r.spec.Efi,
+	)
 	if err != nil {
 		return err
 	}
 	// Relabel SELinux
-	_ = ele.SelinuxRelabel(cnst.ActiveDir, false)
+	_ = e.SelinuxRelabel(cnst.ActiveDir, false)
 
-	err = resetHook(config, cnst.AfterResetChrootHook, true)
+	err = r.resetHook(cnst.AfterResetChrootHook, true)
 	if err != nil {
 		return err
 	}
 
 	// Unmount active image
-	err = ele.UnmountImage(config.Images.GetActive())
+	err = e.UnmountImage(&r.spec.Active)
 	if err != nil {
 		return err
 	}
 
 	// Install Passive
-	err = ele.DeployImage(config.Images.GetPassive(), false)
+	err = e.DeployImage(&r.spec.Passive, false)
 	if err != nil {
 		return err
 	}
 
-	err = resetHook(config, cnst.AfterResetHook, false)
+	err = r.resetHook(cnst.AfterResetHook, false)
 	if err != nil {
 		return err
 	}
 
 	// installation rebrand (only grub for now)
-	err = ele.Rebrand()
+
 	if err != nil {
 		return err
 	}
@@ -248,12 +156,12 @@ func ResetRun(config *v1.RunConfig) (err error) { // nolint:gocyclo
 	}
 
 	// Reboot, poweroff or nothing
-	if config.Reboot {
-		config.Logger.Infof("Rebooting in 5 seconds")
-		return utils.Reboot(config.Runner, 5)
-	} else if config.PowerOff {
-		config.Logger.Infof("Shutting down in 5 seconds")
-		return utils.Shutdown(config.Runner, 5)
+	if r.cfg.Reboot {
+		r.cfg.Logger.Infof("Rebooting in 5 seconds")
+		return utils.Reboot(r.cfg.Runner, 5)
+	} else if r.cfg.PowerOff {
+		r.cfg.Logger.Infof("Shutting down in 5 seconds")
+		return utils.Shutdown(r.cfg.Runner, 5)
 	}
 	return err
 }

@@ -30,16 +30,16 @@ func NewRunStage(root *cobra.Command) *cobra.Command {
 		Short: "elemental run-stage",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			_ = viper.BindPFlags(cmd.Flags())
+
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
 
-			return utils.RunStage(args[0], cfg)
+			return utils.RunStage(&cfg.Config, args[0], cfg.Strict)
 		},
 	}
 	root.AddCommand(c)

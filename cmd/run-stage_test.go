@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("run-stage", Label("run-stage", "cmd"), func() {
@@ -29,7 +30,9 @@ var _ = Describe("run-stage", Label("run-stage", "cmd"), func() {
 			rootCmd = NewRootCmd()
 			_ = NewRunStage(rootCmd)
 		})
-
+		AfterEach(func() {
+			viper.Reset()
+		})
 		It("executes command correctly", func() {
 			_, out, err := executeCommandC(
 				rootCmd,

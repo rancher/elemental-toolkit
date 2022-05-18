@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("pull-image", Label("pull-image", "cmd", "root"), func() {
@@ -28,6 +29,9 @@ var _ = Describe("pull-image", Label("pull-image", "cmd", "root"), func() {
 		BeforeEach(func() {
 			rootCmd = NewRootCmd()
 			_ = NewPullImageCmd(rootCmd, true)
+		})
+		AfterEach(func() {
+			viper.Reset()
 		})
 		It("executes command correctly", func() {
 			d, err := os.MkdirTemp("", "elemental")

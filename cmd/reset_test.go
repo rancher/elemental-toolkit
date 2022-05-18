@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("Reset", Label("reset", "cmd"), func() {
@@ -31,6 +32,9 @@ var _ = Describe("Reset", Label("reset", "cmd"), func() {
 		buf = new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
+	})
+	AfterEach(func() {
+		viper.Reset()
 	})
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "reset", "--reboot", "--poweroff")
@@ -48,6 +52,6 @@ var _ = Describe("Reset", Label("reset", "cmd"), func() {
 		_, _, err := executeCommandC(rootCmd, "reset", "--directory", "dir", "--docker-image", "image")
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(ContainSubstring("Usage:"))
-		Expect(err.Error()).To(ContainSubstring("docker-image and directory are mutually exclusive"))
+		Expect(err.Error()).To(ContainSubstring("flags docker-image, directory and system are mutually exclusive"))
 	})
 })

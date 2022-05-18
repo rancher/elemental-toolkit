@@ -22,6 +22,8 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
+	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -36,8 +38,6 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Short: "elemental installer",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			_ = viper.BindEnv("target", "ELEMENTAL_TARGET")
-			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
 				return CheckRoot()
 			}
@@ -50,50 +50,67 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			mounter := mount.New(path)
 
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
 
-			if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
+			if err := validateInstallUpgradeFlags(cfg.Logger, cmd.Flags()); err != nil {
 				return err
 			}
 
-			// Override target installation device with arguments from cli
-			// TODO: this needs proper validation, see https://github.com/rancher-sandbox/elemental/issues/33
-			if len(args) == 1 {
-				cfg.Target = args[0]
+			// Manage deprecated flags
+			// Adapt 'docker-image' and 'directory'  deprecated flags to 'system' syntax
+			adaptDockerImageAndDirectoryFlagsToSystem(cmd.Flags())
+
+			//Adapt 'force-efi' and 'force-gpt' to 'firmware' and 'part-table'
+			adaptEFIAndGPTFlags(cmd.Flags())
+
+			cmd.SilenceUsage = true
+			spec, err := config.ReadInstallSpec(cfg, cmd.Flags(), constants.GetInstallKeyEnvMap())
+			if err != nil {
+				cfg.Logger.Errorf("invalid install command setup %v", err)
+				return err
 			}
 
-			if cfg.Target == "" {
+			if len(args) == 1 {
+				spec.Target = args[0]
+			}
+
+			if spec.Target == "" {
 				return errors.New("at least a target device must be supplied")
 			}
 
-			err = action.InstallSetup(cfg)
-			if err != nil {
-				return err
-			}
-			cmd.SilenceUsage = true
-
 			cfg.Logger.Infof("Install called")
-
-			err = action.InstallRun(cfg)
+			install := action.NewInstallAction(cfg, spec)
+			err = install.Run()
 			if err != nil {
 				return err
 			}
 			return nil
 		},
 	}
+	firmType := newEnumFlag([]string{v1.EFI, v1.BIOS}, v1.EFI)
+	pTableType := newEnumFlag([]string{v1.GPT, v1.MSDOS}, v1.GPT)
+
 	root.AddCommand(c)
 	c.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
 	c.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
 	c.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
-	c.Flags().BoolP("no-format", "", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
-	c.Flags().BoolP("force-efi", "", false, "Forces an EFI installation")
-	c.Flags().BoolP("force-gpt", "", false, "Forces a GPT partition table")
-	c.Flags().BoolP("tty", "", false, "Add named tty to grub")
-	c.Flags().BoolP("force", "", false, "Force install")
-	c.Flags().BoolP("eject-cd", "", false, "Try to eject the cd on reboot, only valid if booting from iso")
+	_ = c.Flags().MarkDeprecated("partition-layout", "'partition-layout' is deprecated and ignored please use a config file instead")
+	c.Flags().Bool("no-format", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
+
+	c.Flags().Bool("force-efi", false, "Forces an EFI installation")
+	_ = c.Flags().MarkDeprecated("force-efi", "'force-efi' is deprecated please use 'firmware' instead")
+	c.Flags().Var(firmType, "firmware", "Firmware to install for ('esp' or 'bios')")
+
+	c.Flags().Bool("force-gpt", false, "Forces a GPT partition table")
+	_ = c.Flags().MarkDeprecated("force-gpt", "'force-gpt' is deprecated please use 'part-table' instead")
+	c.Flags().Var(pTableType, "part-table", "Partition table type to use")
+
+	c.Flags().String("tty", "", "Add named tty to grub")
+	c.Flags().Bool("force", false, "Force install")
+	c.Flags().Bool("eject-cd", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	return c

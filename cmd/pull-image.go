@@ -39,7 +39,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)

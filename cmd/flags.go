@@ -23,27 +23,39 @@ import (
 
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/spf13/pflag"
 )
 
 // addCosignFlags adds flags related to cosign
 func addCosignFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolP("cosign", "", false, "Enable cosign verification (requires images with signatures)")
-	cmd.Flags().StringP("cosign-key", "", "", "Sets the URL of the public key to be used by cosign validation")
+	cmd.Flags().Bool("cosign", false, "Enable cosign verification (requires images with signatures)")
+	cmd.Flags().String("cosign-key", "", "Sets the URL of the public key to be used by cosign validation")
 }
 
 // addPowerFlags adds flags related to power
 func addPowerFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolP("reboot", "", false, "Reboot the system after install")
-	cmd.Flags().BoolP("poweroff", "", false, "Shutdown the system after install")
+	cmd.Flags().Bool("reboot", false, "Reboot the system after install")
+	cmd.Flags().Bool("poweroff", false, "Shutdown the system after install")
 }
 
 // addSharedInstallUpgradeFlags add flags shared between install, upgrade and reset
 func addSharedInstallUpgradeFlags(cmd *cobra.Command) {
+	addResetFlags(cmd)
+	cmd.Flags().String("recovery-system.uri", "", "Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')")
+	addSquashFsCompressionFlags(cmd)
+}
+
+// addResetFlags add flags shared between reset, install and upgrade
+func addResetFlags(cmd *cobra.Command) {
 	cmd.Flags().String("directory", "", "Use directory as source to install from")
+	_ = cmd.Flags().MarkDeprecated("directory", "'directory' is deprecated please use 'system' instead")
+
 	cmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
-	cmd.Flags().BoolP("no-verify", "", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
-	cmd.Flags().BoolP("strict", "", false, "Enable strict check of hooks (They need to exit with 0)")
+	_ = cmd.Flags().MarkDeprecated("docker-image", "'docker-image' is deprecated please use 'system' instead")
+
+	cmd.Flags().String("system.uri", "", "Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')")
+	cmd.Flags().Bool("no-verify", false, "Disable mtree checksum verification (requires images manifests generated with mtree separately)")
+	cmd.Flags().Bool("strict", false, "Enable strict check of hooks (They need to exit with 0)")
 
 	addCosignFlags(cmd)
 	addPowerFlags(cmd)
@@ -54,42 +66,76 @@ func addLocalImageFlag(cmd *cobra.Command) {
 	cmd.Flags().Bool("local", false, "Use an image from local cache")
 }
 
-func validateCosignFlags(log v1.Logger) error {
-	if viper.GetString("cosign-key") != "" && !viper.GetBool("cosign") {
+func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {
+	systemFlag := "system.uri"
+	doc, _ := flags.GetString("docker-image")
+	if doc != "" {
+		_ = flags.Set(systemFlag, fmt.Sprintf("docker:%s", doc))
+	}
+	dir, _ := flags.GetString("directory")
+	if dir != "" {
+		_ = flags.Set(systemFlag, fmt.Sprintf("dir:%s", dir))
+	}
+}
+
+func adaptEFIAndGPTFlags(flags *pflag.FlagSet) {
+	efi, _ := flags.GetBool("force-efi")
+	if efi {
+		_ = flags.Set("firmware", v1.EFI)
+	}
+	gpt, _ := flags.GetBool("force-gpt")
+	if gpt {
+		_ = flags.Set("part-table", v1.GPT)
+	}
+}
+
+func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
+	cosignKey, _ := flags.GetString("cosign-key")
+	cosign, _ := flags.GetBool("cosign")
+
+	if cosignKey != "" && !cosign {
 		return errors.New("'cosign-key' requires 'cosign' option to be enabled")
 	}
 
-	if viper.GetBool("cosign") && viper.GetString("cosign-key") == "" {
+	if cosign && cosignKey == "" {
 		log.Warnf("No 'cosign-key' option set, keyless cosign verification is experimental")
 	}
 	return nil
 }
 
-func validateSourceFlags(log v1.Logger) error {
-	// docker-image and directory are mutually exclusive. Can't have your cake and eat it too.
-	if viper.GetString("docker-image") != "" && viper.GetString("directory") != "" {
-		msg := "flags docker-image and directory are mutually exclusive, please only set one of them"
+func validateSourceFlags(log v1.Logger, flags *pflag.FlagSet) error {
+	msg := "flags docker-image, directory and system are mutually exclusive, please only set one of them"
+	system, _ := flags.GetString("system.uri")
+	directory, _ := flags.GetString("directory")
+	dockerImg, _ := flags.GetString("docker-image")
+	// docker-image, directory and system are mutually exclusive. Can't have your cake and eat it too.
+	if system != "" && (directory != "" || dockerImg != "") {
+		return errors.New(msg)
+	}
+	if directory != "" && dockerImg != "" {
 		return errors.New(msg)
 	}
 	return nil
 }
 
-func validatePowerFlags(log v1.Logger) error {
-	if viper.GetBool("reboot") && viper.GetBool("poweroff") {
+func validatePowerFlags(log v1.Logger, flags *pflag.FlagSet) error {
+	reboot, _ := flags.GetBool("reboot")
+	poweroff, _ := flags.GetBool("poweroff")
+	if reboot && poweroff {
 		return errors.New("'reboot' and 'poweroff' are mutually exclusive options")
 	}
 	return nil
 }
 
 // validateUpgradeFlags is a helper call to check all the flags for the upgrade command
-func validateInstallUpgradeFlags(log v1.Logger) error {
-	if err := validateSourceFlags(log); err != nil {
+func validateInstallUpgradeFlags(log v1.Logger, flags *pflag.FlagSet) error {
+	if err := validateSourceFlags(log, flags); err != nil {
 		return err
 	}
-	if err := validateCosignFlags(log); err != nil {
+	if err := validateCosignFlags(log, flags); err != nil {
 		return err
 	}
-	if err := validatePowerFlags(log); err != nil {
+	if err := validatePowerFlags(log, flags); err != nil {
 		return err
 	}
 	return nil
@@ -140,9 +186,4 @@ func (a *enum) Type() string {
 
 func addSquashFsCompressionFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayP("squash-compression", "x", []string{}, "cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')")
-}
-
-func bindSquashFsCompressionFlags(cmd *cobra.Command) {
-	// Flag is under RunConfig.Config so we need to bind it properly
-	_ = viper.BindPFlag("Config.SquashFsCompressionConfig", cmd.Flags().Lookup("squash-compression"))
 }

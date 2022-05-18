@@ -42,7 +42,7 @@ func ghwPartitionToInternalPartition(partition *block.Partition) *v1.Partition {
 }
 
 // GetAllPartitions returns all partitions in the system for all disks
-func GetAllPartitions() ([]*v1.Partition, error) {
+func GetAllPartitions() (v1.PartitionList, error) {
 	var parts []*v1.Partition
 	blockDevices, err := block.New(ghw.WithDisableTools(), ghw.WithDisableWarnings())
 	if err != nil {

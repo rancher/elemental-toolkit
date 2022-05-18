@@ -16,13 +16,24 @@ limitations under the License.
 
 package v1
 
+import (
+	"fmt"
+	"net/url"
+	"path/filepath"
+)
+
+const (
+	docker  = "docker"
+	oci     = "oci"
+	file    = "file"
+	dir     = "dir"
+	channel = "channel"
+)
+
 // ImageSource represents the source from where an image is created for easy identification
 type ImageSource struct {
-	source    string
-	isDir     bool
-	isChannel bool
-	isDocker  bool
-	isFile    bool
+	source  string
+	srcType string
 }
 
 func (i ImageSource) Value() string {
@@ -30,37 +41,90 @@ func (i ImageSource) Value() string {
 }
 
 func (i ImageSource) IsDocker() bool {
-	return i.isDocker
+	return i.srcType == oci
 }
 
 func (i ImageSource) IsChannel() bool {
-	return i.isChannel
+	return i.srcType == channel
 }
 
 func (i ImageSource) IsDir() bool {
-	return i.isDir
+	return i.srcType == dir
 }
 
 func (i ImageSource) IsFile() bool {
-	return i.isFile
+	return i.srcType == file
 }
 
-func NewEmptySrc() ImageSource {
-	return ImageSource{}
+func (i ImageSource) IsEmpty() bool {
+	if i.srcType == "" {
+		return true
+	}
+	if i.source == "" {
+		return true
+	}
+	return false
 }
 
-func NewDockerSrc(src string) ImageSource {
-	return ImageSource{source: src, isDocker: true}
+func (i *ImageSource) CustomUnmarshal(data interface{}) (bool, error) {
+	src, ok := data.(string)
+	if !ok {
+		return false, fmt.Errorf("can't unmarshal %+v to an ImageSource type", data)
+	}
+	return false, i.updateFromURI(src)
 }
 
-func NewFileSrc(src string) ImageSource {
-	return ImageSource{source: src, isFile: true}
+func (i *ImageSource) updateFromURI(uri string) error {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return err
+	}
+	scheme := u.Scheme
+	value := u.Opaque
+	if value == "" {
+		value = filepath.Join(u.Host, u.Path)
+	}
+	switch scheme {
+	case oci, docker:
+		i.srcType = oci
+		i.source = value
+	case channel:
+		i.srcType = channel
+		i.source = value
+	case dir:
+		i.srcType = dir
+		i.source = value
+	case file:
+		i.srcType = file
+		i.source = value
+	default:
+		return fmt.Errorf("unknown source type for %s", uri)
+	}
+	return nil
 }
 
-func NewChannelSrc(src string) ImageSource {
-	return ImageSource{source: src, isChannel: true}
+func NewSrcFromURI(uri string) (*ImageSource, error) {
+	src := ImageSource{}
+	err := src.updateFromURI(uri)
+	return &src, err
 }
 
-func NewDirSrc(src string) ImageSource {
-	return ImageSource{source: src, isDir: true}
+func NewEmptySrc() *ImageSource {
+	return &ImageSource{}
+}
+
+func NewDockerSrc(src string) *ImageSource {
+	return &ImageSource{source: src, srcType: oci}
+}
+
+func NewFileSrc(src string) *ImageSource {
+	return &ImageSource{source: src, srcType: file}
+}
+
+func NewChannelSrc(src string) *ImageSource {
+	return &ImageSource{source: src, srcType: channel}
+}
+
+func NewDirSrc(src string) *ImageSource {
+	return &ImageSource{source: src, srcType: dir}
 }

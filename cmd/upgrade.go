@@ -21,6 +21,7 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -35,11 +36,6 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Short: "upgrade the system",
 		Args:  cobra.ExactArgs(0),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			// We bind the --recovery flag into RecoveryUpgrade value to have a more explicit var in the config
-			_ = viper.BindPFlag("RecoveryUpgrade", cmd.Flags().Lookup("recovery"))
-			bindSquashFsCompressionFlags(cmd)
-			// bind the rest of the flags into their direct values as they are mapped 1to1
-			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
 				return CheckRoot()
 			}
@@ -53,39 +49,36 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			mounter := mount.New(path)
 
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), mounter)
-
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
 
-			if err := validateInstallUpgradeFlags(cfg.Logger); err != nil {
+			if err := validateInstallUpgradeFlags(cfg.Logger, cmd.Flags()); err != nil {
 				return err
 			}
 
-			if cfg.DockerImg != "" || cfg.Directory != "" {
-				// Force channel upgrades to be false, because as its loaded from the config files,
-				// it will probably always be set to true due to it being the default value
-				cfg.ChannelUpgrades = false
-			}
+			// Adapt 'docker-image' and 'directory'  deprecated flags to 'system' syntax
+			adaptDockerImageAndDirectoryFlagsToSystem(cmd.Flags())
+
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			// Init luet
-			action.SetupLuet(cfg)
-			upgrade := action.NewUpgradeAction(cfg)
-			err = upgrade.Run()
+			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), constants.GetUpgradeKeyEnvMap())
 			if err != nil {
+				cfg.Logger.Errorf("invalid upgrade command setup %v", err)
 				return err
 			}
-			return nil
+
+			cfg.Logger.Infof("Upgrade called")
+			upgrade := action.NewUpgradeAction(cfg, spec)
+			return upgrade.Run()
 		},
 	}
 	root.AddCommand(c)
 	c.Flags().Bool("recovery", false, "Upgrade the recovery")
 	addSharedInstallUpgradeFlags(c)
-	addSquashFsCompressionFlags(c)
 	addLocalImageFlag(c)
 	return c
 }

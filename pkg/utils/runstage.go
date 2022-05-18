@@ -43,7 +43,7 @@ func onlyYAMLPartialErrors(er error) bool {
 	return true
 }
 
-func checkYAMLError(cfg *v1.RunConfig, allErrors, err error) error {
+func checkYAMLError(cfg *v1.Config, allErrors, err error) error {
 	if !onlyYAMLPartialErrors(err) {
 		// here we absorb errors only if are related to YAML unmarshalling
 		// As cmdline is parsed out as a yaml file
@@ -57,21 +57,15 @@ func checkYAMLError(cfg *v1.RunConfig, allErrors, err error) error {
 }
 
 // RunStage will run yip
-func RunStage(stage string, cfg *v1.RunConfig) error {
+func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...string) error {
 	var cmdLineYipURI string
 	var allErrors error
-	CloudInitPaths := constants.GetCloudInitPaths()
 
-	// Check if we have extra cloud init
-	// This requires fixing the env vars, otherwise it wont work
-	if cfg.CloudInitPaths != "" {
-		cfg.Logger.Debugf("Adding extra paths: %s", cfg.CloudInitPaths)
-		extraCloudInitPathsSplit := strings.Split(cfg.CloudInitPaths, " ")
-		CloudInitPaths = append(CloudInitPaths, extraCloudInitPathsSplit...)
-	}
+	cloudInitPaths = append(constants.GetCloudInitPaths(), cloudInitPaths...)
+	cfg.Logger.Debugf("Cloud-init paths set to %v", cloudInitPaths)
 
 	// Make sure cloud init path specified are existing in the system
-	for _, cp := range CloudInitPaths {
+	for _, cp := range cloudInitPaths {
 		err := MkdirAll(cfg.Fs, cp, constants.DirPerm)
 		if err != nil {
 			cfg.Logger.Debugf("Failed creating cloud-init config path: %s %s", cp, err.Error())
@@ -100,7 +94,7 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
 	for _, s := range []string{stageBefore, stage, stageAfter} {
-		err = cfg.CloudInitRunner.Run(s, CloudInitPaths...)
+		err = cfg.CloudInitRunner.Run(s, cloudInitPaths...)
 		if err != nil {
 			allErrors = multierror.Append(allErrors, err)
 		}
@@ -132,7 +126,7 @@ func RunStage(stage string, cfg *v1.RunConfig) error {
 	// We return error here only if we have been running in strict mode.
 	// Cloud configs are being loaded and executed on a best-effort, so every step/config
 	// gets a chance to be executed and error is being appended and reported.
-	if allErrors != nil && !cfg.Strict {
+	if allErrors != nil && !strict {
 		cfg.Logger.Info("Some errors found but were ignored. Enable --strict mode to fail on those or --debug to see them in the log")
 		cfg.Logger.Warn(allErrors)
 		return nil

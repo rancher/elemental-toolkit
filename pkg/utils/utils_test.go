@@ -30,13 +30,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental/pkg/action"
 	conf "github.com/rancher-sandbox/elemental/pkg/config"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
-	log "github.com/sirupsen/logrus"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 )
@@ -50,7 +48,7 @@ func getNamesFromListFiles(list []os.FileInfo) []string {
 }
 
 var _ = Describe("Utils", Label("utils"), func() {
-	var config *v1.RunConfig
+	var config *v1.Config
 	var runner *v1mock.FakeRunner
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
@@ -71,7 +69,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		fs.Mkdir("/run", constants.DirPerm)
 		fs.Mkdir("/etc", constants.DirPerm)
 
-		config = conf.NewRunConfig(
+		config = conf.NewConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
 			conf.WithLogger(logger),
@@ -687,19 +685,19 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("NewSourceGuessingType", Label("source"), func() {
 		It("Creates a new Docker source for a tagged reference", func() {
-			src := utils.NewSrcGuessingType(config.Config, "registry.suse.com/elemental/image:v0.1")
+			src := utils.NewSrcGuessingType(config, "registry.suse.com/elemental/image:v0.1")
 			Expect(src.IsDocker()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config.Config, "registry.suse.com:1906/elemental/image:tag")
+			src = utils.NewSrcGuessingType(config, "registry.suse.com:1906/elemental/image:tag")
 			Expect(src.IsDocker()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config.Config, "elemental/image:tag")
+			src = utils.NewSrcGuessingType(config, "elemental/image:tag")
 			Expect(src.IsDocker()).To(BeTrue())
 		})
 		It("Creates a new Directory source from a path only if it exists", func() {
 			err := utils.MkdirAll(fs, "/dir", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
-			src := utils.NewSrcGuessingType(config.Config, "/dir")
+			src := utils.NewSrcGuessingType(config, "/dir")
 			Expect(src.IsDir()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config.Config, "/folder")
+			src = utils.NewSrcGuessingType(config, "/folder")
 			Expect(src.IsDir()).To(BeFalse())
 		})
 		It("Creates a new File source from a path only if it exists", func() {
@@ -707,153 +705,85 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			_, err = fs.Create("/dir/file")
 			Expect(err).ShouldNot(HaveOccurred())
-			src := utils.NewSrcGuessingType(config.Config, "/dir/file")
+			src := utils.NewSrcGuessingType(config, "/dir/file")
 			Expect(src.IsFile()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config.Config, "/dir/otherfile")
+			src = utils.NewSrcGuessingType(config, "/dir/otherfile")
 			Expect(src.IsFile()).To(BeFalse())
 		})
 		It("Creates a new Channel source", func() {
-			src := utils.NewSrcGuessingType(config.Config, "system/cos")
+			src := utils.NewSrcGuessingType(config, "system/cos")
 			Expect(src.IsChannel()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config.Config, "cos")
+			src = utils.NewSrcGuessingType(config, "cos")
 			Expect(src.IsChannel()).To(BeTrue())
 		})
 	})
-	Describe("Grub", Label("grub", "root"), func() {
+	Describe("Grub", Label("grub"), func() {
 		Describe("Install", func() {
+			var target, rootDir, bootDir string
+			var buf *bytes.Buffer
 			BeforeEach(func() {
-				// Create iso dir so InstallImagesSetup does not fail to get a source
-				_ = utils.MkdirAll(fs, constants.IsoBaseTree, os.ModeDir)
-				config.Target = "/dev/test"
-				action.SetPartitionsFromScratch(config)
-				action.InstallImagesSetup(config)
+				target = "/dev/test"
+				rootDir = constants.ActiveDir
+				bootDir = constants.StateDir
+				buf = &bytes.Buffer{}
+				logger = v1.NewBufferLogger(buf)
+				logger.SetLevel(v1.DebugLevel())
+				config.Logger = logger
+
+				err := utils.MkdirAll(fs, filepath.Join(bootDir, "grub2"), constants.DirPerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(rootDir, constants.GrubConf)), constants.DirPerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = fs.WriteFile(filepath.Join(rootDir, constants.GrubConf), []byte("console=tty1"), 0644)
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 			It("installs with default values", func() {
-				buf := &bytes.Buffer{}
-				logger := log.New()
-				logger.SetOutput(buf)
-
-				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				config.Logger = logger
-				config.GrubConf = "/etc/cos/grub.cfg"
-
 				grub := utils.NewGrub(config)
-				err = grub.Install()
+				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, "", false)
 				Expect(err).To(BeNil())
 
 				Expect(buf).To(ContainSubstring("Installing GRUB.."))
 				Expect(buf).To(ContainSubstring("Grub install to device /dev/test complete"))
 				Expect(buf).ToNot(ContainSubstring("efi"))
 				Expect(buf.String()).ToNot(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
+				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
 				Expect(err).To(BeNil())
 				// Should not be modified at all
 				Expect(targetGrub).To(ContainSubstring("console=tty1"))
 
 			})
-			It("installs with efi on efi system", Label("efi"), func() {
-				buf := &bytes.Buffer{}
-				logger := log.New()
-				logger.SetOutput(buf)
-				logger.SetLevel(log.DebugLevel)
-
-				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
-				_, _ = fs.Create(constants.EfiDevice)
-
-				config.Logger = logger
-
+			It("installs with efi firmware", Label("efi"), func() {
 				grub := utils.NewGrub(config)
-				err = grub.Install()
+				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, "", true)
 				Expect(err).ShouldNot(HaveOccurred())
-
-				Expect(buf.String()).To(ContainSubstring("--target=x86_64-efi"))
-				Expect(buf.String()).To(ContainSubstring("--efi-directory"))
-				Expect(buf.String()).To(ContainSubstring("Installing grub efi for arch x86_64"))
-			})
-			It("installs with efi with --force-efi", Label("efi"), func() {
-				buf := &bytes.Buffer{}
-				logger := log.New()
-				logger.SetOutput(buf)
-				logger.SetLevel(log.DebugLevel)
-
-				err := utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				_, _ = fs.Create(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf))
-
-				config.Logger = logger
-				config.ForceEfi = true
-
-				grub := utils.NewGrub(config)
-				err = grub.Install()
-				Expect(err).To(BeNil())
 
 				Expect(buf.String()).To(ContainSubstring("--target=x86_64-efi"))
 				Expect(buf.String()).To(ContainSubstring("--efi-directory"))
 				Expect(buf.String()).To(ContainSubstring("Installing grub efi for arch x86_64"))
 			})
 			It("installs with extra tty", func() {
-				buf := &bytes.Buffer{}
-				logger := log.New()
-				logger.SetOutput(buf)
-
-				fs.Mkdir("/dev", constants.DirPerm)
-
-				err := utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf)), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = fs.WriteFile(filepath.Join(config.Images.GetActive().MountPoint, constants.GrubConf), []byte("console=tty1"), 0644)
+				err := fs.Mkdir("/dev", constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				_, err = fs.Create("/dev/serial")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				config.Logger = logger
-				config.Tty = "serial"
-
 				grub := utils.NewGrub(config)
-				err = grub.Install()
+				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, "serial", false)
 				Expect(err).To(BeNil())
 
 				Expect(buf.String()).To(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", constants.StateDir))
+				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
 				Expect(err).To(BeNil())
 				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
 			})
-			It("Fails if active image is unset", func() {
-				config.Images.SetActive(nil)
-				grub := utils.NewGrub(config)
-				err := grub.Install()
-				Expect(err).NotTo(BeNil())
-			})
 			It("Fails if it can't read grub config file", func() {
-				buf := &bytes.Buffer{}
-				logger := log.New()
-				logger.SetOutput(buf)
-
-				_ = utils.MkdirAll(fs, fmt.Sprintf("%s/grub2/", constants.StateDir), constants.DirPerm)
-
-				config.Logger = logger
-
+				err := fs.RemoveAll(filepath.Join(rootDir, constants.GrubConf))
+				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
-				Expect(grub.Install()).NotTo(BeNil())
+				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, "", false)).NotTo(BeNil())
 
 				Expect(buf).To(ContainSubstring("Failed reading grub config file"))
 			})
@@ -938,6 +868,91 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ToNot(HaveOccurred())
 			_, err = utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).To(HaveOccurred())
+		})
+	})
+	Describe("IsMounted", Label("ismounted"), func() {
+		It("checks a mounted partition", func() {
+			part := &v1.Partition{
+				MountPoint: "/some/mountpoint",
+			}
+			err := mounter.Mount("/some/device", "/some/mountpoint", "auto", []string{})
+			Expect(err).ShouldNot(HaveOccurred())
+			mnt, err := utils.IsMounted(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(mnt).To(BeTrue())
+		})
+		It("checks a not mounted partition", func() {
+			part := &v1.Partition{
+				MountPoint: "/some/mountpoint",
+			}
+			mnt, err := utils.IsMounted(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(mnt).To(BeFalse())
+		})
+		It("checks a partition without mountpoint", func() {
+			part := &v1.Partition{}
+			mnt, err := utils.IsMounted(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(mnt).To(BeFalse())
+		})
+	})
+	Describe("HasSquashedRecovery", Label("squashedRec"), func() {
+		var squashedImg string
+		var part *v1.Partition
+		BeforeEach(func() {
+			squashedImg = filepath.Join(constants.LiveDir, "cOS", constants.RecoverySquashFile)
+			part = &v1.Partition{
+				MountPoint: constants.LiveDir,
+				Path:       "/some/device",
+			}
+		})
+		It("has squashed image from a mounted recovery", func() {
+			// mount recovery
+			err := mounter.Mount(part.Path, constants.LiveDir, "auto", []string{})
+			Expect(err).ShouldNot(HaveOccurred())
+
+			// create squashfs
+			err = utils.MkdirAll(config.Fs, filepath.Dir(squashedImg), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = config.Fs.Create(squashedImg)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			squash, err := utils.HasSquashedRecovery(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(squash).To(BeTrue())
+		})
+		It("does not have squashed image from a mounted recovery", func() {
+			// mount recovery
+			err := mounter.Mount(part.Path, constants.LiveDir, "auto", []string{})
+			Expect(err).ShouldNot(HaveOccurred())
+
+			squash, err := utils.HasSquashedRecovery(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(squash).To(BeFalse())
+		})
+		It("has squashed image from a not mounted recovery", func() {
+			// squashed image on temp dir
+			squashedImg = filepath.Join("/tmp/elemental", "cOS", constants.RecoverySquashFile)
+			// create squashfs
+			err := utils.MkdirAll(config.Fs, filepath.Dir(squashedImg), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = config.Fs.Create(squashedImg)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			squash, err := utils.HasSquashedRecovery(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(squash).To(BeTrue())
+		})
+		It("does not have squashed image from a not mounted recovery", func() {
+			squash, err := utils.HasSquashedRecovery(config, part)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(squash).To(BeFalse())
+		})
+		It("fails to mount recovery", func() {
+			mounter.ErrorOnMount = true
+			squash, err := utils.HasSquashedRecovery(config, part)
+			Expect(err).Should(HaveOccurred())
+			Expect(squash).To(BeFalse())
 		})
 	})
 	Describe("CleanStack", Label("CleanStack"), func() {

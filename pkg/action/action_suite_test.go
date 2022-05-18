@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestElementalSuite(t *testing.T) {
+func TestActionSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Actions test suite")
 }

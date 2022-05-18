@@ -36,7 +36,7 @@ func NewDerivativeCmd(root *cobra.Command) *cobra.Command {
 		SilenceUsage:  true, // Do not show usage on error
 		SilenceErrors: true, // Do not propagate errors down the line, we control them
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)

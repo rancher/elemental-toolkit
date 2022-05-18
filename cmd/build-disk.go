@@ -58,7 +58,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return err
 			}
 
-			err = validateCosignFlags(cfg.Logger)
+			err = validateCosignFlags(cfg.Logger, cmd.Flags())
 			if err != nil {
 				return err
 			}

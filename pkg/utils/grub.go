@@ -17,22 +17,21 @@ limitations under the License.
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
-	"runtime"
 	"strings"
 
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 )
 
 // Grub is the struct that will allow us to install grub to the target device
 type Grub struct {
-	config *v1.RunConfig
+	config *v1.Config
 }
 
-func NewGrub(config *v1.RunConfig) *Grub {
+func NewGrub(config *v1.Config) *Grub {
 	g := &Grub{
 		config: config,
 	}
@@ -41,52 +40,40 @@ func NewGrub(config *v1.RunConfig) *Grub {
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install() (err error) { // nolint:gocyclo
+func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool) (err error) { // nolint:gocyclo
 	var grubargs []string
-	var arch, grubdir, tty, finalContent string
+	var grubdir, finalContent string
 
-	switch runtime.GOARCH {
-	case "arm64":
-		arch = "arm64"
-	default:
-		arch = "x86_64"
-	}
 	g.config.Logger.Info("Installing GRUB..")
 
-	if g.config.Tty == "" {
+	if tty == "" {
 		// Get current tty and remove /dev/ from its name
 		out, err := g.config.Runner.Run("tty")
 		tty = strings.TrimPrefix(strings.TrimSpace(string(out)), "/dev/")
 		if err != nil {
-			return err
+			g.config.Logger.Warnf("failed to find current tty, leaving it unset")
+			tty = ""
 		}
-	} else {
-		tty = g.config.Tty
 	}
 
-	efiExists, _ := Exists(g.config.Fs, cnst.EfiDevice)
-
-	if g.config.ForceEfi || efiExists {
-		g.config.Logger.Infof("Installing grub efi for arch %s", arch)
+	if efi {
+		g.config.Logger.Infof("Installing grub efi for arch %s", g.config.Arch)
 		grubargs = append(
 			grubargs,
-			fmt.Sprintf("--target=%s-efi", arch),
+			fmt.Sprintf("--target=%s-efi", g.config.Arch),
 			fmt.Sprintf("--efi-directory=%s", cnst.EfiDir),
 		)
-	}
-
-	statePart := g.config.Partitions.GetByName(cnst.StatePartName)
-	activeImg := g.config.Images.GetActive()
-	if statePart == nil || activeImg == nil {
-		g.config.Logger.Errorf("State partition and/or Active image configuration is missing")
-		return errors.New("Failed setting grub arguments")
+	} else {
+		if g.config.Arch == "x86_64" {
+			grubargs = append(grubargs, "--target=i386-pc")
+		}
 	}
 
 	grubargs = append(
 		grubargs,
-		fmt.Sprintf("--root-directory=%s", activeImg.MountPoint),
-		fmt.Sprintf("--boot-directory=%s", statePart.MountPoint),
-		"--removable", g.config.Target,
+		fmt.Sprintf("--root-directory=%s", rootDir),
+		fmt.Sprintf("--boot-directory=%s", bootDir),
+		"--removable", target,
 	)
 
 	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
@@ -96,8 +83,8 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 		return err
 	}
 
-	grub1dir := filepath.Join(statePart.MountPoint, "grub")
-	grub2dir := filepath.Join(statePart.MountPoint, "grub2")
+	grub1dir := filepath.Join(bootDir, "grub")
+	grub2dir := filepath.Join(bootDir, "grub2")
 
 	// Select the proper dir for grub
 	if ok, _ := IsDir(g.config.Fs, grub1dir); ok {
@@ -108,9 +95,9 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 	}
 	g.config.Logger.Infof("Found grub config dir %s", grubdir)
 
-	grubConf, err := g.config.Fs.ReadFile(filepath.Join(activeImg.MountPoint, g.config.GrubConf))
+	grubCfg, err := g.config.Fs.ReadFile(filepath.Join(rootDir, grubConf))
 	if err != nil {
-		g.config.Logger.Errorf("Failed reading grub config file: %s", filepath.Join(activeImg.MountPoint, g.config.GrubConf))
+		g.config.Logger.Errorf("Failed reading grub config file: %s", filepath.Join(rootDir, grubConf))
 		return err
 	}
 
@@ -123,22 +110,23 @@ func (g Grub) Install() (err error) { // nolint:gocyclo
 
 	ttyExists, _ := Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
 
-	if ttyExists && tty != "" && tty != "console" && tty != "tty1" {
+	if ttyExists && tty != "" && tty != "console" && tty != constants.DefaultTty {
 		// We need to add a tty to the grub file
 		g.config.Logger.Infof("Adding extra tty (%s) to grub.cfg", tty)
-		finalContent = strings.Replace(string(grubConf), "console=tty1", fmt.Sprintf("console=tty1 console=%s", tty), -1)
+		defConsole := fmt.Sprintf("console=%s", constants.DefaultTty)
+		finalContent = strings.Replace(string(grubCfg), defConsole, fmt.Sprintf("%s console=%s", defConsole, tty), -1)
 	} else {
 		// We don't add anything, just read the file
-		finalContent = string(grubConf)
+		finalContent = string(grubCfg)
 	}
 
-	g.config.Logger.Infof("Copying grub contents from %s to %s", g.config.GrubConf, fmt.Sprintf("%s/grub.cfg", grubdir))
+	g.config.Logger.Infof("Copying grub contents from %s to %s", grubConf, fmt.Sprintf("%s/grub.cfg", grubdir))
 	_, err = grubConfTarget.WriteString(finalContent)
 	if err != nil {
 		return err
 	}
 
-	g.config.Logger.Infof("Grub install to device %s complete", g.config.Target)
+	g.config.Logger.Infof("Grub install to device %s complete", target)
 	return nil
 }
 

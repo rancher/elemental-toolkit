@@ -42,11 +42,11 @@ import (
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Actions test suite")
+	RunSpecs(t, "Luet test suite")
 }
 
 var _ = Describe("Types", Label("luet", "types"), func() {
-	var l v1.LuetInterface
+	var l *luet.Luet
 	var target string
 	var fs vfs.FS
 	var cleanup func()
@@ -124,7 +124,8 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		})
 		Describe("Luet options", Label("options"), func() {
 			It("Sets plugins correctly", func() {
-				luet.NewLuet(luet.WithPlugins("mkdir"))
+				l = luet.NewLuet(luet.WithPlugins("mkdir"))
+				l.InitPlugins()
 				p := pluggable.Plugin{
 					Name:       "mkdir",
 					Executable: "/usr/bin/mkdir",
@@ -132,7 +133,8 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				Expect(bus.Manager.Plugins).To(ContainElement(p))
 			})
 			It("Sets plugins correctly with log", func() {
-				luet.NewLuet(luet.WithLogger(v1.NewNullLogger()), luet.WithPlugins("cat"))
+				l = luet.NewLuet(luet.WithLogger(v1.NewNullLogger()), luet.WithPlugins("cat"))
+				l.InitPlugins()
 				p := pluggable.Plugin{
 					Name:       "cat",
 					Executable: "/usr/bin/cat",

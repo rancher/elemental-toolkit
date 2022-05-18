@@ -24,8 +24,8 @@ import (
 
 var _ = Describe("Types", Label("types", "common"), func() {
 	Describe("Source", func() {
-		It("Initiates each type as expected", func() {
-			o := v1.ImageSource{}
+		It("initiates each type as expected", func() {
+			o := &v1.ImageSource{}
 			Expect(o.Value()).To(Equal(""))
 			Expect(o.IsDir()).To(BeFalse())
 			Expect(o.IsChannel()).To(BeFalse())
@@ -39,7 +39,45 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			Expect(o.IsDocker()).To(BeTrue())
 			o = v1.NewChannelSrc("channel")
 			Expect(o.IsChannel()).To(BeTrue())
+			o = v1.NewEmptySrc()
+			Expect(o.IsEmpty()).To(BeTrue())
+		})
+		It("unmarshals each type as expected", func() {
+			o := v1.NewEmptySrc()
+			_, err := o.CustomUnmarshal("docker://some/image")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsDocker()).To(BeTrue())
+			_, err = o.CustomUnmarshal("channel://some/package")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsChannel()).To(BeTrue())
+			_, err = o.CustomUnmarshal("dir:///some/absolute/path")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsDir()).To(BeTrue())
+			Expect(o.Value() == "/some/absolute/path").To(BeTrue())
+			_, err = o.CustomUnmarshal("file://some/relative/path")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsFile()).To(BeTrue())
+			Expect(o.Value() == "some/relative/path").To(BeTrue())
 
+			// Opaque URI
+			_, err = o.CustomUnmarshal("docker:some/image")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsDocker()).To(BeTrue())
+		})
+		It("fails to unmarshal non string types", func() {
+			o := v1.NewEmptySrc()
+			_, err := o.CustomUnmarshal(map[string]string{})
+			Expect(err).Should(HaveOccurred())
+		})
+		It("fails to unmarshal unknown scheme", func() {
+			o := v1.NewEmptySrc()
+			_, err := o.CustomUnmarshal("scheme:some.opaque.uri.org")
+			Expect(err).Should(HaveOccurred())
+		})
+		It("fails to unmarshal invalid uri", func() {
+			o := v1.NewEmptySrc()
+			_, err := o.CustomUnmarshal("jp#afs://insanity")
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 

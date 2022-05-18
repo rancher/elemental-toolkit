@@ -27,21 +27,22 @@ import (
 const (
 	GrubConf               = "/etc/cos/grub.cfg"
 	GrubOEMEnv             = "grub_oem_env"
-	GrubDefEntry           = "cOs"
-	BiosPartName           = "p.bios"
+	GrubDefEntry           = "cOS"
+	DefaultTty             = "tty1"
+	BiosPartName           = "bios"
 	EfiLabel               = "COS_GRUB"
-	EfiPartName            = "p.grub"
+	EfiPartName            = "efi"
 	ActiveLabel            = "COS_ACTIVE"
 	PassiveLabel           = "COS_PASSIVE"
 	SystemLabel            = "COS_SYSTEM"
 	RecoveryLabel          = "COS_RECOVERY"
-	RecoveryPartName       = "p.recovery"
+	RecoveryPartName       = "recovery"
 	StateLabel             = "COS_STATE"
-	StatePartName          = "p.state"
+	StatePartName          = "state"
 	PersistentLabel        = "COS_PERSISTENT"
-	PersistentPartName     = "p.persistent"
+	PersistentPartName     = "persistent"
 	OEMLabel               = "COS_OEM"
-	OEMPartName            = "p.oem"
+	OEMPartName            = "oem"
 	ISOLabel               = "COS_LIVE"
 	MountBinary            = "/usr/bin/mount"
 	EfiDevice              = "/sys/firmware/efi"
@@ -59,12 +60,13 @@ const (
 	ImgSize                = uint(3072)
 	HTTPTimeout            = 60
 	PartStage              = "partitioning"
-	IsoMnt                 = "/run/initramfs/live"
+	LiveDir                = "/run/initramfs/live"
 	RecoveryDir            = "/run/cos/recovery"
 	StateDir               = "/run/cos/state"
 	OEMDir                 = "/run/cos/oem"
 	PersistentDir          = "/run/cos/persistent"
 	ActiveDir              = "/run/cos/active"
+	TransitionDir          = "/run/cos/transition"
 	EfiDir                 = "/run/cos/efi"
 	RecoverySquashFile     = "recovery.squashfs"
 	IsoRootFile            = "rootfs.squashfs"
@@ -88,7 +90,6 @@ const (
 	UpgradeActive          = "active"
 	UpgradeRecovery        = "recovery"
 	ChannelSource          = "system/cos"
-	UpgradeRecoveryDir     = "/run/initramfs/live"
 	TransitionImgFile      = "transition.img"
 	TransitionSquashFile   = "transition.squashfs"
 	RunningStateDir        = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
@@ -97,6 +98,8 @@ const (
 	RecoveryImgName        = "recovery"
 	GPT                    = "gpt"
 	BuildImgName           = "elemental"
+	UsrLocalPath           = "/usr/local"
+	OEMPath                = "/oem"
 
 	//TODO these paths are abitrary, coupled to package live/grub2 and assuming xz
 	// I'd suggest using `/boot/kernel` and `/boot/initrd`
@@ -189,5 +192,28 @@ func GetBuildDiskDefaultPackages() map[string]string {
 		"system/grub2-config":    "root",
 		"system/grub2-artifacts": "root/grub2",
 		"recovery/cos-img":       "root/cOS",
+	}
+}
+
+func GetInstallKeyEnvMap() map[string]string {
+	return map[string]string{
+		"target":              "TARGET",
+		"system.uri":          "SYSTEM",
+		"recovery-system.uri": "RECOVERY_SYSTEM",
+	}
+}
+
+func GetResetKeyEnvMap() map[string]string {
+	return map[string]string{
+		"target":     "TARGET",
+		"system.uri": "SYSTEM",
+	}
+}
+
+func GetUpgradeKeyEnvMap() map[string]string {
+	return map[string]string{
+		"recovery":            "RECOVERY",
+		"system.uri":          "SYSTEM",
+		"recovery-system.uri": "RECOVERY_SYSTEM",
 	}
 }

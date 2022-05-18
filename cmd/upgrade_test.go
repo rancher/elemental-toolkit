@@ -19,12 +19,16 @@ package cmd
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("Upgrade", Label("upgrade", "cmd"), func() {
 	BeforeEach(func() {
 		rootCmd = NewRootCmd()
 		_ = NewUpgradeCmd(rootCmd, false)
+	})
+	AfterEach(func() {
+		viper.Reset()
 	})
 	It("Returns error if both --docker-image and --directory flags are used", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "upgrade", "--docker-image", "img", "--directory", "/tmp")

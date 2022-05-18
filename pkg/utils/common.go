@@ -261,11 +261,50 @@ func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 	return envMap, err
 }
 
+func IsMounted(config *v1.Config, part *v1.Partition) (bool, error) {
+	if part.MountPoint == "" {
+		return false, nil
+	}
+	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
+	// for bind mounts here
+	notMnt, err := config.Mounter.IsLikelyNotMountPoint(part.MountPoint)
+	if err != nil {
+		return false, err
+	}
+	return !notMnt, nil
+}
+
+// HasSquashedRecovery returns true if a squashed recovery image is found in the system
+func HasSquashedRecovery(config *v1.Config, recovery *v1.Partition) (squashed bool, err error) {
+	mountPoint := recovery.MountPoint
+	if mnt, _ := IsMounted(config, recovery); !mnt {
+		tmpMountDir, err := TempDir(config.Fs, "", "elemental")
+		if err != nil {
+			config.Logger.Errorf("failed creating temporary dir: %v", err)
+			return false, err
+		}
+		defer config.Fs.RemoveAll(tmpMountDir) // nolint:errcheck
+		err = config.Mounter.Mount(recovery.Path, tmpMountDir, "auto", []string{})
+		if err != nil {
+			config.Logger.Errorf("failed mounting recovery partition: %v", err)
+			return false, err
+		}
+		mountPoint = tmpMountDir
+		defer func() {
+			err = config.Mounter.Unmount(tmpMountDir)
+			if err != nil {
+				squashed = false
+			}
+		}()
+	}
+	return Exists(config.Fs, filepath.Join(mountPoint, "cOS", cnst.RecoverySquashFile))
+}
+
 // GetTempDir returns the dir for storing related temporal files
 // It will respect TMPDIR and use that if exists, fallback to try the persistent partition if its mounted
 // and finally the default /tmp/ dir
 // suffix is what is appended to the dir name elemental-suffix. If empty it will randomly generate a number
-func GetTempDir(config *v1.RunConfig, suffix string) string {
+func GetTempDir(config *v1.Config, suffix string) string {
 	// if we got a TMPDIR var, respect and use that
 	if suffix == "" {
 		random.Seed(time.Now().UnixNano())
@@ -276,10 +315,17 @@ func GetTempDir(config *v1.RunConfig, suffix string) string {
 	if dir != "" {
 		return filepath.Join(dir, elementalTmpDir)
 	}
+	parts, err := GetAllPartitions()
+	if err != nil {
+		return filepath.Join("/", "tmp", elementalTmpDir)
+	}
 	// Check persistent and if its mounted
-	persistent, err := GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 5)
-	if err == nil && persistent.MountPoint != "" {
-		return filepath.Join(persistent.MountPoint, elementalTmpDir)
+	ep := v1.NewElementalPartitionsFromList(parts)
+	persistent := ep.Persistent
+	if persistent != nil {
+		if mnt, _ := IsMounted(config, persistent); mnt {
+			return filepath.Join(persistent.MountPoint, elementalTmpDir)
+		}
 	}
 	return filepath.Join("/", "tmp", elementalTmpDir)
 }
@@ -320,7 +366,7 @@ func IsHTTPURI(uri string) (bool, error) {
 
 // GetSource copies given source to destination, if source is a local path it simply
 // copies files, if source is a remote URL it tries to download URL to destination.
-func GetSource(config *v1.RunConfig, source string, destination string) error {
+func GetSource(config *v1.Config, source string, destination string) error {
 	local, err := IsLocalURI(source)
 	if err != nil {
 		config.Logger.Errorf("Not a valid url: %s", source)
@@ -374,7 +420,7 @@ func ValidTaggedContainerReference(ref string) bool {
 //	 2. Assume it is a container registry reference if it matches [<domain>/]<repositry>:<tag>
 //      (only domain is optional)
 //	 3. Fallback to a channel source
-func NewSrcGuessingType(c v1.Config, value string) v1.ImageSource {
+func NewSrcGuessingType(c *v1.Config, value string) *v1.ImageSource {
 	if exists, _ := Exists(c.Fs, value); exists {
 		if dir, _ := IsDir(c.Fs, value); dir {
 			return v1.NewDirSrc(value)

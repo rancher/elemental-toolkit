@@ -287,7 +287,7 @@ func burnISO(c *v1.BuildConfig, root string) error {
 func applySources(c v1.Config, target string, sources ...string) error {
 	var err error
 	for _, src := range sources {
-		err = applySource(c, target, utils.NewSrcGuessingType(c, src))
+		err = applySource(c, target, utils.NewSrcGuessingType(&c, src))
 		if err != nil {
 			return err
 		}
@@ -297,7 +297,7 @@ func applySources(c v1.Config, target string, sources ...string) error {
 
 // TODO this method should be part of Elemental (almost the same code as in CopyImage) however Elemental
 // is tied to RunConfig while it shouldn't, related to issue #33
-func applySource(c v1.Config, target string, src v1.ImageSource) error {
+func applySource(c v1.Config, target string, src *v1.ImageSource) error {
 	c.Logger.Debugf("Applying source %s to target %s", src.Value(), target)
 	if src.IsDocker() {
 		if c.Cosign {

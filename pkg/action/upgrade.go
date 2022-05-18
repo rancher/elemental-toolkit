@@ -28,362 +28,195 @@ import (
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
 type UpgradeAction struct {
-	Config *v1.RunConfig
+	config *v1.RunConfig
+	spec   *v1.UpgradeSpec
 }
 
-func NewUpgradeAction(config *v1.RunConfig) *UpgradeAction {
-	return &UpgradeAction{Config: config}
+func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec) *UpgradeAction {
+	return &UpgradeAction{config: config, spec: spec}
 }
 
-func (u *UpgradeAction) Info(s string, args ...interface{}) {
-	u.Config.Logger.Infof(s, args...)
+func (u UpgradeAction) Info(s string, args ...interface{}) {
+	u.config.Logger.Infof(s, args...)
 }
 
-func (u *UpgradeAction) Debug(s string, args ...interface{}) {
-	u.Config.Logger.Debugf(s, args...)
+func (u UpgradeAction) Debug(s string, args ...interface{}) {
+	u.config.Logger.Debugf(s, args...)
 }
 
-func (u *UpgradeAction) Error(s string, args ...interface{}) {
-	u.Config.Logger.Errorf(s, args...)
+func (u UpgradeAction) Error(s string, args ...interface{}) {
+	u.config.Logger.Errorf(s, args...)
 }
 
-func upgradeHook(config *v1.RunConfig, hook string, chroot bool) error {
+func (u UpgradeAction) upgradeHook(hook string, chroot bool) error {
+	u.Info("Applying '%s' hook", hook)
 	if chroot {
 		mountPoints := map[string]string{}
 
-		oemDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.OEMLabel, 2)
-		if err == nil && oemDevice.MountPoint != "" {
-			mountPoints[oemDevice.MountPoint] = "/oem"
+		oemDevice := u.spec.Partitions.OEM
+		if oemDevice != nil && oemDevice.MountPoint != "" {
+			mountPoints[oemDevice.MountPoint] = constants.OEMPath
 		}
 
-		persistentDevice, err := utils.GetFullDeviceByLabel(config.Runner, config.PersistentLabel, 2)
-		if err == nil && persistentDevice.MountPoint != "" {
-			mountPoints[persistentDevice.MountPoint] = "/usr/local"
+		persistentDevice := u.spec.Partitions.Persistent
+		if persistentDevice != nil && persistentDevice.MountPoint != "" {
+			mountPoints[persistentDevice.MountPoint] = constants.UsrLocalPath
 		}
 
-		return ChrootHook(config, hook, config.Images[constants.ActiveImgName].MountPoint, mountPoints)
+		return ChrootHook(&u.config.Config, hook, u.config.Strict, u.spec.Active.MountPoint, mountPoints, u.config.CloudInitPaths...)
 	}
-	return Hook(config, hook)
+	return Hook(&u.config.Config, hook, u.config.Strict, u.config.CloudInitPaths...)
 }
 
-func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
-	var transitionImg string
-	var isSquashRecovery bool
-	var upgradeStateDir string
-	// When booting from recovery the label can be the recovery or the system, depending on the recovery img type (squash/non-squash)
-	bootedFromRecovery := utils.BootedFrom(u.Config.Runner, u.Config.RecoveryLabel) || utils.BootedFrom(u.Config.Runner, u.Config.SystemLabel)
-	u.Debug("Booted from recovery: %v", bootedFromRecovery)
-	// To check if we are on squash recovery we need to check different depending on where we are
-	if bootedFromRecovery {
-		// Here is simple, we just check if the file is there
-		if exists, _ := utils.Exists(u.Config.Fs, filepath.Join(constants.UpgradeRecoveryDir, "cOS", constants.RecoverySquashFile)); exists {
-			isSquashRecovery = true
-		}
-	} else {
-		// Booting from active, mount the recovery partition and check for the squashfs file
-		recoveryPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
-		if err != nil {
-			u.Error("Could not find device for %s label: %s", u.Config.RecoveryLabel, err)
-			return err
-		}
-		tmpMountDir, _ := utils.TempDir(u.Config.Fs, "", "elemental")
-		err = u.Config.Mounter.Mount(recoveryPart.Path, tmpMountDir, "auto", []string{})
-		if err != nil {
-			return err
-		}
-		if exists, _ := utils.Exists(u.Config.Fs, filepath.Join(tmpMountDir, "cOS", constants.RecoverySquashFile)); exists {
-			isSquashRecovery = true
-		}
-		// Cleanup
-		err = u.Config.Mounter.Unmount(tmpMountDir)
-		if err != nil {
-			return err
-		}
-		err = u.Config.Fs.RemoveAll(tmpMountDir)
-		if err != nil {
-			return err
-		}
-	}
-	u.Debug("Is squash recovery: %v", isSquashRecovery)
+func (u *UpgradeAction) Run() (err error) {
+	var mountPart *v1.Partition
+	var upgradeImg v1.Image
+	var finalImageFile string
 
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	// Work out the paths and current system to mount the upgrade state dir
-	// We booted from recovery
-	if bootedFromRecovery {
-		// We are updating recovery
-		if u.Config.RecoveryUpgrade {
-			recoveryPart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
-			err = u.Config.Mounter.Mount(recoveryPart.Path, recoveryPart.MountPoint, "auto", []string{"remount", "rw"})
-			if err != nil {
-				u.Error("Error mounting %s: %s", recoveryPart.MountPoint, err)
-				return err
-			}
-			// set upgradeStateDir to recovery mountpoint
-			upgradeStateDir = recoveryPart.MountPoint
+	e := elemental.NewElemental(&u.config.Config)
+
+	if u.spec.RecoveryUpgrade {
+		mountPart = u.spec.Partitions.Recovery
+		upgradeImg = u.spec.Recovery
+		if upgradeImg.FS == constants.SquashFs {
+			finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.RecoverySquashFile)
 		} else {
-			// We are upgrading the active so we need to mount the state label partition on /run/cos/state
-			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-			err = utils.MkdirAll(u.Config.Fs, constants.StateDir, constants.DirPerm)
-			if err != nil {
-				u.Error("Error creating dir %s: %s", constants.StateDir, err)
-				return err
-			}
-			err = u.Config.Mounter.Mount(statePart.Path, constants.StateDir, "auto", []string{})
-			if err != nil {
-				u.Error("Error mounting %s: %s", constants.StateDir, err)
-				return err
-			}
-			cleanup.Push(func() error {
-				return u.Config.Mounter.Unmount(constants.StateDir)
-			})
-			upgradeStateDir = constants.StateDir
+			finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.RecoveryImgFile)
 		}
-	} else { // We booted from active/passive
-		//  We are updating recovery
-		if u.Config.RecoveryUpgrade {
-			// Try to mount SYSTEM partition, only exists if recovery is squash
-			var recoveryPart *v1.Partition
-			recoveryPart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.SystemLabel, 2)
-			if err != nil {
-				// Failure to get the system label, fallback tor recovery label
-				recoveryPart, err = utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.RecoveryLabel, 2)
-			}
-			err = utils.MkdirAll(u.Config.Fs, constants.RecoveryDir, constants.DirPerm)
-			if err != nil {
-				u.Error("Error creating dir %s: %s", constants.RecoveryDir, err)
-				return err
-			}
-			// set upgradeStateDir to /run/cos/recovery
-			err = u.Config.Mounter.Mount(recoveryPart.Path, constants.RecoveryDir, "auto", []string{})
-			if err != nil {
-				u.Error("Error mounting %s: %s", constants.RecoveryDir, err)
-				return err
-			}
-			cleanup.Push(func() error {
-				return u.Config.Mounter.Unmount(constants.RecoveryDir)
-			})
-			upgradeStateDir = constants.RecoveryDir
-		} else { // We are updating active
-			// Remount state partition RW
-			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-			err = u.Config.Mounter.Mount(statePart.Path, statePart.MountPoint, "auto", []string{"remount", "rw"})
-			if err != nil {
-				u.Error("Error mounting %s: %s", statePart.MountPoint, err)
-				return err
-			}
-			// set upgradeStateDir to /run/initramfs/cos-state
-			upgradeStateDir = statePart.MountPoint
-		}
-	}
-
-	// Some debug info just in case
-	u.Debug("Upgrade state dir: %s", upgradeStateDir)
-
-	upgradeTarget, upgradeSource := u.getTargetAndSource()
-
-	u.Config.Logger.Infof("Upgrading %s partition", upgradeTarget)
-
-	// Both Recoveries do not mount persistent, so try to mount it. Ignore errors, as its not mandatory.
-	if bootedFromRecovery {
-		persistentPart, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.PersistentLabel, 2)
-		if err == nil {
-			err := utils.MkdirAll(u.Config.Fs, constants.PersistentDir, constants.DirPerm)
-			if err == nil {
-				err = u.Config.Mounter.Mount(persistentPart.Path, constants.PersistentDir, "auto", []string{})
-				if err != nil {
-					u.Config.Logger.Warnf("Could not mount persistent partition: %s", err)
-				} else {
-					cleanup.Push(func() error { return u.unmount(constants.PersistentDir) })
-				}
-			}
-		}
-	}
-
-	// If we are upgrading the recovery and have squash, the transition img naming is different
-	if isSquashRecovery && u.Config.RecoveryUpgrade {
-		transitionImg = filepath.Join(upgradeStateDir, "cOS", constants.TransitionSquashFile)
 	} else {
-		transitionImg = filepath.Join(upgradeStateDir, "cOS", constants.TransitionImgFile)
+		mountPart = u.spec.Partitions.State
+		upgradeImg = u.spec.Active
+		finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.ActiveImgFile)
 	}
 
-	u.Debug("Using transition img: %s", transitionImg)
-
-	cleanup.Push(func() error { return u.remove(transitionImg) })
-
-	// Get the upgradeTempDir here, so we use the persistent partition if mounted
-	upgradeTempDir := utils.GetTempDir(u.Config, "upgrade")
-	u.Debug("Upgrade temp dir: %s", upgradeTempDir)
-
-	err = utils.MkdirAll(u.Config.Fs, upgradeTempDir, constants.DirPerm)
-	if err != nil {
-		u.Error("Error creating target dir %s: %s", upgradeTempDir, err)
-		return err
-	}
-	cleanup.Push(func() error { return u.remove(upgradeTempDir) })
-
-	// create transition.img
-	img := v1.Image{
-		File:       transitionImg,
-		Size:       u.Config.ImgSize,
-		Label:      u.Config.ActiveLabel,
-		FS:         constants.LinuxImgFs,
-		MountPoint: upgradeTempDir,
-		Source:     upgradeSource, // if source is a dir it will copy from here, if it's a docker img it uses Config.DockerImg IN THAT ORDER!
+	if upgradeImg.Source.IsEmpty() {
+		return fmt.Errorf("undefined upgrade source")
 	}
 
-	// If upgrading recovery, set the label to the RecoveryLabel instead
-	if u.Config.RecoveryUpgrade {
-		img.Label = u.Config.SystemLabel
-	}
-
-	ele := elemental.NewElemental(u.Config)
-
-	if u.Config.RecoveryUpgrade && isSquashRecovery {
-		u.Debug("Upgrading recovery+squash, not mounting image file")
-	} else {
-		// Only on recovery+squash we dont use the img file
-		err = ele.CreateFileSystemImage(&img)
+	u.Info("mounting %s partition as rw", mountPart.Name)
+	if mnt, _ := utils.IsMounted(&u.config.Config, mountPart); mnt {
+		err = e.MountPartition(mountPart, "remount", "rw")
 		if err != nil {
-			u.Error("Failed to create %s img: %s", transitionImg, err)
+			u.Error("failed mounting %s partition: %v", mountPart.Name, err)
 			return err
 		}
-
-		// mount the transition img on targetDir, so we can install the upgraded files into targetDir, and they end up on the img
-		err = ele.MountImage(&img, "rw")
+		cleanup.Push(func() error { return e.MountPartition(mountPart, "remount", "ro") })
+	} else {
+		err = e.MountPartition(mountPart, "rw")
+		if err != nil {
+			u.Error("failed mounting %s partition: %v", mountPart.Name, err)
+			return err
+		}
+		cleanup.Push(func() error { return e.UnmountPartition(mountPart) })
 	}
 
-	_ = utils.CreateDirStructure(u.Config.Fs, upgradeTempDir)
+	// Cleanup transition image file before leaving
+	cleanup.Push(func() error { return u.remove(upgradeImg.File) })
 
-	err = upgradeHook(u.Config, "before-upgrade", false)
+	// Recovery does not mount persistent, so try to mount it. Ignore errors, as its not mandatory.
+	persistentPart := u.spec.Partitions.Persistent
+	if persistentPart != nil {
+		if mnt, _ := utils.IsMounted(&u.config.Config, persistentPart); !mnt {
+			u.Debug("mounting persistent partition")
+			err := e.MountPartition(persistentPart, "rw")
+			if err != nil {
+				u.config.Logger.Warn("could not mount persistent partition")
+			} else {
+				cleanup.Push(func() error { return e.UnmountPartition(persistentPart) })
+			}
+		}
+	}
+
+	// WARNING this changed the order in which this is applied, now it is before mounting/preparing image area as in install/reset
+	err = u.upgradeHook("before-upgrade", false)
 	if err != nil {
 		u.Error("Error while running hook before-upgrade: %s", err)
 		return err
 	}
-	// Setting the activeImg to our img, tricks CopyActive into doing it anyway even if it's a recovery img
-	u.Config.Images[constants.ActiveImgName] = &img
-	err = ele.CopyImage(&img)
+
+	u.Info("deploying image %s to %s", upgradeImg.Source.Value(), upgradeImg.File)
+	err = e.DeployImage(&upgradeImg, true)
 	if err != nil {
-		u.Error("Error copying active: %s", err)
+		u.Error("Failed deploying image to file %s", upgradeImg.File)
 		return err
 	}
-	// Selinux relabel
-	// In the original script, any errors are ignored
-	_, _ = u.Config.Runner.Run("chmod", "755", upgradeTempDir)
-	_ = ele.SelinuxRelabel(upgradeTempDir, false)
+	cleanup.Push(func() error { return e.UnmountImage(&upgradeImg) })
 
-	// Only run rebrand on non recovery+squash
-	err = upgradeHook(u.Config, "after-upgrade-chroot", true)
+	// Selinux relabel
+	// Doesn't make sense to relabel a readonly filesystem
+	if upgradeImg.FS != constants.SquashFs {
+		// In the original script, any errors are ignored
+		_ = e.SelinuxRelabel(upgradeImg.MountPoint, false)
+	}
+
+	err = u.upgradeHook("after-upgrade-chroot", true)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
 		return err
 	}
 
-	// for the grub rebrand to work, we need to mount the state partition RW, so it can write into it
-	statePartForRecovery, err := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
-	if err == nil {
-		// If its not mounted, mount it so we can rebrand then unmount it
-		if statePartForRecovery.MountPoint == "" {
-			_ = utils.MkdirAll(u.Config.Fs, constants.StateDir, constants.DirPerm)
-			if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(constants.StateDir); notMounted {
-				err = u.Config.Mounter.Mount(statePartForRecovery.Path, constants.StateDir, "auto", []string{"rw"})
-				if err != nil {
-					u.Error("Could not mount state partition with label %s for rebrand: %s", u.Config.StateLabel, err)
-					return err
-				}
-				cleanup.Push(func() error {
-					return u.unmount(constants.StateDir)
-				})
-			}
-		} else {
-			// if mounted it may be RO only, so remount it RW?
-			err = u.Config.Mounter.Mount(statePartForRecovery.Path, statePartForRecovery.MountPoint, "auto", []string{"remount", "rw"})
-			if err != nil {
-				u.Error("Could not remount state partition with label %s for rebrand: %s", u.Config.StateLabel, err)
-				return err
-			}
+	// Only apply rebrand stage for system upgrades
+	if !u.spec.RecoveryUpgrade {
+		u.Info("rebranding")
+		osRelease, err := utils.LoadEnvFile(u.config.Config.Fs, filepath.Join(upgradeImg.MountPoint, "etc", "os-release"))
+		if err != nil {
+			u.config.Logger.Warnf("Could not load os-release file: %v", err)
+		}
+
+		err = e.SetDefaultGrubEntry(mountPart.MountPoint, osRelease["GRUB_ENTRY_NAME"])
+		if err != nil {
+			u.Error("failed setting default entry")
+			return err
 		}
 	}
-	// Load the os-release file from the new upgraded system
-	osRelease, err := utils.LoadEnvFile(u.Config.Fs, filepath.Join(upgradeTempDir, "etc", "os-release"))
-	// override grub vars with the new system vars
-	u.Config.GrubDefEntry = osRelease["GRUB_ENTRY_NAME"]
 
-	err = ele.Rebrand()
-
-	if err != nil {
-		u.Error("Error running rebrand: %s", err)
-		return err
-	}
-	err = upgradeHook(u.Config, "after-upgrade", false)
-
+	err = u.upgradeHook("after-upgrade", false)
 	if err != nil {
 		u.Error("Error running hook after-upgrade: %s", err)
 		return err
 	}
 
-	if u.Config.RecoveryUpgrade && isSquashRecovery {
-		u.Debug("Upgrading recovery+squash, not umounting image file")
-	} else {
-		// Copy is done, unmount transition.img
-		err = ele.UnmountImage(&img)
-		if err != nil {
-			u.Error("Error unmounting %s: %s", img.MountPoint, err)
-			return err
-		}
+	err = e.UnmountImage(&upgradeImg)
+	if err != nil {
+		u.Error("failed unmounting transition image")
+		return err
 	}
 
 	// If not upgrading recovery, backup active into passive
-	if !u.Config.RecoveryUpgrade {
+	if !u.spec.RecoveryUpgrade {
+		//TODO this step could be part of elemental package
 		// backup current active.img to passive.img before overwriting the active.img
 		u.Info("Backing up current active image")
-		source := filepath.Join(upgradeStateDir, "cOS", constants.ActiveImgFile)
-		destination := filepath.Join(upgradeStateDir, "cOS", constants.PassiveImgFile)
-		u.Info("Moving %s to %s", source, destination)
-		_, err := u.Config.Runner.Run("mv", "-f", source, destination)
+		source := filepath.Join(mountPart.MountPoint, "cOS", constants.ActiveImgFile)
+		u.Info("Moving %s to %s", source, u.spec.Passive.File)
+		_, err := u.config.Runner.Run("mv", "-f", source, u.spec.Passive.File)
 		if err != nil {
-			u.Error("Failed to move %s to %s: %s", source, destination, err)
+			u.Error("Failed to move %s to %s: %s", source, u.spec.Passive.File, err)
 			return err
 		}
-		u.Info("Finished moving %s to %s", source, destination)
+		u.Info("Finished moving %s to %s", source, u.spec.Passive.File)
 		// Label the image to passive!
-		out, err := u.Config.Runner.Run("tune2fs", "-L", u.Config.PassiveLabel, destination)
+		out, err := u.config.Runner.Run("tune2fs", "-L", u.spec.Passive.Label, u.spec.Passive.File)
 		if err != nil {
-			u.Error("Error while labeling the passive image %s: %s", destination, err)
+			u.Error("Error while labeling the passive image %s: %s", u.spec.Passive.File, err)
 			u.Debug("Error while labeling the passive image %s, command output: %s", out)
 			return err
 		}
-		_, _ = u.Config.Runner.Run("sync")
-	}
-	// Final step, move the newly updated img/squash into the proper place
-	finalDestination := filepath.Join(upgradeStateDir, "cOS", fmt.Sprintf("%s.img", upgradeTarget))
-
-	// if we are upgrading the recovery and its squash recovery, we need to create the squash file
-	if isSquashRecovery && u.Config.RecoveryUpgrade {
-		finalDestination = filepath.Join(upgradeStateDir, "cOS", constants.RecoverySquashFile)
-		u.Info("Creating %s", constants.RecoverySquashFile)
-		squashOptions := constants.GetDefaultSquashfsOptions()
-		if len(u.Config.SquashFsCompressionConfig) > 0 {
-			squashOptions = append(squashOptions, u.Config.SquashFsCompressionConfig...)
-		} else {
-			squashOptions = append(squashOptions, constants.GetDefaultSquashfsCompressionOptions()...)
-		}
-		err = utils.CreateSquashFS(u.Config.Runner, u.Config.Logger, upgradeTempDir, transitionImg, squashOptions)
-		if err != nil {
-			return err
-		}
+		_, _ = u.config.Runner.Run("sync")
 	}
 
-	u.Info("Moving %s to %s", transitionImg, finalDestination)
-	_, err = u.Config.Runner.Run("mv", "-f", transitionImg, finalDestination)
+	u.Info("Moving %s to %s", upgradeImg.File, finalImageFile)
+	_, err = u.config.Runner.Run("mv", "-f", upgradeImg.File, finalImageFile)
 	if err != nil {
-		u.Error("Failed to move %s to %s: %s", transitionImg, finalDestination, err)
+		u.Error("Failed to move %s to %s: %s", upgradeImg.File, finalImageFile, err)
 		return err
 	}
-	u.Info("Finished moving %s to %s", transitionImg, finalDestination)
+	u.Info("Finished moving %s to %s", upgradeImg.File, finalImageFile)
 
-	_, _ = u.Config.Runner.Run("sync")
+	_, _ = u.config.Runner.Run("sync")
 
 	u.Info("Upgrade completed")
 
@@ -392,74 +225,21 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 	if err != nil {
 		return err
 	}
-	if u.Config.Reboot {
+	if u.config.Reboot {
 		u.Info("Rebooting in 5 seconds")
-		return utils.Reboot(u.Config.Runner, 5)
-	} else if u.Config.PowerOff {
+		return utils.Reboot(u.config.Runner, 5)
+	} else if u.config.PowerOff {
 		u.Info("Shutting down in 5 seconds")
-		return utils.Shutdown(u.Config.Runner, 5)
+		return utils.Shutdown(u.config.Runner, 5)
 	}
 	return err
 }
 
-// unmount attempts to unmount the given path. Does nothing if not mounted
-func (u *UpgradeAction) unmount(path string) error {
-	if notMounted, _ := u.Config.Mounter.IsLikelyNotMountPoint(path); !notMounted {
-		u.Debug("[Cleanup] Unmounting %s", path)
-		return u.Config.Mounter.Unmount(path)
-	}
-	return nil
-}
-
 // remove attempts to remove the given path. Does nothing if it doesn't exist
 func (u *UpgradeAction) remove(path string) error {
-	if exists, _ := utils.Exists(u.Config.Fs, path); exists {
+	if exists, _ := utils.Exists(u.config.Fs, path); exists {
 		u.Debug("[Cleanup] Removing %s", path)
-		return u.Config.Fs.RemoveAll(path)
+		return u.config.Fs.RemoveAll(path)
 	}
 	return nil
-}
-
-// getTargetAndSource finds our the target and source for the upgrade
-func (u *UpgradeAction) getTargetAndSource() (string, v1.ImageSource) {
-	upgradeSource := v1.NewChannelSrc(constants.ChannelSource)
-	upgradeTarget := constants.UpgradeActive
-
-	if u.Config.RecoveryUpgrade {
-		u.Debug("Upgrading recovery")
-		upgradeTarget = constants.UpgradeRecovery
-	}
-	// if channel_upgrades==true then it picks the default image from /etc/cos-upgrade-image
-	// this means, it gets the UPGRADE_IMAGE(default system/cos)/RECOVERY_IMAGE from the luet repo configured on the system
-	if u.Config.ChannelUpgrades {
-		u.Debug("Source is channel-upgrades")
-		if u.Config.RecoveryUpgrade {
-			if u.Config.RecoveryImage == "" {
-				if u.Config.UpgradeImage != "" {
-					upgradeSource = v1.NewChannelSrc(u.Config.UpgradeImage)
-				}
-			} else {
-				upgradeSource = v1.NewChannelSrc(u.Config.RecoveryImage)
-			}
-		} else {
-			if u.Config.UpgradeImage != "" { // I don't think it's possible to have an empty UpgradeImage....
-				// Only override the source if we have a valid UpgradeImage, otherwise use the default
-				upgradeSource = v1.NewChannelSrc(u.Config.UpgradeImage) // Loaded from /etc/cos-upgrade-image
-			}
-		}
-	} else {
-		// if channel_upgrades==false then
-		// if docker-image -> upgrade from image directly, ignores release_channel and pulls the given image directly
-		if u.Config.DockerImg != "" {
-			u.Debug("Source is docker image: %s", u.Config.DockerImg)
-			upgradeSource = v1.NewDockerSrc(u.Config.DockerImg)
-		}
-		// if directory -> upgrade from dir directly, ignores release_channel and uses the given directory
-		if u.Config.Directory != "" {
-			u.Debug("Source is directory: %s", u.Config.Directory)
-			upgradeSource = v1.NewDirSrc(u.Config.Directory)
-		}
-	}
-	u.Debug("Upgrade target: %s Upgrade source: %s", upgradeTarget, upgradeSource.Value())
-	return upgradeTarget, upgradeSource
 }

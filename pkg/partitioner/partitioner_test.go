@@ -18,8 +18,9 @@ package partitioner_test
 
 import (
 	"errors"
-	"github.com/jaypipes/ghw/pkg/block"
 	"testing"
+
+	"github.com/jaypipes/ghw/pkg/block"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -313,7 +314,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Does not find device for a given partition number", func() {
-				dev := part.NewDisk("/dev/loop0")
+				dev := part.NewDisk("/dev/lp0")
 				_, err := dev.FindPartitionDevice(4)
 				Expect(err).NotTo(BeNil())
 			})

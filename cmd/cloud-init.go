@@ -37,7 +37,7 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			_ = viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 			if err != nil {
 				return err
 			}

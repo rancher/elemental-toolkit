@@ -19,4 +19,6 @@ package v1
 type LuetInterface interface {
 	Unpack(string, string, bool) error
 	UnpackFromChannel(string, string, ...Repository) error
+	SetPlugins(...string)
+	GetPlugins() []string
 }

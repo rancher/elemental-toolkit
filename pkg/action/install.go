@@ -17,228 +17,142 @@ limitations under the License.
 package action
 
 import (
-	"errors"
 	"fmt"
-	"path/filepath"
 
 	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/elemental"
-	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
 )
 
-func installHook(config *v1.RunConfig, hook string, chroot bool) error {
+func (i *InstallAction) installHook(hook string, chroot bool) error {
 	if chroot {
 		extraMounts := map[string]string{}
-		persistent := config.Partitions.GetByName(cnst.PersistentPartName)
-		if persistent != nil {
-			extraMounts[persistent.MountPoint] = "/usr/local" //nolint:goconst
+		persistent := i.spec.Partitions.Persistent
+		if persistent != nil && persistent.MountPoint != "" {
+			extraMounts[persistent.MountPoint] = cnst.UsrLocalPath
 		}
-		oem := config.Partitions.GetByName(cnst.OEMPartName)
-		if oem != nil {
-			extraMounts[oem.MountPoint] = "/oem" //nolint:goconst
+		oem := i.spec.Partitions.OEM
+		if oem != nil && oem.MountPoint != "" {
+			extraMounts[oem.MountPoint] = cnst.OEMPath
 		}
-		return ChrootHook(config, hook, config.Images.GetActive().MountPoint, extraMounts)
+		return ChrootHook(&i.cfg.Config, hook, i.cfg.Strict, i.spec.Active.MountPoint, extraMounts, i.cfg.CloudInitPaths...)
 	}
-	return Hook(config, hook)
+	return Hook(&i.cfg.Config, hook, i.cfg.Strict, i.cfg.CloudInitPaths...)
 }
 
-// InstallImagesSetup defines the parameters of active, passive and recovery
-// images of an installation
-func InstallImagesSetup(config *v1.RunConfig) error {
-	partState := config.Partitions.GetByName(cnst.StatePartName)
-	if partState == nil {
-		config.Logger.Errorf("State partition not configured")
-		return errors.New("error setting Active image")
-	}
-	// Set active image
-	activeImg := v1.Image{
-		Label:      config.ActiveLabel,
-		Size:       cnst.ImgSize,
-		File:       filepath.Join(partState.MountPoint, "cOS", cnst.ActiveImgFile),
-		FS:         cnst.LinuxImgFs,
-		MountPoint: cnst.ActiveDir,
-	}
-
-	if config.DockerImg != "" {
-		activeImg.Source = v1.NewDockerSrc(config.DockerImg)
-	} else if config.Directory != "" {
-		activeImg.Source = v1.NewDirSrc(config.Directory)
-	} else if _, err := config.Fs.Stat(cnst.IsoBaseTree); err == nil {
-		// If cnst.IsoBaseTree exists we are booting from iso, use that as source
-		activeImg.Source = v1.NewDirSrc(cnst.IsoBaseTree)
-	} else {
-		// We cannot fall back to channel upgrades always as they may be disabled, so check before setting it as source
-		if config.ChannelUpgrades {
-			activeImg.Source = v1.NewChannelSrc(cnst.ChannelSource)
-		}
-	}
-
-	// Error out if we could not find the source and we haven't set the iso file, which fill the source later
-	if activeImg.Source.Value() == "" && config.Iso == "" {
-		config.Logger.Error("Could not find source for the install")
-		return &v1.SourceNotFound{}
-	}
-
-	// Set passive image
-	passiveImg := v1.Image{
-		File:   filepath.Join(partState.MountPoint, "cOS", cnst.PassiveImgFile),
-		Label:  config.PassiveLabel,
-		Source: v1.NewFileSrc(activeImg.File),
-		FS:     cnst.LinuxImgFs,
-	}
-
-	// Set recovery image
-	partRecovery := config.Partitions.GetByName(cnst.RecoveryPartName)
-	if partRecovery == nil {
-		config.Logger.Errorf("Recovery partition not configured")
-		return errors.New("error setting Recovery image")
-	}
-
-	recoveryDirCos := filepath.Join(partRecovery.MountPoint, "cOS")
-	squashedImgSource := filepath.Join(cnst.IsoMnt, cnst.RecoverySquashFile)
-
-	recoveryImg := v1.Image{}
-	if exists, _ := utils.Exists(config.Fs, squashedImgSource); exists {
-		recoveryImg.File = filepath.Join(recoveryDirCos, cnst.RecoverySquashFile)
-		recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
-		recoveryImg.FS = cnst.SquashFs
-	} else {
-		recoveryImg.File = filepath.Join(recoveryDirCos, cnst.RecoveryImgFile)
-		recoveryImg.Source = v1.NewFileSrc(activeImg.File)
-		recoveryImg.FS = cnst.LinuxImgFs
-		recoveryImg.Label = config.SystemLabel
-	}
-
-	// Add images to config
-	config.Images.SetActive(&activeImg)
-	config.Images.SetPassive(&passiveImg)
-	config.Images.SetRecovery(&recoveryImg)
-
-	return nil
+type InstallAction struct {
+	cfg  *v1.RunConfig
+	spec *v1.InstallSpec
 }
 
-// InstallSetup will set installation parameters according to
-// the given configuration flags
-func InstallSetup(config *v1.RunConfig) error {
-	SetPartitionsFromScratch(config)
-	err := InstallImagesSetup(config)
-
-	// Only error out if we can't find the source
-	switch e := err.(type) {
-	case *v1.SourceNotFound:
-		return e
-	}
-	SetupLuet(config)
-	return nil
+func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec) *InstallAction {
+	return &InstallAction{cfg: cfg, spec: spec}
 }
 
 // InstallRun will install the system from a given configuration
-func InstallRun(config *v1.RunConfig) (err error) { //nolint:gocyclo
-	newElemental := elemental.NewElemental(config)
+func (i InstallAction) Run() (err error) {
+	e := elemental.NewElemental(&i.cfg.Config)
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	disk := partitioner.NewDisk(
-		config.Target,
-		partitioner.WithRunner(config.Runner),
-		partitioner.WithFS(config.Fs),
-		partitioner.WithLogger(config.Logger),
-	)
-
-	err = installHook(config, cnst.BeforeInstallHook, false)
+	err = i.installHook(cnst.BeforeInstallHook, false)
 	if err != nil {
 		return err
 	}
 
-	// Make config.Iso to also install active from downloaded ISO
-	if config.Iso != "" {
-		tmpDir, err := newElemental.GetIso()
+	// Set installation sources from a downloaded ISO
+	if i.spec.Iso != "" {
+		tmpDir, err := e.GetIso(i.spec.Iso)
 		if err != nil {
 			return err
 		}
-		cleanup.Push(func() error { return config.Fs.RemoveAll(tmpDir) })
-		cleanup.Push(func() error { return config.Mounter.Unmount(filepath.Join(tmpDir, "iso")) })
-		cleanup.Push(func() error { return config.Mounter.Unmount(filepath.Join(tmpDir, "rootfs")) })
-	}
-
-	// Check device valid
-	if !disk.Exists() {
-		config.Logger.Errorf("Disk %s does not exist", config.Target)
-		return fmt.Errorf("disk %s does not exist", config.Target)
+		cleanup.Push(func() error { return i.cfg.Fs.RemoveAll(tmpDir) })
+		err = e.UpdateSourcesFormDownloadedISO(tmpDir, &i.spec.Active, &i.spec.Recovery)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Check no-format flag
-	if config.NoFormat {
+	if i.spec.NoFormat {
 		// Check force flag against current device
-		err = newElemental.CheckNoFormat()
-		if err != nil {
-			return err
+		labels := []string{i.spec.Active.Label, i.spec.Recovery.Label}
+		if e.CheckActiveDeployment(labels) && !i.spec.Force {
+			return fmt.Errorf("use `force` flag to run an installation over the current running deployment")
 		}
 	} else {
 		// Partition device
-		err = newElemental.PartitionAndFormatDevice(disk)
+		err = e.PartitionAndFormatDevice(i.spec)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = newElemental.MountPartitions()
+	err = e.MountPartitions(i.spec.Partitions.PartitionsByMountPoint(false))
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return newElemental.UnmountPartitions() })
+	cleanup.Push(func() error {
+		return e.UnmountPartitions(i.spec.Partitions.PartitionsByMountPoint(true))
+	})
 
 	// Deploy active image
-	err = newElemental.DeployImage(config.Images.GetActive(), true)
+	err = e.DeployImage(&i.spec.Active, true)
 	if err != nil {
 		return err
 	}
-	cleanup.Push(func() error { return newElemental.UnmountImage(config.Images.GetActive()) })
+	cleanup.Push(func() error { return e.UnmountImage(&i.spec.Active) })
 
 	// Copy cloud-init if any
-	err = newElemental.CopyCloudConfig()
+	err = e.CopyCloudConfig(i.spec.CloudInit)
 	if err != nil {
 		return err
 	}
 	// Install grub
-	grub := utils.NewGrub(config)
-	err = grub.Install()
+	grub := utils.NewGrub(&i.cfg.Config)
+	err = grub.Install(
+		i.spec.Target,
+		i.spec.Active.MountPoint,
+		i.spec.Partitions.State.MountPoint,
+		i.spec.GrubConf,
+		i.spec.Tty,
+		i.spec.Firmware == v1.EFI,
+	)
 	if err != nil {
 		return err
 	}
 	// Relabel SELinux
-	_ = newElemental.SelinuxRelabel(cnst.ActiveDir, false)
+	_ = e.SelinuxRelabel(cnst.ActiveDir, false)
 
-	err = installHook(config, cnst.AfterInstallChrootHook, true)
+	err = i.installHook(cnst.AfterInstallChrootHook, true)
 	if err != nil {
 		return err
 	}
 
 	// Unmount active image
-	err = newElemental.UnmountImage(config.Images.GetActive())
+	err = e.UnmountImage(&i.spec.Active)
 	if err != nil {
 		return err
 	}
 	// Install Recovery
-	err = newElemental.DeployImage(config.Images.GetRecovery(), false)
+	err = e.DeployImage(&i.spec.Recovery, false)
 	if err != nil {
 		return err
 	}
 	// Install Passive
-	err = newElemental.DeployImage(config.Images.GetPassive(), false)
+	err = e.DeployImage(&i.spec.Passive, false)
 	if err != nil {
 		return err
 	}
 
-	err = installHook(config, cnst.AfterInstallHook, false)
+	err = i.installHook(cnst.AfterInstallHook, false)
 	if err != nil {
 		return err
 	}
 
 	// Installation rebrand (only grub for now)
-	err = newElemental.Rebrand()
+	err = e.SetDefaultGrubEntry(i.spec.Partitions.State.MountPoint, i.spec.GrubDefEntry)
 	if err != nil {
 		return err
 	}
@@ -250,21 +164,21 @@ func InstallRun(config *v1.RunConfig) (err error) { //nolint:gocyclo
 	}
 
 	// If we want to eject the cd, create the required executable so the cd is ejected at shutdown
-	if config.EjectCD && utils.BootedFrom(config.Runner, "cdroot") {
-		config.Logger.Infof("Writing eject script")
-		err = config.Fs.WriteFile("/usr/lib/systemd/system-shutdown/eject", []byte(cnst.EjectScript), 0744)
+	if i.cfg.EjectCD && utils.BootedFrom(i.cfg.Runner, "cdroot") {
+		i.cfg.Logger.Infof("Writing eject script")
+		err = i.cfg.Fs.WriteFile("/usr/lib/systemd/system-shutdown/eject", []byte(cnst.EjectScript), 0744)
 		if err != nil {
-			config.Logger.Warnf("Could not write eject script, cdrom wont be ejected automatically: %s", err)
+			i.cfg.Logger.Warnf("Could not write eject script, cdrom wont be ejected automatically: %s", err)
 		}
 	}
 
 	// Reboot, poweroff or nothing
-	if config.Reboot {
-		config.Logger.Infof("Rebooting in 5 seconds")
-		return utils.Reboot(config.Runner, 5)
-	} else if config.PowerOff {
-		config.Logger.Infof("Shutting down in 5 seconds")
-		return utils.Shutdown(config.Runner, 5)
+	if i.cfg.Reboot {
+		i.cfg.Logger.Infof("Rebooting in 5 seconds")
+		return utils.Reboot(i.cfg.Runner, 5)
+	} else if i.cfg.PowerOff {
+		i.cfg.Logger.Infof("Shutting down in 5 seconds")
+		return utils.Shutdown(i.cfg.Runner, 5)
 	}
 	return err
 }

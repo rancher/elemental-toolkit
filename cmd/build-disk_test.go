@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/viper"
 )
 
 var _ = Describe("BuildDisk", Label("disk", "raw", "cmd"), func() {
@@ -31,6 +32,9 @@ var _ = Describe("BuildDisk", Label("disk", "raw", "cmd"), func() {
 		buf = new(bytes.Buffer)
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
+	})
+	AfterEach(func() {
+		viper.Reset()
 	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "--config-dir", "config/config", "build-disk", "--cosign-key", "pubKey.url")

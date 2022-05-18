@@ -30,6 +30,7 @@ type FakeLuet struct {
 	UnpackFromChannelSideEffect func(string, string, ...v1.Repository) error
 	unpackCalled                bool
 	unpackFromChannelCalled     bool
+	plugins                     []string
 }
 
 func NewFakeLuet() *FakeLuet {
@@ -67,3 +68,11 @@ func (l FakeLuet) UnpackChannelCalled() bool {
 }
 
 func (l FakeLuet) OverrideConfig(config *luetTypes.LuetConfig) {}
+
+func (l *FakeLuet) SetPlugins(plugins ...string) {
+	l.plugins = plugins
+}
+
+func (l *FakeLuet) GetPlugins() []string {
+	return l.plugins
+}

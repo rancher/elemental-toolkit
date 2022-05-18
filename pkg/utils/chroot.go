@@ -33,10 +33,10 @@ type Chroot struct {
 	defaultMounts []string
 	extraMounts   map[string]string
 	activeMounts  []string
-	config        *v1.RunConfig
+	config        *v1.Config
 }
 
-func NewChroot(path string, config *v1.RunConfig) *Chroot {
+func NewChroot(path string, config *v1.Config) *Chroot {
 	return &Chroot{
 		path:          path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},

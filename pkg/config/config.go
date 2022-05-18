@@ -17,10 +17,15 @@ limitations under the License.
 package config
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/rancher-sandbox/elemental/pkg/cloudinit"
-	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/http"
+	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher-sandbox/elemental/pkg/utils"
 	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
 )
@@ -92,13 +97,15 @@ func WithArch(arch string) func(r *v1.Config) error {
 
 func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
+	//TODO set arch dynamically to the current arch
 	c := &v1.Config{
-		Fs:      vfs.OSFS,
-		Logger:  log,
-		Syscall: &v1.RealSyscall{},
-		Client:  http.NewClient(),
-		Repos:   []v1.Repository{},
-		Arch:    "x86_64",
+		Fs:                        vfs.OSFS,
+		Logger:                    log,
+		Syscall:                   &v1.RealSyscall{},
+		Client:                    http.NewClient(),
+		Repos:                     []v1.Repository{},
+		Arch:                      "x86_64",
+		SquashFsCompressionConfig: constants.GetDefaultSquashfsCompressionOptions(),
 	}
 	for _, o := range opts {
 		err := o(c)
@@ -126,69 +133,308 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 	}
 
 	if c.Mounter == nil {
-		c.Mounter = mount.New(cnst.MountBinary)
+		c.Mounter = mount.New(constants.MountBinary)
+	}
+
+	if c.Luet == nil {
+		tmpDir := utils.GetTempDir(c, "")
+		c.Luet = luet.NewLuet(luet.WithFs(c.Fs), luet.WithLogger(log), luet.WithLuetTempDir(tmpDir))
 	}
 	return c
 }
 
 func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
+	config := NewConfig(opts...)
 	r := &v1.RunConfig{
-		Config: *NewConfig(opts...),
-	}
-	// Set defaults if empty
-	if r.GrubConf == "" {
-		r.GrubConf = cnst.GrubConf
-	}
-
-	if r.ActiveLabel == "" {
-		r.ActiveLabel = cnst.ActiveLabel
-	}
-
-	if r.PassiveLabel == "" {
-		r.PassiveLabel = cnst.PassiveLabel
-	}
-
-	if r.SystemLabel == "" {
-		r.SystemLabel = cnst.SystemLabel
-	}
-
-	if r.RecoveryLabel == "" {
-		r.RecoveryLabel = cnst.RecoveryLabel
-	}
-
-	if r.PersistentLabel == "" {
-		r.PersistentLabel = cnst.PersistentLabel
-	}
-
-	if r.OEMLabel == "" {
-		r.OEMLabel = cnst.OEMLabel
-	}
-
-	if r.StateLabel == "" {
-		r.StateLabel = cnst.StateLabel
-	}
-
-	r.Partitions = v1.PartitionList{}
-	r.Images = v1.ImageMap{}
-
-	if r.GrubDefEntry == "" {
-		r.GrubDefEntry = cnst.GrubDefEntry
-	}
-
-	if r.ImgSize == 0 {
-		r.ImgSize = cnst.ImgSize
+		Config: *config,
 	}
 	return r
 }
 
+// CoOccurrenceConfig sets further configurations once config files and other
+// runtime configurations are read. This is mostly a method to call once the
+// mapstructure unmarshal already took place.
+func CoOccurrenceConfig(cfg *v1.Config) {
+	// Set Luet plugins, we only use the mtree plugin for now
+	if !cfg.NoVerify {
+		cfg.Luet.SetPlugins(constants.LuetMtreePlugin)
+	}
+}
+
+// NewInstallSpec returns an InstallSpec struct all based on defaults and basic host checks (e.g. EFI vs BIOS)
+func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
+	var firmware string
+	var recoveryImg, activeImg, passiveImg v1.Image
+
+	recoveryImgFile := filepath.Join(constants.LiveDir, constants.RecoverySquashFile)
+
+	// Check if current host has EFI firmware
+	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
+	// Check the default ISO installation media is available
+	isoRootExists, _ := utils.Exists(cfg.Fs, constants.IsoBaseTree)
+	// Check the default ISO recovery installation media is available)
+	recoveryExists, _ := utils.Exists(cfg.Fs, recoveryImgFile)
+
+	if efiExists {
+		firmware = v1.EFI
+	} else {
+		firmware = v1.BIOS
+	}
+
+	activeImg.Label = constants.ActiveLabel
+	activeImg.Size = constants.ImgSize
+	activeImg.File = filepath.Join(constants.StateDir, "cOS", constants.ActiveImgFile)
+	activeImg.FS = constants.LinuxImgFs
+	activeImg.MountPoint = constants.ActiveDir
+	if isoRootExists {
+		activeImg.Source = v1.NewDirSrc(constants.IsoBaseTree)
+	} else {
+		activeImg.Source = v1.NewEmptySrc()
+	}
+
+	if recoveryExists {
+		recoveryImg.Source = v1.NewFileSrc(recoveryImgFile)
+		recoveryImg.FS = constants.SquashFs
+		recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoverySquashFile)
+	} else {
+		recoveryImg.Source = v1.NewFileSrc(activeImg.File)
+		recoveryImg.FS = constants.LinuxImgFs
+		recoveryImg.Label = constants.SystemLabel
+		recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoveryImgFile)
+	}
+
+	passiveImg = v1.Image{
+		File:   filepath.Join(constants.StateDir, "cOS", constants.PassiveImgFile),
+		Label:  constants.PassiveLabel,
+		Source: v1.NewFileSrc(activeImg.File),
+		FS:     constants.LinuxImgFs,
+	}
+
+	return &v1.InstallSpec{
+		Firmware:     firmware,
+		PartTable:    v1.GPT,
+		Partitions:   NewInstallElementalParitions(),
+		GrubDefEntry: constants.GrubDefEntry,
+		GrubConf:     constants.GrubConf,
+		Tty:          constants.DefaultTty,
+		Active:       activeImg,
+		Recovery:     recoveryImg,
+		Passive:      passiveImg,
+	}
+}
+
+func NewInstallElementalParitions() v1.ElementalPartitions {
+	partitions := v1.ElementalPartitions{}
+	partitions.OEM = &v1.Partition{
+		Label:      constants.OEMLabel,
+		Size:       constants.OEMSize,
+		Name:       constants.OEMPartName,
+		FS:         constants.LinuxFs,
+		MountPoint: constants.OEMDir,
+		Flags:      []string{},
+	}
+
+	partitions.Recovery = &v1.Partition{
+		Label:      constants.RecoveryLabel,
+		Size:       constants.RecoverySize,
+		Name:       constants.RecoveryPartName,
+		FS:         constants.LinuxFs,
+		MountPoint: constants.RecoveryDir,
+		Flags:      []string{},
+	}
+
+	partitions.State = &v1.Partition{
+		Label:      constants.StateLabel,
+		Size:       constants.StateSize,
+		Name:       constants.StatePartName,
+		FS:         constants.LinuxFs,
+		MountPoint: constants.StateDir,
+		Flags:      []string{},
+	}
+
+	partitions.Persistent = &v1.Partition{
+		Label:      constants.PersistentLabel,
+		Size:       constants.PersistentSize,
+		Name:       constants.PersistentPartName,
+		FS:         constants.LinuxFs,
+		MountPoint: constants.PersistentDir,
+		Flags:      []string{},
+	}
+	return partitions
+}
+
+// NewUpgradeSpec returns an UpgradeSpec struct all based on defaults and current host state
+func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
+	var recLabel, recFs, recMnt string
+	var active, passive, recovery v1.Image
+
+	parts, err := utils.GetAllPartitions()
+	if err != nil {
+		return nil, fmt.Errorf("could not read host partitions")
+	}
+	ep := v1.NewElementalPartitionsFromList(parts)
+
+	if ep.Recovery != nil {
+		if ep.Recovery.MountPoint == "" {
+			ep.Recovery.MountPoint = constants.RecoveryDir
+		}
+
+		squashedRec, err := utils.HasSquashedRecovery(&cfg, ep.Recovery)
+		if err != nil {
+			return nil, fmt.Errorf("failed checking for squashed recovery")
+		}
+
+		if squashedRec {
+			recFs = constants.SquashFs
+		} else {
+			recLabel = constants.SystemLabel
+			recFs = constants.LinuxImgFs
+			recMnt = constants.TransitionDir
+		}
+
+		recovery = v1.Image{
+			File:       filepath.Join(ep.Recovery.MountPoint, "cOS", constants.TransitionImgFile),
+			Size:       constants.ImgSize,
+			Label:      recLabel,
+			FS:         recFs,
+			MountPoint: recMnt,
+			Source:     v1.NewEmptySrc(),
+		}
+	}
+
+	if ep.State != nil {
+		if ep.State.MountPoint == "" {
+			ep.State.MountPoint = constants.StateDir
+		}
+
+		active = v1.Image{
+			File:       filepath.Join(ep.State.MountPoint, "cOS", constants.TransitionImgFile),
+			Size:       constants.ImgSize,
+			Label:      constants.ActiveLabel,
+			FS:         constants.LinuxImgFs,
+			MountPoint: constants.TransitionDir,
+			Source:     v1.NewEmptySrc(),
+		}
+
+		passive = v1.Image{
+			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
+			Label:  constants.PassiveLabel,
+			Source: v1.NewFileSrc(active.File),
+			FS:     constants.LinuxImgFs,
+		}
+	}
+
+	return &v1.UpgradeSpec{
+		Active:     active,
+		Recovery:   recovery,
+		Passive:    passive,
+		Partitions: ep,
+	}, nil
+}
+
+// NewResetSpec returns a ResetSpec struct all based on defaults and current host state
+func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
+	var imgSource *v1.ImageSource
+
+	//TODO find a way to pre-load current state values such as labels
+	if !utils.BootedFrom(cfg.Runner, constants.RecoverySquashFile) &&
+		!utils.BootedFrom(cfg.Runner, constants.SystemLabel) {
+		return nil, fmt.Errorf("reset can only be called from the recovery system")
+	}
+
+	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
+
+	parts, err := utils.GetAllPartitions()
+	if err != nil {
+		return nil, fmt.Errorf("could not read host partitions")
+	}
+	ep := v1.NewElementalPartitionsFromList(parts)
+
+	// We won't do anything with the recovery partition
+	// removing it so we can easily loop to mount and unmount
+	ep.Recovery = nil
+
+	if efiExists {
+		if ep.EFI == nil {
+			return nil, fmt.Errorf("EFI partition not found")
+		}
+		if ep.EFI.MountPoint == "" {
+			ep.EFI.MountPoint = constants.EfiDir
+		}
+		ep.EFI.Name = constants.EfiPartName
+	}
+
+	if ep.State == nil {
+		return nil, fmt.Errorf("state partition not found")
+	}
+	if ep.State.MountPoint == "" {
+		ep.State.MountPoint = constants.StateDir
+	}
+	ep.State.Name = constants.StatePartName
+	target := ep.State.Disk
+
+	// OEM partition is not a hard requirement
+	if ep.OEM != nil {
+		if ep.OEM.MountPoint == "" {
+			ep.OEM.MountPoint = constants.OEMDir
+		}
+		ep.OEM.Name = constants.OEMPartName
+	} else {
+		cfg.Logger.Warnf("no OEM partition found")
+	}
+
+	// Persistent partition is not a hard requirement
+	if ep.Persistent != nil {
+		if ep.Persistent.MountPoint == "" {
+			ep.Persistent.MountPoint = constants.PersistentDir
+		}
+		ep.Persistent.Name = constants.PersistentPartName
+	} else {
+		cfg.Logger.Warnf("no Persistent partition found")
+	}
+
+	recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
+		imgSource = v1.NewFileSrc(recoveryImg)
+	} else if exists, _ = utils.Exists(cfg.Fs, constants.IsoBaseTree); exists {
+		imgSource = v1.NewDirSrc(constants.IsoBaseTree)
+	} else {
+		imgSource = v1.NewEmptySrc()
+	}
+
+	activeFile := filepath.Join(ep.State.MountPoint, "cOS", constants.ActiveImgFile)
+	return &v1.ResetSpec{
+		Target:       target,
+		Partitions:   ep,
+		Efi:          efiExists,
+		GrubDefEntry: constants.GrubDefEntry,
+		GrubConf:     constants.GrubConf,
+		Tty:          constants.DefaultTty,
+		Active: v1.Image{
+			Label:      constants.ActiveLabel,
+			Size:       constants.ImgSize,
+			File:       activeFile,
+			FS:         constants.LinuxImgFs,
+			Source:     imgSource,
+			MountPoint: constants.ActiveDir,
+		},
+		Passive: v1.Image{
+			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
+			Label:  constants.PassiveLabel,
+			Source: v1.NewFileSrc(activeFile),
+			FS:     constants.LinuxImgFs,
+		},
+	}, nil
+}
+
 func NewISO() *v1.LiveISO {
 	return &v1.LiveISO{
-		Label:       cnst.ISOLabel,
-		UEFI:        cnst.GetDefaultISOUEFI(),
-		Image:       cnst.GetDefaultISOImage(),
-		HybridMBR:   cnst.IsoHybridMBR,
-		BootFile:    cnst.IsoBootFile,
-		BootCatalog: cnst.IsoBootCatalog,
+		Label:       constants.ISOLabel,
+		UEFI:        constants.GetDefaultISOUEFI(),
+		Image:       constants.GetDefaultISOImage(),
+		HybridMBR:   constants.IsoHybridMBR,
+		BootFile:    constants.IsoBootFile,
+		BootCatalog: constants.IsoBootCatalog,
 	}
 }
 
@@ -196,7 +442,7 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	b := &v1.BuildConfig{
 		Config: *NewConfig(opts...),
 		ISO:    NewISO(),
-		Name:   cnst.BuildImgName,
+		Name:   constants.BuildImgName,
 	}
 	return b
 }
