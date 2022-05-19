@@ -96,6 +96,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				version := s.GetOSRelease("VERSION")
 				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
 				out, err := s.Command(fmt.Sprintf("elemental --debug upgrade --recovery --docker-image %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
+				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 
