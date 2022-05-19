@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/install/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2021-11-04T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-19T10:47:29+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T21:56:16+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Installing">
 <meta itemprop="description" content="Installing cOS or a derivative locally
 "><meta itemprop="datePublished" content="2021-11-04T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-19T10:47:29+02:00" />
+<meta itemprop="dateModified" content="2022-05-19T21:56:16+02:00" />
 <meta itemprop="wordCount" content="467">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Installing"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2188,7 +2188,7 @@ if (!doNotTrack) {
 <h4 id="with-docker">With Docker</h4>
 <p>If in the rescue system, or LiveCD you have docker available, it can be used to perform an installation</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --privileged -v /dev/:/dev/ -ti quay.io/costoolkit/elemental:latest install --system.uri <span style="color:#000">$IMAGE</span> <span style="color:#000">$DEVICE</span>
-</span></span></code></pre></div><p>Where <code>$IMAGE</code> is the container image that we want to install (e.g. <code>docker:quay.io/costoolkit/releases-green:cos-system-0.8.7</code> ), elemental identifies the type of source by the URI scheme (<code>docker</code>, <code>channel</code>, <code>dir</code> or <code>file</code>). <code>$DEVICE</code> is the device where to perform the installation to (e.g. <code>/dev/sda</code>).</p>
+</span></span></code></pre></div><p>Where <code>$IMAGE</code> is the container image that we want to install (e.g. <code>docker:quay.io/costoolkit/releases-teal:cos-system-0.8.10-3</code> ), elemental identifies the type of source by the URI scheme (<code>docker</code>, <code>channel</code>, <code>dir</code> or <code>file</code>). <code>$DEVICE</code> is the device where to perform the installation to (e.g. <code>/dev/sda</code>).</p>
 <p>Note, we used the <code>quay.io/costoolkit/elemental:latest</code> image which contains the latest stable installer and the dependencies.
 You can see all the versions at <a href="https://quay.io/repository/costoolkit/elemental?tab=tags">quay</a>.</p>
 <h4 id="by-using-manually-the-elemental-installer">By using manually the Elemental installer</h4>
@@ -2263,7 +2263,7 @@ You can see all the versions at <a href="https://quay.io/repository/costoolkit/e
 
     Last modified
     May 19, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/4c7e555321e3412221cc8df0ad09a494b49bbf0e">Fix yq stanza for generating repo files (#1340) (4c7e555)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/f3a370f37d1de279e3a00a3a48fb7bb122cfdfc0">Change green for teal as the default base (#1321) (f3a370f)</a>
 
 </div>
 

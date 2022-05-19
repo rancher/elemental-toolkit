@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/booting/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-19T10:47:29+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T21:56:16+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Booting">
 <meta itemprop="description" content="Documents various methods for booting cOS vanilla images
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-19T10:47:29+02:00" />
+<meta itemprop="dateModified" content="2022-05-19T21:56:16+02:00" />
 <meta itemprop="wordCount" content="1185">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Booting"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2097,18 +2097,18 @@ if (!doNotTrack) {
 <img style="float: right;" src="https://docs.google.com/drawings/d/e/2PACX-1vQXQFmc4MnmRsPCLR1_hCElykMWbcye6TY-zDWZhVyFbIqFEXyVsLgPIKVqUCZaQTkAE00uAK66Mt-D/pub?w=507&amp;h=217">
 <p>Each cOS release contains a variety of assets:</p>
 <ul>
-<li>ISOs <code>cOS-Seed-green-$VERSION-$ARCH.iso.tar.xz</code></li>
-<li>QCOW <code>cOS-Packer-green_$VERSION-QEMU-$ARCH.tar.gz.tar.xz</code></li>
-<li>OVA <code>cOS-Packer-green_$VERSION-vbox-$ARCH.tar.gz.tar.xz</code></li>
-<li>Vagrant box (vbox provider) <code>cOS-Packer-green-$VERSION-vbox-$ARCH.box.tar.xz</code></li>
-<li>Vagrant box (qemu provider) <code>cOS-Packer-green-$VERSION-QEMU-$ARCH.box.tar.xz</code></li>
+<li>ISOs <code>cOS-Seed-teal-$VERSION-$ARCH.iso.tar.xz</code></li>
+<li>QCOW <code>cOS-Packer-teal_$VERSION-QEMU-$ARCH.tar.gz.tar.xz</code></li>
+<li>OVA <code>cOS-Packer-teal_$VERSION-vbox-$ARCH.tar.gz.tar.xz</code></li>
+<li>Vagrant box (vbox provider) <code>cOS-Packer-teal-$VERSION-vbox-$ARCH.box.tar.xz</code></li>
+<li>Vagrant box (qemu provider) <code>cOS-Packer-teal-$VERSION-QEMU-$ARCH.box.tar.xz</code></li>
 <li>RAW Disk <code>cOS-Vanilla-RAW-$VERSION-$ARCH.raw.tar.xz</code></li>
 <li>VHD <code>cOS-Vanilla-AZURE-$VERSION-$ARCH.vhd.tar.xz</code></li>
-<li>GCE <code>cOS-Vanilla-GCE-green-$VERSION-$ARCH.raw.tar.xz</code></li>
+<li>GCE <code>cOS-Vanilla-GCE-teal-$VERSION-$ARCH.raw.tar.xz</code></li>
 </ul>
 <p>here we try to summarize and document how they are meant to be consumed.</p>
 <h2 id="iso">ISO</h2>
-<p>ISO images (e.g. ``cOS-Seed-green-$VERSION-$ARCH.iso.tar.xz` ) are shipping a cOS vanilla image and they feature an installer to perform an automated installation. They can be used to burn USB sticks or CD/DVD used to boot baremetals. Once booted, you can install cOS with:</p>
+<p>ISO images (e.g. ``cOS-Seed-teal-$VERSION-$ARCH.iso.tar.xz` ) are shipping a cOS vanilla image and they feature an installer to perform an automated installation. They can be used to burn USB sticks or CD/DVD used to boot baremetals. Once booted, you can install cOS with:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install <span style="color:#000">$DEVICE</span>
 </span></span></code></pre></div><p>See also [../install] for installation options.</p>
 <p>After the first boot you can also switch to a derivative by:</p>
@@ -2119,13 +2119,13 @@ system or by inserting a custom build iPXE iso by using your either your servers
 management web-interface (ILO, iDrac, &hellip;) or using a
 <a href="https://www.dmtf.org/standards/redfish">redfish</a> library or its vendor specific implementation (e.g. <a href="https://hewlettpackard.github.io/python-redfish-utility/">ilorest</a>).</p>
 <p>To boot from IPXE you need to extract the squashfs from
-<a href="https://quay.io/repository/costoolkit/releases-green?tab=tags">images</a> with the <code>cos-img-recovery-</code> prefix.
+<a href="https://quay.io/repository/costoolkit/releases-teal?tab=tags">images</a> with the <code>cos-img-recovery-</code> prefix.
 By pulling the image, saving it using docker save, then unpack the single layer
 in the file to an extra directory and then run</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; mksquashfs &lt;path_to_folder&gt; &lt;output_path&gt;/root.squashfs
 </span></span></code></pre></div><p><strong>Note:</strong>
 The squashfs file can also be extracted using the following <code>docker</code> command:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker run -v <span style="color:#000">$PWD</span>:/cOS --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-green:cos-img-recovery-&lt;version&gt; .
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker run -v <span style="color:#000">$PWD</span>:/cOS --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-teal:cos-img-recovery-&lt;version&gt; .
 </span></span></code></pre></div><p>Then copy the <code>boot</code> directory and the squashfs file to your webserver and use
 the following script to boot.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">#!ipxe
@@ -2142,18 +2142,18 @@ resulting iso can be found in <code>src/bin/ipxe.iso</code> and should be <code>
 <h2 id="virtual-machines">Virtual machines</h2>
 <p>For booting into Virtual machines we offer QCOW2, OVA, and raw disk recovery images which can be used to bootstrap your booting container.</p>
 <h3 id="qcow2">QCOW2</h3>
-<p>QCOW2 images ( e.g. <code>cOS-Packer-green-$VERSION-QEMU-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via QEMU, e.g:</p>
+<p>QCOW2 images ( e.g. <code>cOS-Packer-teal-$VERSION-QEMU-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via QEMU, e.g:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda cOS -nographic
 </span></span></code></pre></div><h3 id="ova">OVA</h3>
-<p>Ova images ( e.g. <code>cOS-Packer-green-$VERSION-vbox-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via vbox.
+<p>Ova images ( e.g. <code>cOS-Packer-teal-$VERSION-vbox-$ARCH.tar.gz.tar.xz</code> ) contains a pre-installed cOS system which can be booted via vbox.
 Please check the virtuabox docs on how to create a new VM with an existing disk.</p>
 <h3 id="vagrant">Vagrant</h3>
-<p>Download the vagrant box artifact ( e.g. <code>cOS-Packer-green-$VERSION-{vbox, QEMU}-$ARCH.box.tar.xz</code> ), extract it and run:</p>
+<p>Download the vagrant box artifact ( e.g. <code>cOS-Packer-teal-$VERSION-{vbox, QEMU}-$ARCH.box.tar.xz</code> ), extract it and run:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>vagrant box add cos &lt;cos-box-image&gt;
 </span></span><span style="display:flex;"><span>vagrant init cos
 </span></span><span style="display:flex;"><span>vagrant up
 </span></span></code></pre></div><h3 id="raw-disk-images">RAW disk images</h3>
-<p>RAW disk images ( e.g. <code>cOS-Vanilla-RAW-green-$VERSION-$ARCH.raw.tar.xz</code> ) contains only the <code>cOS</code> recovery system. Those are typically used when creating derivatives images based on top of <code>cOS</code>.</p>
+<p>RAW disk images ( e.g. <code>cOS-Vanilla-RAW-teal-$VERSION-$ARCH.raw.tar.xz</code> ) contains only the <code>cOS</code> recovery system. Those are typically used when creating derivatives images based on top of <code>cOS</code>.</p>
 <p>They can be run with QEMU with:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>qemu-system-x86_64 -m <span style="color:#0000cf;font-weight:bold">2048</span> -hda &lt;cos-disk-image&gt;.raw -bios /usr/share/qemu/ovmf-x86_64.bin
 </span></span></code></pre></div><h2 id="cloud-images">Cloud Images</h2>
@@ -2166,7 +2166,7 @@ system or your derivative.</p>
 
 
 <div class="pageinfo pageinfo-primary">
-<p>You can also use RAW images ( e.g. <code>cOS-Vanilla-RAW-green-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing AMIs images and use them to generate images with Packer. See <a href="../../creating-derivatives/packer/build_ami">build AMI with Packer</a></p>
+<p>You can also use RAW images ( e.g. <code>cOS-Vanilla-RAW-teal-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing AMIs images and use them to generate images with Packer. See <a href="../../creating-derivatives/packer/build_ami">build AMI with Packer</a></p>
 
 </div>
 
@@ -2233,7 +2233,7 @@ stages:
 
 
 <div class="pageinfo pageinfo-primary">
-<p>You need to use the GCE images ( e.g. <code>cOS-Vanilla-GCE-green-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing GCE images and use them to generate images with Packer. See <a href="../../creating-derivatives/packer/build_gcp">build GCE with Packer</a></p>
+<p>You need to use the GCE images ( e.g. <code>cOS-Vanilla-GCE-teal-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing GCE images and use them to generate images with Packer. See <a href="../../creating-derivatives/packer/build_gcp">build GCE with Packer</a></p>
 
 </div>
 
@@ -2284,10 +2284,10 @@ stages:
 </span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
 </span></span></span></code></pre></div><h3 id="importing-an-azure-image-manually">Importing an Azure image manually</h3>
 
-<p style="font-style: italic;"><i class="fa fa-info-circle" aria-hidden="true">&nbsp;</i><p>You need to use the AZURE images ( e.g. <code>cOS-Vanilla-AZURE-green-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing Azure images.</p>
+<p style="font-style: italic;"><i class="fa fa-info-circle" aria-hidden="true">&nbsp;</i><p>You need to use the AZURE images ( e.g. <code>cOS-Vanilla-AZURE-teal-$VERSION-$ARCH.raw.tar.xz</code> ) manually when importing Azure images.</p>
 </p>
 <ol>
-<li>Upload the Azure Cloud VHD disk in <code>.vhda</code> format ( extract e.g. <code>cOS-Vanilla-AZURE-green-0.6.0-g7d04f1db-x86_64.vhd.tar.xz</code> ) to your bucket</li>
+<li>Upload the Azure Cloud VHD disk in <code>.vhda</code> format ( extract e.g. <code>cOS-Vanilla-AZURE-teal-0.6.0-g7d04f1db-x86_64.vhd.tar.xz</code> ) to your bucket</li>
 </ol>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>az storage copy --source &lt;cos-azure-image&gt; --destination https://&lt;account&gt;.blob.core.windows.net/&lt;container&gt;/&lt;destination-cos-azure-image&gt;
 </span></span></code></pre></div><ol start="2">
@@ -2402,7 +2402,7 @@ stages:
 
     Last modified
     May 19, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/4c7e555321e3412221cc8df0ad09a494b49bbf0e">Fix yq stanza for generating repo files (#1340) (4c7e555)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/f3a370f37d1de279e3a00a3a48fb7bb122cfdfc0">Change green for teal as the default base (#1321) (f3a370f)</a>
 
 </div>
 

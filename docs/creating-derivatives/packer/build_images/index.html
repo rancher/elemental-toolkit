@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/creating-derivatives/packer/build_images/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-19T10:47:29+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T21:56:16+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Build QCOW, VirtualBox and Vagrant images">
 <meta itemprop="description" content="This section documents the procedure to build a custom QCOW, VirtualBox and a Vagrant images with the cOS packer templates
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-19T10:47:29+02:00" />
+<meta itemprop="dateModified" content="2022-05-19T21:56:16+02:00" />
 <meta itemprop="wordCount" content="655">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Build QCOW, VirtualBox and Vagrant images"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.13bef94cf7ab4c76ab76d0b07ef4be16.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2119,23 +2119,23 @@ and possibilties of Packer check the <a href="https://www.packer.io/guides/hcl">
 </span></span><span style="display:flex;"><span>&gt; packer build -var <span style="color:#4e9a06">&#34;iso=/path/to/image.iso&#34;</span> -only qemu.cos .
 </span></span></code></pre></div><p>The process should end up by building a <code>.box</code> file (vagrant image) and a <code>.tar.gz</code> file (containing the raw disk) in the same folder:</p>
 <pre tabindex="0"><code>...
-==&gt; qemu.cos (compress): Using pgzip compression with 8 cores for cOS_green_dev_amd64.tar.gz
-==&gt; qemu.cos (compress): Tarring cOS_green_dev_amd64.tar.gz with pgzip
-==&gt; qemu.cos (compress): Archive cOS_green_dev_amd64.tar.gz completed
+==&gt; qemu.cos (compress): Using pgzip compression with 8 cores for cOS_teal_dev_amd64.tar.gz
+==&gt; qemu.cos (compress): Tarring cOS_teal_dev_amd64.tar.gz with pgzip
+==&gt; qemu.cos (compress): Archive cOS_teal_dev_amd64.tar.gz completed
 Build &#39;qemu.cos&#39; finished after 4 minutes 34 seconds.
 
 ==&gt; Wait completed after 4 minutes 34 seconds
 
 ==&gt; Builds finished. The artifacts of successful builds are:
---&gt; qemu.cos: &#39;libvirt&#39; provider box: cOS_green_dev_amd64.box
---&gt; qemu.cos: compressed artifacts in: cOS_green_dev_amd64.tar.gz
+--&gt; qemu.cos: &#39;libvirt&#39; provider box: cOS_teal_dev_amd64.box
+--&gt; qemu.cos: compressed artifacts in: cOS_teal_dev_amd64.tar.gz
 
 &gt; ubuntu@jumpbox:~/cOS-toolkit/packer$ ls -liah
 total 2.3G
  516552 drwxrwxr-x  4 ubuntu ubuntu 4.0K Jul 30 07:54 .
  516207 drwxrwxr-x 14 ubuntu ubuntu 4.0K Jul 30 07:41 ..
- 516362 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_green_dev_amd64.box
- 516385 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_green_dev_amd64.tar.gz
+ 516362 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_teal_dev_amd64.box
+ 516385 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_teal_dev_amd64.tar.gz
  516553 -rw-rw-r--  1 ubuntu ubuntu  389 Jun 28 08:07 config.yaml
  516339 -rw-rw-r--  1 ubuntu ubuntu 6.5K Jul 30 07:41 images.json.pkr.hcl
 1818463 drwxrwxr-x  3 ubuntu ubuntu 4.0K Jul 30 07:49 packer_cache
@@ -2275,7 +2275,7 @@ these are some of the relevant ones:</p>
 
     Last modified
     May 19, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/4c7e555321e3412221cc8df0ad09a494b49bbf0e">Fix yq stanza for generating repo files (#1340) (4c7e555)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/f3a370f37d1de279e3a00a3a48fb7bb122cfdfc0">Change green for teal as the default base (#1321) (f3a370f)</a>
 
 </div>
 
