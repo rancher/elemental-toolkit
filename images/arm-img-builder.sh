@@ -15,7 +15,7 @@ load_vars() {
   default_active_size="${DEFAULT_ACTIVE_SIZE:-2400}"
 
   ## Repositories
-  final_repo="${FINAL_REPO:-quay.io/costoolkit/releases-green-arm64}"
+  final_repo="${FINAL_REPO:-quay.io/costoolkit/releases-teal-arm64}"
   repo_type="${REPO_TYPE:-docker}"
 
   # Warning: these default values must be aligned with the values provided

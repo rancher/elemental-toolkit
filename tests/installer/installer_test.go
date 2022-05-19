@@ -61,7 +61,7 @@ var _ = Describe("cOS Installer tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the elemental install")
-				out, err := s.Command(fmt.Sprintf("elemental install --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("elemental install --system.uri  docker:%s:cos-system-%s /dev/sda", s.ArtifactsRepo, s.TestVersion))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))

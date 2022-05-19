@@ -18,7 +18,7 @@ label: "COS_LIVE"
 raw_disk:
   x86_64:
     # Where to get the packages from if the local build doesn't have the needed packages
-    repo: quay.io/costoolkit/releases-green
+    repo: quay.io/costoolkit/releases-teal
     # which packages to install and the target to install them at
     packages:
       - name: system/grub2-efi-image
@@ -30,7 +30,7 @@ raw_disk:
       - name: recovery/cos-img
         target: root/cOS
   aarch64:
-    repo: quay.io/costoolkit/releases-green-arm64
+    repo: quay.io/costoolkit/releases-teal-arm64
     packages:
       - name: system/grub2-efi-image
         target: efi
@@ -41,7 +41,7 @@ raw_disk:
       - name: recovery/cos-img
         target: root/cOS
   odroid_c2:
-    repo: quay.io/costoolkit/releases-green-arm64
+    repo: quay.io/costoolkit/releases-teal-arm64
     packages:
       - name: system/grub2-efi-image
         target: efi

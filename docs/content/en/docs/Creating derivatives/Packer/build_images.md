@@ -39,23 +39,23 @@ The process should end up by building a `.box` file (vagrant image) and a `.tar.
 
 ```
 ...
-==> qemu.cos (compress): Using pgzip compression with 8 cores for cOS_green_dev_amd64.tar.gz
-==> qemu.cos (compress): Tarring cOS_green_dev_amd64.tar.gz with pgzip
-==> qemu.cos (compress): Archive cOS_green_dev_amd64.tar.gz completed
+==> qemu.cos (compress): Using pgzip compression with 8 cores for cOS_teal_dev_amd64.tar.gz
+==> qemu.cos (compress): Tarring cOS_teal_dev_amd64.tar.gz with pgzip
+==> qemu.cos (compress): Archive cOS_teal_dev_amd64.tar.gz completed
 Build 'qemu.cos' finished after 4 minutes 34 seconds.
 
 ==> Wait completed after 4 minutes 34 seconds
 
 ==> Builds finished. The artifacts of successful builds are:
---> qemu.cos: 'libvirt' provider box: cOS_green_dev_amd64.box
---> qemu.cos: compressed artifacts in: cOS_green_dev_amd64.tar.gz
+--> qemu.cos: 'libvirt' provider box: cOS_teal_dev_amd64.box
+--> qemu.cos: compressed artifacts in: cOS_teal_dev_amd64.tar.gz
 
 > ubuntu@jumpbox:~/cOS-toolkit/packer$ ls -liah
 total 2.3G
  516552 drwxrwxr-x  4 ubuntu ubuntu 4.0K Jul 30 07:54 .
  516207 drwxrwxr-x 14 ubuntu ubuntu 4.0K Jul 30 07:41 ..
- 516362 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_green_dev_amd64.box
- 516385 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_green_dev_amd64.tar.gz
+ 516362 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_teal_dev_amd64.box
+ 516385 -rw-r--r--  1 root   root   1.2G Jul 30 07:54 cOS_teal_dev_amd64.tar.gz
  516553 -rw-rw-r--  1 ubuntu ubuntu  389 Jun 28 08:07 config.yaml
  516339 -rw-rw-r--  1 ubuntu ubuntu 6.5K Jul 30 07:41 images.json.pkr.hcl
 1818463 drwxrwxr-x  3 ubuntu ubuntu 4.0K Jul 30 07:49 packer_cache

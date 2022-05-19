@@ -91,7 +91,7 @@ Each cloud-config file is loaded and executed only at the apprioriate stage, thi
 The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases/tag/0.9.6), or just run it with docker:
 
 ```bash
-cat <<EOF | docker run -i --rm quay.io/costoolkit/releases-green:cos-recovery-0.6.0 yip -s test -
+cat <<EOF | docker run -i --rm quay.io/costoolkit/releases-teal:cos-recovery-0.8.10-3 yip -s test -
 stages:
  test:
  - commands:

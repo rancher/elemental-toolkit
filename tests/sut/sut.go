@@ -58,14 +58,14 @@ func (d DiskLayout) GetPartition(label string) (PartitionEntry, error) {
 }
 
 type SUT struct {
-	Host        string
-	Username    string
-	Password    string
-	Timeout     int
-	GreenRepo   string
-	TestVersion string
-	CDLocation  string
-	MachineID   string
+	Host          string
+	Username      string
+	Password      string
+	Timeout       int
+	ArtifactsRepo string
+	TestVersion   string
+	CDLocation    string
+	MachineID     string
 }
 
 func NewSUT() *SUT {
@@ -92,14 +92,14 @@ func NewSUT() *SUT {
 	}
 
 	return &SUT{
-		Host:        host,
-		Username:    user,
-		Password:    pass,
-		MachineID:   "test",
-		Timeout:     timeout,
-		GreenRepo:   "quay.io/costoolkit/releases-green",
-		TestVersion: "0.7.11-5",
-		CDLocation:  "",
+		Host:          host,
+		Username:      user,
+		Password:      pass,
+		MachineID:     "test",
+		Timeout:       timeout,
+		ArtifactsRepo: "quay.io/costoolkit/releases-teal",
+		TestVersion:   "0.8.10",
+		CDLocation:    "",
 	}
 }
 

@@ -61,7 +61,7 @@ iso:
   label: "COS_LIVE"
   
 repositories:
-  - uri: quay.io/costoolkit/releases-green
+  - uri: quay.io/costoolkit/releases-teal
 
 ```
 

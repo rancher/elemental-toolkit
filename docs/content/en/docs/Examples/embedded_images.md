@@ -29,69 +29,14 @@ Let's create now a `Dockerfile` for our image inside that directory, which will 
 ```Dockerfile
 # Let's copy over luet from official images. 
 # This version will be used to bootstrap luet itself and cOS internal components
-ARG LUET_VERSION=0.16.7
+ARG LUET_VERSION=0.32.0
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
-FROM opensuse/leap:15.3
+FROM registry.suse.com/suse/sle-micro-rancher/5.2
 ARG K3S_VERSION=v1.20.4+k3s1
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
 
-# Install packages from the base image
-RUN zypper in -y \
-    bash-completion \
-    conntrack-tools \
-    coreutils \
-    curl \
-    device-mapper \
-    dosfstools \
-    dracut \
-    e2fsprogs \
-    findutils \
-    gawk \
-    gptfdisk \
-    grub2-i386-pc \
-    grub2-x86_64-efi \
-    haveged \
-    iproute2 \
-    iptables \
-    iputils \
-    issue-generator \
-    jq \
-    kernel-default \
-    kernel-firmware-bnx2 \
-    kernel-firmware-i915 \
-    kernel-firmware-intel \
-    kernel-firmware-iwlwifi \
-    kernel-firmware-mellanox \
-    kernel-firmware-network \
-    kernel-firmware-platform \
-    kernel-firmware-realtek \
-    less \
-    lsscsi \
-    lvm2 \
-    mdadm \
-    multipath-tools \
-    nano \
-    nfs-utils \
-    open-iscsi \
-    open-vm-tools \
-    parted \
-    pigz \
-    policycoreutils \
-    procps \
-    python-azure-agent \
-    qemu-guest-agent \
-    rng-tools \
-    rsync \
-    squashfs \
-    strace \
-    systemd \
-    systemd-sysvinit \
-    tar \
-    timezone \
-    vim \
-    which
 
 # Copy the luet config file pointing to the upgrade repository
 COPY repositories.yaml /etc/luet/luet.yaml
@@ -312,7 +257,7 @@ luet:
   - name: cOS
     enable: true
     urls:
-      - quay.io/costoolkit/releases-green
+      - quay.io/costoolkit/releases-teal
     type: docker
 ```
 
@@ -372,13 +317,14 @@ We copy the configuration file of `luet` which just points to cOS repositories w
 COPY repositories.yaml /etc/luet/luet.yaml
 ```
 
-The config file should point to the `green` [flavor](../../getting-started/download#releases) as our derivative will be based on opensuse. It should point to `blue`, or `orange` instead if building against Fedora or Ubuntu.
+The config file should point to the `teal` [flavor](../../getting-started/download#releases) as our derivative will be based on SLE Micro. It should point to `green`, `blue`, or `orange` instead if building against Opensuse, Fedora or Ubuntu.
 
 ### cOS toolkit
 
 We install packages from the cOS toolkit with `luet`. In this case we pick the basic ones that allows us to install/upgrade immutable cOS derivatives:
 
 ```Dockerfile
+ENV LUET_NOLOCK=true
 RUN luet install -y \
        toolchain/yip \
        toolchain/luet \
@@ -389,7 +335,7 @@ RUN luet install -y \
        system/base-dracut-modules
 ```
 
-You can check all the available packages [here](https://cos-toolkit.herokuapp.com/cos-toolkit-green), and you can learn more about this in our [Creating Derivatives section](../../creating-derivatives).
+You can check all the available packages [here](https://cos-toolkit.herokuapp.com/cos-toolkit-teal), and you can learn more about this in our [Creating Derivatives section](../../creating-derivatives).
 
 ### System layout and k3s
 

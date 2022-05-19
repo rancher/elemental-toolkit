@@ -82,7 +82,7 @@ If in the rescue system, or LiveCD you have docker available, it can be used to 
 docker run --privileged -v /dev/:/dev/ -ti quay.io/costoolkit/elemental:latest install --system.uri $IMAGE $DEVICE
 ```
 
-Where `$IMAGE` is the container image that we want to install (e.g. `docker:quay.io/costoolkit/releases-green:cos-system-0.8.7` ), elemental identifies the type of source by the URI scheme (`docker`, `channel`, `dir` or `file`). `$DEVICE` is the device where to perform the installation to (e.g. `/dev/sda`).
+Where `$IMAGE` is the container image that we want to install (e.g. `docker:quay.io/costoolkit/releases-teal:cos-system-0.8.10-3` ), elemental identifies the type of source by the URI scheme (`docker`, `channel`, `dir` or `file`). `$DEVICE` is the device where to perform the installation to (e.g. `/dev/sda`).
 
 
 Note, we used the `quay.io/costoolkit/elemental:latest` image which contains the latest stable installer and the dependencies.

@@ -25,7 +25,7 @@ This signature generation is provided by [luet-cosign](https://github.com/ranche
 
 The process is completely transparent to the end user when upgrading/deploying a running system and using our published artifacts.
 
-When using luet-cosign as part of `luet install` you need to set `COSIGN_REPOSITORY=raccos/releases-green` and `COSIGN_EXPERIMENTAL=1` so it can find the proper signatures and use keyless verification
+When using luet-cosign as part of `luet install` you need to set `COSIGN_REPOSITORY=raccos/releases-teal` and `COSIGN_EXPERIMENTAL=1` so it can find the proper signatures and use keyless verification
 
 
 {{% alert title="Note" %}}
@@ -40,7 +40,7 @@ If building a derivative, you can also sign and verify you final artifacts with 
 As keyless is only possible to do in an CI environment (as it needs an OIDC token) you would need to set up private/public signature and verification.
 
 {{% alert title="Note" %}}
-If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/.github/workflows/build-master-green-x86_64.yaml#L445)
+If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/.github/workflows/build-master-teal-x86_64.yaml#L445)
 {{% /alert %}}
 
 
@@ -49,7 +49,7 @@ If you are building and publishing your derivatives with luet on github, you can
 If you consume cos-toolkit artifacts in your Dockerfile as part of building a derivative you can verify the signatures of the artifacts by setting:
 
 ```dockerfile
-ENV COSIGN_REPOSITORY=raccos/releases-green
+ENV COSIGN_REPOSITORY=raccos/releases-teal
 ENV COSIGN_EXPERIMENTAL=1
 RUN luet install -y meta/cos-verify # install dependencies for signature checking
 ```

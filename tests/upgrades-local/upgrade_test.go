@@ -28,7 +28,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				if s.GetArch() == "aarch64" {
 					By("Upgrading aarch64 system")
-					s.GreenRepo = "quay.io/costoolkit/releases-green-arm64"
+					s.ArtifactsRepo = "quay.io/costoolkit/releases-teal-arm64"
 				}
 
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
@@ -37,7 +37,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 
 				version := out
 
-				out, err = s.Command(fmt.Sprintf("mkdir /run/update && elemental pull-image %s:cos-system-%s /run/update", s.GreenRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("mkdir /run/update && elemental pull-image %s:cos-system-%s /run/update", s.ArtifactsRepo, s.TestVersion))
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from elemental pull-image: %v\n", err)
 				}

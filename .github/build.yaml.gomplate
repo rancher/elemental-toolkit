@@ -911,7 +911,7 @@
             source .github/helpers.sh
             export PKR_VAR_cos_version=$(cos_package_version)
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
-            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "green") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
+            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "teal") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             make packer
 {{{ end }}}
 
@@ -939,7 +939,7 @@
 
 {{{define "publish_vanilla"}}}
   {{{ $config := (datasource "config") }}}
-  {{{ $flavor := "green" }}}
+  {{{ $flavor := "teal" }}}
   # We need only a single vanilla image for any OS
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:
@@ -1023,7 +1023,7 @@
 
 {{{define "toolchain_images"}}}
 {{{ $config := (datasource "config") }}}
-{{{ $flavor := "green" }}}
+{{{ $flavor := "teal" }}}
 {{{- if and $config.publishing_pipeline $config.publish_toolchain }}}
   build-toolchain-tagged:
     if: startsWith(github.ref, 'refs/tags/')
@@ -1075,7 +1075,7 @@
 
 {{{define "framework_images"}}}
 {{{ $config := (datasource "config") }}}
-{{{ $flavor := "green" }}}
+{{{ $flavor := "teal" }}}
 {{{- if and $config.publishing_pipeline $config.publish_toolchain }}}
   build-framework-tagged:
     if: startsWith(github.ref, 'refs/tags/')

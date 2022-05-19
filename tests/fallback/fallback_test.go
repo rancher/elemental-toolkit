@@ -46,8 +46,8 @@ var _ = Describe("cOS booting fallback tests", func() {
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
-			out, err := s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-			Expect(err).ToNot(HaveOccurred())
+			out, err := s.Command(fmt.Sprintf("elemental upgrade --no-verify --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
 			out, _ = s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
