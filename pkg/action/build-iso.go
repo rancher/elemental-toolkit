@@ -169,11 +169,11 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 
 	// align efiSize to the next 4MB slot
 	align := int64(4 * 1024 * 1024)
-	efiSize = efiSize/align*align + align
+	efiSizeMB := (efiSize/align*align + align) / (1024 * 1024)
 
 	err = b.e.CreateFileSystemImage(&v1.Image{
 		File:  img,
-		Size:  uint(efiSize),
+		Size:  uint(efiSizeMB),
 		FS:    constants.EfiFs,
 		Label: constants.EfiLabel,
 	})
