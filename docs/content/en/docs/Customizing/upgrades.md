@@ -69,7 +69,7 @@ repositories:
   priority: 1
   verify: false
   urls:
-  - "quay.io/costoolkit/releases-green"
+  - "quay.io/costoolkit/releases-teal"
 ```
 
 Alternatively a repositories list can be included in `/etc/elemental/config.yaml` file and this will not affect system wide Luet configuration, see [general configuration](../../customizing/general_configuration) for a repositories setup example.

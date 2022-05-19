@@ -33,7 +33,7 @@ To build a bootable image is as simple as running `docker build`.
 - Immutable-first, but with a flexible layout
 - Cloud-init driven
 - Based on systemd
-- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-green)!
+- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-teal)!
 - A/B updates
 - Easy to customize
 - Cryptographically verified

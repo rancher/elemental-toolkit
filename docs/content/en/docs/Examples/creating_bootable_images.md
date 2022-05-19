@@ -42,7 +42,7 @@ system/grub2-config
 from the toolchain. If you want to customize further the container further add more step afterwards `luet install` see [the customizing section](../../customizing).
 
 {{% alert title="Note" %}}
-Depending on the base image (`FROM opensuse/leap:15.3` in the sample), you must set the corresponding repository for each flavor [see releases](../../getting-started/download#releases) in the luet config file ( which in the sample above points to the _green_ releases )
+Depending on the base image (`FROM opensuse/leap:15.3` in the sample), you must set the corresponding repository for each flavor [see releases](../../getting-started/download#releases) in the luet config file ( which in the sample above points to the _teal_ releases )
 {{% /alert %}}
 
 ## Generating from CI image
@@ -85,5 +85,5 @@ Repositories have the following fields, notably:
 - `reference`: (optional) A reference to a repository index file to use to retrieve the repository metadata instead of latest. This can be used to point to a different or an older repository index to act as a "wayback machine". The client will consume the repository state from that snapshot instead of latest.
   
 {{% alert title="Note" %}}
-The `reference` field has to be a valid tag. For example, for the `green` flavor, browse the relevant [container image list page](https://quay.io/repository/costoolkit/releases-green?tab=tags). The repository index snapshots are prefixed with a timestamp, and ending in `repository.yaml`. For example ` 20211027153653-repository.yaml`
+The `reference` field has to be a valid tag. For example, for the `teal` flavor, browse the relevant [container image list page](https://quay.io/repository/costoolkit/releases-teal?tab=tags). The repository index snapshots are prefixed with a timestamp, and ending in `repository.yaml`. For example ` 20211027153653-repository.yaml`
 {{% /alert %}}
