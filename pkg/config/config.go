@@ -19,6 +19,7 @@ package config
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	"github.com/rancher-sandbox/elemental/pkg/cloudinit"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -97,14 +98,20 @@ func WithArch(arch string) func(r *v1.Config) error {
 
 func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
-	//TODO set arch dynamically to the current arch
+	arch := func() string {
+		switch runtime.GOARCH {
+		case "amd64":
+			return "x86_64"
+		}
+		return runtime.GOARCH
+	}()
 	c := &v1.Config{
 		Fs:                        vfs.OSFS,
 		Logger:                    log,
 		Syscall:                   &v1.RealSyscall{},
 		Client:                    http.NewClient(),
 		Repos:                     []v1.Repository{},
-		Arch:                      "x86_64",
+		Arch:                      arch,
 		SquashFsCompressionConfig: constants.GetDefaultSquashfsCompressionOptions(),
 	}
 	for _, o := range opts {
