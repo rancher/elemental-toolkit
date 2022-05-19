@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/creating-derivatives/build_disk/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2022-03-03T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Build disk images with Elemental">
 <meta itemprop="description" content="This section documents the procedure to build disk images using elemental
 "><meta itemprop="datePublished" content="2022-03-03T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
-<meta itemprop="wordCount" content="320">
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
+<meta itemprop="wordCount" content="321">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Build disk images with Elemental"/>
 <meta name="twitter:description" content="This section documents the procedure to build disk images using elemental
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2101,9 +2101,9 @@ specific elemental expects to find common linux utilities to operate over block 
 </span></span><span style="display:flex;"><span>&gt; sudo losetup -f --show disk.img
 </span></span><span style="display:flex;"><span>&lt;device&gt;
 </span></span></code></pre></div><h2 id="run-elemental-installation">Run elemental installation</h2>
-<p>Execute the elemental installation as described in TODO:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>&gt; sudo elemental install --force-efi --docker-image &lt;image&gt; &lt;device&gt;
-</span></span></code></pre></div><p>Where <code>&lt;image&gt;</code> is the cOS derivative container image we want to use for the disk creation and <code>&lt;device&gt;</code> is the
+<p>Execute the elemental installation as described in <a href="../../getting-started/install">installing</a>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>&gt; sudo elemental install --firmware efi --system.uri docker:&lt;<span style="color:#000">image</span><span style="color:#ce5c00;font-weight:bold">=</span>ref&gt; &lt;device&gt;
+</span></span></code></pre></div><p>Where <code>&lt;image-ref&gt;</code> is the cOS derivative container image we want to use for the disk creation and <code>&lt;device&gt;</code> is the
 loop device previously created with <code>losetup</code> (e.g. <code>/dev/loop0</code>).</p>
 <h2 id="convert-the-raw-image-to-desired-format">Convert the RAW image to desired format</h2>
 <p>Once the installation is done just unsetting the loop device and converting the image to the desired format is missing:</p>
@@ -2184,8 +2184,8 @@ loop device previously created with <code>losetup</code> (e.g. <code>/dev/loop0<
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 

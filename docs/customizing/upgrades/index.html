@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/customizing/upgrades/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Upgrades">
 <meta itemprop="description" content="Customizing the default upgrade channel
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
-<meta itemprop="wordCount" content="283">
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
+<meta itemprop="wordCount" content="384">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Upgrades"/>
 <meta name="twitter:description" content="Customizing the default upgrade channel
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2082,21 +2082,29 @@ if (!doNotTrack) {
 <p>By default, <code>cos</code> derivatives if not specified will point to latest <code>cos-toolkit</code>. To override, you need to or overwrite the content of <code>/system/oem/02_upgrades.yaml</code> or supply an additional one, e.g. <code>/system/oem/03_upgrades.yaml</code> in the final image, see <a href="https://github.com/rancher-sandbox/cOS-toolkit/blob/master/packages/cloud-config/oem/02_upgrades.yaml">the default here</a>.</p>
 <h2 id="configuration">Configuration</h2>
 <p><code>elemental upgrade</code> during start reads the <a href="../general_configuration">cOS configuration file</a> and allows to tweak the following:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Tweak the package to upgrade to, or the docker image (full reference)</span>
-</span></span><span style="display:flex;"><span><span style="color:#000">ELEMENTAL_UPGRADE_IMAGE</span><span style="color:#ce5c00;font-weight:bold">=</span>system/cos
-</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Turn on/off channel upgrades. If disabled, UPGRADE_IMAGE should be a full reference to a container image</span>
-</span></span><span style="display:flex;"><span><span style="color:#000">ELEMENTAL_CHANNEL_UPGRADES</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span>
-</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Disable mtree verification. Enabled by default</span>
-</span></span><span style="display:flex;"><span><span style="color:#000">ELEMENTAL_NO_VERIFY</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span>
-</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Specify a separate recovery image (defaults to UPGRADE_IMAGE)</span>
-</span></span><span style="display:flex;"><span><span style="color:#000">ELEMENTAL_RECOVERY_IMAGE</span><span style="color:#ce5c00;font-weight:bold">=</span>recovery/cos
-</span></span></code></pre></div><p><code>elemental upgrade</code> also reads its configuration from <code>/etc/cos-upgrade-image</code> if the file is present in the system.</p>
-<p>Specifically, it allows to configure:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># configuration used for the &#39;ugrade&#39; command</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">upgrade</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># if set to true upgrade command will upgrade recovery system instead</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># of main active system</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">recovery</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">false</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># image used to upgrade main OS</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># size in MiB</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">system</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#000">&lt;image-spec&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># image used to upgrade recovery OS</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># recovery images can be set to use squashfs</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">recovery-system</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">fs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">squashfs</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">uri</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">channel:recovery/cos</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>The <code>system</code> and <code>recovery-system</code> objects define the OS image used for the main active system and the recovery system respectively. They both are fined by a <code>&lt;image-spec&gt;</code>.</p>
+<p>The <code>&lt;image-spec&gt;</code> can include the following fields, none is explicitly required, if missing defaults are applied:</p>
 <ul>
-<li><strong>ELEMENTAL_UPGRADE_IMAGE</strong>: A container image reference ( e.g. <code>registry.io/org/image:tag</code> ) or a <code>luet</code> package ( e.g. <code>system/cos</code> )</li>
-<li><strong>ELEMENTAL_CHANNEL_UPGRADES</strong>: Boolean indicating wether to use channel upgrades or not. If it is disabled <strong>UPGRADE_IMAGE</strong> should refer to a container image, e.g. <code>registry.io/org/image:tag</code></li>
-<li><strong>ELEMENTAL_NO_VERIFY</strong>: Turns off or on mtree verification.</li>
-<li><strong>ELEMENTAL_RECOVERY_IMAGE</strong>: Allows to specify a different image for the recovery partition. Similarly to <strong>UPGRADE_IMAGE</strong> needs to be either an image reference or a package.</li>
+<li><strong>fs</strong>: defines the filesyste of the image. Currently only <code>ext2</code> and <code>squashfs</code> should be used for images and <code>squashfs</code> is only supported for the <code>recovery-system</code> image.</li>
+<li><strong>label</strong>: defines the filesystem label. It is strongly recommended to use default labels as it is easy to fall into inconsistent states when changing labels as all changes should also be reflected in several other parts such as the bootloader configuration. This attribute has no effect for <code>squashfs</code> filesystems.</li>
+<li><strong>uri</strong>: defines the source of the image. The uri must include a valid scheme to identify the type of source. It supports <code>docker</code>, <code>channel</code>, <code>dir</code> and <code>file</code> schemes.</li>
+<li><strong>size</strong>: defines the filesystem image size in MiB, it must be big enough to store the defined image source. This attribute has no effect for <code>squashfs</code> filesystems.</li>
 </ul>
 <h2 id="changing-the-default-release-channel">Changing the default release channel</h2>
 <p>Release channels are standard luet repositories. To change the default release channel, create a <code>/etc/luet/luet.yaml</code> configuration file pointing to a valid luet repository:</p>
@@ -2118,7 +2126,8 @@ if (!doNotTrack) {
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">verify</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">false</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">urls</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#4e9a06">&#34;quay.io/costoolkit/releases-green&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span></code></pre></div>
+</span></span></span></code></pre></div><p>Alternatively a repositories list can be included in <code>/etc/elemental/config.yaml</code> file and this will not affect system wide Luet configuration, see <a href="../../customizing/general_configuration">general configuration</a> for a repositories setup example.</p>
+
 	
 		<style>
   .feedback--answer {
@@ -2186,8 +2195,8 @@ if (!doNotTrack) {
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 

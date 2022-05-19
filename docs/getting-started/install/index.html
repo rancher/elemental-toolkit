@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/install/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2021-11-04T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Installing">
 <meta itemprop="description" content="Installing cOS or a derivative locally
 "><meta itemprop="datePublished" content="2021-11-04T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
-<meta itemprop="wordCount" content="555">
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
+<meta itemprop="wordCount" content="467">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Installing"/>
 <meta name="twitter:description" content="Installing cOS or a derivative locally
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1995,7 +1995,7 @@ if (!doNotTrack) {
     <li>
       <ul>
         <li><a href="#custom-oem-configuration">Custom OEM configuration</a></li>
-        <li><a href="#custom-partitioning-layout">Custom partitioning layout</a></li>
+        <li><a href="#custom-partitioning">Custom partitioning</a></li>
         <li><a href="#installation-from-3rd-party-livecd-or-rescue-mediums">Installation from 3rd party LiveCD or rescue mediums</a></li>
       </ul>
     </li>
@@ -2105,24 +2105,16 @@ if (!doNotTrack) {
 <td>Sets the URL of the public key to be used by cosign validation</td>
 </tr>
 <tr>
-<td>&ndash;directory string</td>
-<td>Use directory as source to install from</td>
+<td>&ndash;eject-cd</td>
+<td>Try to eject the cd on reboot, only valid if booting from iso</td>
 </tr>
 <tr>
-<td>&ndash;docker-image string</td>
-<td>Install a specified container image</td>
+<td>&ndash;firmware string</td>
+<td>Firmware to install for (&rsquo;esp&rsquo; or &lsquo;bios&rsquo;) (default &ldquo;efi&rdquo;)</td>
 </tr>
 <tr>
 <td>&ndash;force</td>
 <td>Force install</td>
-</tr>
-<tr>
-<td>&ndash;force-efi</td>
-<td>Forces an EFI installation</td>
-</tr>
-<tr>
-<td>&ndash;force-gpt</td>
-<td>Forces a GPT partition table</td>
 </tr>
 <tr>
 <td>&ndash;help</td>
@@ -2141,8 +2133,8 @@ if (!doNotTrack) {
 <td>Disable mtree checksum verification (requires images manifests generated with mtree separately)</td>
 </tr>
 <tr>
-<td>&ndash;partition-layout string</td>
-<td>Partitioning layout file</td>
+<td>&ndash;part-table string</td>
+<td>Partition table type to use (default &ldquo;gpt&rdquo;)</td>
 </tr>
 <tr>
 <td>&ndash;poweroff</td>
@@ -2153,11 +2145,19 @@ if (!doNotTrack) {
 <td>Reboot the system after install</td>
 </tr>
 <tr>
+<td>&ndash;recovery-system.uri string</td>
+<td>Sets the recovery image source and its type (e.g. &lsquo;docker:registry.org/image:tag&rsquo;)</td>
+</tr>
+<tr>
+<td>&ndash;system.uri string</td>
+<td>Sets the system image source and its type (e.g. &lsquo;docker:registry.org/image:tag&rsquo;)</td>
+</tr>
+<tr>
 <td>&ndash;strict</td>
 <td>Enable strict check of hooks (They need to exit with 0)</td>
 </tr>
 <tr>
-<td>&ndash;tty</td>
+<td>&ndash;tty string</td>
 <td>Add named tty to grub</td>
 </tr>
 </tbody>
@@ -2165,64 +2165,35 @@ if (!doNotTrack) {
 <h3 id="custom-oem-configuration">Custom OEM configuration</h3>
 <p>During installation it can be specified a <a href="../../reference/cloud_init">cloud-init config file</a>, that will be installed and persist in the system after installation:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install --cloud-init <span style="color:#ce5c00;font-weight:bold">[</span>url<span style="color:#000;font-weight:bold">|</span>path<span style="color:#ce5c00;font-weight:bold">]</span> &lt;device&gt;
-</span></span></code></pre></div><h3 id="custom-partitioning-layout">Custom partitioning layout</h3>
-<p>When installing with GPT or EFI it&rsquo;s possible to specify a custom partitioning layout via specific config file, e.g.:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">partitioning</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart disk&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/dev/sda</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8192</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_OEM</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">oem</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># default filesystem is ext2 if omitted</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">filesystem</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">ext4</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">40000</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">recovery</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># default filesystem is ext2 if omitted</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">filesystem</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">ext4</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">40000</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span></code></pre></div><p>Refer to the <a href="../../reference/cloud_init">cloud-init config file reference</a> about the <code>layout</code> section.</p>
-<p>It can be also used to create additional partitions, or either create partitions into a different device, etc..</p>
-<p>Run the installer with</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>elemental install --partition-layout &lt;file&gt; &lt;device&gt;
-</span></span></code></pre></div>
-
-<div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Note</h4>
-
-    <p>While specifying a custom layout it is necessary to at least create 4 partitions: <code>COS_OEM</code>, <code>COS_STATE</code>, <code>COS_RECOVERY</code>, <code>COS_PERSISTENT</code>. Keep in mind the following while adjusting the partition sizes manually:</p>
-<ul>
-<li><code>COS_OEM</code> typically is used to store cloud-init files, so it can be also small.</li>
-<li><code>COS_STATE</code> is used to store all the system images, which by default are set to <code>3GB</code>. This value is customizable <a href="../../customizing/general_configuration">in our configuration file</a>. A system may contain 2 images (Active/Passive), plus additional space for a third transitioning image which will be created during upgrades.</li>
-<li><code>COS_RECOVERY</code> contains the recovery image, and additional space for a transition image during upgrades</li>
-<li><code>COS_PERSISTENT</code> is the persistent partition that is mounted over <code>/usr/local</code>. Typically is set to take all the free space left.</li>
-</ul>
-
-
-</div>
-
+</span></span></code></pre></div><h3 id="custom-partitioning">Custom partitioning</h3>
+<p>When installing it&rsquo;s possible to specify a custom partition sizes via the configuration file (<code>/etc/elemental/config.yaml</code> by default).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">install</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span><span style="color:#204a87;font-weight:bold">state</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#8f5902;font-style:italic"># All sizes are in MiB</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8192</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span><span style="color:#204a87;font-weight:bold">recovery</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">4096</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span><span style="color:#204a87;font-weight:bold">oem</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">64</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span><span style="color:#204a87;font-weight:bold">persistent</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#8f5902;font-style:italic"># zero size tells parted to use all the available</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#8f5902;font-style:italic"># disk, note this is only functional for the last partition</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>Refer to the <a href="../../customizing/general_configuration">config file docs</a> for further details about all partitioning options.</p>
+<p>In order to create additional partitions please consider the layout section on <a href="../../reference/cloud_init">cloud-init config file reference</a></p>
 <h3 id="installation-from-3rd-party-livecd-or-rescue-mediums">Installation from 3rd party LiveCD or rescue mediums</h3>
 <p>The installer can be used to perform installations also from outside the cOS or standard derivative ISOs.</p>
 <p>For instance, it is possible to install cOS (or any derivative) with the installer from another bootable medium, or a rescue mode which is booting from RAM, given there is enough free RAM available.</p>
 <h4 id="with-docker">With Docker</h4>
 <p>If in the rescue system, or LiveCD you have docker available, it can be used to perform an installation</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --privileged -v /dev/:/dev/ -ti quay.io/costoolkit/elemental:latest install --docker-image <span style="color:#000">$IMAGE</span> <span style="color:#000">$DEVICE</span>
-</span></span></code></pre></div><p>Where <code>$IMAGE</code> is the container image that we want to install (e.g. <code>quay.io/costoolkit/releases-green:cos-system-0.8.7</code> ), and <code>$DEVICE</code> is the device where to perform the installation to (e.g. <code>/dev/sda</code>).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --privileged -v /dev/:/dev/ -ti quay.io/costoolkit/elemental:latest install --system.uri <span style="color:#000">$IMAGE</span> <span style="color:#000">$DEVICE</span>
+</span></span></code></pre></div><p>Where <code>$IMAGE</code> is the container image that we want to install (e.g. <code>docker:quay.io/costoolkit/releases-green:cos-system-0.8.7</code> ), elemental identifies the type of source by the URI scheme (<code>docker</code>, <code>channel</code>, <code>dir</code> or <code>file</code>). <code>$DEVICE</code> is the device where to perform the installation to (e.g. <code>/dev/sda</code>).</p>
 <p>Note, we used the <code>quay.io/costoolkit/elemental:latest</code> image which contains the latest stable installer and the dependencies.
 You can see all the versions at <a href="https://quay.io/repository/costoolkit/elemental?tab=tags">quay</a>.</p>
 <h4 id="by-using-manually-the-elemental-installer">By using manually the Elemental installer</h4>
 <p>Similarly, the same mechanism can be used without docker. Download elemental from <a href="https://github.com/rancher-sandbox/elemental/releases/latest">github releases</a> and run the follow as root:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install --docker-image <span style="color:#000">$IMAGE</span> <span style="color:#000">$DEVICE</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install --system.uri <span style="color:#000">$IMAGE</span> <span style="color:#000">$DEVICE</span>
 </span></span></code></pre></div>
 	
 		<style>
@@ -2291,8 +2262,8 @@ You can see all the versions at <a href="https://quay.io/repository/costoolkit/e
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 

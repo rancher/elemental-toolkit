@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/customizing/configure_grub/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="GRUB">
 <meta itemprop="description" content="GRUB 2 Configuration
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
-<meta itemprop="wordCount" content="864">
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
+<meta itemprop="wordCount" content="871">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="GRUB"/>
 <meta name="twitter:description" content="GRUB 2 Configuration
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2218,9 +2218,15 @@ to reboot to without having to make any permanent config change.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>&gt; grub2-editenv /oem/grubenv <span style="color:#204a87">set</span> <span style="color:#000">saved_entry</span><span style="color:#ce5c00;font-weight:bold">=</span>fallback
 </span></span></code></pre></div><h2 id="boot-menu">Boot menu</h2>
 <p>By default <code>cOS</code> and derivatives shows the default boot menu entry while booting (<code>cOS</code>).</p>
-<p>The grub menu entry is generated during installation and can be configured by setting <code>GRUB_ENTRY_NAME</code> in the <a href="../general_configuration">cOS configuration file</a> inside the derivative, or either via cloud-init before installation.</p>
-<p>For example, specifying in <code>/etc/cos/config</code>:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#000">GRUB_ENTRY_NAME</span><span style="color:#ce5c00;font-weight:bold">=</span>myOS
+<p>The grub menu entry is generated during installation and can be configured by setting <code>GRUB_ENTRY_NAME</code> in the <code>/etc/os-release</code> file inside the derivative, or either via the <a href="../../customizing/general_configuration">general configuration</a> to specify installation details.</p>
+<p>For example, specifying in <code>/etc/elemental/config.yaml</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>install:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  grub-default-entry: myOS
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  ...
 </span></span></code></pre></div><p>will automatically set the GRUB menu entries for active, passive and recovery to the specified value.</p>
 <p>The grub menu boot entry can also be set with <code>grub2-editenv</code>:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>&gt; grub2-editenv /oem/grubenv <span style="color:#204a87">set</span> <span style="color:#000">default_menu_entry</span><span style="color:#ce5c00;font-weight:bold">=</span>fooOS
@@ -2323,8 +2329,8 @@ The <code>grubmenu</code> file will be sourced at the end of the boot process, a
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 

@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/booting/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Booting">
 <meta itemprop="description" content="Documents various methods for booting cOS vanilla images
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
 <meta itemprop="wordCount" content="1185">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Booting"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2112,7 +2112,7 @@ if (!doNotTrack) {
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install <span style="color:#000">$DEVICE</span>
 </span></span></code></pre></div><p>See also [../install] for installation options.</p>
 <p>After the first boot you can also switch to a derivative by:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental upgrade --docker-image --no-verify <span style="color:#000">$IMAGE</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental upgrade --no-verify --system.uri <span style="color:#000">$IMAGE</span>
 </span></span></code></pre></div><h2 id="booting-from-network">Booting from network</h2>
 <p>You can boot a cOS squashfs by using a native iPXE implementation on your
 system or by inserting a custom build iPXE iso by using your either your servers
@@ -2226,7 +2226,7 @@ stages:
        name: &#34;Deploy cos-system&#34;
        commands:
          - |
-             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
+             # Use `elemental reset --system.uri docker:&lt;img-ref&gt;` to deploy a custom image
              # By default the recovery cOS gets deployed
              elemental reset --reboot
 </code></pre><h3 id="importing-a-google-cloud-image-manually">Importing a Google Cloud image manually</h3>
@@ -2279,7 +2279,7 @@ stages:
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --system.uri docker:&lt;img-ref&gt;` to deploy a custom image
 </span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
 </span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
 </span></span></span></code></pre></div><h3 id="importing-an-azure-image-manually">Importing an Azure image manually</h3>
@@ -2327,7 +2327,7 @@ stages:
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy cos-system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --docker-image &lt;img-ref&gt;` to deploy a custom image
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --system.uri docker:&lt;img-ref&gt;` to deploy a custom image
 </span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # By default recovery cOS gets deployed
 </span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot</span><span style="color:#f8f8f8;text-decoration:underline">             
 </span></span></span></code></pre></div><h2 id="login">Login</h2>
@@ -2401,8 +2401,8 @@ stages:
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 

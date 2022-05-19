@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/upgrading/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-04T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-18T12:27:40+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-19T09:21:12+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Upgrading">
 <meta itemprop="description" content="How to run upgrades in cOS
 "><meta itemprop="datePublished" content="2017-01-04T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-18T12:27:40+02:00" />
-<meta itemprop="wordCount" content="291">
+<meta itemprop="dateModified" content="2022-05-19T09:21:12+02:00" />
+<meta itemprop="wordCount" content="290">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Upgrading"/>
 <meta name="twitter:description" content="How to run upgrades in cOS
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.08d5cd8c4a4786b9fc9b7e742f3c6bf8.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.e8efe9a994460bc21c1e1497f0142778.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2086,8 +2086,8 @@ if (!doNotTrack) {
 <p>This will perform an upgrade based on the default derivative configuration for the image. See <a href="../../customizing/general_configuration">general configuration</a> on how to configure defaults when building a derivative.</p>
 <p>&ldquo;Upgrades&rdquo; are not carried over the usual way of treating each single package individually: cOS considers the container image as a new system where to boot into. It will pull a new container image during this phase, which will be booted on the next reboot.</p>
 <h2 id="upgrade-to-a-specific-container-image">Upgrade to a specific container image</h2>
-<p>To specify a specific container image to upgrade to instead of the regular upgrade channels, run <code>elemental upgrade --docker-image image</code>.</p>
-<p><em>Note</em> by default <code>elemental upgrade --docker-image</code> checks images against the notary registry server for valid signatures for the images tag. To disable image verification, run <code>elemental upgrade --no-verify --docker-image</code>.</p>
+<p>To specify a specific container image to upgrade to instead of the regular upgrade channels, run <code>elemental upgrade --system.uri imagei-uri</code>.</p>
+<p><em>Note</em> by default <code>elemental upgrade --system.uri</code> runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run <code>elemental upgrade --no-verify --system.uri</code>.</p>
 <h2 id="integration-with-system-upgrade-controller">Integration with System Upgrade Controller</h2>
 <p>If running a kubernetes cluster on the <code>cOS</code> system, you can leverage the <a href="https://github.com/rancher/system-upgrade-controller">system-upgrade-controller</a> to trigger upgrades to specific image versions, for example:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
@@ -2190,8 +2190,8 @@ if (!doNotTrack) {
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    May 18, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/c47e98f487f383d4dca2e884b84a9ee7376aacdb">Bump toolchain/elemental-cli to 0.20220515 (#1324) (c47e98f)</a>
+    May 19, 2022
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/37a1172a20add76e54552b364f12427e0213bda9">Ugrading to new elemental (#1307) (37a1172)</a>
 
 </div>
 
