@@ -518,3 +518,21 @@ func (e Elemental) SetDefaultGrubEntry(mountPoint string, defaultEntry string) e
 		map[string]string{"default_menu_entry": defaultEntry},
 	)
 }
+
+// FindKernelInitrd finds for kernel and intird files inside the /boot directory of a given
+// root tree path. It assumes kernel and initrd files match certain file name prefixes.
+func (e Elemental) FindKernelInitrd(rootDir string) (kernel string, initrd string, err error) {
+	kernelNames := []string{"uImage", "Image", "zImage", "vmlinuz", "image"}
+	initrdNames := []string{"initrd", "initramfs"}
+	kernel, err = utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, "boot"), kernelNames...)
+	if err != nil {
+		e.config.Logger.Errorf("No Kernel file found")
+		return "", "", err
+	}
+	initrd, err = utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, "boot"), initrdNames...)
+	if err != nil {
+		e.config.Logger.Errorf("No initrd file found")
+		return "", "", err
+	}
+	return kernel, initrd, nil
+}

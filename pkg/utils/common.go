@@ -431,3 +431,36 @@ func NewSrcGuessingType(c *v1.Config, value string) *v1.ImageSource {
 	}
 	return v1.NewChannelSrc(value)
 }
+
+// FindFileWithPrefix looks for a file in the given path matching one of the given
+// prefixes. Returns the found file path including the given path. It does not
+// check subfolders recusively
+func FindFileWithPrefix(fs v1.FS, path string, prefixes ...string) (string, error) {
+	files, err := fs.ReadDir(path)
+	if err != nil {
+		return "", err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		for _, p := range prefixes {
+			if strings.HasPrefix(f.Name(), p) {
+				if f.Mode()&os.ModeSymlink == os.ModeSymlink {
+					found, err := fs.Readlink(filepath.Join(path, f.Name()))
+					if err == nil {
+						if !filepath.IsAbs(found) {
+							found = filepath.Join(path, found)
+						}
+						if exists, _ := Exists(fs, found); exists {
+							return found, nil
+						}
+					}
+				} else {
+					return filepath.Join(path, f.Name()), nil
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("No file found with prefixes: %v", prefixes)
+}

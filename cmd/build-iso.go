@@ -126,7 +126,8 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio})
 			}
 
-			err = action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err = buildISO.ISORun()
 			if err != nil {
 				return err
 			}

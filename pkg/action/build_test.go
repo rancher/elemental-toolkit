@@ -100,7 +100,8 @@ var _ = Describe("Runtime Actions", func() {
 				return nil
 			}
 
-			err := action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err := buildISO.ISORun()
 
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
@@ -118,7 +119,8 @@ var _ = Describe("Runtime Actions", func() {
 			_, err = fs.Create("/overlay/dir/boot/initrd")
 			Expect(err).ShouldNot(HaveOccurred())
 
-			err = action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err = buildISO.ISORun()
 
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
@@ -132,20 +134,23 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			By("fails without kernel")
-			err = action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err = buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 
 			By("fails without initrd")
 			_, err = fs.Create("/local/dir/boot/vmlinuz")
 			Expect(err).ShouldNot(HaveOccurred())
-			err = action.BuildISORun(cfg)
+			buildISO = action.NewBuildISOAction(cfg)
+			err = buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing rootfs sources", func() {
 			cfg.ISO.RootFS = []string{"system/elemental"}
 			luet.OnUnpackFromChannelError = true
 
-			err := action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
@@ -154,7 +159,8 @@ var _ = Describe("Runtime Actions", func() {
 			cfg.ISO.UEFI = []string{"live/efi"}
 			luet.OnUnpackFromChannelError = true
 
-			err := action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
@@ -165,7 +171,8 @@ var _ = Describe("Runtime Actions", func() {
 			cfg.ISO.Image = []string{"live/bootloader"}
 			luet.OnUnpackFromChannelError = true
 
-			err := action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
@@ -189,7 +196,8 @@ var _ = Describe("Runtime Actions", func() {
 				return []byte{}, nil
 			}
 
-			err = action.BuildISORun(cfg)
+			buildISO := action.NewBuildISOAction(cfg)
+			err = buildISO.ISORun()
 
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 			Expect(err).Should(HaveOccurred())

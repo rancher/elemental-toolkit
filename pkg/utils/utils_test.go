@@ -717,6 +717,62 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(src.IsChannel()).To(BeTrue())
 		})
 	})
+	Describe("FindFileWithPrefix", Label("find"), func() {
+		BeforeEach(func() {
+			err := utils.MkdirAll(fs, "/path/inner", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			_, err = fs.Create("/path/onefile")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			_, err = fs.Create("/path/somefile")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			err = fs.Symlink("onefile", "/path/linkedfile")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			err = fs.Symlink("/path/onefile", "/path/abslinkedfile")
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("finds a matching file", func() {
+			f, err := utils.FindFileWithPrefix(fs, "/path", "prefix", "some")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal("/path/somefile"))
+		})
+		It("finds a matching file, but returns the target of a relative symlink", func() {
+			// apparently fs.Readlink returns the raw path so we need to
+			// use raw paths here. This is an arguable behavior
+			rawPath, err := fs.RawPath("/path")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			f, err := utils.FindFileWithPrefix(vfs.OSFS, rawPath, "linked")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rawPath, "onefile")))
+		})
+		It("finds a matching file, but returns the target of an absolute symlink", func() {
+			// apparently fs.Readlink returns the raw path so we need to
+			// use raw paths here. This is an arguable behavior
+			rawPath, err := fs.RawPath("/path")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			f, err := utils.FindFileWithPrefix(vfs.OSFS, rawPath, "abslinked")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rawPath, "onefile")))
+		})
+		It("fails to read given path", func() {
+			_, err := utils.FindFileWithPrefix(fs, "nonexisting", "some")
+			Expect(err).Should(HaveOccurred())
+		})
+		It("doesn't find any matching file in path", func() {
+			utils.MkdirAll(fs, "/path", constants.DirPerm)
+			_, err := utils.FindFileWithPrefix(fs, "/path", "prefix", "anotherprefix")
+			Expect(err).Should(HaveOccurred())
+		})
+	})
 	Describe("Grub", Label("grub"), func() {
 		Describe("Install", func() {
 			var target, rootDir, bootDir string

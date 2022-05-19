@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 
 	"github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher-sandbox/elemental/pkg/elemental"
 	"github.com/rancher-sandbox/elemental/pkg/partitioner"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
@@ -62,6 +63,7 @@ func BuildDiskRun(cfg *v1.BuildConfig, imgType string, oemLabel string, recovery
 		recoveryLabel = constants.RecoveryLabel
 	}
 
+	e := elemental.NewElemental(&cfg.Config)
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
@@ -89,7 +91,10 @@ func BuildDiskRun(cfg *v1.BuildConfig, imgType string, oemLabel string, recovery
 		if err != nil {
 			return err
 		}
-		err = applySources(cfg.Config, filepath.Join(baseDir, pkg.Target), pkg.Name)
+		err = e.DumpSource(
+			filepath.Join(baseDir, pkg.Target),
+			utils.NewSrcGuessingType(&cfg.Config, pkg.Name),
+		)
 		if err != nil {
 			cfg.Logger.Error(err)
 		}

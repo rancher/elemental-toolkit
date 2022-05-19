@@ -731,6 +731,41 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(el.SetDefaultGrubEntry("/mountpoint", "default_entry")).NotTo(BeNil())
 		})
 	})
+	Describe("FindKernelInitrd", Label("find"), func() {
+		BeforeEach(func() {
+			err := utils.MkdirAll(fs, "/path/boot", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("finds kernel and initrd files", func() {
+			_, err := fs.Create("/path/boot/initrd")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			_, err = fs.Create("/path/boot/vmlinuz")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			el := elemental.NewElemental(config)
+			k, i, err := el.FindKernelInitrd("/path")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(k).To(Equal("/path/boot/vmlinuz"))
+			Expect(i).To(Equal("/path/boot/initrd"))
+		})
+		It("fails if no initrd is found", func() {
+			_, err := fs.Create("/path/boot/vmlinuz")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			el := elemental.NewElemental(config)
+			_, _, err = el.FindKernelInitrd("/path")
+			Expect(err).Should(HaveOccurred())
+		})
+		It("fails if no kernel is found", func() {
+			_, err := fs.Create("/path/boot/initrd")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			el := elemental.NewElemental(config)
+			_, _, err = el.FindKernelInitrd("/path")
+			Expect(err).Should(HaveOccurred())
+		})
+	})
 })
 
 // PathInMountPoints will check if the given path is in the mountPoints list
