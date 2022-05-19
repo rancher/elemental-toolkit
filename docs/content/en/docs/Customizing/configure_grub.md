@@ -130,12 +130,18 @@ Or to set the default entry to `fallback` system:
 
 By default `cOS` and derivatives shows the default boot menu entry while booting (`cOS`).
 
-The grub menu entry is generated during installation and can be configured by setting `GRUB_ENTRY_NAME` in the [cOS configuration file](../general_configuration) inside the derivative, or either via cloud-init before installation.
+The grub menu entry is generated during installation and can be configured by setting `GRUB_ENTRY_NAME` in the `/etc/os-release` file inside the derivative, or either via the [general configuration](../../customizing/general_configuration) to specify installation details.
 
-For example, specifying in `/etc/cos/config`:
+For example, specifying in `/etc/elemental/config.yaml`:
 
 ```bash
-GRUB_ENTRY_NAME=myOS
+install:
+
+  ...
+
+  grub-default-entry: myOS
+
+  ...
 ```
 
 will automatically set the GRUB menu entries for active, passive and recovery to the specified value.

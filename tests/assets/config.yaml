@@ -1,3 +1,12 @@
-stages:
-  network:
-    - hostname: "testhostname"
+install:
+  partitions:
+    state:
+      size: 8192
+    recovery:
+      size: 4000
+      fs: ext2
+    persistent:
+      size: 100
+      fs: ext2
+    oem:
+      size: 10

@@ -39,13 +39,13 @@ Preparing the a loop device for the installation is simple and straight forward.
 
 ## Run elemental installation
 
-Execute the elemental installation as described in TODO:
+Execute the elemental installation as described in [installing](../../getting-started/install):
 
 ```bash
-> sudo elemental install --force-efi --docker-image <image> <device>
+> sudo elemental install --firmware efi --system.uri docker:<image=ref> <device>
 ```
 
-Where `<image>` is the cOS derivative container image we want to use for the disk creation and `<device>` is the
+Where `<image-ref>` is the cOS derivative container image we want to use for the disk creation and `<device>` is the
 loop device previously created with `losetup` (e.g. `/dev/loop0`).
 
 

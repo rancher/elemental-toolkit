@@ -47,9 +47,8 @@ var _ = Describe("cOS booting fallback tests", func() {
 			bootAssessmentInstalled()
 
 			out, err := s.Command(fmt.Sprintf("elemental upgrade --no-verify --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
-			Expect(err).ToNot(HaveOccurred(), out)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
-			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 
 			out, _ = s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))

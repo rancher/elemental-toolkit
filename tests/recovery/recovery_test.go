@@ -53,7 +53,6 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			out, err := s.Command("elemental upgrade")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
-			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 
 			By("Reboot to upgraded active")
 			s.Reboot()
@@ -78,7 +77,6 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			out, err := s.Command(fmt.Sprintf("elemental upgrade --docker-image %s:cos-system-%s", s.GreenRepo, s.TestVersion))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
-			Expect(out).Should(ContainSubstring("Upgrading active partition"))
 			err = s.ChangeBoot(sut.Active)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -97,10 +95,9 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 				version := s.GetOSRelease("VERSION")
 				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
-				out, err := s.Command(fmt.Sprintf("elemental upgrade --recovery --docker-image %s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
+				out, err := s.Command(fmt.Sprintf("elemental upgrade --recovery --recovery-system.uri docker:%s:cos-recovery-%s", s.GreenRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
-				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
 
 				By("booting into recovery to check the OS version")
 				err = s.ChangeBootOnce(sut.Recovery)
@@ -126,7 +123,6 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				out, err := s.Command("elemental upgrade --recovery")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
-				Expect(out).Should(ContainSubstring("Upgrading recovery partition"))
 
 				By("Reboot to upgraded recovery")
 				err = s.ChangeBootOnce(sut.Recovery)

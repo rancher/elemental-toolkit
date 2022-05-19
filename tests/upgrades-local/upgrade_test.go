@@ -50,7 +50,6 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				}
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
-				Expect(out).Should(ContainSubstring("Upgrading active partition"))
 				By("rebooting")
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))

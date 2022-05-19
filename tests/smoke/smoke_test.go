@@ -73,9 +73,9 @@ var _ = Describe("cOS Smoke tests", func() {
 
 	Context("Settings", func() {
 		It("has correct defaults", func() {
-			out, err := s.Command("source /etc/cos-upgrade-image && echo $UPGRADE_IMAGE")
+			out, err := s.Command("cat /etc/elemental/config.yaml | grep system/cos")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(Equal("system/cos\n"))
+			Expect(out).Should(ContainSubstring("uri: channel:system/cos"))
 
 			out, err = s.Command("source /etc/os-release && echo $PRETTY_NAME")
 			Expect(err).ToNot(HaveOccurred())

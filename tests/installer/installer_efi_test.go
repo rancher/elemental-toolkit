@@ -54,32 +54,30 @@ var _ = Describe("cOS Installer EFI tests", func() {
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
 				It("performs a standard install", func() {
-					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
-					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
-					Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
+					Expect(out).To(ContainSubstring("Running after-install hook"))
 				})
 
 				// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
 				PIt("Forcing GPT", func() {
-					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install --force-gpt --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
-					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
-					Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
+					Expect(out).To(ContainSubstring("Running after-install hook"))
 
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
@@ -120,16 +118,15 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				// Marked as pending to reduce the number of efi tests. VBox efi support is
 				// not good enough to run extensive tests
 				PIt("Not forcing GPT", func() {
-					err := s.SendFile("../assets/layout.yaml", "/usr/local/layout.yaml", "0770")
+					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install --partition-layout /usr/local/layout.yaml /dev/sda")
+					out, err := s.Command("elemental --config-dir /usr/local install /dev/sda")
 					Expect(err).To(BeNil())
-					Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
-					Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
+					Expect(out).To(ContainSubstring("Running after-install hook"))
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
 					// Reboot so we boot into the just installed cos
@@ -175,12 +172,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				By("Running the elemental install")
 				out, err := s.Command("elemental install /dev/sda")
 				Expect(err).To(BeNil())
-				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
-				Expect(out).To(ContainSubstring("Copying COS_PASSIVE image"))
-				Expect(out).To(ContainSubstring("Copying COS_SYSTEM image"))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
+				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -193,11 +188,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				By("Running the elemental install")
 				out, err := s.Command(fmt.Sprintf("elemental install --docker-image  %s:cos-system-%s /dev/sda", s.GreenRepo, s.TestVersion))
 				Expect(err).To(BeNil())
-				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
-				Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
+				Expect(out).To(ContainSubstring("Running after-install hook"))
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
@@ -213,11 +207,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				By("Running the installer")
 				out, err := s.Command("elemental install --force-gpt /dev/sda")
 				Expect(err).To(BeNil())
-				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
-				Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
+				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -229,11 +222,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				By("Running the installer")
 				out, err := s.Command("elemental install --force-efi /dev/sda")
 				Expect(err).To(BeNil())
-				Expect(out).To(ContainSubstring("Copying COS_ACTIVE image..."))
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
-				Expect(out).To(ContainSubstring("Copying COS_PASSIVE image..."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
+				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos

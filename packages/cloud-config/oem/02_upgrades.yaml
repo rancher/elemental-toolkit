@@ -9,13 +9,11 @@ name: "Upgrades settings"
 stages:
    initramfs:
      - name: "Setup Luet config file"
-       directories:
-       - path: "/etc/luet"
+       files:
+       - path: /etc/luet/luet.yaml
          permissions: 0600
          owner: 0
          group: 0
-       files:
-       - path: /etc/luet/luet.yaml
          content: |
                   # For a full reference, see:
                   # https://luet-lab.github.io/docs/docs/getting-started/#configuration
@@ -35,17 +33,15 @@ stages:
                     verify: false
                     urls:
                     - "quay.io/costoolkit/releases-:FLAVOR::ARCH:"
-         permissions: 0600
-         owner: 0
-         group: 0
      - name: "Setup upgrade channel"
        files:
-       - path: /etc/cos-upgrade-image
-         permissions: 0600
+       - path: /etc/elemental/config.yaml
+         permissions: 0644
          owner: 0
          group: 0
-       environment_file: /etc/cos-upgrade-image
-       environment:
-         UPGRADE_IMAGE: system/cos
-         CHANNEL_UPGRADES: "true"
-         RECOVERY_IMAGE: recovery/cos
+         content: |
+                  upgrade:
+                    system: 
+                      uri: channel:system/cos
+                    recovery-system:
+                      uri: channel:recovery/cos

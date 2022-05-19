@@ -18,25 +18,33 @@ By default, `cos` derivatives if not specified will point to latest `cos-toolkit
 
 `elemental upgrade` during start reads the [cOS configuration file](../general_configuration) and allows to tweak the following:
 
-```bash
-# Tweak the package to upgrade to, or the docker image (full reference)
-ELEMENTAL_UPGRADE_IMAGE=system/cos
-# Turn on/off channel upgrades. If disabled, UPGRADE_IMAGE should be a full reference to a container image
-ELEMENTAL_CHANNEL_UPGRADES=true
-# Disable mtree verification. Enabled by default
-ELEMENTAL_NO_VERIFY=true
-# Specify a separate recovery image (defaults to UPGRADE_IMAGE)
-ELEMENTAL_RECOVERY_IMAGE=recovery/cos
+```yaml
+# configuration used for the 'ugrade' command
+upgrade:
+  # if set to true upgrade command will upgrade recovery system instead
+  # of main active system
+  recovery: false
+
+  # image used to upgrade main OS
+  # size in MiB
+  system:
+    <image-spec>
+
+  # image used to upgrade recovery OS
+  # recovery images can be set to use squashfs
+  recovery-system:
+    fs: squashfs
+    uri: channel:recovery/cos
 ```
 
-`elemental upgrade` also reads its configuration from `/etc/cos-upgrade-image` if the file is present in the system.
+The `system` and `recovery-system` objects define the OS image used for the main active system and the recovery system respectively. They both are fined by a `<image-spec>`.
 
-Specifically, it allows to configure:
+The `<image-spec>` can include the following fields, none is explicitly required, if missing defaults are applied:
 
-- **ELEMENTAL_UPGRADE_IMAGE**: A container image reference ( e.g. `registry.io/org/image:tag` ) or a `luet` package ( e.g. `system/cos` )
-- **ELEMENTAL_CHANNEL_UPGRADES**: Boolean indicating wether to use channel upgrades or not. If it is disabled **UPGRADE_IMAGE** should refer to a container image, e.g. `registry.io/org/image:tag`
-- **ELEMENTAL_NO_VERIFY**: Turns off or on mtree verification.
-- **ELEMENTAL_RECOVERY_IMAGE**: Allows to specify a different image for the recovery partition. Similarly to **UPGRADE_IMAGE** needs to be either an image reference or a package.
+- **fs**: defines the filesyste of the image. Currently only `ext2` and `squashfs` should be used for images and `squashfs` is only supported for the `recovery-system` image.
+- **label**: defines the filesystem label. It is strongly recommended to use default labels as it is easy to fall into inconsistent states when changing labels as all changes should also be reflected in several other parts such as the bootloader configuration. This attribute has no effect for `squashfs` filesystems.
+- **uri**: defines the source of the image. The uri must include a valid scheme to identify the type of source. It supports `docker`, `channel`, `dir` and `file` schemes.
+- **size**: defines the filesystem image size in MiB, it must be big enough to store the defined image source. This attribute has no effect for `squashfs` filesystems.
 
 
 ## Changing the default release channel
@@ -64,3 +72,4 @@ repositories:
   - "quay.io/costoolkit/releases-green"
 ```
 
+Alternatively a repositories list can be included in `/etc/elemental/config.yaml` file and this will not affect system wide Luet configuration, see [general configuration](../../customizing/general_configuration) for a repositories setup example.
