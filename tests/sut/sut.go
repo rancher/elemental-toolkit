@@ -98,7 +98,7 @@ func NewSUT() *SUT {
 		MachineID:     "test",
 		Timeout:       timeout,
 		ArtifactsRepo: "quay.io/costoolkit/releases-teal",
-		TestVersion:   "0.8.9-22",
+		TestVersion:   "0.8.10",
 		CDLocation:    "",
 	}
 }
