@@ -36,7 +36,7 @@ See also [../install] for installation options.
 After the first boot you can also switch to a derivative by:
 
 ```bash
-elemental upgrade --no-verify --system.uri $IMAGE
+elemental upgrade --verify --system.uri $IMAGE
 ```
 
 ## Booting from network

@@ -26,7 +26,7 @@ elemental install [options] <device>
 | --help                       | help for install                                                                                             |
 | --iso string                 | Performs an installation from the ISO url                                                                    |
 | --no-format                  | Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing |
-| --no-verify                  | Disable mtree checksum verification (requires images manifests generated with mtree separately)              |
+| --verify                     | Enable mtree checksum verification (requires images manifests generated with mtree separately)               |
 | --part-table string          | Partition table type to use (default "gpt")                                                                  |
 | --poweroff                   | Shutdown the system after install                                                                            |
 | --reboot                     | Reboot the system after install                                                                              |

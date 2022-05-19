@@ -44,7 +44,7 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
-				out, err = s.Command("elemental upgrade --no-verify --directory /run/update")
+				out, err = s.Command("elemental upgrade --directory /run/update")
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from elemental upgrade: %v\n", err)
 				}

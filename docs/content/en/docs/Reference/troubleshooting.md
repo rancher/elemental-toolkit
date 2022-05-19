@@ -67,7 +67,7 @@ $> docker push $NEW_IMAGE
 In the derivative then it's sufficient to upgrade to that image with `elemental upgrade`:
 
 ```bash
-$> elemental upgrade --no-verify --docker-image $NEW_IMAGE
+$> elemental upgrade --docker-image $NEW_IMAGE
 ```
 
 ## Adding login keys at boot
