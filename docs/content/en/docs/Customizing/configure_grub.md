@@ -139,7 +139,7 @@ install:
 
   ...
 
-  grub-default-entry: myOS
+  grub-entry-name: myOS
 
   ...
 ```
