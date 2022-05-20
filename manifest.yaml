@@ -1,24 +1,21 @@
 iso:
   rootfs:
-  - system/cos
+    - system/cos
   uefi:
-  - live/grub2-efi-image
+    - live/grub2-efi-image
   image:
-  - live/grub2
-  - live/grub2-efi-image
-  - recovery/cos-img
+    - live/grub2
+    - live/grub2-efi-image
+    - recovery/cos-img
   label: "COS_LIVE"
-
 name: "cOS-0"
 label: "COS_LIVE"
-
 # Raw disk creation values start
-
-
 raw_disk:
   x86_64:
     # Where to get the packages from if the local build doesn't have the needed packages
-    repo: quay.io/costoolkit/releases-teal
+    repositories:
+      - uri: quay.io/costoolkit/releases-teal
     # which packages to install and the target to install them at
     packages:
       - name: system/grub2-efi-image
@@ -30,7 +27,8 @@ raw_disk:
       - name: recovery/cos-img
         target: root/cOS
   aarch64:
-    repo: quay.io/costoolkit/releases-teal-arm64
+    repositories:
+      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
       - name: system/grub2-efi-image
         target: efi
@@ -41,7 +39,8 @@ raw_disk:
       - name: recovery/cos-img
         target: root/cOS
   odroid_c2:
-    repo: quay.io/costoolkit/releases-teal-arm64
+    repositories:
+      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
       - name: system/grub2-efi-image
         target: efi
@@ -49,18 +48,16 @@ raw_disk:
         target: root
       - name: system/grub2-artifacts
         target: root/grub2
-
-
 # Raw disk creation values end
 
 # Additional packages to build
 build:
- - utils/nerdctl
- - utils/k9s
- - utils/jq
- - selinux/rancher
- - selinux/k3s
- - recovery/cos
- - system/grub2-artifacts
- - system/grub2-efi-image
- - toolchain/elemental-cli
+  - utils/nerdctl
+  - utils/k9s
+  - utils/jq
+  - selinux/rancher
+  - selinux/k3s
+  - recovery/cos
+  - system/grub2-artifacts
+  - system/grub2-efi-image
+  - toolchain/elemental-cli
