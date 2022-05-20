@@ -147,6 +147,7 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-green-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-green
       PUBLISH_ARGS: "--plugin luet-cosign"
