@@ -358,7 +358,7 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) error { //
 			return err
 		}
 	} else if imgSrc.IsChannel() {
-		err = e.config.Luet.UnpackFromChannel(target, imgSrc.Value())
+		err = e.config.Luet.UnpackFromChannel(target, imgSrc.Value(), e.config.Repos...)
 		if err != nil {
 			return err
 		}
