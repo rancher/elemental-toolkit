@@ -9,9 +9,22 @@ function doLoopMount {
         label=$(basename "${dev}")
         [ -e "/tmp/cosloop-${label}" ] && continue
         > "/tmp/cosloop-${label}" 
+
         mount -t auto -o "${cos_root_perm}" "/dev/disk/by-label/${label}" "${cos_state}" || continue
         if [ -f "${cos_state}/${cos_img}" ]; then
-            losetup -f "${cos_state}/${cos_img}"
+
+            # FSCHECK if cos_root_perm == "ro" on both
+            if [ "$cos_root_perm" == "ro" ]; then
+               /usr/lib/systemd/systemd-fsck "/dev/disk/by-label/${label}"
+            fi
+
+            dev=$(losetup --show -f "${cos_state}/${cos_img}")
+
+            # FSCHECK if cos_root_perm == "ro"
+            if [ "$cos_root_perm" == "ro" ]; then
+               /usr/lib/systemd/systemd-fsck "$dev"
+            fi
+
             exit 0
         else
             umount "${cos_state}"
