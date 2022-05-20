@@ -61,7 +61,7 @@ spec:
         emptyDir: {}
       containers:
       - name: dind
-        image: docker:20.10.9-dind
+        image: docker:20.10.16-dind
         command:
         - /usr/local/bin/dockerd-entrypoint.sh
         - --mtu=1100
