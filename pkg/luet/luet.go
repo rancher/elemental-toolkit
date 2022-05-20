@@ -199,12 +199,17 @@ func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, 
 		}
 	}
 
+	if repo.ReferenceID == "" {
+		repo.ReferenceID = "repository.yaml"
+	}
+
 	return luetTypes.LuetRepository{
-		Name:     name,
-		Priority: repo.Priority,
-		Enable:   true,
-		Urls:     []string{repo.URI},
-		Type:     repoType,
+		Name:        name,
+		Priority:    repo.Priority,
+		Enable:      true,
+		Urls:        []string{repo.URI},
+		Type:        repoType,
+		ReferenceID: repo.ReferenceID,
 	}, nil
 }
 

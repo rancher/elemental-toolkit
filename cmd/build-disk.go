@@ -82,7 +82,14 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
 			for _, u := range cfg.RawDisk[cfg.Arch].Repositories {
-				repos = append(repos, v1.Repository{URI: u.URI, Priority: constants.LuetDefaultRepoPrio})
+				repos = append(repos, v1.Repository{
+					URI:         u.URI,
+					Priority:    constants.LuetDefaultRepoPrio,
+					Name:        u.Name,
+					ReferenceID: u.ReferenceID,
+					Arch:        u.Arch,
+					Type:        u.Type,
+				})
 			}
 			cfg.Config.Repos = repos
 

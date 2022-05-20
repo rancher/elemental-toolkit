@@ -341,11 +341,12 @@ type LiveISO struct {
 
 // Repository represents the basic configuration for a package repository
 type Repository struct {
-	Name     string `yaml:"name,omitempty" mapstructure:"name"`
-	Priority int    `yaml:"priority,omitempty" mapstructure:"priority"`
-	URI      string `yaml:"uri,omitempty" mapstructure:"uri"`
-	Type     string `yaml:"type,omitempty" mapstructure:"type"`
-	Arch     string `yaml:"arch,omitempty" mapstructure:"arch"`
+	Name        string `yaml:"name,omitempty" mapstructure:"name"`
+	Priority    int    `yaml:"priority,omitempty" mapstructure:"priority"`
+	URI         string `yaml:"uri,omitempty" mapstructure:"uri"`
+	Type        string `yaml:"type,omitempty" mapstructure:"type"`
+	Arch        string `yaml:"arch,omitempty" mapstructure:"arch"`
+	ReferenceID string `yaml:"reference,omitempty" mapstructure:"reference"`
 }
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
@@ -361,7 +362,7 @@ type BuildConfig struct {
 
 // RawDiskArchEntry represents an arch entry in raw_disk
 type RawDiskArchEntry struct {
-	Repositories []Repository     `yaml:"repo,omitempty"`
+	Repositories []Repository     `yaml:"repositories,omitempty" mapstructure:"repositories"`
 	Packages     []RawDiskPackage `yaml:"packages,omitempty"`
 }
 
