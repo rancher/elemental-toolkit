@@ -58,6 +58,9 @@ raw_disk: as_root $(YQ) $(JQ) $(MTOOLS) $(DOSTOOLS) $(ETOOLS) $(GPTTOOLS) $(ELEM
 ifneq ("$(RAW)","")
 	@echo "'$(RAW)' exists, it will be overwritten"
 endif
+# Add repo based on flavor to the manifest, so any files not available in local build are picked from there
+# instead of getting them from the default repo in elemental binary, i.e. green
+	$(YQ) -i '.raw_disk.$(ARCH).repositories[0].uri = "$(FINAL_REPO)"| .raw_disk.$(ARCH).repositories[0].priority = 30' $(MANIFEST)
 	elemental --debug build-disk -a $(ARCH)
 
 .PHONY: aws_vanilla_ami
