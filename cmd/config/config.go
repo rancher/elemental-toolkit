@@ -32,6 +32,7 @@ import (
 	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/sanity-io/litter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -126,7 +127,7 @@ func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}
 
-	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
+	cfg.Logger.Debugf("Full config loaded: %s", litter.Sdump(cfg))
 
 	return cfg, nil
 }
@@ -189,7 +190,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	}
 
 	err = cfg.Sanitize()
-	cfg.Logger.Debugf("Full config loaded: %+v", cfg)
+	cfg.Logger.Debugf("Full config loaded: %s", litter.Sdump(cfg))
 	return cfg, err
 }
 
@@ -209,7 +210,7 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 		r.Logger.Warnf("error unmarshalling InstallSpec: %s", err)
 	}
 	err = install.Sanitize()
-	r.Logger.Debugf("Loaded install spec: %+v", install)
+	r.Logger.Debugf("Loaded install spec: %s", litter.Sdump(install))
 	return install, err
 }
 
@@ -232,7 +233,7 @@ func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]st
 		r.Logger.Warnf("error unmarshalling ResetSpec: %s", err)
 	}
 	err = reset.Sanitize()
-	r.Logger.Debugf("Loaded reset spec: %+v", reset)
+	r.Logger.Debugf("Loaded reset spec: %s", litter.Sdump(reset))
 	return reset, err
 }
 
@@ -255,7 +256,7 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
 	}
 	err = upgrade.Sanitize()
-	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %+v", upgrade)
+	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
 }
 
@@ -297,7 +298,11 @@ func configLogger(log v1.Logger, vfs v1.FS) {
 	}
 
 	v := version.Get()
-	log.Infof("Starting elemental version %s", v.Version)
+	if log.GetLevel() == logrus.DebugLevel {
+		log.Debugf("Starting elemental version %s on commit %s", v.Version, v.GitCommit)
+	} else {
+		log.Infof("Starting elemental version %s", v.Version)
+	}
 }
 
 func viperReadEnv(vp *viper.Viper, prefix string, keyMap map[string]string) {
