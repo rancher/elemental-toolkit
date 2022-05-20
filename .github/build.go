@@ -45,7 +45,11 @@ func repositoryPackages(repo string) (searchResult client.SearchResult) {
 
 	if err != nil {
 		fmt.Println("No packages found")
-		fmt.Println(err)
+		if os.Getenv("DOWNLOAD_FATAL_MISSING_PACKAGES") == "true" {
+			checkErr(err)
+		} else {
+			fmt.Println(err)
+		}
 	} else {
 		for _, p := range re.GetTree().GetDatabase().World() {
 			searchResult.Packages = append(searchResult.Packages, client.Package{

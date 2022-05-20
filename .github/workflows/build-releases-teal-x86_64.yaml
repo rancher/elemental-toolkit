@@ -718,6 +718,7 @@ jobs:
       FINAL_REPO: quay.io/costoolkit/releases-teal
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-teal
       PUBLISH_ARGS: "--plugin luet-cosign"
