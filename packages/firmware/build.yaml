@@ -4,7 +4,7 @@
   {{if eq .Values.distribution "opensuse"}}
 image: {{ .Values.image }}
   {{else }}
-image: opensuse/leap:15.3
+image: opensuse/tumbleweed:latest
   {{end}}
 {{end}}
 {{ else }}
@@ -26,7 +26,7 @@ package_dir: "/data/boot"
 
 {{if eq .Values.name "u-boot-rpi64"}}
 - mkdir -p /data/{boot,usr}
-- wget https://download.opensuse.org/distribution/leap/15.3/repo/oss/aarch64/u-boot-rpiarm64-{{.Values.version}}.aarch64.rpm
+- wget https://download.opensuse.org/ports/aarch64/tumbleweed/repo/oss/aarch64/u-boot-rpiarm64-{{.Values.version}}.aarch64.rpm
 - rpm2cpio u-boot-rpiarm64-{{.Values.version}}.aarch64.rpm | cpio -idmv
 - mv usr/share/doc /data
 - mv usr/share/licenses /data
@@ -42,7 +42,7 @@ package_dir: "/data"
 "raspberrypi-firmware-config") (eq .Values.name "raspberrypi-firmware-dt")}}
 - mkdir -p /data/boot
 - mkdir -p /data/usr
-- wget -c https://download.opensuse.org/distribution/leap/15.3/repo/oss/noarch/{{.Values.name}}-{{.Values.version}}.noarch.rpm
+- wget -c https://download.opensuse.org/tumbleweed/repo/oss/noarch/{{.Values.name}}-{{.Values.version}}.noarch.rpm
 - rpm2cpio {{.Values.name}}-{{.Values.version}}.noarch.rpm | cpio -idmv
 {{if or (eq .Values.name "raspberrypi-firmware")}}
 - mv usr/* /data

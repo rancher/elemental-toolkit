@@ -1,4 +1,4 @@
-FROM opensuse/leap
+FROM opensuse/tumbleweed:latest
 
 ENV LUET_NOLOCK=true
 
