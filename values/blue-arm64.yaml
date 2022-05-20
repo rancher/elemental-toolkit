@@ -5,7 +5,7 @@ arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: opensuse/leap:15.3@sha256:30e1ea6881aaeefb8419a1295708fa523cdc089d1d38aa715552dc7feabbf8af
+tool_image: opensuse/tumbleweed:latest@sha256:017767fbf0778c00d3d5fa37cc16547f1a39e0e450a7c9086086f57f586363e9
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi

@@ -4,7 +4,7 @@ codename: "orange"
 arch: "x86_64"
 golang_arch: "amd64"
 
-tool_image: opensuse/leap:15.3
+tool_image: opensuse/tumbleweed:latest
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc

@@ -2,7 +2,7 @@ ARG LUET_VERSION=0.20.6
 
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
-FROM opensuse/leap:15.3 AS ca
+FROM opensuse/tumbleweed:latest AS ca
 
 FROM scratch
 
