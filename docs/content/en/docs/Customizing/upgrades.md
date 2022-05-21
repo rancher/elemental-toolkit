@@ -39,14 +39,6 @@ upgrade:
 
 The `system` and `recovery-system` objects define the OS image used for the main active system and the recovery system respectively. They both are fined by a `<image-spec>`.
 
-The `<image-spec>` can include the following fields, none is explicitly required, if missing defaults are applied:
-
-- **fs**: defines the filesyste of the image. Currently only `ext2` and `squashfs` should be used for images and `squashfs` is only supported for the `recovery-system` image.
-- **label**: defines the filesystem label. It is strongly recommended to use default labels as it is easy to fall into inconsistent states when changing labels as all changes should also be reflected in several other parts such as the bootloader configuration. This attribute has no effect for `squashfs` filesystems.
-- **uri**: defines the source of the image. The uri must include a valid scheme to identify the type of source. It supports `docker`, `channel`, `dir` and `file` schemes.
-- **size**: defines the filesystem image size in MiB, it must be big enough to store the defined image source. This attribute has no effect for `squashfs` filesystems.
-
-
 ## Changing the default release channel
 
 Release channels are standard luet repositories. To change the default release channel, create a `/etc/luet/luet.yaml` configuration file pointing to a valid luet repository:
