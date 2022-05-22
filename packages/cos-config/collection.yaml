@@ -4,4 +4,4 @@ packages:
     version: 0.1.0-3
   - name: "cos-config-tmpl"
     category: "utils"
-    version: 0.1.0-2
+    version: 0.1.0-3
