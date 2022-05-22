@@ -33,6 +33,7 @@ packages:
     name: "network"
     oem_file: "05_network.yaml"
     templated: false
+    version: 0.3-1
   - !!merge <<: *base
     name: "recovery"
     oem_file: "06_recovery.yaml.tmpl"
