@@ -43,3 +43,4 @@ packages:
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
     templated: false
+    version: 0.3-1
