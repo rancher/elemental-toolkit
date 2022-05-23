@@ -1,7 +1,14 @@
+{{ if .Values.arch }}
+  {{if and (eq .Values.arch "aarch64") (ne .Values.codename "green") }}
+image: {{ .Values.live_image }}
+  {{else}}
 requires:
 - name: "tool"
   category: "distro"
   version: ">=0"
+{{end}}
+{{end}}
+
 prelude:
 {{ if .Values.arch }}
   {{if eq .Values.arch "x86_64"}}

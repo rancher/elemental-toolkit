@@ -5,6 +5,8 @@ arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
+# live_image is used to build live/* packages, which requires some x86+i386 packages
+live_image: opensuse/leap:15.3@sha256:74bf846453cef9eb12e22a7559580fd79673dcad85e5096b11379bee60c9518d
 tool_image: opensuse/tumbleweed:latest@sha256:017767fbf0778c00d3d5fa37cc16547f1a39e0e450a7c9086086f57f586363e9
 tool_image_distribution: "opensuse"
 tools_packages: >-
