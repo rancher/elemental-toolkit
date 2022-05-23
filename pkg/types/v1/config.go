@@ -92,7 +92,7 @@ type InstallSpec struct {
 	Force        bool                `yaml:"force,omitempty" mapstructure:"force"`
 	CloudInit    string              `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	Iso          string              `yaml:"iso,omitempty" mapstructure:"iso"`
-	GrubDefEntry string              `yaml:"grub-default-entry,omitempty" mapstructure:"grub-default-entry"`
+	GrubDefEntry string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
 	Tty          string              `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
@@ -115,7 +115,7 @@ func (i *InstallSpec) Sanitize() error {
 // ResetSpec struct represents all the reset action details
 type ResetSpec struct {
 	FormatPersistent bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
-	GrubDefEntry     string `yaml:"grub-default-entry,omitempty" mapstructure:"grub-default-entry"`
+	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
 	Tty              string `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
 	Passive          Image
@@ -138,9 +138,10 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade bool  `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	Active          Image `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery        Image `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	RecoveryUpgrade bool   `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	Active          Image  `yaml:"system,omitempty" mapstructure:"system"`
+	Recovery        Image  `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry    string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
 	Passive         Image
 	Partitions      ElementalPartitions
 }

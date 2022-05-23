@@ -507,14 +507,22 @@ func (e Elemental) UpdateSourcesFormDownloadedISO(workDir string, activeImg *v1.
 
 // Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in
 // State partition mountpoint.
-func (e Elemental) SetDefaultGrubEntry(mountPoint string, defaultEntry string) error {
+func (e Elemental) SetDefaultGrubEntry(partMountPoint string, imgMountPoint string, defaultEntry string) error {
 	if defaultEntry == "" {
-		e.config.Logger.Debug("unset grub default entry")
-		return nil
+		osRelease, err := utils.LoadEnvFile(e.config.Fs, filepath.Join(imgMountPoint, "etc", "os-release"))
+		if err != nil {
+			e.config.Logger.Warnf("Could not load os-release file: %v", err)
+			return nil
+		}
+		defaultEntry = osRelease["GRUB_ENTRY_NAME"]
+		if defaultEntry == "" {
+			e.config.Logger.Debug("unset grub default entry")
+			return nil
+		}
 	}
 	grub := utils.NewGrub(e.config)
 	return grub.SetPersistentVariables(
-		filepath.Join(mountPoint, cnst.GrubOEMEnv),
+		filepath.Join(partMountPoint, cnst.GrubOEMEnv),
 		map[string]string{"default_menu_entry": defaultEntry},
 	)
 }

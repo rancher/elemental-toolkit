@@ -719,16 +719,31 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("SetDefaultGrubEntry", Label("SetDefaultGrubEntry", "grub"), func() {
 		It("Sets the default grub entry without issues", func() {
 			el := elemental.NewElemental(config)
-			Expect(el.SetDefaultGrubEntry("/mountpoint", "default_entry")).To(BeNil())
+			Expect(el.SetDefaultGrubEntry("/mountpoint", "/imgMountpoint", "default_entry")).To(BeNil())
 		})
-		It("Does not fail on empty default entry", func() {
+		It("does nothing on empty default entry and no /etc/os-release", func() {
 			el := elemental.NewElemental(config)
-			Expect(el.SetDefaultGrubEntry("/mountpoint", "")).To(BeNil())
+			Expect(el.SetDefaultGrubEntry("/mountpoint", "/imgMountPoint", "")).To(BeNil())
+			// No grub2-editenv command called
+			Expect(runner.CmdsMatch([][]string{{"grub2-editenv"}})).NotTo(BeNil())
+		})
+		It("loads /etc/os-release on empty default entry", func() {
+			err := utils.MkdirAll(config.Fs, "/imgMountPoint/etc", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			err = config.Fs.WriteFile("/imgMountPoint/etc/os-release", []byte("GRUB_ENTRY_NAME=test"), constants.FilePerm)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			el := elemental.NewElemental(config)
+			Expect(el.SetDefaultGrubEntry("/mountpoint", "/imgMountPoint", "")).To(BeNil())
+			// Calls grub2-editenv with the loaded content from /etc/os-release
+			Expect(runner.CmdsMatch([][]string{
+				{"grub2-editenv", "/mountpoint/grub_oem_env", "set", "default_menu_entry=test"},
+			})).To(BeNil())
 		})
 		It("Fails setting grubenv", func() {
 			runner.ReturnError = errors.New("failure")
 			el := elemental.NewElemental(config)
-			Expect(el.SetDefaultGrubEntry("/mountpoint", "default_entry")).NotTo(BeNil())
+			Expect(el.SetDefaultGrubEntry("/mountpoint", "/imgMountPoint", "default_entry")).NotTo(BeNil())
 		})
 	})
 	Describe("FindKernelInitrd", Label("find"), func() {

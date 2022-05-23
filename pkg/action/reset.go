@@ -126,6 +126,16 @@ func (r ResetAction) Run() (err error) {
 		return err
 	}
 
+	// installation rebrand (only grub for now)
+	err = e.SetDefaultGrubEntry(
+		r.spec.Partitions.State.MountPoint,
+		r.spec.Active.MountPoint,
+		r.spec.GrubDefEntry,
+	)
+	if err != nil {
+		return err
+	}
+
 	// Unmount active image
 	err = e.UnmountImage(&r.spec.Active)
 	if err != nil {
@@ -139,12 +149,6 @@ func (r ResetAction) Run() (err error) {
 	}
 
 	err = r.resetHook(cnst.AfterResetHook, false)
-	if err != nil {
-		return err
-	}
-
-	// installation rebrand (only grub for now)
-
 	if err != nil {
 		return err
 	}

@@ -58,12 +58,10 @@ install:
   cloud-init: "https://some.cloud-init.org/my-config-file"
 
   # grub menu entry, this is the string that will be displayed
-  grub-default-entry: cOS
+  grub-entry-name: cOS
 
   # tty console to add into the kernel parameters
   tty: ttyS0
-
-
 
 # configuration for the 'reset' command
 reset:
@@ -82,12 +80,10 @@ reset:
   passive.label: COS_PASSIVE
 
   # grub menu entry, this is the string that will be displayed
-  grub-default-entry: cOS
+  grub-entry-name: cOS
 
   # tty console to add into the kernel parameters
   tty: ttyS0
-
-
 
 # configuration used for the 'ugrade' command
 upgrade:
@@ -106,9 +102,8 @@ upgrade:
     fs: squashfs
     uri: channel:recovery/cos
 
-  # filesystem label of the passive backup image
-  passive.label: COS_PASSIVE
-
+  # grub menu entry, this is the string that will be displayed
+  grub-entry-name: cOS
 
 # use cosing to validate images from container registries
 cosign: true
@@ -124,6 +119,13 @@ strict: false
 # Additional paths for look for cloud-init files
 cloud-init-paths:
 - "/some/path"
+
+# Respositories defined for channel sources
+repositories:
+- name: "some_repo"
+  uri: "registry.org/repo"
+  type: "docker"
+  priority: 10
   
 # reboot/power off when done
 reboot: false
