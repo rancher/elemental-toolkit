@@ -35,15 +35,15 @@ import (
 var MB = int64(1024 * 1024)
 var GB = 1024 * MB
 
-func BuildDiskRun(cfg *v1.BuildConfig, imgType string, oemLabel string, recoveryLabel string, output string) (err error) {
+func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDisk, imgType string, oemLabel string, recoveryLabel string, output string) (err error) {
 	cfg.Logger.Infof("Building disk image type %s for arch %s", imgType, cfg.Arch)
-	if cfg.RawDisk[cfg.Arch] == nil {
+	if (*spec)[cfg.Arch] == nil {
 		msg := fmt.Sprintf("no values in the config for arch %s", cfg.Arch)
 		cfg.Logger.Error(msg)
 		return errors.New(msg)
 	}
 
-	if len(cfg.RawDisk[cfg.Arch].Packages) == 0 {
+	if len((*spec)[cfg.Arch].Packages) == 0 {
 		msg := fmt.Sprintf("no packages in the config for arch %s", cfg.Arch)
 		cfg.Logger.Error(msg)
 		return errors.New(msg)
@@ -86,7 +86,7 @@ func BuildDiskRun(cfg *v1.BuildConfig, imgType string, oemLabel string, recovery
 	efiPart := filepath.Join(diskTempDir, "efi.part")
 
 	// Extract required packages to basedir
-	for _, pkg := range cfg.RawDisk[cfg.Arch].Packages {
+	for _, pkg := range (*spec)[cfg.Arch].Packages {
 		err = os.MkdirAll(filepath.Join(baseDir, pkg.Target), constants.DirPerm)
 		if err != nil {
 			return err

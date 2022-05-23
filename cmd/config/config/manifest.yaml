@@ -5,7 +5,7 @@ iso:
     - live/grub2-efi-image
   image:
     - recovery/cos-img
-  label: "COS_LIVE"
+  label: "LIVE_LABEL"
 
 # Raw disk creation values start
 
@@ -13,17 +13,11 @@ iso:
 raw_disk:
   x86_64:
     repositories:
-     - uri: quay.io/costoolkit/releases-green
+     - uri: quay.io/some/repo
     # which packages to install and the target to install them at
     packages:
-      - name: system/grub2-efi-image
+      - name: system/myos
         target: efi
-      - name: system/grub2-config
-        target: root
-      - name: system/grub2-artifacts
-        target: root/grub2
-      - name: recovery/cos-img
-        target: root/cOS
   aarch64:
     repositories:
      - uri: quay.io/costoolkit/releases-green-arm64
@@ -49,6 +43,9 @@ raw_disk:
 
 
 # Raw disk creation values end
+
+repositories:
+- uri: registry.org/my/repo
 
 name: "cOS-0"
 date: true

@@ -383,10 +383,26 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				})
 			})
 		})
-		Describe("BuildConfig", func() {
-			build := config.NewBuildConfig()
-			Expect(build.Name).To(Equal(constants.BuildImgName))
-			Expect(build.ISO.BootCatalog).To(Equal(constants.IsoBootCatalog))
+		Describe("BuildConfig", Label("build"), func() {
+			It("initiates a new build config", func() {
+				build := config.NewBuildConfig()
+				Expect(build.Name).To(Equal(constants.BuildImgName))
+				Expect(len(build.Repos)).To(Equal(1))
+				Expect(build.Repos[0].URI).To(ContainSubstring(constants.LuetDefaultRepoURI))
+			})
+		})
+		Describe("LiveISO", Label("iso"), func() {
+			It("initiates a new LiveISO", func() {
+				iso := config.NewISO()
+				Expect(iso.Label).To(Equal(constants.ISOLabel))
+				Expect(iso.Image).To(Equal(constants.GetDefaultISOImage()))
+			})
+		})
+		Describe("RawDisk", Label("disk"), func() {
+			It("initiates a new RawDisk", func() {
+				disk := config.NewRawDisk(*c)
+				Expect(len((*disk)[c.Arch].Packages)).To(Equal(len(constants.GetBuildDiskDefaultPackages())))
+			})
 		})
 	})
 

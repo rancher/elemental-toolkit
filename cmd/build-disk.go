@@ -38,7 +38,6 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Short: "Build a raw recovery image",
 		Args:  cobra.NoArgs,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
 				return CheckRoot()
 			}
@@ -47,18 +46,13 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mounter := &mountUtils.FakeMounter{}
 
-			// If configDir is empty try to get the manifest from current dir
-			configDir := viper.GetString("config-dir")
-			if configDir == "" {
-				configDir = "."
-			}
-
-			cfg, err := config.ReadConfigBuild(configDir, mounter)
+			flags := cmd.Flags()
+			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), flags, mounter)
 			if err != nil {
 				return err
 			}
 
-			err = validateCosignFlags(cfg.Logger, cmd.Flags())
+			err = validateCosignFlags(cfg.Logger, flags)
 			if err != nil {
 				return err
 			}
@@ -66,22 +60,23 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
-			imgType, _ := cmd.Flags().GetString("type")
-			output, _ := cmd.Flags().GetString("output")
-			oemLabel, _ := cmd.Flags().GetString("oem_label")
-			recoveryLabel, _ := cmd.Flags().GetString("recovery_label")
 
-			entry := cfg.RawDisk[cfg.Arch]
-			if entry == nil {
-				// We didnt load anything from the config file, create empty map
-				cfg.RawDisk = map[string]*v1.RawDiskArchEntry{
-					cfg.Arch: {Repositories: nil, Packages: nil},
-				}
+			spec, err := config.ReadBuildDisk(cfg, flags)
+			if err != nil {
+				cfg.Logger.Errorf("invalid install command setup %v", err)
+				return err
 			}
+
+			// TODO map these to buildconfig and rawdisk structs, so they
+			// are directly unmarshaled and there is no need handle them here
+			imgType, _ := flags.GetString("type")
+			output, _ := flags.GetString("output")
+			oemLabel, _ := flags.GetString("oem_label")
+			recoveryLabel, _ := flags.GetString("recovery_label")
 
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
-			for _, u := range cfg.RawDisk[cfg.Arch].Repositories {
+			for _, u := range (*spec)[cfg.Arch].Repositories {
 				repos = append(repos, v1.Repository{
 					URI:         u.URI,
 					Priority:    constants.LuetDefaultRepoPrio,
@@ -91,37 +86,18 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 					Type:        u.Type,
 				})
 			}
-			cfg.Config.Repos = repos
+
+			// Only overwrite repos if some are defined, default repo is alredy there
+			if len(repos) > 0 {
+				cfg.Config.Repos = repos
+			}
 
 			if exists, _ := utils.Exists(cfg.Fs, output); exists {
 				cfg.Logger.Errorf("Output file %s exists, refusing to continue", output)
 				return fmt.Errorf("output file %s exists, refusing to continue", output)
 			}
 
-			// Set defaults if they are empty
-			if len(cfg.Config.Repos) == 0 {
-				repo := constants.LuetDefaultRepoURI
-				if cfg.Arch != "x86_64" {
-					repo = fmt.Sprintf("%s-%s", repo, cfg.Arch)
-				}
-				cfg.Logger.Infof("Repositories are empty, setting default value: %s", repo)
-				cfg.Config.Repos = append(cfg.Config.Repos, v1.Repository{URI: repo, Priority: constants.LuetDefaultRepoPrio})
-
-				cfg.RawDisk[cfg.Arch].Repositories = cfg.Config.Repos
-			}
-
-			// Set defaults packages if empty
-			if len(cfg.RawDisk[cfg.Arch].Packages) == 0 {
-				defaultPackages := constants.GetBuildDiskDefaultPackages()
-				var packages []v1.RawDiskPackage
-				for pkg, target := range defaultPackages {
-					packages = append(packages, v1.RawDiskPackage{Name: pkg, Target: target})
-				}
-				cfg.Logger.Infof("Packages are empty, setting default values: %+v", packages)
-				cfg.RawDisk[cfg.Arch].Packages = packages
-			}
-
-			err = action.BuildDiskRun(cfg, imgType, oemLabel, recoveryLabel, output)
+			err = action.BuildDiskRun(cfg, spec, imgType, oemLabel, recoveryLabel, output)
 			if err != nil {
 				return err
 			}

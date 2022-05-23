@@ -22,7 +22,6 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -67,7 +66,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			adaptEFIAndGPTFlags(cmd.Flags())
 
 			cmd.SilenceUsage = true
-			spec, err := config.ReadInstallSpec(cfg, cmd.Flags(), constants.GetInstallKeyEnvMap())
+			spec, err := config.ReadInstallSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("invalid install command setup %v", err)
 				return err

@@ -21,7 +21,6 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -65,7 +64,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), constants.GetUpgradeKeyEnvMap())
+			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("invalid upgrade command setup %v", err)
 				return err

@@ -29,6 +29,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/rancher-sandbox/elemental/internal/version"
 	"github.com/rancher-sandbox/elemental/pkg/config"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/rancher-sandbox/elemental/pkg/luet"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
 	"github.com/rancher-sandbox/elemental/pkg/utils"
@@ -98,18 +99,16 @@ func bindGivenFlags(vp *viper.Viper, flagSet *pflag.FlagSet) {
 	}
 }
 
-func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig, error) {
+func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Interface) (*v1.BuildConfig, error) {
 	logger := v1.NewLogger()
-	arch := viper.GetString("arch")
-	if arch == "" {
-		arch = "x86_64"
+	if configDir == "" {
+		configDir = "."
 	}
 
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
 		config.WithMounter(mounter),
 		config.WithLuet(luet.NewLuet(luet.WithLogger(logger))),
-		config.WithArch(arch),
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)
@@ -119,17 +118,20 @@ func ReadConfigBuild(configDir string, mounter mount.Interface) (*v1.BuildConfig
 	viper.SetConfigName("manifest.yaml")
 	// If a config file is found, read it in.
 	_ = viper.MergeInConfig()
-	viperReadEnv(viper.GetViper(), "", map[string]string{})
+
+	// Bind runconfig flags
+	bindGivenFlags(viper.GetViper(), flags)
+	// merge environment variables on top for rootCmd
+	viperReadEnv(viper.GetViper(), "BUILD", constants.GetBuildKeyEnvMap())
 
 	// unmarshal all the vars into the config object
-	err := viper.Unmarshal(cfg, setDecoder)
+	err := viper.Unmarshal(cfg, setDecoder, decodeHook)
 	if err != nil {
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}
 
 	cfg.Logger.Debugf("Full config loaded: %s", litter.Sdump(cfg))
-
-	return cfg, nil
+	return cfg, err
 }
 
 func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interface) (*v1.RunConfig, error) {
@@ -181,7 +183,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	// Bind runconfig flags
 	bindGivenFlags(viper.GetViper(), flags)
 	// merge environment variables on top for rootCmd
-	viperReadEnv(viper.GetViper(), "", map[string]string{})
+	viperReadEnv(viper.GetViper(), "", constants.GetRunKeyEnvMap())
 
 	// unmarshal all the vars into the RunConfig object
 	err := viper.Unmarshal(cfg, setDecoder, decodeHook)
@@ -194,7 +196,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	return cfg, err
 }
 
-func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]string) (*v1.InstallSpec, error) {
+func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InstallSpec, error) {
 	install := config.NewInstallSpec(r.Config)
 	vp := viper.Sub("install")
 	if vp == nil {
@@ -203,7 +205,7 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 	// Bind install cmd flags
 	bindGivenFlags(vp, flags)
 	// Bind install env vars
-	viperReadEnv(vp, "INSTALL", keyRemap)
+	viperReadEnv(vp, "INSTALL", constants.GetInstallKeyEnvMap())
 
 	err := vp.Unmarshal(install, setDecoder, decodeHook)
 	if err != nil {
@@ -214,7 +216,7 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 	return install, err
 }
 
-func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]string) (*v1.ResetSpec, error) {
+func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error) {
 	reset, err := config.NewResetSpec(r.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed initializing reset spec: %v", err)
@@ -226,7 +228,7 @@ func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]st
 	// Bind reset cmd flags
 	bindGivenFlags(vp, flags)
 	// Bind reset env vars
-	viperReadEnv(vp, "RESET", keyRemap)
+	viperReadEnv(vp, "RESET", constants.GetResetKeyEnvMap())
 
 	err = vp.Unmarshal(reset, setDecoder, decodeHook)
 	if err != nil {
@@ -237,7 +239,7 @@ func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]st
 	return reset, err
 }
 
-func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]string) (*v1.UpgradeSpec, error) {
+func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, error) {
 	upgrade, err := config.NewUpgradeSpec(r.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed initializing upgrade spec: %v", err)
@@ -249,7 +251,7 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 	// Bind upgrade cmd flags
 	bindGivenFlags(vp, flags)
 	// Bind upgrade env vars
-	viperReadEnv(vp, "UPGRADE", keyRemap)
+	viperReadEnv(vp, "UPGRADE", constants.GetUpgradeKeyEnvMap())
 
 	err = vp.Unmarshal(upgrade, setDecoder, decodeHook)
 	if err != nil {
@@ -258,6 +260,46 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, keyRemap map[string]
 	err = upgrade.Sanitize()
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
+}
+
+func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) {
+	iso := config.NewISO()
+	vp := viper.Sub("iso")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind build-iso cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind build-iso env vars
+	viperReadEnv(vp, "ISO", constants.GetISOKeyEnvMap())
+
+	err := vp.Unmarshal(iso, setDecoder, decodeHook)
+	if err != nil {
+		b.Logger.Warnf("error unmarshalling LiveISO: %s", err)
+	}
+	err = iso.Sanitize()
+	b.Logger.Debugf("Loaded LiveISO: %s", litter.Sdump(iso))
+	return iso, err
+}
+
+func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.RawDisk, error) {
+	disk := config.NewRawDisk(b.Config)
+	vp := viper.Sub("raw_disk")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind build-disk cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind build-disk env vars
+	viperReadEnv(vp, "RAWDISK", constants.GetDiskKeyEnvMap())
+
+	err := vp.Unmarshal(disk, setDecoder, decodeHook)
+	if err != nil {
+		b.Logger.Warnf("error unmarshalling RawDisk: %s", err)
+	}
+	err = disk.Sanitize()
+	b.Logger.Debugf("Loaded RawDisk: %s", litter.Sdump(disk))
+	return disk, err
 }
 
 func configLogger(log v1.Logger, vfs v1.FS) {

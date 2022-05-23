@@ -17,7 +17,6 @@ limitations under the License.
 package action
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -90,10 +89,6 @@ func (u *UpgradeAction) Run() (err error) {
 		mountPart = u.spec.Partitions.State
 		upgradeImg = u.spec.Active
 		finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.ActiveImgFile)
-	}
-
-	if upgradeImg.Source.IsEmpty() {
-		return fmt.Errorf("undefined upgrade source")
 	}
 
 	u.Info("mounting %s partition as rw", mountPart.Name)

@@ -50,32 +50,104 @@ var _ = Describe("Config", Label("config"), func() {
 		viper.Reset()
 	})
 	Describe("Build config", Label("build"), func() {
+		var flags *pflag.FlagSet
+		BeforeEach(func() {
+			flags = pflag.NewFlagSet("testflags", 1)
+			flags.String("arch", "", "testing flag")
+			flags.Set("arch", "arm64")
+		})
 		It("values empty if config path not valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("/none/", mounter)
+			cfg, err := ReadConfigBuild("/none/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal(""))
 			Expect(cfg.Name).To(Equal("elemental"))
+			Expect(cfg.Arch).To(Equal("arm64"))
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("config/", mounter)
+			cfg, err := ReadConfigBuild("config/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal("cOS-0"))
 			Expect(cfg.Name).To(Equal("cOS-0"))
 			hasSuffix := strings.HasSuffix(viper.ConfigFileUsed(), "config/manifest.yaml")
 			Expect(hasSuffix).To(BeTrue())
-			Expect(len(cfg.ISO.Image)).To(Equal(1))
-			Expect(cfg.ISO.Image[0]).To(Equal("recovery/cos-img"))
 		})
-		// TODO this test requires adaptations to use same runconfig approach regarding
-		// environment variables, explict bindigs
-		PIt("overrides values with env values", Label("env", "values"), func() {
-			_ = os.Setenv("ELEMENTAL_NAME", "environment")
-			cfg, err := ReadConfigBuild("config/", mounter)
+
+		It("overrides values with env values", Label("env", "values"), func() {
+			_ = os.Setenv("ELEMENTAL_BUILD_NAME", "randomname")
+			cfg, err := ReadConfigBuild("config/", flags, mounter)
 			Expect(err).To(BeNil())
-			source := viper.GetString("name")
-			// check that the final value comes from the env var
-			Expect(source).To(Equal("environment"))
-			Expect(cfg.Name).To(Equal("environment"))
+			Expect(cfg.Name).To(Equal("randomname"))
+		})
+	})
+	Describe("Read build specs", Label("build"), func() {
+		var cfg *v1.BuildConfig
+		var runner *v1mock.FakeRunner
+		var fs vfs.FS
+		var logger v1.Logger
+		var mounter *v1mock.ErrorMounter
+		var syscall *v1mock.FakeSyscall
+		var client *v1mock.FakeHTTPClient
+		var cloudInit *v1mock.FakeCloudInitRunner
+		var cleanup func()
+		var memLog *bytes.Buffer
+		var err error
+
+		BeforeEach(func() {
+			runner = v1mock.NewFakeRunner()
+			syscall = &v1mock.FakeSyscall{}
+			mounter = v1mock.NewErrorMounter()
+			client = &v1mock.FakeHTTPClient{}
+			memLog = &bytes.Buffer{}
+			logger = v1.NewBufferLogger(memLog)
+			cloudInit = &v1mock.FakeCloudInitRunner{}
+
+			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
+			Expect(err).Should(BeNil())
+
+			cfg, err = ReadConfigBuild("config/", nil, mounter)
+			Expect(err).Should(BeNil())
+			// From defaults
+			Expect(cfg.Arch).To(Equal("x86_64"))
+
+			// From config
+			Expect(cfg.Repos[0].URI).To(ContainSubstring("registry.org/my/repo"))
+
+			cfg.Fs = fs
+			cfg.Runner = runner
+			cfg.Logger = logger
+			cfg.Mounter = mounter
+			cfg.Syscall = syscall
+			cfg.Client = client
+			cfg.CloudInitRunner = cloudInit
+		})
+		AfterEach(func() {
+			cleanup()
+		})
+
+		Describe("LiveISO spec", Label("iso"), func() {
+			It("initiates a LiveISO spec", func() {
+				iso, err := ReadBuildISO(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				// By default
+				Expect(iso.HybridMBR).To(Equal(constants.IsoHybridMBR))
+
+				// From config file
+				Expect(iso.Image[0]).To(Equal("recovery/cos-img"))
+				Expect(iso.Label).To(Equal("LIVE_LABEL"))
+			})
+		})
+		Describe("RawDisk spec", Label("disk"), func() {
+			It("initiates a RawDisk spec", func() {
+				disk, err := ReadBuildDisk(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				// From config file
+				Expect(len((*disk)["x86_64"].Packages)).To(Equal(1))
+				Expect((*disk)["x86_64"].Packages[0].Name).To(Equal("system/myos"))
+				Expect(len((*disk)["x86_64"].Repositories)).To(Equal(1))
+				Expect((*disk)["x86_64"].Repositories[0].URI).To(Equal("quay.io/some/repo"))
+			})
 		})
 	})
 	Describe("Run config", Label("run"), func() {
@@ -127,7 +199,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Logger.GetLevel()).To(Equal(logrus.DebugLevel))
 		})
 	})
-	Describe("Read specs", Label("spec"), func() {
+	Describe("Read runtime specs", Label("spec"), func() {
 		var cfg *v1.RunConfig
 		var runner *v1mock.FakeRunner
 		var fs vfs.FS
@@ -175,7 +247,7 @@ var _ = Describe("Config", Label("config"), func() {
 				flags.Set("system.uri", "docker:image/from:flag")
 			})
 			It("inits a default install spec if no configs are provided", func() {
-				spec, err := ReadInstallSpec(cfg, nil, map[string]string{})
+				spec, err := ReadInstallSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Target == "")
 				Expect(spec.PartTable == v1.GPT)
@@ -188,7 +260,7 @@ var _ = Describe("Config", Label("config"), func() {
 				err = os.Setenv("ELEMENTAL_INSTALL_SYSTEM", "itwillbeignored")
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec, err := ReadInstallSpec(cfg, flags, constants.GetInstallKeyEnvMap())
+				spec, err := ReadInstallSpec(cfg, flags)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites target from environment variables
 				Expect(spec.Target == "/env/disk")
@@ -240,7 +312,7 @@ var _ = Describe("Config", Label("config"), func() {
 				// Disable recovery boot detection
 				bootedFrom = ""
 
-				_, err := ReadResetSpec(cfg, nil, map[string]string{})
+				_, err := ReadResetSpec(cfg, nil)
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("reset can only be called from the recovery system"))
 			})
@@ -249,7 +321,7 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_RESET_SYSTEM", "channel:system/cos")
 				Expect(err).ShouldNot(HaveOccurred())
-				spec, err := ReadResetSpec(cfg, nil, constants.GetResetKeyEnvMap())
+				spec, err := ReadResetSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites target from environment variables
 				Expect(spec.Target == "/special/disk")
@@ -269,7 +341,7 @@ var _ = Describe("Config", Label("config"), func() {
 				flags.Set("recovery-system.uri", "docker:image/from:flag")
 			})
 			It("can't init upgrade spec if partitions are not found", func() {
-				_, err := ReadUpgradeSpec(cfg, nil, map[string]string{})
+				_, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("undefined state partition"))
 			})
@@ -297,7 +369,7 @@ var _ = Describe("Config", Label("config"), func() {
 				defer ghwTest.Clean()
 
 				err := os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")
-				spec, err := ReadUpgradeSpec(cfg, nil, constants.GetUpgradeKeyEnvMap())
+				spec, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars
 				Expect(spec.Recovery.Source.Value() == "image/from:flag")

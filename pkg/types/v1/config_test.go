@@ -19,7 +19,10 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/rancher-sandbox/elemental/pkg/config"
+	"github.com/rancher-sandbox/elemental/pkg/constants"
 	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1mocks "github.com/rancher-sandbox/elemental/tests/mocks"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {
@@ -174,5 +177,130 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(p.GetByName("nonexistent")).To(BeNil())
 		})
 	})
+	Describe("RunConfig", func() {
+		It("runs sanitize method", func() {
+			cfg := config.NewRunConfig(config.WithMounter(v1mocks.NewErrorMounter()))
 
+			// Sets the luet mtree pluing
+			err := cfg.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cfg.Luet.GetPlugins()).To(Equal([]string{constants.LuetMtreePlugin}))
+		})
+	})
+	Describe("BuildConfig", func() {
+		It("runs sanitize method", func() {
+			cfg := config.NewBuildConfig(config.WithMounter(v1mocks.NewErrorMounter()))
+
+			// Sets the luet mtree pluing
+			err := cfg.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cfg.Luet.GetPlugins()).To(Equal([]string{constants.LuetMtreePlugin}))
+		})
+	})
+	Describe("InstallSpec", func() {
+		It("runs sanitize method", func() {
+			cfg := config.NewConfig(config.WithMounter(v1mocks.NewErrorMounter()))
+			spec := config.NewInstallSpec(*cfg)
+			Expect(spec.Partitions.EFI).To(BeNil())
+			Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
+
+			// Creates firmware partitions
+			spec.Active.Source = v1.NewDirSrc("/dir")
+			spec.Firmware = v1.EFI
+			err := spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(spec.Partitions.EFI).NotTo(BeNil())
+
+			// Fails without state partition
+			spec.Partitions.State = nil
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+
+			// Fails without an install source
+			spec.Active.Source = v1.NewEmptySrc()
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("ResetSpec", func() {
+		It("runs sanitize method", func() {
+			spec := &v1.ResetSpec{
+				Active: v1.Image{
+					Source: v1.NewDirSrc("/dir"),
+				},
+				Partitions: v1.ElementalPartitions{
+					State: &v1.Partition{
+						MountPoint: "mountpoint",
+					},
+				},
+			}
+			err := spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+
+			//Fails on missing state partition
+			spec.Partitions.State = nil
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+
+			//Fails on empty source
+			spec.Active.Source = v1.NewEmptySrc()
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("UpgradeSpec", func() {
+		It("runs sanitize method", func() {
+			spec := &v1.UpgradeSpec{
+				Active: v1.Image{
+					Source: v1.NewDirSrc("/dir"),
+				},
+				Recovery: v1.Image{
+					Source: v1.NewDirSrc("/dir"),
+				},
+				Partitions: v1.ElementalPartitions{
+					State: &v1.Partition{
+						MountPoint: "mountpoint",
+					},
+					Recovery: &v1.Partition{
+						MountPoint: "mountpoint",
+					},
+				},
+			}
+			err := spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+
+			//Fails on empty source for active upgrade
+			spec.Active.Source = v1.NewEmptySrc()
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+
+			//Fails on missing state partition for active upgrade
+			spec.Partitions.State = nil
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+
+			//Fails on empty source for recovery upgrade
+			spec.RecoveryUpgrade = true
+			spec.Recovery.Source = v1.NewEmptySrc()
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+
+			//Fails on missing recovery partition for recovery upgrade
+			spec.Partitions.Recovery = nil
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("LiveISO", func() {
+		It("runs sanitize method", func() {
+			iso := config.NewISO()
+			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
+		})
+	})
+	Describe("RawDisk", func() {
+		It("runs sanitize method", func() {
+			disk := &v1.RawDisk{}
+			Expect(disk.Sanitize()).ShouldNot(HaveOccurred())
+		})
+	})
 })

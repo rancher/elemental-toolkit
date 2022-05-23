@@ -39,7 +39,6 @@ func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Short: fmt.Sprintf("converts between a raw disk and a cloud operator disk image (%s)", strings.Join(outputAllowed, ",")),
 		Args:  cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
 				return CheckRoot()
 			}
@@ -48,13 +47,7 @@ func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mounter := &mountUtils.FakeMounter{}
 
-			// If configDir is empty try to get the manifest from current dir
-			configDir := viper.GetString("config-dir")
-			if configDir == "" {
-				configDir = "."
-			}
-
-			cfg, err := config.ReadConfigBuild(configDir, mounter)
+			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				return err
 			}

@@ -21,7 +21,6 @@ import (
 
 	"github.com/rancher-sandbox/elemental/cmd/config"
 	"github.com/rancher-sandbox/elemental/pkg/action"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -58,7 +57,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			adaptDockerImageAndDirectoryFlagsToSystem(cmd.Flags())
 
 			cmd.SilenceUsage = true
-			spec, err := config.ReadResetSpec(cfg, cmd.Flags(), constants.GetResetKeyEnvMap())
+			spec, err := config.ReadResetSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("invalid reset command setup %v", err)
 				return err

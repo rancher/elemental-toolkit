@@ -28,14 +28,16 @@ import (
 )
 
 type BuildISOAction struct {
-	cfg *v1.BuildConfig
-	e   *elemental.Elemental
+	cfg  *v1.BuildConfig
+	spec *v1.LiveISO
+	e    *elemental.Elemental
 }
 
-func NewBuildISOAction(cfg *v1.BuildConfig) *BuildISOAction {
+func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO) *BuildISOAction {
 	return &BuildISOAction{
-		cfg: cfg,
-		e:   elemental.NewElemental(&cfg.Config),
+		cfg:  cfg,
+		e:    elemental.NewElemental(&cfg.Config),
+		spec: spec,
 	}
 }
 
@@ -77,7 +79,7 @@ func (b *BuildISOAction) ISORun() (err error) {
 	}
 
 	b.cfg.Logger.Infof("Preparing squashfs root...")
-	err = b.applySources(rootDir, b.cfg.ISO.RootFS...)
+	err = b.applySources(rootDir, b.spec.RootFS...)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed installing OS packages: %v", err)
 		return err
@@ -89,14 +91,14 @@ func (b *BuildISOAction) ISORun() (err error) {
 	}
 
 	b.cfg.Logger.Infof("Preparing EFI image...")
-	err = b.applySources(uefiDir, b.cfg.ISO.UEFI...)
+	err = b.applySources(uefiDir, b.spec.UEFI...)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed installing EFI packages: %v", err)
 		return err
 	}
 
 	b.cfg.Logger.Infof("Preparing ISO image root tree...")
-	err = b.applySources(isoDir, b.cfg.ISO.Image...)
+	err = b.applySources(isoDir, b.spec.Image...)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed installing ISO image packages: %v", err)
 		return err
@@ -220,11 +222,11 @@ func (b BuildISOAction) burnISO(root string) error {
 	}
 
 	args := []string{
-		"-volid", b.cfg.ISO.Label, "-joliet", "on", "-padding", "0",
+		"-volid", b.spec.Label, "-joliet", "on", "-padding", "0",
 		"-outdev", outputFile, "-map", root, "/", "-chmod", "0755", "--",
 	}
 	args = append(args, constants.GetDefaultXorrisoBooloaderArgs(
-		root, b.cfg.ISO.BootFile, b.cfg.ISO.BootCatalog, b.cfg.ISO.HybridMBR,
+		root, b.spec.BootFile, b.spec.BootCatalog, b.spec.HybridMBR,
 	)...)
 
 	out, err := b.cfg.Runner.Run(cmd, args...)

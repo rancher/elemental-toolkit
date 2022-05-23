@@ -195,6 +195,13 @@ func GetBuildDiskDefaultPackages() map[string]string {
 	}
 }
 
+// GetRunKeyEnvMap returns environment variable bindings to RunConfig data
+func GetRunKeyEnvMap() map[string]string {
+	// None for the time being
+	return map[string]string{}
+}
+
+// GetInstallKeyEnvMap returns environment variable bindings to InstallSpec data
 func GetInstallKeyEnvMap() map[string]string {
 	return map[string]string{
 		"target":              "TARGET",
@@ -203,6 +210,7 @@ func GetInstallKeyEnvMap() map[string]string {
 	}
 }
 
+// GetResetKeyEnvMap returns environment variable bindings to ResetSpec data
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
 		"target":     "TARGET",
@@ -210,10 +218,30 @@ func GetResetKeyEnvMap() map[string]string {
 	}
 }
 
+// GetUpgradeKeyEnvMap returns environment variable bindings to UpgradeSpec data
 func GetUpgradeKeyEnvMap() map[string]string {
 	return map[string]string{
 		"recovery":            "RECOVERY",
 		"system.uri":          "SYSTEM",
 		"recovery-system.uri": "RECOVERY_SYSTEM",
 	}
+}
+
+// GetBuildKeyEnvMap returns environment variable bindings to BuildConfig data
+func GetBuildKeyEnvMap() map[string]string {
+	return map[string]string{
+		"name": "NAME",
+	}
+}
+
+// GetISOKeyEnvMap returns environment variable bindings to LiveISO data
+func GetISOKeyEnvMap() map[string]string {
+	// None for the time being
+	return map[string]string{}
+}
+
+// GetDiskKeyEnvMap returns environment variable bindings to RawDisk data
+func GetDiskKeyEnvMap() map[string]string {
+	// None for the time being
+	return map[string]string{}
 }

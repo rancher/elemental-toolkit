@@ -434,6 +434,19 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
+func NewRawDisk(cfg v1.Config) *v1.RawDisk {
+	var packages []v1.RawDiskPackage
+	defaultPackages := constants.GetBuildDiskDefaultPackages()
+
+	for pkg, target := range defaultPackages {
+		packages = append(packages, v1.RawDiskPackage{Name: pkg, Target: target})
+	}
+
+	return &v1.RawDisk{
+		cfg.Arch: &v1.RawDiskArchEntry{Packages: packages},
+	}
+}
+
 func NewISO() *v1.LiveISO {
 	return &v1.LiveISO{
 		Label:       constants.ISOLabel,
@@ -448,8 +461,19 @@ func NewISO() *v1.LiveISO {
 func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	b := &v1.BuildConfig{
 		Config: *NewConfig(opts...),
-		ISO:    NewISO(),
 		Name:   constants.BuildImgName,
+	}
+	if len(b.Repos) == 0 {
+		repo := constants.LuetDefaultRepoURI
+		if b.Arch != "x86_64" {
+			repo = fmt.Sprintf("%s-%s", constants.LuetDefaultRepoURI, b.Arch)
+		}
+		b.Repos = []v1.Repository{{
+			Name:     "cos",
+			Type:     "docker",
+			URI:      repo,
+			Priority: constants.LuetDefaultRepoPrio,
+		}}
 	}
 	return b
 }

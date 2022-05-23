@@ -39,7 +39,6 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Short: "builds bootable installation media ISOs",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			_ = viper.BindPFlags(cmd.Flags())
 			if addCheckRoot {
 				return CheckRoot()
 			}
@@ -52,41 +51,44 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			mounter := mount.New(path)
 
-			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), mounter)
+			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 			}
 
-			if len(args) >= 1 {
-				cfg.ISO.RootFS = []string{args[0]}
-			}
-
-			err = validateCosignFlags(cfg.Logger, cmd.Flags())
+			flags := cmd.Flags()
+			err = validateCosignFlags(cfg.Logger, flags)
 			if err != nil {
 				return err
-			}
-
-			if len(cfg.ISO.RootFS) == 0 {
-				return fmt.Errorf("no rootfs image source provided")
 			}
 
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
-
-			oRootfs, _ := cmd.Flags().GetString("overlay-rootfs")
-			oUEFI, _ := cmd.Flags().GetString("overlay-uefi")
-			oISO, _ := cmd.Flags().GetString("overlay-iso")
-			repoURIs, _ := cmd.Flags().GetStringArray("repo")
-			label, _ := cmd.Flags().GetString("label")
-
-			if label != "" {
-				cfg.ISO.Label = label
+			spec, err := config.ReadBuildISO(cfg, flags)
+			if err != nil {
+				cfg.Logger.Errorf("invalid install command setup %v", err)
+				return err
 			}
+
+			if len(args) >= 1 {
+				spec.RootFS = []string{args[0]}
+			}
+
+			if len(spec.RootFS) == 0 {
+				return fmt.Errorf("no rootfs image source provided")
+			}
+
+			// Repos and overlays can't be unmarshaled directly as they require
+			// to be merged on top and flags do not match any config value key
+			oRootfs, _ := flags.GetString("overlay-rootfs")
+			oUEFI, _ := flags.GetString("overlay-uefi")
+			oISO, _ := flags.GetString("overlay-iso")
+			repoURIs, _ := flags.GetStringArray("repo")
 
 			if oRootfs != "" {
 				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
-					cfg.ISO.RootFS = append(cfg.ISO.RootFS, oRootfs)
+					spec.RootFS = append(spec.RootFS, oRootfs)
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-rootfs")
 					return fmt.Errorf("Invalid path '%s': %v", oRootfs, err)
@@ -94,7 +96,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oUEFI != "" {
 				if ok, err := utils.Exists(cfg.Fs, oUEFI); ok {
-					cfg.ISO.UEFI = append(cfg.ISO.UEFI, oUEFI)
+					spec.UEFI = append(spec.UEFI, oUEFI)
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-uefi")
 					return fmt.Errorf("Invalid path '%s': %v", oUEFI, err)
@@ -102,31 +104,18 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oISO != "" {
 				if ok, err := utils.Exists(cfg.Fs, oISO); ok {
-					cfg.ISO.Image = append(cfg.ISO.Image, oISO)
+					spec.Image = append(spec.Image, oISO)
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-iso")
 					return fmt.Errorf("Invalid path '%s': %v", oISO, err)
 				}
 			}
 
-			if len(cfg.Repos) == 0 {
-				repo := constants.LuetDefaultRepoURI
-				if cfg.Arch != "x86_64" {
-					repo = fmt.Sprintf("%s-%s", constants.LuetDefaultRepoURI, cfg.Arch)
-				}
-				cfg.Repos = []v1.Repository{{
-					Name:     "cos",
-					Type:     "docker",
-					URI:      repo,
-					Priority: constants.LuetDefaultRepoPrio,
-				}}
-			}
-
 			for _, u := range repoURIs {
 				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio})
 			}
 
-			buildISO := action.NewBuildISOAction(cfg)
+			buildISO := action.NewBuildISOAction(cfg, spec)
 			err = buildISO.ISORun()
 			if err != nil {
 				return err
