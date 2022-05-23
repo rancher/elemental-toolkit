@@ -32,6 +32,15 @@ function doLoopMount {
     done
 }
 
+function dofsCheck {
+    # Iterate over current partitions
+    # As fs corruption could lead to partitions with no label, we scan here for all partitions found and we run systemd-fsck
+    for dev in /dev/disk/by-partuuid/*; do
+        partuuid=$(basename "${dev}")
+        /usr/lib/systemd/systemd-fsck "/dev/disk/by-partuuid/${partuuid}"
+    done
+}
+
 type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -50,6 +59,7 @@ ismounted "${cos_state}" && exit 0
 
 mkdir -p "${cos_state}"
 
+dofsCheck
 doLoopMount
 
 rm -r "${cos_state}"
