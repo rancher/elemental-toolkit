@@ -197,8 +197,11 @@ func GetBuildDiskDefaultPackages() map[string]string {
 
 // GetRunKeyEnvMap returns environment variable bindings to RunConfig data
 func GetRunKeyEnvMap() map[string]string {
-	// None for the time being
-	return map[string]string{}
+	return map[string]string{
+		"poweroff": "POWEROFF",
+		"reboot":   "REBOOT",
+		"strict":   "STRICT",
+	}
 }
 
 // GetInstallKeyEnvMap returns environment variable bindings to InstallSpec data
@@ -207,14 +210,23 @@ func GetInstallKeyEnvMap() map[string]string {
 		"target":              "TARGET",
 		"system.uri":          "SYSTEM",
 		"recovery-system.uri": "RECOVERY_SYSTEM",
+		"cloud-init":          "CLOUD_INIT",
+		"iso":                 "ISO",
+		"firmware":            "FIRMWARE",
+		"part-table":          "PART_TABLE",
+		"no-format":           "NO_FORMAT",
+		"tty":                 "TTY",
+		"grub-entry-name":     "GRUB_ENTRY_NAME",
 	}
 }
 
 // GetResetKeyEnvMap returns environment variable bindings to ResetSpec data
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
-		"target":     "TARGET",
-		"system.uri": "SYSTEM",
+		"target":          "TARGET",
+		"system.uri":      "SYSTEM",
+		"tty":             "TTY",
+		"grub-entry-name": "GRUB_ENTRY_NAME",
 	}
 }
 
