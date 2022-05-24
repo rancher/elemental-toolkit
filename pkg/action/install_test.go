@@ -315,6 +315,13 @@ var _ = Describe("Install action tests", func() {
 			Expect(installer.Run()).NotTo(BeNil())
 		})
 
+		It("Fails on blkdeactivate errors", Label("disk", "partitions"), func() {
+			spec.Target = device
+			cmdFail = "blkdeactivate"
+			Expect(installer.Run()).NotTo(BeNil())
+			Expect(runner.MatchMilestones([][]string{{"parted"}}))
+		})
+
 		It("Fails on parted errors", Label("disk", "partitions"), func() {
 			spec.Target = device
 			cmdFail = "parted"

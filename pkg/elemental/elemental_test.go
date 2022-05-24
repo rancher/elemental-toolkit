@@ -781,6 +781,17 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).Should(HaveOccurred())
 		})
 	})
+	Describe("DeactivateDevices", Label("blkdeactivate"), func() {
+		It("calls blkdeactivat", func() {
+			el := elemental.NewElemental(config)
+			err := el.DeactivateDevices()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.CmdsMatch([][]string{{
+				"blkdeactivate", "--lvmoptions", "retry,wholevg",
+				"--dmoptions", "force,retry", "--errors",
+			}})).To(BeNil())
+		})
+	})
 })
 
 // PathInMountPoints will check if the given path is in the mountPoints list

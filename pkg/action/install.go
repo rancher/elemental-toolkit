@@ -82,6 +82,11 @@ func (i InstallAction) Run() (err error) {
 			return fmt.Errorf("use `force` flag to run an installation over the current running deployment")
 		}
 	} else {
+		// Deactivate any active volume on target
+		err = e.DeactivateDevices()
+		if err != nil {
+			return err
+		}
 		// Partition device
 		err = e.PartitionAndFormatDevice(i.spec)
 		if err != nil {
