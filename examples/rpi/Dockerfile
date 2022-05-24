@@ -1,83 +1,21 @@
-ARG LUET_VERSION=0.20.10
+ARG LUET_VERSION=0.32.0
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
-FROM opensuse/tumbleweed:latest
+FROM quay.io/costoolkit/releases-teal-arm64:cos-system-0.8.10-3
 
 ENV COSIGN_EXPERIMENTAL=1
 ENV COSIGN_REPOSITORY=raccos/releases-teal
-
-RUN zypper ref
-RUN zypper in -y \
-    # RPI
-    aaa_base-extras \
-    bcm43xx-firmware \
-    conntrack-tools \
-    coreutils \
-    curl \
-    device-mapper \
-    dosfstools \
-    dracut \
-    e2fsprogs \
-    findutils \
-    gawk \
-    gptfdisk \
-    grub2 \
-    grub2-arm64-efi \
-    haveged \
-    iproute2 \
-    iputils \
-    iw \
-    jq \
-    kernel-default \
-    kernel-firmware-all \
-    kmod \
-    less \
-    libudev1 \
-    lsscsi \
-    lvm2 \
-    mdadm \
-    multipath-tools \
-    nano \
-    NetworkManager \
-    nfs-utils \
-    open-iscsi \
-    open-vm-tools \
-    parted \
-    python-azure-agent \
-    qemu-guest-agent \
-    raspberrypi-eeprom \
-    rng-tools \
-    rsync \
-    squashfs \
-    systemd \
-    systemd-sysvinit \
-    tar \
-    timezone \
-    vim \
-    vim-small \
-    which \
-    wireless-tools \
-    wpa_supplicant
-
-RUN zypper cc
-
-# Configure NetworkManager as default network management service
-RUN zypper remove -y wicked
-RUN systemctl disable wicked \
-    && systemctl enable NetworkManager
+ENV LUET_NOLOCK=true
 
 # Copy the luet config file pointing to the upgrade repository
 COPY conf/luet.yaml /etc/luet/luet.yaml
-RUN curl -L https://github.com/mudler/luet/releases/download/0.20.10/luet-0.20.10-linux-arm64 --output /usr/bin/luet
-
-RUN chmod +x /usr/bin/luet
+COPY --from=luet /usr/bin/luet /usr/bin/luet
 RUN luet install -y meta/cos-verify
-
-RUN luet install --plugin luet-cosign -y meta/cos-minimal
+RUN luet install --plugin luet-cosign -y \
+    meta/cos-minimal \
+    system/dracut-initrd
 
 COPY files/ /
 
-
 RUN mkinitrd
-
 RUN ln -sf Image /boot/vmlinuz

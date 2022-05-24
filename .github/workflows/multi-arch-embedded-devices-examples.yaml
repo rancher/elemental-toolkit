@@ -8,17 +8,27 @@ on:
       - arm_adaptations
     tags:
       - '*'
-
+  pull_request:
+    paths:
+      - examples/**
 jobs:
   docker:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
+          - tag: "odroid-c2-leap-"
+            dockerfile: "examples/odroid-c2-leap"
+            platforms: "linux/arm64"
+            model: odroid_c2
           - tag: "odroid-c2-"
             dockerfile: "examples/odroid-c2"
             platforms: "linux/arm64"
             model: odroid_c2
+          - tag: "rpi-leap-"
+            dockerfile: "examples/rpi-leap"
+            platforms: "linux/arm64"
+            model: rpi64
           - tag: "rpi-"
             dockerfile: "examples/rpi"
             platforms: "linux/arm64"
@@ -52,13 +62,12 @@ jobs:
           echo ::set-output name=docker_image::${DOCKER_IMAGE}
           echo ::set-output name=current::${DOCKER_IMAGE}:${{ matrix.tag }}${SHORTREF}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
+        uses: docker/setup-qemu-action@v2
         with:
           platforms: all
-
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@master
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
@@ -74,24 +83,27 @@ jobs:
           context: ./${{ matrix.dockerfile }}
           file: ./${{ matrix.dockerfile }}/Dockerfile
           platforms: ${{ matrix.platforms }}
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags }}
       - name: Export cos version
         run: |
              source .github/helpers.sh
              echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
       - name: Build Image
+        if: github.event_name != 'pull_request'
         id: build_image
         run: |
           mkdir build
           sudo ./images/arm-img-builder.sh --model ${{ matrix.model }} --docker-image ${{ steps.prep.outputs.current }} build/cOS-example-${{ matrix.tag }}$COS_VERSION.img
       - name: Upload Image
+        if: github.event_name != 'pull_request'
         run: |
           sudo tar cvf build.tar build
           sudo luet util pack quay.io/costoolkit/examples:${{ matrix.tag }}$COS_VERSION.img build.tar image.tar
           sudo -E docker load -i image.tar
           sudo -E docker push quay.io/costoolkit/examples:${{ matrix.tag }}$COS_VERSION.img
       - name: Upload results
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.tag }}-image
