@@ -249,7 +249,7 @@ for mount in "${mountpoints[@]}"; do
         fi
     else
         # FSCK
-        /usr/lib/systemd/systemd-fsck "${mount}"
+        systemd-fsck "${mount}"
         fstab+=$(mountPersistent "${mount}")
     fi
 done

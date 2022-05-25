@@ -15,14 +15,14 @@ function doLoopMount {
 
             # FSCHECK if cos_root_perm == "ro" on both
             if [ "$cos_root_perm" == "ro" ]; then
-               /usr/lib/systemd/systemd-fsck "/dev/disk/by-label/${label}"
+               systemd-fsck "/dev/disk/by-label/${label}"
             fi
 
             dev=$(losetup --show -f "${cos_state}/${cos_img}")
 
             # FSCHECK if cos_root_perm == "ro"
             if [ "$cos_root_perm" == "ro" ]; then
-               /usr/lib/systemd/systemd-fsck "$dev"
+               systemd-fsck "$dev"
             fi
 
             exit 0
@@ -37,7 +37,7 @@ function dofsCheck {
     # As fs corruption could lead to partitions with no label, we scan here for all partitions found and we run systemd-fsck
     for dev in /dev/disk/by-partuuid/*; do
         partuuid=$(basename "${dev}")
-        /usr/lib/systemd/systemd-fsck "/dev/disk/by-partuuid/${partuuid}"
+        systemd-fsck "/dev/disk/by-partuuid/${partuuid}"
     done
 }
 

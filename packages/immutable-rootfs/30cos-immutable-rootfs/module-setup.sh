@@ -41,5 +41,7 @@ install() {
     mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.requires"
     ln_r "../cos-immutable-rootfs.service" \
         "${systemdsystemunitdir}/initrd-fs.target.requires/cos-immutable-rootfs.service"
+    ln_r "$systemdutildir"/systemd-fsck \
+        "/sbin/systemd-fsck"
     dracut_need_initqueue
 }
