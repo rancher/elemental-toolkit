@@ -46,7 +46,7 @@ type Config struct {
 	Luet                      LuetInterface
 	Client                    HTTPClient
 	Cosign                    bool         `yaml:"cosign,omitempty" mapstructure:"cosign"`
-	NoVerify                  bool         `yaml:"no-verify,omitempty" mapstructure:"no-verify"`
+	Verify                    bool         `yaml:"verify,omitempty" mapstructure:"verify"`
 	CosignPubKey              string       `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
 	LocalImage                bool         `yaml:"local,omitempty" mapstructure:"local"`
 	Repos                     []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
@@ -58,7 +58,7 @@ type Config struct {
 // if unsolvable inconsistencies are found
 func (c *Config) Sanitize() error {
 	// Set Luet plugins, we only use the mtree plugin for now
-	if !c.NoVerify {
+	if c.Verify {
 		c.Luet.SetPlugins(constants.LuetMtreePlugin)
 	}
 	return nil

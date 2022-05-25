@@ -180,6 +180,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("RunConfig", func() {
 		It("runs sanitize method", func() {
 			cfg := config.NewRunConfig(config.WithMounter(v1mocks.NewErrorMounter()))
+			cfg.Config.Verify = true
 
 			// Sets the luet mtree pluing
 			err := cfg.Sanitize()
@@ -190,6 +191,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("BuildConfig", func() {
 		It("runs sanitize method", func() {
 			cfg := config.NewBuildConfig(config.WithMounter(v1mocks.NewErrorMounter()))
+			cfg.Config.Verify = true
 
 			// Sets the luet mtree pluing
 			err := cfg.Sanitize()

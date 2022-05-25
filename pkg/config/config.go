@@ -163,7 +163,7 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 // mapstructure unmarshal already took place.
 func CoOccurrenceConfig(cfg *v1.Config) {
 	// Set Luet plugins, we only use the mtree plugin for now
-	if !cfg.NoVerify {
+	if cfg.Verify {
 		cfg.Luet.SetPlugins(constants.LuetMtreePlugin)
 	}
 }

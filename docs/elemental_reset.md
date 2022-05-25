@@ -12,7 +12,7 @@ elemental reset [flags]
       --cosign              Enable cosign verification (requires images with signatures)
       --cosign-key string   Sets the URL of the public key to be used by cosign validation
   -h, --help                help for reset
-      --no-verify           Disable mtree checksum verification (requires images manifests generated with mtree separately)
+      --verify              Enable mtree checksum verification (requires images manifests generated with mtree separately)
       --poweroff            Shutdown the system after install
       --reboot              Reboot the system after install
       --reset-persistent    Clear persistent partitions
