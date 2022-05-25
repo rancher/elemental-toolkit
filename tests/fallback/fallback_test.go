@@ -152,7 +152,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 	})
 
 	Context("COS_PERSISTENT partition is corrupted", func() {
-		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
+		It("boots in active when the persistent partition is damaged, and can be repaired with fsck", func() {
 
 			// Just to make sure we can match against the same output of blkid later on
 			// and that the starting condition is the one we expect
@@ -175,6 +175,8 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Reboot()
 			s.EventuallyConnects(700)
+
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 
 			// We should see traces of fsck in the journal.
 			// Note, this is a bit ugly because the only messages
