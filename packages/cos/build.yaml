@@ -105,26 +105,3 @@ excludes:
 {{ end }}
 {{- end}}
 #### system/cos system/cos-container and recovery/cos end here
-
-#### recovery/cos-img starts here
-{{ if eq .Values.name "cos-img" }}
-requires:
-  - category: "distro"
-    name: "base"
-    version: ">=0"
-copy:
-  - package:
-      category: "recovery"
-      name: "cos"
-      version: ">=0"
-    source: "/."
-    destination: "/recovery"
-
-requires_final_images: true
-
-package_dir: "/output"
-steps:
-  - mkdir /output
-  - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
-{{- end}}
-#### recovery/cos-img ends here

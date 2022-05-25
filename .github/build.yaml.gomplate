@@ -249,12 +249,6 @@
           sudo apt-get update
           sudo apt-get install -y xorriso squashfs-tools mtools
 
-  {{{- if eq $subset "nonsquashfs" }}}
-      - name: Tweak manifest and drop squashfs recovery
-        run: |
-          source .github/helpers.sh
-          drop_recovery manifest.yaml
-  {{{- end }}}
       {{{ tmpl.Exec "cos_version" }}}
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
@@ -280,7 +274,7 @@
   {{{ $subset := index . "subset" }}}
   qemu-{{{$subset}}}-{{{ $flavor }}}:
     runs-on: ubuntu-latest
-    needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    needs: iso-nonsquashfs-{{{ $flavor }}}
     env:
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
@@ -302,7 +296,7 @@
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
+          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Install deps
         run: |
           sudo -E make deps
@@ -337,7 +331,7 @@
   {{{ $subset := index . "subset" }}}
   vbox-{{{$subset}}}-{{{ $flavor }}}:
     runs-on: macos-10.15
-    needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    needs: iso-nonsquashfs-{{{ $flavor }}}
     env:
       PKR_VAR_arch: {{{ $config.arch }}}
       PKR_VAR_flavor: {{{ $flavor }}}
@@ -348,7 +342,7 @@
       - name: Download ISO
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
+          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Install deps
         run: |
             brew install yq
@@ -499,7 +493,7 @@
       ARCH: {{{ $config.arch }}}
       COS_TIMEOUT: 800
     runs-on: macos-10.15
-    needs: iso-{{{$subset}}}-{{{ $flavor }}}
+    needs: iso-nonsquashfs-{{{ $flavor }}}
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -509,7 +503,7 @@
       - name: Download iso
         uses: actions/download-artifact@v2
         with:
-          name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
+          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Prepare tests 🔧
         run: |
           make create_vm_from_iso_{{{$variant}}}
@@ -1119,13 +1113,17 @@ jobs:
   {{{tmpl.Exec "build_packages" $flavor}}}
   {{{- end }}}
 
+  {{{- if not (has $config.skip_images_flavor $flavor) }}}
+{{{ $context := coll.Dict "flavor" $flavor "subset" "nonsquashfs" }}}
+  {{{ tmpl.Exec "build_iso" $context }}}
+  {{{- end}}}
+
   {{{- range slice "squashfs" "nonsquashfs" }}}
 
     {{{- $subset:=. }}}
     {{{ $context := coll.Dict "flavor" $flavor "subset" $subset }}}
 
     {{{- if not (has $config.skip_images_flavor $flavor) }}}
-  {{{ tmpl.Exec "build_iso" $context }}}
         {{{- if has $config "run_installer_test" }}}
             {{{- if $config.run_installer_test }}}
   {{{ tmpl.Exec "installer_tests" $context }}}

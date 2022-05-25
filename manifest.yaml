@@ -6,10 +6,11 @@ iso:
   image:
     - live/grub2
     - live/grub2-efi-image
-    - recovery/cos-img
   label: "COS_LIVE"
+
 name: "cOS-0"
 label: "COS_LIVE"
+
 # Raw disk creation values start
 raw_disk:
   x86_64:

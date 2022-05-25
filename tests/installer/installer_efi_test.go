@@ -54,10 +54,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
 				It("performs a standard install", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
+					out, err := s.Command("elemental install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -68,10 +68,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 
 				// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
 				PIt("Forcing GPT", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
+					out, err := s.Command("elemental install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -118,10 +118,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				// Marked as pending to reduce the number of efi tests. VBox efi support is
 				// not good enough to run extensive tests
 				PIt("Not forcing GPT", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install /dev/sda")
+					out, err := s.Command("elemental install /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
