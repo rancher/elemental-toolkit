@@ -7,7 +7,7 @@ check() {
 
 # called by dracut 
 depends() {
-    echo rootfs-block dm fs-lib
+    echo systemd rootfs-block dm fs-lib
     return 0
 }
 
