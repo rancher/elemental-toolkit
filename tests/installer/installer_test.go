@@ -35,6 +35,13 @@ var _ = Describe("cOS Installer tests", func() {
 			out, err = s.Command("df -h /")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
+
+			// squashfs comes from a command line flag at suite level
+			if squashfs {
+				By("Setting the squashfs recovery install")
+				err = s.SendFile("../assets/install_recovery.yaml", "/etc/elemental/config.d/install_recovery.yaml", "0770")
+				Expect(err).ToNot(HaveOccurred())
+			}
 		})
 
 		AfterEach(func() {

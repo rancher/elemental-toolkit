@@ -46,7 +46,6 @@ else
 VMNAME=cos-arm64
 endif
 
-
 test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-hooks test-fallback test-recovery test-deploys-images-recovery
 
 #
@@ -101,10 +100,10 @@ test-deploys-images-recovery: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
 
 test-installer-bios: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer $(PASSTHROUGH_ARGS)
 
 test-installer-efi: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using efi" ./installer
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using efi" ./installer $(PASSTHROUGH_ARGS)
 
 $(GINKGO):
 	@echo "'ginkgo' not found."

@@ -1,0 +1,4 @@
+install:
+  recovery-system:
+    fs: squashfs
+    uri: file:/run/initramfs/live/rootfs.squashfs
