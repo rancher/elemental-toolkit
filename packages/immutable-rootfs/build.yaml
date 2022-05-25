@@ -7,7 +7,13 @@ steps:
 {{ if .Values.distribution }}
 {{if eq .Values.distribution "opensuse" }}
 # Mount /tmp as tmpfs by default as set by systemd itself
-- cp /usr/share/systemd/tmp.mount /etc/systemd/system
+- | 
+    /bin/bash -c " \
+    if [ -e /usr/share/systemd/tmp.mount ]; then \
+      cp /usr/share/systemd/tmp.mount /etc/systemd/system; \
+    else \
+      cp /usr/lib/systemd/system/tmp.mount /etc/systemd/system; \
+    fi "
 {{end}}
 {{end}}
 - cp -r 30cos-immutable-rootfs /usr/lib/dracut/modules.d
