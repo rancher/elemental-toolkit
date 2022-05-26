@@ -92,7 +92,7 @@ type InstallSpec struct {
 	Force        bool                `yaml:"force,omitempty" mapstructure:"force"`
 	CloudInit    string              `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	Iso          string              `yaml:"iso,omitempty" mapstructure:"iso"`
-	GrubDefEntry string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
+	GrubDefEntry string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Tty          string              `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
@@ -115,7 +115,7 @@ func (i *InstallSpec) Sanitize() error {
 // ResetSpec struct represents all the reset action details
 type ResetSpec struct {
 	FormatPersistent bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
-	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
+	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Tty              string `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
 	Passive          Image
@@ -141,7 +141,7 @@ type UpgradeSpec struct {
 	RecoveryUpgrade bool   `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	Active          Image  `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery        Image  `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry    string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-default-entry"`
+	GrubDefEntry    string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Passive         Image
 	Partitions      ElementalPartitions
 }
