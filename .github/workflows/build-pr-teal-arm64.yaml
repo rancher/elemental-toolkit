@@ -176,7 +176,7 @@ jobs:
       PKR_VAR_memory: 4096
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-      PACKER_TARGET: qemu.cos-arm64
+      PACKER_TARGET: qemu.cos-arm64-squashfs
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO

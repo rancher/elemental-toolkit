@@ -287,9 +287,17 @@
       {{{if eq $config.arch "arm64" }}}
       PKR_VAR_qemu_binary: qemu-system-aarch64
       PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      {{{if eq $subset "squashfs" }}}
+      PACKER_TARGET: qemu.cos-arm64-squashfs
+      {{{else}}}
       PACKER_TARGET: qemu.cos-arm64
+      {{{- end}}}
+      {{{else}}}
+      {{{if eq $subset "squashfs" }}}
+      PACKER_TARGET: qemu.cos-squashfs
       {{{else}}}
       PACKER_TARGET: qemu.cos
+      {{{- end}}}
       {{{- end}}}
     steps:
       - uses: actions/checkout@v2
@@ -336,7 +344,11 @@
       PKR_VAR_arch: {{{ $config.arch }}}
       PKR_VAR_flavor: {{{ $flavor }}}
       PKR_VAR_feature: vagrant
+      {{{if eq $subset "squashfs" }}}
+      PACKER_TARGET: virtualbox-iso.cos-squashfs
+      {{{else}}}
       PACKER_TARGET: virtualbox-iso.cos
+      {{{- end}}}
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO

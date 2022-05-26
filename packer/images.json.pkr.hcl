@@ -161,6 +161,24 @@ build {
 
   sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
 
+  source "source.qemu.cos" {
+    name = "cos-squashfs"
+  }
+
+  source "source.qemu.cos-arm64" {
+    name = "cos-arm64-squashfs"
+  }
+
+  source "source.virtualbox-iso.cos" {
+    name = "cos-squashfs"
+  }
+
+  provisioner "file" {
+    only = ["virtualbox-iso.cos-squashfs", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
+    destination = "/etc/elemental/config.d/squashed_recovery.yaml"
+    source      = "squashed_recovery.yaml"
+  }
+
   provisioner "file" {
     except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
     destination = "/90_custom.yaml"
@@ -209,22 +227,22 @@ build {
   }
 
   post-processor "vagrant" {
-    only   = ["virtualbox-iso.cos"]
+    only   = ["virtualbox-iso.cos", "virtualbox-iso.cos-squashfs"]
     output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.box"
   }
 
   post-processor "vagrant" {
-    only   = ["qemu.cos", "qemu.cos-arm64"]
+    only   = ["qemu.cos", "qemu.cos-arm64", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
     output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.box"
   }
 
   post-processor "compress" {
-    only   = ["virtualbox-iso.cos"]
+    only   = ["virtualbox-iso.cos", "virtualbox-iso.cos-squashfs"]
     output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.tar.gz"
   }
 
   post-processor "compress" {
-    only   = ["qemu.cos", "qemu.cos-arm64"]
+    only   = ["qemu.cos", "qemu.cos-arm64", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
     output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.tar.gz"
   }
 }

@@ -267,7 +267,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
-      PACKER_TARGET: qemu.cos
+      PACKER_TARGET: qemu.cos-squashfs
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
@@ -307,7 +307,7 @@ jobs:
       PKR_VAR_arch: x86_64
       PKR_VAR_flavor: teal
       PKR_VAR_feature: vagrant
-      PACKER_TARGET: virtualbox-iso.cos
+      PACKER_TARGET: virtualbox-iso.cos-squashfs
     steps:
       - uses: actions/checkout@v2
       - name: Download ISO
