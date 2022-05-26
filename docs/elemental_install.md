@@ -19,7 +19,6 @@ elemental install DEVICE [flags]
   -i, --iso string                       Performs an installation from the ISO url
       --local                            Use an image from local cache
       --no-format                        Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing
-      --verify                           Enable mtree checksum verification (requires images manifests generated with mtree separately)
       --part-table string                Partition table type to use (default "gpt")
       --poweroff                         Shutdown the system after install
       --reboot                           Reboot the system after install
@@ -28,6 +27,7 @@ elemental install DEVICE [flags]
       --strict                           Enable strict check of hooks (They need to exit with 0)
       --system.uri string                Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
       --tty string                       Add named tty to grub
+      --verify                           Enable mtree checksum verification (requires images manifests generated with mtree separately)
 ```
 
 ### Options inherited from parent commands
