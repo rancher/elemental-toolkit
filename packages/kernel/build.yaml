@@ -12,6 +12,15 @@ unpack: true
 includes:
 - ^/boot|^/boot/.*
 - ^/lib/modules|^/lib/modules.*
+{{ if .Values.arch }}
+  {{ if eq .Values.arch "aarch64" }}
+steps:
+# link kernel to vmlinuz
+- |
+  kernel=$(ls /boot/Image-* | head -n1) && \
+  ln -sf "${kernel#/boot/}" /boot/vmlinuz
+  {{ end }}
+{{ end }}
 {{ else }}
 steps:
 {{ if .Values.distribution }}
