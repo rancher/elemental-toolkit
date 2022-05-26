@@ -39,7 +39,7 @@ var _ = Describe("cOS Installer tests", func() {
 			// squashfs comes from a command line flag at suite level
 			if squashfs {
 				By("Setting the squashfs recovery install")
-				err = s.SendFile("../assets/install_recovery.yaml", "/etc/elemental/config.d/install_recovery.yaml", "0770")
+				err = s.SendFile("../assets/squashed_recovery.yaml", "/etc/elemental/config.d/install_recovery.yaml", "0770")
 				Expect(err).ToNot(HaveOccurred())
 			}
 		})
@@ -60,6 +60,11 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+				}
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
@@ -75,6 +80,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+				}
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
@@ -96,6 +105,10 @@ var _ = Describe("cOS Installer tests", func() {
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
+					if squashfs {
+						// Check the squashfs image is used as recovery
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					}
 					s.Reboot()
 					By("Checking we booted from the installed cOS")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
@@ -142,6 +155,10 @@ var _ = Describe("cOS Installer tests", func() {
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
+					if squashfs {
+						// Check the squashfs image is used as recovery
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					}
 					s.Reboot()
 					By("Checking we booted from the installed cOS")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
@@ -189,6 +206,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+				}
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
@@ -203,6 +224,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+				}
 				s.Reboot()
 				// We are on a bios system, we should not be able to boot from an EFI installed system!
 				By("Checking we booted from the CD")
@@ -222,6 +247,10 @@ var _ = Describe("cOS Installer tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Unmounting disk partitions"))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+				}
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
