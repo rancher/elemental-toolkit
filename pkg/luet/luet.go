@@ -115,7 +115,7 @@ func NewLuet(opts ...Options) *Luet {
 
 	if luet.context == nil {
 		luetConfig := luet.createLuetConfig()
-		luet.context = context.NewContext(context.WithConfig(luetConfig))
+		luet.context = context.NewContext(context.WithConfig(luetConfig), context.WithLogger(luet.log))
 	}
 
 	if luet.auth == nil {

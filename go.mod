@@ -12,7 +12,6 @@ require (
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/docker/go-units v0.4.0
-	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-getter v1.5.11
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ishidawataru/sctp v0.0.0-20210707070123-9a39160e9062 // indirect
@@ -22,7 +21,7 @@ require (
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e
-	github.com/mudler/luet v0.0.0-20220127164253-6f77fa2b3a72
+	github.com/mudler/luet v0.0.0-20220526130937-264bf53fe7ab
 	github.com/mudler/yip v0.0.0-20220321143540-2617d71ea02a
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.19.0

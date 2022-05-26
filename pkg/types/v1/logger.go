@@ -18,9 +18,12 @@ package v1
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 
+	"github.com/mudler/luet/pkg/api/core/types"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,6 +34,8 @@ type Logger interface {
 	Debug(...interface{})
 	Error(...interface{})
 	Fatal(...interface{})
+	Success(...interface{})
+	Warning(...interface{})
 	Panic(...interface{})
 	Trace(...interface{})
 	Infof(string, ...interface{})
@@ -44,6 +49,13 @@ type Logger interface {
 	GetLevel() log.Level
 	SetOutput(writer io.Writer)
 	SetFormatter(formatter log.Formatter)
+
+	Copy() (types.Logger, error)
+	SetContext(string)
+	SpinnerStop()
+	Spinner()
+	Ask() bool
+	Screen(string)
 }
 
 func DebugLevel() log.Level {
@@ -58,19 +70,60 @@ func IsDebugLevel(l Logger) bool {
 type LoggerOptions func(l Logger) error
 
 func NewLogger() Logger {
-	return log.New()
+	return newLogrusWrapper(log.New())
 }
 
 // NewNullLogger will return a logger that discards all logs, used mainly for testing
 func NewNullLogger() Logger {
 	logger := log.New()
 	logger.SetOutput(ioutil.Discard)
-	return logger
+	return newLogrusWrapper(logger)
 }
 
 // NewBufferLogger will return a logger that stores all logs in a buffer, used mainly for testing
 func NewBufferLogger(b *bytes.Buffer) Logger {
 	logger := log.New()
 	logger.SetOutput(b)
-	return logger
+	return newLogrusWrapper(logger)
 }
+
+type logrusWrapper struct {
+	*log.Logger
+}
+
+func newLogrusWrapper(l *log.Logger) Logger {
+	return &logrusWrapper{Logger: l}
+}
+
+func (w *logrusWrapper) Ask() bool {
+	var input string
+	w.Info("Do you want to continue with this operation? [y/N]: ")
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		return false
+	}
+	input = strings.ToLower(input)
+
+	if input == "y" || input == "yes" {
+		return true
+	}
+	return false
+}
+
+func (w *logrusWrapper) Copy() (types.Logger, error) {
+	c := *w
+	copy := &c
+	return copy, nil
+}
+
+func (w *logrusWrapper) Screen(t string) {
+	w.Infof(">>>%s", t)
+}
+
+// no-ops
+func (w *logrusWrapper) Success(r ...interface{}) {
+	w.Info(r...)
+}
+func (w *logrusWrapper) SetContext(string) {}
+func (w *logrusWrapper) Spinner()          {}
+func (w *logrusWrapper) SpinnerStop()      {}

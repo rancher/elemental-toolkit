@@ -19,11 +19,11 @@ package cloudinit_test
 import (
 	"errors"
 	"fmt"
-	"github.com/jaypipes/ghw/pkg/block"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/jaypipes/ghw/pkg/block"
 
 	. "github.com/rancher-sandbox/elemental/pkg/cloudinit"
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -46,8 +46,7 @@ const printOutput = `BYT;
 var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
 	// unit test stolen from yip
 	Describe("loading yaml files", func() {
-		logger := logrus.New()
-		logger.SetOutput(ioutil.Discard)
+		logger := v1.NewNullLogger()
 
 		It("executes commands", func() {
 
@@ -103,8 +102,7 @@ stages:
 		var device, cmdFail string
 		var partNum int
 		var cleanup func()
-		logger := logrus.New()
-		logger.SetOutput(ioutil.Discard)
+		logger := v1.NewNullLogger()
 		BeforeEach(func() {
 			afs, cleanup, _ = vfst.NewTestFS(nil)
 			err := utils.MkdirAll(afs, "/some/yip", constants.DirPerm)
