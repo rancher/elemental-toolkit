@@ -1021,6 +1021,8 @@ github.com/rancher-sandbox/cloud-init v1.14.3-0.20210913085759-bf90bf5eb77e h1:1
 github.com/rancher-sandbox/cloud-init v1.14.3-0.20210913085759-bf90bf5eb77e/go.mod h1:qbJr82AYxRKlEa4ZSm6qENOmXebBxPXne8BWbtll4cg=
 github.com/rancher-sandbox/gofilecache v0.0.0-20210330135715-becdeff5df15 h1:w8tg3snxZF0UHTVmYq7DDPkC3lehwFC/4EwVTAxFeWg=
 github.com/rancher-sandbox/gofilecache v0.0.0-20210330135715-becdeff5df15/go.mod h1:+Uhkjp4zCSryD4cpHhEu8uz4fIQ533t6Lv6M6pSVIKQ=
+github.com/rancher-sandbox/grsync v1.6.2-0.20220526080038-4032e9b0e97c h1:0/+U+enNsv4oF++X1bYJPDV2hzHLKBDiYBshgPmFMqs=
+github.com/rancher-sandbox/grsync v1.6.2-0.20220526080038-4032e9b0e97c/go.mod h1:0Ue43fnWwx3doC5GkfmwmUwCAvQ54h06FRHXXX3ZWls=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
@@ -1189,8 +1191,6 @@ github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f/go
 github.com/zcalusic/sysinfo v0.0.0-20210831153053-2c6e1d254246/go.mod h1:WGLNaWsjKQ2gXmAHh+MQztgu3FLFAnOFJjFzhpgShCY=
 github.com/zcalusic/sysinfo v0.0.0-20210905121133-6fa2f969a900 h1:4klaqgLMtyCrRio4MV/xE8gcrMOYnvXtmbWPOLjxVBA=
 github.com/zcalusic/sysinfo v0.0.0-20210905121133-6fa2f969a900/go.mod h1:Z/gPVufBrFc8X5sef3m6kkw3r3nlNFp+I6bvASfvBZQ=
-github.com/zloylos/grsync v1.5.1 h1:ZK+4ikSrXftZUndmC3rYZt7WHvyT2WoZz1MBTztxDo4=
-github.com/zloylos/grsync v1.5.1/go.mod h1:2utuy8p4VcWXfB5p9wTL+VCberFM+MwTDjDf1nr8s78=
 go.etcd.io/bbolt v1.3.0/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

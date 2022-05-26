@@ -2,6 +2,9 @@ module github.com/rancher-sandbox/elemental
 
 go 1.16
 
+// until https://github.com/zloylos/grsync/pull/20 is merged we need to use our fork
+replace github.com/zloylos/grsync v1.6.1 => github.com/rancher-sandbox/grsync v1.6.2-0.20220526080038-4032e9b0e97c
+
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20220113124808-70ae35bab23f // indirect
@@ -35,7 +38,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	github.com/zcalusic/sysinfo v0.0.0-20210905121133-6fa2f969a900 // indirect
-	github.com/zloylos/grsync v1.5.1
+	github.com/zloylos/grsync v1.6.1
 	golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	gopkg.in/ini.v1 v1.66.3 // indirect

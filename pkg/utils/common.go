@@ -136,7 +136,7 @@ func CreateDirStructure(fs v1.FS, target string) error {
 
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
-func SyncData(fs v1.FS, source string, target string, excludes ...string) error {
+func SyncData(log v1.Logger, fs v1.FS, source string, target string, excludes ...string) error {
 	if fs != nil {
 		if s, err := fs.RawPath(source); err == nil {
 			source = s
@@ -165,6 +165,27 @@ func SyncData(fs v1.FS, source string, target string, excludes ...string) error 
 			Exclude: excludes,
 		},
 	)
+
+	if v1.IsDebugLevel(log) {
+		go func() {
+			for {
+				state := task.State()
+				// Only log status if there is still things to copy, otherwise we are finished
+				if state.Remain > 0 {
+					log.Debugf(
+						"progress rsync %s to %s: %.2f / rem. %d / tot. %d / sp. %s",
+						source,
+						target,
+						state.Progress,
+						state.Remain,
+						state.Total,
+						state.Speed,
+					)
+					<-time.After(5 * time.Second)
+				}
+			}
+		}()
+	}
 
 	err := task.Run()
 	if err != nil {

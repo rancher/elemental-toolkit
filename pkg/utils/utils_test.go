@@ -443,7 +443,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(fs, sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(logger, fs, sourceDir, destDir)).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -474,7 +474,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(fs, sourceDir, destDir, "host", "run")).To(BeNil())
+			Expect(utils.SyncData(logger, fs, sourceDir, destDir, "host", "run")).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -512,7 +512,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "tmp", "host"), constants.DirPerm)
 
-			Expect(utils.SyncData(fs, sourceDir, destDir, "/host", "/run")).To(BeNil())
+			Expect(utils.SyncData(logger, fs, sourceDir, destDir, "/host", "/run")).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -538,19 +538,19 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(utils.SyncData(fs, sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(logger, fs, sourceDir, destDir)).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(sourceDir)
-			Expect(utils.SyncData(nil, sourceDir, "/welp")).NotTo(BeNil())
+			Expect(utils.SyncData(logger, nil, sourceDir, "/welp")).NotTo(BeNil())
 		})
 		It("should fail if source does not exist", func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			Expect(utils.SyncData(nil, "/welp", destDir)).NotTo(BeNil())
+			Expect(utils.SyncData(logger, nil, "/welp", destDir)).NotTo(BeNil())
 		})
 	})
 	Describe("IsLocalURI", Label("uri"), func() {
