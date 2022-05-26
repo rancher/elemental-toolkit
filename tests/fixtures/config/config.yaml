@@ -10,6 +10,7 @@ cloud-init-paths:
 
 install:
   target: "someDisk"
+
   no-format: true
   system:
     uri: docker:some/image:latest

@@ -405,5 +405,4 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			})
 		})
 	})
-
 })
