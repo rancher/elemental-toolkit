@@ -26,7 +26,7 @@ raw_disk:
         target: root/grub2
       - name: recovery/cos-img
         target: root/cOS
-  aarch64:
+  arm64:
     repositories:
       - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
