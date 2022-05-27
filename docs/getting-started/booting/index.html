@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher-sandbox.github.io/cOS-toolkit/docs/getting-started/booting/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-05-27T11:59:13+02:00" /><meta property="og:site_name" content="cOS toolkit" />
+<meta property="article:modified_time" content="2022-05-27T12:03:08+02:00" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Booting">
 <meta itemprop="description" content="Documents various methods for booting cOS vanilla images
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-05-27T11:59:13+02:00" />
+<meta itemprop="dateModified" content="2022-05-27T12:03:08+02:00" />
 <meta itemprop="wordCount" content="1185">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Booting"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.b6a9d3a824610c6ff952c481ad91abf0.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.409a53172cf4890d07591efd4c1391f5.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.b6a9d3a824610c6ff952c481ad91abf0.json"
+  data-offline-search-index-json-src="https://rancher-sandbox.github.io/cOS-toolkit/offline-search-index.409a53172cf4890d07591efd4c1391f5.json"
   data-offline-search-base-href="https://rancher-sandbox.github.io/cOS-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2112,7 +2112,7 @@ if (!doNotTrack) {
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental install <span style="color:#000">$DEVICE</span>
 </span></span></code></pre></div><p>See also [../install] for installation options.</p>
 <p>After the first boot you can also switch to a derivative by:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental upgrade --no-verify --system.uri <span style="color:#000">$IMAGE</span>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental upgrade --verify --system.uri <span style="color:#000">$IMAGE</span>
 </span></span></code></pre></div><h2 id="booting-from-network">Booting from network</h2>
 <p>You can boot a cOS squashfs by using a native iPXE implementation on your
 system or by inserting a custom build iPXE iso by using your either your servers
@@ -2402,7 +2402,7 @@ stages:
 
     Last modified
     May 27, 2022
-    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/b0ea4ae7f0329e39abcbd1efaabaffd4a188c7a4">Add fgiudici to github workflows (#1366) (b0ea4ae)</a>
+    : <a  href="https://github.com/rancher-sandbox/cOS-toolkit/commit/943c6ec299ece36c1c783866cdcc589a54d33128">Disable mtree verify by default (#1338) (943c6ec)</a>
 
 </div>
 
