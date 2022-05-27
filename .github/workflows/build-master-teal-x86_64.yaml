@@ -9,7 +9,7 @@ concurrency:
 jobs:
   build-teal-x86_64:
     runs-on: [self-hosted, x64]
-    if: contains(fromJson('["mudler", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
+    if: contains(fromJson('["mudler", "fgiudici", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
     env:
       LUET_ARCH: x86_64
       FLAVOR: teal
