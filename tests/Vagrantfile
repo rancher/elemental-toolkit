@@ -35,6 +35,7 @@ Vagrant.configure("2") do |config|
             #  sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
             # Now, we set a static ip for our VM in the dhcp network:
             #  sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+            libvirt.qemu_use_session = true
             libvirt.management_network_name = "default"
             libvirt.management_network_address = "192.168.122.0/24"
             libvirt.management_network_mac = "52:54:00:00:00:01"

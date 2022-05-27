@@ -394,23 +394,15 @@
   tests-{{{$subset}}}-{{{ $flavor }}}:
     env:
       ARCH: {{{ $config.arch }}}
-      {{{ if eq $config.arch "arm64" }}}
       VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      VAGRANT_MEMORY: 6096
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
-      {{{else}}}
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
+      {{{ if eq $config.arch "arm64" }}}
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       {{{end}}}
-    {{{ if eq $config.arch "arm64" }}}
     runs-on: ubuntu-latest
     needs: qemu-{{{$subset}}}-{{{ $flavor }}}
-    {{{else}}}
-    runs-on: macos-10.15
-    needs: vbox-{{{$subset}}}-{{{ $flavor }}}
-    {{{end}}}
     strategy:
       matrix:
         test: [ {{{  join $subset_tests ", " }}} ]
@@ -423,19 +415,19 @@
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          {{{ if eq $config.arch "arm64" }}}
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
-          {{{else}}}
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
-          {{{end}}}
           path: packer
-      {{{ if eq $config.arch "arm64" }}}
       - name: Install deps
         run: |
           sudo -E make deps
           sudo apt-get update
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+          {{{ if eq $config.arch "arm64" }}}
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64
+          {{{ else }}}
+          sudo apt-get install -y qemu-system-x86
+          {{{ end }}}
+          sudo apt-get install -y vagrant vagrant-libvirt make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -449,13 +441,8 @@
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      {{{end}}}
       - name: Prepare tests 🔧
         run: |
-          {{{ if ne $config.arch "arm64" }}}
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          {{{end}}}
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
@@ -469,28 +456,12 @@
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      {{{ if eq $config.arch "arm64" }}}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
           path: serial_log.log
           if-no-files-found: warn
-      {{{end}}}
-      {{{ if ne $config.arch "arm64" }}}
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-{{{$subset}}}-${{ matrix.test }}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      {{{end}}}
 {{{ end }}}
 
 {{{ define "installer_tests"}}}

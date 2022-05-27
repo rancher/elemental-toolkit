@@ -213,10 +213,10 @@ jobs:
     env:
       ARCH: arm64
       VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      VAGRANT_MEMORY: 6096
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
     runs-on: ubuntu-latest
     needs: qemu-squashfs-teal
     strategy:
@@ -238,7 +238,8 @@ jobs:
           sudo -E make deps
           sudo apt-get update
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64
+          sudo apt-get install -y vagrant vagrant-libvirt make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -324,10 +325,10 @@ jobs:
     env:
       ARCH: arm64
       VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      VAGRANT_MEMORY: 6096
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
+      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
     runs-on: ubuntu-latest
     needs: qemu-nonsquashfs-teal
     strategy:
@@ -349,7 +350,8 @@ jobs:
           sudo -E make deps
           sudo apt-get update
           sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64
+          sudo apt-get install -y vagrant vagrant-libvirt make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
