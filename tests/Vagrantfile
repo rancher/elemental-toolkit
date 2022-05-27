@@ -25,6 +25,25 @@ Vagrant.configure("2") do |config|
                 vb.customize ["modifyvm", :id, "--recording", "on", "--recordingscreens", "0","--recordingfile", "../capture.webm"]
             end
         end
+        cos.vm.provider :libvirt do |libvirt|
+            libvirt.memory = ENV['VAGRANT_MEMORY'] || "4096"
+            libvirt.cpus = ENV['VAGRANT_CPU'] || "2"
+            # This mac is linked to a static ip given by the default network, as long as we run the following:
+            #  sudo mkdir -p /etc/qemu/
+            #  echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+            #  sudo chmod u+r /etc/qemu/bridge.conf
+            #  sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+            # Now, we set a static ip for our VM in the dhcp network:
+            #  sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+            libvirt.management_network_name = "default"
+            libvirt.management_network_address = "192.168.122.0/24"
+            libvirt.management_network_mac = "52:54:00:00:00:01"
+            # To se the serial output we have to manually modify the default domain.xml from vagrant-libvirt
+            # you could run the following:
+            # sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$DESTINATION/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
+            # in higher versions of vagrant-libvirt the following is supported to set the serial directly:
+            # libvirt.serial :type => "file", :source => {:path => ".test.log"}
+        end
     end
 
     config.vm.define "cos-arm64" do |cos|
