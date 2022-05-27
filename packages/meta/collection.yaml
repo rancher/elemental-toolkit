@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.22"
+    version: "0.23"
     requires:
       - category: toolchain
         name: elemental-cli
@@ -59,6 +59,8 @@ packages:
         name: "live"
       - !!merge <<: *config
         name: "boot-assessment"
+      - !!merge <<: *config
+        name: "default-services"
   - !!merge <<: *metabase
     name: "cos-core"
     description: "cOS core package. It includes toolchain and base grub/dracut configuration"
@@ -135,3 +137,5 @@ packages:
         name: "live"
       - !!merge <<: *cc
         name: "boot-assessment"
+      - !!merge <<: *config
+        name: "default-services"
