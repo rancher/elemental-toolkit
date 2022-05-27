@@ -133,7 +133,7 @@ The workflow would be then:
 
 1) `docker build` the image
 2) `docker push` the image to some registry
-3) `elemental upgrade --no-verify --docker-image $IMAGE` from a cOS machine or (`elemental reset` if bootstrapping a cloud image)
+3) `elemental upgrade --docker-image $IMAGE` from a cOS machine or (`elemental reset` if bootstrapping a cloud image)
 
 The following can be incorporated in any standard gitops workflow.
 

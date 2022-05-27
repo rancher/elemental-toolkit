@@ -4,6 +4,7 @@ isowork/
 *.iso.sha256
 iso-meta.json
 iso-meta.yaml
+.idea/
 .qemu/
 .vagrant/
 ^Vagrantfile

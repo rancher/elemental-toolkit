@@ -22,7 +22,7 @@ This will perform an upgrade based on the default derivative configuration for t
 
 To specify a specific container image to upgrade to instead of the regular upgrade channels, run `elemental upgrade --system.uri imagei-uri`.
 
-_Note_ by default `elemental upgrade --system.uri` runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run `elemental upgrade --no-verify --system.uri`.
+_Note_ by default `elemental upgrade --system.uri` runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run `elemental upgrade --verify --system.uri`.
 
 ## Integration with System Upgrade Controller
 

@@ -49,7 +49,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 				version := out
 				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
-				out, err = s.Command(fmt.Sprintf("elemental upgrade --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+				out, err = s.Command(fmt.Sprintf("elemental upgrade --verify --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(
 					And(
