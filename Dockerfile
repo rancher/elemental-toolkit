@@ -35,7 +35,7 @@ FROM opensuse/leap:$LEAP_VERSION AS elemental
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 RUN zypper ref && zypper dup -y
-RUN zypper ref && zypper in -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso
+RUN zypper ref && zypper in -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso lvm2
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
 COPY --from=cosign-bin /usr/bin/cosign /usr/bin/cosign
 # Fix for blkid only using udev on opensuse
