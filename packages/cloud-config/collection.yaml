@@ -5,7 +5,7 @@ packages:
     oem_dir: "/system/oem"
     templated: true
     category: cloud-config
-    version: 0.3-1
+    version: "0.4"
     requires:
       - name: "cos-setup"
         category: "system"
@@ -14,39 +14,35 @@ packages:
     name: "defaults"
     oem_file: "01_defaults.yaml"
     templated: false
-    version: 0.3-1
   - !!merge <<: *base
     name: "upgrades"
     oem_file: "02_upgrades.yaml"
     templated: false
-    version: 0.3-2
   - !!merge <<: *base
     name: "branding"
     oem_file: "03_branding.yaml"
     templated: false
-    version: 0.3-1
   - !!merge <<: *base
     name: "accounting"
     oem_file: "04_accounting.yaml"
     templated: false
-    version: 0.3-1
   - !!merge <<: *base
     name: "network"
     oem_file: "05_network.yaml"
     templated: false
-    version: 0.3-1
   - !!merge <<: *base
     name: "recovery"
     oem_file: "06_recovery.yaml.tmpl"
     templated: true
-    version: 0.3-1
   - !!merge <<: *base
     name: "live"
     oem_file: "07_live.yaml"
     templated: false
-    version: 0.3-1
   - !!merge <<: *base
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
     templated: false
-    version: 0.3-1
+  - !!merge <<: *base
+    name: "default-services"
+    oem_file: "09_services.yaml"
+    templated: false

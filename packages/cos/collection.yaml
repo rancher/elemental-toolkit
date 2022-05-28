@@ -2,7 +2,7 @@ packages:
   - &cos
     name: "cos"
     category: "system"
-    version: 0.8.13
+    version: "0.8.14"
     description: "cOS base image, used to build cOS live ISOs"
     brand_name: "cOS"
     labels:
@@ -10,12 +10,10 @@ packages:
   - !!merge <<: *cos
     name: "cos-container"
     description: "cOS container image, used to build cOS derivatives from scratch"
-    version: 0.8.13
   - !!merge <<: *cos
     category: "recovery"
     brand_name: "cOS recovery"
     description: "cOS recovery image, used to boot cOS for troubleshooting"
-    version: 0.8.13
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"

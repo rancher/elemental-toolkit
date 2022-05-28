@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rancher-sandbox/cOS/tests/sut"
+	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -3,7 +3,7 @@ package cos_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/cOS/tests/sut"
+	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
 var _ = Describe("cOS Smoke tests", func() {
@@ -20,6 +20,13 @@ var _ = Describe("cOS Smoke tests", func() {
 	})
 
 	Context("After install", func() {
+
+		It("has default services on", func() {
+			for _, svc := range []string{"systemd-timesyncd"} {
+				sut.SystemdUnitIsActive(svc, s)
+			}
+		})
+
 		It("can boot into passive", func() {
 			err := s.ChangeBootOnce(sut.Passive)
 			Expect(err).ToNot(HaveOccurred())
