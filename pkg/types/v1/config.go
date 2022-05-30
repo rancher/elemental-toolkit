@@ -18,6 +18,7 @@ package v1
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 
 	"github.com/rancher-sandbox/elemental/pkg/constants"
@@ -108,6 +109,16 @@ func (i *InstallSpec) Sanitize() error {
 	}
 	if i.Partitions.State == nil || i.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
+	}
+	// Set the image file name depending on the filesystem
+	recoveryMnt := constants.RecoveryDir
+	if i.Partitions.Recovery != nil && i.Partitions.Recovery.MountPoint != "" {
+		recoveryMnt = i.Partitions.Recovery.MountPoint
+	}
+	if i.Recovery.FS == constants.SquashFs {
+		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoverySquashFile)
+	} else {
+		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoveryImgFile)
 	}
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
