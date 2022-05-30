@@ -52,8 +52,6 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220527092239-c748f8731b8e h1:GOEpRuhhyJU7fllZh3RqFX9wT10VyxORxB2hHAkTc6s=
-github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220527092239-c748f8731b8e/go.mod h1:VCKQij8+FXOxg0C9ivjdcdo5hBBfMBmk5Aa2gP421w0=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220527172218-91e4b18a1c7e h1:R9dgCfDf0+ZKe5lPuFKmr22UTB7v0E7C2Nm4U3DTLtk=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220527172218-91e4b18a1c7e/go.mod h1:VCKQij8+FXOxg0C9ivjdcdo5hBBfMBmk5Aa2gP421w0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
