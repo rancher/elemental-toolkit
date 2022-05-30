@@ -42,9 +42,10 @@ jobs:
           github-token: ${{ secrets.BOT_GITHUB_TOKEN }}
           script: |
             console.log(context)
+            console.log(context.payload.repository.owner)
             console.log("Creating tag " + "${{steps.current.outputs.tag}}")
             github.rest.git.createRef({
-              owner: "cOS-cibot",
+              owner: "itxaka",
               repo: "cOS-toolkit",
               ref: "refs/tags/${{steps.current.outputs.tag}}",
               sha: context.sha
