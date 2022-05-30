@@ -1,4 +1,4 @@
-name: autorelease
+name: Autorelease
 on:
   workflow_dispatch:
   schedule:
@@ -41,10 +41,11 @@ jobs:
         with:
           github-token: ${{ secrets.BOT_GITHUB_TOKEN }}
           script: |
+            console.log(context)
             console.log("Creating tag " + "${{steps.current.outputs.tag}}")
             github.rest.git.createRef({
-              owner: context.payload.repository.owner.login,
-              repo: context.payload.repository.name,
+              owner: "cOScibot@gmail.com",
+              repo: "rancher-sandbox/cos-toolkit",
               ref: "refs/tags/${{steps.current.outputs.tag}}",
               sha: context.sha
             })
