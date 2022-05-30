@@ -44,7 +44,7 @@ jobs:
             console.log(context)
             console.log("Creating tag " + "${{steps.current.outputs.tag}}")
             github.rest.git.createRef({
-              owner: "cOScibot@gmail.com",
+              owner: "cOS-cibot",
               repo: "cOS-toolkit",
               ref: "refs/tags/${{steps.current.outputs.tag}}",
               sha: context.sha
