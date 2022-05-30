@@ -41,13 +41,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			recoveryName := s.GetOSRelease("NAME")
 
-			// In these tests, if we are booting into squashfs we are booting into recovery. And the recovery image
-			// is shipping a different os-release name (cOS recovery) instead of the standard one (cOS)
-			if s.SquashFSRecovery() {
-				Expect(currentName).ToNot(Equal(recoveryName))
-			} else {
-				Expect(currentName).To(Equal(recoveryName))
-			}
+			Expect(currentName).To(Equal(recoveryName))
 
 			By("upgrade active")
 			out, err := s.Command("elemental upgrade")
