@@ -73,7 +73,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 					if squashfs {
 						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 					}
 				})
 
@@ -91,7 +91,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 					if squashfs {
 						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 					}
 
 					// Remove iso so we boot directly from the disk
@@ -144,7 +144,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 					if squashfs {
 						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 					}
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
@@ -197,7 +197,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				if squashfs {
 					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
@@ -217,7 +217,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				if squashfs {
 					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -240,7 +240,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				if squashfs {
 					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
@@ -259,7 +259,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				if squashfs {
 					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.img"))
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
