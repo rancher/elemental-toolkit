@@ -1,10 +1,10 @@
-name: publish
+name: publish arm64
 on:
   workflow_dispatch:
     inputs:
       flavor:
         required: false
-        default: green
+        default: teal
         type: choice
         description: flavor to build and push
         options:
@@ -17,41 +17,68 @@ on:
         default: "--plugin luet-cosign"
         type: string
         description: Publish args to pass to publish-repo
+      final-repo:
+        required: false
+        default: quay.io/costoolkit/releases-teal-arm64
+        type: string
+        description: repo to publish the artifacts to
 concurrency:
   group: ci-publish-${{ github.event.inputs.flavor }}-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, arm64 ]
+    if: contains(fromJson('["mudler", "fgiudici", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
     env:
       LUET_ARCH: arm64
       FLAVOR: ${{ github.event.inputs.flavor }}
       ARCH: arm64
       PLUGINS: cleanup-images
-      FINAL_REPO: quay.io/costoolkit/releases-${{ github.event.inputs.flavor }}
+      FINAL_REPO: ${{ github.event.inputs.final-repo }}
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-${{ github.event.inputs.flavor }}-cache
+      REPO_CACHE: ${{ github.event.inputs.final-repo }}-cache
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
+      - name: Release space from worker ♻
+        if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
           sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Login to Quay Registry
-        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
-          sudo -E make deps
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Run make validate
         run: |
           sudo -E make validate
@@ -60,24 +87,17 @@ jobs:
           export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
-          go build -o build
+          go build -o build build.go
           popd
           sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
-      - name: Generate manifests
+      - name: Fix git permissions for CVE-2022-24765
+        # This fixes running git commands on our git directory under sudo user
+        # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
         run: |
-          for f in build/*tar*; do
-            [ -e "$f" ] || continue
-            sudo -E luet mtree -- generate $f -o "$f.mtree"
-          done
-      - name: Append manifests to metadata
-        run: |
-          for f in build/*mtree; do
-            [ -e "$f" ] || continue
-            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
-            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
-          done
+          sudo git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
       - name: Run make create-repo
         run: |
           sudo -E make create-repo
@@ -87,6 +107,17 @@ jobs:
           name: build-${{ github.event.inputs.flavor }}-arm64
           path: build
           if-no-files-found: error
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
   publish:
     runs-on: ubuntu-latest
     needs: build
@@ -95,25 +126,48 @@ jobs:
     env:
       FLAVOR: ${{ github.event.inputs.flavor }}
       ARCH: arm64
-      FINAL_REPO: quay.io/costoolkit/releases-${{ github.event.inputs.flavor }}
+      FINAL_REPO: ${{ github.event.inputs.final-repo }}
       DOWNLOAD_METADATA: true
-      DOWNLOAD_ALL: true
       DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
       COSIGN_REPOSITORY: raccos/releases-${{ github.event.inputs.flavor }}
       PUBLISH_ARGS: ${{ github.event.inputs.publish-args }}
+      COSIGN_FULCIO_URL: "https://v1.fulcio.sigstore.dev"
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '^1.16'
+        run: |
+          curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker
+      - name: Release space from worker ♻
+        if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
           sudo cp -rfv .github/plugins/* /usr/bin/
@@ -128,22 +182,40 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Run make deps
+      - name: Run make deps_ci
         run: |
-          sudo -E make deps
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-${{ github.event.inputs.flavor }}-arm64
+          name: build-teal-arm64
           path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
-          go build -o build
+          go build -o build build.go
           popd
           sudo -E ./.github/build
           ls -liah $PWD/build
+      - name: Fix git permissions for CVE-2022-24765
+        # This fixes running git commands on our git directory under sudo user
+        # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
+        run: |
+          sudo git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
       - name: Publish to DockerHub 🚀
         run: |
           sudo -E make publish-repo
+      - name: upload cosign logs
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: luetcosign.log.zip
+          path: /tmp/luet-cosign.log
+          if-no-files-found: warn
