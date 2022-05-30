@@ -20,8 +20,3 @@ create_remote_manifest() {
     $YQ e -i '.luet.repositories[0].type="docker"' $MANIFEST.remote 
     $YQ e -i ".luet.repositories[0].urls[0]=\"$FINAL_REPO\"" $MANIFEST.remote 
 }
-
-drop_recovery() {
-    MANIFEST=$1
-    $YQ e -i 'del( .iso.image[] | select(.=="recovery/cos-img") )' $MANIFEST 
-}

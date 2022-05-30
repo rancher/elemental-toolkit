@@ -31,6 +31,13 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
 			s.EmptyDisk("/dev/sda")
 			_, _ = s.Command("sync")
+
+			// squashfs comes from a command line flag at suite level
+			if squashfs {
+				By("Setting the squashfs recovery install")
+				err = s.SendFile("../assets/squashed_recovery.yaml", "/etc/elemental/config.d/install_recovery.yaml", "0770")
+				Expect(err).ToNot(HaveOccurred())
+			}
 		})
 		AfterEach(func() {
 			if CurrentGinkgoTestDescription().Failed {
@@ -54,30 +61,38 @@ var _ = Describe("cOS Installer EFI tests", func() {
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
 				It("performs a standard install", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
+					out, err := s.Command("elemental install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
+					if squashfs {
+						// Check the squashfs image is used as recovery
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+					}
 				})
 
 				// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
 				PIt("Forcing GPT", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install --force-gpt /dev/sda")
+					out, err := s.Command("elemental install --force-gpt /dev/sda")
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
+					if squashfs {
+						// Check the squashfs image is used as recovery
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+					}
 
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
@@ -118,15 +133,19 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				// Marked as pending to reduce the number of efi tests. VBox efi support is
 				// not good enough to run extensive tests
 				PIt("Not forcing GPT", func() {
-					err := s.SendFile("../assets/config.yaml", "/usr/local/config.yaml", "0770")
+					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental --config-dir /usr/local install /dev/sda")
+					out, err := s.Command("elemental install /dev/sda")
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
+					if squashfs {
+						// Check the squashfs image is used as recovery
+						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+					}
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
 					// Reboot so we boot into the just installed cos
@@ -176,6 +195,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -192,6 +215,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+				}
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
@@ -211,6 +238,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -226,6 +257,10 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
+				if squashfs {
+					// Check the squashfs image is used as recovery
+					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
+				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos

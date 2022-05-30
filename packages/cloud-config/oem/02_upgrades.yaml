@@ -35,7 +35,7 @@ stages:
                     - "quay.io/costoolkit/releases-:FLAVOR::ARCH:"
      - name: "Setup upgrade channel"
        files:
-       - path: /etc/elemental/config.yaml
+       - path: /etc/elemental/config.d/upgrade_channel.yaml
          permissions: 0644
          owner: 0
          group: 0
