@@ -1,7 +1,6 @@
 package cos_test
 
 import (
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
@@ -73,7 +72,7 @@ var _ = Describe("cOS Smoke tests", func() {
 		})
 
 		It("fails running elemental reset from COS_ACTIVE", func() {
-			out, err := s.Command(fmt.Sprintf("%s reset", sut.ElementalCmd))
+			out, err := s.Command("elemental reset")
 			Expect(err).To(HaveOccurred())
 			Expect(out).Should(ContainSubstring("reset can only be called from the recovery system"))
 		})

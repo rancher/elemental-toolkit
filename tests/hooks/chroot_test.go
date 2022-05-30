@@ -1,7 +1,6 @@
 package cos_test
 
 import (
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
@@ -19,7 +18,7 @@ var _ = Describe("cOS Feature tests", func() {
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 
-			out, err := s.Command(fmt.Sprintf("%s upgrade", sut.ElementalCmd))
+			out, err := s.Command("elemental upgrade")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 			By("rebooting")
