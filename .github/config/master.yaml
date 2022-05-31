@@ -52,7 +52,7 @@ flavors:
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
-        skip_tests: false
+        skip_tests: true
         run_tests: ["test-smoke", "test-upgrades-images-unsigned" ]
         flavor: "teal"
         skip_tests_flavor: [ "blue","orange", "green", "teal"]
