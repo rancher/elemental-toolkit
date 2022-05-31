@@ -1,13 +1,13 @@
 requires:
-- name: "base"
+- name: "tool"
   category: "distro"
   version: ">=0"
 env:
 - GITHUB_ORG={{ ( index .Values.labels "github.owner" ) }}
 - GITHUB_REPO={{ ( index .Values.labels "github.repo" ) }}
 
-{{ if .Values.distribution }}
-{{if eq .Values.distribution "opensuse" }}
+{{ if .Values.tool_image_distribution }}
+{{if eq .Values.tool_image_distribution "opensuse" }}
 prelude:
 - zypper ar https://download.opensuse.org/repositories/security:/SELinux/openSUSE_Leap_15.3/security:SELinux.repo
 - zypper --gpg-auto-import-keys in -y --allow-vendor-change --allow-downgrade container-selinux -libsemanage1
