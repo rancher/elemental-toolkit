@@ -52,14 +52,14 @@ flavors:
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
-        skip_tests: true
+        skip_tests: false
         run_tests: ["test-smoke", "test-upgrades-images-unsigned" ]
         flavor: "teal"
-        skip_tests_flavor: [ "blue","orange", "green"]
-        skip_images_flavor: [ "blue","orange", "green" ]
+        skip_tests_flavor: [ "blue","orange", "green", "teal"]
+        skip_images_flavor: [ "blue","orange", "green", "teal"]
         build_image_qemu: true
         build_image_vbox: false
-        build_raw_image: true
+        build_raw_image: false
         run_raw_image_test: false
         release_flavor: [ ]
         arch: "arm64"
