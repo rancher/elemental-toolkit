@@ -55,11 +55,11 @@ flavors:
         skip_tests: true
         run_tests: ["test-smoke", "test-upgrades-images-unsigned" ]
         flavor: "teal"
-        skip_tests_flavor: [ "blue","orange", "green", "teal"]
-        skip_images_flavor: [ "blue","orange", "green", "teal"]
+        skip_tests_flavor: [ "blue","orange", "green"]
+        skip_images_flavor: [ "blue","orange", "green" ]
         build_image_qemu: true
         build_image_vbox: false
-        build_raw_image: false
+        build_raw_image: true
         run_raw_image_test: false
         release_flavor: [ ]
         arch: "arm64"
