@@ -1,7 +1,7 @@
 {
 	"version": 3,
 	"file": "main.css",
-	"sourceRoot": "/home/runner/work/cOS-toolkit/cOS-toolkit/docs",
+	"sourceRoot": "/home/runner/work/elemental-toolkit/elemental-toolkit/docs",
 	"sources": [
 		"assets/sass/main.scss",
 		"docs/themes/projects-theme/assets/sass/main.scss"
