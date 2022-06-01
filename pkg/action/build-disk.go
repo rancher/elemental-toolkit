@@ -97,6 +97,7 @@ func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDisk, imgType string, oemLabe
 		)
 		if err != nil {
 			cfg.Logger.Error(err)
+			return err
 		}
 	}
 

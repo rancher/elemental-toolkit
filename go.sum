@@ -1114,7 +1114,6 @@ github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN
 github.com/mailru/easyjson v0.7.0/go.mod h1:KAzv3t3aY1NaHWoQz1+4F1ccyAH66Jk7yos7ldAVICs=
 github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/maratori/testpackage v1.0.1/go.mod h1:ddKdw+XG0Phzhx8BFDTKgpWP4i7MpApTE5fXSKAqwDU=
-github.com/marcsauter/single v0.0.0-20181104081128-f8bf46f26ec0 h1:c1oKPqtIulBHwu1rkz3dXsPt5hgDqJCPMN/RAdT8lvs=
 github.com/marcsauter/single v0.0.0-20181104081128-f8bf46f26ec0/go.mod h1:uUA07IN7rYmbr5YlZM5nDVLyoxiqqpprFlXBrjqI24A=
 github.com/marstr/guid v1.1.0/go.mod h1:74gB1z2wpxxInTG6yaqA7KrtM0NZ+RbrcqDvYHefzho=
 github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb/go.mod h1:1BELzlh859Sh1c6+90blK8lbYy0kwQf1bYlBhBysy1s=
@@ -1235,14 +1234,11 @@ github.com/mozilla/tls-observatory v0.0.0-20190404164649-a3c1b6cfecfd/go.mod h1:
 github.com/mozilla/tls-observatory v0.0.0-20200317151703-4fa42e1c2dee/go.mod h1:SrKMQvPiws7F7iqYp8/TX+IhxCYhzr6N/1yb8cwHsGk=
 github.com/mrunalp/fileutils v0.0.0-20200520151820-abd8a0e76976/go.mod h1:x8F1gnqOkIEiO4rqoeEEEqQbo7HjGMTvyoq3gej4iT0=
 github.com/mrunalp/fileutils v0.5.0/go.mod h1:M1WthSahJixYnrXQl/DFQuteStB1weuxD2QJNHXfbSQ=
-github.com/mudler/cobra-extensions v0.0.0-20200612154940-31a47105fe3d h1:fKh+rvwZQCA+TPzK0EMwwbqhjvRHaQ6H8AsVU1Wt+NQ=
 github.com/mudler/cobra-extensions v0.0.0-20200612154940-31a47105fe3d/go.mod h1:puRUWSwyecW2V355tKncwPVPRAjQBduPsFjG0mrV/Nw=
 github.com/mudler/entities v0.0.0-20211108084227-d1414478861b h1:wvoYTx0OkwSuTfrdlgFYeStrTadiY1t2iAytNzAMiBY=
 github.com/mudler/entities v0.0.0-20211108084227-d1414478861b/go.mod h1:qquFT9tYp+/NO7tTotto4BT9zSRYSMDxo2PGZwujpFA=
 github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e h1:CZI+kJW2+WjZXLWWnVzi6NDQ6SfwSfeNqq5d1iDiwyY=
 github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e/go.mod h1:WmKcT8ONmhDQIqQ+HxU+tkGWjzBEyY/KFO8LTGCu4AI=
-github.com/mudler/luet v0.0.0-20220526130647-edd2275bf592 h1:wZUwtzk7/WwHG1atMGxY2Wb5sWYELuAx5y235q8Fz5Q=
-github.com/mudler/luet v0.0.0-20220526130647-edd2275bf592/go.mod h1:/dK5pG3mCODr/7YH/aalA5TFOPmo4Kid/uXgWII/wP4=
 github.com/mudler/luet v0.0.0-20220526130937-264bf53fe7ab h1:MTlVt+yKyzBGWotEZevwqNgfpJZzgFxk33TOW1DnxfA=
 github.com/mudler/luet v0.0.0-20220526130937-264bf53fe7ab/go.mod h1:/dK5pG3mCODr/7YH/aalA5TFOPmo4Kid/uXgWII/wP4=
 github.com/mudler/topsort v0.0.0-20201103161459-db5c7901c290 h1:426hFyXMpXeqIeGJn2cGAW9ogvM2Jf+Jv23gtVPvBLM=
