@@ -120,8 +120,8 @@ url_latest_version = "https://rancher.github.io/elemental-toolkit/"
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
 github_repo = "github.com/rancher/elemental-toolkit"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
-github_project_repo = "https://rancher.github.io/elemental-toolkit"
-github = "https://rancher.github.io/elemental-toolkit"
+github_project_repo = "https://github.com/rancher/elemental-toolkit"
+github = "https://github.com/rancher/elemental-toolkit"
 # Specify a value here if your content directory is not in your repo's root directory
 github_subdir = "docs"
 # Uncomment this if you have a newer GitHub repo with "main" as the default branch,
