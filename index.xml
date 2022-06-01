@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>cOS toolkit – Elemental toolkit</title>
-    <link>https://rancher-sandbox.github.io/cOS-toolkit/</link>
+    <link>https://rancher.github.io/elemental-toolkit/</link>
     <description>Recent content in Elemental toolkit on cOS toolkit</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	  <atom:link href="https://rancher-sandbox.github.io/cOS-toolkit/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://rancher.github.io/elemental-toolkit/index.xml" rel="self" type="application/rss+xml" />
     
     
       
