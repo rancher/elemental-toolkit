@@ -19,7 +19,7 @@ converted to other formats after the installation by using `qemu-img convert`.
 
 ## Get Elemental
 
-Elemental binary can be downloaded from the [github releases](https://github.com/rancher-sandbox/elemental/releases/latest) page.
+Elemental binary can be downloaded from the [github releases](https://github.com/rancher/elemental-cli/releases/latest) page.
 
 The golang binary can be used as is, however take into account that some linux utilities are expected to be present in the host. More
 specific elemental expects to find common linux utilities to operate over block devices: rsync, parted, blkid, lsblk, udevadm, resize2fs, tune2fs, mkfs.ext2, etc.

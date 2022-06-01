@@ -18,7 +18,7 @@ By default `<config-dir>` is set to `/etc/elemental` however this can be changed
 
 Below you can find an example of the config file including most of the available options:
 
-{{<githubembed repo="rancher-sandbox/elemental" file="config.yaml.example" lang="yaml">}}
+{{<githubembed repo="rancher/elemental-cli" file="config.yaml.example" lang="yaml">}}
 
 
 The `system` and `recovery-system` objects are an image specification. An image specification is defined by:

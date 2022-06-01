@@ -4,11 +4,11 @@ linkTitle: "Creating derivatives"
 weight: 3
 date: 2017-01-05
 description: >
-  This document summarize references to create derivatives with `cos-toolkit` by using the `luet` toolchain.
+  This document summarize references to create derivatives with `elemental-toolkit` by using the `luet` toolchain.
 
 ---
 
-`cos-toolkit` is a manifest to share a common abstract layer between derivatives inheriting the same featureset. 
+`elemental-toolkit` is a manifest to share a common abstract layer between derivatives inheriting the same featureset. 
 
 `cos` is a [Luet tree](https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#specfiles) and derivatives can be expressed as Luet trees as well that inherit part of the compilation specs from `cos`.
 
@@ -26,7 +26,7 @@ While on the client side, the upgrade workflow is:
 - `luet install` (when upgrading from release channels) latest cos on a pristine image file
 - or `luet util unpack` (when upgrading from specific docker images)
 
-*Note*: The manual build steps are not stable and will likely change until [we build a single CLI](https://github.com/rancher-sandbox/cOS-toolkit/issues/108) to encompass the `cos-toolkit` components, rather use `source .envrc && cos-build` for the moment being while iterating locally.
+*Note*: The manual build steps are not stable and will likely change until [we build a single CLI](https://github.com/rancher/elemental-toolkit/issues/108) to encompass the `elemental-toolkit` components, rather use `source .envrc && cos-build` for the moment being while iterating locally.
 
 ## Single image OS
 
@@ -83,7 +83,7 @@ The package `build` definition supports [templating](https://luet-lab.github.io/
 
 Values file can be specified during build time in luet with the ```--values``` flag (also multiple files are allowed) and, if you are familiar with `helm` it using the same engine under the hood, so all the functions are available as well.
 
-`cos-toolkit` itself uses [default values files](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/values) for every supported distributions.
+`elemental-toolkit` itself uses [default values files](https://github.com/rancher/elemental-toolkit/tree/master/values) for every supported distributions.
 
 Templates uses cases are for: resharing common pieces between flavors, building for different platforms and architectures, ...
 

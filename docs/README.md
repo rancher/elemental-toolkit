@@ -5,9 +5,9 @@ The website content it is deployed automatically in the `gh-pages` branch by Git
 After cloning the repo (with submodules), just run `make serve` to test the website locally.
 
 ```
-$> git clone --recurse-submodule https://github.com/rancher-sandbox/cos-toolkit
-$> cd cos-toolkit
-$> cd docs; make serve
+$> git clone --recurse-submodule https://github.com/rancher/elemental-toolkit
+$> cd elemental-toolkit
+$> make serve
 ```
 
 Or just sync the submodules:

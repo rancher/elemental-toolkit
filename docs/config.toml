@@ -1,9 +1,9 @@
-baseURL = "https://rancher-sandbox.github.io/cos-toolkit/" # for local debugging / is enough
+baseURL = "https://rancher.github.io/elemental-toolkit/" # for local debugging / is enough
 # Set canonifyUrls to true when baseURL is containing subpaths
 canonifyurls = true
 
 languageCode = "en-us"
-title = "cOS toolkit"
+title = "Elemental toolkit"
 
 enableRobotsTXT = true
 
@@ -58,7 +58,7 @@ id = "UA-00000000-0"
 [languages]
 [languages.en]
 title = "cOS toolkit"
-description = "cOS toolkit documentation website"
+description = "Elemental toolkit documentation website"
 languageName ="English"
 # Weight used for sorting.
 weight = 1
@@ -66,7 +66,7 @@ weight = 1
 [[menu.main]]
     name = "Github releases"
     weight = 50
-    url = "https://github.com/rancher-sandbox/cOS-toolkit/releases"
+    url = "https://github.com/rancher/elemental-toolkit/releases"
     pre = "<i class='fab fa-github'></i>"
     post = "" 
 [[menu.main]]
@@ -115,13 +115,13 @@ version = "0.5.8"
 
 # A link to latest version of the docs. Used in the "version-banner" partial to
 # point people to the main doc site.
-url_latest_version = "https://rancher-sandbox.github.io/cos-toolkit/"
+url_latest_version = "https://rancher.github.io/elemental-toolkit/"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://github.com/rancher-sandbox/cOS-toolkit"
+github_repo = "https://github.com/rancher/elemental-toolkit"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
-github_project_repo = "https://github.com/rancher-sandbox/cOS-toolkit"
-github = "https://github.com/rancher-sandbox/cOS-toolkit"
+github_project_repo = "https://github.com/rancher/elemental-toolkit"
+github = "https://github.com/rancher/elemental-toolkit"
 # Specify a value here if your content directory is not in your repo's root directory
 github_subdir = "docs"
 # Uncomment this if you have a newer GitHub repo with "main" as the default branch,
@@ -160,8 +160,8 @@ footer_about_disable = false
 [params.ui.feedback]
 enable = true
 # The responses that the user sees after clicking "yes" (the page was helpful) or "no" (the page was not helpful).
-yes = 'Glad to hear it! Please <a href="https://github.com/rancher-sandbox/cOS-toolkit/issues/new">tell us how we can improve</a>.'
-no = 'Sorry to hear that. Please <a href="https://github.com/rancher-sandbox/cOS-toolkit/issues/new">tell us how we can improve</a>.'
+yes = 'Glad to hear it! Please <a href="https://github.com/rancher/elemental-toolkit/issues/new">tell us how we can improve</a>.'
+no = 'Sorry to hear that. Please <a href="https://github.com/rancher/elemental-toolkit/issues/new">tell us how we can improve</a>.'
 
 # Adds a reading time to the top of each doc.
 # If you want this feature, but occasionally need to remove the Reading time from a single page, 

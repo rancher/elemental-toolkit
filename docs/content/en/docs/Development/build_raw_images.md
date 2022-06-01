@@ -25,7 +25,7 @@ The RAW image can then be used into packer templates to generate custom Images, 
 
 ## Getting the packages
 
-By default, elemental will use the cos-toolkit repo to obtain the required packages to build the raw image.
+By default, elemental will use the elemental-toolkit repo to obtain the required packages to build the raw image.
 
 We can also use locally built packages instead. Just run:
 
@@ -42,7 +42,7 @@ Then prepare a `manifest.yaml` file with the local repo, so build-disk can read 
 raw_image:
   x86_64: # arch we are building for
     repositories: # list of repositories to use for getting the needed packages
-      - uri: /home/user/cos-toolkit/packages/
+      - uri: /home/user/elemental-toolkit/packages/
         type: local
 ```
 
