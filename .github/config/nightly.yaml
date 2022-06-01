@@ -30,7 +30,19 @@ flavors:
         release_flavor: ["teal"]
         arch: "x86_64"
         luet_override: ""
-
+        run_tests:
+          squashfs:
+            - "test-recovery"
+          nonsquashfs:
+            - "test-features"
+            - "test-hooks"
+            - "test-smoke"
+            - "test-fallback"
+            - "test-recovery"
+            - "test-upgrades-images-signed"
+            - "test-upgrades-images-unsigned"
+            - "test-upgrades-local"
+            - "test-deploys-images-recovery"
         on:
           schedule:
             - cron:  '0 20 * * *'

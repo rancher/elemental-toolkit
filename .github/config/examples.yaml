@@ -28,7 +28,19 @@ flavors:
         luet_override: ""
         build_examples_dir: ["cos-official", "scratch", "standard"]
         arch: "x86_64"
-
+        run_tests:
+          squashfs:
+            - "test-recovery"
+          nonsquashfs:
+            - "test-features"
+            - "test-hooks"
+            - "test-smoke"
+            - "test-fallback"
+            - "test-recovery"
+            - "test-upgrades-images-signed"
+            - "test-upgrades-images-unsigned"
+            - "test-upgrades-local"
+            - "test-deploys-images-recovery"
         on:
           push:
             branches: [ "master" ]

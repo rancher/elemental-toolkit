@@ -221,7 +221,7 @@ jobs:
     needs: qemu-squashfs-teal
     strategy:
       matrix:
-        test: [test-smoke, test-upgrades-images-unsigned]
+        test: [ test-recovery ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -332,7 +332,7 @@ jobs:
     needs: qemu-nonsquashfs-teal
     strategy:
       matrix:
-        test: [test-smoke, test-upgrades-images-unsigned]
+        test: [ test-smoke, test-upgrades-images-unsigned ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

@@ -359,7 +359,7 @@ jobs:
     needs: vbox-squashfs-teal
     strategy:
       matrix:
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-recovery" ]
+        test: [ test-recovery ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -583,7 +583,7 @@ jobs:
     needs: vbox-nonsquashfs-teal
     strategy:
       matrix:
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-recovery" ]
+        test: [ test-features, test-hooks, test-smoke, test-fallback, test-recovery, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
