@@ -7,7 +7,7 @@ After cloning the repo (with submodules), just run `make serve` to test the webs
 ```
 $> git clone --recurse-submodule https://github.com/rancher/elemental-toolkit
 $> cd elemental-toolkit
-$> cd docs; make serve
+$> make serve
 ```
 
 Or just sync the submodules:
