@@ -9,7 +9,7 @@ description: >
 ---
 
 
-cOS (or any cOS derivative built with cos-toolkit) can be installed with `elemental install`:
+cOS (or any cOS derivative built with elemental-toolkit) can be installed with `elemental install`:
 
 ```bash
 elemental install [options] <device>
@@ -91,7 +91,7 @@ You can see all the versions at [quay](https://quay.io/repository/costoolkit/ele
 
 #### By using manually the Elemental installer
 
-Similarly, the same mechanism can be used without docker. Download elemental from [github releases](https://github.com/rancher-sandbox/elemental/releases/latest) and run the follow as root:
+Similarly, the same mechanism can be used without docker. Download elemental from [github releases](https://github.com/rancher/elemental-cli/releases/latest) and run the follow as root:
 
 ```bash
 elemental install --system.uri $IMAGE $DEVICE

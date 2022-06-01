@@ -3,7 +3,7 @@
 #
 #
 
-export BASE_URL?=https://rancher-sandbox.github.io/cOS-toolkit/
+export BASE_URL?=https://rancher.github.io/elemental-toolkit/
 
 docs-deps: $(LUET) $(HUGO) $(YQ)
 

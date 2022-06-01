@@ -8,19 +8,19 @@ menu:
     weight: 20
 ---
 
-## What is cOS?
+## What is Elemental toolkit?
 
-cOS is a toolkit which allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
+Elemental is a toolkit which allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
 
-cOS allows to create meta-Linux derivatives which are configured throughout cloud-init configuration files and are immutable by default.
+Elemental allows to create meta-Linux derivatives which are configured throughout cloud-init configuration files and are immutable by default.
 
-cOS and derivatives shares a common feature set, can be upgraded with a A/B mechanism, and upgrades are delivered with standard container registries. 
+Elemental and derivatives shares a common feature set, can be upgraded with a A/B mechanism, and upgrades are delivered with standard container registries. 
 
-cOS comes also with vanilla images that can be used to boot directly container images built with the toolkit.
+Elemental comes also with vanilla images that can be used to boot directly container images built with the toolkit.
 
-## Why cOS? 
+## Why Elemental? 
 
-cOS allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - cOS enables then everyone to build their own derivative and access it in various formats. 
+Elemental allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - Elemental enables then everyone to build their own derivative and access it in various formats. 
 
 To build a bootable image is as simple as running `docker build`.
 
@@ -38,24 +38,24 @@ To build a bootable image is as simple as running `docker build`.
 - Easy to customize
 - Cryptographically verified
 - instant switch from different versions
-- recovery mechanism with `cOS` vanilla images (or bring your own)
+- recovery mechanism with `Elemental` vanilla images (or bring your own)
 
 ## Mission
 
-The cOS-toolkit project is under the Elemental umbrella.
+The elemental-toolkit project is under the Elemental umbrella.
 
-Elemental provides a unique container based approach to define the system lifecycle of an immutable Linux derivative, without any string attached to a specific Linux distribution.
+Elemental-toolkit provides a unique container based approach to define the system lifecycle of an immutable Linux derivative, without any string attached to a specific Linux distribution.
 
-At its heart, Elemental is the abstraction layer between Linux distro management and the specific purpose of the OS.
+At its heart, Elemental-toolkit is the abstraction layer between Linux distro management and the specific purpose of the OS.
 
-Elemental empowers anyone to create derivatives from standard OCI images. Frees whoever wants to create a Linux derivative from handling the heavy bits of packaging and managing entire repositories to propagate upgrades, simplifying the entire process by using container images as base for OS.
-At the same time, Elemental provides an highly integrated ecosystem which is designed to be container-first, cloud native, and immutable.
-Anyone can tweak Elemental derivatives from the bottom-up to enable and disable its featureset.
+Elemental-toolkit empowers anyone to create derivatives from standard OCI images. Frees whoever wants to create a Linux derivative from handling the heavy bits of packaging and managing entire repositories to propagate upgrades, simplifying the entire process by using container images as base for OS.
+At the same time, Elemental-toolkit provides an highly integrated ecosystem which is designed to be container-first, cloud native, and immutable.
+Anyone can tweak Elemental-toolkit derivatives from the bottom-up to enable and disable its featureset.
 
-As the Elemental team, the [os2](https://github.com/rancher-sandbox/os2) project is our point of reference.
+As the Elemental team, the [elemental](https://github.com/rancher/elemental) project is our point of reference.
 
-`os2` is a complete derivative built with Elemental tied with the rancher ecosystem and full cycle node management solution with Kubernetes. 
+`Elemental` is a complete derivative built with elemental-toolkit tied with the rancher ecosystem and full cycle node management solution with Kubernetes. 
 
-We are supporting directly and indirectly `os2` within changes also in the Elemental ecosystem.
+We are supporting directly and indirectly `elemental` within changes also in the Elemental ecosystem.
 
-`os2` is our main show-case, and as the Elemental team we are committed to it. It encompasses several technologies to create a Kubernetes-focused Linux derivative which lifecycle is managed entirely from Kubernetes itself, [Secure Device Onboarding](https://www.intel.it/content/www/it/it/internet-of-things/secure-device-onboard.html) included, and automatic provisioning via cloud-init.
+`Elemental` is our main show-case, and as the Elemental team we are committed to it. It encompasses several technologies to create a Kubernetes-focused Linux derivative which lifecycle is managed entirely from Kubernetes itself, [Secure Device Onboarding](https://www.intel.it/content/www/it/it/internet-of-things/secure-device-onboard.html) included, and automatic provisioning via cloud-init.

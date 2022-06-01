@@ -9,7 +9,7 @@ description: >
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vReZtyNs0imrji-AwnqK0-4ekCKLcKzfnQ_CwiMj93Q7IsycAJHwlNohwCv_hyHnaify7qO-v2Cecg5/pub?w=1223&h=691)
 
-In order to build an iso we rely on [elemental build-iso](https://github.com/rancher-sandbox/elemental) command. It accepts a YAML file denoting the packages to bundle in an ISO and a list of luet repositories where to download the packages from. In addition it can also overlay custom files or use container images from a registry as packages.
+In order to build an iso we rely on [elemental build-iso](https://github.com/rancher/elemental-cli) command. It accepts a YAML file denoting the packages to bundle in an ISO and a list of luet repositories where to download the packages from. In addition it can also overlay custom files or use container images from a registry as packages.
 
 To build an iso, just run:
 
@@ -21,7 +21,7 @@ Where `$IMAGE` is the container image you want to build the ISO for, you might w
 
 `elemental build-iso` command also supports reading a configuration `manifest.yaml` file. It is loaded form the directory specified by `--config-dir` elemental's flag.
 
-An example of a yaml file using the cos-toolkit opensuse repositories:
+An example of a yaml file using the elemental-toolkit opensuse repositories:
 
 ```yaml
 iso:

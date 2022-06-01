@@ -24,7 +24,7 @@ $ docker run -ti --rm quay.io/costoolkit/releases-teal:cos-system-$VERSION /bin/
 
 You can also try out cOS from the vanilla images and use it to experiment locally or either bootstrap a derivative: those are minimal system with a small package set in order to boot and deploy a container. 
 
-Latest cOS-toolkit releases assets (ISOs, Raw disks, Cloud images) can be found on [Github](https://github.com/rancher-sandbox/cOS-toolkit/releases/), check [Booting](../booting) for an explanation of each asset type and how to use it.
+Latest cOS-toolkit releases assets (ISOs, Raw disks, Cloud images) can be found on [Github](https://github.com/rancher/elemental-toolkit/releases/), check [Booting](../booting) for an explanation of each asset type and how to use it.
 
 cOS can run in: VMs, baremetals and Cloud - the default login username/password is `root/cos`.
 
@@ -53,7 +53,7 @@ We publish AMI images for each release, you can find them into ec2 for example w
 aws ec2 describe-images --filters 'Name=description,Values=cOS*'
 ```
 
-The list of all the published AMI is released as part of the [releases](https://github.com/rancher-sandbox/cOS-toolkit/releases) assets with the `ami_id.txt.tar.xz` file, e.g. [v0.6.7](https://github.com/rancher-sandbox/cOS-toolkit/releases/download/v0.6.7/ami_id.txt.tar.xz)
+The list of all the published AMI is released as part of the [releases](https://github.com/rancher/elemental-toolkit/releases) assets with the `ami_id.txt.tar.xz` file, e.g. [v0.6.7](https://github.com/rancher/elemental-toolkit/releases/download/v0.6.7/ami_id.txt.tar.xz)
 
 The AMI Owner ID is `053594193760`.
 

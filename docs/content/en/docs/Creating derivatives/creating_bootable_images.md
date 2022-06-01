@@ -19,7 +19,7 @@ Bootable images are standard container images, that means the usual `build` and 
 The base image can be any Linux distribution that is compatible with our flavors.
 
 The image needs to ship:
-- parts of the cos-toolkit (required, see below)
+- parts of the elemental-toolkit (required, see below)
 - kernel (required)
 - initrd (required)
 - grub (required)
@@ -32,14 +32,14 @@ The image needs to ship:
 An illustrative example can be:
 
 
-{{<githubembed repo="rancher-sandbox/cos-toolkit" file="examples/standard/Dockerfile" lang="Dockerfile">}}
+{{<githubembed repo="rancher/elemental-toolkit" file="examples/standard/Dockerfile" lang="Dockerfile">}}
 
 With the config file:
 
-{{<githubembed repo="rancher-sandbox/cos-toolkit" file="examples/standard/conf/luet.yaml" lang="yaml">}}
+{{<githubembed repo="rancher/elemental-toolkit" file="examples/standard/conf/luet.yaml" lang="yaml">}}
 
 
-In the example above, the cos-toolkit parts that are **required** are pulled in by `RUN luet install -y meta/cos-minimal`.
+In the example above, the elemental-toolkit parts that are **required** are pulled in by `RUN luet install -y meta/cos-minimal`.
 Afterwards we install k9s and nerdctl packages to create our derivative with those packages on it.
 
 ### Meta packages
@@ -100,7 +100,7 @@ The {{<package package="meta/cos-verify" >}} is a meta package that will pull {{
 
 {{<package package="toolchain/cosign" >}} and {{<package package="toolchain/luet-cosign" >}} are optional packages that would install cosign and luet-cosign in order to verify the packages installed by luet.
 
-You can use cosign to both verify that packages coming from cos-toolkit are verified and sign your own derivative artifacts
+You can use cosign to both verify that packages coming from elemental-toolkit are verified and sign your own derivative artifacts
 
 {{% alert title="Note" %}}
 If you want to manually verify cosign and luet-cosign packages before installing them with luet, you can do so by:
