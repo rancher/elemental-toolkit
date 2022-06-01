@@ -118,7 +118,7 @@ version = "0.5.8"
 url_latest_version = "https://rancher.github.io/elemental-toolkit/"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://rancher.github.io/elemental-toolkit"
+github_repo = "github.com/rancher/elemental-toolkit"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
 github_project_repo = "https://rancher.github.io/elemental-toolkit"
 github = "https://rancher.github.io/elemental-toolkit"
