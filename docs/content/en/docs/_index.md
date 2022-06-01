@@ -8,19 +8,19 @@ menu:
     weight: 20
 ---
 
-## What is cOS?
+## What is Elemental toolkit?
 
-cOS is a toolkit which allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
+Elemental is a toolkit which allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
 
-cOS allows to create meta-Linux derivatives which are configured throughout cloud-init configuration files and are immutable by default.
+Elemental allows to create meta-Linux derivatives which are configured throughout cloud-init configuration files and are immutable by default.
 
-cOS and derivatives shares a common feature set, can be upgraded with a A/B mechanism, and upgrades are delivered with standard container registries. 
+Elemental and derivatives shares a common feature set, can be upgraded with a A/B mechanism, and upgrades are delivered with standard container registries. 
 
-cOS comes also with vanilla images that can be used to boot directly container images built with the toolkit.
+Elemental comes also with vanilla images that can be used to boot directly container images built with the toolkit.
 
-## Why cOS? 
+## Why Elemental? 
 
-cOS allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - cOS enables then everyone to build their own derivative and access it in various formats. 
+Elemental allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - Elemental enables then everyone to build their own derivative and access it in various formats. 
 
 To build a bootable image is as simple as running `docker build`.
 
@@ -38,7 +38,7 @@ To build a bootable image is as simple as running `docker build`.
 - Easy to customize
 - Cryptographically verified
 - instant switch from different versions
-- recovery mechanism with `cOS` vanilla images (or bring your own)
+- recovery mechanism with `Elemental` vanilla images (or bring your own)
 
 ## Mission
 
