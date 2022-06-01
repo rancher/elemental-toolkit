@@ -152,6 +152,8 @@ function mountOverlay {
 
     mount="${mount#/}"
     merged="/sysroot/${mount}"
+    # Check if source mount path does exist
+    [ ! -d "${merged}" ] && return
     if [ "${base##/run}" == "${base}"  ]; then
         base="/sysroot${base}"
     fi
@@ -180,9 +182,11 @@ function mountState {
     if [ "${state_bind}" = "true" ]; then
         mount="${mount#/}"
         base="/sysroot/${mount}"
+       # Check if source mount path does exist
+        [ ! -d "${base}" ] && return
         state_dir="/sysroot${state_target}/${mount//\//-}.bind"
         if ! mountpoint -q "${base}"; then
-            mkdir -p "${base}" "${state_dir}"
+            mkdir -p "${state_dir}"
             rsync -aqAX "${base}/" "${state_dir}/"
             mount -o defaults,bind "${state_dir}" "${base}"
             fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
