@@ -19,16 +19,16 @@
 
 <title>Getting Started | cOS toolkit</title>
 <meta name="description" content="Elemental toolkit documentation website"><meta property="og:title" content="Getting Started" />
-<meta property="og:description" content="Getting started with cOS
+<meta property="og:description" content="Getting started with Elemental
 " />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/getting-started/" /><meta property="og:site_name" content="cOS toolkit" />
 
 <meta itemprop="name" content="Getting Started">
-<meta itemprop="description" content="Getting started with cOS
+<meta itemprop="description" content="Getting started with Elemental
 "><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Getting Started"/>
-<meta name="twitter:description" content="Getting started with cOS
+<meta name="twitter:description" content="Getting started with Elemental
 "/>
 
 
@@ -127,7 +127,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.0efa13bee65d6ffc26c7c6759c5fe814.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.d3faadd564611c6ae78087dd2fdeaf33.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -163,7 +163,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.0efa13bee65d6ffc26c7c6759c5fe814.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.d3faadd564611c6ae78087dd2fdeaf33.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -1988,7 +1988,7 @@ if (!doNotTrack) {
 <div class="td-toc"><nav id="TableOfContents">
   <ul>
     <li><a href="#philosophy">Philosophy</a></li>
-    <li><a href="#building-cos-derivatives">Building cOS derivatives</a></li>
+    <li><a href="#building-elemental-derivatives">Building Elemental derivatives</a></li>
     <li><a href="#vanilla-images">Vanilla images</a>
       <ul>
         <li><a href="#what-to-do-next">What to do next?</a></li>
@@ -2051,7 +2051,7 @@ if (!doNotTrack) {
             
 <div class="td-content">
 	<h1>Getting Started</h1>
-  <div class="lead">Getting started with cOS</div>
+  <div class="lead">Getting started with Elemental</div>
 	<header class="article-meta">
 		
 		
@@ -2068,10 +2068,10 @@ if (!doNotTrack) {
 		
 	</header>
 	<p><img src="https://docs.google.com/drawings/d/e/2PACX-1vRSuocC4_2rHeJAWW2vqinw_EZeZxTzJFo5ZwnJaL_sdKab_R_OsCTLT_LFh1_L5fUcA_2i9FIe-k69/pub?w=1223&amp;h=691" alt=""></p>
-<p>cOS provides a runtime and buildtime framework in order to boot containers in VMs, Baremetals and Cloud.</p>
-<p>You can either choose to <strong>build</strong> a cOS derivative or <strong>run</strong> cOS to boostrap a new system.</p>
-<p>cOS vanilla images are published to allow to deploy user-built derivatives.</p>
-<p>cOS is designed to run, deploy and upgrade derivatives that can be built just as standard OCI container images. cOS assets can be used to either drive unattended deployments of a derivative or used to create custom images (with packer).</p>
+<p>Elemental toolkit provides a runtime and buildtime framework in order to boot containers in VMs, Baremetals and Cloud.</p>
+<p>You can either choose to <strong>build</strong> a Elemental derivative or <strong>run</strong> Elemental to boostrap a new system.</p>
+<p>Elemental vanilla images are published to allow to deploy user-built derivatives.</p>
+<p>Elemental is designed to run, deploy and upgrade derivatives that can be built just as standard OCI container images. Elemental assets can be used to either drive unattended deployments of a derivative or used to create custom images (with packer).</p>
 <h2 id="philosophy">Philosophy</h2>
 
 <img style="float: right;" src="https://docs.google.com/drawings/d/e/2PACX-1vRLayrWAJo6g8ssUwKmREIkwcOHWOn_nlUUNgFxkn9HcZkE3RrAXTBWd4gVj1rxPHg559kAzUk_rsqr/pub?w=384&amp;h=255">
@@ -2092,16 +2092,16 @@ if (!doNotTrack) {
 <li><a href="../customizing/runtime_persistent_changes">Customize the image during runtime to persist changes across reboots</a></li>
 <li><a href="./booting">Perform an installation from the LiveCD medium</a></li>
 </ul>
-<h2 id="building-cos-derivatives">Building cOS derivatives</h2>
+<h2 id="building-elemental-derivatives">Building Elemental derivatives</h2>
 <p>The starting point to use elemental-toolkit is to check out our <a href="https://github.com/rancher/elemental-toolkit/tree/master/examples">examples</a> and our <a href="../creating-derivatives/creating_bootable_images">creating bootable images</a> section.</p>
 <p>The only requirement to build derivatives with <code>elemental-toolkit</code> is Docker installed. If you are interested in building elemental-toolkit itself, see <a href="../development">Development notes</a>.</p>
 <p>The toolkit itself is delivered as a set of standalone, re-usable OCI artifacts which are tagged and tracked as standard OCI images and it is installed inside the container image to provide the same featureset among derivatives, see <a href="../creating-derivatives/creating_bootable_images">how to create bootable images</a>.</p>
 <h2 id="vanilla-images">Vanilla images</h2>
-<p><code>cOS</code> releases are composed of vanilla images that are used internally for testing and can be used as a starting point to deploy derivatives in specific environments (e.g. AWS) or just to try out the cOS featureset.</p>
+<p><code>Elemental</code> releases are composed of vanilla images that are used internally for testing and can be used as a starting point to deploy derivatives in specific environments (e.g. AWS) or just to try out the Elemental featureset.</p>
 <p>The vanilla images ships no specific business-logic aside serving as a base for testing and deploying other derivatives.</p>
 <h3 id="what-to-do-next">What to do next?</h3>
-<p>Check out <a href="../creating-derivatives/creating_bootable_images">how to create bootable images</a> or <a href="../getting-started/download">download the cOS vanilla images</a> to give cOS a try!</p>
-<p>Here below you will find the common documentation that applies to any derivative built with cOS and the cOS vanilla images.</p>
+<p>Check out <a href="../creating-derivatives/creating_bootable_images">how to create bootable images</a> or <a href="../getting-started/download">download the Elemental vanilla images</a> to give Elemental a try!</p>
+<p>Here below you will find the common documentation that applies to any derivative built with Elemental and the Elemental vanilla images.</p>
 
         <div class="section-index">
     
@@ -2231,7 +2231,7 @@ if (!doNotTrack) {
 
     Last modified
     June 1, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/1501bcc18e2f5c6e6f27efd382527ffb519621c6">Revert cos-img package removal (#1464) (1501bcc)</a>
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/2895152da3010c37cda72065851c9a80ffc51755">update cOS references (#1469) (2895152)</a>
 
 </div>
 
