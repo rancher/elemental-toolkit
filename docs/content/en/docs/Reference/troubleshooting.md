@@ -13,7 +13,7 @@ Section under construction.
 
 While building a derivative, or on a running system things can go really wrong, the guide is aimed to give tips while building derivatives and also debugging running systems.
 
-Don't forget tocheck the known issues for the [release you're using](https://github.com/rancher-sandbox/cOS-toolkit/issues).
+Don't forget tocheck the known issues for the [release you're using](https://github.com/rancher/elemental-toolkit/issues).
 
 Before booting, [several kernel parameters](../immutable_rootfs) can be used to help during debugging (also when booting an ISO). Those are meant to be used only while debugging, and they might defeat the concept of immutability.
 

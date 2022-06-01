@@ -7,7 +7,7 @@ description: >
   OEM configuration reserved to cOS and derivatives
 ---
 
-There are several way to customize cOS and a cos-toolkit derivative:
+There are several way to customize cOS and a elemental-toolkit derivative:
 
 - declaratively in runtime with cloud-config file (by overriding, or extending)
 - stateful, embedding any configuration in the container image to be booted.

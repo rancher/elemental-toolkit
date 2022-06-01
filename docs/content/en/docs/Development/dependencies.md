@@ -20,15 +20,15 @@ $> make deps
 or you need:
 
 - [`luet`](https://github.com/mudler/luet)
-- [`elemental`](https://github.com/rancher-sandbox/elemental)
+- [`elemental-cli`](https://github.com/rancher/elemental-cli)
 - [`squashfs-tools`](https://github.com/plougher/squashfs-tools)
   - `zypper in squashfs` on SLES or openSUSE
 - [`xorriso`](https://dev.lovelyhq.com/libburnia/web/wiki/Xorriso)
   - `zypper in xorriso` on SLES or openSUSE
 - [`mtools`](https://www.gnu.org/software/mtools/)
   - `zypper in mtools` on SLES or openSUSE
-- `yq` ([version `4.x`](https://github.com/mikefarah/yq/releases)), installed via [packages/toolchain/yq](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/yq) (optional)
-- [`jq`](https://stedolan.github.io/jq), installed via [packages/utils/jq](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/utils/jq) (optional)
+- `yq` ([version `4.x`](https://github.com/mikefarah/yq/releases)), installed via [packages/toolchain/yq](https://github.com/rancher/elemental-toolkit/tree/master/packages/toolchain/yq) (optional)
+- [`jq`](https://stedolan.github.io/jq), installed via [packages/utils/jq](https://github.com/rancher/elemental-toolkit/tree/master/packages/utils/jq) (optional)
 
 _Note_: Running `make` deps will install only `luet`, `luet-makeiso`, `yq` and `jq`. `squashfs-tools` and `xorriso` needs to be provided by the OS.
 
@@ -36,7 +36,7 @@ _Note_: Running `make` deps will install only `luet`, `luet-makeiso`, `yq` and `
 
 To install luet locally, you can also run as root:
 ```bash
-# curl https://raw.githubusercontent.com/rancher-sandbox/cOS-toolkit/master/scripts/get_luet.sh | sh
+# curl https://raw.githubusercontent.com/rancher/elemental-toolkit/master/scripts/get_luet.sh | sh
 ```
 or build [luet from source](https://github.com/mudler/luet)).
 
@@ -45,14 +45,14 @@ You can find more luet components in the official [Luet repository](https://gith
 
 #### elemental
 
-`elemental` comes [with cOS-toolkit](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packages/toolchain/elemental-cli)
+`elemental` comes [with cOS-toolkit](https://github.com/rancher/elemental-toolkit/tree/master/packages/toolchain/elemental-cli)
 and can be installed with `luet` locally:
 
 ```bash
 $> luet install -y toolchain/elemental-cli
 ```
 
-You can also grab the binary from [elemental](https://github.com/rancher-sandbox/elemental) releases.
+You can also grab the binary from [elemental](https://github.com/rancher/elemental-cli) releases.
 
 
 #### yq and jq

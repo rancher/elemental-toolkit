@@ -12,7 +12,7 @@ description: >
 However, it's possible to tweak the default behavior of `elemental upgrade` to point to a specific docker image/tag, or a different release channel.
 
 
-By default, `cos` derivatives if not specified will point to latest `cos-toolkit`. To override, you need to or overwrite the content of `/system/oem/02_upgrades.yaml` or supply an additional one, e.g. `/system/oem/03_upgrades.yaml` in the final image, see [the default here](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/packages/cloud-config/oem/02_upgrades.yaml).
+By default, `cos` derivatives if not specified will point to latest `elemental-toolkit`. To override, you need to or overwrite the content of `/system/oem/02_upgrades.yaml` or supply an additional one, e.g. `/system/oem/03_upgrades.yaml` in the final image, see [the default here](https://github.com/rancher/elemental-toolkit/blob/master/packages/cloud-config/oem/02_upgrades.yaml).
 
 ## Configuration
 

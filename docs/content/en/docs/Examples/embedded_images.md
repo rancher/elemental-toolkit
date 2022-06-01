@@ -84,7 +84,7 @@ COPY cloud-init.yaml /system/oem/
 
 Create then `repositories.yaml` in `derivative/repositories.yaml` with the following content:
 
-{{<githubembed repo="rancher-sandbox/cos-toolkit" file="examples/standard/conf/luet.yaml" lang="yaml">}}
+{{<githubembed repo="rancher/elemental-toolkit" file="examples/standard/conf/luet.yaml" lang="yaml">}}
 
 
 ## 2) Configuration
@@ -99,7 +99,7 @@ COPY cloud-init.yaml /system/oem/
 Create a `cloud-init.yaml` file as the `derivative/cloud-init.yaml` with the following content:
 
 ```yaml
-# See https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/cloud_init/ for a full syntax reference
+# See https://rancher.github.io/elemental-toolkit/docs/reference/cloud_init/ for a full syntax reference
 name: "Default settings"
 stages:
    initramfs:
@@ -158,7 +158,7 @@ stages:
        commands:
        - passwd -l root
    # Setup persistency so k3s works properly
-   # See also: https://rancher-sandbox.github.io/cOS-toolkit/docs/reference/immutable_rootfs/#configuration-with-an-environment-file
+   # See also: https://rancher.github.io/elemental-toolkit/docs/reference/immutable_rootfs/#configuration-with-an-environment-file
    rootfs.after:
     - name: "Immutable Layout configuration"
       environment_file: /run/cos/cos-layout.env
@@ -335,7 +335,7 @@ RUN luet install -y \
        system/base-dracut-modules
 ```
 
-You can check all the available packages [here](https://cos-toolkit.herokuapp.com/cos-toolkit-teal), and you can learn more about this in our [Creating Derivatives section](../../creating-derivatives).
+You can check all the available packages [here](https://elemental-toolkit.herokuapp.com/elemental-toolkit-teal), and you can learn more about this in our [Creating Derivatives section](../../creating-derivatives).
 
 ### System layout and k3s
 

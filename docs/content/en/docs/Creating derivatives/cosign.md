@@ -5,14 +5,14 @@ linkTitle: "Cosign"
 weight: 2
 date: 2020-11-02
 description: >
-  How we use cosign in cos-toolkit
+  How we use cosign in elemental-toolkit
 ---
 
 [Cosign](https://github.com/sigstore/cosign) is a project that signs and verifies containers and stores the signatures on OCI registries.
 
 You can check the cosign [github repo](https://github.com/sigstore/cosign) for more information.
 
-In cos-toolkit we sign every container that we generate as part of our publish process so the signature can be verified during package installation with luet or during deploy/upgrades from a deployed system to verify that the containers have not been altered in any way since their build.
+In elemental-toolkit we sign every container that we generate as part of our publish process so the signature can be verified during package installation with luet or during deploy/upgrades from a deployed system to verify that the containers have not been altered in any way since their build.
 
 Currently cosign provides 2 methods for signing and verifying.
 
@@ -40,13 +40,13 @@ If building a derivative, you can also sign and verify you final artifacts with 
 As keyless is only possible to do in an CI environment (as it needs an OIDC token) you would need to set up private/public signature and verification.
 
 {{% alert title="Note" %}}
-If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher-sandbox/cOS-toolkit/blob/master/.github/workflows/build-master-teal-x86_64.yaml#L445)
+If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher/elemental-toolkit/blob/master/.github/workflows/build-master-teal-x86_64.yaml#L445)
 {{% /alert %}}
 
 
-### Verify cos-toolkit artifacts as part of derivative building
+### Verify elemental-toolkit artifacts as part of derivative building
 
-If you consume cos-toolkit artifacts in your Dockerfile as part of building a derivative you can verify the signatures of the artifacts by setting:
+If you consume elemental-toolkit artifacts in your Dockerfile as part of building a derivative you can verify the signatures of the artifacts by setting:
 
 ```dockerfile
 ENV COSIGN_REPOSITORY=raccos/releases-teal
@@ -59,7 +59,7 @@ The {{<package package="meta/cos-verify" >}} is a meta package that will pull {{
 {{% /alert %}}
 
 
-And then making sure you call luet with `--plugin luet-cosign`. You can see an example of this in our [standard Dockerfile example](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/examples/standard) 
+And then making sure you call luet with `--plugin luet-cosign`. You can see an example of this in our [standard Dockerfile example](https://github.com/rancher/elemental-toolkit/tree/master/examples/standard) 
 
 That would verify the artifacts coming from our repository.
 

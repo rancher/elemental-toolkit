@@ -21,7 +21,7 @@ cOS is designed to run, deploy and upgrade derivatives that can be built just as
 
 {{<image_right image="https://docs.google.com/drawings/d/e/2PACX-1vRLayrWAJo6g8ssUwKmREIkwcOHWOn_nlUUNgFxkn9HcZkE3RrAXTBWd4gVj1rxPHg559kAzUk_rsqr/pub?w=384&h=255">}}
 
-Philosophy behind cos-toolkit is simple: it allows you to create Linux derivatives from container images.
+Philosophy behind elemental-toolkit is simple: it allows you to create Linux derivatives from container images.
 
 - **Container registry as a single source of truth**
 - Hybrid way to access your image for different scopes (development, debugging, ..)
@@ -40,9 +40,9 @@ A derivative automatically inherits the following featureset:
 
 ## Building cOS derivatives
 
-The starting point to use cos-toolkit is to check out our [examples](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/examples) and our [creating bootable images](../creating-derivatives/creating_bootable_images) section.
+The starting point to use elemental-toolkit is to check out our [examples](https://github.com/rancher/elemental-toolkit/tree/master/examples) and our [creating bootable images](../creating-derivatives/creating_bootable_images) section.
 
-The only requirement to build derivatives with `cos-toolkit` is Docker installed. If you are interested in building cOS-toolkit itself, see [Development notes](../development).
+The only requirement to build derivatives with `elemental-toolkit` is Docker installed. If you are interested in building elemental-toolkit itself, see [Development notes](../development).
 
 The toolkit itself is delivered as a set of standalone, re-usable OCI artifacts which are tagged and tracked as standard OCI images and it is installed inside the container image to provide the same featureset among derivatives, see [how to create bootable images](../creating-derivatives/creating_bootable_images).
 

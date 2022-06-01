@@ -15,7 +15,7 @@ Requirements:
 * Packer
 * Azure access keys with the appropriate roles and permissions
 * [A Vanilla image](../../../getting-started/booting/#importing-an-azure-image-manually)
-* [Packer templates](https://github.com/rancher-sandbox/cOS-toolkit/tree/master/packer)
+* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
 
 The suggested approach is based on using Packer templates to customize the
 deployment and automate the upload and publish to Azure of cOS derivatives or cOS itself. For all the details
