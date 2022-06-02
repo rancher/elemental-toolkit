@@ -388,6 +388,9 @@
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
+  {{{ $run_tests := index $config "run_tests" }}}
+  {{{ $subset_tests := index $run_tests $subset }}}
+
   tests-{{{$subset}}}-{{{ $flavor }}}:
     env:
       ARCH: {{{ $config.arch }}}
@@ -410,11 +413,7 @@
     {{{end}}}
     strategy:
       matrix:
-        {{{ if eq $config.arch "arm64" }}}
-        test: [{{{ join $config.run_tests ", "}}}]
-        {{{else}}}
-        test: ["test-features", "test-hooks", "test-smoke", "test-fallback", "test-recovery", "test-upgrades-images-signed", "test-upgrades-images-unsigned", "test-upgrades-local", "test-deploys-images-recovery" ]
-        {{{end}}}
+        test: [ {{{  join $subset_tests ", " }}} ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

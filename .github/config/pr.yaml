@@ -24,6 +24,19 @@ flavors:
         build_image_qemu: true
         luet_override: ""
         luet_script_override: ""
+        run_tests:
+          squashfs:
+            - "test-recovery"
+          nonsquashfs:
+            - "test-features"
+            - "test-hooks"
+            - "test-smoke"
+            - "test-fallback"
+            - "test-recovery"
+            - "test-upgrades-images-signed"
+            - "test-upgrades-images-unsigned"
+            - "test-upgrades-local"
+            - "test-deploys-images-recovery"
         build_image_vbox: true
         build_raw_image: true
         run_raw_image_test: true
@@ -56,7 +69,12 @@ flavors:
         cache_repository: "build"
         organization: "quay.io/costoolkit"
         skip_tests: false
-        run_tests: ["test-smoke", "test-upgrades-images-unsigned" ]
+        run_tests:
+          squashfs:
+            - "test-recovery"
+          nonsquashfs:
+            - "test-smoke"
+            - "test-upgrades-images-unsigned"
         flavor: "teal"
         skip_tests_flavor: [ "blue", "orange", "green"]
         skip_images_flavor: [ "blue", "orange", "green" ]
