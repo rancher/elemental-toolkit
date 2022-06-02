@@ -189,7 +189,7 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy

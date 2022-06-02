@@ -5,7 +5,7 @@ import (
 
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -18,14 +18,14 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	})
 
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			s.GatherAllLogs()
 		}
 	})
 
 	Context("upgrading COS_ACTIVE from the recovery partition", func() {
 		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed == false {
+			if !CurrentSpecReport().Failed() {
 				s.Reset()
 			}
 		})
@@ -44,7 +44,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			Expect(currentName).To(Equal(recoveryName))
 
 			By("upgrade active")
-			out, err := s.Command("elemental upgrade")
+			out, err := s.Command(s.ElementalCmd("upgrade"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -68,9 +68,10 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-			out, err := s.Command(fmt.Sprintf("elemental upgrade --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
+			fmt.Fprint(GinkgoWriter, out)
 			err = s.ChangeBoot(sut.Active)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -87,9 +88,10 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	Context("upgrading recovery", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
+
 				version := s.GetOSRelease("VERSION")
-				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
-				out, err := s.Command(fmt.Sprintf("elemental upgrade --recovery --recovery-system.uri docker:%s:cos-recovery-%s", s.ArtifactsRepo, s.TestVersion))
+				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion))
+				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", fmt.Sprintf("docker:%s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion)))
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
@@ -115,7 +117,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using upgrade channel", func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery")
-				out, err := s.Command("elemental upgrade --recovery")
+				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 

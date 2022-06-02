@@ -6,7 +6,7 @@ import (
 
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -18,10 +18,10 @@ var _ = Describe("cOS booting fallback tests", func() {
 		s.EventuallyConnects()
 	})
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			s.GatherAllLogs()
 		}
-		if CurrentGinkgoTestDescription().Failed == false {
+		if !CurrentSpecReport().Failed() {
 			s.Reset()
 		}
 	})
@@ -46,7 +46,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
-			out, err := s.Command(fmt.Sprintf("elemental upgrade --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
