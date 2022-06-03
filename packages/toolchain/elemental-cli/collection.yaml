@@ -1,9 +1,9 @@
 packages:
   - &elemental
     name: "elemental-cli"
-    bin_name: "elemental"
     category: "toolchain"
     version: "0.20220608"
+    bin_name: "elemental"
     fips: false
     labels:
       github.repo: "elemental-cli"
