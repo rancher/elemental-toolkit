@@ -14,9 +14,6 @@ label: "COS_LIVE"
 # Raw disk creation values start
 raw_disk:
   x86_64:
-    # Where to get the packages from if the local build doesn't have the needed packages
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal
     # which packages to install and the target to install them at
     packages:
       - name: system/grub2-efi-image
@@ -28,8 +25,6 @@ raw_disk:
       - name: recovery/cos-img
         target: root/cOS
   arm64:
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
       - name: system/grub2-efi-image
         target: efi
@@ -62,3 +57,9 @@ build:
   - system/grub2-artifacts
   - system/grub2-efi-image
   - toolchain/elemental-cli
+
+repositories:
+- uri: quay.io/costoolkit/releases-teal-arm64
+  arch: "arm64"
+- uri: quay.io/costoolkit/releases-teal
+  arch: "amd64"
