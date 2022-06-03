@@ -9,7 +9,7 @@ concurrency:
 jobs:
   build-orange-arm64:
     runs-on: [self-hosted, arm64]
-    if: contains(fromJson('["mudler", "fgiudici", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
+    if: contains(fromJson('["mudler", "fgiudici", "frelon", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
     env:
       LUET_ARCH: arm64
       FLAVOR: orange

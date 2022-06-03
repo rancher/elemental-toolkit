@@ -10,7 +10,7 @@ concurrency:
 jobs:
   build-teal-arm64:
     runs-on: [self-hosted, arm64]
-    if: contains(fromJson('["mudler", "fgiudici", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) && contains(github.event.pull_request.labels.*.name, 'arm64')
+    if: contains(fromJson('["mudler", "fgiudici", "frelon", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) && contains(github.event.pull_request.labels.*.name, 'arm64')
     env:
       LUET_ARCH: arm64
       FLAVOR: teal
