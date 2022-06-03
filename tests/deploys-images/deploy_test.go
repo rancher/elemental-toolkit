@@ -3,7 +3,7 @@ package cos_test
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
@@ -18,10 +18,10 @@ var _ = Describe("cOS Deploy tests", func() {
 
 	AfterEach(func() {
 		// Try to gather mtree logs on failure
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			s.GatherAllLogs()
 		}
-		if CurrentGinkgoTestDescription().Failed == false {
+		if !CurrentSpecReport().Failed() {
 			s.Reset()
 		}
 	})
@@ -29,6 +29,7 @@ var _ = Describe("cOS Deploy tests", func() {
 	Context("From recovery", func() {
 		When("deploying again", func() {
 			It("deploys the system", func() {
+
 				err := s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()
@@ -39,7 +40,7 @@ var _ = Describe("cOS Deploy tests", func() {
 
 				version := out
 
-				_, err = s.Command(fmt.Sprintf("elemental reset --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+				_, err = s.Command(s.ElementalCmd("reset", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
 				Expect(err).NotTo(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))

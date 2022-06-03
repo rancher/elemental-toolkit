@@ -3,7 +3,7 @@ package cos_test
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
@@ -17,18 +17,13 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 	})
 
 	AfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			s.GatherAllLogs()
 		}
 	})
 	Context("After install", func() {
 		When("images are not signed", func() {
 			It("upgrades", func() {
-
-				if s.GetArch() == "aarch64" {
-					By("Upgrading aarch64 system")
-					s.ArtifactsRepo = "quay.io/costoolkit/releases-teal-arm64"
-				}
 
 				grubEntry, err := s.Command("grub2-editenv /run/initramfs/cos-state/grub_oem_env list | grep default_menu_entry= | sed 's/default_menu_entry=//'")
 				Expect(err).ToNot(HaveOccurred())
@@ -38,7 +33,7 @@ var _ = Describe("cOS Upgrade tests - Images unsigned", func() {
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				out, err = s.Command(fmt.Sprintf("elemental --debug --logfile /tmp/elemental.log upgrade --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+				out, err = s.Command(s.ElementalCmd("upgrade", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
 				Expect(err).ToNot(HaveOccurred(), out)
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				By("rebooting")

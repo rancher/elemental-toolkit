@@ -3,7 +3,7 @@ package cos_test
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
@@ -40,7 +40,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			}
 		})
 		AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
+			if CurrentSpecReport().Failed() {
 				s.GatherAllLogs()
 			}
 		})
@@ -64,7 +64,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install --force-gpt /dev/sda")
+					out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -82,7 +82,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install --force-gpt /dev/sda")
+					out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
@@ -136,7 +136,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command("elemental install /dev/sda")
+					out, err := s.Command(s.ElementalCmd("install", "/dev/sda"))
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
@@ -189,7 +189,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 		PContext("install source tests", func() {
 			It("from iso", func() {
 				By("Running the elemental install")
-				out, err := s.Command("elemental install /dev/sda")
+				out, err := s.Command(s.ElementalCmd("install", "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
@@ -209,7 +209,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			PIt("from url", func() {})
 			It("from docker image", func() {
 				By("Running the elemental install")
-				out, err := s.Command(fmt.Sprintf("elemental install --system.uri  docker:%s:cos-system-%s /dev/sda", s.ArtifactsRepo, s.TestVersion))
+				out, err := s.Command(s.ElementalCmd("install", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion), "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
@@ -232,7 +232,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 		PContext("efi/gpt tests", func() {
 			It("forces gpt", func() {
 				By("Running the installer")
-				out, err := s.Command("elemental install --force-gpt /dev/sda")
+				out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
@@ -251,7 +251,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			})
 			It("forces efi", func() {
 				By("Running the installer")
-				out, err := s.Command("elemental install --force-efi /dev/sda")
+				out, err := s.Command(s.ElementalCmd("install", "--force-efi", "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Installing GRUB.."))
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))

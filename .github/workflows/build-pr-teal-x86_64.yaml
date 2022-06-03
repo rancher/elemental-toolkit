@@ -189,7 +189,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
@@ -234,7 +234,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-installer-bios
       - uses: actions/upload-artifact@v2
@@ -366,7 +366,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
@@ -414,7 +414,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
@@ -458,7 +458,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-installer-bios
       - uses: actions/upload-artifact@v2
@@ -590,7 +590,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
@@ -714,7 +714,7 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go get -u github.com/onsi/ginkgo/ginkgo
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy

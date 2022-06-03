@@ -3,7 +3,7 @@ package cos_test
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
@@ -18,17 +18,17 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 	AfterEach(func() {
 		// Try to gather mtree logs on failure
-		if CurrentGinkgoTestDescription().Failed {
+		if CurrentSpecReport().Failed() {
 			s.GatherAllLogs()
 		}
-		if CurrentGinkgoTestDescription().Failed == false {
+		if !CurrentSpecReport().Failed() {
 			s.Reset()
 		}
 	})
 	Context("After install", func() {
 		When("upgrading", func() {
 			It("upgrades to latest available (master) and reset", func() {
-				out, err := s.Command("elemental upgrade")
+				out, err := s.Command(s.ElementalCmd("upgrade"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 				By("rebooting")
@@ -38,18 +38,13 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 
 			It("upgrades to a specific image and reset back to the installed version", func() {
 
-				if s.GetArch() == "aarch64" {
-					By("Upgrading aarch64 system")
-					s.ArtifactsRepo = "quay.io/costoolkit/releases-teal-arm64"
-				}
-
 				out, err := s.Command("source /etc/os-release && echo $VERSION")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
 				version := out
-				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
-				out, err = s.Command(fmt.Sprintf("elemental upgrade --verify --system.uri docker:%s:cos-system-%s", s.ArtifactsRepo, s.TestVersion))
+				By(fmt.Sprintf("upgrading to an old image: %s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion))
+				out, err = s.Command(s.ElementalCmd("upgrade", "--verify", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(
 					And(
