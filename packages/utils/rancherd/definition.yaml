@@ -1,6 +1,6 @@
 name: "rancherd"
 category: "utils"
-version: 0.0.1-alpha13-10
+version: 0.0.1-alpha13-11
 platform: linux
 upx: false
 labels:
