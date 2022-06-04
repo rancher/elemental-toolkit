@@ -49,3 +49,4 @@ packages:
     name: "default-services"
     oem_file: "09_services.yaml"
     templated: false
+    version: 0.4-2
