@@ -1,7 +1,7 @@
 packages:
   - name: "k3s"
     category: "selinux"
-    version: 1.1.1-5
+    version: 1.1.1-6
     labels:
       github.repo: "k3s-selinux"
       github.owner: "k3s-io"
@@ -14,7 +14,7 @@ packages:
         curl -s -L "https://github.com/{{.Values.labels.github.owner}}/{{.Values.labels.github.repo}}/releases/download/{{.Values.labels.github.tag}}/sha256sum-centos7-noarch.txt" | grep "noarch" | cut -d" " -f 1
   - name: "rancher"
     category: "selinux"
-    version: 0.2.1-10
+    version: 0.2.1-11
     labels:
       github.repo: "rancher-selinux"
       github.owner: "rancher"
