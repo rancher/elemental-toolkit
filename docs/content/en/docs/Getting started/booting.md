@@ -5,12 +5,12 @@ linkTitle: "Booting"
 weight: 2
 date: 2017-01-05
 description: >
-  Documents various methods for booting cOS vanilla images
+  Documents various methods for booting Elemental vanilla images
 ---
 
 {{<image_right image="https://docs.google.com/drawings/d/e/2PACX-1vQXQFmc4MnmRsPCLR1_hCElykMWbcye6TY-zDWZhVyFbIqFEXyVsLgPIKVqUCZaQTkAE00uAK66Mt-D/pub?w=507&h=217">}}
 
-Each cOS release contains a variety of assets:
+Each Elemental release contains a variety of assets:
 
 - ISOs `cOS-Seed-teal-$VERSION-$ARCH.iso.tar.xz`
 - QCOW `cOS-Packer-teal_$VERSION-QEMU-$ARCH.tar.gz.tar.xz`
@@ -25,7 +25,7 @@ here we try to summarize and document how they are meant to be consumed.
 
 ## ISO
 
-ISO images (e.g. ``cOS-Seed-teal-$VERSION-$ARCH.iso.tar.xz` ) are shipping a cOS vanilla image and they feature an installer to perform an automated installation. They can be used to burn USB sticks or CD/DVD used to boot baremetals. Once booted, you can install cOS with:
+ISO images (e.g. ``cOS-Seed-teal-$VERSION-$ARCH.iso.tar.xz` ) are shipping a Elemental vanilla image and they feature an installer to perform an automated installation. They can be used to burn USB sticks or CD/DVD used to boot baremetals. Once booted, you can install cOS with:
 
 ```bash
 elemental install $DEVICE
@@ -59,7 +59,7 @@ $> mksquashfs <path_to_folder> <output_path>/root.squashfs
 The squashfs file can also be extracted using the following `docker` command:
 
 ```bash
-$> docker run -v $PWD:/cOS --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-teal:cos-img-recovery-<version> .
+$> docker run -v $PWD:/Elemental --entrypoint /usr/bin/luet -ti --rm quay.io/costoolkit/toolchain util unpack quay.io/costoolkit/releases-teal:cos-img-recovery-<version> .
 ```
 
 Then copy the `boot` directory and the squashfs file to your webserver and use
@@ -86,7 +86,7 @@ For booting into Virtual machines we offer QCOW2, OVA, and raw disk recovery ima
 
 ### QCOW2
 
-QCOW2 images ( e.g. `cOS-Packer-teal-$VERSION-QEMU-$ARCH.tar.gz.tar.xz` ) contains a pre-installed cOS system which can be booted via QEMU, e.g:
+QCOW2 images ( e.g. `cOS-Packer-teal-$VERSION-QEMU-$ARCH.tar.gz.tar.xz` ) contains a pre-installed Elemental system which can be booted via QEMU, e.g:
 
 ```bash
 qemu-system-x86_64 -m 2048 -hda cOS -nographic
@@ -94,7 +94,7 @@ qemu-system-x86_64 -m 2048 -hda cOS -nographic
 
 ### OVA
 
-Ova images ( e.g. `cOS-Packer-teal-$VERSION-vbox-$ARCH.tar.gz.tar.xz` ) contains a pre-installed cOS system which can be booted via vbox.
+Ova images ( e.g. `cOS-Packer-teal-$VERSION-vbox-$ARCH.tar.gz.tar.xz` ) contains a pre-installed Elemental system which can be booted via vbox.
 Please check the virtuabox docs on how to create a new VM with an existing disk.
 
 ### Vagrant
@@ -109,7 +109,7 @@ vagrant up
 
 ### RAW disk images
 
-RAW disk images ( e.g. `cOS-Vanilla-RAW-teal-$VERSION-$ARCH.raw.tar.xz` ) contains only the `cOS` recovery system. Those are typically used when creating derivatives images based on top of `cOS`.
+RAW disk images ( e.g. `cOS-Vanilla-RAW-teal-$VERSION-$ARCH.raw.tar.xz` ) contains only the `Elemental` recovery system. Those are typically used when creating derivatives images based on top of `Elemental`.
 
 They can be run with QEMU with:
 
@@ -120,7 +120,7 @@ qemu-system-x86_64 -m 2048 -hda <cos-disk-image>.raw -bios /usr/share/qemu/ovmf-
 ## Cloud Images
 
 Cloud images are `vanilla` images that boots into [recovery mode](../recovery) and can be used to deploy
-whatever image you want to the VM. Then you can snapshot that VM into a VM image ready to deploy with the default cOS
+whatever image you want to the VM. Then you can snapshot that VM into a VM image ready to deploy with the default Elemental
 system or your derivative.
 
 At the moment we support Azure and AWS images among our artifacts. We publish AWS images that can also be re-used in packer templates for creating customized AMI images. 
@@ -142,7 +142,7 @@ aws s3 cp <cos-raw-image> s3://<your_s3_bucket>
 
 ```
 {
-  "Description": "cOS Testing image in RAW format",
+  "Description": "Elemental Testing image in RAW format",
   "Format": "raw",
   "UserBucket": {
     "S3Bucket": "<your_s3_bucket>",
@@ -154,7 +154,7 @@ aws s3 cp <cos-raw-image> s3://<your_s3_bucket>
 3. Import the disk as snapshot
 
 ```
-aws ec2 import-snapshot --description "cOS PoC" --disk-container file://container.json
+aws ec2 import-snapshot --description "Elemental PoC" --disk-container file://container.json
 ```
 
 4. Followed the procedure described in [AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#creating-launching-ami-from-snapshot) to register an AMI from snapshot. Used all default settings unless for the firmware, set to force to UEFI boot.
@@ -191,7 +191,7 @@ stages:
        commands:
          - |
              # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
-             # By default the recovery cOS gets deployed
+             # By default the recovery Elemental gets deployed
              elemental reset --reboot
 
 ```
@@ -250,7 +250,7 @@ stages:
        commands:
          - |
              # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
-             # By default recovery cOS gets deployed
+             # By default recovery Elemental gets deployed
              elemental reset --reboot
 ```
 
@@ -309,7 +309,7 @@ stages:
        commands:
          - |
              # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
-             # By default recovery cOS gets deployed
+             # By default recovery Elemental gets deployed
              elemental reset --reboot
 ```
 

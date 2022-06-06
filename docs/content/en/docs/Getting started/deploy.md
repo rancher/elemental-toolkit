@@ -5,17 +5,17 @@ linkTitle: "Deploying"
 weight: 6
 date: 2021-10-27
 description: >
-  How to deploy derivatives images from cOS vanilla images
+  How to deploy derivatives images from Elemental vanilla images
 ---
 
 
-cOS vanilla images, like ISOs, cloud images or raw disks can be used to deploy another derivative image.
+Elemental vanilla images, like ISOs, cloud images or raw disks can be used to deploy another derivative image.
 
 ## `elemental reset`
 
 `elemental reset` can be used to reset the system from the recovery image or from a custom image. Vanilla images only include a minimal recovery partition and system.
 
-It can be either invoked manually with `elemental reset --system.uri <img-ref>` or used in conjuction with a cloud-init configuration, for example consider the following [cloud-init configuration file](../../reference/cloud_init) that creates the `state` and `persistent` partitions during first boot (this is required on cOS vanilla images):
+It can be either invoked manually with `elemental reset --system.uri <img-ref>` or used in conjuction with a cloud-init configuration, for example consider the following [cloud-init configuration file](../../reference/cloud_init) that creates the `state` and `persistent` partitions during first boot (this is required on Elemental vanilla images):
 
 
 ```yaml
@@ -37,11 +37,11 @@ stages:
              pLabel: persistent
    network:
      - if: '[ -f "/run/cos/recovery_mode" ]'
-       name: "Deploy cOS system"
+       name: "Deploy Elemental system"
        commands:
          - |
              # Use `elemental reset --system.uri docker:<img-ref>` to deploy a custom image
-             # By default the recovery cOS gets deployed
+             # By default the recovery Elemental gets deployed
              elemental reset --reboot --system.uri docker:$IMAGE
 ```
 

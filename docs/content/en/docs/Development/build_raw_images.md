@@ -4,7 +4,7 @@ linkTitle: "Build Raw images"
 weight: 4
 date: 2017-01-05
 description: >
-  This section documents the procedure to build cOS raw images
+  This section documents the procedure to build Elemental raw images
   which are used to boot into Cloud providers.
 ---
 
@@ -13,12 +13,12 @@ Requirements:
 * `elemental` binary
 * elemental runtime dependencies
 
-The suggested approach high level view is building cOS packages and generating a RAW image from
+The suggested approach high level view is building Elemental packages and generating a RAW image from
 them. That would allow us to transform that RAW image in a valid Azure/Google/Amazon Cloud blob that can be transformed into a VM image ready
 to be launched.
 
 This generates a `vanilla` image that boots into [recovery mode](../../getting-started/recovery) and can be used to deploy
-whatever image you want to the VM. Then you can snapshot that VM into a VM image ready to deploy with the default cOS
+whatever image you want to the VM. Then you can snapshot that VM into a VM image ready to deploy with the default Elemental
 system or your derivative.
 
 The RAW image can then be used into packer templates to generate custom Images, or used as-is with a userdata to deploy a container image of choice with an input user-data.
@@ -60,8 +60,8 @@ raw_image:
 ## Building the RAW image
 
 The RAW image is just a RAW disk image that contains the recovery, so once launched is ready to be used for installing
-whatever cOS or derivative that you want into the VM disks. This allows us to have a barebones base image that can be
-used for provisioning whatever cOS you want.
+whatever Elemental or derivative that you want into the VM disks. This allows us to have a barebones base image that can be
+used for provisioning whatever Elemental you want.
 
 Building the RAW image is as simple as running:
 
@@ -129,7 +129,7 @@ Note that we used `--os-type linux --hyper-v-generation v2` as flags. This indic
 and its required. Otherwise, launching the image will try to boot it in legacy mode, and it will fail.
 
 
-Once this is over you will have you cOS (or derivative) vanilla image ready for consumption.
+Once this is over you will have you Elemental (or derivative) vanilla image ready for consumption.
 You can see your new image by running:
 
 ```bash
@@ -196,7 +196,7 @@ Note that we used `--guest-os-features=UEFI_COMPATIBLE` as a flag. This indicate
 and its required. Otherwise, launching the image will try to boot it in legacy mode and it will fail.
 
 
-Once this is over you will have you cOS (or derivative) vanilla image ready for consumption.
+Once this is over you will have you Elemental (or derivative) vanilla image ready for consumption.
 You can see your new image by running:
 
 ```bash

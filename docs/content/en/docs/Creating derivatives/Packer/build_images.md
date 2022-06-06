@@ -4,7 +4,7 @@ linkTitle: "Build QCOW, VirtualBox and Vagrant images"
 weight: 4
 date: 2017-01-05
 description: >
-  This section documents the procedure to build a custom QCOW, VirtualBox and a Vagrant images with the cOS packer templates
+  This section documents the procedure to build a custom QCOW, VirtualBox and a Vagrant images with the Elemental packer templates
 ---
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vT-ZugVPCUCffRbfko-tOoTyRIpqjtgvQgQn74lckTZCjMLIakEJKRPwyjFL7tGEmKE8DDMVSZBEZ9u/pub?w=1223&h=691)
@@ -13,23 +13,23 @@ Requirements:
 
 * Packer
 * Either qemu or VirtualBox functioning in the build host
-* a cOS or a [custom ISO](../../build_iso)
+* a Elemental or a [custom ISO](../../build_iso)
 * [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
 
 The suggested approach is based on using [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer) to customize the
-deployment and automate creation of QCOW, Virtualbox and Vagrant images of cOS derivatives or cOS itself. For all the details
+deployment and automate creation of QCOW, Virtualbox and Vagrant images of Elemental derivatives or Elemental itself. For all the details
 and possibilties of Packer check the [official documentation](https://www.packer.io/guides/hcl).
 
 ## Run the build with Packer
 
-To build QCOW and VirtualBox images an ISO file is required. You can either [Download](../../../getting-started/download) a cOS ISO or [build your own from a container image](../../build_iso).
+To build QCOW and VirtualBox images an ISO file is required. You can either [Download](../../../getting-started/download) a Elemental ISO or [build your own from a container image](../../build_iso).
 
 ### QCOW2
 
 Consider:
 
 ```bash
-# From the root of a cOS-toolkit repository checkout
+# From the root of a Elemental-toolkit repository checkout
 
 > cd packer
 > packer build -var "iso=/path/to/image.iso" -only qemu.cos .
@@ -74,7 +74,7 @@ few other sources such as `amazon-ebs` and `virtualbox-iso`.
 Similarly, to build OVA images we run:
 
 ```bash
-# From the root of a cOS-toolkit repository checkout
+# From the root of a Elemental-toolkit repository checkout
 
 > cd packer
 > packer build -var "iso=/path/to/image.iso" -only virtualbox-iso.cos .
@@ -85,7 +85,7 @@ Similarly, to build OVA images we run:
 To build vagrant images, we enable the `vagrant` feature, which allows the `vagrant` user to login afterwards:
 
 ```bash
-# From the root of a cOS-toolkit repository checkout
+# From the root of a Elemental-toolkit repository checkout
 
 > cd packer
 > packer build -var "iso=/path/to/image.iso" -var "feature=vagrant" -only virtualbox-iso.cos .
@@ -99,7 +99,7 @@ time using the `-var key=value` or `-var-file=path` flags. The variable file
 can be a json file including desired varibles. Consider the following example:
 
 ```bash
-# From the packer folder of the cOS-toolkit repository checkout
+# From the packer folder of the Elemental-toolkit repository checkout
 
 > cat << EOF > test.json
 {
@@ -137,4 +137,4 @@ these are some of the relevant ones:
 
 * `root_password`: Password for the user specified in `root_username`
 
-* `feature`: Enable/Disables specific `cOS` features.
+* `feature`: Enable/Disables specific `Elemental` features.

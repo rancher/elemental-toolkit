@@ -4,7 +4,7 @@ linkTitle: "Creating bootable images"
 weight: 3
 date: 2017-01-05
 description: >
-  This document describes the requirements to create standard container images that can be used for `cOS` deployments
+  This document describes the requirements to create standard container images that can be used for `Elemental` deployments
 ---
 
 
@@ -12,7 +12,7 @@ You can find the examples below in the [examples](https://github.com/rancher/ele
 
 ## From standard images
 
-Besides using the `elemental-toolkit` toolchain, it's possible to create standard container images which are consumable by the vanilla `cOS` images (ISO, Cloud Images, etc.) during the upgrade and deploy phase.
+Besides using the `elemental-toolkit` toolchain, it's possible to create standard container images which are consumable by the vanilla `Elemental` images (ISO, Cloud Images, etc.) during the upgrade and deploy phase.
 
 An example of a Dockerfile image can be:
 
@@ -47,7 +47,7 @@ Depending on the base image (`FROM opensuse/tumbleweed:latest:15.3` in the sampl
 
 ## Generating from CI image
 
-Derivatives can be stacked on top of another, so it is possible to reuse directly also the vanilla cOS images:
+Derivatives can be stacked on top of another, so it is possible to reuse directly also the vanilla Elemental images:
 
 {{<githubembed repo="rancher/elemental-toolkit" file="examples/cos-official/Dockerfile" lang="Dockerfile">}}
 
@@ -67,7 +67,7 @@ Dockerfile:
 
 All the method above imply that the image generated will be the booting one, there are however several configuration entrypoint that you should keep in mind while building the image:
 
-- Everything under `/system/oem` will be loaded during the various stage (boot, network, initramfs). You can check [here](https://github.com/rancher/elemental-toolkit/tree/e411d8b3f0044edffc6fafa39f3097b471ef46bc/packages/cloud-config/oem) for the `cOS` defaults. See `00_rootfs.yaml` to customize the booting layout.
+- Everything under `/system/oem` will be loaded during the various stage (boot, network, initramfs). You can check [here](https://github.com/rancher/elemental-toolkit/tree/e411d8b3f0044edffc6fafa39f3097b471ef46bc/packages/cloud-config/oem) for the `Elemental` defaults. See `00_rootfs.yaml` to customize the booting layout.
 - `/etc/cos/bootargs.cfg` contains the booting options required to boot the image with GRUB
 - `/etc/cos-upgrade-image` contains the default upgrade configuration for recovery and the booting system image
 

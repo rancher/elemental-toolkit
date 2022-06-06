@@ -36,7 +36,7 @@ system upgrades.
 
 ## Specifying default custom boot options
 
-cOS images and its derivatives, are expected to include a
+Elemental images and its derivatives, are expected to include a
 `/etc/cos/bootargs.cfg` file which provides the definition of the following
 variables:
 
@@ -44,10 +44,10 @@ variables:
 * `$kernelcmd`: Kernel parameters
 * `$initramfs`: Path of the initrd binary
 
-This is the mechanism any cOS image or cOS derivative has to communicate
+This is the mechanism any Elemental image or Elemental derivative has to communicate
 its boot parameters (kernel, kernel params and initrd file) to GRUB2.
 
-For example, the default cOS bootarg.cfg file is:
+For example, the default Elemental bootarg.cfg file is:
 
 ```
 set kernel=/boot/vmlinuz
@@ -70,7 +70,7 @@ You can tweak that file to suit your needs if you need to specify persistent boo
 
 ## Grub environment variables
 
-cOS (since v0.5.8) makes use of the GRUB2 environment block which can used to define
+Elemental (since v0.5.8) makes use of the GRUB2 environment block which can used to define
 persistent GRUB2 variables across reboots.
 
 Use `grub2-editenv` command line utility to define the desired values.
@@ -128,7 +128,7 @@ Or to set the default entry to `fallback` system:
 
 ## Boot menu
 
-By default `cOS` and derivatives shows the default boot menu entry while booting (`cOS`).
+By default `Elemental` and derivatives shows the default boot menu entry while booting (`Elemental`).
 
 The grub menu entry is generated during installation and can be configured by setting `GRUB_ENTRY_NAME` in the `/etc/os-release` file inside the derivative, or either via the [general configuration](../../customizing/general_configuration) to specify installation details.
 
@@ -171,7 +171,7 @@ It is possible to define persistent boot flag for each menu entry also via `grub
 
 ## Customizing fallback logic
 
-By default cOS boots into active, and if there are failures will boot into the passive, and finally if keeps failing, will boot into recovery.
+By default Elemental boots into active, and if there are failures will boot into the passive, and finally if keeps failing, will boot into recovery.
 
 It is possible to override the default fallback logic by setting `default_fallback` as grub environment, consider for example:
 

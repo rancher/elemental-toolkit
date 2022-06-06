@@ -45,7 +45,7 @@ You can find more luet components in the official [Luet repository](https://gith
 
 #### elemental
 
-`elemental` comes [with cOS-toolkit](https://github.com/rancher/elemental-toolkit/tree/master/packages/toolchain/elemental-cli)
+`elemental` comes [with Elemental-toolkit](https://github.com/rancher/elemental-toolkit/tree/master/packages/toolchain/elemental-cli)
 and can be installed with `luet` locally:
 
 ```bash

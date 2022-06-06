@@ -4,14 +4,14 @@ linkTitle: "Known issues"
 weight: 3
 date: 2017-01-05
 description: >
-  This document encompasses known issues while building cOS and cOS derivatives.
+  This document encompasses known issues while building Elemental and Elemental derivatives.
 ---
 
-When building cOS or a cOS derivative, you could face different issues, this section provides a description of the most known ones, and way to workaround them.
+When building Elemental or a Elemental derivative, you could face different issues, this section provides a description of the most known ones, and way to workaround them.
 
 ### Building SELinux fails
 
-`cOS` by default has SELinux enabled in permissive mode. If you are building parts of cOS or cOS itself from scratch, you might encounter issues while building the SELinux module, like so:
+`Elemental` by default has SELinux enabled in permissive mode. If you are building parts of Elemental or Elemental itself from scratch, you might encounter issues while building the SELinux module, like so:
 
 ```
 Step 12/13 : RUN checkmodule -M -m -o cOS.mod cOS.te && semodule_package -o cOS.pp -m cOS.mod

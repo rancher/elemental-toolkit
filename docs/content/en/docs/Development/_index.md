@@ -5,12 +5,12 @@ linkTitle: "Development"
 weight: 8
 date: 2017-01-05
 description: >
-  How to build cOS?
+  How to build Elemental?
 ---
 
 Welcome!
 
-The cOS (containerized OS) distribution is entirely built over GitHub. You can check the pipelines in the `.github` folder to see how the process looks like.
+The Elemental (containerized OS) distribution is entirely built over GitHub. You can check the pipelines in the `.github` folder to see how the process looks like.
 
 ## Repository layout
 
@@ -18,12 +18,12 @@ The cOS (containerized OS) distribution is entirely built over GitHub. You can c
 - `values`: interpolation files, needed only for multi-arch and flavor-specific build
 - `assets`: static files needed by the iso generation process
 - `packer`: Packer templates
-- `tests`: cOS test suites
+- `tests`: Elemental test suites
 - `manifest.yaml`: Is the manifest needed used to generate the ISO and additional packages to build
 
 ## Forking and test on your own
 
-By forking the `cOS-toolkit` repository, you already have the Github Action workflow configured to start building and pushing your own `cOS` fork.
+By forking the `Elemental-toolkit` repository, you already have the Github Action workflow configured to start building and pushing your own `Elemental` fork.
 
 The only changes required to keep in mind for pushing images:
 - set `DOCKER_PASSWORD` and `DOCKER_USERNAME` as Github secrets, which are needed to push the resulting container images from the pipeline. 
@@ -33,7 +33,7 @@ Those are not required for building - you can disable image push (`--push`) from
 
 ## Building locally
 
-cOS has a container image which can be used to build cOS locally in order to generate the cOS packages and the cOS iso from your checkout.
+Elemental has a container image which can be used to build Elemental locally in order to generate the Elemental packages and the Elemental iso from your checkout.
 
 From your git folder:
 
@@ -115,7 +115,7 @@ This will create a disk image at `.qemu/drive.img` and boot from the ISO.
 
 #### Installing
 
-With a fresh `drive.img`, `make run-qemu` will boot from ISO. You can then log in as `root` with password `cos` and install cOS on
+With a fresh `drive.img`, `make run-qemu` will boot from ISO. You can then log in as `root` with password `cos` and install Elemental on
 the disk image with:
 
 ```
@@ -124,7 +124,7 @@ the disk image with:
 
 #### Running
 
-After a successful installation of cOS on `drive.img`, you can boot
+After a successful installation of Elemental on `drive.img`, you can boot
 the resulting sytem with
 
 ```

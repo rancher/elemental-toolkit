@@ -4,10 +4,10 @@ linkTitle: "OEM configuration"
 weight: 3
 date: 2017-01-05
 description: >
-  OEM configuration reserved to cOS and derivatives
+  OEM configuration reserved to Elemental and derivatives
 ---
 
-There are several way to customize cOS and a elemental-toolkit derivative:
+There are several way to customize Elemental and a elemental-toolkit derivative:
 
 - declaratively in runtime with cloud-config file (by overriding, or extending)
 - stateful, embedding any configuration in the container image to be booted.
@@ -24,12 +24,12 @@ Derivatives that wish to override default configurations can do that by placing 
 
 This is to setup for example, the default root password or the prefered upgrade channel. 
 
-The following are the `cOS` default oem files, which are shipped within the {{<package package="system/cloud-config" >}}, which is an optional package:
+The following are the `Elemental` default oem files, which are shipped within the {{<package package="system/cloud-config" >}}, which is an optional package:
 
 ```
 /system/oem/00_rootfs.yaml - defines the rootfs mountpoint layout setting
 /system/oem/01_defaults.yaml - systemd defaults (keyboard layout, timezone)
-/system/oem/02_upgrades.yaml - Settings for cOS vanilla channel upgrades
+/system/oem/02_upgrades.yaml - Settings for Elemental vanilla channel upgrades
 /system/oem/03_branding.yaml - Branding setting, Derivative name, /etc/issue content
 /system/oem/04_accounting.yaml - Default user/pass
 /system/oem/05_network.yaml - Default network setup

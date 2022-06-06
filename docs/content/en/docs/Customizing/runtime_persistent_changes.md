@@ -4,10 +4,10 @@ linkTitle: "Runtime persistent changes"
 weight: 3
 date: 2021-09-24
 description: >
-  Applying changes to cOS images in runtime or “how to install a package in an immutable OS at runtime?”
+  Applying changes to Elemental images in runtime or “how to install a package in an immutable OS at runtime?”
 ---
 
-cOS and derivatives are [immutable](../../reference/immutable_rootfs) systems. That means that any change in the running OS will not persist after a reboot.
+Elemental and derivatives are [immutable](../../reference/immutable_rootfs) systems. That means that any change in the running OS will not persist after a reboot.
 
 While [configurations can be persisted](../configuration_persistency), there are occasions where installing a custom package or provide additional persistent files in the end system is needed.
 
@@ -15,13 +15,13 @@ We will see here a way to install packages, drivers, or apply any modification w
 
 ## Transient changes
 
-To apply transient changes, it's possible to boot a cOS derivative in read/write mode by specifying `rd.cos.debugrw` [see here for more details](../../reference/immutable_rootfs). This allows to do any change and will persist into the active/passive booting system (does NOT apply for recovery). Altough this methodology should be only considered for debugging purposes.
+To apply transient changes, it's possible to boot a Elemental derivative in read/write mode by specifying `rd.cos.debugrw` [see here for more details](../../reference/immutable_rootfs). This allows to do any change and will persist into the active/passive booting system (does NOT apply for recovery). Altough this methodology should be only considered for debugging purposes.
 
 ## Persist changes with Cloud init files
 
 Note: The following applies only to derivatives with {{<package package="utils/installer" >}} at version `0.17` or newer
 
-cOS allows to apply a set of commands, or cloud-init steps, during upgrade, deploy, install and reset in the context of the target image, in RW capabilities. This allows to carry on changes during upgrades on the target image without the need to re-build or have a custom derivative image.
+Elemental allows to apply a set of commands, or cloud-init steps, during upgrade, deploy, install and reset in the context of the target image, in RW capabilities. This allows to carry on changes during upgrades on the target image without the need to re-build or have a custom derivative image.
 
 All the configuration that we want to apply to the system will run each time we do an upgrade, a reset or an installation on top of the new downloaded image (in case of upgrade) or the image which is the target system. 
 

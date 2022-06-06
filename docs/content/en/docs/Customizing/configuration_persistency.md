@@ -4,11 +4,11 @@ linkTitle: "Configuration persistency"
 weight: 2
 date: 2017-01-05
 description: >
-  Persisting configurations in cOS and derivatives
+  Persisting configurations in Elemental and derivatives
 ---
 
 
-By default cOS and derivatives are reading and executing cloud-init files in (lexicopgrahic) sequence inside:
+By default Elemental and derivatives are reading and executing cloud-init files in (lexicopgrahic) sequence inside:
 
 - `/system/oem`
 - `/usr/local/cloud-config` 
@@ -49,4 +49,4 @@ stages:
             group: 0
 ```
 
-For more examples you can find `/system/oem` inside cOS vanilla images containing files used to configure on boot a pristine `cOS`. 
+For more examples you can find `/system/oem` inside Elemental vanilla images containing files used to configure on boot a pristine `Elemental`. 

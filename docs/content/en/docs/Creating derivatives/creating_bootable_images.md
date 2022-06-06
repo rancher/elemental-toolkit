@@ -4,12 +4,12 @@ linkTitle: "Creating bootable images"
 weight: 2
 date: 2017-01-05
 description: >
-  This document describes the requirements to create standard container images that can be used for `cOS` deployments
+  This document describes the requirements to create standard container images that can be used for `Elemental` deployments
 ---
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vSmIZ5FTInGjtkGonUOgwhti6DZnSoeexGmWL9CAmbdiIGtBGnzDuGNj80Lj_206hP0MOxQGpEdYFvK/pub?w=1223&h=691)
 
-A derivative is a simple container image which can be processed by the cOS toolkit in order to be bootable and installable. This section describes the requirements to create a container image that can be run by `cOS`.
+A derivative is a simple container image which can be processed by the Elemental toolkit in order to be bootable and installable. This section describes the requirements to create a container image that can be run by `Elemental`.
 
 ## Requirements
 {{<image_right image="https://docs.google.com/drawings/d/e/2PACX-1vQBfT10W88mD1bbReDmAJIOPF3tWdVHP7QE9w7W7ByOIzoKGOdh2z5YWsKf7wn8csFF_QGrDXgGsPWg/pub?w=478&h=178">}}
@@ -23,7 +23,7 @@ The image needs to ship:
 - kernel (required)
 - initrd (required)
 - grub (required)
-- dracut (optional, kernel and initrd can be consumed from the cOS repositories)
+- dracut (optional, kernel and initrd can be consumed from the Elemental repositories)
 - microcode (optional, not required in order to boot, but recomended)
 - [cosign and luet-cosign](../cosign) packages (optional, required if you want to verify the images installed by luet)
 
@@ -90,7 +90,7 @@ RUN luet install -y meta/cos-light meta/toolchain
 
 
 {{% alert title="Note" %}}
-{{<package package="system/cloud-config" >}} is optional, but provides `cOS` defaults setting, for example default user/password, rootfs layout, and more. If you are not installing it directly, an equivalent cloud-config or a set has to be provided in order to properly boot and run a system, see [oem configuration](../../customizing/oem_configuration).
+{{<package package="system/cloud-config" >}} is optional, but provides `Elemental` defaults setting, for example default user/password, rootfs layout, and more. If you are not installing it directly, an equivalent cloud-config or a set has to be provided in order to properly boot and run a system, see [oem configuration](../../customizing/oem_configuration).
 Individual cloud-configs can be installed as well as are available as standalone packages.
 {{% /alert %}}
 
@@ -123,7 +123,7 @@ By default the initrd is expected to be symlinked to `/boot/initrd` and the kern
 
 {{<package package="system/base-dracut-modules" >}} is required to be installed with `luet` in case you are building manually the initrd from the Dockerfile and also to run `dracut` to build the initrd, the command might vary depending on the base distro which was chosen.
 
-{{<package package="system/kernel" >}} and {{<package package="system/dracut-initrd" >}} can also be installed if you plan to use kernels and initrd from the `cOS` repositories and don't build them / or install them from the official distro repositories (e.g. with `zypper`, or `dnf` or either `apt-get`...). In this case you don't need to generate initrd on your own, neither install the kernel coming from the base image.
+{{<package package="system/kernel" >}} and {{<package package="system/dracut-initrd" >}} can also be installed if you plan to use kernels and initrd from the `Elemental` repositories and don't build them / or install them from the official distro repositories (e.g. with `zypper`, or `dnf` or either `apt-get`...). In this case you don't need to generate initrd on your own, neither install the kernel coming from the base image.
 
 ## Building
 
@@ -133,7 +133,7 @@ The workflow would be then:
 
 1) `docker build` the image
 2) `docker push` the image to some registry
-3) `elemental upgrade --docker-image $IMAGE` from a cOS machine or (`elemental reset` if bootstrapping a cloud image)
+3) `elemental upgrade --docker-image $IMAGE` from a Elemental machine or (`elemental reset` if bootstrapping a cloud image)
 
 The following can be incorporated in any standard gitops workflow.
 

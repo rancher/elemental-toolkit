@@ -45,7 +45,7 @@ Execute the elemental installation as described in [installing](../../getting-st
 > sudo elemental install --firmware efi --system.uri docker:<image=ref> <device>
 ```
 
-Where `<image-ref>` is the cOS derivative container image we want to use for the disk creation and `<device>` is the
+Where `<image-ref>` is the Elemental derivative container image we want to use for the disk creation and `<device>` is the
 loop device previously created with `losetup` (e.g. `/dev/loop0`).
 
 

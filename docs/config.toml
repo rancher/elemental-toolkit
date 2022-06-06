@@ -57,7 +57,7 @@ id = "UA-00000000-0"
 
 [languages]
 [languages.en]
-title = "cOS toolkit"
+title = "Elemental toolkit"
 description = "Elemental toolkit documentation website"
 languageName ="English"
 # Weight used for sorting.

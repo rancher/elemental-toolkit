@@ -7,7 +7,7 @@ description: >
   Add features that can be enabled and disabled on runtime
 ---
 
-cOS allows to (optionally) add features that can be disabled/enabled in runtime, provided by {{<package package="system/cos-features" >}}.
+Elemental allows to (optionally) add features that can be disabled/enabled in runtime, provided by {{<package package="system/cos-features" >}}.
 
 [Cloud-init files](../../reference/cloud_init) stored in `/system/features` are read by `cos-feature` and allow to interactively enable or disable them in a running system, for example:
 
@@ -27,10 +27,10 @@ To disable, run: cos-feature disable <feature>
 ```
 
 {{% alert title="Note" %}}
-`/system/features` is the default path which can be customized in the [cOS configuration file](../general_configuration) by specifying it with `COS_FEATURESDIR`.
+`/system/features` is the default path which can be customized in the [Elemental configuration file](../general_configuration) by specifying it with `COS_FEATURESDIR`.
 {{% /alert %}}
 
-By default cOS ships the `vagrant` featureset - when enabled will automatically create the default `vagrant` user which is generally used to create new Vagrant boxes. 
+By default Elemental ships the `vagrant` featureset - when enabled will automatically create the default `vagrant` user which is generally used to create new Vagrant boxes. 
 
 If you don't need `cos-features` you can avoid installing {{<package package="system/cos-features" >}}, it's optional.
 

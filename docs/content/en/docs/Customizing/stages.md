@@ -21,7 +21,7 @@ Cloud-init files in `/system/oem`, `/oem` and `/usr/local/oem` are applied in 5 
 Multiple stages can be specified in a single cloud-init file.
 
 {{% alert title="Note" %}}
-When a cOS derivative boots it creates sentinel files in order to allow to execute cloud-init steps programmaticaly.
+When a Elemental derivative boots it creates sentinel files in order to allow to execute cloud-init steps programmaticaly.
 
 - `/run/cos/recovery_mode` is being created when booting from the recovery partition
 - `/run/cos/live_mode` is created when booting from the LiveCD
@@ -53,7 +53,7 @@ stage:
 
 ### `initramfs`
 
-This is still an early stage, running before switching root. Here you can apply radical changes to the booting setup of `cOS`.
+This is still an early stage, running before switching root. Here you can apply radical changes to the booting setup of `Elemental`.
 Despite this is executed before switching root this exection runs chrooted into the target root after the immutable rootfs is set up and ready.
 
 Example:

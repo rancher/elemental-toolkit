@@ -4,12 +4,12 @@ linkTitle: "Runtime layout"
 weight: 4
 date: 2021-10-11
 description: >
-  Runtime layout of a booted cOS derivative
+  Runtime layout of a booted Elemental derivative
 ---
 
-This section describes the runtime layout of a derivative (or a cOS Vanilla image) once booted in a system.  
+This section describes the runtime layout of a derivative (or a Elemental Vanilla image) once booted in a system.  
 
-The cOS toolkit performs during installation a common setup which is equivalent across all derivatives. 
+The Elemental toolkit performs during installation a common setup which is equivalent across all derivatives. 
 
 This mechanism ensures that a layout:
 
@@ -34,7 +34,7 @@ Similarly, a recovery system can be upgraded as well by running `elemental upgra
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vSP-Pz9l9hwYDeIlej7qXzzcMzGYBiKjyFpiYYKlbNR3H37n_R_c0eBNeYa3msouOupmDim3ZYYBSxS/pub?w=812&h=646)
 
-The default partitioning is created during installation and is expected to be present in a booted cOS system:
+The default partitioning is created during installation and is expected to be present in a booted Elemental system:
 
 - a `COS_STATE` partition that will contain our active, passive and recovery images. The images are located under the `/cOS` directory
 - a `COS_PERSISTENT` partition which contains the persistent user data. This directory is mounted over `/usr/local` during runtime
@@ -43,4 +43,4 @@ The default partitioning is created during installation and is expected to be pr
 
 The `COS_STATE` partitions contains the `active`, `passive` . While the `active` and `passive` are `.img` files which are loopback mounted, the `recovery` system is in `COS_RECOVERY` and can also be a `squashfs` file (provided in `/cOS/recovery.squashfs`). This ensures the immutability aspect and ease out building derivative in constrained environments (e.g. when we have restricted permissions and we can't mount).
 
-For more information about the immutability aspect of cOS, see [Immutable rootfs](../immutable_rootfs)
+For more information about the immutability aspect of Elemental, see [Immutable rootfs](../immutable_rootfs)
