@@ -54,12 +54,8 @@ _VALIDATE_OPTIONS?=-s
 #
 # extract packages from yaml spec
 #
-YQ_VERSION=$(shell yq -V | cut -d " " -f 3 | cut -d "." -f 1)
-ifeq ("$(YQ_VERSION)", "3")
-	PACKAGES?=$(shell yq r -j $(MANIFEST) | jq -r '.build,.iso[] | .[]' | sort -u)
-else
-	PACKAGES?=$(shell yq e -j $(MANIFEST) | jq -r '.build,.iso[] | .[]' | sort -u)
-endif
+# ignore the label field as its a string
+PACKAGES?=$(shell yq '.build[],.iso[]|select(. != "COS_LIVE")|join(" ")' | sort -u)
 
 ifeq ("$(PACKAGES)","")
 	BUILD_ARGS+=--all
