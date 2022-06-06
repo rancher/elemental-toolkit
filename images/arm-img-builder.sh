@@ -216,12 +216,6 @@ if [ -z "$output_image" ]; then
 fi
 
 if [ -n "$manifest" ]; then
-  YQ_VERSION=$( yq -V | cut -d " " -f 3 | cut -d "." -f 1)
-
-  if [[ "${YQ_VERSION}" == "3" ]]; then
-    YQ_REPO_COMMAND=(yq r "${manifest}" "raw_disk.$model.repo")
-    YQ_PACKAGES_COMMAND=(yq r -j "${manifest}")
-  else
     YQ_REPO_COMMAND=(yq e ".raw_disk.$model.repo" "${manifest}")
     YQ_PACKAGES_COMMAND=(yq e -o=json "$manifest")
   fi
