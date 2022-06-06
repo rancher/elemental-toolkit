@@ -578,7 +578,6 @@
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
       {{{- end }}}
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
-      COSIGN_REPOSITORY: raccos/releases-{{{ $flavor }}}
       PUBLISH_ARGS: "--plugin luet-cosign"
       COSIGN_FULCIO_URL: "https://v1.fulcio.sigstore.dev"
     steps:

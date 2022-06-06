@@ -4,12 +4,12 @@ on:
     inputs:
       final-repo:
         required: false
-        default: quay.io/costoolkit/releases-green
+        default: quay.io/costoolkit/releases-teal
         type: string
         description: Repo to check artifacts for signatures
       cosign-repository:
         required: false
-        default: raccos/releases-green
+        default: quay.io/costoolkit/releases-teal
         type: string
         description: Repo that contains the signatures for the final_repo
       fulcio-url:

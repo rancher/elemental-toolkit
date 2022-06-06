@@ -4,7 +4,6 @@ FROM quay.io/luet/base:$LUET_VERSION AS luet
 FROM quay.io/costoolkit/releases-teal:cos-system-0.8.10-1
 
 ENV COSIGN_EXPERIMENTAL=1
-ENV COSIGN_REPOSITORY=raccos/releases-teal
 
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
