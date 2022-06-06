@@ -18,7 +18,7 @@ $(GINKGO):
 	@exit 1
 
 build:
-	go build -ldflags '$(LDFLAGS)' -o bin/
+	go build -ldflags '$(LDFLAGS)' -o bin/elemental
 
 docker_build:
 	DOCKER_BUILDKIT=1 docker build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t elemental:${GIT_TAG}-${GIT_COMMIT_SHORT} .
