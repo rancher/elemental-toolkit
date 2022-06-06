@@ -15,7 +15,7 @@ Here is a not-exhaustive lists of derivatives built with Elemental.
 | Name      | Description                                                                                                     | Link                                   |
 |-----------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | Harvester | Open source hyperconverged infrastructure (HCI) software                                                        | https://github.com/harvester/harvester |
-| Elemental | Immutable Linux distribution built to run Rancher and it's corresponding Kubernetes distributions RKE2 and k3s. | https://github.com/rancher/elemental   |
+| Elemental | Immutable Linux distribution built to run Rancher and its corresponding Kubernetes distributions RKE2 and k3s. | https://github.com/rancher/elemental   |
 
 
 ## Run by Community
