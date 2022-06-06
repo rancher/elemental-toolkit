@@ -4,11 +4,11 @@ linkTitle: "General Configuration"
 weight: 3
 date: 2017-01-05
 description: >
-  Configuring a cOS derivative
+  Configuring a Elemental derivative
 ---
 
 
-cOS during installation, reset and upgrade (`elemental install`, `elemental reset` and `elemental upgrade` respectively) will read a configuration file in order to apply derivative customizations. The configuration files are sourced in precedence order and can be located in the following places:
+Elemental during installation, reset and upgrade (`elemental install`, `elemental reset` and `elemental upgrade` respectively) will read a configuration file in order to apply derivative customizations. The configuration files are sourced in precedence order and can be located in the following places:
 
 - `/etc/os-release`
 - `<config-dir>/config.yaml`

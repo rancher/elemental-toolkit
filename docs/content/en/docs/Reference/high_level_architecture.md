@@ -5,10 +5,10 @@ linkTitle: "High level architecture"
 weight: 6
 date: 2017-01-05
 description: >
-  High level architecture of cOS and its components.
+  High level architecture of Elemental and its components.
 ---
 
-# cOS toolkit High level Architecture
+# Elemental toolkit High level Architecture
 
 This page tries to encompass the [`elemental-toolkit`](https://github.com/rancher/elemental-toolkit) structure and the high level architecture, along with all the involved components.
 

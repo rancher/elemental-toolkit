@@ -45,7 +45,7 @@ If you can boot into the system, the recovery partition can be used to reset the
 ## Mutating derivative images
 
 It can be useful to mutate derivative images and commit a container’s file changes or settings into a new image. 
-This allows you to debug a container by running an interactive shell, and re-use the mutated image in cOS systems. Generally, it is better to use Dockerfiles to manage your images in a documented and maintainable way. [Read more about creating bootable images](../../creating-derivatives/creating_bootable_images).
+This allows you to debug a container by running an interactive shell, and re-use the mutated image in Elemental systems. Generally, it is better to use Dockerfiles to manage your images in a documented and maintainable way. [Read more about creating bootable images](../../creating-derivatives/creating_bootable_images).
 
 Let's suppose we have the derivative original image at `$IMAGE` and we want to mutate it. We will push it later with another name `$NEW_IMAGE` and use it to our node downstream.
 

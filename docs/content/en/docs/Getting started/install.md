@@ -5,11 +5,11 @@ linkTitle: "Installing"
 weight: 2
 date: 2021-11-04
 description: >
-  Installing cOS or a derivative locally
+  Installing Elemental or a derivative locally
 ---
 
 
-cOS (or any cOS derivative built with elemental-toolkit) can be installed with `elemental install`:
+Elemental (or any Elemental derivative built with elemental-toolkit) can be installed with `elemental install`:
 
 ```bash
 elemental install [options] <device>
@@ -70,9 +70,9 @@ In order to create additional partitions please consider the layout section on [
 
 ### Installation from 3rd party LiveCD or rescue mediums
 
-The installer can be used to perform installations also from outside the cOS or standard derivative ISOs.
+The installer can be used to perform installations also from outside the Elemental or standard derivative ISOs.
 
-For instance, it is possible to install cOS (or any derivative) with the installer from another bootable medium, or a rescue mode which is booting from RAM, given there is enough free RAM available.
+For instance, it is possible to install Elemental (or any derivative) with the installer from another bootable medium, or a rescue mode which is booting from RAM, given there is enough free RAM available.
 
 #### With Docker
 

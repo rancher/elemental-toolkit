@@ -8,7 +8,7 @@ description: >
   How to use the recovery partition to reset the system or perform upgrades.
 ---
 
-cOS derivatives have a recovery mechanism built-in which can be leveraged to restore the system to a known point. At installation time, the recovery partition is created from the installation medium.
+Elemental derivatives shares a common recovery mechanism built-in which can be leveraged to restore the system to a known point. At installation time, the recovery partition is created from the installation medium.
 
 The recovery system can be accessed during boot by selecting the last entry in the menu (labeled by "recovery").
 

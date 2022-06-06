@@ -4,8 +4,8 @@ linkTitle: "Build Azure images"
 weight: 4
 date: 2017-01-05
 description: >
-  This section documents the procedure to deploy cOS (or derivatives) images
-  in Azure public cloud provider by using the cOS Vanilla image.
+  This section documents the procedure to deploy Elemental (or derivatives) images
+  in Azure public cloud provider by using the Elemental Vanilla image.
 ---
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vSqJWcFThP7K2HS551LCqs73l4ZncXElLjlbCvxY96Ga2Jbjnq79j-DEjaccUZvYEQyphWiDQc9flxk/pub?w=1223&h=691)
@@ -18,19 +18,19 @@ Requirements:
 * [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
 
 The suggested approach is based on using Packer templates to customize the
-deployment and automate the upload and publish to Azure of cOS derivatives or cOS itself. For all the details
+deployment and automate the upload and publish to Azure of Elemental derivatives or Elemental itself. For all the details
 and possibilities of Packer check the [official documentation](https://www.packer.io/guides/hcl).
 
 ## Run the build with Packer
 
-Publishing an image in Azure based on top of the latest cOS Vanilla image is
+Publishing an image in Azure based on top of the latest Elemental Vanilla image is
 fairly simple. In fact, it is only needed to set the Azure credentials
 and run a `packer build` process to trigger the deployment and register the
-resulting snapshot as an image. In such case the latest cOS image will be
+resulting snapshot as an image. In such case the latest Elemental image will be
 deployed and configured with pure defaults. Consider:
 
 ```bash
-# From the root of a cOS-toolkit repository checkout
+# From the root of a Elemental-toolkit repository checkout
 
 > export AZURE_CLIENT_ID=<your_azure_client_id> 
 > export AZURE_TENANT_ID=<your_azure_tenant_id> 
@@ -53,7 +53,7 @@ time using the `-var key=value` or `-var-file=path` flags. The variable file
 can be a json file including desired variables. Consider the following example:
 
 ```bash
-# From the packer folder of the cOS-toolkit repository checkout
+# From the packer folder of the Elemental-toolkit repository checkout
 
 > cat << EOF > test.json
 {
@@ -78,8 +78,8 @@ template. These are some of the relevant ones:
 
 * `azure_cos_deploy_args`: This the command that will be executed once the
   Vanilla image booted. In this stage it is expected that user sets a command
-  to install the desired cOS or derivative image. By default it is set to
-  `elemental reset` which will deploy the cOS image from the recovery partition.
+  to install the desired Elemental or derivative image. By default it is set to
+  `elemental reset` which will deploy the Elemental image from the recovery partition.
   To deploy custom derivatives something like
   `elemental reset --docker-image <my-derivative-img-ref>` should be sufficient.
   

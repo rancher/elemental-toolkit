@@ -11,4 +11,4 @@ description: >
 
 For Vagrant Boxes, OVA and QEMU images at the moment we are relying on [packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer). 
 
-The cOS vanilla images can be used as input to Packer to deploy pristine images of the user container image with [elemental reset](../../getting-started/deploy). 
+The Elemental vanilla images can be used as input to Packer to deploy pristine images of the user container image with [elemental reset](../../getting-started/deploy). 

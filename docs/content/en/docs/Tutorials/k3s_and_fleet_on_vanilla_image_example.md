@@ -5,23 +5,23 @@ linkTitle: "K3s and Fleet"
 weight: 3
 date: 2021-01-05
 description: >
-  Running k3s and Fleet on a cOS vanilla raw image
+  Running k3s and Fleet on a Elemental vanilla raw image
 ---
 
-This is a work in progress example of how to deploy K3S + Fleet + System Uprade Controller over a cOS vanilla image only
+This is a work in progress example of how to deploy K3S + Fleet + System Uprade Controller over a Elemental vanilla image only
 by using cloud-init yaml configuration files. The config file reproduced here is meant to be included
-as a user-data in a cloud provider (aws, gcp, azure, etc) or as part of a cdrom (cOS-Recovery will try to fetch `/userdata` file
+as a user-data in a cloud provider (aws, gcp, azure, etc) or as part of a cdrom (Elemental-Recovery will try to fetch `/userdata` file
 from a cdrom device).
 
-A vanilla image is an image that only provides the cOS-Recovery system on a `COS_RECOVERY` partition. It does not include any other
-system and it is meant to be dumped to a bigger disk and deploy a cOS system or a derivative system over the free space in disk.
+A vanilla image is an image that only provides the Elemental-Recovery system on a `COS_RECOVERY` partition. It does not include any other
+system and it is meant to be dumped to a bigger disk and deploy a Elemental system or a derivative system over the free space in disk.
 COS vanilla images are build as part of the CI workflow, see CI artifacts to download one of those.
 
-The configuration file of this example has two purposes: first it deploys cOS, second in reboots on the deployed OS and deploys
+The configuration file of this example has two purposes: first it deploys Elemental, second in reboots on the deployed OS and deploys
 K3S + Fleet + System Upgrades Controller.
 
-On first boot it will fail to boot cOS grub menu entry and fallback
-to cOS-Recovery system. From there it will partition the vanilla image to create the main system partition (`COS_STATE`)
+On first boot it will fail to boot Elemental grub menu entry and fallback
+to Elemental-Recovery system. From there it will partition the vanilla image to create the main system partition (`COS_STATE`)
 and add an extra partition for persistent data (`COS_PERSISTENT`). It will use the full disk, a disk of at least 20GiB
 is recommended. After partitioning it will deploy the main system on `COS_STATE` and reboot to it.
 

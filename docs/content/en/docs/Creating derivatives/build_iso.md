@@ -34,7 +34,7 @@ iso:
   - live/grub2
   label: "COS_LIVE"
 
-name: "cOS-0"
+name: "Elemental-0"
 date: true
 ```
 
@@ -203,7 +203,7 @@ menuentry "Custom grub2 menu entry" --class os --unrestricted {
 
 ## Separate recovery
 
-To make an ISO with a separate recovery image as squashfs, you can either use the default from `cOS`, by adding it in the iso yaml file:
+To make an ISO with a separate recovery image as squashfs, you can either use the default from `Elemental`, by adding it in the iso yaml file:
 
 ```yaml
 iso:

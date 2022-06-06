@@ -4,7 +4,7 @@ linkTitle: "SELinux"
 weight: 3
 date: 2021-01-05
 description: >
-  Build SELinux policies with cOS
+  Build SELinux policies with Elemental
 ---
 
 You can create a sample policy by using  `audit2allow` after running some
@@ -40,7 +40,7 @@ version: 0.0.1
 
 Example mypolicy.te (generated with `audit2alllow`)
 ```
-#==== cOS SELinux targeted policy module ========
+#==== Elemental SELinux targeted policy module ========
 #
 # Disclaimer: This module is definition is for illustration use only. It
 # has no guarantees of completeness, accuracy and usefulness. It should

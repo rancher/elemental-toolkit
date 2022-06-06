@@ -4,10 +4,10 @@ linkTitle: "Creating embedded images"
 weight: 3
 date: 2017-01-05
 description: >
-  This document is a step-by-step guide to build a customized embedded system that can be used in cOS
+  This document is a step-by-step guide to build a customized embedded system that can be used in Elemental
 ---
 
-This guide will guide in a step-by-step process to build a derivative which is fully compatible with cOS, and will illustrate how to make customization on such image, by adding for example a default set of services and a custom user.
+This guide will guide in a step-by-step process to build a derivative which is fully compatible with Elemental, and will illustrate how to make customization on such image, by adding for example a default set of services and a custom user.
 
 The derivative will be based on openSUSE and embed k3s, and a custom user `joe` which will be already set to allow us to login.
 
@@ -28,7 +28,7 @@ Let's create now a `Dockerfile` for our image inside that directory, which will 
 
 ```Dockerfile
 # Let's copy over luet from official images. 
-# This version will be used to bootstrap luet itself and cOS internal components
+# This version will be used to bootstrap luet itself and Elemental internal components
 ARG LUET_VERSION=0.32.0
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
@@ -224,7 +224,7 @@ Successfully built 38cc4c8b173a
 Successfully tagged derivative:latest
 ```
 
-After the process completed, we are ready to consume our docker image. If you push the image over a container registry, you can then or use a running `cOS` system to upgrade to it, or deploy it directly [see getting started](../../getting-started).
+After the process completed, we are ready to consume our docker image. If you push the image over a container registry, you can then or use a running `Elemental` system to upgrade to it, or deploy it directly [see getting started](../../getting-started).
 
 ### Build an ISO image
 
@@ -254,7 +254,7 @@ label: "COS_LIVE"
 
 luet:
   repositories:
-  - name: cOS
+  - name: Elemental
     enable: true
     urls:
       - quay.io/costoolkit/releases-teal
@@ -310,7 +310,7 @@ RUN zypper in -y \
 
 ### Repositories configuration
 
-We copy the configuration file of `luet` which just points to cOS repositories with: 
+We copy the configuration file of `luet` which just points to Elemental repositories with: 
 
 ```
 # Copy the luet config file pointing to the upgrade repository
@@ -319,9 +319,9 @@ COPY repositories.yaml /etc/luet/luet.yaml
 
 The config file should point to the `teal` [flavor](../../getting-started/download#releases) as our derivative will be based on SLE Micro. It should point to `green`, `blue`, or `orange` instead if building against Opensuse, Fedora or Ubuntu.
 
-### cOS toolkit
+### Elemental toolkit
 
-We install packages from the cOS toolkit with `luet`. In this case we pick the basic ones that allows us to install/upgrade immutable cOS derivatives:
+We install packages from the Elemental toolkit with `luet`. In this case we pick the basic ones that allows us to install/upgrade immutable Elemental derivatives:
 
 ```Dockerfile
 ENV LUET_NOLOCK=true

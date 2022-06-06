@@ -5,7 +5,7 @@ linkTitle: "Cloud-init support"
 weight: 3
 date: 2021-01-05
 description: >
-  Features inherited by cOS derivatives that are also available in the cOS vanilla images
+  Features inherited by Elemental derivatives that are also available in the Elemental vanilla images
 ---
 
 

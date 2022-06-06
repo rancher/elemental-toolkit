@@ -7,7 +7,7 @@ description: >
   Customizing the default upgrade channel
 ---
 
-`cOS` vanilla images by default are picking upgrades by the standard upgrade channel. It means it will always get the latest published `cOS` version by our CI.
+`Elemental` vanilla images by default are picking upgrades by the standard upgrade channel. It means it will always get the latest published `Elemental` version by our CI.
 
 However, it's possible to tweak the default behavior of `elemental upgrade` to point to a specific docker image/tag, or a different release channel.
 
@@ -16,7 +16,7 @@ By default, `cos` derivatives if not specified will point to latest `elemental-t
 
 ## Configuration
 
-`elemental upgrade` during start reads the [cOS configuration file](../general_configuration) and allows to tweak the following:
+`elemental upgrade` during start reads the [Elemental configuration file](../general_configuration) and allows to tweak the following:
 
 ```yaml
 # configuration used for the 'ugrade' command

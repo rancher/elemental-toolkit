@@ -5,7 +5,7 @@ linkTitle: "Trigger upgrades with K3s and Fleet"
 weight: 3
 date: 2021-01-05
 description: >
-  Using fleet to trigger upgradeson cOS based derivatives
+  Using fleet to trigger upgrades on Elemental-based derivatives
 ---
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vQPv9TI3D95vocG7oCHmVmNuuvBYuc2_0kaxAc6xnCBM9mFTnUTFIIDkzZKUFFP-xyw2Hg4q9XhxLD8/pub?w=1185&h=712)
@@ -13,7 +13,7 @@ description: >
 In this tutorial we will:
 
 1) Build a custom OS image to deploy in our cluster
-2) Setup a cluster with cOS, k3s and fleet
+2) Setup a cluster with Elemental, k3s and fleet
 3) Upgrade the cluster to our custom OS image with fleet
 
 [This repository](https://github.com/rancher-sandbox/cos-fleet-upgrades-sample/) contains the full example code.
@@ -33,9 +33,9 @@ In this tutorial we will:
 # docker push $IMAGE
 ```
 
-## 3) Prepare a cOS VM
+## 3) Prepare a Elemental VM
 
-Download an ISO, or a qcow image from the Github artifacts of cOS. Or generate an iso of the image (check [here](https://github.com/mudler/os2) for another example). 
+Download an ISO, or a qcow image from the Github artifacts of Elemental. Or generate an iso of the image (check [here](https://github.com/mudler/os2) for another example). 
 
 If deploying on AWS/openstack/Cloud, use the `fleet-cloud-init.yaml` file as userdata. If deploying on baremetal/VMs, place `fleet-cloud-init.yaml` in `/oem` after install (or run the installer with `elemental install --cloud-init https://raw.githubusercontent.com/rancher-sandbox/cos-fleet-upgrades-sample/main/fleet-cloud-init.yaml $DEVICE`).
 
