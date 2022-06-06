@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/twpayne/go-vfs"
 )
 

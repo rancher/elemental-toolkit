@@ -19,10 +19,10 @@ package action
 import (
 	"fmt"
 
-	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/elemental"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
+	cnst "github.com/rancher/elemental-cli/pkg/constants"
+	"github.com/rancher/elemental-cli/pkg/elemental"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
 func (i *InstallAction) installHook(hook string, chroot bool) error {

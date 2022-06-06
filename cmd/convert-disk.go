@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher-sandbox/elemental/cmd/config"
-	"github.com/rancher-sandbox/elemental/pkg/action"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
+	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mountUtils "k8s.io/mount-utils"

@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-getter"
-	"github.com/rancher-sandbox/elemental/cmd/config"
+	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"

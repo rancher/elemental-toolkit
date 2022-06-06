@@ -23,8 +23,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/constants"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 // Chroot represents the struct that will allow us to run commands inside a given chroot

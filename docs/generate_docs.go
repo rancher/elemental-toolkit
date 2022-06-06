@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rancher-sandbox/elemental/cmd"
+	"github.com/rancher/elemental-cli/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )

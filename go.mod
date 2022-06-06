@@ -1,4 +1,4 @@
-module github.com/rancher-sandbox/elemental
+module github.com/rancher/elemental-cli
 
 go 1.16
 

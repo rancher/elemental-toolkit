@@ -19,8 +19,8 @@ package cmd
 import (
 	"os/exec"
 
-	"github.com/rancher-sandbox/elemental/cmd/config"
-	"github.com/rancher-sandbox/elemental/pkg/action"
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"

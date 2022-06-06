@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/rancher-sandbox/elemental/cmd/config"
+	"github.com/rancher/elemental-cli/cmd/config"
 	"k8s.io/mount-utils"
 
 	"github.com/mudler/yip/pkg/schema"

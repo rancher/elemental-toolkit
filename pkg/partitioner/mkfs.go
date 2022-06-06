@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 type MkfsCall struct {

@@ -24,7 +24,7 @@ import (
 	"github.com/jaypipes/ghw"
 	"github.com/jaypipes/ghw/pkg/block"
 	ghwUtil "github.com/jaypipes/ghw/pkg/util"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 // ghwPartitionToInternalPartition transforms a block.Partition from ghw lib to our v1.Partition type

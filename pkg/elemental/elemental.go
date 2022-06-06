@@ -22,10 +22,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	cnst "github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/partitioner"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
+	cnst "github.com/rancher/elemental-cli/pkg/constants"
+	"github.com/rancher/elemental-cli/pkg/partitioner"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
 // Elemental is the struct meant to self-contain most utils and actions related to Elemental, like installing or applying selinux

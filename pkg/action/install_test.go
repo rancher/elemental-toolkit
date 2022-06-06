@@ -26,12 +26,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental/pkg/action"
-	conf "github.com/rancher-sandbox/elemental/pkg/config"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
-	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
+	"github.com/rancher/elemental-cli/pkg/action"
+	conf "github.com/rancher/elemental-cli/pkg/config"
+	"github.com/rancher/elemental-cli/pkg/constants"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
+	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 )

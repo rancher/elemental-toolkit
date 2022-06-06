@@ -35,8 +35,8 @@ import (
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental/pkg/luet"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/luet"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
 )
 

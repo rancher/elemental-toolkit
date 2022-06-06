@@ -20,9 +20,9 @@ import (
 	"errors"
 	"os/exec"
 
-	"github.com/rancher-sandbox/elemental/cmd/config"
-	"github.com/rancher-sandbox/elemental/pkg/action"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"

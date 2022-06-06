@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

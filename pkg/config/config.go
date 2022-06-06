@@ -21,12 +21,12 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/rancher-sandbox/elemental/pkg/cloudinit"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	"github.com/rancher-sandbox/elemental/pkg/http"
-	"github.com/rancher-sandbox/elemental/pkg/luet"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
+	"github.com/rancher/elemental-cli/pkg/cloudinit"
+	"github.com/rancher/elemental-cli/pkg/constants"
+	"github.com/rancher/elemental-cli/pkg/http"
+	"github.com/rancher/elemental-cli/pkg/luet"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
 )

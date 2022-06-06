@@ -25,8 +25,8 @@ ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 RUN go build \
     -ldflags "-w -s \
-    -X github.com/rancher-sandbox/elemental/internal/version.version=$ELEMENTAL_VERSION \
-    -X github.com/rancher-sandbox/elemental/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
+    -X github.com/rancher/elemental-cli/internal/version.version=$ELEMENTAL_VERSION \
+    -X github.com/rancher/elemental-cli/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
     -o /usr/bin/elemental
 
 FROM opensuse/leap:$LEAP_VERSION AS elemental

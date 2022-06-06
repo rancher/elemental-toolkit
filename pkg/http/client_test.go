@@ -20,8 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rancher-sandbox/elemental/pkg/http"
-	"github.com/rancher-sandbox/elemental/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/http"
+	"github.com/rancher/elemental-cli/pkg/types/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

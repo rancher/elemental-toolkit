@@ -20,7 +20,7 @@ import (
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/twpayne/go-vfs"
 )
 

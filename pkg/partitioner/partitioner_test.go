@@ -24,10 +24,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	part "github.com/rancher-sandbox/elemental/pkg/partitioner"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
-	mocks "github.com/rancher-sandbox/elemental/tests/mocks"
+	"github.com/rancher/elemental-cli/pkg/constants"
+	part "github.com/rancher/elemental-cli/pkg/partitioner"
+	"github.com/rancher/elemental-cli/pkg/utils"
+	mocks "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 )

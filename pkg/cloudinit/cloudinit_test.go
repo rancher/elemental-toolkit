@@ -25,11 +25,11 @@ import (
 
 	"github.com/jaypipes/ghw/pkg/block"
 
-	. "github.com/rancher-sandbox/elemental/pkg/cloudinit"
-	"github.com/rancher-sandbox/elemental/pkg/constants"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	"github.com/rancher-sandbox/elemental/pkg/utils"
-	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
+	. "github.com/rancher/elemental-cli/pkg/cloudinit"
+	"github.com/rancher/elemental-cli/pkg/constants"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
+	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/twpayne/go-vfs/vfst"
 
 	. "github.com/onsi/ginkgo/v2"

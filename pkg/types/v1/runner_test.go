@@ -20,8 +20,8 @@ import (
 	"bytes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher-sandbox/elemental/pkg/types/v1"
-	v1mock "github.com/rancher-sandbox/elemental/tests/mocks"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/sirupsen/logrus"
 )
 

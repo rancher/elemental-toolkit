@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/rancher-sandbox/elemental/pkg/constants"
+	"github.com/rancher/elemental-cli/pkg/constants"
 	"k8s.io/mount-utils"
 )
 
