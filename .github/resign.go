@@ -11,7 +11,8 @@ import (
 	"strings"
 )
 
-func getRepositoryPackages(repo string, ctx *types.Context) (searchResult client.SearchResult) {
+// getRepo just gets the repo with the proper reference ID, syncs it and returns the repo pointer
+func getRepo(repo string, ctx *types.Context) *installer.LuetSystemRepository {
 	tmpdir, err := ioutil.TempDir(os.TempDir(), "ci")
 	if err != nil {
 		panic(err)
@@ -31,20 +32,35 @@ func getRepositoryPackages(repo string, ctx *types.Context) (searchResult client
 	ctx.Config.GetSystem().Rootfs = "/"
 	ctx.Config.GetSystem().TmpDirBase = tmpdir
 	re, err := d.Sync(ctx, false)
+	// Copy the reference as it's lost after sync :o
+	re.ReferenceID = d.ReferenceID
 	if err != nil {
 		panic(err)
-	} else {
-		for _, p := range re.GetTree().GetDatabase().World() {
-			searchResult.Packages = append(searchResult.Packages, client.Package{
-				Name:     p.GetName(),
-				Category: p.GetCategory(),
-				Version:  p.GetVersion(),
-			})
-		}
-		return
 	}
+	return re
 }
 
+// getRepositoryPackages gets all the packages in the repo and returns a SearchResult
+func getRepositoryPackages(repo *installer.LuetSystemRepository) (searchResult client.SearchResult) {
+	for _, p := range repo.GetTree().GetDatabase().World() {
+		searchResult.Packages = append(searchResult.Packages, client.Package{
+			Name:     p.GetName(),
+			Category: p.GetCategory(),
+			Version:  p.GetVersion(),
+		})
+	}
+	return
+}
+
+// getRepositoryFiles returns the files that are part of the repo skeleton, not packages per se
+func getRepositoryFiles(repo *installer.LuetSystemRepository) (repoFiles []string) {
+	for _, f := range repo.RepositoryFiles {
+		repoFiles = append(repoFiles, f.FileName)
+	}
+	// Don't forget to add the own repository.yaml file or equivalent!
+	repoFiles = append(repoFiles, repo.ReferenceID)
+	return
+}
 func main() {
 	// We want to be cool and keep the same format as luet, so we create the context here to pass around and use the logging functions
 	ctx := types.NewContext()
@@ -61,9 +77,15 @@ func main() {
 		ctx.Error("A signature repository must be specified with COSIGN_REPOSITORY")
 		os.Exit(1)
 	}
-	packages := getRepositoryPackages(finalRepo, ctx)
+	repo := getRepo(finalRepo, ctx)
+	packages := getRepositoryPackages(repo)
 	for _, val := range packages.Packages {
 		imageTag := fmt.Sprintf("%s:%s", finalRepo, val.ImageTag())
+		checkAndSign(imageTag, ctx)
+	}
+	repoFiles := getRepositoryFiles(repo)
+	for _, val := range repoFiles {
+		imageTag := fmt.Sprintf("%s:%s", finalRepo, val)
 		checkAndSign(imageTag, ctx)
 	}
 	return
