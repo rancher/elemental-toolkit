@@ -4,7 +4,6 @@ FROM quay.io/luet/base:$LUET_VERSION AS luet
 FROM opensuse/leap:15.3
 
 ENV COSIGN_EXPERIMENTAL=1
-ENV COSIGN_REPOSITORY=raccos/releases-green
 ENV LUET_NOLOCK=true
 
 RUN zypper ref

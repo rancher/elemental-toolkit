@@ -107,7 +107,6 @@ If you want to manually verify cosign and luet-cosign packages before installing
  - Install [Cosign](https://github.com/sigstore/cosign)
  - Export the proper vars
    - `export COSIGN_EXPERIMENTAL=1` for keyless verify
-   - `export COSIGN_REPOSITORY=raccos/releases-teal` to point cosign to the repo the signatures are stored on
  - Manually verify the signatures on both packages
    - Check the latest $VERSION for both packages at the repo (i.e. `https://quay.io/repository/costoolkit/releases-teal?tab=tags`) 
    - `cosign verify quay.io/costoolkit/releases-teal:luet-cosign-toolchain-$VERSION`

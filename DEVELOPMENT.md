@@ -63,7 +63,7 @@ Use `make clean_vm_from_iso` to clean up the vm and its artifacts (Note that thi
 
 ## Raw image tests
 
-Raw image tests are tests run from the raw image created by `images/img-builder.sh` which creates a raw image with the recovery partition only.
+Raw image tests are tests run from the raw image created by `elemental build-disk` which creates a raw image with the recovery partition only.
 This raw image is the base to create the different cloud images currently (AWS, GCE, AZURE)
 
 The test setup is done via the `make/Makefile.test` with `create_vm_from_raw_image` target.
@@ -140,7 +140,7 @@ The job at `.github/workflows/resigner.yaml` will use the code at `.github/resig
 The following environment variables are available:
 
  - `FINAL_REPO` Repo to check artifacts for signatures
- - `COSIGN_REPOSITORY` Repo that contains the signatures for the final_repo
+ - `COSIGN_REPOSITORY` Repo that contains the signatures for the final_repo, if not given it uses the default FINAL_REPO
  - `FULCIO_URL` Set a fulcio url for the signing part. Leave empty to use cosign default url
  - `REFERENCEID` Name of the repository.yaml that will be downloaded.
  - `DEBUGLOGLEVEL` Set debug log level

@@ -25,12 +25,7 @@ This signature generation is provided by [luet-cosign](https://github.com/ranche
 
 The process is completely transparent to the end user when upgrading/deploying a running system and using our published artifacts.
 
-When using luet-cosign as part of `luet install` you need to set `COSIGN_REPOSITORY=raccos/releases-teal` and `COSIGN_EXPERIMENTAL=1` so it can find the proper signatures and use keyless verification
-
-
-{{% alert title="Note" %}}
-Currently setting `COSIGN_REPOSITORY` value is due to quay.io not supporting OCI artifacts. It may be removed in the future and signatures stored along the artifacts.
-{{% /alert %}}
+When using luet-cosign as part of `luet install` you need to set `COSIGN_EXPERIMENTAL=1` so it can use keyless verification
 
 
 ## Derivatives
@@ -49,7 +44,6 @@ If you are building and publishing your derivatives with luet on github, you can
 If you consume elemental-toolkit artifacts in your Dockerfile as part of building a derivative you can verify the signatures of the artifacts by setting:
 
 ```dockerfile
-ENV COSIGN_REPOSITORY=raccos/releases-teal
 ENV COSIGN_EXPERIMENTAL=1
 RUN luet install -y meta/cos-verify # install dependencies for signature checking
 ```
