@@ -1,11 +1,11 @@
 iso:
   rootfs:
-    - system/cos
+    - channel:system/cos
   uefi:
-    - live/grub2-efi-image
+    - channel:live/grub2-efi-image
   image:
-    - live/grub2
-    - live/grub2-efi-image
+    - channel:live/grub2
+    - channel:live/grub2-efi-image
   label: "COS_LIVE"
 
 name: "cOS-0"
@@ -16,31 +16,31 @@ raw_disk:
   x86_64:
     # which packages to install and the target to install them at
     packages:
-      - name: channel://system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: channel://system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: channel://system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
-      - name: channel://recovery/cos-img
+      - name: channel:recovery/cos-img
         target: root/cOS
   arm64:
     packages:
-      - name: channel://system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: channel://system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: channel://system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
-      - name: channel://recovery/cos-img
+      - name: channel:recovery/cos-img
         target: root/cOS
   odroid_c2:
     packages:
-      - name: channel://system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: channel://system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: channel://system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
 # Raw disk creation values end
 
