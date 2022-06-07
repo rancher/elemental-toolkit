@@ -16,33 +16,31 @@ raw_disk:
   x86_64:
     # which packages to install and the target to install them at
     packages:
-      - name: system/grub2-efi-image
+      - name: channel://system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel://system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel://system/grub2-artifacts
         target: root/grub2
-      - name: recovery/cos-img
+      - name: channel://recovery/cos-img
         target: root/cOS
   arm64:
     packages:
-      - name: system/grub2-efi-image
+      - name: channel://system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel://system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel://system/grub2-artifacts
         target: root/grub2
-      - name: recovery/cos-img
+      - name: channel://recovery/cos-img
         target: root/cOS
   odroid_c2:
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
-      - name: system/grub2-efi-image
+      - name: channel://system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel://system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel://system/grub2-artifacts
         target: root/grub2
 # Raw disk creation values end
 
@@ -59,7 +57,7 @@ build:
   - toolchain/elemental-cli
 
 repositories:
-- uri: quay.io/costoolkit/releases-teal-arm64
-  arch: "arm64"
-- uri: quay.io/costoolkit/releases-teal
-  arch: "amd64"
+  - uri: quay.io/costoolkit/releases-teal
+    arch: "x86_64"
+  - uri: quay.io/costoolkit/releases-teal-arm64
+    arch: "arm64"
