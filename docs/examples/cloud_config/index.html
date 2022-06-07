@@ -17,23 +17,23 @@
 <link rel="icon" type="image/png" href="https://rancher.github.io/elemental-toolkit/favicons/android-144x144.png" sizes="144x144">
 <link rel="icon" type="image/png" href="https://rancher.github.io/elemental-toolkit/favicons/android-192x192.png" sizes="192x192">
 
-<title>Troubleshooting | Elemental toolkit</title>
-<meta name="description" content="Elemental toolkit documentation website"><meta property="og:title" content="Troubleshooting" />
-<meta property="og:description" content="Stuff can go wrong. This document tries to make them right with some useful tips
+<title>Cloud config examples | Elemental toolkit</title>
+<meta name="description" content="Elemental toolkit documentation website"><meta property="og:title" content="Cloud config examples" />
+<meta property="og:description" content="Useful copy-paste cloud-config settings
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/reference/troubleshooting/" /><meta property="article:section" content="docs" />
-<meta property="article:published_time" content="2021-09-08T00:00:00+00:00" />
+<meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/examples/cloud_config/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
 <meta property="article:modified_time" content="2022-06-07T16:50:45+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
-<meta itemprop="name" content="Troubleshooting">
-<meta itemprop="description" content="Stuff can go wrong. This document tries to make them right with some useful tips
-"><meta itemprop="datePublished" content="2021-09-08T00:00:00+00:00" />
+<meta itemprop="name" content="Cloud config examples">
+<meta itemprop="description" content="Useful copy-paste cloud-config settings
+"><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2022-06-07T16:50:45+02:00" />
-<meta itemprop="wordCount" content="458">
+<meta itemprop="wordCount" content="254">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Troubleshooting"/>
-<meta name="twitter:description" content="Stuff can go wrong. This document tries to make them right with some useful tips
+<meta name="twitter:title" content="Cloud config examples"/>
+<meta name="twitter:description" content="Useful copy-paste cloud-config settings
 "/>
 
 
@@ -1006,7 +1006,7 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsexamples-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsexamples-li">
     
       <a href="https://rancher.github.io/elemental-toolkit/docs/examples/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-docsexamples"><span class="">Examples</span></a>
     
@@ -1034,7 +1034,7 @@ if (!doNotTrack) {
   
   <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsexamplescloud_config-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/examples/cloud_config/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docsexamplescloud_config"><span class="">Cloud config examples</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/examples/cloud_config/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docsexamplescloud_config"><span class="td-sidebar-nav-active-item">Cloud config examples</span></a>
     
     
   </li>
@@ -1205,7 +1205,7 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsreference-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsreference-li">
     
       <a href="https://rancher.github.io/elemental-toolkit/docs/reference/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-docsreference"><span class="">Reference</span></a>
     
@@ -1815,7 +1815,7 @@ if (!doNotTrack) {
   
   <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsreferencetroubleshooting-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/reference/troubleshooting/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docsreferencetroubleshooting"><span class="td-sidebar-nav-active-item">Troubleshooting</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/reference/troubleshooting/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docsreferencetroubleshooting"><span class="">Troubleshooting</span></a>
     
     
   </li>
@@ -2028,9 +2028,9 @@ if (!doNotTrack) {
     
     
 
-    <a href="https://github.com/rancher/elemental-toolkit/edit/master/docs/content/en/docs/Reference/troubleshooting.md" target="_blank"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
-    <a href="https://github.com/rancher/elemental-toolkit/new/master/docs/content/en/docs/Reference/troubleshooting.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" target="_blank"><i class="fa fa-edit fa-fw"></i> Create child page</a>
-    <a href="https://github.com/rancher/elemental-toolkit/issues/new?title=Troubleshooting" target="_blank"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+    <a href="https://github.com/rancher/elemental-toolkit/edit/master/docs/content/en/docs/Examples/cloud_config.md" target="_blank"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+    <a href="https://github.com/rancher/elemental-toolkit/new/master/docs/content/en/docs/Examples/cloud_config.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" target="_blank"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+    <a href="https://github.com/rancher/elemental-toolkit/issues/new?title=Cloud%20config%20examples" target="_blank"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
     
       
       <a href="https://github.com/rancher/elemental-toolkit/issues/new" target="_blank"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
@@ -2046,11 +2046,18 @@ if (!doNotTrack) {
 
 <div class="td-toc"><nav id="TableOfContents">
   <ul>
-    <li><a href="#disable-immutability">Disable Immutability</a></li>
-    <li><a href="#debug-initramfs-issues">Debug initramfs issues</a></li>
-    <li><a href="#recovery-partition">Recovery partition</a></li>
-    <li><a href="#mutating-derivative-images">Mutating derivative images</a></li>
-    <li><a href="#adding-login-keys-at-boot">Adding login keys at boot</a></li>
+    <li><a href="#networking-with-wicked">Networking with wicked</a>
+      <ul>
+        <li><a href="#additional-nic">Additional NIC</a></li>
+        <li><a href="#static-ip">Static IP</a></li>
+        <li><a href="#dhcp">DHCP</a></li>
+      </ul>
+    </li>
+    <li><a href="#additional-files">Additional files</a>
+      <ul>
+        <li><a href="#k3s-manifests">K3s manifests</a></li>
+      </ul>
+    </li>
   </ul>
 </nav></div>
 
@@ -2102,14 +2109,14 @@ if (!doNotTrack) {
 
 
 <li class="breadcrumb-item" >
-	<a href="https://rancher.github.io/elemental-toolkit/docs/reference/">Reference</a>
+	<a href="https://rancher.github.io/elemental-toolkit/docs/examples/">Examples</a>
 </li>
 
 
 
 
 <li class="breadcrumb-item active" aria-current="page">
-	<a href="https://rancher.github.io/elemental-toolkit/docs/reference/troubleshooting/">Troubleshooting</a>
+	<a href="https://rancher.github.io/elemental-toolkit/docs/examples/cloud_config/">Cloud config examples</a>
 </li>
 
 	</ol>
@@ -2117,8 +2124,8 @@ if (!doNotTrack) {
 
             
 <div class="td-content">
-	<h1>Troubleshooting</h1>
-	<div class="lead">Stuff can go wrong. This document tries to make them right with some useful tips</div>
+	<h1>Cloud config examples</h1>
+	<div class="lead">Useful copy-paste cloud-config settings</div>
 	<header class="article-meta">
 		
 		
@@ -2134,54 +2141,91 @@ if (!doNotTrack) {
 		
 		
 	</header>    
-	
-
-<div class="pageinfo pageinfo-warning">
-<p>Section under construction.</p>
-
-</div>
-
-<p>While building a derivative, or on a running system things can go really wrong, the guide is aimed to give tips while building derivatives and also debugging running systems.</p>
-<p>Don&rsquo;t forget tocheck the known issues for the <a href="https://github.com/rancher/elemental-toolkit/issues">release you&rsquo;re using</a>.</p>
-<p>Before booting, <a href="../immutable_rootfs">several kernel parameters</a> can be used to help during debugging (also when booting an ISO). Those are meant to be used only while debugging, and they might defeat the concept of immutability.</p>
-<h2 id="disable-immutability">Disable Immutability</h2>
-<p>By adding <code>rd.cos.debugrw</code> to the boot parameters read only mode will be disabled. See <a href="../immutable_rootfs">Immutable setup</a> for more options.</p>
-<p>The derivative will boot into RW mode, that means any change made during runtime will persist across reboots. Use this feature with caution as defeats the concept of immutability.</p>
-<p><code>rd.cos.debugrw</code> applies only to active and passive partitions. The recovery image can&rsquo;t be mutated.</p>
-
-
-<div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Note</h4>
-
-    The changes made will persist during reboots but won&rsquo;t persist across upgrades. If you need to persist changes across upgrades in runtime (for example by adding additional packages on top of the derivative image), see <a href="../../customizing/runtime_persistent_changes">how to apply persistent changes</a>.
-
-</div>
-
-<h2 id="debug-initramfs-issues">Debug initramfs issues</h2>
-<p>As derivative can ship and build their own initrd, the <a href="https://fedoraproject.org/wiki/How_to_debug_Dracut_problems">official debug docs</a> contains valid information that can be used for troubleshooting.</p>
-<p>For example:</p>
-<ul>
-<li><code>rd.break=pre-mount rd.shell</code>: Drop a shell before setting up mount points</li>
-<li><code>rd.break=pre-pivot rd.shell</code>: Drop a shell before switch-root</li>
-</ul>
-<h2 id="recovery-partition">Recovery partition</h2>
-<p>If you can boot into the system, the recovery partition can be used to reset the state of the active/passive, but can also be used to upgrade to specific images. Be sure to read the <a href="../../getting-started/recovery">Recovery section in the docs</a>.</p>
-<h2 id="mutating-derivative-images">Mutating derivative images</h2>
-<p>It can be useful to mutate derivative images and commit a container’s file changes or settings into a new image.
-This allows you to debug a container by running an interactive shell, and re-use the mutated image in Elemental systems. Generally, it is better to use Dockerfiles to manage your images in a documented and maintainable way. <a href="../../creating-derivatives/creating_bootable_images">Read more about creating bootable images</a>.</p>
-<p>Let&rsquo;s suppose we have the derivative original image at <code>$IMAGE</code> and we want to mutate it. We will push it later with another name <code>$NEW_IMAGE</code> and use it to our node downstream.</p>
-<p>Run the derivative image locally, and perform any necessary change (e.g. add additional software):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker run --entrypoint /bin/bash -ti --name updated-image <span style="color:#000">$IMAGE</span>
-</span></span></code></pre></div><p>Commit any changes to a new image <code>$NEW_IMAGE</code>:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker commit updated-image <span style="color:#000">$NEW_IMAGE</span>
-</span></span></code></pre></div><p>And push the image to the container registry:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker push <span style="color:#000">$NEW_IMAGE</span>
-</span></span></code></pre></div><p>In the derivative then it&rsquo;s sufficient to upgrade to that image with <code>elemental upgrade</code>:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; elemental upgrade --docker-image <span style="color:#000">$NEW_IMAGE</span>
-</span></span></code></pre></div><h2 id="adding-login-keys-at-boot">Adding login keys at boot</h2>
-<p>To add users key from the GRUB menu prompt, edit the boot cmdline and add the following kernel parameters:</p>
-<p><code>stages.boot[0].authorized_keys.root[0]=github:mudler</code></p>
-
+	<p>You can find here examples on how to tweak a system via cloud-config various aspects of an Elemental-toolkit derivative.</p>
+<p>The examples are meant to be placed as yaml files under <code>/oem</code> ore either <code>/usr/local/cloud-config</code>. They can be also given as input cloud-config while calling <code>elemental install</code>.</p>
+<h2 id="networking-with-wicked">Networking with wicked</h2>
+<p>By default all interfaces will get automatically an IP address, however, there are situations where a static IP is desired, or custom configuration to be specified, here you can find some network settings with wicked.</p>
+<h3 id="additional-nic">Additional NIC</h3>
+<p>Set static IP to an additional NIC:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default network configuration&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">boot</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#000">wicked ifup eth1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Setup network&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/etc/sysconfig/network/ifcfg-eth1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">            BOOTPROTO=&#39;static&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">            IPADDR=&#39;192.168.1.2/24&#39;</span><span style="color:#f8f8f8;text-decoration:underline">            
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">permissions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0600</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">owner</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">group</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="static-ip">Static IP</h3>
+<p>Set static IP to default interface:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default network configuration&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">boot</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#000">wicked ifup eth0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Setup network&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/etc/sysconfig/network/ifcfg-eth0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">            BOOTPROTO=&#39;static&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">            IPADDR=&#39;192.168.1.2/24&#39;</span><span style="color:#f8f8f8;text-decoration:underline">            
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">permissions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0600</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">owner</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">group</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="dhcp">DHCP</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default network configuration&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">boot</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#000">wicked ifup eth1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Setup network&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/etc/sysconfig/network/ifcfg-eth1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                  BOOTPROTO=&#39;dhcp&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                  STARTMODE=&#39;onboot&#39;</span><span style="color:#f8f8f8;text-decoration:underline">                  
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">permissions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0600</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">owner</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">group</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h2 id="additional-files">Additional files</h2>
+<h3 id="k3s-manifests">K3s manifests</h3>
+<p>Add k3s manifests:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;k3s&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ ! -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Fleet deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">files</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/var/lib/rancher/k3s/server/manifests/fleet-config.yaml</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">content</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              apiVersion: v1
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              kind: Namespace
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                name: cattle-system
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              ---
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              apiVersion: helm.cattle.io/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              kind: HelmChart
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                name: fleet-crd
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                namespace: cattle-system
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                chart: https://github.com/rancher/fleet/releases/download/v0.3.8/fleet-crd-0.3.8.tgz
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              ---
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              apiVersion: helm.cattle.io/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              kind: HelmChart
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                name: fleet
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                namespace: cattle-system
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">              spec:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">                chart: https://github.com/rancher/fleet/releases/download/v0.3.8/fleet-0.3.8.tgz</span><span style="color:#f8f8f8;text-decoration:underline">              
+</span></span></span></code></pre></div>
 	
 		<style>
   .feedback--answer {
