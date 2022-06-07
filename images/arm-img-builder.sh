@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 load_vars() {
 
@@ -216,11 +216,8 @@ if [ -z "$output_image" ]; then
 fi
 
 if [ -n "$manifest" ]; then
-    YQ_REPO_COMMAND=(yq e ".raw_disk.$model.repo" "${manifest}")
-    YQ_PACKAGES_COMMAND=(yq e -o=json "$manifest")
-  fi
-
-  final_repo=${final_repo:-$("${YQ_REPO_COMMAND[@]}")}
+  YQ_PACKAGES_COMMAND=(yq e -o=json "$manifest")
+  final_repo=${final_repo:-$(yq e ".raw_disk.$model.repo" "${manifest}")}
 fi
 
 echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
