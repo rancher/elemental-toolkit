@@ -141,6 +141,11 @@ write_files:
 
 Is executed at boot, by using the standard `cloud-config` format.
 
+{{% alert title="Note" %}}
+You can't mix extended syntax with legacy cloud-init syntax. By pre-pending the cloud-config with the `#cloud-config` header you enable the legacy notation, and the extended one ( `stages`.. ) will be ignored.
+{{% /alert %}}
+
+
 ### `stages.STAGE_ID.STEP_NAME.name`
 
 A description of the stage step. Used only when printing output to console.
