@@ -1,4 +1,3 @@
-
 ---
 title: "Cloud config examples"
 linkTitle: "Cloud config examples"
@@ -77,4 +76,41 @@ stages:
          permissions: 0600
          owner: 0
          group: 0
+```
+
+## Additional files
+
+### K3s manifests
+
+Add k3s manifests:
+
+```yaml
+name: "k3s"
+stages:
+    network:
+     - if: '[ ! -f "/run/cos/recovery_mode" ]'
+       name: "Fleet deployment"
+       files:
+       - path: /var/lib/rancher/k3s/server/manifests/fleet-config.yaml
+         content: |
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: cattle-system
+              ---
+              apiVersion: helm.cattle.io/v1
+              kind: HelmChart
+              metadata:
+                name: fleet-crd
+                namespace: cattle-system
+              spec:
+                chart: https://github.com/rancher/fleet/releases/download/v0.3.8/fleet-crd-0.3.8.tgz
+              ---
+              apiVersion: helm.cattle.io/v1
+              kind: HelmChart
+              metadata:
+                name: fleet
+                namespace: cattle-system
+              spec:
+                chart: https://github.com/rancher/fleet/releases/download/v0.3.8/fleet-0.3.8.tgz
 ```
