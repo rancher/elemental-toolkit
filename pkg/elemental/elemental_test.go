@@ -19,6 +19,7 @@ package elemental_test
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -604,13 +605,68 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 	Describe("SelinuxRelabel", Label("SelinuxRelabel", "selinux"), func() {
-		It("Works", func() {
+		BeforeEach(func() {
+			// to mock the existance of setfiles command on non selinux hosts
+			err := utils.MkdirAll(fs, "/usr/sbin", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			sbin, err := fs.RawPath("/usr/sbin")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			path := os.Getenv("PATH")
+			os.Setenv("PATH", fmt.Sprintf("%s:%s", sbin, path))
+			_, err = fs.Create("/usr/sbin/setfiles")
+			Expect(err).ShouldNot(HaveOccurred())
+			err = fs.Chmod("/usr/sbin/setfiles", 0777)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("does nothing if the context file is not found", func() {
 			c := elemental.NewElemental(config)
-			// This is actually failing but not sure we should return an error
-			Expect(c.SelinuxRelabel("/", true)).ToNot(BeNil())
-			fs, cleanup, _ = vfst.NewTestFS(nil)
-			_, _ = fs.Create("/etc/selinux/targeted/contexts/files/file_contexts")
-			Expect(c.SelinuxRelabel("/", false)).To(BeNil())
+			Expect(c.SelinuxRelabel("/", true)).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{}}))
+		})
+		It("relabels the current root", func() {
+			err := utils.MkdirAll(fs, filepath.Dir(constants.SELinuxContextFile), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create(constants.SELinuxContextFile)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			c := elemental.NewElemental(config)
+			Expect(c.SelinuxRelabel("", true)).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"setfiles", "-F", constants.SELinuxContextFile, "/"}}))
+
+			Expect(c.SelinuxRelabel("/", true)).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"setfiles", "-F", constants.SELinuxContextFile, "/"}}))
+		})
+		It("fails to relabel the current root", func() {
+			err := utils.MkdirAll(fs, filepath.Dir(constants.SELinuxContextFile), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create(constants.SELinuxContextFile)
+			Expect(err).ShouldNot(HaveOccurred())
+			runner.ReturnError = errors.New("setfiles failure")
+			c := elemental.NewElemental(config)
+			Expect(c.SelinuxRelabel("", true)).NotTo(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"setfiles", "-F", constants.SELinuxContextFile, "/"}}))
+		})
+		It("ignores relabel failures", func() {
+			err := utils.MkdirAll(fs, filepath.Dir(constants.SELinuxContextFile), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create(constants.SELinuxContextFile)
+			Expect(err).ShouldNot(HaveOccurred())
+			runner.ReturnError = errors.New("setfiles failure")
+			c := elemental.NewElemental(config)
+			Expect(c.SelinuxRelabel("", false)).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"setfiles", "-F", constants.SELinuxContextFile, "/"}}))
+		})
+		It("relabels the given root-tree path", func() {
+			contextFile := filepath.Join("/root", filepath.Dir(constants.SELinuxContextFile))
+			err := utils.MkdirAll(fs, filepath.Dir(contextFile), constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create(contextFile)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			c := elemental.NewElemental(config)
+			Expect(c.SelinuxRelabel("/root", true)).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{{"setfiles", "-F", "-r", "/root", constants.SELinuxContextFile, "/root"}}))
 		})
 	})
 	Describe("GetIso", Label("GetIso", "iso"), func() {

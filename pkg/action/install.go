@@ -127,8 +127,21 @@ func (i InstallAction) Run() (err error) {
 	if err != nil {
 		return err
 	}
+
 	// Relabel SELinux
-	_ = e.SelinuxRelabel(cnst.ActiveDir, false)
+	binds := map[string]string{}
+	if mnt, _ := utils.IsMounted(&i.cfg.Config, i.spec.Partitions.Persistent); mnt {
+		binds[i.spec.Partitions.Persistent.MountPoint] = cnst.UsrLocalPath
+	}
+	if mnt, _ := utils.IsMounted(&i.cfg.Config, i.spec.Partitions.OEM); mnt {
+		binds[i.spec.Partitions.OEM.MountPoint] = cnst.OEMPath
+	}
+	err = utils.ChrootedCallback(
+		&i.cfg.Config, i.spec.Active.MountPoint, binds, func() error { return e.SelinuxRelabel("/", true) },
+	)
+	if err != nil {
+		return err
+	}
 
 	err = i.installHook(cnst.AfterInstallChrootHook, true)
 	if err != nil {

@@ -46,6 +46,13 @@ func NewChroot(path string, config *v1.Config) *Chroot {
 	}
 }
 
+// ChrootedCallback runs the given callback in a chroot environment
+func ChrootedCallback(cfg *v1.Config, path string, bindMounts map[string]string, callback func() error) error {
+	chroot := NewChroot(path, cfg)
+	chroot.SetExtraMounts(bindMounts)
+	return chroot.RunCallback(callback)
+}
+
 // Sets additional bind mounts for the chroot enviornment. They are represented
 // in a map where the key is the path outside the chroot and the value is the
 // path inside the chroot.

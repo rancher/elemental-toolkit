@@ -284,6 +284,10 @@ func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 }
 
 func IsMounted(config *v1.Config, part *v1.Partition) (bool, error) {
+	if part == nil {
+		return false, fmt.Errorf("nil partition")
+	}
+
 	if part.MountPoint == "" {
 		return false, nil
 	}

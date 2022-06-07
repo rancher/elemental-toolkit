@@ -113,15 +113,13 @@ func (u *UpgradeAction) Run() (err error) {
 
 	// Recovery does not mount persistent, so try to mount it. Ignore errors, as its not mandatory.
 	persistentPart := u.spec.Partitions.Persistent
-	if persistentPart != nil {
-		if mnt, _ := utils.IsMounted(&u.config.Config, persistentPart); !mnt {
-			u.Debug("mounting persistent partition")
-			err := e.MountPartition(persistentPart, "rw")
-			if err != nil {
-				u.config.Logger.Warn("could not mount persistent partition")
-			} else {
-				cleanup.Push(func() error { return e.UnmountPartition(persistentPart) })
-			}
+	if mnt, err := utils.IsMounted(&u.config.Config, persistentPart); !mnt && err == nil {
+		u.Debug("mounting persistent partition")
+		err := e.MountPartition(persistentPart, "rw")
+		if err != nil {
+			u.config.Logger.Warn("could not mount persistent partition")
+		} else {
+			cleanup.Push(func() error { return e.UnmountPartition(persistentPart) })
 		}
 	}
 
@@ -143,8 +141,23 @@ func (u *UpgradeAction) Run() (err error) {
 	// Selinux relabel
 	// Doesn't make sense to relabel a readonly filesystem
 	if upgradeImg.FS != constants.SquashFs {
-		// In the original script, any errors are ignored
-		_ = e.SelinuxRelabel(upgradeImg.MountPoint, false)
+		// Relabel SELinux
+		// TODO probably relabelling persistent volumes should be an opt in feature, it could
+		// have undesired effects in case of failures
+		binds := map[string]string{}
+		if mnt, _ := utils.IsMounted(&u.config.Config, u.spec.Partitions.Persistent); mnt {
+			binds[u.spec.Partitions.Persistent.MountPoint] = constants.UsrLocalPath
+		}
+		if mnt, _ := utils.IsMounted(&u.config.Config, u.spec.Partitions.OEM); mnt {
+			binds[u.spec.Partitions.OEM.MountPoint] = constants.OEMPath
+		}
+		err = utils.ChrootedCallback(
+			&u.config.Config, upgradeImg.MountPoint, binds,
+			func() error { return e.SelinuxRelabel("/", true) },
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = u.upgradeHook("after-upgrade-chroot", true)

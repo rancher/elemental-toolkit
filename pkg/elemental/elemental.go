@@ -396,23 +396,25 @@ func (e *Elemental) CopyCloudConfig(cloudInit string) (err error) {
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
 func (e *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
-	var err error
+	contextFile := filepath.Join(rootDir, cnst.SELinuxContextFile)
+	contextExists, _ := utils.Exists(e.config.Fs, contextFile)
 
-	contextFile := filepath.Join(rootDir, "/etc/selinux/targeted/contexts/files/file_contexts")
-
-	_, err = e.config.Fs.Stat(contextFile)
-	contextExists := err == nil
-
-	if utils.CommandExists("setfiles") && contextExists {
-		_, err = e.config.Runner.Run("setfiles", "-r", rootDir, contextFile, rootDir)
+	if contextExists && utils.CommandExists("setfiles") {
+		var out []byte
+		var err error
+		if rootDir == "/" || rootDir == "" {
+			out, err = e.config.Runner.Run("setfiles", "-F", contextFile, rootDir)
+		} else {
+			out, err = e.config.Runner.Run("setfiles", "-F", "-r", rootDir, contextFile, rootDir)
+		}
+		e.config.Logger.Debug("SELinux setfiles output: %s", string(out))
+		if err != nil && raiseError {
+			return err
+		}
+	} else {
+		e.config.Logger.Debugf("No files relabelling as SELinux utilities are not found")
 	}
 
-	// In the original code this can error out and we dont really care
-	// I guess that to maintain backwards compatibility we have to do the same, we dont care if it raises an error
-	// but we still add the possibility to return an error if we want to change it in the future to be more strict?
-	if raiseError && err != nil {
-		return err
-	}
 	return nil
 }
 

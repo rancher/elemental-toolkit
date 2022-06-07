@@ -38,10 +38,8 @@ func Hook(config *v1.Config, hook string, strict bool, cloudInitPaths ...string)
 
 // ChrootHook executes Hook inside a chroot environment
 func ChrootHook(config *v1.Config, hook string, strict bool, chrootDir string, bindMounts map[string]string, cloudInitPaths ...string) (err error) {
-	chroot := utils.NewChroot(chrootDir, config)
-	chroot.SetExtraMounts(bindMounts)
 	callback := func() error {
 		return Hook(config, hook, strict, cloudInitPaths...)
 	}
-	return chroot.RunCallback(callback)
+	return utils.ChrootedCallback(config, chrootDir, bindMounts, callback)
 }
