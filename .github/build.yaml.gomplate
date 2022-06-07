@@ -8,6 +8,38 @@
 {{{ end }}}
 
 
+{{{ define "post_failed_status_slack" }}}
+{{{ $config := (datasource "config") }}}
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow {{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}} failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+{{{- end }}}
+
 {{{define "prepare_worker" }}}
   {{{ $config := (datasource "config") }}}
       - uses: actions/checkout@v2
@@ -217,6 +249,7 @@
           path: build
           if-no-files-found: error
       {{{ tmpl.Exec "runner_cleanup" }}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{end}}}
 
 {{{define "build_iso"}}}
@@ -265,6 +298,7 @@
             *.iso
             *.sha256
           if-no-files-found: error
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 
@@ -331,6 +365,7 @@
           path: |
             packer/*.box
           if-no-files-found: error
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "build_vbox"}}}
@@ -382,6 +417,7 @@
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.capture.zip
           path: capture.webm
           if-no-files-found: error
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "test"}}}
@@ -491,6 +527,7 @@
           path: capture.webm
           if-no-files-found: warn
       {{{end}}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{ define "installer_tests"}}}
@@ -546,6 +583,7 @@
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.record.zip
           path: capture.webm
           if-no-files-found: warn
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
   {{{- end}}}
 {{{end}}}
 
@@ -625,7 +663,7 @@
           name: luetcosign.log.zip
           path: /tmp/luet-cosign.log
           if-no-files-found: warn
-
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "generate_repo_files"}}}
@@ -648,6 +686,7 @@
         uses: actions/upload-artifact@v2
         with:
           path: cos-{{{ $config.arch }}}.yaml
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 
@@ -772,6 +811,7 @@
         env:
           GHR_PATH: iso-release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "raw_image"}}}
@@ -834,6 +874,7 @@
       - name: cleanup leftovers
         if: always()
         run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "raw_image_test_deploy"}}}
@@ -893,6 +934,7 @@
           name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.capture.zip
           path: capture.webm
           if-no-files-found: warn
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "ami_publish"}}}
@@ -921,6 +963,7 @@
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "teal") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
             make packer
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "image_link"}}}
@@ -943,6 +986,7 @@
           name: images-{{{ $flavor }}}-{{{$config.arch}}}.txt
           path: |
             images-{{{ $flavor }}}-{{{$config.arch}}}.txt
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "publish_vanilla"}}}
@@ -985,6 +1029,7 @@
           name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
           path: |
             ami_id.txt
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
 {{{define "build_example_dir"}}}
@@ -1011,6 +1056,7 @@
           name: {{{ $dir }}}.tar
           path: |
             {{{ $dir }}}.tar
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{end}}}
 
 
@@ -1039,12 +1085,14 @@
     needs: publish-{{{$flavor}}}
     steps:
       {{{tmpl.Exec "toolchain_images_steps" "${{ env.COS_VERSION }}"}}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
   build-toolchain-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
     {{{ tmpl.Exec "runner" }}}
     needs: publish-{{{$flavor}}}
     steps:
       {{{tmpl.Exec "toolchain_images_steps" "latest"}}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{- end}}}
 {{{end}}}
 
@@ -1091,12 +1139,14 @@
     needs: publish-{{{$flavor}}}
     steps:
       {{{tmpl.Exec "framework_images_steps" "${{ env.COS_VERSION }}"}}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
   build-framework-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
     needs: publish-{{{$flavor}}}
     steps:
       {{{tmpl.Exec "framework_images_steps" "latest"}}}
+      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{- end}}}
 {{{end}}}
 
@@ -1181,4 +1231,7 @@ jobs:
 {{{tmpl.Exec "framework_images"}}}
 {{{- if $config.publish_cloud }}}
 {{{tmpl.Exec "publish_vanilla"}}}
+{{{- if $config.slack_on_failure }}}
+{{{tmpl.Exec "post_failed_status_slack"}}}
+{{{- end }}}
 {{{- end }}}

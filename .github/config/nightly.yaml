@@ -46,18 +46,22 @@ flavors:
         on:
           schedule:
             - cron:  '0 20 * * *'
+        slack_on_failure: true
   orange:
     arches:
       x86_64:
         <<: *x86_64
         flavor: "orange"
+        slack_on_failure: false
   blue:
     arches:
       x86_64:
         <<: *x86_64
         flavor: "blue"
+        slack_on_failure: false
   green:
     arches:
       x86_64:
         <<: *x86_64
         flavor: "green"
+        slack_on_failure: false
