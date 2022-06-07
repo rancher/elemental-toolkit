@@ -210,14 +210,21 @@ jobs:
             packer/*.box
           if-no-files-found: error
   tests-squashfs-teal:
+    runs-on: [ self-hosted, arm64 ]
+    if: contains(fromJson('["mudler", "fgiudici", "frelon", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor) && contains(github.event.pull_request.labels.*.name, 'arm64')
     env:
+      LUET_ARCH: arm64
+      FLAVOR: teal
       ARCH: arm64
-      VAGRANT_CPU: 2
+      FINAL_REPO: quay.io/costoolkit/releases-teal-arm64
+      DOWNLOAD_METADATA: false
+      PUSH_CACHE: false
+      REPO_CACHE: quay.io/costoolkit/build-teal-cache-arm64
+      VAGRANT_CPU: 4
       VAGRANT_MEMORY: 5120
       VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
-    runs-on: ubuntu-latest
     needs: qemu-squashfs-teal
     strategy:
       matrix:
