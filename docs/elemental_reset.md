@@ -14,6 +14,7 @@ elemental reset [flags]
   -h, --help                help for reset
       --poweroff            Shutdown the system after install
       --reboot              Reboot the system after install
+      --reset-oem           Clear OEM partitions
       --reset-persistent    Clear persistent partitions
       --strict              Enable strict check of hooks (They need to exit with 0)
       --system.uri string   Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
