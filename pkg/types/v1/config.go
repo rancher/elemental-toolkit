@@ -350,13 +350,13 @@ type Image struct {
 
 // LiveISO represents the configurations needed for a live ISO image
 type LiveISO struct {
-	RootFS      []string `yaml:"rootfs,omitempty" mapstructure:"rootfs"`
-	UEFI        []string `yaml:"uefi,omitempty" mapstructure:"uefi"`
-	Image       []string `yaml:"image,omitempty" mapstructure:"image"`
-	Label       string   `yaml:"label,omitempty" mapstructure:"label"`
-	BootCatalog string   `yaml:"boot-catalog,omitempty" mapstructure:"boot-catalog"`
-	BootFile    string   `yaml:"boot-file,omitempty" mapstructure:"boot-file"`
-	HybridMBR   string   `yaml:"hybrid-mbr,omitempty" mapstructure:"hybrid-mbr,omitempty"`
+	RootFS      []*ImageSource `yaml:"rootfs,omitempty" mapstructure:"rootfs"`
+	UEFI        []*ImageSource `yaml:"uefi,omitempty" mapstructure:"uefi"`
+	Image       []*ImageSource `yaml:"image,omitempty" mapstructure:"image"`
+	Label       string         `yaml:"label,omitempty" mapstructure:"label"`
+	BootCatalog string         `yaml:"boot-catalog,omitempty" mapstructure:"boot-catalog"`
+	BootFile    string         `yaml:"boot-file,omitempty" mapstructure:"boot-file"`
+	HybridMBR   string         `yaml:"hybrid-mbr,omitempty" mapstructure:"hybrid-mbr,omitempty"`
 }
 
 // Sanitize checks the consistency of the struct, returns error

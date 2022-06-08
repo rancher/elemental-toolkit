@@ -83,9 +83,12 @@ var _ = Describe("Runtime Actions", func() {
 		})
 		It("Successfully builds an ISO from a Docker image", func() {
 			cfg.Date = true
-			iso.RootFS = []string{"elementalos:latest"}
-			iso.UEFI = []string{"live/efi"}
-			iso.Image = []string{"live/bootloader"}
+			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
+			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
+			iso.Image = []*v1.ImageSource{imageSrc}
 
 			luet.UnpackSideEffect = func(target string, image string, local bool) error {
 				bootDir := filepath.Join(target, "boot")
@@ -112,9 +115,15 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 		It("Successfully builds an ISO from a luet channel including overlayed files", func() {
-			iso.RootFS = []string{"system/elemental", "/overlay/dir"}
-			iso.UEFI = []string{"live/efi"}
-			iso.Image = []string{"live/bootloader"}
+			rootFs := []string{"channel:system/elemental", "dir:/overlay/dir"}
+			for _, src := range rootFs {
+				rootSrc, _ := v1.NewSrcFromURI(src)
+				iso.RootFS = append(iso.RootFS, rootSrc)
+			}
+			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
+			iso.Image = []*v1.ImageSource{imageSrc}
 
 			err := utils.MkdirAll(fs, "/overlay/dir/boot", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -130,9 +139,12 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 		It("Fails if kernel or initrd is not found in rootfs", func() {
-			iso.RootFS = []string{"/local/dir"}
-			iso.UEFI = []string{"live/efi"}
-			iso.Image = []string{"live/bootloader"}
+			rootSrc, _ := v1.NewSrcFromURI("dir:/local/dir")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
+			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
+			iso.Image = []*v1.ImageSource{imageSrc}
 
 			err := utils.MkdirAll(fs, "/local/dir/boot", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -150,7 +162,8 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing rootfs sources", func() {
-			iso.RootFS = []string{"system/elemental"}
+			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
 			luet.OnUnpackFromChannelError = true
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
@@ -159,8 +172,10 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails installing uefi sources", func() {
-			iso.RootFS = []string{"elemental:latest"}
-			iso.UEFI = []string{"live/efi"}
+			rootSrc, _ := v1.NewSrcFromURI("docker:elemental:latest")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
+			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
 			luet.OnUnpackFromChannelError = true
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
@@ -170,9 +185,12 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails installing image sources", func() {
-			iso.RootFS = []string{"elemental:latest"}
-			iso.UEFI = []string{"registry.suse.com/custom-uefi:v0.1"}
-			iso.Image = []string{"live/bootloader"}
+			rootSrc, _ := v1.NewSrcFromURI("docker:elemental:latest")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
+			uefiSrc, _ := v1.NewSrcFromURI("docker:registry.suse.com/custom-uefi:v0.1")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
+			iso.Image = []*v1.ImageSource{imageSrc}
 			luet.OnUnpackFromChannelError = true
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
@@ -182,9 +200,12 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails on ISO filesystem creation", func() {
-			iso.RootFS = []string{"/local/dir"}
-			iso.UEFI = []string{"live/efi"}
-			iso.Image = []string{"live/bootloader"}
+			rootSrc, _ := v1.NewSrcFromURI("dir:/local/dir")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
+			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
+			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
+			iso.Image = []*v1.ImageSource{imageSrc}
 
 			err := utils.MkdirAll(fs, "/local/dir/boot", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -211,7 +232,7 @@ var _ = Describe("Runtime Actions", func() {
 		var rawDisk *v1.RawDisk
 		BeforeEach(func() {
 			rawDisk = config.NewRawDisk(cfg.Config)
-			(*rawDisk)["x86_64"].Packages = []v1.RawDiskPackage{{Name: "what", Target: "what"}}
+			(*rawDisk)["x86_64"].Packages = []v1.RawDiskPackage{{Name: "oci:what", Target: "what"}}
 
 			cfg.Repos = []v1.Repository{{URI: "test"}}
 		})

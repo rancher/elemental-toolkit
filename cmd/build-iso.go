@@ -35,7 +35,7 @@ import (
 // pre-run check. This method is mostly used for testing purposes.
 func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "build-iso IMAGE",
+		Use:   "build-iso SOURCE",
 		Short: "builds bootable installation media ISOs",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -71,12 +71,19 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return err
 			}
 
-			if len(args) >= 1 {
-				spec.RootFS = []string{args[0]}
-			}
-
-			if len(spec.RootFS) == 0 {
-				return fmt.Errorf("no rootfs image source provided")
+			if len(args) == 1 {
+				imgSource, err := v1.NewSrcFromURI(args[0])
+				if err != nil && utils.ValidContainerReference(args[0]) {
+					imageName := args[0]
+					if !utils.ValidTaggedContainerReference(imageName) {
+						imageName = imageName + ":latest"
+					}
+					// ensure we set it as a docker type
+					imgSource = v1.NewDockerSrc(imageName)
+				}
+				spec.RootFS = []*v1.ImageSource{imgSource}
+			} else {
+				return fmt.Errorf("rootfs source image for building ISO was not provided")
 			}
 
 			// Repos and overlays can't be unmarshaled directly as they require
@@ -88,7 +95,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if oRootfs != "" {
 				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
-					spec.RootFS = append(spec.RootFS, oRootfs)
+					spec.RootFS = append(spec.RootFS, v1.NewDirSrc(oRootfs))
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-rootfs")
 					return fmt.Errorf("Invalid path '%s': %v", oRootfs, err)
@@ -96,7 +103,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oUEFI != "" {
 				if ok, err := utils.Exists(cfg.Fs, oUEFI); ok {
-					spec.UEFI = append(spec.UEFI, oUEFI)
+					spec.UEFI = append(spec.UEFI, v1.NewDirSrc(oUEFI))
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-uefi")
 					return fmt.Errorf("Invalid path '%s': %v", oUEFI, err)
@@ -104,7 +111,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oISO != "" {
 				if ok, err := utils.Exists(cfg.Fs, oISO); ok {
-					spec.Image = append(spec.Image, oISO)
+					spec.Image = append(spec.Image, v1.NewDirSrc(oISO))
 				} else {
 					cfg.Logger.Errorf("Invalid value for overlay-iso")
 					return fmt.Errorf("Invalid path '%s': %v", oISO, err)

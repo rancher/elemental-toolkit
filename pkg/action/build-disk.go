@@ -91,9 +91,13 @@ func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDisk, imgType string, oemLabe
 		if err != nil {
 			return err
 		}
+		imgSource, err := v1.NewSrcFromURI(pkg.Name)
+		if err != nil {
+			return err
+		}
 		err = e.DumpSource(
 			filepath.Join(baseDir, pkg.Target),
-			utils.NewSrcGuessingType(&cfg.Config, pkg.Name),
+			imgSource,
 		)
 		if err != nil {
 			cfg.Logger.Error(err)

@@ -237,10 +237,9 @@ func (b BuildISOAction) burnISO(root string) error {
 	return nil
 }
 
-func (b BuildISOAction) applySources(target string, sources ...string) error {
-	var err error
+func (b BuildISOAction) applySources(target string, sources ...*v1.ImageSource) error {
 	for _, src := range sources {
-		err = b.e.DumpSource(target, utils.NewSrcGuessingType(&b.cfg.Config, src))
+		err := b.e.DumpSource(target, src)
 		if err != nil {
 			return err
 		}

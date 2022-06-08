@@ -180,19 +180,24 @@ func GetDefaultXorrisoBooloaderArgs(root, bootFile, bootCatalog, hybridMBR strin
 }
 
 func GetDefaultISOImage() []string {
-	return []string{"live/grub2", "live/grub2-efi-image"}
+	return []string{
+		"channel:live/grub2",
+		"channel:live/grub2-efi-image",
+	}
 }
 
 func GetDefaultISOUEFI() []string {
-	return []string{"live/grub2-efi-image"}
+	return []string{
+		"channel:live/grub2-efi-image",
+	}
 }
 
 func GetBuildDiskDefaultPackages() map[string]string {
 	return map[string]string{
-		"system/grub2-efi-image": "efi",
-		"system/grub2-config":    "root",
-		"system/grub2-artifacts": "root/grub2",
-		"recovery/cos-img":       "root/cOS",
+		"channel:system/grub2-efi-image": "efi",
+		"channel:system/grub2-config":    "root",
+		"channel:system/grub2-artifacts": "root/grub2",
+		"channel:recovery/cos-img":       "root/cOS",
 	}
 }
 

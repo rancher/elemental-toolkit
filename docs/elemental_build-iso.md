@@ -3,7 +3,11 @@
 builds bootable installation media ISOs
 
 ```
-elemental build-iso IMAGE [flags]
+elemental build-iso SOURCE [flags]
+
+SOURCE - should be provided as uri in following format <sourceType>:<sourceName>
+    * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is "docker"
+    * <sourceName> - is path to file or directory, image name with tag version or channel name
 ```
 
 ### Options

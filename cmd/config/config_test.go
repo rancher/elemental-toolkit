@@ -154,7 +154,7 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(iso.HybridMBR).To(Equal(constants.IsoHybridMBR))
 
 				// From config file
-				Expect(iso.Image[0]).To(Equal("recovery/cos-img"))
+				Expect(iso.Image[0].Value()).To(Equal("recovery/cos-img"))
 				Expect(iso.Label).To(Equal("LIVE_LABEL"))
 			})
 		})

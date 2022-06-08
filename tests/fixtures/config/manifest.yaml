@@ -1,10 +1,10 @@
 iso:
   rootfs:
-    - system/cos
+    - channel:system/cos
   uefi:
-    - live/grub2-efi-image
+    - channel:live/grub2-efi-image
   image:
-    - recovery/cos-img
+    - channel:recovery/cos-img
   label: "LIVE_LABEL"
 
 # Raw disk creation values start

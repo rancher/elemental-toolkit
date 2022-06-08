@@ -45,7 +45,7 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 	It("Errors out if no rootfs sources are defined", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "build-iso")
 		Expect(err).ToNot(BeNil())
-		Expect(err.Error()).To(ContainSubstring("no rootfs image source provided"))
+		Expect(err.Error()).To(ContainSubstring("rootfs source image for building ISO was not provided"))
 	})
 	It("Errors out if overlay roofs path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(

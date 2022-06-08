@@ -18,6 +18,7 @@ package config_test
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
@@ -395,7 +396,22 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("initiates a new LiveISO", func() {
 				iso := config.NewISO()
 				Expect(iso.Label).To(Equal(constants.ISOLabel))
-				Expect(iso.Image).To(Equal(constants.GetDefaultISOImage()))
+				for i, d := range constants.GetDefaultISOImage() {
+					src := strings.Split(d, ":")
+					switch src[0] {
+					case "dir":
+						Expect(iso.Image[i].IsDir()).Should(BeTrue())
+					case "file":
+						Expect(iso.Image[i].IsFile()).Should(BeTrue())
+					case "docker", "oci":
+						Expect(iso.Image[i].IsDocker()).Should(BeTrue())
+					case "channel":
+						Expect(iso.Image[i].IsChannel()).Should(BeTrue())
+					default:
+						Expect(iso.Image[i].IsEmpty()).Should(BeTrue())
+					}
+					Expect(iso.Image[i].Value()).To(Equal(src[1]))
+				}
 			})
 		})
 		Describe("RawDisk", Label("disk"), func() {
