@@ -30,7 +30,7 @@ Preparing the a loop device for the installation is simple and straight forward.
 
 ```bash
 # Create a raw image of 32G
-> qemu-img create -f raw diks.img 32G
+> qemu-img create -f raw disk.img 32G
 
 # Set the disk image as a loop device
 > sudo losetup -f --show disk.img
