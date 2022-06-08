@@ -67,6 +67,7 @@ install:
 reset:
   # if set to true it will format persistent partitions ('oem 'and 'persistent')
   reset-persistent: false
+  reset-oem: false
 
   # OS image used to reset disk
   # size in MiB

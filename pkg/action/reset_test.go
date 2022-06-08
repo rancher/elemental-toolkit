@@ -158,6 +158,7 @@ var _ = Describe("Reset action tests", func() {
 		It("Successfully resets on non-squashfs recovery including persistent data", func() {
 			config.PowerOff = true
 			spec.FormatPersistent = true
+			spec.FormatOEM = true
 			Expect(reset.Run()).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})

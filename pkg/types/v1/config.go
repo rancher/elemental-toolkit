@@ -125,15 +125,17 @@ func (i *InstallSpec) Sanitize() error {
 
 // ResetSpec struct represents all the reset action details
 type ResetSpec struct {
-	FormatPersistent bool   `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
-	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty              string `yaml:"tty,omitempty" mapstructure:"tty"`
-	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
-	Passive          Image
-	Partitions       ElementalPartitions
-	Target           string
-	Efi              bool
-	GrubConf         string
+	FormatPersistent bool `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
+	FormatOEM        bool `yaml:"reset-oem,omitempty" mapstructure:"reset-oem"`
+
+	GrubDefEntry string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
+	Active       Image  `yaml:"system,omitempty" mapstructure:"system"`
+	Passive      Image
+	Partitions   ElementalPartitions
+	Target       string
+	Efi          bool
+	GrubConf     string
 }
 
 // Sanitize checks the consistency of the struct, returns error

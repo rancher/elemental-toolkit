@@ -71,7 +71,7 @@ func (r ResetAction) Run() (err error) {
 		return err
 	}
 
-	// Reformat persistent partitions
+	// Reformat persistent partition
 	if r.spec.FormatPersistent {
 		persistent := r.spec.Partitions.Persistent
 		if persistent != nil {
@@ -80,6 +80,11 @@ func (r ResetAction) Run() (err error) {
 				return err
 			}
 		}
+
+	}
+
+	// Reformat OEM
+	if r.spec.FormatOEM {
 		oem := r.spec.Partitions.OEM
 		if oem != nil {
 			err = e.FormatPartition(oem)
@@ -88,7 +93,6 @@ func (r ResetAction) Run() (err error) {
 			}
 		}
 	}
-
 	// Mount configured partitions
 	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false))
 	if err != nil {
