@@ -113,6 +113,34 @@ jobs:
           sudo rm -Rf /var/luet || true
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   iso-nonsquashfs-teal:
     runs-on: ubuntu-latest
     needs: build-teal-x86_64
@@ -174,6 +202,34 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-squashfs-teal-installer-efi:
     env:
       ARCH: x86_64
@@ -219,6 +275,34 @@ jobs:
           name: cOS-squashfs-test-installer-efi.record.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-squashfs-teal-installer-bios:
     env:
       ARCH: x86_64
@@ -264,6 +348,34 @@ jobs:
           name: cOS-squashfs-test-installer-bios.record.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   qemu-squashfs-teal:
     runs-on: ubuntu-latest
     needs: iso-nonsquashfs-teal
@@ -309,6 +421,34 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   vbox-squashfs-teal:
     runs-on: macos-10.15
     needs: iso-nonsquashfs-teal
@@ -350,6 +490,34 @@ jobs:
           name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
           if-no-files-found: error
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-squashfs-teal:
     env:
       ARCH: x86_64
@@ -400,6 +568,34 @@ jobs:
           name: cOS-squashfs-${{ matrix.test }}.capture.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-nonsquashfs-teal-installer-efi:
     env:
       ARCH: x86_64
@@ -444,6 +640,34 @@ jobs:
           name: cOS-nonsquashfs-test-installer-efi.record.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-nonsquashfs-teal-installer-bios:
     env:
       ARCH: x86_64
@@ -488,6 +712,34 @@ jobs:
           name: cOS-nonsquashfs-test-installer-bios.record.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   qemu-nonsquashfs-teal:
     runs-on: ubuntu-latest
     needs: iso-nonsquashfs-teal
@@ -533,6 +785,34 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   vbox-nonsquashfs-teal:
     runs-on: macos-10.15
     needs: iso-nonsquashfs-teal
@@ -574,6 +854,34 @@ jobs:
           name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
           if-no-files-found: error
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-nonsquashfs-teal:
     env:
       ARCH: x86_64
@@ -624,6 +932,34 @@ jobs:
           name: cOS-nonsquashfs-${{ matrix.test }}.capture.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   image-link-teal:
     runs-on: ubuntu-latest
     needs: publish-teal
@@ -644,6 +980,34 @@ jobs:
           name: images-teal-x86_64.txt
           path: |
             images-teal-x86_64.txt
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   publish-teal:
     runs-on: ubuntu-latest
     needs: tests-squashfs-teal
@@ -744,6 +1108,34 @@ jobs:
           name: luetcosign.log.zip
           path: /tmp/luet-cosign.log
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   generate-repo-files-teal:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -761,6 +1153,34 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: cos-x86_64.yaml
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   github-release-teal:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -854,6 +1274,34 @@ jobs:
         env:
           GHR_PATH: iso-release/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   raw-images-teal:
     runs-on: [self-hosted, x64]
     needs:
@@ -930,6 +1378,34 @@ jobs:
       - name: cleanup leftovers
         if: always()
         run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-raw-disk-deploy-teal:
     runs-on: macos-10.15
     needs: raw-images-teal
@@ -984,6 +1460,34 @@ jobs:
           name: cOS-raw_disk_test_deploy-teal.capture.zip
           path: capture.webm
           if-no-files-found: warn
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   ami-publish-teal:
     runs-on: ubuntu-latest
     needs: publish-vanilla-ami
@@ -1010,6 +1514,34 @@ jobs:
             export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
             export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-teal:cos-system-${COS_VERSION}"
             make packer
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   build-toolchain-tagged:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: [self-hosted, x64]
@@ -1048,6 +1580,34 @@ jobs:
           export P_VERSION="${tag/+/-}"
           docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
           docker push quay.io/costoolkit/toolchain:$P_VERSION
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   build-toolchain-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
     runs-on: [self-hosted, x64]
@@ -1086,6 +1646,34 @@ jobs:
           export P_VERSION="${tag/+/-}"
           docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
           docker push quay.io/costoolkit/toolchain:$P_VERSION
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   build-framework-tagged:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -1141,6 +1729,34 @@ jobs:
           platforms: "linux/arm64,linux/amd64"
           push: true
           tags: ${{ steps.prep.outputs.tags }}
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   build-framework-latest:
     if: "!startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
@@ -1196,6 +1812,34 @@ jobs:
           platforms: "linux/arm64,linux/amd64"
           push: true
           tags: ${{ steps.prep.outputs.tags }}
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   # We need only a single vanilla image for any OS
   # Vanilla image is always based on openSUSE
   publish-vanilla-ami:
@@ -1234,3 +1878,59 @@ jobs:
           name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
           path: |
             ami_id.txt
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      - name: Send failed status to slack
+        if: failure()
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
+                    },
+                    "accessory": {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": ":github:",
+                         "emoji": true
+                        },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

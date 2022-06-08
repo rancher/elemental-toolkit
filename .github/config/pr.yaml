@@ -53,6 +53,7 @@ flavors:
               - '.github/**'
               - 'Makefile'
               - 'tests/**'
+        slack_on_failure: false
       arm64:
         &arm64
         local_runner: true
@@ -92,6 +93,7 @@ flavors:
         on:
           pull_request:
             types: [ "labeled", "synchronize" ]  # synchronize means when the PR is updated
+        slack_on_failure: false
   orange:
     arches:
       x86_64:

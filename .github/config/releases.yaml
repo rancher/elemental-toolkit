@@ -49,6 +49,7 @@ flavors:
           push:
             tags:
               - "v*"
+        slack_on_failure: true
       arm64:
         &arm64
         local_runner: true
@@ -88,6 +89,7 @@ flavors:
           push:
             tags:
               - "v*"
+        slack_on_failure: true
   orange:
     arches:
       x86_64:

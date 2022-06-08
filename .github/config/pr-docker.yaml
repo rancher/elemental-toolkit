@@ -50,6 +50,7 @@ flavors:
             - "test-upgrades-images-unsigned"
             - "test-upgrades-local"
             - "test-deploys-images-recovery"
+        slack_on_failure: false
   orange:
     arches:
       x86_64:

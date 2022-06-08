@@ -53,3 +53,4 @@ flavors:
               - 'Makefile'
               - 'tests/**'
               - 'examples/**'
+        slack_on_failure: false
