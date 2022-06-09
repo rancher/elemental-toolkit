@@ -2,6 +2,14 @@
 
 builds bootable installation media ISOs
 
+### Synopsis
+
+builds bootable installation media ISOs
+
+SOURCE - should be provided as uri in following format <sourceType>:<sourceName>
+    * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is "docker"
+    * <sourceName> - is path to file or directory, image name with tag version or channel name
+
 ```
 elemental build-iso SOURCE [flags]
 ```

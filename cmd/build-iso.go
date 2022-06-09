@@ -37,7 +37,11 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "build-iso SOURCE",
 		Short: "builds bootable installation media ISOs",
-		Args:  cobra.MaximumNArgs(1),
+		Long: "builds bootable installation media ISOs\n\n" +
+			"SOURCE - should be provided as uri in following format <sourceType>:<sourceName>\n" +
+			"    * <sourceType> - might be [\"dir\", \"file\", \"oci\", \"docker\", \"channel\"], as default is \"docker\"\n" +
+			"    * <sourceName> - is path to file or directory, image name with tag version or channel name",
+		Args: cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {
 				return CheckRoot()
