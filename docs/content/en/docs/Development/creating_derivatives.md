@@ -93,7 +93,13 @@ Templates uses cases are for: resharing common pieces between flavors, building 
 To build an iso for a derivative image `elemental build-iso` command can be used:
 
 ```bash
-elemental build-iso -n $NAME $IMAGE
+elemental build-iso -n $NAME $SOURCE
 ```
 
-Where `$NAME` is the name of the ISO and `$IMAGE` is the reference to the container image we are building the ISO for. See also [building ISOs](../../creating-derivatives/build_iso)
+Where `$NAME` is the name of the ISO and `$SOURCE` might be the reference to the directory, file, container image or chaneel we are building the ISO for. `$SOURCE` should be provided as uri in following format <sourceType>:<sourceName>, where:
+    * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is taken "docker"
+    * <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then "latest" is used)
+
+Some examples for $SOURCE argument "dir:/cOS/system", "oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10", "channel:system/cos"
+
+See also [building ISOs](../../creating-derivatives/build_iso)
