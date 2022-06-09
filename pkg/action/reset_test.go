@@ -105,6 +105,11 @@ var _ = Describe("Reset action tests", func() {
 						Label: "COS_PERSISTENT",
 						Type:  "ext4",
 					},
+					{
+						Name:  "device4",
+						Label: "COS_OEM",
+						Type:  "ext4",
+					},
 				},
 			}
 			ghwTest = v1mock.GhwMock{}

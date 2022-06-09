@@ -19,6 +19,7 @@ package luet_test
 import (
 	"bytes"
 	"context"
+	"github.com/rancher/elemental-cli/pkg/utils"
 	"testing"
 
 	dockTypes "github.com/docker/docker/api/types"
@@ -86,6 +87,40 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 			// Check that luet can unpack the local image
 			Expect(l.Unpack(target, image, true)).To(BeNil())
 		})
+		Describe("UnpackFromChannel", Label("unpack", "channel"), func() {
+			It("Check that luet can unpack from channel", Label("root"), func() {
+				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal"}
+				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).To(BeNil())
+			})
+			It("Fails to unpack with a repository with no URI", func() {
+				repo := v1.Repository{}
+				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err.Error()).To(ContainSubstring("no URI is provided"))
+				Expect(err).NotTo(BeNil())
+			})
+			It("Fails to unpack with a dir repository that doesnt have anything", func() {
+				dir, _ := utils.TempDir(fs, "", "")
+				repo := v1.Repository{URI: dir}
+				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err).NotTo(BeNil())
+			})
+			It("Fails to unpack with a http repository that doesnt exists", func() {
+				repo := v1.Repository{URI: "http://jojo.bizarre.adventure"}
+				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err).NotTo(BeNil())
+			})
+			It("Fails to unpack with a strange repository that cant get the type for", func() {
+				repo := v1.Repository{URI: "is:this:real:life"}
+				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err.Error()).To(ContainSubstring("Invalid Luet repository URI"))
+				Expect(err).NotTo(BeNil())
+			})
+			It("Fails to unpack from channel without root privileges", func() {
+				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal"}
+				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).ToNot(BeNil())
+			})
+		})
+
 		Describe("Luet config", Label("config"), func() {
 			It("Create empty config if there is no luet.yaml", func() {
 				memLog := bytes.Buffer{}

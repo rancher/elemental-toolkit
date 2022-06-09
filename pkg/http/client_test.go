@@ -61,4 +61,8 @@ var _ = Describe("HTTPClient", Label("http"), func() {
 		source := "http://nonexisting.stuff"
 		Expect(client.GetURL(log, source, destDir)).NotTo(BeNil())
 	})
+	It("Fails to download a broken url", func() {
+		source := "scp://23412342341234.wqer.234|@#~ł€@¶|@~#"
+		Expect(client.GetURL(log, source, destDir)).NotTo(BeNil())
+	})
 })

@@ -40,7 +40,7 @@ func writeCmdline(s string, fs v1.FS) error {
 	return fs.WriteFile("/proc/cmdline", []byte(s), os.ModePerm)
 }
 
-var _ = Describe("run stage", Label("RunStage", "root"), func() {
+var _ = Describe("run stage", Label("RunStage"), func() {
 	var config *v1.Config
 	var runner *v1mock.FakeRunner
 	var logger v1.Logger
