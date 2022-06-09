@@ -396,18 +396,19 @@ func (e *Elemental) CopyCloudConfig(cloudInit string) (err error) {
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
 func (e *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
-	contextFile := filepath.Join(rootDir, cnst.SELinuxContextFile)
+	policyFile, err := utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, cnst.SELinuxTargetedPolicyPath), "policy.")
+	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(e.config.Fs, contextFile)
 
-	if contextExists && utils.CommandExists("setfiles") {
+	if err == nil && contextExists && utils.CommandExists("setfiles") {
 		var out []byte
 		var err error
 		if rootDir == "/" || rootDir == "" {
-			out, err = e.config.Runner.Run("setfiles", "-F", contextFile, rootDir)
+			out, err = e.config.Runner.Run("setfiles", "-c", policyFile, "-e", "/dev", "-e", "/proc", "-e", "/sys", "-F", contextFile, "/")
 		} else {
-			out, err = e.config.Runner.Run("setfiles", "-F", "-r", rootDir, contextFile, rootDir)
+			out, err = e.config.Runner.Run("setfiles", "-c", policyFile, "-F", "-r", rootDir, contextFile, rootDir)
 		}
-		e.config.Logger.Debug("SELinux setfiles output: %s", string(out))
+		e.config.Logger.Debugf("SELinux setfiles output: %s", string(out))
 		if err != nil && raiseError {
 			return err
 		}
