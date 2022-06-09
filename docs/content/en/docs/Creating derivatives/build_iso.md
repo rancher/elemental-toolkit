@@ -14,10 +14,14 @@ In order to build an iso we rely on [elemental build-iso](https://github.com/ran
 To build an iso, just run:
 
 ```bash
-docker run --rm -ti -v $(pwd):/build quay.io/costoolkit/elemental:v0.0.14-e4e39d4 --debug build-iso -o /build $IMAGE
+docker run --rm -ti -v $(pwd):/build quay.io/costoolkit/elemental:v0.0.14-e4e39d4 --debug build-iso -o /build $SOURCE
 ```
 
-Where `$IMAGE` is the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images).
+Where `$SOURCE` might be the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images). Argument `$SOURCE` might be the reference to the directory, file, container image or chaneel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
+    * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is taken "docker"
+    * <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then "latest" is used)
+
+Some examples for $SOURCE argument "dir:/cOS/system", "oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10", "channel:system/cos"
 
 `elemental build-iso` command also supports reading a configuration `manifest.yaml` file. It is loaded form the directory specified by `--config-dir` elemental's flag.
 
@@ -26,12 +30,12 @@ An example of a yaml file using the elemental-toolkit opensuse repositories:
 ```yaml
 iso:
   rootfs:
-  - system/cos
+  - channel:system/cos
   uefi:
-  - live/grub2-efi-image
+  - channel:live/grub2-efi-image
   image:
-  - live/grub2-efi-image
-  - live/grub2
+  - dir:/packages/rsync
+  - channel:live/grub2
   label: "COS_LIVE"
 
 name: "Elemental-0"
@@ -53,11 +57,11 @@ iso:
   - ..
   # Packages to be installed in the uefi image
   uefi:
-  - live/grub2-efi-image
+  - channel:live/grub2-efi-image
   # Packages to be installed in the iso image
   image:
-  - live/grub2-efi-image
-  - live/grub2
+  - channel:live/grub2-efi-image
+  - channel:live/grub2
   label: "COS_LIVE"
   
 repositories:
@@ -82,15 +86,15 @@ Packages or sources can be a Luet package (as in the example), an image referenc
 
 ### `iso.rootfs`
 
-A list of sources (luet package, container image or local path) to install in the rootfs. The rootfs will be squashed to a `rootfs.squashfs` file
+A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in the rootfs. The rootfs will be squashed to a `rootfs.squashfs` file
 
 ### `iso.uefi`
 
-A list of sources (luet package, container image or local path) to install in the efi FAT image or partition.
+A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in the efi FAT image or partition.
 
 ### `iso.image`
 
-A list of sources (luet package, container image or local path) to install in ISO filesystem.
+A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in ISO filesystem.
 
 ### `iso.label`
 
@@ -139,10 +143,10 @@ iso:
   rootfs:
   - ...
   uefi:
-  - live/grub2-efi-image
+  - channel:live/grub2-efi-image
   image:
-  - live/grub2
-  - live/grub2-efi-image
+  - channel:live/grub2
+  - channel:live/grub2-efi-image
 ```
 
 We can customize either the `image` packages (in the referrence image `live/grub2` package
@@ -156,11 +160,11 @@ iso:
   rootfs:
   - ...
   uefi:
-  - live/grub2-efi-image
+  - channel:live/grub2-efi-image
   image:
-  - live/grub2
-  - live/grub2-efi-image
-  - /my/path/to/overlay/iso
+  - channel:live/grub2
+  - channel:live/grub2-efi-image
+  - dir:/my/path/to/overlay/iso
 ```
 
 With the above the ISO will also include the files under `/my/path/to/overlay/iso` path. To customize the boot
@@ -213,7 +217,7 @@ iso:
   ..
   image:
   ...
-  - recovery/cos-img
+  - channel:recovery/cos-img
 ```
 
 The installer will detect the squashfs file in the iso, and will use it when installing the system. You can customize the recovery image as well by providing your own: see the `recovery/cos-img` package definition as a reference.
