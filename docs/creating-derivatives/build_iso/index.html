@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/creating-derivatives/build_iso/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-06-09T23:13:16+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:modified_time" content="2022-06-09T23:13:40+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
 <meta itemprop="name" content="Build ISOs">
 <meta itemprop="description" content="Build ISOs from bootable images
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-06-09T23:13:16+02:00" />
-<meta itemprop="wordCount" content="936">
+<meta itemprop="dateModified" content="2022-06-09T23:13:40+02:00" />
+<meta itemprop="wordCount" content="1044">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Build ISOs"/>
 <meta name="twitter:description" content="Build ISOs from bootable images
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.c1241df3122bacd8cd201d204f94f2ed.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.fca55804e23600432913908ea9e6de5d.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.c1241df3122bacd8cd201d204f94f2ed.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.fca55804e23600432913908ea9e6de5d.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2156,18 +2156,21 @@ if (!doNotTrack) {
 	<p><img src="https://docs.google.com/drawings/d/e/2PACX-1vReZtyNs0imrji-AwnqK0-4ekCKLcKzfnQ_CwiMj93Q7IsycAJHwlNohwCv_hyHnaify7qO-v2Cecg5/pub?w=1223&amp;h=691" alt=""></p>
 <p>In order to build an iso we rely on <a href="https://github.com/rancher/elemental-cli">elemental build-iso</a> command. It accepts a YAML file denoting the packages to bundle in an ISO and a list of luet repositories where to download the packages from. In addition it can also overlay custom files or use container images from a registry as packages.</p>
 <p>To build an iso, just run:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -ti -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>:/build quay.io/costoolkit/elemental:v0.0.14-e4e39d4 --debug build-iso -o /build <span style="color:#000">$IMAGE</span>
-</span></span></code></pre></div><p>Where <code>$IMAGE</code> is the container image you want to build the ISO for, you might want to check on <a href="../creating_bootable_images">how to build bootable images</a>.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -ti -v <span style="color:#204a87;font-weight:bold">$(</span><span style="color:#204a87">pwd</span><span style="color:#204a87;font-weight:bold">)</span>:/build quay.io/costoolkit/elemental:v0.0.14-e4e39d4 --debug build-iso -o /build <span style="color:#000">$SOURCE</span>
+</span></span></code></pre></div><p>Where <code>$SOURCE</code> might be the container image you want to build the ISO for, you might want to check on <a href="../creating_bootable_images">how to build bootable images</a>. Argument <code>$SOURCE</code> might be the reference to the directory, file, container image or chaneel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
+* <sourceType> - might be [&ldquo;dir&rdquo;, &ldquo;file&rdquo;, &ldquo;oci&rdquo;, &ldquo;docker&rdquo;, &ldquo;channel&rdquo;], as default is taken &ldquo;docker&rdquo;
+* <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then &ldquo;latest&rdquo; is used)</p>
+<p>Some examples for $SOURCE argument &ldquo;dir:/cOS/system&rdquo;, &ldquo;oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10&rdquo;, &ldquo;channel:system/cos&rdquo;</p>
 <p><code>elemental build-iso</code> command also supports reading a configuration <code>manifest.yaml</code> file. It is loaded form the directory specified by <code>--config-dir</code> elemental&rsquo;s flag.</p>
 <p>An example of a yaml file using the elemental-toolkit opensuse repositories:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">iso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">rootfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">system/cos</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:system/cos</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">uefi</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">dir:/packages/rsync</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;COS_LIVE&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Elemental-0&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
@@ -2184,11 +2187,11 @@ if (!doNotTrack) {
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">..</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># Packages to be installed in the uefi image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">uefi</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># Packages to be installed in the iso image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;COS_LIVE&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">repositories</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
@@ -2207,11 +2210,11 @@ if (!doNotTrack) {
 </ul>
 <h2 id="configuration-reference">Configuration reference</h2>
 <h3 id="isorootfs"><code>iso.rootfs</code></h3>
-<p>A list of sources (luet package, container image or local path) to install in the rootfs. The rootfs will be squashed to a <code>rootfs.squashfs</code> file</p>
+<p>A list of sources in uri format (luet package, container image or local path) [ &ldquo;channel&rdquo;, &ldquo;docker&rdquo;, &ldquo;oci&rdquo;, &ldquo;dir&rdquo;, &ldquo;file&rdquo; ] to install in the rootfs. The rootfs will be squashed to a <code>rootfs.squashfs</code> file</p>
 <h3 id="isouefi"><code>iso.uefi</code></h3>
-<p>A list of sources (luet package, container image or local path) to install in the efi FAT image or partition.</p>
+<p>A list of sources in uri format (luet package, container image or local path) [ &ldquo;channel&rdquo;, &ldquo;docker&rdquo;, &ldquo;oci&rdquo;, &ldquo;dir&rdquo;, &ldquo;file&rdquo; ] to install in the efi FAT image or partition.</p>
 <h3 id="isoimage"><code>iso.image</code></h3>
-<p>A list of sources (luet package, container image or local path) to install in ISO filesystem.</p>
+<p>A list of sources in uri format (luet package, container image or local path) [ &ldquo;channel&rdquo;, &ldquo;docker&rdquo;, &ldquo;oci&rdquo;, &ldquo;dir&rdquo;, &ldquo;file&rdquo; ] to install in ISO filesystem.</p>
 <h3 id="isolabel"><code>iso.label</code></h3>
 <p>The label of the ISO filesystem. Defaults to <code>COS_LIVE</code>. Note this value is tied with the bootloader and kernel parameters to identify the root device.</p>
 <h3 id="repositories"><code>repositories</code></h3>
@@ -2237,10 +2240,10 @@ if (!doNotTrack) {
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">rootfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">uefi</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span></code></pre></div><p>We can customize either the <code>image</code> packages (in the referrence image <code>live/grub2</code> package
 includes bootloader configuration) or make use of the overlay concept to include or
 overwrite addition files for <code>image</code> section.</p>
@@ -2249,11 +2252,11 @@ overwrite addition files for <code>image</code> section.</p>
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">rootfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">uefi</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">/my/path/to/overlay/iso</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:live/grub2-efi-image</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">dir:/my/path/to/overlay/iso</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span></code></pre></div><p>With the above the ISO will also include the files under <code>/my/path/to/overlay/iso</code> path. To customize the boot
 menu parameters consider copy and modify relevant files from <code>live/grub2</code> package. In this example the
 <code>overlay</code> folder files list could be:</p>
@@ -2293,7 +2296,7 @@ menuentry &#34;Custom grub2 menu entry&#34; --class os --unrestricted {
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#000">..</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">recovery/cos-img</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">channel:recovery/cos-img</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span></code></pre></div><p>The installer will detect the squashfs file in the iso, and will use it when installing the system. You can customize the recovery image as well by providing your own: see the <code>recovery/cos-img</code> package definition as a reference.</p>
 
 	
@@ -2364,7 +2367,7 @@ menuentry &#34;Custom grub2 menu entry&#34; --class os --unrestricted {
 
     Last modified
     June 9, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/133658b2a769368df430ded11d1d05dd66de4b7e">Fix regression on immutable rootfs (#1499) (133658b)</a>
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/4ec22b62d3e6d46e8d60c693ca03ff86008b64dc">docs: Update documenation for build-iso (#1498) (4ec22b6)</a>
 
 </div>
 

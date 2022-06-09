@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/development/creating_derivatives/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-06-09T23:13:16+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:modified_time" content="2022-06-09T23:13:40+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
 <meta itemprop="name" content="Creating derivatives">
 <meta itemprop="description" content="This document summarize references to create derivatives with `elemental-toolkit` by using the `luet` toolchain.
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-06-09T23:13:16+02:00" />
-<meta itemprop="wordCount" content="533">
+<meta itemprop="dateModified" content="2022-06-09T23:13:40+02:00" />
+<meta itemprop="wordCount" content="595">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Creating derivatives"/>
 <meta name="twitter:description" content="This document summarize references to create derivatives with `elemental-toolkit` by using the `luet` toolchain.
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.c1241df3122bacd8cd201d204f94f2ed.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.fca55804e23600432913908ea9e6de5d.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.c1241df3122bacd8cd201d204f94f2ed.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.fca55804e23600432913908ea9e6de5d.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2179,8 +2179,12 @@ if (!doNotTrack) {
 <p>Templates uses cases are for: resharing common pieces between flavors, building for different platforms and architectures, &hellip;</p>
 <h2 id="build-iso">Build ISO</h2>
 <p>To build an iso for a derivative image <code>elemental build-iso</code> command can be used:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental build-iso -n <span style="color:#000">$NAME</span> <span style="color:#000">$IMAGE</span>
-</span></span></code></pre></div><p>Where <code>$NAME</code> is the name of the ISO and <code>$IMAGE</code> is the reference to the container image we are building the ISO for. See also <a href="../../creating-derivatives/build_iso">building ISOs</a></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>elemental build-iso -n <span style="color:#000">$NAME</span> <span style="color:#000">$SOURCE</span>
+</span></span></code></pre></div><p>Where <code>$NAME</code> is the name of the ISO and <code>$SOURCE</code> might be the reference to the directory, file, container image or chaneel we are building the ISO for. <code>$SOURCE</code> should be provided as uri in following format <sourceType>:<sourceName>, where:
+* <sourceType> - might be [&ldquo;dir&rdquo;, &ldquo;file&rdquo;, &ldquo;oci&rdquo;, &ldquo;docker&rdquo;, &ldquo;channel&rdquo;], as default is taken &ldquo;docker&rdquo;
+* <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then &ldquo;latest&rdquo; is used)</p>
+<p>Some examples for $SOURCE argument &ldquo;dir:/cOS/system&rdquo;, &ldquo;oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10&rdquo;, &ldquo;channel:system/cos&rdquo;</p>
+<p>See also <a href="../../creating-derivatives/build_iso">building ISOs</a></p>
 
 	
 		<style>
@@ -2250,7 +2254,7 @@ if (!doNotTrack) {
 
     Last modified
     June 9, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/133658b2a769368df430ded11d1d05dd66de4b7e">Fix regression on immutable rootfs (#1499) (133658b)</a>
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/4ec22b62d3e6d46e8d60c693ca03ff86008b64dc">docs: Update documenation for build-iso (#1498) (4ec22b6)</a>
 
 </div>
 
