@@ -309,6 +309,36 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		It("runs sanitize method", func() {
 			iso := config.NewISO()
 			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
+
+			//Success when properly provided source packages
+			spec := &v1.LiveISO{
+				RootFS: []*v1.ImageSource{
+					v1.NewDirSrc("/system/os"),
+					v1.NewChannelSrc("system/os"),
+				},
+				UEFI: []*v1.ImageSource{
+					v1.NewChannelSrc("live/grub2-efi-image"),
+				},
+				Image: []*v1.ImageSource{
+					v1.NewChannelSrc("live/grub2"),
+				},
+			}
+			Expect(spec.Sanitize()).ShouldNot(HaveOccurred())
+			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
+
+			//Fails when packages were provided in incorrect format
+			spec = &v1.LiveISO{
+				RootFS: []*v1.ImageSource{
+					nil,
+				},
+				UEFI: []*v1.ImageSource{
+					nil,
+				},
+				Image: []*v1.ImageSource{
+					nil,
+				},
+			}
+			Expect(spec.Sanitize()).Should(HaveOccurred())
 		})
 	})
 	Describe("RawDisk", func() {

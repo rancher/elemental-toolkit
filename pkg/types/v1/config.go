@@ -362,7 +362,22 @@ type LiveISO struct {
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (i *LiveISO) Sanitize() error {
-	// No checks for the time being
+	for _, src := range i.RootFS {
+		if src == nil {
+			return fmt.Errorf("wrong name of source package for rootfs")
+		}
+	}
+	for _, src := range i.UEFI {
+		if src == nil {
+			return fmt.Errorf("wrong name of source package for uefi")
+		}
+	}
+	for _, src := range i.Image {
+		if src == nil {
+			return fmt.Errorf("wrong name of source package for image")
+		}
+	}
+
 	return nil
 }
 
