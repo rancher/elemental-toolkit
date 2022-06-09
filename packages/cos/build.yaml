@@ -24,6 +24,11 @@ requires:
 - name: cos-features
   category: system
   version: ">=0"
+{{if eq .Values.codename "teal" }}
+- name: "elemental-selinux"
+  category: "system"
+  version: ">=0"
+{{end}}
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
 steps:
@@ -31,6 +36,17 @@ steps:
 - sed -i 's/:VERSION:/{{.Values.version}}/g' setup.yaml
 - sed -i 's/:PRETTY_NAME:/{{.Values.brand_name}} v{{.Values.version}}/g' setup.yaml
 - elemental cloud-init setup.yaml
+{{if eq .Values.codename "teal" }}
+# semodule mutates few files under /etc, hence we need to call selinux utilities here and not as part of
+# elemental-selinux otherwise mutated files are not included as part of the elemental-selinux delta. 
+
+# Need to copy up selinux files to prevent cross-device hardlinks
+# Happens if overlayfs docker driver or similar stacks are in use, see https://github.com/SELinuxProject/selinux/issues/343
+# this appears to be fixed since libsemanage v3.4 (released on May 2022)
+- mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous
+- cp --link --recursive /var/lib/selinux/targeted/previous /var/lib/selinux/targeted/active && semodule -i /usr/share/elemental/selinux/elemental.pp
+- sed -i "s|^SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
+{{end}}
 
 # See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#package-by-container-content
 unpack: true
@@ -38,8 +54,8 @@ unpack: true
 # See https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#requires_final_images
 requires_final_images: true
 
-# Files to exclude from the final 
-# artifact 
+# Files to exclude from the final
+# artifact
 # See also: https://luet-lab.github.io/docs/docs/concepts/packages/specfile/#excludingincluding-files-explictly
 excludes:
 - ^/var/cache/luet
@@ -68,7 +84,7 @@ excludes:
 - ^/etc/zypp
 - ^/usr/bin/rpm.*
 - ^/var/lib/rpm
-- ^/usr/lib64/rpm-plugins 
+- ^/usr/lib64/rpm-plugins
 # Yast
 - ^/var/lib/YaST2
 
