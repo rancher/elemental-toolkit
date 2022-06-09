@@ -440,24 +440,6 @@ func ValidTaggedContainerReference(ref string) bool {
 	return true
 }
 
-// NewSrcGuessingType returns new v1.ImageSource instance guessing its type
-// applying somne heuristic techniques (by order of preference):
-//	1. Assume it is Dir/File if value is found as a path in host
-//	2. Assume it is a container registry reference if it matches [<domain>/]<repositry>:<tag>
-//		(only domain is optional)
-//	3. Fallback to a channel source
-func NewSrcGuessingType(c *v1.Config, value string) *v1.ImageSource {
-	if exists, _ := Exists(c.Fs, value); exists {
-		if dir, _ := IsDir(c.Fs, value); dir {
-			return v1.NewDirSrc(value)
-		}
-		return v1.NewFileSrc(value)
-	} else if ValidTaggedContainerReference(value) {
-		return v1.NewDockerSrc(value)
-	}
-	return v1.NewChannelSrc(value)
-}
-
 // FindFileWithPrefix looks for a file in the given path matching one of the given
 // prefixes. Returns the found file path including the given path. It does not
 // check subfolders recusively

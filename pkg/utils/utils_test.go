@@ -696,40 +696,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).Should(HaveOccurred())
 		})
 	})
-	Describe("NewSourceGuessingType", Label("source"), func() {
-		It("Creates a new Docker source for a tagged reference", func() {
-			src := utils.NewSrcGuessingType(config, "registry.suse.com/elemental/image:v0.1")
-			Expect(src.IsDocker()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config, "registry.suse.com:1906/elemental/image:tag")
-			Expect(src.IsDocker()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config, "elemental/image:tag")
-			Expect(src.IsDocker()).To(BeTrue())
-		})
-		It("Creates a new Directory source from a path only if it exists", func() {
-			err := utils.MkdirAll(fs, "/dir", constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			src := utils.NewSrcGuessingType(config, "/dir")
-			Expect(src.IsDir()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config, "/folder")
-			Expect(src.IsDir()).To(BeFalse())
-		})
-		It("Creates a new File source from a path only if it exists", func() {
-			err := utils.MkdirAll(fs, "/dir", constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = fs.Create("/dir/file")
-			Expect(err).ShouldNot(HaveOccurred())
-			src := utils.NewSrcGuessingType(config, "/dir/file")
-			Expect(src.IsFile()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config, "/dir/otherfile")
-			Expect(src.IsFile()).To(BeFalse())
-		})
-		It("Creates a new Channel source", func() {
-			src := utils.NewSrcGuessingType(config, "system/cos")
-			Expect(src.IsChannel()).To(BeTrue())
-			src = utils.NewSrcGuessingType(config, "cos")
-			Expect(src.IsChannel()).To(BeTrue())
-		})
-	})
 	Describe("FindFileWithPrefix", Label("find"), func() {
 		BeforeEach(func() {
 			err := utils.MkdirAll(fs, "/path/inner", constants.DirPerm)
