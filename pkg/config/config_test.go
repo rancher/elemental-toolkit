@@ -416,8 +416,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("RawDisk", Label("disk"), func() {
 			It("initiates a new RawDisk", func() {
-				disk := config.NewRawDisk(*c)
-				Expect(len((*disk)[c.Arch].Packages)).To(Equal(len(constants.GetBuildDiskDefaultPackages())))
+				disk := config.NewRawDisk()
+				Expect(len(disk.X86_64.Packages)).To(Equal(len(constants.GetBuildDiskDefaultPackages())))
 			})
 		})
 	})

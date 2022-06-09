@@ -387,7 +387,10 @@ type BuildConfig struct {
 	Config `yaml:",inline" mapstructure:",squash"`
 }
 
-type RawDisk map[string]*RawDiskArchEntry
+type RawDisk struct {
+	X86_64 *RawDiskArchEntry `yaml:"x86_64,omitempty" mapstructure:"x86_64"` //nolint:revive
+	Arm64  *RawDiskArchEntry `yaml:"arm64,omitempty" mapstructure:"arm64"`
+}
 
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found

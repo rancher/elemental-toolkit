@@ -67,6 +67,14 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return err
 			}
 
+			// Get the spec for the arch only
+			var specArch *v1.RawDiskArchEntry
+			if cfg.Arch == "x86_64" {
+				specArch = spec.X86_64
+			} else {
+				specArch = spec.Arm64
+			}
+
 			// TODO map these to buildconfig and rawdisk structs, so they
 			// are directly unmarshaled and there is no need handle them here
 			imgType, _ := flags.GetString("type")
@@ -76,7 +84,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			// Set the repo depending on the arch we are building for
 			var repos []v1.Repository
-			for _, u := range (*spec)[cfg.Arch].Repositories {
+			for _, u := range specArch.Repositories {
 				repos = append(repos, v1.Repository{
 					URI:         u.URI,
 					Priority:    constants.LuetDefaultRepoPrio,
@@ -97,7 +105,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return fmt.Errorf("output file %s exists, refusing to continue", output)
 			}
 
-			err = action.BuildDiskRun(cfg, spec, imgType, oemLabel, recoveryLabel, output)
+			err = action.BuildDiskRun(cfg, specArch, imgType, oemLabel, recoveryLabel, output)
 			if err != nil {
 				return err
 			}

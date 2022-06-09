@@ -35,15 +35,10 @@ import (
 var MB = int64(1024 * 1024)
 var GB = 1024 * MB
 
-func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDisk, imgType string, oemLabel string, recoveryLabel string, output string) (err error) {
+func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDiskArchEntry, imgType string, oemLabel string, recoveryLabel string, output string) (err error) {
 	cfg.Logger.Infof("Building disk image type %s for arch %s", imgType, cfg.Arch)
-	if (*spec)[cfg.Arch] == nil {
-		msg := fmt.Sprintf("no values in the config for arch %s", cfg.Arch)
-		cfg.Logger.Error(msg)
-		return errors.New(msg)
-	}
 
-	if len((*spec)[cfg.Arch].Packages) == 0 {
+	if len(spec.Packages) == 0 {
 		msg := fmt.Sprintf("no packages in the config for arch %s", cfg.Arch)
 		cfg.Logger.Error(msg)
 		return errors.New(msg)
@@ -84,15 +79,16 @@ func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDisk, imgType string, oemLabe
 	rootfsPart := filepath.Join(diskTempDir, "rootfs.part")
 	oemPart := filepath.Join(diskTempDir, "oem.part")
 	efiPart := filepath.Join(diskTempDir, "efi.part")
-
 	// Extract required packages to basedir
-	for _, pkg := range (*spec)[cfg.Arch].Packages {
+	for _, pkg := range spec.Packages {
 		err = os.MkdirAll(filepath.Join(baseDir, pkg.Target), constants.DirPerm)
 		if err != nil {
+			cfg.Logger.Error(err)
 			return err
 		}
 		imgSource, err := v1.NewSrcFromURI(pkg.Name)
 		if err != nil {
+			cfg.Logger.Error(err)
 			return err
 		}
 		err = e.DumpSource(

@@ -232,8 +232,8 @@ var _ = Describe("Runtime Actions", func() {
 	Describe("Build disk", Label("disk", "build"), func() {
 		var rawDisk *v1.RawDisk
 		BeforeEach(func() {
-			rawDisk = config.NewRawDisk(cfg.Config)
-			(*rawDisk)["x86_64"].Packages = []v1.RawDiskPackage{{Name: "oci:what", Target: "what"}}
+			rawDisk = config.NewRawDisk()
+			rawDisk.X86_64.Packages = []v1.RawDiskPackage{{Name: "oci:what", Target: "what"}}
 
 			cfg.Repos = []v1.Repository{{URI: "test"}}
 		})
@@ -251,7 +251,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, rawDisk, "raw", "", "", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "", "", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
@@ -287,7 +287,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, rawDisk, "raw", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
@@ -323,7 +323,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, rawDisk, "gce", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "gce", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
@@ -356,7 +356,7 @@ var _ = Describe("Runtime Actions", func() {
 			_ = fs.WriteFile(filepath.Join(partsDir, "oem.part"), []byte(""), os.ModePerm)
 			_ = fs.WriteFile(filepath.Join(partsDir, "efi.part"), []byte(""), os.ModePerm)
 
-			err := action.BuildDiskRun(cfg, rawDisk, "azure", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "azure", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
@@ -478,21 +478,15 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
 			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
 		})
-		It("Fails if the specs does not have an arch", func() {
-			rawDisk = &v1.RawDisk{}
-			err := action.BuildDiskRun(cfg, rawDisk, "raw", "OEM", "REC", "disk.raw")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("no values in the config for arch %s", cfg.Arch)))
-		})
 		It("Fails if the specs does not have packages", func() {
-			(*rawDisk)["x86_64"].Packages = []v1.RawDiskPackage{}
-			err := action.BuildDiskRun(cfg, rawDisk, "raw", "OEM", "REC", "disk.raw")
+			rawDisk.X86_64.Packages = []v1.RawDiskPackage{}
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", "disk.raw")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("no packages in the config for arch %s", cfg.Arch)))
 		})
 		It("Fails if config has no repos", func() {
 			cfg.Repos = []v1.Repository{}
-			err := action.BuildDiskRun(cfg, rawDisk, "raw", "OEM", "REC", "disk.raw")
+			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", "disk.raw")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("no repositories configured for arch %s", cfg.Arch)))
 		})

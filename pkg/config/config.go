@@ -434,7 +434,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
-func NewRawDisk(cfg v1.Config) *v1.RawDisk {
+func NewRawDisk() *v1.RawDisk {
 	var packages []v1.RawDiskPackage
 	defaultPackages := constants.GetBuildDiskDefaultPackages()
 
@@ -443,7 +443,8 @@ func NewRawDisk(cfg v1.Config) *v1.RawDisk {
 	}
 
 	return &v1.RawDisk{
-		cfg.Arch: &v1.RawDiskArchEntry{Packages: packages},
+		X86_64: &v1.RawDiskArchEntry{Packages: packages},
+		Arm64:  &v1.RawDiskArchEntry{Packages: packages},
 	}
 }
 
