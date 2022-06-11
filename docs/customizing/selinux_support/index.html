@@ -17,23 +17,23 @@
 <link rel="icon" type="image/png" href="https://rancher.github.io/elemental-toolkit/favicons/android-144x144.png" sizes="144x144">
 <link rel="icon" type="image/png" href="https://rancher.github.io/elemental-toolkit/favicons/android-192x192.png" sizes="192x192">
 
-<title>Deploying | Elemental toolkit</title>
-<meta name="description" content="Elemental toolkit documentation website"><meta property="og:title" content="Deploying" />
-<meta property="og:description" content="How to deploy derivatives images from Elemental vanilla images
+<title>SELinux Support | Elemental toolkit</title>
+<meta name="description" content="Elemental toolkit documentation website"><meta property="og:title" content="SELinux Support" />
+<meta property="og:description" content="SELinux support in Elemental
 " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/getting-started/deploy/" /><meta property="article:section" content="docs" />
-<meta property="article:published_time" content="2021-10-27T00:00:00+00:00" />
+<meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-06-10T00:00:00+00:00" />
 <meta property="article:modified_time" content="2022-06-11T21:48:46+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
-<meta itemprop="name" content="Deploying">
-<meta itemprop="description" content="How to deploy derivatives images from Elemental vanilla images
-"><meta itemprop="datePublished" content="2021-10-27T00:00:00+00:00" />
+<meta itemprop="name" content="SELinux Support">
+<meta itemprop="description" content="SELinux support in Elemental
+"><meta itemprop="datePublished" content="2022-06-10T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2022-06-11T21:48:46+02:00" />
-<meta itemprop="wordCount" content="237">
+<meta itemprop="wordCount" content="926">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Deploying"/>
-<meta name="twitter:description" content="How to deploy derivatives images from Elemental vanilla images
+<meta name="twitter:title" content="SELinux Support"/>
+<meta name="twitter:description" content="SELinux support in Elemental
 "/>
 
 
@@ -230,7 +230,7 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsgetting-started-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsgetting-started-li">
     
       <a href="https://rancher.github.io/elemental-toolkit/docs/getting-started/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-docsgetting-started"><span class="">Getting Started</span></a>
     
@@ -393,7 +393,7 @@ if (!doNotTrack) {
   
   <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsgetting-starteddeploy-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/getting-started/deploy/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docsgetting-starteddeploy"><span class="td-sidebar-nav-active-item">Deploying</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/getting-started/deploy/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docsgetting-starteddeploy"><span class="">Deploying</span></a>
     
     
   </li>
@@ -424,7 +424,7 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docscustomizing-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docscustomizing-li">
     
       <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id="m-docscustomizing"><span class="">Customizing</span></a>
     
@@ -641,7 +641,7 @@ if (!doNotTrack) {
   
   <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscustomizingselinux_support-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docscustomizingselinux_support"><span class="">SELinux Support</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docscustomizingselinux_support"><span class="td-sidebar-nav-active-item">SELinux Support</span></a>
     
     
   </li>
@@ -2055,9 +2055,9 @@ if (!doNotTrack) {
     
     
 
-    <a href="https://github.com/rancher/elemental-toolkit/edit/master/docs/content/en/docs/Getting%20started/deploy.md" target="_blank"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
-    <a href="https://github.com/rancher/elemental-toolkit/new/master/docs/content/en/docs/Getting%20started/deploy.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" target="_blank"><i class="fa fa-edit fa-fw"></i> Create child page</a>
-    <a href="https://github.com/rancher/elemental-toolkit/issues/new?title=Deploying" target="_blank"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+    <a href="https://github.com/rancher/elemental-toolkit/edit/master/docs/content/en/docs/Customizing/selinux_support.md" target="_blank"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+    <a href="https://github.com/rancher/elemental-toolkit/new/master/docs/content/en/docs/Customizing/selinux_support.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" target="_blank"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+    <a href="https://github.com/rancher/elemental-toolkit/issues/new?title=SELinux%20Support" target="_blank"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
     
       
       <a href="https://github.com/rancher/elemental-toolkit/issues/new" target="_blank"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
@@ -2119,14 +2119,14 @@ if (!doNotTrack) {
 
 
 <li class="breadcrumb-item" >
-	<a href="https://rancher.github.io/elemental-toolkit/docs/getting-started/">Getting Started</a>
+	<a href="https://rancher.github.io/elemental-toolkit/docs/customizing/">Customizing</a>
 </li>
 
 
 
 
 <li class="breadcrumb-item active" aria-current="page">
-	<a href="https://rancher.github.io/elemental-toolkit/docs/getting-started/deploy/">Deploying</a>
+	<a href="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/">SELinux Support</a>
 </li>
 
 	</ol>
@@ -2134,8 +2134,8 @@ if (!doNotTrack) {
 
             
 <div class="td-content">
-	<h1>Deploying</h1>
-	<div class="lead">How to deploy derivatives images from Elemental vanilla images</div>
+	<h1>SELinux Support</h1>
+	<div class="lead">SELinux support in Elemental</div>
 	<header class="article-meta">
 		
 		
@@ -2151,36 +2151,74 @@ if (!doNotTrack) {
 		
 		
 	</header>    
-	<p>Elemental vanilla images, like ISOs, cloud images or raw disks can be used to deploy another derivative image.</p>
-<h2 id="elemental-reset"><code>elemental reset</code></h2>
-<p><code>elemental reset</code> can be used to reset the system from the recovery image or from a custom image. Vanilla images only include a minimal recovery partition and system.</p>
-<p>It can be either invoked manually with <code>elemental reset --system.uri &lt;img-ref&gt;</code> or used in conjuction with a cloud-init configuration, for example consider the following <a href="../../reference/cloud_init">cloud-init configuration file</a> that creates the <code>state</code> and <code>persistent</code> partitions during first boot (this is required on Elemental vanilla images):</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Default deployment&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">rootfs.after</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Repart image&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">layout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#8f5902;font-style:italic"># It will partition a device including the given filesystem label or part label (filesystem label matches first)</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">device</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span><span style="color:#204a87;font-weight:bold">label</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_RECOVERY</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">add_partitions</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_STATE</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># 10Gb for COS_STATE, so the disk should have at least 16Gb</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">size</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">10240</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">state</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">           </span>- <span style="color:#204a87;font-weight:bold">fsLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">COS_PERSISTENT</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#8f5902;font-style:italic"># unset size or 0 size means all available space</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">             </span><span style="color:#204a87;font-weight:bold">pLabel</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">persistent</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">network</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">if</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#39;[ -f &#34;/run/cos/recovery_mode&#34; ]&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Deploy Elemental system&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
-</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
-</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # Use `elemental reset --system.uri docker:&lt;img-ref&gt;` to deploy a custom image
-</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             # By default the recovery Elemental gets deployed
-</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">             elemental reset --reboot --system.uri docker:$IMAGE</span><span style="color:#f8f8f8;text-decoration:underline">             
-</span></span></span></code></pre></div><p>The following will first repartition the image after the <code>rootfs</code> <a href="../../customizing/stages">stage</a> and will run <code>elemental reset</code> when booting into <a href="../recovery">recovery mode</a>. RAW vanilla disk images automatically boot by default into recovery, so the first thing upon booting is deploying the system</p>
+	<p>Elemental includes basic support for SELinux. From an elemental perspective SELinux is some custom configurationt that requires special treatment. Being specific it mostly nails down to apply SELinux labels at install and upgrade time. Since the rootfs is readonly they can&rsquo;t be easily applied at runtime or at boot time. As consequence of that SELinux autorelabel service should not be used within elemental as it expects a RW root and persistency across reboots (it essentially reboots after appliying labels). For the time being Elemental only considers the <code>targeted</code> SELinux policy.</p>
+<p><code>elemental-cli</code> utility applies SELinux contexts to the installed/upgraded system if three conditions are met:</p>
+<ul>
+<li>the installed system includes the <code>setfiles</code> command</li>
+<li>the installed system includes the targeted files context (<code>/etc/selinux/targeted/contexts/files/file_contexts</code> file)</li>
+<li>the binary for <code>targeted</code> policy is also present (<code>/etc/selinux/targeted/policy/policy.*</code> file)</li>
+</ul>
+<p>In an Elemental workflow SElinux context labels should be applied at install/upgrade time for the readonly areas, but this is not enough as it doesn&rsquo;t cover the ephemeral filesystems (overlayfs on top of tmpfs), which are usually sensitive paths like <code>/etc/</code>, <code>/var</code>, <code>/srv</code>, etc. In order to properly apply file contexts over the ephemeral paths the relabelling has to happen at boot time once those overlayfs are created. The appropriate stage for that is in initrd before switching root. In fact, it can be done as a cloud-init step as part of the <code>initramfs</code> stage, as it happens in <code>cloud-config/selinux</code> Luet package. The package provides <code>10_selinux.yaml</code> with:</p>
 
+
+
+
+
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Default cOS OEM configuration file</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic"># Default cOS OEM configuration file</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic">#</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic"># This file is part of cOS and will get reset during upgrades.</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic">#</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic"># Before you change this file manually,</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic"># consider copying this file to /usr/local/cloud-config or</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#8f5902;font-style:italic"># copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;SELinux&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stages</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">initramfs</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;Relabelling&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">commands</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span>- <span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">           load_policy -i
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">           restorecon -R -i -v /etc /root /opt /srv /var /home /usr/local /oem</span><span style="color:#f8f8f8;text-decoration:underline">           
+</span></span></span></code></pre></div>
+
+<small> <i class='fab fa-github'></i> <i>Complete source code:  <a target=_blank href="https://github.com/rancher/elemental-toolkit/blob/master/packages/cloud-config/oem/10_selinux.yaml">https://github.com/rancher/elemental-toolkit/blob/master/packages/cloud-config/oem/10_selinux.yaml</a></i> </small>
+<hr>
+
+<p>Note it is required to load the policy in advance to be capable to apply the <code>restorecon</code> command. The <code>restorecon</code> command should be applied to all ephemeral paths and, depending on the specific use case, to the persistent paths too. Note that without restoring context on the ephemeral <code>/etc</code> it is unlikely the system is capable of properly booting, hence this is a very important step if SELinux is intended to used.</p>
+<h2 id="using-custom-selinux-modules">Using custom SELinux modules</h2>
+<p>Making use of <code>cloud-config/selinux</code> and including SELinux utilities and targeted policy within the base OS it is enough to get started with SELinux, however there is a great chance that this is too generic and requires some additional policy modules to be fully functional according to each specific use case. In that regard the  <code>system/elemental-selinux</code> luet package provides a basic custom module for illustration purposes, <strong>it should NOT be used as is</strong> in production. <code>system/elemental-selinux</code> provides the sources of a very simple Type Enforcement (TE) file (<code>/usr/share/elemental/selinux/elemental.te</code>) and the compiled Policy Package (<code>/usr/share/elemental/selinux/elemental.pp</code>) out of the TE file, ready to be installed and loaded by SELinux.</p>
+<p>The Type Enforcement file was created by booting an Elemental OS on permissive mode using <code>audit2allow</code> and other SELinux related utilities to generate the custom module out of the reported denials. Something like:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create the type enforcement file</span>
+</span></span><span style="display:flex;"><span>cat /var/log/audit/audit.log <span style="color:#000;font-weight:bold">|</span> audit2allow -m elemental &gt; elemental.te
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create the policy module</span>
+</span></span><span style="display:flex;"><span>checkmodule -M -m -o elemental.mod elemental.te
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create the policy package out of the module</span>
+</span></span><span style="display:flex;"><span>semodule_package -o elemental.pp -m elemental.mod
+</span></span></code></pre></div><p>To make effective the policy package it has to be loaded or installed within the selinux policy, this can be easily done with the <code>semodule -i /usr/share/elemental/selinux/elemental.pp</code> command. So from a derivative perspective and following the example from <a href="../../creating-derivatives/creating_bootable_images/#example">Creating bootable image</a> section adding the following lines to the Dockerfile should be enough to enable SELinux in enforcing mode:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Install the custom policy package if any and the restore context stage in cloud-init config</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> luet install -y system/elemental-selinux cloud-config/selinux<span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Load the policy package</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> semodule -i /usr/share/elemental/selinux/elemental.pp<span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Enable selinux in enforcing mode</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> sed -i <span style="color:#4e9a06">&#34;s|^SELINUX=.*|SELINUX=enforcing|g&#34;</span> /etc/selinux/config<span style="color:#a40000">
+</span></span></span></code></pre></div><p>The above assumes the base image already includes the SELinux packages and utilities provided by the underlaying distro. It is suggested to set the enforcing mode via the config file rather than setting grub with the selinux kernel parameter (<code>enforcing=1</code>), this way it is easier, at any time, to temporarily add <code>enforcing=0</code> at runtime within the grub2 shell and temporarily set SELinux in permissive mode.</p>
+<p>Notes when using a SELinux version prior to v3.4. If <code>libsemanage</code> version is lower than v3.4, it is likely that the <code>semodule -i *.pp</code> command fails with a cross-device linking issue, this is a known <a href="https://github.com/SELinuxProject/selinux/issues/343">issue</a> upstream and already fixed since v3.4. Command <code>selinux -i &lt;file&gt;</code> mutates files under <code>/var/lib/selinux/targeted</code> and used to rename some files, this can be tricky when executed inside a container as hardlinks across filesystems are not permitted and this is actually what happens if the overlayfs driver is used. This can be worked around if all the originally mutated files are already modified within the execution layer (so they are part of the upper layer of the overlayfs). So the above specific example could be rewritten as:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Install the custom policy package if any and the restore context stage in cloud-init config</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> luet install -y system/elemental-selinux cloud-config/selinux<span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Artificially modify selinux files to copy them in within the overlyfs and then load the policy package</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span><span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    cp --link --recursive /var/lib/selinux/targeted/previous /var/lib/selinux/targeted/active <span style="color:#ce5c00;font-weight:bold">&amp;&amp;</span><span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    semodule -i /usr/share/elemental/selinux/elemental.pp<span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Enable selinux in enforcing mode</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">RUN</span> sed -i <span style="color:#4e9a06">&#34;s|^SELINUX=.*|SELINUX=enforcing|g&#34;</span> /etc/selinux/config<span style="color:#a40000">
+</span></span></span></code></pre></div>
 	
 		<style>
   .feedback--answer {
