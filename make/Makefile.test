@@ -96,6 +96,20 @@ test-smoke: $(GINKGO)
 test-recovery: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery
 
+# Individual test recovery for arm64 in order to run them in parallel on the CI, otherwise the full test is too long
+
+test-recovery1: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "first-test" ./recovery
+
+test-recovery2: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "second-test" ./recovery
+
+test-recovery3: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "third-test" ./recovery
+
+test-recovery4: $(GINKGO)
+	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "fourth-test" ./recovery
+
 test-deploys-images-recovery: $(GINKGO)
 	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
 

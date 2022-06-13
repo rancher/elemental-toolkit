@@ -26,10 +26,16 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	Context("upgrading COS_ACTIVE from the recovery partition", func() {
 		AfterEach(func() {
 			if !CurrentSpecReport().Failed() {
-				s.Reset()
+				// Get the label filter
+				a, _ := GinkgoConfiguration()
+				// if no label was set, we are running the whole suite, so do the reset
+				// Otherwise we are only running one test, no need to reset the vm afterwards, saves time
+				if a.LabelFilter == "" {
+					s.Reset()
+				}
 			}
 		})
-		It("upgrades to the latest", func() {
+		It("upgrades to the latest", Label("first-test"), func() {
 			currentName := s.GetOSRelease("NAME")
 
 			By("booting into recovery to check the OS version")
@@ -53,7 +59,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 		})
 
-		It("upgrades to a specific image", func() {
+		It("upgrades to a specific image", Label("second-test"), func() {
 			err := s.ChangeBoot(sut.Active)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -84,8 +90,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		})
 	})
 
-	// After this tests the VM is no longer in its initial state!!
-	Context("upgrading recovery", func() {
+	// After this test, the VM is no longer in its initial state!!
+	Context("upgrading recovery", Label("third-test"), func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", func() {
 
@@ -114,7 +120,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			})
 		})
 
-		When("using upgrade channel", func() {
+		When("using upgrade channel", Label("fourth-test"), func() {
 			It("upgrades to latest image", func() {
 				By("upgrading recovery")
 				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery"))
