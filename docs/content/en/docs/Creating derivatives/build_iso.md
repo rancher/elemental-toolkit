@@ -17,7 +17,7 @@ To build an iso, just run:
 docker run --rm -ti -v $(pwd):/build quay.io/costoolkit/elemental:v0.0.14-e4e39d4 --debug build-iso -o /build $SOURCE
 ```
 
-Where `$SOURCE` might be the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images). Argument `$SOURCE` might be the reference to the directory, file, container image or chaneel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
+Where `$SOURCE` might be the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images). Argument `$SOURCE` might be the reference to the directory, file, container image or channel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
     * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is taken "docker"
     * <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then "latest" is used)
 
