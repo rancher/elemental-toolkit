@@ -47,6 +47,11 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("rootfs source image for building ISO was not provided"))
 	})
+	It("Errors out if rootfs is a non valid argument", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "build-iso", "/no/image/reference")
+		Expect(err).ToNot(BeNil())
+		Expect(err.Error()).To(ContainSubstring("unknown source type for"))
+	})
 	It("Errors out if overlay roofs path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
 			rootCmd, "build-iso", "system/cos", "--overlay-rootfs", "/nonexistingpath",
@@ -63,7 +68,7 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 	})
 	It("Errors out if overlay iso path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(
-			rootCmd, "build-iso", "/my/rootfs", "--overlay-iso", "/nonexistingpath",
+			rootCmd, "build-iso", "some/image:latest", "--overlay-iso", "/nonexistingpath",
 		)
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("Invalid path"))

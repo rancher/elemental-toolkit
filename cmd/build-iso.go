@@ -84,10 +84,15 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 					}
 					// ensure we set it as a docker type
 					imgSource = v1.NewDockerSrc(imageName)
+				} else if err != nil {
+					cfg.Logger.Errorf("not a valid rootfs source image argument: %s", args[0])
+					return err
 				}
 				spec.RootFS = []*v1.ImageSource{imgSource}
-			} else {
-				return fmt.Errorf("rootfs source image for building ISO was not provided")
+			} else if len(spec.RootFS) == 0 {
+				errmsg := "rootfs source image for building ISO was not provided"
+				cfg.Logger.Errorf(errmsg)
+				return fmt.Errorf(errmsg)
 			}
 
 			// Repos and overlays can't be unmarshaled directly as they require
@@ -129,6 +134,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			buildISO := action.NewBuildISOAction(cfg, spec)
 			err = buildISO.ISORun()
 			if err != nil {
+				cfg.Logger.Errorf(err.Error())
 				return err
 			}
 
