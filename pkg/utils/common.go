@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -496,4 +497,20 @@ func GolangArchToArch(arch string) (string, error) {
 	default:
 		return "", errInvalidArch
 	}
+}
+
+// CalcFileChecksum opens the given file and returns the sha256 checksum of it.
+func CalcFileChecksum(fs v1.FS, fileName string) (string, error) {
+	f, err := fs.Open(fileName)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }

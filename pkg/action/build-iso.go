@@ -196,14 +196,16 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 func (b BuildISOAction) burnISO(root string) error {
 	cmd := "xorriso"
 	var outputFile string
+	var isoFileName string
 
 	if b.cfg.Date {
 		currTime := time.Now()
-		outputFile = fmt.Sprintf("%s.%s.iso", b.cfg.Name, currTime.Format("20060102"))
+		isoFileName = fmt.Sprintf("%s.%s.iso", b.cfg.Name, currTime.Format("20060102"))
 	} else {
-		outputFile = fmt.Sprintf("%s.iso", b.cfg.Name)
+		isoFileName = fmt.Sprintf("%s.iso", b.cfg.Name)
 	}
 
+	outputFile = isoFileName
 	if b.cfg.OutDir != "" {
 		outputFile = filepath.Join(b.cfg.OutDir, outputFile)
 	}
@@ -229,6 +231,22 @@ func (b BuildISOAction) burnISO(root string) error {
 	if err != nil {
 		return err
 	}
+
+	// When we start Xorriso we expect either building the ISO img file or returning
+	// an error. During tests anyway we use the FakeRunner Runner: the Xorriso cmd is
+	// not run and we land here with no ISO img file and no error.
+	// Let's skip the checksum computation if the ISO img file is missing.
+	if exists, _ := utils.Exists(b.cfg.Fs, outputFile); exists {
+		checksum, err := utils.CalcFileChecksum(b.cfg.Fs, outputFile)
+		if err != nil {
+			return fmt.Errorf("checksum computation failed: %w", err)
+		}
+		err = b.cfg.Fs.WriteFile(fmt.Sprintf("%s.sha256", outputFile), []byte(fmt.Sprintf("%s %s\n", checksum, isoFileName)), 0644)
+		if err != nil {
+			return fmt.Errorf("cannot write checksum file: %w", err)
+		}
+	}
+
 	return nil
 }
 
