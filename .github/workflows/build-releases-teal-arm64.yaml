@@ -758,6 +758,7 @@ jobs:
       - name: upload repo file
         uses: actions/upload-artifact@v2
         with:
+          name: cos-arm64.yaml
           path: cos-arm64.yaml
       - name: Send failed status to slack
         if: failure()
