@@ -91,9 +91,9 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	})
 
 	// After this test, the VM is no longer in its initial state!!
-	Context("upgrading recovery", Label("third-test"), func() {
+	Context("upgrading recovery", func() {
 		When("using specific images", func() {
-			It("upgrades to a specific image and reset back to the installed version", func() {
+			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
 
 				version := s.GetOSRelease("VERSION")
 				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion))
@@ -120,8 +120,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			})
 		})
 
-		When("using upgrade channel", Label("fourth-test"), func() {
-			It("upgrades to latest image", func() {
+		When("using upgrade channel", func() {
+			It("upgrades to latest image", Label("fourth-test"), func() {
 				By("upgrading recovery")
 				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery"))
 				Expect(err).ToNot(HaveOccurred())
