@@ -59,5 +59,3 @@ build:
 repositories:
   - uri: quay.io/costoolkit/releases-teal
     arch: "x86_64"
-  - uri: quay.io/costoolkit/releases-teal-arm64
-    arch: "arm64"
