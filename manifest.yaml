@@ -1,11 +1,11 @@
 iso:
   rootfs:
-    - system/cos
+    - channel:system/cos
   uefi:
-    - live/grub2-efi-image
+    - channel:live/grub2-efi-image
   image:
-    - live/grub2
-    - live/grub2-efi-image
+    - channel:live/grub2
+    - channel:live/grub2-efi-image
   label: "COS_LIVE"
 
 name: "cOS-0"
@@ -14,40 +14,33 @@ label: "COS_LIVE"
 # Raw disk creation values start
 raw_disk:
   x86_64:
-    # Where to get the packages from if the local build doesn't have the needed packages
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal
     # which packages to install and the target to install them at
     packages:
-      - name: system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
-      - name: recovery/cos-img
+      - name: channel:recovery/cos-img
         target: root/cOS
   arm64:
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
-      - name: system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
-      - name: recovery/cos-img
+      - name: channel:recovery/cos-img
         target: root/cOS
   odroid_c2:
-    repositories:
-      - uri: quay.io/costoolkit/releases-teal-arm64
     packages:
-      - name: system/grub2-efi-image
+      - name: channel:system/grub2-efi-image
         target: efi
-      - name: system/grub2-config
+      - name: channel:system/grub2-config
         target: root
-      - name: system/grub2-artifacts
+      - name: channel:system/grub2-artifacts
         target: root/grub2
 # Raw disk creation values end
 
@@ -62,3 +55,9 @@ build:
   - system/grub2-artifacts
   - system/grub2-efi-image
   - toolchain/elemental-cli
+
+repositories:
+  - uri: quay.io/costoolkit/releases-teal
+    arch: "x86_64"
+  - uri: quay.io/costoolkit/releases-teal-arm64
+    arch: "arm64"
