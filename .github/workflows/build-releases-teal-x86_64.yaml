@@ -1259,7 +1259,7 @@ jobs:
           path: release
       - uses: actions/download-artifact@v2
         with:
-          name: cos-repo-x86_64.yaml
+          name: cos-x86_64.yaml
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1

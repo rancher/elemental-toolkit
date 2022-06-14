@@ -796,7 +796,7 @@
       {{{- end }}}
       - uses: actions/download-artifact@v2
         with:
-          name: cos-repo-{{{ $config.arch }}}.yaml
+          name: cos-{{{ $config.arch }}}.yaml
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1

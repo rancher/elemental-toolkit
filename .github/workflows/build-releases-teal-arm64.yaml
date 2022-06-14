@@ -849,7 +849,7 @@ jobs:
           path: release
       - uses: actions/download-artifact@v2
         with:
-          name: cos-repo-arm64.yaml
+          name: cos-arm64.yaml
           path: release
       - name: Release
         uses: fnkr/github-action-ghr@v1
