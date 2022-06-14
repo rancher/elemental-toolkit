@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jaypipes/ghw/pkg/block"
@@ -750,6 +751,21 @@ var _ = Describe("Utils", Label("utils"), func() {
 			utils.MkdirAll(fs, "/path", constants.DirPerm)
 			_, err := utils.FindFileWithPrefix(fs, "/path", "prefix", "anotherprefix")
 			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("CalcFileChecksum", Label("checksum"), func() {
+		It("compute correct sha256 checksum", func() {
+			testData := strings.Repeat("abcdefghilmnopqrstuvz\n", 20)
+			testDataSHA256 := "7f182529f6362ae9cfa952ab87342a7180db45d2c57b52b50a68b6130b15a422"
+
+			err := fs.Mkdir("/iso", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			err = fs.WriteFile("/iso/test.iso", []byte(testData), 0644)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			checksum, err := utils.CalcFileChecksum(fs, "/iso/test.iso")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(checksum).To(Equal(testDataSHA256))
 		})
 	})
 	Describe("Grub", Label("grub"), func() {
