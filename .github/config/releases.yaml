@@ -71,7 +71,10 @@ flavors:
         skip_tests: false
         run_tests:
           squashfs:
-            - "test-recovery"
+            - "test-recovery1"
+            - "test-recovery2"
+            - "test-recovery3"
+            - "test-recovery4"
           nonsquashfs:
             - "test-smoke"
             - "test-upgrades-images-unsigned"
