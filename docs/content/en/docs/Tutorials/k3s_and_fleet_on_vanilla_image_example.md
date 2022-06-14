@@ -8,7 +8,7 @@ description: >
   Running k3s and Fleet on a Elemental vanilla raw image
 ---
 
-This is a work in progress example of how to deploy K3S + Fleet + System Uprade Controller over a Elemental vanilla image only
+This is a work in progress example of how to deploy K3S + Fleet + System Upgrade Controller over a Elemental vanilla image only
 by using cloud-init yaml configuration files. The config file reproduced here is meant to be included
 as a user-data in a cloud provider (aws, gcp, azure, etc) or as part of a cdrom (Elemental-Recovery will try to fetch `/userdata` file
 from a cdrom device).
