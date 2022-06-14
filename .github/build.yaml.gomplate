@@ -685,6 +685,7 @@
       - name: upload repo file
         uses: actions/upload-artifact@v2
         with:
+          name: cos-{{{ $config.arch }}}.yaml
           path: cos-{{{ $config.arch }}}.yaml
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
