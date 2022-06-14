@@ -156,8 +156,8 @@ stages:
 			ghwTest := v1mock.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
-					Name:  "device1",
-					Label: "DEV_LABEL",
+					Name:            "device1",
+					FilesystemLabel: "DEV_LABEL",
 				},
 			}}
 			ghwTest.AddDisk(disk)

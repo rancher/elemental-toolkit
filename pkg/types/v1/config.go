@@ -182,14 +182,14 @@ func (u *UpgradeSpec) Sanitize() error {
 
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
-	Name       string
-	Label      string   `yaml:"label,omitempty" mapstructure:"label"`
-	Size       uint     `yaml:"size,omitempty" mapstructure:"size"`
-	FS         string   `yaml:"fs,omitempty" mapstrcuture:"fs"`
-	Flags      []string `yaml:"flags,omitempty" mapstrcuture:"flags"`
-	MountPoint string
-	Path       string
-	Disk       string
+	Name            string
+	FilesystemLabel string   `yaml:"label,omitempty" mapstructure:"label"`
+	Size            uint     `yaml:"size,omitempty" mapstructure:"size"`
+	FS              string   `yaml:"fs,omitempty" mapstrcuture:"fs"`
+	Flags           []string `yaml:"flags,omitempty" mapstrcuture:"flags"`
+	MountPoint      string
+	Path            string
+	Disk            string
 }
 
 type PartitionList []*Partition
@@ -207,7 +207,7 @@ func (pl PartitionList) GetByName(name string) *Partition {
 // GetByLabel gets a partition by its label from the PartitionList
 func (pl PartitionList) GetByLabel(label string) *Partition {
 	for _, p := range pl {
-		if p.Label == label {
+		if p.FilesystemLabel == label {
 			return p
 		}
 	}
@@ -227,22 +227,22 @@ type ElementalPartitions struct {
 func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable string) error {
 	if firmware == EFI && partTable == GPT {
 		ep.EFI = &Partition{
-			Label:      constants.EfiLabel,
-			Size:       constants.EfiSize,
-			Name:       constants.EfiPartName,
-			FS:         constants.EfiFs,
-			MountPoint: constants.EfiDir,
-			Flags:      []string{esp},
+			FilesystemLabel: constants.EfiLabel,
+			Size:            constants.EfiSize,
+			Name:            constants.EfiPartName,
+			FS:              constants.EfiFs,
+			MountPoint:      constants.EfiDir,
+			Flags:           []string{esp},
 		}
 		ep.BIOS = nil
 	} else if firmware == BIOS && partTable == GPT {
 		ep.BIOS = &Partition{
-			Label:      "",
-			Size:       constants.BiosSize,
-			Name:       constants.BiosPartName,
-			FS:         "",
-			MountPoint: "",
-			Flags:      []string{bios},
+			FilesystemLabel: "",
+			Size:            constants.BiosSize,
+			Name:            constants.BiosPartName,
+			FS:              "",
+			MountPoint:      "",
+			Flags:           []string{bios},
 		}
 		ep.EFI = nil
 	} else {

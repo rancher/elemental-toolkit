@@ -91,24 +91,24 @@ var _ = Describe("Reset action tests", func() {
 				Name: "device",
 				Partitions: []*block.Partition{
 					{
-						Name:  "device1",
-						Label: "COS_GRUB",
-						Type:  "ext4",
+						Name:            "device1",
+						FilesystemLabel: "COS_GRUB",
+						Type:            "ext4",
 					},
 					{
-						Name:  "device2",
-						Label: "COS_STATE",
-						Type:  "ext4",
+						Name:            "device2",
+						FilesystemLabel: "COS_STATE",
+						Type:            "ext4",
 					},
 					{
-						Name:  "device3",
-						Label: "COS_PERSISTENT",
-						Type:  "ext4",
+						Name:            "device3",
+						FilesystemLabel: "COS_PERSISTENT",
+						Type:            "ext4",
 					},
 					{
-						Name:  "device4",
-						Label: "COS_OEM",
-						Type:  "ext4",
+						Name:            "device4",
+						FilesystemLabel: "COS_OEM",
+						Type:            "ext4",
 					},
 				},
 			}

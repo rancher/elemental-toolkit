@@ -30,14 +30,14 @@ import (
 // ghwPartitionToInternalPartition transforms a block.Partition from ghw lib to our v1.Partition type
 func ghwPartitionToInternalPartition(partition *block.Partition) *v1.Partition {
 	return &v1.Partition{
-		Label:      partition.Label,
-		Size:       uint(partition.SizeBytes / (1024 * 1024)), // Converts B to MB
-		Name:       partition.Name,
-		FS:         partition.Type,
-		Flags:      nil,
-		MountPoint: partition.MountPoint,
-		Path:       filepath.Join("/dev", partition.Name),
-		Disk:       filepath.Join("/dev", partition.Disk.Name),
+		FilesystemLabel: partition.FilesystemLabel,
+		Size:            uint(partition.SizeBytes / (1024 * 1024)), // Converts B to MB
+		Name:            partition.Name,
+		FS:              partition.Type,
+		Flags:           nil,
+		MountPoint:      partition.MountPoint,
+		Path:            filepath.Join("/dev", partition.Name),
+		Disk:            filepath.Join("/dev", partition.Disk.Name),
 	}
 }
 

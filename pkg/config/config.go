@@ -233,39 +233,39 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 func NewInstallElementalParitions() v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 	partitions.OEM = &v1.Partition{
-		Label:      constants.OEMLabel,
-		Size:       constants.OEMSize,
-		Name:       constants.OEMPartName,
-		FS:         constants.LinuxFs,
-		MountPoint: constants.OEMDir,
-		Flags:      []string{},
+		FilesystemLabel: constants.OEMLabel,
+		Size:            constants.OEMSize,
+		Name:            constants.OEMPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      constants.OEMDir,
+		Flags:           []string{},
 	}
 
 	partitions.Recovery = &v1.Partition{
-		Label:      constants.RecoveryLabel,
-		Size:       constants.RecoverySize,
-		Name:       constants.RecoveryPartName,
-		FS:         constants.LinuxFs,
-		MountPoint: constants.RecoveryDir,
-		Flags:      []string{},
+		FilesystemLabel: constants.RecoveryLabel,
+		Size:            constants.RecoverySize,
+		Name:            constants.RecoveryPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      constants.RecoveryDir,
+		Flags:           []string{},
 	}
 
 	partitions.State = &v1.Partition{
-		Label:      constants.StateLabel,
-		Size:       constants.StateSize,
-		Name:       constants.StatePartName,
-		FS:         constants.LinuxFs,
-		MountPoint: constants.StateDir,
-		Flags:      []string{},
+		FilesystemLabel: constants.StateLabel,
+		Size:            constants.StateSize,
+		Name:            constants.StatePartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      constants.StateDir,
+		Flags:           []string{},
 	}
 
 	partitions.Persistent = &v1.Partition{
-		Label:      constants.PersistentLabel,
-		Size:       constants.PersistentSize,
-		Name:       constants.PersistentPartName,
-		FS:         constants.LinuxFs,
-		MountPoint: constants.PersistentDir,
-		Flags:      []string{},
+		FilesystemLabel: constants.PersistentLabel,
+		Size:            constants.PersistentSize,
+		Name:            constants.PersistentPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      constants.PersistentDir,
+		Flags:           []string{},
 	}
 	return partitions
 }

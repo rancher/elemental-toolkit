@@ -315,10 +315,10 @@ var _ = Describe("Config", Label("config"), func() {
 					Name: "device",
 					Partitions: []*block.Partition{
 						{
-							Name:       "device2",
-							Label:      "COS_STATE",
-							Type:       "ext4",
-							MountPoint: constants.RunningStateDir,
+							Name:            "device2",
+							FilesystemLabel: "COS_STATE",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
 						},
 					},
 				}
@@ -371,16 +371,16 @@ var _ = Describe("Config", Label("config"), func() {
 					Name: "device",
 					Partitions: []*block.Partition{
 						{
-							Name:       "device2",
-							Label:      "COS_STATE",
-							Type:       "ext4",
-							MountPoint: constants.RunningStateDir,
+							Name:            "device2",
+							FilesystemLabel: "COS_STATE",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
 						},
 						{
-							Name:       "device3",
-							Label:      "COS_RECOVERY",
-							Type:       "ext4",
-							MountPoint: constants.RunningStateDir,
+							Name:            "device3",
+							FilesystemLabel: "COS_RECOVERY",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
 						},
 					},
 				}

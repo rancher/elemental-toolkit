@@ -87,7 +87,7 @@ func (g *GhwMock) CreateDevices() {
 			// Create the /sys/block/DISK_NAME/PARTITION_NAME/dev file which contains the major:minor of the partition
 			_ = ioutil.WriteFile(filepath.Join(diskPath, partition.Name, "dev"), []byte(fmt.Sprintf("%d:6%d\n", indexDisk, indexPart)), 0644)
 			// Create the /run/udev/data/bMAJOR:MINOR file with the data inside to mimic the udev database
-			data := []string{fmt.Sprintf("E:ID_FS_LABEL=%s\n", partition.Label)}
+			data := []string{fmt.Sprintf("E:ID_FS_LABEL=%s\n", partition.FilesystemLabel)}
 			if partition.Type != "" {
 				data = append(data, fmt.Sprintf("E:ID_FS_TYPE=%s\n", partition.Type))
 			}

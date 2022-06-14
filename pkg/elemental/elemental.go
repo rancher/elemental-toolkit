@@ -42,7 +42,7 @@ func NewElemental(config *v1.Config) *Elemental {
 // FormatPartition will format an already existing partition
 func (e *Elemental) FormatPartition(part *v1.Partition, opts ...string) error {
 	e.config.Logger.Infof("Formatting '%s' partition", part.Name)
-	return partitioner.FormatDevice(e.config.Runner, part.Path, part.FS, part.Label, opts...)
+	return partitioner.FormatDevice(e.config.Runner, part.Path, part.FS, part.FilesystemLabel, opts...)
 }
 
 // PartitionAndFormatDevice creates a new empty partition table on target disk
@@ -85,8 +85,8 @@ func (e *Elemental) createAndFormatPartition(disk *partitioner.Disk, part *v1.Pa
 		return err
 	}
 	if part.FS != "" {
-		e.config.Logger.Debugf("Formatting partition with label %s", part.Label)
-		err = partitioner.FormatDevice(e.config.Runner, partDev, part.FS, part.Label)
+		e.config.Logger.Debugf("Formatting partition with label %s", part.FilesystemLabel)
+		err = partitioner.FormatDevice(e.config.Runner, partDev, part.FS, part.FilesystemLabel)
 		if err != nil {
 			e.config.Logger.Errorf("Failed formatting partition %s", part.Name)
 			return err
@@ -157,23 +157,23 @@ func (e Elemental) UnmountPartitions(parts v1.PartitionList) error {
 
 // MountPartition mounts a partition with the given mount options
 func (e Elemental) MountPartition(part *v1.Partition, opts ...string) error {
-	e.config.Logger.Debugf("Mounting partition %s", part.Label)
+	e.config.Logger.Debugf("Mounting partition %s", part.FilesystemLabel)
 	err := utils.MkdirAll(e.config.Fs, part.MountPoint, cnst.DirPerm)
 	if err != nil {
 		return err
 	}
 	if part.Path == "" {
 		// Lets error out only after 10 attempts to find the device
-		device, err := utils.GetDeviceByLabel(e.config.Runner, part.Label, 10)
+		device, err := utils.GetDeviceByLabel(e.config.Runner, part.FilesystemLabel, 10)
 		if err != nil {
-			e.config.Logger.Errorf("Could not find a device with label %s", part.Label)
+			e.config.Logger.Errorf("Could not find a device with label %s", part.FilesystemLabel)
 			return err
 		}
 		part.Path = device
 	}
 	err = e.config.Mounter.Mount(part.Path, part.MountPoint, "auto", opts)
 	if err != nil {
-		e.config.Logger.Errorf("Failed mounting device %s with label %s", part.Path, part.Label)
+		e.config.Logger.Errorf("Failed mounting device %s with label %s", part.Path, part.FilesystemLabel)
 		return err
 	}
 	return nil
@@ -185,7 +185,7 @@ func (e Elemental) UnmountPartition(part *v1.Partition) error {
 		e.config.Logger.Debugf("Not unmounting partition, %s doesn't look like mountpoint", part.MountPoint)
 		return nil
 	}
-	e.config.Logger.Debugf("Unmounting partition %s", part.Label)
+	e.config.Logger.Debugf("Unmounting partition %s", part.FilesystemLabel)
 	return e.config.Mounter.Unmount(part.MountPoint)
 }
 
