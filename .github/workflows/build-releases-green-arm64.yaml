@@ -255,6 +255,10 @@ jobs:
             registry: quay.io
             username: ${{ secrets.QUAY_USERNAME }}
             password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -264,10 +268,6 @@ jobs:
         run: |
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin

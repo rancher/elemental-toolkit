@@ -143,6 +143,10 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -152,10 +156,6 @@ jobs:
         run: |
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
       - name: Install deps
         run: |
           sudo apt-get update
