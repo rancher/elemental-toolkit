@@ -32,8 +32,10 @@ import (
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
-var MB = int64(1024 * 1024)
-var GB = 1024 * MB
+const (
+	MB = int64(1024 * 1024)
+	GB = 1024 * MB
+)
 
 func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDiskArchEntry, imgType string, oemLabel string, recoveryLabel string, output string) (err error) {
 	cfg.Logger.Infof("Building disk image type %s for arch %s", imgType, cfg.Arch)
@@ -45,7 +47,7 @@ func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDiskArchEntry, imgType string
 	}
 
 	if len(cfg.Config.Repos) == 0 {
-		msg := fmt.Sprintf("no repositories configured for arch %s", cfg.Arch)
+		msg := "no repositories configured"
 		cfg.Logger.Error(msg)
 		return errors.New(msg)
 	}

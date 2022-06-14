@@ -19,8 +19,10 @@ package luet_test
 import (
 	"bytes"
 	"context"
-	"github.com/rancher/elemental-cli/pkg/utils"
 	"testing"
+
+	"github.com/rancher/elemental-cli/pkg/constants"
+	"github.com/rancher/elemental-cli/pkg/utils"
 
 	dockTypes "github.com/docker/docker/api/types"
 	dockClient "github.com/docker/docker/client"
@@ -36,9 +38,10 @@ import (
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
+
 	"github.com/rancher/elemental-cli/pkg/luet"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/sirupsen/logrus"
 )
 
 func TestElementalSuite(t *testing.T) {
@@ -59,7 +62,10 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		fs.Mkdir("/etc/luet", os.ModePerm)
 		target, err = os.MkdirTemp("", "elemental")
 		Expect(err).To(BeNil())
-		l = luet.NewLuet(luet.WithLogger(v1.NewNullLogger()))
+		l = luet.NewLuet(
+			luet.WithLogger(v1.NewNullLogger()),
+			luet.WithArch(constants.Archx86),
+		)
 	})
 	AfterEach(func() {
 		Expect(os.RemoveAll(target)).To(BeNil())
@@ -89,11 +95,11 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 		})
 		Describe("UnpackFromChannel", Label("unpack", "channel"), func() {
 			It("Check that luet can unpack from channel", Label("root"), func() {
-				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal"}
+				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal", Arch: constants.Archx86}
 				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).To(BeNil())
 			})
 			It("Fails to unpack with a repository with no URI", func() {
-				repo := v1.Repository{}
+				repo := v1.Repository{Arch: constants.Archx86}
 				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err.Error()).To(ContainSubstring("no URI is provided"))
 				Expect(err).NotTo(BeNil())
@@ -110,7 +116,7 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 				Expect(err).NotTo(BeNil())
 			})
 			It("Fails to unpack with a strange repository that cant get the type for", func() {
-				repo := v1.Repository{URI: "is:this:real:life"}
+				repo := v1.Repository{URI: "is:this:real:life", Arch: constants.Archx86}
 				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err.Error()).To(ContainSubstring("Invalid Luet repository URI"))
 				Expect(err).NotTo(BeNil())
@@ -118,6 +124,12 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 			It("Fails to unpack from channel without root privileges", func() {
 				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal"}
 				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).ToNot(BeNil())
+			})
+			It("Fails to unpack from channel without matching arch", func() {
+				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal-arm-64", Arch: constants.ArchArm64}
+				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err.Error()).To(ContainSubstring("package 'utils/gomplate->=0' not found"))
+				Expect(err).NotTo(BeNil())
 			})
 		})
 

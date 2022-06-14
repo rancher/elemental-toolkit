@@ -19,14 +19,14 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/action"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mountUtils "k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
 // NewBuildDisk returns a new instance of the build-disk subcommand and appends it to
@@ -82,22 +82,9 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			oemLabel, _ := flags.GetString("oem_label")
 			recoveryLabel, _ := flags.GetString("recovery_label")
 
-			// Set the repo depending on the arch we are building for
-			var repos []v1.Repository
-			for _, u := range specArch.Repositories {
-				repos = append(repos, v1.Repository{
-					URI:         u.URI,
-					Priority:    constants.LuetDefaultRepoPrio,
-					Name:        u.Name,
-					ReferenceID: u.ReferenceID,
-					Arch:        u.Arch,
-					Type:        u.Type,
-				})
-			}
-
 			// Only overwrite repos if some are defined, default repo is alredy there
-			if len(repos) > 0 {
-				cfg.Config.Repos = repos
+			if len(cfg.Repos) > 0 {
+				cfg.Config.Repos = cfg.Repos
 			}
 
 			if exists, _ := utils.Exists(cfg.Fs, output); exists {

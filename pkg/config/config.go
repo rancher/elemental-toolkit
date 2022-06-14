@@ -21,14 +21,15 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/twpayne/go-vfs"
+	"k8s.io/mount-utils"
+
 	"github.com/rancher/elemental-cli/pkg/cloudinit"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/http"
 	"github.com/rancher/elemental-cli/pkg/luet"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
-	"github.com/twpayne/go-vfs"
-	"k8s.io/mount-utils"
 )
 
 type GenericOptions func(a *v1.Config) error
@@ -98,13 +99,12 @@ func WithArch(arch string) func(r *v1.Config) error {
 
 func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
-	arch := func() string {
-		switch runtime.GOARCH {
-		case "amd64":
-			return "x86_64"
-		}
-		return runtime.GOARCH
-	}()
+	arch, err := utils.GolangArchToArch(runtime.GOARCH)
+	if err != nil {
+		log.Errorf("invalid arch: %s", err.Error())
+		return nil
+	}
+
 	c := &v1.Config{
 		Fs:                        vfs.OSFS,
 		Logger:                    log,
@@ -117,6 +117,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 	for _, o := range opts {
 		err := o(c)
 		if err != nil {
+			log.Errorf("error applying config option: %s", err.Error())
 			return nil
 		}
 	}
@@ -480,7 +481,7 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	}
 	if len(b.Repos) == 0 {
 		repo := constants.LuetDefaultRepoURI
-		if b.Arch != "x86_64" {
+		if b.Arch != constants.Archx86 {
 			repo = fmt.Sprintf("%s-%s", constants.LuetDefaultRepoURI, b.Arch)
 		}
 		b.Repos = []v1.Repository{{

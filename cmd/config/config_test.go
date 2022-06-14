@@ -21,20 +21,22 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/rancher/elemental-cli/cmd/config"
 	"github.com/sanity-io/litter"
+
+	. "github.com/rancher/elemental-cli/cmd/config"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
+
+	"github.com/rancher/elemental-cli/pkg/constants"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 )
 
 var _ = Describe("Config", Label("config"), func() {
@@ -166,8 +168,6 @@ var _ = Describe("Config", Label("config"), func() {
 				// From config file
 				Expect(len(disk.X86_64.Packages)).To(Equal(1))
 				Expect(disk.X86_64.Packages[0].Name).To(Equal("system/myos"))
-				Expect(len(disk.X86_64.Repositories)).To(Equal(1))
-				Expect(disk.X86_64.Repositories[0].URI).To(Equal("quay.io/some/repo"))
 			})
 		})
 	})
