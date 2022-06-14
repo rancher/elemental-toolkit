@@ -267,6 +267,7 @@
       ARCH: {{{ $config.arch }}}
     steps:
       {{{ tmpl.Exec "prepare_worker" }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -276,7 +277,6 @@
         run: |
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
-      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Install deps
         run: |
           sudo apt-get update
@@ -634,6 +634,7 @@
             username: ${{ secrets.QUAY_USERNAME }}
             password: ${{ secrets.QUAY_PASSWORD }}
       {{{- end }}}
+      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
@@ -643,7 +644,6 @@
         run: |
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
-      {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Grab metadata from remotes
         run: |
           export PATH=$PATH:/usr/local/go/bin
