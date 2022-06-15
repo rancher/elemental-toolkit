@@ -274,7 +274,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("Builds a raw image", func() {
+		It("Builds a raw image", Label("serial"), func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file
@@ -310,7 +310,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("Builds a raw image with GCE output", func() {
+		It("Builds a raw image with GCE output", Label("serial"), func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file
@@ -343,7 +343,7 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 		})
-		It("Builds a raw image with Azure output", func() {
+		It("Builds a raw image with Azure output", Label("serial"), func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file

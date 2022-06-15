@@ -488,6 +488,7 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 			Name:     "cos",
 			Type:     "docker",
 			URI:      repo,
+			Arch:     b.Arch,
 			Priority: constants.LuetDefaultRepoPrio,
 		}}
 	}
