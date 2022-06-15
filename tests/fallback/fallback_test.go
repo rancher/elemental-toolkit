@@ -184,7 +184,9 @@ var _ = Describe("cOS booting fallback tests", func() {
 			// But this is enough for us to assess if it actually kicked in.
 			out, err := s.Command("sudo journalctl")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(ContainSubstring("systemd-fsck"))
+			Expect(out).To(ContainSubstring("e2fsck"))
+			Expect(out).To(ContainSubstring("Checking inodes"))
+			Expect(out).Should(MatchRegexp("COS_PERSISTENT: .* files"))
 		})
 	})
 
