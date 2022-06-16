@@ -61,6 +61,8 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
@@ -78,6 +80,19 @@ jobs:
           sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
+      - name: Generate manifests
+        run: |
+          for f in build/*tar*; do
+            [ -e "$f" ] || continue
+            sudo -E luet mtree -- generate $f -o "$f.mtree"
+          done
+      - name: Append manifests to metadata
+        run: |
+          for f in build/*mtree; do
+            [ -e "$f" ] || continue
+            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
+            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
+          done
       - name: Fix git permissions for CVE-2022-24765
         # This fixes running git commands on our git directory under sudo user
         # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
@@ -341,56 +356,6 @@ jobs:
           name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
           if-no-files-found: error
-  tests-squashfs-teal:
-    env:
-      ARCH: x86_64
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-    runs-on: macos-10.15
-    needs: vbox-squashfs-teal
-    strategy:
-      matrix:
-        test: [ test-recovery ]
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
-      - uses: actions/checkout@v2
-      - name: Download vagrant box
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Packer-squashfs-teal-vbox-x86_64.box
-          path: packer
-      - name: Prepare tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-clean
-          make prepare-test
-      - name: Run tests 🔧
-        run: |
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
   tests-nonsquashfs-teal-installer-efi:
     env:
       ARCH: x86_64
@@ -565,56 +530,232 @@ jobs:
           name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
           if-no-files-found: error
-  tests-nonsquashfs-teal:
-    env:
-      ARCH: x86_64
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-    runs-on: macos-10.15
-    needs: vbox-nonsquashfs-teal
-    strategy:
-      matrix:
-        test: [ test-features, test-hooks, test-smoke, test-fallback, test-recovery, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
+  image-link-teal:
+    runs-on: ubuntu-latest
+    needs: publish-teal
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
       - uses: actions/checkout@v2
-      - name: Download vagrant box
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Generate link for teal
+        run: |
+            source .github/helpers.sh
+            PACKAGE_VERSION=$(cos_package_version)
+            export COS_VERSION="${PACKAGE_VERSION/+/-}"
+            echo "quay.io/costoolkit/releases-teal:cos-system-${COS_VERSION}" > images-teal-x86_64.txt
+      - uses: actions/upload-artifact@v2
+        with:
+          name: images-teal-x86_64.txt
+          path: |
+            images-teal-x86_64.txt
+  publish-teal:
+    runs-on: ubuntu-latest
+    needs:
+    - build-teal-x86_64
+    - iso-squashfs-teal
+    permissions:
+      id-token: write  # undocumented OIDC support.
+    env:
+      FLAVOR: teal
+      ARCH: x86_64
+      FINAL_REPO: quay.io/costoolkit/releases-teal
+      DOWNLOAD_METADATA: true
+      DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
+      COSIGN_EXPERIMENTAL: 1 # use keyless signing
+      PUBLISH_ARGS: "--plugin luet-cosign"
+      COSIGN_FULCIO_URL: "https://v1.fulcio.sigstore.dev"
+    steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-amd64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+            registry: quay.io
+            username: ${{ secrets.QUAY_USERNAME }}
+            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-teal-x86_64
+          path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
+      - name: Grab metadata from remotes
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          pushd ./.github
+          go build -o build build.go
+          popd
+          sudo -E ./.github/build
+          ls -liah $PWD/build
+      - name: Fix git permissions for CVE-2022-24765
+        # This fixes running git commands on our git directory under sudo user
+        # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
+        run: |
+          sudo git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
+      - name: Publish to DockerHub 🚀
+        run: |
+          sudo -E make publish-repo
+      - name: upload cosign logs
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: luetcosign.log.zip
+          path: /tmp/luet-cosign.log
+          if-no-files-found: warn
+  generate-repo-files-teal:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+      - publish-teal
+    env:
+      LUET_REPO_ARCH: amd64
+      FINAL_REPO: quay.io/costoolkit/releases-teal
+    steps:
+      - uses: actions/checkout@v2
+      - uses: mikefarah/yq@v4.25.1
+      - run: |
+          yq '.urls = ["${{ env.FINAL_REPO }}"]' .github/cos.yaml.template | yq '.reference = "${{ github.ref_name }}-repository.yaml"' | yq '.arch = "${{ env.LUET_REPO_ARCH }}"'> cos-x86_64.yaml
+      - name: upload repo file
+        uses: actions/upload-artifact@v2
+        with:
+          name: cos-x86_64.yaml
+          path: cos-x86_64.yaml
+  github-release-teal:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+    - build-teal-x86_64
+    - raw-images-teal
+    - vbox-nonsquashfs-teal
+    - qemu-nonsquashfs-teal
+    - iso-nonsquashfs-teal
+    - image-link-teal
+    - generate-repo-files-teal
+    env:
+      FLAVOR: teal
+      ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-x86_64.iso.zip
+          path: iso-release
+      - name: Download vagrant box (vbox)
         uses: actions/download-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.box
-          path: packer
-      - name: Prepare tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-clean
-          make prepare-test
-      - name: Run tests 🔧
-        run: |
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure()
+          path: release
+      - name: Download OVA image
+        uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
+          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.ova
+          path: release
+      - name: Download vagrant box (qemu)
+        uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.box
+          path: release
+      - name: Download QCOW image
+        uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.qcow
+          path: release
+      - name: Download GCE RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-x86_64
+          path: release
+      - name: Download AZURE RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-x86_64
+          path: release
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64
+          path: release
+      - name: Download Image links
+        uses: actions/download-artifact@v2
+        with:
+          name: images-teal-x86_64.txt
+          path: release
+      - uses: actions/download-artifact@v2
+        with:
+          name: cos-x86_64.yaml
+          path: release
+      - name: Release
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_COMPRESS: xz
+          GHR_PATH: release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release ISO
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_PATH: iso-release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   raw-images-teal:
     runs-on: [self-hosted, x64]
     needs:
@@ -745,3 +886,189 @@ jobs:
           name: cOS-raw_disk_test_deploy-teal.capture.zip
           path: capture.webm
           if-no-files-found: warn
+  build-toolchain-tagged:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: [self-hosted, x64]
+    needs: publish-teal
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Build  🔧
+        run: |
+          tag="${{ env.COS_VERSION }}"
+          export P_VERSION="${tag/+/-}"
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
+          docker push quay.io/costoolkit/toolchain:$P_VERSION
+  build-toolchain-latest:
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    runs-on: [self-hosted, x64]
+    needs: publish-teal
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Build  🔧
+        run: |
+          tag="latest"
+          export P_VERSION="${tag/+/-}"
+          docker build -t quay.io/costoolkit/toolchain:$P_VERSION .
+          docker push quay.io/costoolkit/toolchain:$P_VERSION
+  build-framework-tagged:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs: publish-teal
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Prepare
+        id: prep
+        run: |
+          tag="${{ env.COS_VERSION }}"
+          P_VERSION="${tag/+/-}"
+          # Set output parameters.
+          echo ::set-output name=tags::quay.io/costoolkit/framework:${P_VERSION}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ./images/framework
+          file: ./images/framework/Dockerfile
+          platforms: "linux/arm64,linux/amd64"
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
+  build-framework-latest:
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+    needs: publish-teal
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
+      - name: Prepare
+        id: prep
+        run: |
+          tag="latest"
+          P_VERSION="${tag/+/-}"
+          # Set output parameters.
+          echo ::set-output name=tags::quay.io/costoolkit/framework:${P_VERSION}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: ./images/framework
+          file: ./images/framework/Dockerfile
+          platforms: "linux/arm64,linux/amd64"
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}

@@ -9,15 +9,15 @@ flavors:
         runs_on: [ "self-hosted", "x64" ]
         pipeline: "PR"
         push_cache: false
-        publishing_pipeline: false
-        publish_toolchain: false
+        publishing_pipeline: true
+        publish_toolchain: true
         publish_cloud: false
         skip_build: false
         skip_docker_build: true
         repository: "releases" # releases for prod
         cache_repository: "build"
         organization: "quay.io/costoolkit"
-        skip_tests: false
+        skip_tests: true
         flavor: "teal"
         skip_tests_flavor: [ "blue", "orange", "green" ]
         skip_images_flavor: [ "blue", "orange", "green" ]
@@ -60,7 +60,7 @@ flavors:
         runs_on: [ "self-hosted", "arm64" ]
         pipeline: "PR"
         push_cache: false
-        publishing_pipeline: false
+        publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: false
         skip_build: false
@@ -69,7 +69,7 @@ flavors:
         repository: "releases" # releases for prod
         cache_repository: "build"
         organization: "quay.io/costoolkit"
-        skip_tests: false
+        skip_tests: true
         run_tests:
           squashfs:
             - "test-recovery1"

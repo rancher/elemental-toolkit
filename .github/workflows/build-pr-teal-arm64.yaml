@@ -58,6 +58,8 @@ jobs:
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
@@ -75,6 +77,19 @@ jobs:
           sudo -E ./.github/build
           ls -liah $PWD/build
           sudo chmod -R 777 $PWD/build
+      - name: Generate manifests
+        run: |
+          for f in build/*tar*; do
+            [ -e "$f" ] || continue
+            sudo -E luet mtree -- generate $f -o "$f.mtree"
+          done
+      - name: Append manifests to metadata
+        run: |
+          for f in build/*mtree; do
+            [ -e "$f" ] || continue
+            BASE_NAME=`basename -s .package.tar.zst.mtree $f`
+            sudo -E .github/append_manifests.py build/$BASE_NAME.metadata.yaml $f mtree
+          done
       - name: Fix git permissions for CVE-2022-24765
         # This fixes running git commands on our git directory under sudo user
         # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
@@ -209,70 +224,6 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-  tests-squashfs-teal:
-    env:
-      ARCH: arm64
-      VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
-      COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1800
-    runs-on: ubuntu-latest
-    needs: qemu-squashfs-teal
-    strategy:
-      matrix:
-        test: [ test-recovery1, test-recovery2, test-recovery3, test-recovery4 ]
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
-      - uses: actions/checkout@v2
-      - name: Download vagrant box
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Packer-squashfs-teal-QEMU-arm64.box
-          path: packer
-      - name: Install deps
-        run: |
-          sudo -E make deps
-          sudo apt-get update
-          sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
-      - name: Prepare libvirt
-        run: |
-          # Create bridge conf
-          sudo mkdir -p /etc/qemu/
-          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
-          sudo chmod u+r /etc/qemu/bridge.conf
-          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
-          # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
-      - name: Enable serial for default vagrant-libvirt machine
-        run: |
-          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      - name: Prepare tests 🔧
-        run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-clean
-          make prepare-test
-      - name: Run tests 🔧
-        run: |
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: serial_log.log
-          if-no-files-found: warn
   qemu-nonsquashfs-teal:
     runs-on: ubuntu-latest
     needs: iso-nonsquashfs-teal
@@ -320,70 +271,221 @@ jobs:
           path: |
             packer/*.box
           if-no-files-found: error
-  tests-nonsquashfs-teal:
-    env:
-      ARCH: arm64
-      VAGRANT_CPU: 2
-      VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
-      COS_HOST: "192.168.122.50:22"
-      COS_TIMEOUT: 1800
+  image-link-teal:
     runs-on: ubuntu-latest
-    needs: qemu-nonsquashfs-teal
-    strategy:
-      matrix:
-        test: [ test-smoke, test-upgrades-images-unsigned ]
+    needs: publish-teal
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
       - uses: actions/checkout@v2
-      - name: Download vagrant box
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Generate link for teal
+        run: |
+            source .github/helpers.sh
+            PACKAGE_VERSION=$(cos_package_version)
+            export COS_VERSION="${PACKAGE_VERSION/+/-}"
+            echo "quay.io/costoolkit/releases-teal-arm64:cos-system-${COS_VERSION}" > images-teal-arm64.txt
+      - uses: actions/upload-artifact@v2
+        with:
+          name: images-teal-arm64.txt
+          path: |
+            images-teal-arm64.txt
+  publish-teal:
+    runs-on: ubuntu-latest
+    needs:
+    - build-teal-arm64
+    - iso-squashfs-teal
+    permissions:
+      id-token: write  # undocumented OIDC support.
+    env:
+      FLAVOR: teal
+      ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-teal-arm64
+      DOWNLOAD_METADATA: true
+      DOWNLOAD_ONLY: true
+      DOWNLOAD_FATAL_MISSING_PACKAGES: true
+      COSIGN_EXPERIMENTAL: 1 # use keyless signing
+      PUBLISH_ARGS: "--plugin luet-cosign"
+      COSIGN_FULCIO_URL: "https://v1.fulcio.sigstore.dev"
+    steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install Go
+        run: |
+          curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+      - name: Install make
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y make
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+            registry: quay.io
+            username: ${{ secrets.QUAY_USERNAME }}
+            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Download result for build
+        uses: actions/download-artifact@v2
+        with:
+          name: build-teal-arm64
+          path: build
+      - name: Add build repository
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make add_local_repo
+      - name: Grab metadata from remotes
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          pushd ./.github
+          go build -o build build.go
+          popd
+          sudo -E ./.github/build
+          ls -liah $PWD/build
+      - name: Fix git permissions for CVE-2022-24765
+        # This fixes running git commands on our git directory under sudo user
+        # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
+        run: |
+          sudo git config --global --add safe.directory ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
+      - name: Publish to DockerHub 🚀
+        run: |
+          sudo -E make publish-repo
+      - name: upload cosign logs
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: luetcosign.log.zip
+          path: /tmp/luet-cosign.log
+          if-no-files-found: warn
+  generate-repo-files-teal:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+      - publish-teal
+    env:
+      LUET_REPO_ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-teal-arm64
+    steps:
+      - uses: actions/checkout@v2
+      - uses: mikefarah/yq@v4.25.1
+      - run: |
+          yq '.urls = ["${{ env.FINAL_REPO }}"]' .github/cos.yaml.template | yq '.reference = "${{ github.ref_name }}-repository.yaml"' | yq '.arch = "${{ env.LUET_REPO_ARCH }}"'> cos-arm64.yaml
+      - name: upload repo file
+        uses: actions/upload-artifact@v2
+        with:
+          name: cos-arm64.yaml
+          path: cos-arm64.yaml
+  github-release-teal:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    needs:
+    - build-teal-arm64
+    - raw-images-teal
+    - qemu-nonsquashfs-teal
+    - iso-nonsquashfs-teal
+    - image-link-teal
+    - generate-repo-files-teal
+    env:
+      FLAVOR: teal
+      ARCH: arm64
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run make deps_ci
+        run: |
+          export DOCKER_INSTALL=true
+          sudo -E make deps_ci
+      - name: Export cos version
+        run: |
+             source .github/helpers.sh
+             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
+      - name: Download ISO
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-nonsquashfs-teal-arm64.iso.zip
+          path: iso-release
+      - name: Download vagrant box (qemu)
         uses: actions/download-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.box
-          path: packer
-      - name: Install deps
-        run: |
-          sudo -E make deps
-          sudo apt-get update
-          sudo apt-get remove -y apparmor*
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
-      - name: Prepare libvirt
-        run: |
-          # Create bridge conf
-          sudo mkdir -p /etc/qemu/
-          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
-          sudo chmod u+r /etc/qemu/bridge.conf
-          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
-          # Set a static ip for our VM
-          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
-      - name: Enable serial for default vagrant-libvirt machine
-        run: |
-          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
-          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      - name: Prepare tests 🔧
-        run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-clean
-          make prepare-test
-      - name: Run tests 🔧
-        run: |
-          make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
-        if: failure()
+          path: release
+      - name: Download QCOW image
+        uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
+          name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.qcow
+          path: release
+      - name: Download GCE RAW image
+        uses: actions/download-artifact@v2
         with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: serial_log.log
-          if-no-files-found: warn
+          name: cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64
+          path: release
+      - name: Download AZURE RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64
+          path: release
+      - name: Download RAW image
+        uses: actions/download-artifact@v2
+        with:
+          name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64
+          path: release
+      - name: Download Image links
+        uses: actions/download-artifact@v2
+        with:
+          name: images-teal-arm64.txt
+          path: release
+      - uses: actions/download-artifact@v2
+        with:
+          name: cos-arm64.yaml
+          path: release
+      - name: Release
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_COMPRESS: xz
+          GHR_PATH: release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release ISO
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_PATH: iso-release/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   raw-images-teal:
     runs-on: [self-hosted, arm64]
     needs:
