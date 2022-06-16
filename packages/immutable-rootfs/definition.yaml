@@ -1,6 +1,6 @@
 name: "immutable-rootfs"
 category: "system"
-version: 0.6-4
+version: 0.6-5
 requires:
   - name: "cos-setup"
     category: "system"
