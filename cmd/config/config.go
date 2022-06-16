@@ -122,7 +122,7 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	// If a config file is found, read it in.
 	_ = viper.MergeInConfig()
 
-	// Bind runconfig flags
+	// Bind buildconfig flags
 	bindGivenFlags(viper.GetViper(), flags)
 	// merge environment variables on top for rootCmd
 	viperReadEnv(viper.GetViper(), "BUILD", constants.GetBuildKeyEnvMap())
@@ -133,8 +133,7 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 		cfg.Logger.Warnf("error unmarshalling config: %s", err)
 	}
 
-	l.Arch = cfg.Arch
-
+	err = cfg.Sanitize()
 	cfg.Logger.Debugf("Full config loaded: %s", litter.Sdump(cfg))
 	return cfg, err
 }

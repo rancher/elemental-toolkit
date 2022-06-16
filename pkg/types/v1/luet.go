@@ -21,4 +21,5 @@ type LuetInterface interface {
 	UnpackFromChannel(string, string, ...Repository) error
 	SetPlugins(...string)
 	GetPlugins() []string
+	SetArch(string)
 }

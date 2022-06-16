@@ -47,7 +47,7 @@ type Luet struct {
 	plugins           []string
 	VerifyImageUnpack bool
 	TmpDir            string
-	Arch              string
+	arch              string
 }
 
 type Options func(l *Luet) error
@@ -99,7 +99,7 @@ func WithLuetTempDir(tmpDir string) func(r *Luet) error {
 
 func WithArch(arch string) func(r *Luet) error {
 	return func(l *Luet) error {
-		l.Arch = arch
+		l.arch = arch
 		return nil
 	}
 }
@@ -133,6 +133,10 @@ func NewLuet(opts ...Options) *Luet {
 	}
 
 	return luet
+}
+
+func (l *Luet) SetArch(arch string) {
+	l.arch = arch
 }
 
 func (l *Luet) SetPlugins(plugins ...string) {
@@ -186,6 +190,8 @@ func (l Luet) Unpack(target string, image string, local bool) error {
 // 3. Repo type is docker if the URL is of type [<dommain>[:<port>]]/<path>
 // Returns error if the type does not match any of any criteria.
 func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, error) {
+	var err error
+
 	if repo.URI == "" {
 		return luetTypes.LuetRepository{}, fmt.Errorf("Invalid repository, no URI is provided: %v", repo)
 	}
@@ -209,6 +215,14 @@ func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, 
 		}
 	}
 
+	arch := l.arch
+	if repo.Arch != "" {
+		arch, err = utils.ArchToGolangArch(repo.Arch)
+		if err != nil {
+			return luetTypes.LuetRepository{}, err
+		}
+	}
+
 	if repo.ReferenceID == "" {
 		repo.ReferenceID = "repository.yaml"
 	}
@@ -225,6 +239,7 @@ func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, 
 		Urls:        []string{repo.URI},
 		Type:        repoType,
 		ReferenceID: repo.ReferenceID,
+		Arch:        arch,
 	}, nil
 }
 
@@ -240,7 +255,8 @@ func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Re
 	if len(repositories) > 0 {
 		repos = luetTypes.LuetRepositories{}
 		for _, r := range repositories {
-			if l.Arch != r.Arch {
+			// If the repository has no arch assigned matches all
+			if r.Arch != "" && l.arch != r.Arch {
 				l.log.Debugf("skipping repository '%s' for arch '%s'", r.Name, r.Arch)
 				continue
 			}

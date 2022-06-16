@@ -31,6 +31,7 @@ type FakeLuet struct {
 	unpackCalled                bool
 	unpackFromChannelCalled     bool
 	plugins                     []string
+	arch                        string
 }
 
 func NewFakeLuet() *FakeLuet {
@@ -75,4 +76,8 @@ func (l *FakeLuet) SetPlugins(plugins ...string) {
 
 func (l *FakeLuet) GetPlugins() []string {
 	return l.plugins
+}
+
+func (l *FakeLuet) SetArch(arch string) {
+	l.arch = arch
 }

@@ -62,6 +62,8 @@ func (c *Config) Sanitize() error {
 	if c.Verify {
 		c.Luet.SetPlugins(constants.LuetMtreePlugin)
 	}
+	// Ensure luet arch matches Config.Arch
+	c.Luet.SetArch(c.Arch)
 	return nil
 }
 
@@ -400,6 +402,12 @@ type BuildConfig struct {
 	// 'inline' and 'squash' labels ensure config fields
 	// are embedded from a yaml and map PoV
 	Config `yaml:",inline" mapstructure:",squash"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+//if unsolvable inconsistencies are found
+func (b *BuildConfig) Sanitize() error {
+	return b.Config.Sanitize()
 }
 
 type RawDisk struct {

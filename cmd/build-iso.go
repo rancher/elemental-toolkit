@@ -128,7 +128,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			for _, u := range repoURIs {
-				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio})
+				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio, Arch: cfg.Arch})
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, spec)
