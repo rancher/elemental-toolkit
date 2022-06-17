@@ -41,7 +41,7 @@ flavors:
         build_raw_image: true
         run_raw_image_test: true
         run_installer_test: true
-        release_flavor: [ "teal" ]
+        release_flavor: [ ]
         arch: "x86_64"
         on:
           pull_request:
@@ -88,7 +88,7 @@ flavors:
         build_image_vbox: false
         build_raw_image: true
         run_raw_image_test: false
-        release_flavor: [ "teal" ]
+        release_flavor: [ ]
         arch: "arm64"
         # labels required for this job to run, list of labels. All will be required.
         labels: [ "arm64" ]
