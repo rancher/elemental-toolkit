@@ -598,7 +598,7 @@
     - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
     {{{- if not ( has $config.skip_images_flavor $flavor ) }}}
-    - iso-squashfs-{{{ $flavor }}}
+    - iso-nonsquashfs-{{{ $flavor }}}
     {{{- end }}}
     {{{- else }}}
     needs: tests-squashfs-{{{ $flavor }}}

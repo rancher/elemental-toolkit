@@ -554,7 +554,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - build-teal-x86_64
-    - iso-squashfs-teal
+    - iso-nonsquashfs-teal
     permissions:
       id-token: write  # undocumented OIDC support.
     env:
