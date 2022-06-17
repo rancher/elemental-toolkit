@@ -14,6 +14,9 @@ function doLoopMount {
         # Ensure run system-fsck, at least, for the root partition
         systemd-fsck "${partdev}"
 
+        # Only run systemd-fsck if root is already found
+        [ "${found}" == ok ] && continue
+
         mount -t auto -o "${cos_root_perm}" "${partdev}" "${cos_state}" || continue
         if [ -f "${cos_state}/${cos_img}" ]; then
 
@@ -22,7 +25,7 @@ function doLoopMount {
             # attempt to run systemd-fsck on the loop device
             systemd-fsck "${dev}"
 
-            exit 0
+            found="ok"
         else
             umount "${cos_state}"
         fi
@@ -36,6 +39,7 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 declare cos_img=$1
 declare cos_root_perm="ro"
 declare cos_state="/run/initramfs/cos-state"
+declare found=""
 
 [ -z "${cos_img}" ] && exit 1
 
@@ -48,6 +52,9 @@ ismounted "${cos_state}" && exit 0
 mkdir -p "${cos_state}"
 
 doLoopMount
+if [ "${found}" == "ok" ]; then
+    exit 0
+fi
 
 rm -r "${cos_state}"
 exit 1
