@@ -3,7 +3,7 @@
 #
 #
 
-GINKGO_ARGS?=-progress -v --failFast -r --timeout=3h
+GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
 
 GINKGO?=$(shell which ginkgo 2> /dev/null)
 ifeq ("$(GINKGO)","")
