@@ -21,18 +21,22 @@ jobs:
             dockerfile: "examples/odroid-c2-leap"
             platforms: "linux/arm64"
             model: odroid_c2
+            upload-image: false
           - tag: "odroid-c2-"
             dockerfile: "examples/odroid-c2"
             platforms: "linux/arm64"
             model: odroid_c2
+            upload-image: true
           - tag: "rpi-leap-"
             dockerfile: "examples/rpi-leap"
             platforms: "linux/arm64"
             model: rpi64
+            upload-image: true
           - tag: "rpi-"
             dockerfile: "examples/rpi"
             platforms: "linux/arm64"
             model: rpi64
+            upload-image: true
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -110,7 +114,7 @@ jobs:
           path: build
           if-no-files-found: error
       - name: "Release"
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && matrix.upload-image
         uses: fnkr/github-action-ghr@v1
         env:
           GHR_COMPRESS: xz

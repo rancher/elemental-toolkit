@@ -14,3 +14,4 @@ packer/packer_cache/
 tests/**/logs
 serial_port1.log
 capture.webm
+
