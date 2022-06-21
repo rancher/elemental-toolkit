@@ -15,7 +15,7 @@ function doLoopMount {
         systemd-fsck "${partdev}"
 
         # Only run systemd-fsck if root is already found
-        [ "${found}" == ok ] && continue
+        [ "${found}" == "ok" ] && continue
 
         mount -t auto -o "${cos_root_perm}" "${partdev}" "${cos_state}" || continue
         if [ -f "${cos_state}/${cos_img}" ]; then
