@@ -144,12 +144,7 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string, uefiDir st
 	}
 
 	b.cfg.Logger.Info("Creating squashfs...")
-	squashOptions := constants.GetDefaultSquashfsOptions()
-	if len(b.cfg.SquashFsCompressionConfig) > 0 {
-		squashOptions = append(squashOptions, b.cfg.SquashFsCompressionConfig...)
-	} else {
-		squashOptions = append(squashOptions, constants.GetDefaultSquashfsCompressionOptions()...)
-	}
+	squashOptions := append(constants.GetDefaultSquashfsOptions(), b.cfg.SquashFsCompressionConfig...)
 	err = utils.CreateSquashFS(b.cfg.Runner, b.cfg.Logger, rootDir, filepath.Join(isoDir, constants.IsoRootFile), squashOptions)
 	if err != nil {
 		return err

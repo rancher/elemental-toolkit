@@ -301,8 +301,8 @@ func (e *Elemental) DeployImage(img *v1.Image, leaveMounted bool) error {
 			return err
 		}
 		if img.FS == cnst.SquashFs {
-			opts := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)
-			err = utils.CreateSquashFS(e.config.Runner, e.config.Logger, target, img.File, opts)
+			squashOptions := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)
+			err = utils.CreateSquashFS(e.config.Runner, e.config.Logger, target, img.File, squashOptions)
 			if err != nil {
 				return err
 			}

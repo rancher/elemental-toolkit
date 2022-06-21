@@ -53,6 +53,7 @@ type Config struct {
 	Repos                     []Repository `yaml:"repositories,omitempty" mapstructure:"repositories"`
 	Arch                      string       `yaml:"arch,omitempty" mapstructure:"arch"`
 	SquashFsCompressionConfig []string     `yaml:"squash-compression,omitempty" mapstructure:"squash-compression"`
+	SquashFsNoCompression     bool         `yaml:"squash-no-compression,omitempty" mapstructure:"squash-no-compression"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -61,6 +62,12 @@ func (c *Config) Sanitize() error {
 	// Set Luet plugins, we only use the mtree plugin for now
 	if c.Verify {
 		c.Luet.SetPlugins(constants.LuetMtreePlugin)
+	}
+	// If no squashcompression is set, zero the compression parameters
+	// By default on NewConfig the SquashFsCompressionConfig is set to the default values, and then override
+	// on config unmarshall.
+	if c.SquashFsNoCompression {
+		c.SquashFsCompressionConfig = []string{}
 	}
 	// Ensure luet arch matches Config.Arch
 	c.Luet.SetArch(c.Arch)
