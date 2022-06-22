@@ -41,7 +41,7 @@ test_deps:
 	go get github.com/onsi/ginkgo/v2/ginkgo/internal@v2.1.4
 	go get github.com/onsi/ginkgo/v2/ginkgo/generators@v2.1.4
 	go get github.com/onsi/ginkgo/v2/ginkgo/labels@v2.1.4
-	go install github.com/onsi/ginkgo/v2/ginkgo
+	go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
 
 test: $(GINKGO)
 	ginkgo run --label-filter '!root && !serial' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt -p -r ${PKG}

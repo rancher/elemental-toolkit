@@ -1,0 +1,4 @@
+include *.go pylib/*.c pylib/*.go
+recursive-include vendor/github.com/moby/buildkit/frontend/dockerfile/command *.go
+recursive-include vendor/github.com/moby/buildkit/frontend/dockerfile/parser *.go
+global-exclude *_test.go
