@@ -19,10 +19,10 @@ jobs:
       - name: Create Pull Request
         id: pr
         uses: peter-evans/create-pull-request@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         with:
           commit-message: "[auto] Update cmd docs"
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          push-to-fork: cos-ci-forks/elemental-cli
           signoff: true
           title: "[auto] Update cmd docs"
           delete-branch: true
@@ -31,9 +31,3 @@ jobs:
             davidcassany
             mudler
             mjura
-      - name: Enable auto-merge
-        uses: peter-evans/enable-pull-request-automerge@v2
-        if: ${{ steps.pr.outputs.pull-request-number }}
-        with:
-          token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          pull-request-number: ${{ steps.pr.outputs.pull-request-number }}
