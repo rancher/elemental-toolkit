@@ -254,6 +254,8 @@ var _ = Describe("Runtime Actions", func() {
 
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "", "", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
+			_ = fs.RemoveAll(filesDir)
+			_ = fs.RemoveAll(partsDir)
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
 			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
@@ -264,6 +266,7 @@ var _ = Describe("Runtime Actions", func() {
 			// it should be exactly 20Mb(efi size) + 64Mb(oem size) + 2048Mb(recovery size) + 3Mb(hybrid boot) + 1Mb(GPT)
 			partsSize := (20 + 64 + 2048 + 3 + 1) * 1024 * 1024
 			Expect(output.Size()).To(BeNumerically("==", partsSize))
+			_ = fs.RemoveAll(outputDir)
 			// Check that mkfs commands set the label properly and copied the proper dirs
 			err = runner.IncludesCmds([][]string{
 				{"mkfs.ext2", "-L", constants.RecoveryLabel, "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
@@ -274,7 +277,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("Builds a raw image", Label("serial"), func() {
+		It("Builds a raw image", func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file
@@ -290,6 +293,8 @@ var _ = Describe("Runtime Actions", func() {
 
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
+			_ = fs.RemoveAll(filesDir)
+			_ = fs.RemoveAll(partsDir)
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
 			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
@@ -300,6 +305,7 @@ var _ = Describe("Runtime Actions", func() {
 			// it should be exactly 20Mb(efi size) + 64Mb(oem size) + 2048Mb(recovery size) + 3Mb(hybrid boot) + 1Mb(GPT)
 			partsSize := (20 + 64 + 2048 + 3 + 1) * 1024 * 1024
 			Expect(output.Size()).To(BeNumerically("==", partsSize))
+			_ = fs.RemoveAll(outputDir)
 			// Check that mkfs commands set the label properly and copied the proper dirs
 			err = runner.IncludesCmds([][]string{
 				{"mkfs.ext2", "-L", "REC", "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
@@ -310,7 +316,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 		})
-		It("Builds a raw image with GCE output", Label("serial"), func() {
+		It("Builds a raw image with GCE output", func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file
@@ -326,12 +332,15 @@ var _ = Describe("Runtime Actions", func() {
 
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "gce", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
+			_ = fs.RemoveAll(filesDir)
+			_ = fs.RemoveAll(partsDir)
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
 			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
 			Expect(memLog.String()).To(ContainSubstring("oem.part"))
 			realPath, _ := fs.RawPath(outputDir)
 			Expect(dockerArchive.IsArchivePath(filepath.Join(realPath, "disk.raw.tar.gz"))).To(BeTrue())
+			_ = fs.RemoveAll(outputDir)
 			// Check that mkfs commands set the label properly and copied the proper dirs
 			err = runner.IncludesCmds([][]string{
 				{"mkfs.ext2", "-L", "REC", "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
@@ -343,7 +352,7 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 		})
-		It("Builds a raw image with Azure output", Label("serial"), func() {
+		It("Builds a raw image with Azure output", func() {
 			// temp dir for output, otherwise we write to .
 			outputDir, _ := utils.TempDir(fs, "", "output")
 			// temp dir for package files, create needed file
@@ -359,6 +368,8 @@ var _ = Describe("Runtime Actions", func() {
 
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "azure", "OEM", "REC", filepath.Join(outputDir, "disk.raw"))
 			Expect(err).ToNot(HaveOccurred())
+			_ = fs.RemoveAll(filesDir)
+			_ = fs.RemoveAll(partsDir)
 			// Check that we copied all needed files to final image
 			Expect(memLog.String()).To(ContainSubstring("efi.part"))
 			Expect(memLog.String()).To(ContainSubstring("rootfs.part"))
@@ -377,6 +388,7 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
 			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
 			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+			_ = fs.RemoveAll(outputDir)
 			// Check that mkfs commands set the label properly and copied the proper dirs
 			err = runner.IncludesCmds([][]string{
 				{"mkfs.ext2", "-L", "REC", "-d", "/tmp/elemental-build-disk-files/root", "/tmp/elemental-build-disk-parts/rootfs.part"},
