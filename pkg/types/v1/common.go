@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+
+	"github.com/distribution/distribution/reference"
 )
 
 const (
@@ -71,10 +73,22 @@ func (i *ImageSource) CustomUnmarshal(data interface{}) (bool, error) {
 	if !ok {
 		return false, fmt.Errorf("can't unmarshal %+v to an ImageSource type", data)
 	}
-	return false, i.updateFromURI(src)
+	err := i.updateFromURI(src)
+	return false, err
 }
 
 func (i *ImageSource) updateFromURI(uri string) error {
+	eURI := i.parseURI(uri)
+	if eURI != nil {
+		eRef := i.parseImageReference(uri)
+		if eRef != nil {
+			return fmt.Errorf("%s and %s", eURI.Error(), eRef.Error())
+		}
+	}
+	return nil
+}
+
+func (i *ImageSource) parseURI(uri string) error {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return err
@@ -100,6 +114,18 @@ func (i *ImageSource) updateFromURI(uri string) error {
 	default:
 		return fmt.Errorf("unknown source type for %s", uri)
 	}
+	return nil
+}
+
+func (i *ImageSource) parseImageReference(ref string) error {
+	n, err := reference.ParseNormalizedNamed(ref)
+	if err != nil {
+		return fmt.Errorf("invalid image reference %s", ref)
+	} else if reference.IsNameOnly(n) {
+		ref += ":latest"
+	}
+	i.srcType = oci
+	i.source = ref
 	return nil
 }
 

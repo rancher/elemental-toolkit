@@ -77,14 +77,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if len(args) == 1 {
 				imgSource, err := v1.NewSrcFromURI(args[0])
-				if err != nil && utils.ValidContainerReference(args[0]) {
-					imageName := args[0]
-					if !utils.ValidTaggedContainerReference(imageName) {
-						imageName = imageName + ":latest"
-					}
-					// ensure we set it as a docker type
-					imgSource = v1.NewDockerSrc(imageName)
-				} else if err != nil {
+				if err != nil {
 					cfg.Logger.Errorf("not a valid rootfs source image argument: %s", args[0])
 					return err
 				}

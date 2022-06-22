@@ -63,15 +63,27 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			_, err = o.CustomUnmarshal("docker:some/image")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.IsDocker()).To(BeTrue())
+
+			// No scheme is parsed as an image reference and
+			// defaults to latest tag if none
+			_, err = o.CustomUnmarshal("registry.company.org/my/image")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.Value()).To(Equal("registry.company.org/my/image:latest"))
+
+			_, err = o.CustomUnmarshal("registry.company.org/my/image:tag")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.Value()).To(Equal("registry.company.org/my/image:tag"))
 		})
 		It("fails to unmarshal non string types", func() {
 			o := v1.NewEmptySrc()
 			_, err := o.CustomUnmarshal(map[string]string{})
 			Expect(err).Should(HaveOccurred())
 		})
-		It("fails to unmarshal unknown scheme", func() {
+		It("fails to unmarshal unknown scheme and invalid image reference", func() {
 			o := v1.NewEmptySrc()
-			_, err := o.CustomUnmarshal("scheme:some.opaque.uri.org")
+			_, err := o.CustomUnmarshal("scheme://some.uri.org")
 			Expect(err).Should(HaveOccurred())
 		})
 		It("fails to unmarshal invalid uri", func() {
