@@ -18,6 +18,7 @@ elemental upgrade [flags]
       --recovery                         Upgrade the recovery
       --recovery-system.uri string       Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')
   -x, --squash-compression stringArray   cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')
+      --squash-no-compression            Disable squashfs compression. Overrides any values on squash-compression
       --strict                           Enable strict check of hooks (They need to exit with 0)
       --system.uri string                Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
       --verify                           Enable mtree checksum verification (requires images manifests generated with mtree separately)

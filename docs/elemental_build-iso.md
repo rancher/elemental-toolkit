@@ -31,6 +31,7 @@ elemental build-iso SOURCE [flags]
       --overlay-uefi string              Path of the overlayed uefi data
       --repo stringArray                 A repository URI for luet. Can be repeated to add more than one source.
   -x, --squash-compression stringArray   cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')
+      --squash-no-compression            Disable squashfs compression. Overrides any values on squash-compression
 ```
 
 ### Options inherited from parent commands
