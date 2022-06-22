@@ -52,14 +52,9 @@ endif
 _VALIDATE_OPTIONS?=-s
 
 #
-# extract packages from yaml spec
+# Luet packages
 #
-# ignore the label field as its a string
-PACKAGES?=$(shell yq '.build[],.iso[]|select(. != "COS_LIVE")|join(" ")' $(MANIFEST) | sed -e 's/channel://g' | sort -u)
-
-ifeq ("$(PACKAGES)","")
-	BUILD_ARGS+=--all
-endif
+PACKAGES?=--all
 
 ifeq ("$(PUSH_CACHE)","true")
 	BUILD_ARGS+=--push
@@ -78,7 +73,6 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 endif
 	# Buildkit is necessary due to https://github.com/moby/moby/issues/37965
-	@echo "PACKAGES >$(PACKAGES)<"
 	DOCKER_BUILDKIT=$(DOCKER_BUILDKIT) $(LUET) build $(BUILD_ARGS) \
 	--values $(ROOT_DIR)/values/$(FLAVOR)-$(ARCH).yaml \
 	--tree=$(TREE) \
