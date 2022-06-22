@@ -19,10 +19,11 @@ jobs:
       - name: Create Pull Request
         id: pr
         uses: peter-evans/create-pull-request@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         with:
           commit-message: "[auto] Update cmd docs"
           signoff: true
-          branch-suffix: short-commit-hash
           title: "[auto] Update cmd docs"
           delete-branch: true
           reviewers: |
@@ -30,3 +31,9 @@ jobs:
             davidcassany
             mudler
             mjura
+      - name: Enable auto-merge
+        uses: peter-evans/enable-pull-request-automerge@v2
+        if: ${{ steps.pr.outputs.pull-request-number }}
+        with:
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.pr.outputs.pull-request-number }}
