@@ -7,7 +7,8 @@ RUN zypper in -y docker curl squashfs xorriso make which mtools dosfstools jq gp
 COPY . /cOS
 WORKDIR /cOS
 
-RUN make deps
+RUN git config --global --add safe.directory /cOS && \ 
+    make deps
 
 ENTRYPOINT ["/usr/bin/make"]
 CMD ["build", "local-iso"]
