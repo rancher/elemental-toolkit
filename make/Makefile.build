@@ -55,7 +55,7 @@ _VALIDATE_OPTIONS?=-s
 # extract packages from yaml spec
 #
 # ignore the label field as its a string
-PACKAGES?=$(shell yq '.build[],.iso[]|select(. != "COS_LIVE")|join(" ")' | sort -u)
+PACKAGES?=$(shell yq '.build[],.iso[]|select(. != "COS_LIVE")|join(" ")' $(MANIFEST) | sed -e 's/channel://g' | sort -u)
 
 ifeq ("$(PACKAGES)","")
 	BUILD_ARGS+=--all
