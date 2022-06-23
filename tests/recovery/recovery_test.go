@@ -51,6 +51,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			By("upgrade active")
 			out, err := s.Command(s.ElementalCmd("upgrade"))
+			_, _ = fmt.Fprintln(GinkgoWriter, out)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -73,8 +74,11 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
-
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
+			By(fmt.Sprintf("upgrading to %s", s.GetSystemURIDocker()))
+			cmd := s.ElementalCmd("upgrade", "--system.uri", s.GetSystemURIDocker())
+			By(fmt.Sprintf("running %s", cmd))
+			out, err := s.Command(cmd)
+			_, _ = fmt.Fprintln(GinkgoWriter, out)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 			fmt.Fprint(GinkgoWriter, out)
@@ -96,8 +100,10 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
 
 				version := s.GetOSRelease("VERSION")
-				By(fmt.Sprintf("upgrading to %s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion))
-				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", fmt.Sprintf("docker:%s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion)))
+				By(fmt.Sprintf("upgrading to %s", s.GetRecoveryURIDocker()))
+				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", s.GetRecoveryURIDocker(), "--squash-no-compression")
+				By(fmt.Sprintf("running %s", cmd))
+				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
@@ -123,10 +129,12 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using upgrade channel", func() {
 			It("upgrades to latest image", Label("fourth-test"), func() {
 				By("upgrading recovery")
-				out, err := s.Command(s.ElementalCmd("upgrade", "--recovery"))
+				cmd := s.ElementalCmd("upgrade", "--recovery", "--squash-no-compression")
+				By(fmt.Sprintf("running %s", cmd))
+				out, err := s.Command(cmd)
+				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
-
 				By("Reboot to upgraded recovery")
 				err = s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
