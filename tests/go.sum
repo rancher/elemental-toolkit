@@ -59,6 +59,8 @@ github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220614101555-2eddf3b113e2 h1
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220614101555-2eddf3b113e2/go.mod h1:rZj2a+V44LvtFVH/vsFXtHYIWMP1Q9aSrl6RGLbk49A=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220623091144-931f0f2ea958 h1:KQzQF+OfLI4s/W1h/WnVPtkzs8tG/1pHceIOPvFJG44=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220623091144-931f0f2ea958/go.mod h1:rZj2a+V44LvtFVH/vsFXtHYIWMP1Q9aSrl6RGLbk49A=
+github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220623122227-d02e491f278b h1:TKeeDmdrrpA4rUysdy6So8RLV6MAg9AGPDqxWVXWatA=
+github.com/rancher-sandbox/ele-testhelpers v0.0.0-20220623122227-d02e491f278b/go.mod h1:rZj2a+V44LvtFVH/vsFXtHYIWMP1Q9aSrl6RGLbk49A=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
