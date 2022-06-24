@@ -466,7 +466,7 @@ jobs:
         with:
           name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
-          if-no-files-found: error
+          if-no-files-found: warn
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0
@@ -830,7 +830,7 @@ jobs:
         with:
           name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
-          if-no-files-found: error
+          if-no-files-found: warn
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0

@@ -340,7 +340,7 @@ jobs:
         with:
           name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
-          if-no-files-found: error
+          if-no-files-found: warn
   tests-squashfs-teal:
     env:
       ARCH: x86_64
@@ -564,7 +564,7 @@ jobs:
         with:
           name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
           path: capture.webm
-          if-no-files-found: error
+          if-no-files-found: warn
   tests-nonsquashfs-teal:
     env:
       ARCH: x86_64

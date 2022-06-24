@@ -416,7 +416,7 @@
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.capture.zip
           path: capture.webm
-          if-no-files-found: error
+          if-no-files-found: warn
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
