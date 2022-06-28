@@ -1,6 +1,6 @@
 name: cos-setup
 category: system-openrc
-version: 0.2-8
+version: 0.2-9
 description: "Experimental package for openrc support"
 requires:
   - name: "elemental-cli"
