@@ -82,7 +82,7 @@ stages:
          path: "/etc/cloud-data"
 ```
 
-The default cloud-config format is split into *stages* (*initramfs*, *boot*, *network*, *initramfs*, *reconcile*, called generically **STAGE_ID** below) [see also stages](../customizing/stages) that are emitted internally during the various phases by calling `cos-setup STAGE_ID`. 
+The default cloud-config format is split into *stages* (*initramfs*, *boot*, *network*, *initramfs*, *reconcile*, called generically **STAGE_ID** below) [see also stages](../../customizing/stages) that are emitted internally during the various phases by calling `cos-setup STAGE_ID`. 
 *steps* (**STEP_NAME** below) defined for each stage are executed in order.
 
 Each cloud-config file is loaded and executed only at the apprioriate stage, this allows further components to emit their own stages at the desired time.
