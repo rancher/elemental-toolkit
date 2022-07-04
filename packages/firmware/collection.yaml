@@ -1,7 +1,7 @@
 packages:
   - name: "odroid-c2"
     category: "firmware"
-    version: "20170419-5.191"
+    version: "20170419-5.197"
   - name: "u-boot-rpi64"
     category: "firmware"
     version: "2021.01-5.1"
