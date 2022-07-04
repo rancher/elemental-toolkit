@@ -13,7 +13,7 @@ image: {{.Values.tool_image}}
 {{ end }}
 
 prelude:
-- zypper in -y wget
+- zypper in -y wget cpio
 
 steps:
 {{if eq .Values.name "odroid-c2"}}
