@@ -1,7 +1,7 @@
 ARG LUET_VERSION=0.32.0
 FROM quay.io/luet/base:$LUET_VERSION AS luet
 
-FROM opensuse/leap:15.3
+FROM registry.opensuse.org/opensuse/leap:15.3
 
 ENV COSIGN_EXPERIMENTAL=1
 ENV LUET_NOLOCK=true
