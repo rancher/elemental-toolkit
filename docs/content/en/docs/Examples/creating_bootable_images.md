@@ -42,7 +42,7 @@ system/grub2-config
 from the toolchain. If you want to customize further the container further add more step afterwards `luet install` see [the customizing section](../../customizing).
 
 {{% alert title="Note" %}}
-Depending on the base image (`FROM opensuse/tumbleweed:latest:15.3` in the sample), you must set the corresponding repository for each flavor [see releases](../../getting-started/download#releases) in the luet config file ( which in the sample above points to the _teal_ releases )
+Depending on the base image (`FROM registry.opensuse.org/opensuse/tumbleweed:latest` in the sample), you must set the corresponding repository for each flavor [see releases](../../getting-started/download#releases) in the luet config file ( which in the sample above points to the _teal_ releases )
 {{% /alert %}}
 
 ## Generating from CI image

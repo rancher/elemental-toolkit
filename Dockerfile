@@ -1,4 +1,4 @@
-FROM opensuse/tumbleweed:latest
+FROM registry.opensuse.org/opensuse/tumbleweed:latest
 
 ENV LUET_NOLOCK=true
 
