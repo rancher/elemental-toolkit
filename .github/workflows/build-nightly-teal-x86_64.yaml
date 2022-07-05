@@ -157,9 +157,13 @@ jobs:
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
       - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools mtools
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -375,8 +379,14 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
@@ -739,8 +749,14 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
@@ -951,9 +967,13 @@ jobs:
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install OS deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2

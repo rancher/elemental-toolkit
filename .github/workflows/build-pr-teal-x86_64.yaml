@@ -37,11 +37,19 @@ jobs:
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install Go
-        run: |
-          curl -L https://golang.org/dl/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-amd64.tar.gz
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-amd64.tar.gz
       - name: Install make
-        run: |
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
             sudo apt-get update
             sudo apt-get install -y make
       - uses: actions/checkout@v2
@@ -143,9 +151,13 @@ jobs:
           export DOCKER_INSTALL=true
           sudo -E make add_local_repo
       - name: Install deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools mtools
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -277,8 +289,14 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
@@ -501,8 +519,14 @@ jobs:
       - name: Install deps
         run: |
           sudo -E make deps
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v1
         with:
@@ -635,9 +659,13 @@ jobs:
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install OS deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v2
       - name: Download result for build
         uses: actions/download-artifact@v2

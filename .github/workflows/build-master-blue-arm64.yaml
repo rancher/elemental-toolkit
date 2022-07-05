@@ -33,11 +33,19 @@ jobs:
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install Go
-        run: |
-          curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
       - name: Install make
-        run: |
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
             sudo apt-get update
             sudo apt-get install -y make
       - uses: actions/checkout@v2
@@ -164,11 +172,19 @@ jobs:
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install Go
-        run: |
-          curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
       - name: Install make
-        run: |
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
             sudo apt-get update
             sudo apt-get install -y make
       - uses: actions/checkout@v2
