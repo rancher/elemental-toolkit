@@ -24,12 +24,12 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/examples/creating_bootable_images/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-07-05T08:47:35+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:modified_time" content="2022-07-05T14:53:25+02:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
 <meta itemprop="name" content="Creating bootable images">
 <meta itemprop="description" content="This document describes the requirements to create standard container images that can be used for `Elemental` deployments
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-07-05T08:47:35+02:00" />
+<meta itemprop="dateModified" content="2022-07-05T14:53:25+02:00" />
 <meta itemprop="wordCount" content="697">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Creating bootable images"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.2f278beadc92a98e69ea29305d5c6093.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.151bdb04031ce0fdebde5c7f08c0944b.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.2f278beadc92a98e69ea29305d5c6093.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.151bdb04031ce0fdebde5c7f08c0944b.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2242,7 +2242,7 @@ system/grub2-config
 <div class="alert alert-primary" role="alert">
 <h4 class="alert-heading">Note</h4>
 
-    Depending on the base image (<code>FROM opensuse/tumbleweed:latest:15.3</code> in the sample), you must set the corresponding repository for each flavor <a href="../../getting-started/download#releases">see releases</a> in the luet config file ( which in the sample above points to the <em>teal</em> releases )
+    Depending on the base image (<code>FROM registry.opensuse.org/opensuse/tumbleweed:latest</code> in the sample), you must set the corresponding repository for each flavor <a href="../../getting-started/download#releases">see releases</a> in the luet config file ( which in the sample above points to the <em>teal</em> releases )
 
 </div>
 
@@ -2302,7 +2302,7 @@ system/grub2-config
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">FROM</span><span style="color:#4e9a06"> quay.io/luet/base:$LUET_VERSION AS luet</span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000">
-</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">FROM</span><span style="color:#4e9a06"> opensuse/tumbleweed:latest AS ca</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">FROM</span><span style="color:#4e9a06"> registry.opensuse.org/opensuse/tumbleweed:latest AS ca</span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">FROM</span><span style="color:#4e9a06"> scratch</span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000">
@@ -2447,7 +2447,7 @@ system/grub2-config
 
     Last modified
     July 5, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/793e2616816b01be5df5052d255bf81cc41acc8d">Bump toolchain-fips/yip to 0.11.0 (#1553) (793e261)</a>
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/0ffbbb9dc257c1fb7a0ec4c86474dc1189635939">[ci] Improvements (#1554) (0ffbbb9)</a>
 
 </div>
 
