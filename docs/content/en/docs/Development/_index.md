@@ -39,15 +39,10 @@ From your git folder:
 
 ```bash
 $> docker build -t cos-builder .
-$> docker run --privileged=true --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/cOS cos-builder
+$> docker run --privileged=true -e FINAL_REPO=YOUR_REPO --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/build cos-builder
 ```
 
-or use the `.envrc` file:
-
-```bash
-$> source .envrc
-$> cos-build
-```
+Where `FINAL_REPO` is the repository where you artifacts reside or will reside. The builder uses that repo to diff the existing packages in that repository versus the packages to build, so it can only build missing packages instead of building the whole repo. Pointing it to an empty or nonexistent address will build all packages.
 
 ### Build all packages locally
 

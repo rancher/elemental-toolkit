@@ -12,7 +12,7 @@ flavors:
         publish_toolchain: false
         publish_cloud: false
         skip_build: true
-        skip_docker_build: true
+        skip_docker_build: false
         repository: "releases" # releases for prod
         cache_repository: "build"
         organization: "quay.io/costoolkit"
