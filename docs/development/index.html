@@ -127,7 +127,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.151bdb04031ce0fdebde5c7f08c0944b.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.b0821b21ec55bd5efe8c4b4f97627b80.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -163,7 +163,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.151bdb04031ce0fdebde5c7f08c0944b.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.b0821b21ec55bd5efe8c4b4f97627b80.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2175,11 +2175,9 @@ if (!doNotTrack) {
 <p>Elemental has a container image which can be used to build Elemental locally in order to generate the Elemental packages and the Elemental iso from your checkout.</p>
 <p>From your git folder:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; docker build -t cos-builder .
-</span></span><span style="display:flex;"><span>$&gt; docker run --privileged<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span> --rm -v /var/run/docker.sock:/var/run/docker.sock -v <span style="color:#000">$PWD</span>:/cOS cos-builder
-</span></span></code></pre></div><p>or use the <code>.envrc</code> file:</p>
-<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$&gt; <span style="color:#204a87">source</span> .envrc
-</span></span><span style="display:flex;"><span>$&gt; cos-build
-</span></span></code></pre></div><h3 id="build-all-packages-locally">Build all packages locally</h3>
+</span></span><span style="display:flex;"><span>$&gt; docker run --privileged<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span> -e <span style="color:#000">FINAL_REPO</span><span style="color:#ce5c00;font-weight:bold">=</span>YOUR_REPO --rm -v /var/run/docker.sock:/var/run/docker.sock -v <span style="color:#000">$PWD</span>:/build cos-builder
+</span></span></code></pre></div><p>Where <code>FINAL_REPO</code> is the repository where you artifacts reside or will reside. The builder uses that repo to diff the existing packages in that repository versus the packages to build, so it can only build missing packages instead of building the whole repo. Pointing it to an empty or nonexistent address will build all packages.</p>
+<h3 id="build-all-packages-locally">Build all packages locally</h3>
 <p>Building locally has a <a href="dependencies.md">set of dependencies</a> that
 should be satisfied.</p>
 <p>Then you can run</p>
@@ -2331,8 +2329,8 @@ $&gt; make test
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    July 5, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/0ffbbb9dc257c1fb7a0ec4c86474dc1189635939">[ci] Improvements (#1554) (0ffbbb9)</a>
+    July 6, 2022
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/e0797b6653ccb5b27cd07145c6893d4515f16a00">[ci] Re-enable build-pr-docker (#1556) (e0797b6)</a>
 
 </div>
 
