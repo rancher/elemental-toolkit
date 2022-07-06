@@ -26,8 +26,8 @@ import (
 type FakeLuet struct {
 	OnUnpackError               bool
 	OnUnpackFromChannelError    bool
-	UnpackSideEffect            func(string, string, bool) error
-	UnpackFromChannelSideEffect func(string, string, ...v1.Repository) error
+	UnpackSideEffect            func(string, string, bool) (*v1.DockerImageMeta, error)
+	UnpackFromChannelSideEffect func(string, string, ...v1.Repository) (*v1.ChannelImageMeta, error)
 	unpackCalled                bool
 	unpackFromChannelCalled     bool
 	plugins                     []string
@@ -38,26 +38,26 @@ func NewFakeLuet() *FakeLuet {
 	return &FakeLuet{}
 }
 
-func (l *FakeLuet) Unpack(target string, image string, local bool) error {
+func (l *FakeLuet) Unpack(target string, image string, local bool) (*v1.DockerImageMeta, error) {
 	l.unpackCalled = true
 	if l.OnUnpackError {
-		return errors.New("Luet install error")
+		return nil, errors.New("Luet install error")
 	}
 	if l.UnpackSideEffect != nil {
 		return l.UnpackSideEffect(target, image, local)
 	}
-	return nil
+	return nil, nil
 }
 
-func (l *FakeLuet) UnpackFromChannel(target string, pkg string, repos ...v1.Repository) error {
+func (l *FakeLuet) UnpackFromChannel(target string, pkg string, repos ...v1.Repository) (*v1.ChannelImageMeta, error) {
 	l.unpackFromChannelCalled = true
 	if l.OnUnpackFromChannelError {
-		return errors.New("Luet install error")
+		return nil, errors.New("Luet install error")
 	}
 	if l.UnpackFromChannelSideEffect != nil {
 		return l.UnpackFromChannelSideEffect(target, pkg, repos...)
 	}
-	return nil
+	return nil, nil
 }
 
 func (l FakeLuet) UnpackCalled() bool {

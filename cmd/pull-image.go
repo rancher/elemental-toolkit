@@ -77,7 +77,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			l := luet.NewLuet(luet.WithLogger(cfg.Logger), luet.WithAuth(auth), luet.WithPlugins(plugins...))
 			l.VerifyImageUnpack = verify
-			err = l.Unpack(destination, image, local)
+			_, err = l.Unpack(destination, image, local)
 
 			if err != nil {
 				cfg.Logger.Error(err.Error())

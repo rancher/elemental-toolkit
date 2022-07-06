@@ -74,12 +74,14 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 	Describe("Luet", func() {
 		It("Fails to unpack without root privileges", Label("unpack"), func() {
 			image := "quay.io/costoolkit/releases-green:cloud-config-system-0.11-1"
-			Expect(l.Unpack(target, image, false)).NotTo(BeNil())
+			_, err := l.Unpack(target, image, false)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Check that luet can unpack the remote image", Label("unpack", "root"), func() {
 			image := "registry.opensuse.org/opensuse/redis"
 			// Check that luet can unpack the remote image
-			Expect(l.Unpack(target, image, false)).To(BeNil())
+			_, err := l.Unpack(target, image, false)
+			Expect(err).To(BeNil())
 		})
 		It("Check that luet can unpack the local image", Label("unpack", "root"), func() {
 			image := "docker.io/library/alpine"
@@ -91,43 +93,46 @@ var _ = Describe("Types", Label("luet", "types"), func() {
 			defer reader.Close()
 			_, _ = io.Copy(ioutil.Discard, reader)
 			// Check that luet can unpack the local image
-			Expect(l.Unpack(target, image, true)).To(BeNil())
+			_, err = l.Unpack(target, image, true)
+			Expect(err).To(BeNil())
 		})
 		Describe("UnpackFromChannel", Label("unpack", "channel"), func() {
 			It("Check that luet can unpack from channel", Label("root"), func() {
 				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal", Arch: constants.Archx86}
-				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).To(BeNil())
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err).To(BeNil())
 			})
 			It("Fails to unpack with a repository with no URI", func() {
 				repo := v1.Repository{Arch: constants.Archx86}
-				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err.Error()).To(ContainSubstring("no URI is provided"))
 				Expect(err).NotTo(BeNil())
 			})
 			It("Fails to unpack with a dir repository that doesnt have anything", func() {
 				dir, _ := utils.TempDir(fs, "", "")
 				repo := v1.Repository{URI: dir}
-				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err).NotTo(BeNil())
 			})
 			It("Fails to unpack with a http repository that doesnt exists", func() {
 				repo := v1.Repository{URI: "http://jojo.bizarre.adventure"}
-				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err).NotTo(BeNil())
 			})
 			It("Fails to unpack with a strange repository that cant get the type for", func() {
 				repo := v1.Repository{URI: "is:this:real:life", Arch: constants.Archx86}
-				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err.Error()).To(ContainSubstring("Invalid Luet repository URI"))
 				Expect(err).NotTo(BeNil())
 			})
 			It("Fails to unpack from channel without root privileges", func() {
 				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal"}
-				Expect(l.UnpackFromChannel(target, "utils/gomplate", repo)).ToNot(BeNil())
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				Expect(err).ToNot(BeNil())
 			})
 			It("Fails to unpack from channel without matching arch", func() {
 				repo := v1.Repository{URI: "quay.io/costoolkit/releases-teal-arm-64", Arch: constants.ArchArm64}
-				err := l.UnpackFromChannel(target, "utils/gomplate", repo)
+				_, err := l.UnpackFromChannel(target, "utils/gomplate", repo)
 				Expect(err.Error()).To(ContainSubstring("package 'utils/gomplate->=0' not found"))
 				Expect(err).NotTo(BeNil())
 			})

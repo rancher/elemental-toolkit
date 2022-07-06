@@ -276,6 +276,11 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 	var recLabel, recFs, recMnt string
 	var active, passive, recovery v1.Image
 
+	installState, err := cfg.LoadInstallState()
+	if err != nil {
+		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
+	}
+
 	parts, err := utils.GetAllPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
@@ -328,7 +333,7 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
 			Label:  constants.PassiveLabel,
 			Source: v1.NewFileSrc(active.File),
-			FS:     constants.LinuxImgFs,
+			FS:     active.FS,
 		}
 	}
 
@@ -337,6 +342,7 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 		Recovery:   recovery,
 		Passive:    passive,
 		Partitions: ep,
+		State:      installState,
 	}, nil
 }
 
@@ -352,15 +358,16 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 
 	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
 
+	installState, err := cfg.LoadInstallState()
+	if err != nil {
+		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
+	}
+
 	parts, err := utils.GetAllPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
 	}
 	ep := v1.NewElementalPartitionsFromList(parts)
-
-	// We won't do anything with the recovery partition
-	// removing it so we can easily loop to mount and unmount
-	ep.Recovery = nil
 
 	if efiExists {
 		if ep.EFI == nil {
@@ -379,6 +386,14 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		ep.State.MountPoint = constants.StateDir
 	}
 	ep.State.Name = constants.StatePartName
+
+	if ep.Recovery == nil {
+		return nil, fmt.Errorf("recovery partition not found")
+	}
+	if ep.Recovery.MountPoint == "" {
+		ep.Recovery.MountPoint = constants.RecoveryDir
+	}
+
 	target := ep.State.Disk
 
 	// OEM partition is not a hard requirement
@@ -432,6 +447,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 			Source: v1.NewFileSrc(activeFile),
 			FS:     constants.LinuxImgFs,
 		},
+		State: installState,
 	}, nil
 }
 

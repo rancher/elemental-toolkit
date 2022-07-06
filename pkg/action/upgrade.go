@@ -17,7 +17,9 @@ limitations under the License.
 package action
 
 import (
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
@@ -67,8 +69,53 @@ func (u UpgradeAction) upgradeHook(hook string, chroot bool) error {
 	return Hook(&u.config.Config, hook, u.config.Strict, u.config.CloudInitPaths...)
 }
 
+func (u *UpgradeAction) upgradeInstallStateYaml(meta interface{}, img v1.Image) error {
+	if u.spec.Partitions.Recovery == nil || u.spec.Partitions.State == nil {
+		return fmt.Errorf("undefined state or recovery partition")
+	}
+
+	if u.spec.State == nil {
+		u.spec.State = &v1.InstallState{
+			Partitions: map[string]*v1.PartitionState{},
+		}
+	}
+
+	u.spec.State.Date = time.Now().Format(time.RFC3339)
+	imgState := &v1.ImageState{
+		Source:         img.Source,
+		SourceMetadata: meta,
+		Label:          img.Label,
+		FS:             img.FS,
+	}
+	if u.spec.RecoveryUpgrade {
+		recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
+		if recoveryPart == nil {
+			recoveryPart = &v1.PartitionState{
+				Images: map[string]*v1.ImageState{},
+			}
+			u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
+		}
+		recoveryPart.Images[constants.RecoveryImgName] = imgState
+	} else {
+		statePart := u.spec.State.Partitions[constants.StatePartName]
+		if statePart == nil {
+			statePart = &v1.PartitionState{
+				Images: map[string]*v1.ImageState{},
+			}
+			u.spec.State.Partitions[constants.StatePartName] = statePart
+		}
+		statePart.Images[constants.PassiveImgName] = statePart.Images[constants.ActiveImgName]
+		statePart.Images[constants.ActiveImgName] = imgState
+	}
+
+	return u.config.WriteInstallState(
+		u.spec.State,
+		filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile),
+		filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
+	)
+}
+
 func (u *UpgradeAction) Run() (err error) {
-	var mountPart *v1.Partition
 	var upgradeImg v1.Image
 	var finalImageFile string
 
@@ -78,35 +125,27 @@ func (u *UpgradeAction) Run() (err error) {
 	e := elemental.NewElemental(&u.config.Config)
 
 	if u.spec.RecoveryUpgrade {
-		mountPart = u.spec.Partitions.Recovery
 		upgradeImg = u.spec.Recovery
 		if upgradeImg.FS == constants.SquashFs {
-			finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.RecoverySquashFile)
+			finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoverySquashFile)
 		} else {
-			finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.RecoveryImgFile)
+			finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoveryImgFile)
 		}
 	} else {
-		mountPart = u.spec.Partitions.State
 		upgradeImg = u.spec.Active
-		finalImageFile = filepath.Join(mountPart.MountPoint, "cOS", constants.ActiveImgFile)
+		finalImageFile = filepath.Join(u.spec.Partitions.State.MountPoint, "cOS", constants.ActiveImgFile)
 	}
 
-	u.Info("mounting %s partition as rw", mountPart.Name)
-	if mnt, _ := utils.IsMounted(&u.config.Config, mountPart); mnt {
-		err = e.MountPartition(mountPart, "remount", "rw")
-		if err != nil {
-			u.Error("failed mounting %s partition: %v", mountPart.Name, err)
-			return err
-		}
-		cleanup.Push(func() error { return e.MountPartition(mountPart, "remount", "ro") })
-	} else {
-		err = e.MountPartition(mountPart, "rw")
-		if err != nil {
-			u.Error("failed mounting %s partition: %v", mountPart.Name, err)
-			return err
-		}
-		cleanup.Push(func() error { return e.UnmountPartition(mountPart) })
+	umount, err := e.MountRWPartition(u.spec.Partitions.State)
+	if err != nil {
+		return err
 	}
+	cleanup.Push(umount)
+	umount, err = e.MountRWPartition(u.spec.Partitions.Recovery)
+	if err != nil {
+		return err
+	}
+	cleanup.Push(umount)
 
 	// Cleanup transition image file before leaving
 	cleanup.Push(func() error { return u.remove(upgradeImg.File) })
@@ -131,7 +170,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	u.Info("deploying image %s to %s", upgradeImg.Source.Value(), upgradeImg.File)
-	err = e.DeployImage(&upgradeImg, true)
+	upgradeMeta, err := e.DeployImage(&upgradeImg, true)
 	if err != nil {
 		u.Error("Failed deploying image to file %s", upgradeImg.File)
 		return err
@@ -170,7 +209,7 @@ func (u *UpgradeAction) Run() (err error) {
 	if !u.spec.RecoveryUpgrade {
 		u.Info("rebranding")
 
-		err = e.SetDefaultGrubEntry(mountPart.MountPoint, upgradeImg.MountPoint, u.spec.GrubDefEntry)
+		err = e.SetDefaultGrubEntry(u.spec.Partitions.State.MountPoint, upgradeImg.MountPoint, u.spec.GrubDefEntry)
 		if err != nil {
 			u.Error("failed setting default entry")
 			return err
@@ -194,7 +233,7 @@ func (u *UpgradeAction) Run() (err error) {
 		//TODO this step could be part of elemental package
 		// backup current active.img to passive.img before overwriting the active.img
 		u.Info("Backing up current active image")
-		source := filepath.Join(mountPart.MountPoint, "cOS", constants.ActiveImgFile)
+		source := filepath.Join(u.spec.Partitions.State.MountPoint, "cOS", constants.ActiveImgFile)
 		u.Info("Moving %s to %s", source, u.spec.Passive.File)
 		_, err := u.config.Runner.Run("mv", "-f", source, u.spec.Passive.File)
 		if err != nil {
@@ -221,6 +260,13 @@ func (u *UpgradeAction) Run() (err error) {
 	u.Info("Finished moving %s to %s", upgradeImg.File, finalImageFile)
 
 	_, _ = u.config.Runner.Run("sync")
+
+	// Update state.yaml file on recovery and state partitions
+	err = u.upgradeInstallStateYaml(upgradeMeta, upgradeImg)
+	if err != nil {
+		u.Error("failed upgrading installation metadata")
+		return err
+	}
 
 	u.Info("Upgrade completed")
 

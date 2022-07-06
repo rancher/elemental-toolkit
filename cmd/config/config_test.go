@@ -315,6 +315,12 @@ var _ = Describe("Config", Label("config"), func() {
 					Name: "device",
 					Partitions: []*block.Partition{
 						{
+							Name:            "device1",
+							FilesystemLabel: "COS_RECOVERY",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
+						},
+						{
 							Name:            "device2",
 							FilesystemLabel: "COS_STATE",
 							Type:            "ext4",

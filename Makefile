@@ -44,20 +44,20 @@ test_deps:
 	go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
 
 test: $(GINKGO)
-	ginkgo run --label-filter '!root' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt -p -r ${PKG}
+	ginkgo run --label-filter '!root' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-cli/... -p -r ${PKG}
 
 test_root: $(GINKGO)
 ifneq ($(shell id -u), 0)
 	@echo "This tests require root/sudo to run."
 	@exit 1
 else
-	ginkgo run --label-filter root --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage_root.txt -procs=1 -r ${PKG}
+	ginkgo run --label-filter root --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-cli/... -procs=1 -r ${PKG}
 endif
 
 # Useful test run for local dev. It does not run tests that require root and it does not run tests that require systemctl checks
 # which results in a escalation prompt for privileges. This can block a run until a password or the prompt is cancelled
 test_no_root_no_systemctl:
-	ginkgo run --label-filter '!root && !systemctl' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt -p -r ${PKG}
+	ginkgo run --label-filter '!root && !systemctl' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-cli/... -p -r ${PKG}
 
 
 license-check:

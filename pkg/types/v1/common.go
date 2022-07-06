@@ -21,6 +21,8 @@ import (
 	"net/url"
 	"path/filepath"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/distribution/distribution/reference"
 )
 
@@ -68,6 +70,21 @@ func (i ImageSource) IsEmpty() bool {
 	return false
 }
 
+func (i ImageSource) String() string {
+	if i.IsEmpty() {
+		return ""
+	}
+	return fmt.Sprintf("%s://%s", i.srcType, i.source)
+}
+
+func (i ImageSource) MarshalYAML() (interface{}, error) {
+	return i.String(), nil
+}
+
+func (i *ImageSource) UnmarshalYAML(value *yaml.Node) error {
+	return i.updateFromURI(value.Value)
+}
+
 func (i *ImageSource) CustomUnmarshal(data interface{}) (bool, error) {
 	src, ok := data.(string)
 	if !ok {
@@ -78,17 +95,6 @@ func (i *ImageSource) CustomUnmarshal(data interface{}) (bool, error) {
 }
 
 func (i *ImageSource) updateFromURI(uri string) error {
-	eURI := i.parseURI(uri)
-	if eURI != nil {
-		eRef := i.parseImageReference(uri)
-		if eRef != nil {
-			return fmt.Errorf("%s and %s", eURI.Error(), eRef.Error())
-		}
-	}
-	return nil
-}
-
-func (i *ImageSource) parseURI(uri string) error {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return err
@@ -100,8 +106,7 @@ func (i *ImageSource) parseURI(uri string) error {
 	}
 	switch scheme {
 	case oci, docker:
-		i.srcType = oci
-		i.source = value
+		return i.parseImageReference(value)
 	case channel:
 		i.srcType = channel
 		i.source = value
@@ -112,7 +117,7 @@ func (i *ImageSource) parseURI(uri string) error {
 		i.srcType = file
 		i.source = value
 	default:
-		return fmt.Errorf("unknown source type for %s", uri)
+		return i.parseImageReference(uri)
 	}
 	return nil
 }

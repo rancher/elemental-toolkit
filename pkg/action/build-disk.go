@@ -93,7 +93,7 @@ func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.RawDiskArchEntry, imgType string
 			cfg.Logger.Error(err)
 			return err
 		}
-		err = e.DumpSource(
+		_, err = e.DumpSource(
 			filepath.Join(baseDir, pkg.Target),
 			imgSource,
 		)

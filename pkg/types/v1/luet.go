@@ -17,8 +17,8 @@ limitations under the License.
 package v1
 
 type LuetInterface interface {
-	Unpack(string, string, bool) error
-	UnpackFromChannel(string, string, ...Repository) error
+	Unpack(string, string, bool) (*DockerImageMeta, error)
+	UnpackFromChannel(string, string, ...Repository) (*ChannelImageMeta, error)
 	SetPlugins(...string)
 	GetPlugins() []string
 	SetArch(string)

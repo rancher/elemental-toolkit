@@ -17,6 +17,10 @@ limitations under the License.
 package action
 
 import (
+	"fmt"
+	"path/filepath"
+	"time"
+
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
@@ -48,6 +52,60 @@ func NewResetAction(cfg *v1.RunConfig, spec *v1.ResetSpec) *ResetAction {
 	return &ResetAction{cfg: cfg, spec: spec}
 }
 
+func (r *ResetAction) updateInstallState(e *elemental.Elemental, cleanup *utils.CleanStack, meta interface{}) error {
+	if r.spec.Partitions.Recovery == nil || r.spec.Partitions.State == nil {
+		return fmt.Errorf("undefined state or recovery partition")
+	}
+
+	installState := &v1.InstallState{
+		Date: time.Now().Format(time.RFC3339),
+		Partitions: map[string]*v1.PartitionState{
+			cnst.StatePartName: {
+				FSLabel: r.spec.Partitions.State.FilesystemLabel,
+				Images: map[string]*v1.ImageState{
+					cnst.ActiveImgName: {
+						Source:         r.spec.Active.Source,
+						SourceMetadata: meta,
+						Label:          r.spec.Active.Label,
+						FS:             r.spec.Active.FS,
+					},
+					cnst.PassiveImgName: {
+						Source:         r.spec.Active.Source,
+						SourceMetadata: meta,
+						Label:          r.spec.Passive.Label,
+						FS:             r.spec.Passive.FS,
+					},
+				},
+			},
+		},
+	}
+	if r.spec.Partitions.OEM != nil {
+		installState.Partitions[cnst.OEMPartName] = &v1.PartitionState{
+			FSLabel: r.spec.Partitions.OEM.FilesystemLabel,
+		}
+	}
+	if r.spec.Partitions.Persistent != nil {
+		installState.Partitions[cnst.PersistentPartName] = &v1.PartitionState{
+			FSLabel: r.spec.Partitions.Persistent.FilesystemLabel,
+		}
+	}
+	if r.spec.State != nil && r.spec.State.Partitions != nil {
+		installState.Partitions[cnst.RecoveryPartName] = r.spec.State.Partitions[cnst.RecoveryPartName]
+	}
+
+	umount, err := e.MountRWPartition(r.spec.Partitions.Recovery)
+	if err != nil {
+		return err
+	}
+	cleanup.Push(umount)
+
+	return r.cfg.WriteInstallState(
+		installState,
+		filepath.Join(r.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
+		filepath.Join(r.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
+	)
+}
+
 // ResetRun will reset the cos system to by following several steps
 func (r ResetAction) Run() (err error) {
 	e := elemental.NewElemental(&r.cfg.Config)
@@ -60,7 +118,7 @@ func (r ResetAction) Run() (err error) {
 	}
 
 	// Unmount partitions if any is already mounted before formatting
-	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true))
+	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	if err != nil {
 		return err
 	}
@@ -80,7 +138,6 @@ func (r ResetAction) Run() (err error) {
 				return err
 			}
 		}
-
 	}
 
 	// Reformat OEM
@@ -94,16 +151,16 @@ func (r ResetAction) Run() (err error) {
 		}
 	}
 	// Mount configured partitions
-	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false))
+	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery))
 	if err != nil {
 		return err
 	}
 	cleanup.Push(func() error {
-		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true))
+		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	})
 
 	// Deploy active image
-	err = e.DeployImage(&r.spec.Active, true)
+	meta, err := e.DeployImage(&r.spec.Active, true)
 	if err != nil {
 		return err
 	}
@@ -163,12 +220,17 @@ func (r ResetAction) Run() (err error) {
 	}
 
 	// Install Passive
-	err = e.DeployImage(&r.spec.Passive, false)
+	_, err = e.DeployImage(&r.spec.Passive, false)
 	if err != nil {
 		return err
 	}
 
 	err = r.resetHook(cnst.AfterResetHook, false)
+	if err != nil {
+		return err
+	}
+
+	err = r.updateInstallState(e, cleanup, meta)
 	if err != nil {
 		return err
 	}

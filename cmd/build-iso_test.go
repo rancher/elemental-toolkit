@@ -50,7 +50,7 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 	It("Errors out if rootfs is a non valid argument", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "build-iso", "/no/image/reference")
 		Expect(err).ToNot(BeNil())
-		Expect(err.Error()).To(ContainSubstring("unknown source type for"))
+		Expect(err.Error()).To(ContainSubstring("invalid image reference"))
 	})
 	It("Errors out if overlay roofs path does not exist", Label("flags"), func() {
 		_, _, err := executeCommandC(

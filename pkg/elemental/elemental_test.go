@@ -74,6 +74,70 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		)
 	})
 	AfterEach(func() { cleanup() })
+	Describe("MountRWPartition", Label("mount"), func() {
+		var el *elemental.Elemental
+		var parts v1.ElementalPartitions
+		BeforeEach(func() {
+			parts = conf.NewInstallElementalParitions()
+
+			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = fs.Create("/some/device")
+			Expect(err).ToNot(HaveOccurred())
+
+			parts.OEM.Path = "/dev/device1"
+
+			el = elemental.NewElemental(config)
+		})
+
+		It("Mounts and umounts a partition with RW", func() {
+			umount, err := el.MountRWPartition(parts.OEM)
+			Expect(err).To(BeNil())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(1))
+			Expect(lst[0].Opts).To(Equal([]string{"rw"}))
+
+			Expect(umount()).ShouldNot(HaveOccurred())
+			lst, _ = mounter.List()
+			Expect(len(lst)).To(Equal(0))
+		})
+		It("Remounts a partition with RW", func() {
+			err := el.MountPartition(parts.OEM)
+			Expect(err).To(BeNil())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(1))
+
+			umount, err := el.MountRWPartition(parts.OEM)
+			Expect(err).To(BeNil())
+			lst, _ = mounter.List()
+			// fake mounter is not merging remounts it just appends
+			Expect(len(lst)).To(Equal(2))
+			Expect(lst[1].Opts).To(Equal([]string{"remount", "rw"}))
+
+			Expect(umount()).ShouldNot(HaveOccurred())
+			lst, _ = mounter.List()
+			// Increased once more to remount read-onply
+			Expect(len(lst)).To(Equal(3))
+			Expect(lst[2].Opts).To(Equal([]string{"remount", "ro"}))
+		})
+		It("Fails to mount a partition", func() {
+			mounter.ErrorOnMount = true
+			_, err := el.MountRWPartition(parts.OEM)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails to remount a partition", func() {
+			err := el.MountPartition(parts.OEM)
+			Expect(err).To(BeNil())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(1))
+
+			mounter.ErrorOnMount = true
+			_, err = el.MountRWPartition(parts.OEM)
+			Expect(err).Should(HaveOccurred())
+			lst, _ = mounter.List()
+			Expect(len(lst)).To(Equal(1))
+		})
+	})
 	Describe("MountPartitions", Label("MountPartitions", "disk", "partition", "mount"), func() {
 		var el *elemental.Elemental
 		var parts v1.ElementalPartitions
@@ -98,6 +162,15 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			lst, _ := mounter.List()
 			Expect(len(lst)).To(Equal(4))
+		})
+
+		It("Mounts disk partitions excluding recovery", func() {
+			err := el.MountPartitions(parts.PartitionsByMountPoint(false, parts.Recovery))
+			Expect(err).To(BeNil())
+			lst, _ := mounter.List()
+			for _, i := range lst {
+				Expect(i.Path).NotTo(Equal("/dev/device3"))
+			}
 		})
 
 		It("Fails if some partition resists to mount ", func() {
@@ -470,7 +543,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			mounter.ErrorOnMount = true
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err = el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Deploys a file image and fails to label it", func() {
 			sourceImg := "/source.img"
@@ -481,12 +555,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			img.Source = v1.NewFileSrc(sourceImg)
 			img.MountPoint = destDir
 			cmdFail = "tune2fs"
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err = el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Fails creating the squashfs filesystem", func() {
 			cmdFail = "mksquashfs"
 			img.FS = constants.SquashFs
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err := el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 			Expect(runner.MatchMilestones([][]string{
 				{
 					"mksquashfs", "/tmp/elemental-tmp", "/tmp/elemental/image.img",
@@ -496,19 +572,23 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		It("Fails formatting the image", func() {
 			cmdFail = "mkfs.ext2"
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err := el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Fails mounting the image", func() {
 			mounter.ErrorOnMount = true
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err := el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Fails copying the image if source does not exist", func() {
 			img.Source = v1.NewDirSrc("/welp")
-			Expect(el.DeployImage(img, true)).NotTo(BeNil())
+			_, err := el.DeployImage(img, true)
+			Expect(err).NotTo(BeNil())
 		})
 		It("Fails unmounting the image after copying", func() {
 			mounter.ErrorOnUnmount = true
-			Expect(el.DeployImage(img, false)).NotTo(BeNil())
+			_, err := el.DeployImage(img, false)
+			Expect(err).NotTo(BeNil())
 		})
 	})
 	Describe("DumpSource", Label("dump"), func() {
@@ -526,30 +606,36 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Copies files from a directory source", func() {
 			sourceDir, err := utils.TempDir(fs, "", "elemental")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(e.DumpSource(destDir, v1.NewDirSrc(sourceDir))).To(BeNil())
+			_, err = e.DumpSource(destDir, v1.NewDirSrc(sourceDir))
+			Expect(err).To(BeNil())
 		})
 		It("Fails if source directory does not exist", func() {
-			Expect(e.DumpSource(destDir, v1.NewDirSrc("/welp"))).ToNot(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewDirSrc("/welp"))
+			Expect(err).ToNot(BeNil())
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
-			Expect(e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))).To(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			Expect(err).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.Cosign = true
-			Expect(e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))).To(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			Expect(err).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
 			runner.ReturnError = errors.New("cosign error")
 			config.Cosign = true
-			Expect(e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))).NotTo(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			luet.OnUnpackError = true
-			Expect(e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))).NotTo(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			Expect(err).NotTo(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Copies image file to target", func() {
@@ -559,20 +645,24 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			destFile := filepath.Join(destDir, "active.img")
 			_, err = fs.Stat(destFile)
 			Expect(err).NotTo(BeNil())
-			Expect(e.DumpSource(destFile, v1.NewFileSrc(sourceImg))).To(BeNil())
+			_, err = e.DumpSource(destFile, v1.NewFileSrc(sourceImg))
+			Expect(err).To(BeNil())
 			_, err = fs.Stat(destFile)
 			Expect(err).To(BeNil())
 		})
 		It("Fails to copy, source file is not present", func() {
-			Expect(e.DumpSource("whatever", v1.NewFileSrc("/source.img"))).NotTo(BeNil())
+			_, err := e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
+			Expect(err).NotTo(BeNil())
 		})
 		It("Unpacks from channel to target", func() {
-			Expect(e.DumpSource(destDir, v1.NewChannelSrc("some/package"))).To(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
+			Expect(err).To(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails to unpack from channel to target", func() {
 			luet.OnUnpackFromChannelError = true
-			Expect(e.DumpSource(destDir, v1.NewChannelSrc("some/package"))).NotTo(BeNil())
+			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
+			Expect(err).NotTo(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 	})

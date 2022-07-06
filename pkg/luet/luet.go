@@ -157,30 +157,35 @@ func (l *Luet) InitPlugins() {
 	}
 }
 
-func (l Luet) Unpack(target string, image string, local bool) error {
+func (l Luet) Unpack(target string, image string, local bool) (*v1.DockerImageMeta, error) {
 	l.log.Infof("Unpacking a container image: %s", image)
 	l.InitPlugins()
+	meta := &v1.DockerImageMeta{}
 	if local {
 		l.log.Infof("Using an image from local cache")
 		info, err := docker.ExtractDockerImage(l.context, image, target)
 		if err != nil {
 			if strings.Contains(err.Error(), "reference does not exist") {
-				return errors.New("Container image does not exist locally")
+				return nil, errors.New("Container image does not exist locally")
 			}
-			return err
+			return nil, err
 		}
 		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
+		meta.Size = info.Target.Size
+		meta.Digest = info.Target.Digest.String()
 	} else {
 		l.log.Infof("Pulling an image from remote repository")
 		info, err := docker.DownloadAndExtractDockerImage(l.context, image, target, l.auth, l.VerifyImageUnpack)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		l.log.Infof("Pulled: %s %s", info.Target.Digest, info.Name)
 		l.log.Infof("Size: %s", units.BytesSize(float64(info.Target.Size)))
+		meta.Size = info.Target.Size
+		meta.Digest = info.Target.Digest.String()
 	}
 
-	return nil
+	return meta, nil
 }
 
 // initLuetRepository returns a Luet repository from a given v1.Repository. It runs heuristics
@@ -245,7 +250,7 @@ func (l Luet) initLuetRepository(repo v1.Repository) (luetTypes.LuetRepository, 
 
 // UnpackFromChannel unpacks/installs a package from the release channel into the target dir by leveraging the
 // luet install action to install to a local dir
-func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Repository) error {
+func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Repository) (*v1.ChannelImageMeta, error) {
 	var toInstall luetTypes.Packages
 	l.InitPlugins()
 
@@ -263,7 +268,7 @@ func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Re
 
 			repo, err := l.initLuetRepository(r)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			repos = append(repos, repo)
 		}
@@ -287,8 +292,38 @@ func (l Luet) UnpackFromChannel(target string, pkg string, repositories ...v1.Re
 		Database: database.NewInMemoryDatabase(false),
 		Target:   target,
 	}
+	err := inst.Install(toInstall, system)
+	if err != nil {
+		return nil, err
+	}
+	pkgs, err := system.Database.FindPackageMatch(pkg)
+	if err != nil {
+		l.log.Error(err.Error())
+		return nil, err
+	}
 
-	return inst.Install(toInstall, system)
+	var meta *v1.ChannelImageMeta
+	if len(pkgs) > 0 {
+		meta = &v1.ChannelImageMeta{
+			Category:    pkgs[0].GetCategory(),
+			Name:        pkgs[0].GetName(),
+			Version:     pkgs[0].GetVersion(),
+			FingerPrint: pkgs[0].GetFingerPrint(),
+		}
+		//TODO: ideally we should only include the repository being used
+		for _, r := range repos {
+			meta.Repos = append(meta.Repos, v1.Repository{
+				Name:        r.Name,
+				Priority:    r.Priority,
+				URI:         r.Urls[0],
+				Type:        r.Type,
+				Arch:        r.Arch,
+				ReferenceID: r.ReferenceID,
+			})
+		}
+	}
+
+	return meta, nil
 }
 
 func (l Luet) parsePackage(p string) *luetTypes.Package {

@@ -39,6 +39,7 @@ const (
 	RecoveryPartName       = "recovery"
 	StateLabel             = "COS_STATE"
 	StatePartName          = "state"
+	InstallStateFile       = "state.yaml"
 	PersistentLabel        = "COS_PERSISTENT"
 	PersistentPartName     = "persistent"
 	OEMLabel               = "COS_OEM"

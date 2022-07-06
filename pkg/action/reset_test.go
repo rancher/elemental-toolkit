@@ -110,6 +110,11 @@ var _ = Describe("Reset action tests", func() {
 						FilesystemLabel: "COS_OEM",
 						Type:            "ext4",
 					},
+					{
+						Name:            "device5",
+						FilesystemLabel: "COS_RECOVERY",
+						Type:            "ext4",
+					},
 				},
 			}
 			ghwTest = v1mock.GhwMock{}

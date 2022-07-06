@@ -242,7 +242,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(spec.Active.Source.Value()).To(Equal(constants.IsoBaseTree))
 					Expect(spec.Partitions.EFI.MountPoint).To(Equal(constants.EfiDir))
-					Expect(spec.Partitions.Recovery).To(BeNil())
 				})
 				It("sets reset defaults on bios from non-squashed recovery", func() {
 					// Set non-squashfs recovery image detection
@@ -255,13 +254,11 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(spec.Active.Source.Value()).To(Equal(recoveryImg))
-					Expect(spec.Partitions.Recovery).To(BeNil())
 				})
 				It("sets reset defaults on bios from unknown recovery", func() {
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
-					Expect(spec.Partitions.Recovery).To(BeNil())
 				})
 			})
 			Describe("Failures", func() {
@@ -280,8 +277,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 					// Set an empty disk for tests, otherwise reads the hosts hardware
 					mainDisk := block.Disk{
-						Name:       "device",
-						Partitions: []*block.Partition{},
+						Name: "device",
+						Partitions: []*block.Partition{
+							{
+								Name:            "device4",
+								FilesystemLabel: constants.StateLabel,
+								Type:            "ext4",
+							},
+						},
 					}
 					ghwTest = v1mock.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
@@ -295,7 +298,22 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("reset can only be called from the recovery system"))
 				})
+				It("fails to set defaults if no recovery partition detected", func() {
+					bootedFrom = constants.SystemLabel
+					_, err := config.NewResetSpec(*c)
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("recovery partition not found"))
+				})
 				It("fails to set defaults if no state partition detected", func() {
+					mainDisk := block.Disk{
+						Name:       "device",
+						Partitions: []*block.Partition{},
+					}
+					ghwTest = v1mock.GhwMock{}
+					ghwTest.AddDisk(mainDisk)
+					ghwTest.CreateDevices()
+					defer ghwTest.Clean()
+
 					bootedFrom = constants.SystemLabel
 					_, err := config.NewResetSpec(*c)
 					Expect(err).Should(HaveOccurred())

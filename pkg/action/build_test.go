@@ -92,21 +92,21 @@ var _ = Describe("Runtime Actions", func() {
 			imageSrc, _ := v1.NewSrcFromURI("channel:live/bootloader")
 			iso.Image = []*v1.ImageSource{imageSrc}
 
-			luet.UnpackSideEffect = func(target string, image string, local bool) error {
+			luet.UnpackSideEffect = func(target string, image string, local bool) (*v1.DockerImageMeta, error) {
 				bootDir := filepath.Join(target, "boot")
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz"))
 				if err != nil {
-					return err
+					return nil, err
 				}
 				_, err = fs.Create(filepath.Join(bootDir, "initrd"))
 				if err != nil {
-					return err
+					return nil, err
 				}
-				return nil
+				return nil, nil
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso)

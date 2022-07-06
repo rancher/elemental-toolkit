@@ -18,6 +18,8 @@ package action
 
 import (
 	"fmt"
+	"path/filepath"
+	"time"
 
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
@@ -39,6 +41,69 @@ func (i *InstallAction) installHook(hook string, chroot bool) error {
 		return ChrootHook(&i.cfg.Config, hook, i.cfg.Strict, i.spec.Active.MountPoint, extraMounts, i.cfg.CloudInitPaths...)
 	}
 	return Hook(&i.cfg.Config, hook, i.cfg.Strict, i.cfg.CloudInitPaths...)
+}
+
+func (i *InstallAction) createInstallStateYaml(sysMeta, recMeta interface{}) error {
+	if i.spec.Partitions.State == nil || i.spec.Partitions.Recovery == nil {
+		return fmt.Errorf("undefined state or recovery partition")
+	}
+
+	// If recovery image is a copyied file from active reuse the same source and metadata
+	recSource := i.spec.Recovery.Source
+	if i.spec.Recovery.Source.IsFile() && i.spec.Active.File == i.spec.Recovery.Source.Value() {
+		recMeta = sysMeta
+		recSource = i.spec.Active.Source
+	}
+
+	installState := &v1.InstallState{
+		Date: time.Now().Format(time.RFC3339),
+		Partitions: map[string]*v1.PartitionState{
+			cnst.StatePartName: {
+				FSLabel: i.spec.Partitions.State.FilesystemLabel,
+				Images: map[string]*v1.ImageState{
+					cnst.ActiveImgName: {
+						Source:         i.spec.Active.Source,
+						SourceMetadata: sysMeta,
+						Label:          i.spec.Active.Label,
+						FS:             i.spec.Active.FS,
+					},
+					cnst.PassiveImgName: {
+						Source:         i.spec.Active.Source,
+						SourceMetadata: sysMeta,
+						Label:          i.spec.Passive.Label,
+						FS:             i.spec.Passive.FS,
+					},
+				},
+			},
+			cnst.RecoveryPartName: {
+				FSLabel: i.spec.Partitions.Recovery.FilesystemLabel,
+				Images: map[string]*v1.ImageState{
+					cnst.RecoveryImgName: {
+						Source:         recSource,
+						SourceMetadata: recMeta,
+						Label:          i.spec.Recovery.Label,
+						FS:             i.spec.Recovery.FS,
+					},
+				},
+			},
+		},
+	}
+	if i.spec.Partitions.OEM != nil {
+		installState.Partitions[cnst.OEMPartName] = &v1.PartitionState{
+			FSLabel: i.spec.Partitions.OEM.FilesystemLabel,
+		}
+	}
+	if i.spec.Partitions.Persistent != nil {
+		installState.Partitions[cnst.PersistentPartName] = &v1.PartitionState{
+			FSLabel: i.spec.Partitions.Persistent.FilesystemLabel,
+		}
+	}
+
+	return i.cfg.WriteInstallState(
+		installState,
+		filepath.Join(i.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
+		filepath.Join(i.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
+	)
 }
 
 type InstallAction struct {
@@ -103,7 +168,7 @@ func (i InstallAction) Run() (err error) {
 	})
 
 	// Deploy active image
-	err = e.DeployImage(&i.spec.Active, true)
+	systemMeta, err := e.DeployImage(&i.spec.Active, true)
 	if err != nil {
 		return err
 	}
@@ -164,17 +229,23 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 	// Install Recovery
-	err = e.DeployImage(&i.spec.Recovery, false)
+	recoveryMeta, err := e.DeployImage(&i.spec.Recovery, false)
 	if err != nil {
 		return err
 	}
 	// Install Passive
-	err = e.DeployImage(&i.spec.Passive, false)
+	_, err = e.DeployImage(&i.spec.Passive, false)
 	if err != nil {
 		return err
 	}
 
 	err = i.installHook(cnst.AfterInstallHook, false)
+	if err != nil {
+		return err
+	}
+
+	// Add state.yaml file on state and recovery partitions
+	err = i.createInstallStateYaml(systemMeta, recoveryMeta)
 	if err != nil {
 		return err
 	}
