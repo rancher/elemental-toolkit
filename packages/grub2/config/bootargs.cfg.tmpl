@@ -1,8 +1,4 @@
 set kernel=/boot/vmlinuz
-if [ -n "$recoverylabel" ]; then
-    set kernelcmd="console=tty1 console=ttyS0 root=live:LABEL=$recoverylabel rd.live.dir=/ rd.live.squashimg=$img panic=5 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@"
-else
-    set kernelcmd="console=tty1 console=ttyS0 root=LABEL=$label cos-img/filename=$img panic=5 security=selinux selinux=1 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@ fsck.mode=force fsck.repair=yes"
-fi
-
+set kernelcmd="console=tty1 console=ttyS0 cos-img/filename=$img panic=5 security=selinux selinux=1 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@ fsck.mode=force fsck.repair=yes"
+set recoverykernelcmd="console=tty1 console=ttyS0 cos-img/filename=$img panic=5 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@"
 set initramfs=/boot/initrd

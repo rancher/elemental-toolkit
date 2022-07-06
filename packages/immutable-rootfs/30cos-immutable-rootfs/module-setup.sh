@@ -6,7 +6,7 @@ check() {
     return 255
 }
 
-# called by dracut 
+# called by dracut
 depends() {
     echo systemd rootfs-block dm fs-lib
     return 0
@@ -25,17 +25,17 @@ install() {
     declare initdir="${initdir}"
 
     inst_multiple \
-        mount mountpoint sort rmdir findmnt rsync cut
+        mount mountpoint sort rmdir findmnt rsync cut realpath basename lsblk
 
     # Include utilities required for cos-setup services,
     # probably a devoted cos-setup dracut module makes sense
     inst_multiple -o \
-        "$systemdutildir"/systemd-fsck partprobe sync udevadm lsblk parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount sgdisk elemental
+        "$systemdutildir"/systemd-fsck partprobe sync udevadm parted sgdisk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount elemental
     inst_hook cmdline 30 "${moddir}/parse-cos-cmdline.sh"
     inst_script "${moddir}/cos-generator.sh" \
         "${systemdutildir}/system-generators/dracut-cos-generator"
     inst_script "${moddir}/cos-mount-layout.sh" "/sbin/cos-mount-layout"
-    inst_script "${moddir}/cos-loop-img.sh" "/sbin/cos-loop-img"
+    inst_script "${moddir}/cos-root-mnt.sh" "/sbin/cos-root-mnt"
     inst_simple "${moddir}/cos-immutable-rootfs.service" \
         "${systemdsystemunitdir}/cos-immutable-rootfs.service"
     mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.requires"

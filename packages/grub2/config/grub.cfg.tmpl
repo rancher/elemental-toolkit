@@ -56,8 +56,8 @@ insmod loopback
 insmod squash4
 
 menuentry "${display_name}" --id cos {
-  search --no-floppy --label --set=root @STATE_LABEL@
   set img=/cOS/active.img
+  search --no-floppy --file $img --set=root
   set label=@ACTIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
@@ -67,8 +67,8 @@ menuentry "${display_name}" --id cos {
 }
 
 menuentry "${display_name} (fallback)" --id fallback {
-  search --no-floppy --label --set=root @STATE_LABEL@
   set img=/cOS/passive.img
+  search --no-floppy --file $img --set=root
   set label=@PASSIVE_LABEL@
   loopback loop0 /$img
   set root=($root)
@@ -84,7 +84,7 @@ menuentry "${display_name} recovery" --id recovery {
   else
     set img=/cOS/recovery.img
   fi
-  search --no-floppy --label --set=root @RECOVERY_LABEL@
+  search --no-floppy --file $img --set=root
   set label=@SYSTEM_LABEL@
   loopback loop0 /$img
   set root=($root)

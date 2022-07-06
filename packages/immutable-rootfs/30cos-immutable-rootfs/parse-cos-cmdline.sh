@@ -13,37 +13,28 @@
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
+cos_root="/run/cos/root"
+
 if getargbool 0 rd.cos.disable; then
     return 0
 fi
 
 cos_img=$(getarg cos-img/filename=)
 [ -z "${cos_img}" ] && return 0
-[ -z "${root}" ] && root=$(getarg root=)
 
-cos_root_perm="ro"
-if getargbool 0 rd.cos.debugrw; then
-    cos_root_perm="rw"
-fi
+mkdir -p "${cos_root}"
 
-case "${root}" in
-    LABEL=*) \
-        root="${root//\//\\x2f}"
-        root="/dev/disk/by-label/${root#LABEL=}"
-        rootok=1 ;;
-    UUID=*) \
-        root="/dev/disk/by-uuid/${root#UUID=}"
-        rootok=1 ;;
-    /dev/*) \
-        root="${root}"
-        rootok=1 ;;
+wait_for_mount "${cos_root}"
+/sbin/initqueue --settled --unique /sbin/cos-root-mnt "${cos_img}"
+
+# set sentinel file for boot mode
+case "${cos_img}" in
+    *recovery*)
+        echo 1 > /run/cos/recovery_mode ;;
+    *active*)
+        echo 1 > /run/cos/active_mode ;;
+    *passive*)
+        echo 1 > /run/cos/passive_mode ;;
 esac
-
-[ "${rootok}" != "1" ] && return 0
-
-info "root device set to root=${root}"
-
-wait_for_dev -n "${root}"
-/sbin/initqueue --settled --unique /sbin/cos-loop-img "${cos_img}"
 
 return 0

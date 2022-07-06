@@ -21,10 +21,10 @@ stages:
           cat /proc/cmdline | grep -q "active.img"
       commands:
       - |
-          mount -o rw,remount /run/initramfs/cos-state
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
-          mount -o ro,remount /run/initramfs/cos-state
+          mount -o rw,remount /run/cos/root
+          grub2-editenv /run/cos/root/boot_assessment set enable_boot_assessment=
+          grub2-editenv /run/cos/root/boot_assessment set boot_assessment_tentative=
+          mount -o ro,remount /run/cos/root
     - name: "Create upgrade failure sentinel if necessary"
       if: |
           cat /proc/cmdline | grep -q "upgrade_failure"
