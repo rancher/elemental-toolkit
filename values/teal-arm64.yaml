@@ -7,7 +7,7 @@ arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3@sha256:fd491438873119e95cf24f11eb727c27a8d69957497c2700ffb5b98f5a447edc
+tool_image: registry.opensuse.org/opensuse/leap:15.3.2.535@sha256:eee7bde22c0b6ad71c50f301a34ad430d1af4aeb1bdbcbd40c340048da136a97
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi
