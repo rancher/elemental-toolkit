@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
-	cloudconfig "github.com/rancher-sandbox/cloud-init/config"
+	cloudconfig "github.com/mudler/yip/pkg/schema/cloudinit"
 	"github.com/twpayne/go-vfs"
 )
 

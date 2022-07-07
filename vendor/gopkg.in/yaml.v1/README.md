@@ -1,6 +1,3 @@
-Note: This is a fork of https://github.com/go-yaml/yaml. The following README
-doesn't necessarily apply to this fork.
-
 # YAML support for the Go language
 
 Introduction

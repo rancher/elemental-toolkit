@@ -30,15 +30,13 @@ type node struct {
 // Parser, produces a node tree out of a libyaml event stream.
 
 type parser struct {
-	parser    yaml_parser_t
-	event     yaml_event_t
-	doc       *node
-	transform transformString
+	parser yaml_parser_t
+	event  yaml_event_t
+	doc    *node
 }
 
-func newParser(b []byte, t transformString) *parser {
-	p := parser{transform: t}
-
+func newParser(b []byte) *parser {
+	p := parser{}
 	if !yaml_parser_initialize(&p.parser) {
 		panic("Failed to initialize YAML emitter")
 	}
@@ -177,10 +175,7 @@ func (p *parser) mapping() *node {
 	p.anchor(n, p.event.anchor)
 	p.skip()
 	for p.event.typ != yaml_MAPPING_END_EVENT {
-		key := p.parse()
-		key.value = p.transform(key.value)
-		value := p.parse()
-		n.children = append(n.children, key, value)
+		n.children = append(n.children, p.parse(), p.parse())
 	}
 	p.skip()
 	return n

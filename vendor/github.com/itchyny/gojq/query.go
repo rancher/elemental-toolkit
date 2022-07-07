@@ -2,8 +2,6 @@ package gojq
 
 import (
 	"context"
-	"encoding/json"
-	"strconv"
 	"strings"
 )
 
@@ -93,11 +91,18 @@ func (e *Query) minify() {
 	}
 }
 
-func (e *Query) toIndices() []interface{} {
-	if e.FuncDefs != nil || e.Right != nil || e.Term == nil {
+func (e *Query) toIndexKey() interface{} {
+	if e.Term == nil {
 		return nil
 	}
-	return e.Term.toIndices()
+	return e.Term.toIndexKey()
+}
+
+func (e *Query) toIndices(xs []interface{}) []interface{} {
+	if e.Term == nil {
+		return nil
+	}
+	return e.Term.toIndices(xs)
 }
 
 // Import ...
@@ -117,12 +122,12 @@ func (e *Import) String() string {
 func (e *Import) writeTo(s *strings.Builder) {
 	if e.ImportPath != "" {
 		s.WriteString("import ")
-		s.WriteString(strconv.Quote(e.ImportPath))
+		jsonEncodeString(s, e.ImportPath)
 		s.WriteString(" as ")
 		s.WriteString(e.ImportAlias)
 	} else {
 		s.WriteString("include ")
-		s.WriteString(strconv.Quote(e.IncludePath))
+		jsonEncodeString(s, e.IncludePath)
 	}
 	if e.Meta != nil {
 		s.WriteByte(' ')
@@ -308,25 +313,48 @@ func (e *Term) toFunc() string {
 	}
 }
 
-func (e *Term) toIndices() []interface{} {
-	if e.Index != nil {
-		xs := e.Index.toIndices()
-		if xs == nil {
-			return nil
+func (e *Term) toIndexKey() interface{} {
+	switch e.Type {
+	case TermTypeNumber:
+		return toNumber(e.Number)
+	case TermTypeUnary:
+		return e.Unary.toNumber()
+	case TermTypeString:
+		if e.Str.Queries == nil {
+			return e.Str.Str
 		}
-		for _, s := range e.SuffixList {
-			x := s.toIndices()
-			if x == nil {
-				return nil
-			}
-			xs = append(xs, x...)
-		}
-		return xs
-	} else if e.Query != nil && len(e.SuffixList) == 0 {
-		return e.Query.toIndices()
-	} else {
+		return nil
+	default:
 		return nil
 	}
+}
+
+func (e *Term) toIndices(xs []interface{}) []interface{} {
+	switch e.Type {
+	case TermTypeIndex:
+		if xs = e.Index.toIndices(xs); xs == nil {
+			return nil
+		}
+	case TermTypeQuery:
+		if xs = e.Query.toIndices(xs); xs == nil {
+			return nil
+		}
+	default:
+		return nil
+	}
+	for _, s := range e.SuffixList {
+		if xs = s.toIndices(xs); xs == nil {
+			return nil
+		}
+	}
+	return xs
+}
+
+func (e *Term) toNumber() interface{} {
+	if e.Type == TermTypeNumber {
+		return toNumber(e.Number)
+	}
+	return nil
 }
 
 // Unary ...
@@ -348,6 +376,14 @@ func (e *Unary) writeTo(s *strings.Builder) {
 
 func (e *Unary) minify() {
 	e.Term.minify()
+}
+
+func (e *Unary) toNumber() interface{} {
+	v := e.Term.toNumber()
+	if v != nil && e.Op == OpSub {
+		v = funcOpNegate(v)
+	}
+	return v
 }
 
 // Pattern ...
@@ -393,7 +429,6 @@ type PatternObject struct {
 	KeyString *String
 	KeyQuery  *Query
 	Val       *Pattern
-	KeyOnly   string
 }
 
 func (e *PatternObject) String() string {
@@ -415,9 +450,6 @@ func (e *PatternObject) writeTo(s *strings.Builder) {
 	if e.Val != nil {
 		s.WriteString(": ")
 		e.Val.writeTo(s)
-	}
-	if e.KeyOnly != "" {
-		s.WriteString(e.KeyOnly)
 	}
 }
 
@@ -450,24 +482,22 @@ func (e *Index) writeTo(s *strings.Builder) {
 func (e *Index) writeSuffixTo(s *strings.Builder) {
 	if e.Name != "" {
 		s.WriteString(e.Name)
+	} else if e.Str != nil {
+		e.Str.writeTo(s)
 	} else {
-		if e.Str != nil {
-			e.Str.writeTo(s)
-		} else {
-			s.WriteByte('[')
-			if e.IsSlice {
-				if e.Start != nil {
-					e.Start.writeTo(s)
-				}
-				s.WriteByte(':')
-				if e.End != nil {
-					e.End.writeTo(s)
-				}
-			} else {
+		s.WriteByte('[')
+		if e.IsSlice {
+			if e.Start != nil {
 				e.Start.writeTo(s)
 			}
-			s.WriteByte(']')
+			s.WriteByte(':')
+			if e.End != nil {
+				e.End.writeTo(s)
+			}
+		} else {
+			e.Start.writeTo(s)
 		}
+		s.WriteByte(']')
 	}
 }
 
@@ -483,11 +513,38 @@ func (e *Index) minify() {
 	}
 }
 
-func (e *Index) toIndices() []interface{} {
-	if e.Name == "" {
-		return nil
+func (e *Index) toIndexKey() interface{} {
+	if e.Name != "" {
+		return e.Name
+	} else if e.Str != nil {
+		if e.Str.Queries == nil {
+			return e.Str.Str
+		}
+	} else if !e.IsSlice {
+		return e.Start.toIndexKey()
+	} else {
+		var start, end interface{}
+		ok := true
+		if e.Start != nil {
+			start = e.Start.toIndexKey()
+			ok = start != nil
+		}
+		if e.End != nil && ok {
+			end = e.End.toIndexKey()
+			ok = end != nil
+		}
+		if ok {
+			return map[string]interface{}{"start": start, "end": end}
+		}
 	}
-	return []interface{}{e.Name}
+	return nil
+}
+
+func (e *Index) toIndices(xs []interface{}) []interface{} {
+	if k := e.toIndexKey(); k != nil {
+		return append(xs, k)
+	}
+	return nil
 }
 
 // Func ...
@@ -543,7 +600,7 @@ func (e *String) String() string {
 
 func (e *String) writeTo(s *strings.Builder) {
 	if e.Queries == nil {
-		s.WriteString(strconv.Quote(e.Str))
+		jsonEncodeString(s, e.Str)
 		return
 	}
 	s.WriteByte('"')
@@ -599,12 +656,10 @@ func (e *Object) minify() {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string
-	KeyString     *String
-	KeyQuery      *Query
-	Val           *ObjectVal
-	KeyOnly       string
-	KeyOnlyString *String
+	Key       string
+	KeyString *String
+	KeyQuery  *Query
+	Val       *ObjectVal
 }
 
 func (e *ObjectKeyVal) String() string {
@@ -627,11 +682,6 @@ func (e *ObjectKeyVal) writeTo(s *strings.Builder) {
 		s.WriteString(": ")
 		e.Val.writeTo(s)
 	}
-	if e.KeyOnly != "" {
-		s.WriteString(e.KeyOnly)
-	} else if e.KeyOnlyString != nil {
-		e.KeyOnlyString.writeTo(s)
-	}
 }
 
 func (e *ObjectKeyVal) minify() {
@@ -642,9 +692,6 @@ func (e *ObjectKeyVal) minify() {
 	}
 	if e.Val != nil {
 		e.Val.minify()
-	}
-	if e.KeyOnlyString != nil {
-		e.KeyOnlyString.minify()
 	}
 }
 
@@ -737,21 +784,21 @@ func (e *Suffix) minify() {
 	}
 }
 
-func (e *Suffix) toTerm() (*Term, bool) {
+func (e *Suffix) toTerm() *Term {
 	if e.Index != nil {
-		return &Term{Type: TermTypeIndex, Index: e.Index}, true
+		return &Term{Type: TermTypeIndex, Index: e.Index}
 	} else if e.Iter {
-		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}, true
+		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}
 	} else {
-		return nil, false
+		return nil
 	}
 }
 
-func (e *Suffix) toIndices() []interface{} {
+func (e *Suffix) toIndices(xs []interface{}) []interface{} {
 	if e.Index == nil {
 		return nil
 	}
-	return e.Index.toIndices()
+	return e.Index.toIndices(xs)
 }
 
 // Bind ...
@@ -998,14 +1045,14 @@ func (e *ConstTerm) writeTo(s *strings.Builder) {
 		e.Array.writeTo(s)
 	} else if e.Number != "" {
 		s.WriteString(e.Number)
-	} else if e.Str != "" {
-		s.WriteString(strconv.Quote(e.Str))
 	} else if e.Null {
 		s.WriteString("null")
 	} else if e.True {
 		s.WriteString("true")
 	} else if e.False {
 		s.WriteString("false")
+	} else {
+		jsonEncodeString(s, e.Str)
 	}
 }
 
@@ -1015,7 +1062,7 @@ func (e *ConstTerm) toValue() interface{} {
 	} else if e.Array != nil {
 		return e.Array.toValue()
 	} else if e.Number != "" {
-		return normalizeNumbers(json.Number(e.Number))
+		return toNumber(e.Number)
 	} else if e.Null {
 		return nil
 	} else if e.True {

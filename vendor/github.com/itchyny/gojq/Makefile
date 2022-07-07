@@ -19,7 +19,7 @@ build-dev: parser.go builtin.go
 
 .PHONY: build-debug
 build-debug: parser.go builtin.go
-	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+	go build -tags gojq_debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
@@ -41,7 +41,7 @@ install-dev: parser.go builtin.go
 
 .PHONY: install-debug
 install-debug: parser.go builtin.go
-	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
+	go install -tags gojq_debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
 show-version: $(GOBIN)/gobump
@@ -52,7 +52,7 @@ $(GOBIN)/gobump:
 
 .PHONY: cross
 cross: $(GOBIN)/goxz CREDITS
-	goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) -arch=amd64,arm64 \
+	goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) \
 		-build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
 
 $(GOBIN)/goxz:
@@ -72,7 +72,7 @@ test: build
 .PHONY: lint
 lint: $(GOBIN)/staticcheck
 	go vet ./...
-	staticcheck -tags debug ./...
+	staticcheck -checks all,-ST1000 -tags gojq_debug ./...
 
 $(GOBIN)/staticcheck:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -89,8 +89,8 @@ clean:
 .PHONY: update
 update: export GOPROXY=direct
 update:
-	rm -f go.sum && go get -u -d ./... && go get -d github.com/mattn/go-runewidth@v0.0.9 && go mod tidy
-	sed -i.bak '/require (/,/)/d' go.dev.mod && rm -f go.dev.{sum,mod.bak}
+	go get -u -d ./... && go mod tidy
+	go mod edit -modfile=go.dev.mod -droprequire=github.com/itchyny/{astgen,timefmt}-go
 	go get -u -d -modfile=go.dev.mod github.com/itchyny/{astgen,timefmt}-go && go generate
 
 .PHONY: bump

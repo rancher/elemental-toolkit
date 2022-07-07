@@ -28,6 +28,10 @@ const (
 	KeyFlagSign
 	KeyFlagEncryptCommunications
 	KeyFlagEncryptStorage
+	KeyFlagSplitKey
+	KeyFlagAuthenticate
+	_
+	KeyFlagGroupKey
 )
 
 // Signature represents a signature. See RFC 4880, section 5.2.
@@ -66,6 +70,7 @@ type Signature struct {
 	PreferredAEAD                                           []uint8
 	IssuerKeyId                                             *uint64
 	IssuerFingerprint                                       []byte
+	SignerUserId                                            *string
 	IsPrimaryId                                             *bool
 
 	// PolicyURI can be set to the URI of a document that describes the
@@ -75,8 +80,8 @@ type Signature struct {
 
 	// FlagsValid is set if any flags were given. See RFC 4880, section
 	// 5.2.3.21 for details.
-	FlagsValid                                                           bool
-	FlagCertify, FlagSign, FlagEncryptCommunications, FlagEncryptStorage bool
+	FlagsValid                                                                                                         bool
+	FlagCertify, FlagSign, FlagEncryptCommunications, FlagEncryptStorage, FlagSplitKey, FlagAuthenticate, FlagGroupKey bool
 
 	// RevocationReason is set if this signature has been revoked.
 	// See RFC 4880, section 5.2.3.23 for details.
@@ -225,6 +230,7 @@ const (
 	primaryUserIdSubpacket       signatureSubpacketType = 25
 	policyUriSubpacket           signatureSubpacketType = 26
 	keyFlagsSubpacket            signatureSubpacketType = 27
+	signerUserIdSubpacket        signatureSubpacketType = 28
 	reasonForRevocationSubpacket signatureSubpacketType = 29
 	featuresSubpacket            signatureSubpacketType = 30
 	embeddedSignatureSubpacket   signatureSubpacketType = 32
@@ -374,6 +380,18 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		if subpacket[0]&KeyFlagEncryptStorage != 0 {
 			sig.FlagEncryptStorage = true
 		}
+		if subpacket[0]&KeyFlagSplitKey != 0 {
+			sig.FlagSplitKey = true
+		}
+		if subpacket[0]&KeyFlagAuthenticate != 0 {
+			sig.FlagAuthenticate = true
+		}
+		if subpacket[0]&KeyFlagGroupKey != 0 {
+			sig.FlagGroupKey = true
+		}
+	case signerUserIdSubpacket:
+		userId := string(subpacket)
+		sig.SignerUserId = &userId
 	case reasonForRevocationSubpacket:
 		// Reason For Revocation, section 5.2.3.23
 		if !isHashed {
@@ -851,6 +869,9 @@ func (sig *Signature) buildSubpackets(issuer PublicKey) (subpackets []outputSubp
 		contents := append([]uint8{uint8(issuer.Version)}, sig.IssuerFingerprint...)
 		subpackets = append(subpackets, outputSubpacket{true, issuerFingerprintSubpacket, sig.Version == 5, contents})
 	}
+	if sig.SignerUserId != nil {
+		subpackets = append(subpackets, outputSubpacket{true, signerUserIdSubpacket, false, []byte(*sig.SignerUserId)})
+	}
 	if sig.SigLifetimeSecs != nil && *sig.SigLifetimeSecs != 0 {
 		sigLifetime := make([]byte, 4)
 		binary.BigEndian.PutUint32(sigLifetime, *sig.SigLifetimeSecs)
@@ -872,6 +893,15 @@ func (sig *Signature) buildSubpackets(issuer PublicKey) (subpackets []outputSubp
 		}
 		if sig.FlagEncryptStorage {
 			flags |= KeyFlagEncryptStorage
+		}
+		if sig.FlagSplitKey {
+			flags |= KeyFlagSplitKey
+		}
+		if sig.FlagAuthenticate {
+			flags |= KeyFlagAuthenticate
+		}
+		if sig.FlagGroupKey {
+			flags |= KeyFlagGroupKey
 		}
 		subpackets = append(subpackets, outputSubpacket{true, keyFlagsSubpacket, false, []byte{flags}})
 	}
@@ -962,7 +992,7 @@ func (sig *Signature) AddMetadataToHashSuffix() {
 	n := sig.HashSuffix[len(sig.HashSuffix)-8:]
 	l := uint64(
 		uint64(n[0])<<56 | uint64(n[1])<<48 | uint64(n[2])<<40 | uint64(n[3])<<32 |
-		uint64(n[4])<<24 | uint64(n[5])<<16 | uint64(n[6])<<8  | uint64(n[7]))
+		uint64(n[4])<<24 | uint64(n[5])<<16 | uint64(n[6])<<8 | uint64(n[7]))
 
 	suffix := bytes.NewBuffer(nil)
 	suffix.Write(sig.HashSuffix[:l])

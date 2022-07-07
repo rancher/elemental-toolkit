@@ -1,10 +1,6 @@
 def not: if . then false else true end;
 def in(xs): . as $x | xs | has($x);
 def map(f): [.[] | f];
-def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];
-def from_entries:
-  map({ (.key // .Key // .name // .Name): (if has("value") then .value else .Value end) })
-    | add // {};
 def with_entries(f): to_entries | map(f) | from_entries;
 def select(f): if f then . else empty end;
 def recurse: recurse(.[]?);
@@ -24,21 +20,10 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
-def _flatten($x):
-  map(if type == "array" and $x != 0 then _flatten($x - 1) else [.] end) | add;
-def flatten($x):
-  if $x < 0
-  then error("flatten depth must not be negative")
-  else _flatten($x) // [] end;
-def flatten: _flatten(-1) // [];
-def min: min_by(.);
 def min_by(f): _min_by(map([f]));
-def max: max_by(.);
 def max_by(f): _max_by(map([f]));
-def sort: sort_by(.);
 def sort_by(f): _sort_by(map([f]));
 def group_by(f): _group_by(map([f]));
-def unique: unique_by(.);
 def unique_by(f): _unique_by(map([f]));
 
 def arrays: select(type == "array");
@@ -54,49 +39,9 @@ def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
-def indices($x): _indices($x);
-def index($x): _lindex($x);
-def rindex($x): _rindex($x);
 def inside(xs): . as $x | xs | contains($x);
-def startswith($x):
-  if type == "string" then
-    if $x|type == "string" then
-      .[:$x | length] == $x
-    else
-      $x | _type_error("startswith")
-    end
-  else
-    _type_error("startswith")
-  end;
-def endswith($x):
-  if type == "string" then
-    if $x|type == "string" then
-      .[- ($x | length):] == $x
-    else
-      $x | _type_error("endswith")
-    end
-  else
-    _type_error("endswith")
-  end;
-def ltrimstr($x):
-  if type == "string" and ($x|type == "string") and startswith($x) then
-    .[$x | length:]
-  end;
-def rtrimstr($x):
-  if type == "string" and ($x|type == "string") and endswith($x) then
-    .[:- ($x | length)]
-  end;
-
-def combinations:
-  if length == 0 then
-    []
-  else
-    .[0][] as $x | .[1:] | combinations as $y | [$x] + $y
-  end;
-def combinations(n):
-  . as $dot | [range(n) | $dot] | combinations;
-def join($x):
-  if type != "array" then [.[]] end | _join($x);
+def combinations: if length == 0 then [] else .[0][] as $x | [$x] + (.[1:] | combinations) end;
+def combinations(n): [limit(n; repeat(.))] | combinations;
 def ascii_downcase:
   explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
 def ascii_upcase:
@@ -109,18 +54,18 @@ def first: .[0];
 def first(g): label $out | g | ., break $out;
 def last: .[-1];
 def last(g): reduce g as $item (null; $item);
-def isempty(g): first((g|false), true);
-def all: all(.[]; .);
+def isempty(g): label $out | (g | false, break $out), true;
+def all: all(.);
 def all(y): all(.[]; y);
-def all(g; y): isempty(g|y and empty);
-def any: any(.[]; .);
+def all(g; y): isempty(g | select(y | not));
+def any: any(.);
 def any(y): any(.[]; y);
-def any(g; y): isempty(g|y or empty) | not;
+def any(g; y): isempty(g | select(y)) | not;
 def limit($n; g):
   if $n > 0 then
     label $out
       | foreach g as $item
-        ($n; .-1; $item, if . <= 0 then break $out else empty end)
+        ($n; . - 1; $item, if . <= 0 then break $out else empty end)
   elif $n == 0 then
     empty
   else
@@ -133,12 +78,11 @@ def nth($n; g):
   else
     label $out
       | foreach g as $item
-        ($n; .-1; . < 0 or empty | $item, break $out)
+        ($n + 1; . - 1; if . <= 0 then $item, break $out else empty end)
   end;
 
 def truncate_stream(f):
-  . as $n | null | f | . as $input
-    | if (.[0] | length) > $n then setpath([0]; $input[0][$n:]) else empty end;
+  . as $n | null | f | if .[0] | length > $n then .[0] |= .[$n:] else empty end;
 def fromstream(f):
   { x: null, e: false } as $init
     | foreach f as $i
@@ -161,11 +105,8 @@ def _modify(ps; f):
       | . as $x | $x[0] | delpaths($x[1]);
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
-def paths:
-  path(recurse(if type | . == "array" or . == "object" then .[] else empty end))
-    | select(length > 0);
-def paths(f):
-  . as $x | paths | select(. as $p | $x | getpath($p) | f);
+def paths: path(..) | select(. != []);
+def paths(f): paths as $p | select(getpath($p) | f) | $p;
 
 def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%S%z") | mktime;
 def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");
@@ -177,35 +118,30 @@ def match($re; $flags): _match($re; $flags; false) | .[];
 def test($re): test($re; null);
 def test($re; $flags): _match($re; $flags; true);
 def capture($re): capture($re; null);
-def capture($re; $flags):
-  match($re; $flags)
-    | [.captures[] | select(.name != null) | { (.name): .string }]
-    | add // {};
+def capture($re; $flags): match($re; $flags) | _capture;
 def scan($re): scan($re; null);
 def scan($re; $flags):
-  match($re; "g" + $flags)
+  match($re; $flags + "g")
     | if .captures|length > 0 then [.captures[].string] else .string end;
 def splits($re): splits($re; null);
 def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
-  . as $in
+  . as $str
     | def _sub:
         if .matches|length > 0
         then
-          . as $x | .matches[0] as $r
-            | [$r.captures[] | select(.name != null) | { (.name): .string }]
-            | add // {}
+          .matches[-1] as $r
             | {
-                string: ($x.string + $in[$x.offset:$r.offset] + str),
-                offset: ($r.offset + $r.length),
-                matches: $x.matches[1:]
+                string: (($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string),
+                offset: $r.offset,
+                matches: .matches[:-1],
               }
             | _sub
         else
-          .string + $in[.offset:]
+          $str[:.offset] + .string
         end;
-  { string: "", offset: 0, matches: [match($re; $flags)] } | _sub;
+  { string: "", matches: [match($re; $flags)] } | _sub;
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 

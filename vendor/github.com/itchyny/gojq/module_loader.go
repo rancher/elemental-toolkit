@@ -9,13 +9,24 @@ import (
 	"strings"
 )
 
-type moduleLoader struct {
-	paths []string
-}
+// ModuleLoader is the interface for loading modules.
+//
+// Implement following optional methods. Use NewModuleLoader to load local modules.
+//
+//   LoadModule(string) (*Query, error)
+//   LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
+//   LoadInitModules() ([]*Query, error)
+//   LoadJSON(string) (interface{}, error)
+//   LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
+type ModuleLoader interface{}
 
 // NewModuleLoader creates a new ModuleLoader reading local modules in the paths.
 func NewModuleLoader(paths []string) ModuleLoader {
 	return &moduleLoader{expandHomeDir(paths)}
+}
+
+type moduleLoader struct {
+	paths []string
 }
 
 func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
@@ -40,7 +51,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 		}
 		q, err := parseModule(path, string(cnt))
 		if err != nil {
-			return nil, &queryParseError{"query in module", path, string(cnt), err}
+			return nil, &queryParseError{path, string(cnt), err}
 		}
 		qs = append(qs, q)
 	}
@@ -58,7 +69,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface
 	}
 	q, err := parseModule(path, string(cnt))
 	if err != nil {
-		return nil, &queryParseError{"query in module", path, string(cnt), err}
+		return nil, &queryParseError{path, string(cnt), err}
 	}
 	return q, nil
 }

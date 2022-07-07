@@ -1,3 +1,4 @@
+//go:build solaris
 // +build solaris
 
 package xattr
@@ -23,14 +24,14 @@ const (
 )
 
 func getxattr(path string, name string, data []byte) (int, error) {
-	fd, err := unix.Open(path, unix.O_RDONLY, 0)
+	f, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
 		return 0, err
 	}
 	defer func() {
-		_ = unix.Close(fd)
+		_ = f.Close()
 	}()
-	return fgetxattr(os.NewFile(uintptr(fd), path), name, data)
+	return fgetxattr(f, name, data)
 }
 
 func lgetxattr(path string, name string, data []byte) (int, error) {
@@ -49,15 +50,16 @@ func fgetxattr(f *os.File, name string, data []byte) (int, error) {
 }
 
 func setxattr(path string, name string, data []byte, flags int) error {
-	fd, err := unix.Open(path, unix.O_RDONLY, 0)
+	f, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
 		return err
 	}
-	if err = fsetxattr(os.NewFile(uintptr(fd), path), name, data, flags); err != nil {
-		_ = unix.Close(fd)
+	err = fsetxattr(f, name, data, flags)
+	if err != nil {
+		_ = f.Close()
 		return err
 	}
-	return unix.Close(fd)
+	return f.Close()
 }
 
 func lsetxattr(path string, name string, data []byte, flags int) error {
@@ -89,10 +91,11 @@ func removexattr(path string, name string) error {
 	if err != nil {
 		return err
 	}
+	f := os.NewFile(uintptr(fd), path)
 	defer func() {
-		_ = unix.Close(fd)
+		_ = f.Close()
 	}()
-	return fremovexattr(os.NewFile(uintptr(fd), path), name)
+	return fremovexattr(f, name)
 }
 
 func lremovexattr(path string, name string) error {
@@ -111,14 +114,14 @@ func fremovexattr(f *os.File, name string) error {
 }
 
 func listxattr(path string, data []byte) (int, error) {
-	fd, err := unix.Open(path, unix.O_RDONLY, 0)
+	f, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
 		return 0, err
 	}
 	defer func() {
-		_ = unix.Close(fd)
+		_ = f.Close()
 	}()
-	return flistxattr(os.NewFile(uintptr(fd), path), data)
+	return flistxattr(f, data)
 }
 
 func llistxattr(path string, data []byte) (int, error) {
@@ -130,10 +133,11 @@ func flistxattr(f *os.File, data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	xf := os.NewFile(uintptr(fd), f.Name())
 	defer func() {
-		_ = unix.Close(fd)
+		_ = xf.Close()
 	}()
-	names, err := os.NewFile(uintptr(fd), f.Name()).Readdirnames(-1)
+	names, err := xf.Readdirnames(-1)
 	if err != nil {
 		return 0, err
 	}

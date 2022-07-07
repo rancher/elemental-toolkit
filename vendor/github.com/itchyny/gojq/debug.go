@@ -1,5 +1,5 @@
-//go:build debug
-// +build debug
+//go:build gojq_debug
+// +build gojq_debug
 
 package gojq
 
@@ -47,7 +47,7 @@ func (c *compiler) appendCodeInfo(x interface{}) {
 	if c.codes[len(c.codes)-1] != nil && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
 		diff = -1
 	}
-	c.codeinfos = append(c.codeinfos, codeinfo{name, c.pc() + diff})
+	c.codeinfos = append(c.codeinfos, codeinfo{name, len(c.codes) + diff})
 }
 
 func (c *compiler) deleteCodeInfo(name string) {
@@ -196,6 +196,8 @@ func debugValue(v interface{}) string {
 	switch v := v.(type) {
 	case Iter:
 		return fmt.Sprintf("gojq.Iter(%#v)", v)
+	case []pathValue:
+		return fmt.Sprintf("[]gojq.pathValue(%v)", v)
 	case [2]int:
 		return fmt.Sprintf("[%d,%d]", v[0], v[1])
 	case [3]int:
@@ -203,6 +205,6 @@ func debugValue(v interface{}) string {
 	case [3]interface{}:
 		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
 	default:
-		return previewValue(v)
+		return Preview(v)
 	}
 }

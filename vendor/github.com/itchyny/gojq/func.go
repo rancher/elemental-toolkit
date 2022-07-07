@@ -51,12 +51,21 @@ func init() {
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
+		"to_entries":     argFunc0(funcToEntries),
+		"from_entries":   argFunc0(funcFromEntries),
 		"add":            argFunc0(funcAdd),
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
 		"type":           argFunc0(funcType),
 		"reverse":        argFunc0(funcReverse),
 		"contains":       argFunc1(funcContains),
+		"indices":        argFunc1(funcIndices),
+		"index":          argFunc1(funcIndex),
+		"rindex":         argFunc1(funcRindex),
+		"startswith":     argFunc1(funcStartsWith),
+		"endswith":       argFunc1(funcEndsWith),
+		"ltrimstr":       argFunc1(funcLtrimstr),
+		"rtrimstr":       argFunc1(funcRtrimstr),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
@@ -70,11 +79,8 @@ func init() {
 		"_tosh":          argFunc0(funcToSh),
 		"_tobase64":      argFunc0(funcToBase64),
 		"_tobase64d":     argFunc0(funcToBase64d),
-		"_index":         argFunc2(funcIndex),
+		"_index":         argFunc2(funcIndex2),
 		"_slice":         argFunc3(funcSlice),
-		"_indices":       argFunc1(funcIndices),
-		"_lindex":        argFunc1(funcLindex),
-		"_rindex":        argFunc1(funcRindex),
 		"_plus":          argFunc0(funcOpPlus),
 		"_negate":        argFunc0(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
@@ -89,13 +95,18 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
+		"flatten":        {argcount0 | argcount1, false, funcFlatten},
 		"_range":         {argcount3, true, funcRange},
+		"min":            argFunc0(funcMin),
 		"_min_by":        argFunc1(funcMinBy),
+		"max":            argFunc0(funcMax),
 		"_max_by":        argFunc1(funcMaxBy),
+		"sort":           argFunc0(funcSort),
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
+		"unique":         argFunc0(funcUnique),
 		"_unique_by":     argFunc1(funcUniqueBy),
-		"_join":          argFunc1(funcJoin),
+		"join":           argFunc1(funcJoin),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -176,41 +187,41 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(funcMatch),
+		"_capture":       argFunc0(funcCapture),
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, false, funcHaltError},
-		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
 
-func argFunc0(fn func(interface{}) interface{}) function {
+func argFunc0(f func(interface{}) interface{}) function {
 	return function{
 		argcount0, false, func(v interface{}, _ []interface{}) interface{} {
-			return fn(v)
+			return f(v)
 		},
 	}
 }
 
-func argFunc1(fn func(_, _ interface{}) interface{}) function {
+func argFunc1(f func(_, _ interface{}) interface{}) function {
 	return function{
 		argcount1, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0])
+			return f(v, args[0])
 		},
 	}
 }
 
-func argFunc2(fn func(_, _, _ interface{}) interface{}) function {
+func argFunc2(f func(_, _, _ interface{}) interface{}) function {
 	return function{
 		argcount2, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0], args[1])
+			return f(v, args[0], args[1])
 		},
 	}
 }
 
-func argFunc3(fn func(_, _, _, _ interface{}) interface{}) function {
+func argFunc3(f func(_, _, _, _ interface{}) interface{}) function {
 	return function{
 		argcount3, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0], args[1], args[2])
+			return f(v, args[0], args[1], args[2])
 		},
 	}
 }
@@ -259,12 +270,8 @@ func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 
 func funcLength(v interface{}) interface{} {
 	switch v := v.(type) {
-	case []interface{}:
-		return len(v)
-	case map[string]interface{}:
-		return len(v)
-	case string:
-		return len([]rune(v))
+	case nil:
+		return 0
 	case int:
 		if v >= 0 {
 			return v
@@ -277,20 +284,23 @@ func funcLength(v interface{}) interface{} {
 			return v
 		}
 		return new(big.Int).Abs(v)
-	case nil:
-		return 0
+	case string:
+		return len([]rune(v))
+	case []interface{}:
+		return len(v)
+	case map[string]interface{}:
+		return len(v)
 	default:
 		return &funcTypeError{"length", v}
 	}
 }
 
 func funcUtf8ByteLength(v interface{}) interface{} {
-	switch v := v.(type) {
-	case string:
-		return len(v)
-	default:
+	s, ok := v.(string)
+	if !ok {
 		return &funcTypeError{"utf8bytelength", v}
 	}
+	return len(s)
 }
 
 func funcKeys(v interface{}) interface{} {
@@ -302,20 +312,39 @@ func funcKeys(v interface{}) interface{} {
 		}
 		return w
 	case map[string]interface{}:
-		w := make([]string, len(v))
-		var i int
-		for k := range v {
+		w := make([]interface{}, len(v))
+		for i, k := range keys(v) {
 			w[i] = k
-			i++
 		}
-		sort.Strings(w)
-		u := make([]interface{}, len(v))
-		for i, x := range w {
-			u[i] = x
-		}
-		return u
+		return w
 	default:
 		return &funcTypeError{"keys", v}
+	}
+}
+
+func keys(v map[string]interface{}) []string {
+	w := make([]string, len(v))
+	var i int
+	for k := range v {
+		w[i] = k
+		i++
+	}
+	sort.Strings(w)
+	return w
+}
+
+func values(v interface{}) ([]interface{}, bool) {
+	switch v := v.(type) {
+	case []interface{}:
+		return v, true
+	case map[string]interface{}:
+		vs := make([]interface{}, len(v))
+		for i, k := range keys(v) {
+			vs[i] = v[k]
+		}
+		return vs, true
+	default:
+		return nil, false
 	}
 }
 
@@ -325,75 +354,132 @@ func funcHas(v, x interface{}) interface{} {
 		if x, ok := toInt(x); ok {
 			return 0 <= x && x < len(v)
 		}
-		return &hasKeyTypeError{v, x}
 	case map[string]interface{}:
-		switch x := x.(type) {
-		case string:
+		if x, ok := x.(string); ok {
 			_, ok := v[x]
 			return ok
-		default:
-			return &hasKeyTypeError{v, x}
 		}
 	case nil:
 		return false
+	}
+	return &hasKeyTypeError{v, x}
+}
+
+func funcToEntries(v interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		w := make([]interface{}, len(v))
+		for i, x := range v {
+			w[i] = map[string]interface{}{"key": i, "value": x}
+		}
+		return w
+	case map[string]interface{}:
+		w := make([]interface{}, len(v))
+		for i, k := range keys(v) {
+			w[i] = map[string]interface{}{"key": k, "value": v[k]}
+		}
+		return w
 	default:
-		return &hasKeyTypeError{v, x}
+		return &funcTypeError{"to_entries", v}
 	}
 }
 
-func funcAdd(v interface{}) interface{} {
-	if vs, ok := v.(map[string]interface{}); ok {
-		xs := make([]string, len(vs))
-		var i int
-		for k := range vs {
-			xs[i] = k
-			i++
-		}
-		sort.Strings(xs)
-		us := make([]interface{}, len(vs))
-		for i, x := range xs {
-			us[i] = vs[x]
-		}
-		v = us
-	}
+func funcFromEntries(v interface{}) interface{} {
 	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"from_entries", v}
+	}
+	w := make(map[string]interface{}, len(vs))
+	for _, v := range vs {
+		switch v := v.(type) {
+		case map[string]interface{}:
+			var (
+				key   string
+				value interface{}
+				ok    bool
+			)
+			for _, k := range [4]string{"key", "Key", "name", "Name"} {
+				if k := v[k]; k != nil && k != false {
+					if key, ok = k.(string); !ok {
+						return &objectKeyNotStringError{k}
+					}
+					break
+				}
+			}
+			if !ok {
+				return &objectKeyNotStringError{nil}
+			}
+			for _, k := range [2]string{"value", "Value"} {
+				if value, ok = v[k]; ok {
+					break
+				}
+			}
+			w[key] = value
+		default:
+			return &funcTypeError{"from_entries", v}
+		}
+	}
+	return w
+}
+
+func funcAdd(v interface{}) interface{} {
+	vs, ok := values(v)
 	if !ok {
 		return &funcTypeError{"add", v}
 	}
 	v = nil
 	for _, x := range vs {
-		switch y := x.(type) {
-		case map[string]interface{}:
+		switch x := x.(type) {
+		case nil:
+			continue
+		case string:
 			switch w := v.(type) {
 			case nil:
-				m := make(map[string]interface{}, len(y))
-				for k, e := range y {
-					m[k] = e
-				}
-				v = m
+				var sb strings.Builder
+				sb.WriteString(x)
+				v = &sb
 				continue
-			case map[string]interface{}:
-				for k, e := range y {
-					w[k] = e
-				}
+			case *strings.Builder:
+				w.WriteString(x)
 				continue
 			}
 		case []interface{}:
 			switch w := v.(type) {
 			case nil:
-				s := make([]interface{}, len(y))
-				copy(s, y)
+				s := make([]interface{}, len(x))
+				copy(s, x)
 				v = s
 				continue
 			case []interface{}:
-				v = append(w, y...)
+				v = append(w, x...)
 				continue
 			}
+		case map[string]interface{}:
+			switch w := v.(type) {
+			case nil:
+				m := make(map[string]interface{}, len(x))
+				for k, e := range x {
+					m[k] = e
+				}
+				v = m
+				continue
+			case map[string]interface{}:
+				for k, e := range x {
+					w[k] = e
+				}
+				continue
+			}
+		}
+		if sb, ok := v.(*strings.Builder); ok {
+			v = sb.String()
 		}
 		v = funcOpAdd(nil, v, x)
 		if err, ok := v.(error); ok {
 			return err
 		}
+	}
+	if sb, ok := v.(*strings.Builder); ok {
+		v = sb.String()
 	}
 	return v
 }
@@ -406,10 +492,14 @@ func funcToNumber(v interface{}) interface{} {
 		if !newLexer(v).validNumber() {
 			return fmt.Errorf("invalid number: %q", v)
 		}
-		return normalizeNumbers(json.Number(v))
+		return toNumber(v)
 	default:
 		return &funcTypeError{"tonumber", v}
 	}
+}
+
+func toNumber(v string) interface{} {
+	return normalizeNumber(json.Number(v))
 }
 
 func funcToString(v interface{}) interface{} {
@@ -420,13 +510,13 @@ func funcToString(v interface{}) interface{} {
 }
 
 func funcType(v interface{}) interface{} {
-	return typeof(v)
+	return TypeOf(v)
 }
 
 func funcReverse(v interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"reverse", v}
 	}
 	ws := make([]interface{}, len(vs))
 	for i, v := range vs {
@@ -436,94 +526,187 @@ func funcReverse(v interface{}) interface{} {
 }
 
 func funcContains(v, x interface{}) interface{} {
-	switch v := v.(type) {
-	case nil:
-		if x == nil {
-			return true
-		}
-	case bool:
-		switch x := x.(type) {
-		case bool:
-			if v == x {
-				return true
-			}
-		}
-	}
 	return binopTypeSwitch(v, x,
 		func(l, r int) interface{} { return l == r },
 		func(l, r float64) interface{} { return l == r },
 		func(l, r *big.Int) interface{} { return l.Cmp(r) == 0 },
 		func(l, r string) interface{} { return strings.Contains(l, r) },
 		func(l, r []interface{}) interface{} {
-			for _, x := range r {
-				var found bool
-				for _, y := range l {
-					if funcContains(y, x) == true {
-						found = true
-						break
+		R:
+			for _, r := range r {
+				for _, l := range l {
+					if funcContains(l, r) == true {
+						continue R
 					}
 				}
-				if !found {
-					return false
-				}
+				return false
 			}
 			return true
 		},
 		func(l, r map[string]interface{}) interface{} {
-			for k, rk := range r {
-				lk, ok := l[k]
-				if !ok {
-					return false
-				}
-				c := funcContains(lk, rk)
-				if _, ok := c.(error); ok {
-					return false
-				}
-				if c == false {
+			if len(l) < len(r) {
+				return false
+			}
+			for k, r := range r {
+				if l, ok := l[k]; !ok || funcContains(l, r) != true {
 					return false
 				}
 			}
 			return true
 		},
-		func(l, r interface{}) interface{} { return &funcContainsError{l, r} },
+		func(l, r interface{}) interface{} {
+			if l == r {
+				return true
+			}
+			return &containsTypeError{l, r}
+		},
 	)
 }
 
-func funcExplode(v interface{}) interface{} {
+func funcIndices(v, x interface{}) interface{} {
+	return indexFunc(v, x, indices)
+}
+
+func indices(vs, xs []interface{}) interface{} {
+	var rs []interface{}
+	if len(xs) == 0 {
+		return rs
+	}
+	for i := 0; i <= len(vs)-len(xs); i++ {
+		if compare(vs[i:i+len(xs)], xs) == 0 {
+			rs = append(rs, i)
+		}
+	}
+	return rs
+}
+
+func funcIndex(v, x interface{}) interface{} {
+	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
+		if len(xs) == 0 {
+			return nil
+		}
+		for i := 0; i <= len(vs)-len(xs); i++ {
+			if compare(vs[i:i+len(xs)], xs) == 0 {
+				return i
+			}
+		}
+		return nil
+	})
+}
+
+func funcRindex(v, x interface{}) interface{} {
+	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
+		if len(xs) == 0 {
+			return nil
+		}
+		for i := len(vs) - len(xs); i >= 0; i-- {
+			if compare(vs[i:i+len(xs)], xs) == 0 {
+				return i
+			}
+		}
+		return nil
+	})
+}
+
+func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interface{} {
 	switch v := v.(type) {
+	case nil:
+		return nil
+	case []interface{}:
+		switch x := x.(type) {
+		case []interface{}:
+			return f(v, x)
+		default:
+			return f(v, []interface{}{x})
+		}
 	case string:
-		return explode(v)
+		if x, ok := x.(string); ok {
+			return f(explode(v), explode(x))
+		}
+		return &expectedStringError{x}
 	default:
-		return &funcTypeError{"explode", v}
+		return &expectedArrayError{v}
 	}
 }
 
+func funcStartsWith(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"startswith", v}
+	}
+	t, ok := x.(string)
+	if !ok {
+		return &funcTypeError{"startswith", x}
+	}
+	return strings.HasPrefix(s, t)
+}
+
+func funcEndsWith(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"endswith", v}
+	}
+	t, ok := x.(string)
+	if !ok {
+		return &funcTypeError{"endswith", x}
+	}
+	return strings.HasSuffix(s, t)
+}
+
+func funcLtrimstr(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+	t, ok := x.(string)
+	if !ok {
+		return v
+	}
+	return strings.TrimPrefix(s, t)
+}
+
+func funcRtrimstr(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+	t, ok := x.(string)
+	if !ok {
+		return v
+	}
+	return strings.TrimSuffix(s, t)
+}
+
+func funcExplode(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"explode", v}
+	}
+	return explode(s)
+}
+
 func explode(s string) []interface{} {
-	rs := []int32(s)
-	xs := make([]interface{}, len(rs))
-	for i, r := range rs {
+	xs := make([]interface{}, len([]rune(s)))
+	var i int
+	for _, r := range s {
 		xs[i] = int(r)
+		i++
 	}
 	return xs
 }
 
 func funcImplode(v interface{}) interface{} {
-	switch v := v.(type) {
-	case []interface{}:
-		return implode(v)
-	default:
+	vs, ok := v.([]interface{})
+	if !ok {
 		return &funcTypeError{"implode", v}
 	}
-}
-
-func implode(v []interface{}) interface{} {
 	var sb strings.Builder
-	sb.Grow(len(v))
-	for _, r := range v {
-		if r, ok := toInt(r); ok && 0 <= r && r <= utf8.MaxRune {
+	sb.Grow(len(vs))
+	for _, v := range vs {
+		if r, ok := toInt(v); ok && 0 <= r && r <= utf8.MaxRune {
 			sb.WriteRune(rune(r))
 		} else {
-			return &funcTypeError{"implode", v}
+			return &funcTypeError{"implode", vs}
 		}
 	}
 	return sb.String()
@@ -568,31 +751,30 @@ func funcToJSON(v interface{}) interface{} {
 }
 
 func funcFromJSON(v interface{}) interface{} {
-	switch v := v.(type) {
-	case string:
-		var w interface{}
-		err := json.Unmarshal([]byte(v), &w)
-		if err != nil {
-			return err
-		}
-		return w
-	default:
+	s, ok := v.(string)
+	if !ok {
 		return &funcTypeError{"fromjson", v}
 	}
+	var w interface{}
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	if err := dec.Decode(&w); err != nil {
+		return err
+	}
+	return normalizeNumbers(w)
 }
 
 func funcFormat(v, x interface{}) interface{} {
-	switch x := x.(type) {
-	case string:
-		fmt := "@" + x
-		f := formatToFunc(fmt)
-		if f == nil {
-			return &formatNotFoundError{fmt}
-		}
-		return internalFuncs[f.Name].callback(v, nil)
-	default:
+	s, ok := x.(string)
+	if !ok {
 		return &funcTypeError{"format", x}
 	}
+	fmt := "@" + s
+	f := formatToFunc(fmt)
+	if f == nil {
+		return &formatNotFoundError{fmt}
+	}
+	return internalFuncs[f.Name].callback(v, nil)
 }
 
 var htmlEscaper = strings.NewReplacer(
@@ -622,7 +804,7 @@ func funcToURI(v interface{}) interface{} {
 }
 
 func funcToCSV(v interface{}) interface{} {
-	return funcToCSVTSV("csv", v, ",", func(s string) string {
+	return formatJoin("csv", v, ",", func(s string) string {
 		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 	})
 }
@@ -635,66 +817,37 @@ var tsvEscaper = strings.NewReplacer(
 )
 
 func funcToTSV(v interface{}) interface{} {
-	return funcToCSVTSV("tsv", v, "\t", func(s string) string {
-		return tsvEscaper.Replace(s)
-	})
-}
-
-func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) string) interface{} {
-	switch xs := v.(type) {
-	case []interface{}:
-		ys := make([]string, len(xs))
-		for i, x := range xs {
-			y, err := toCSVTSV(typ, x, escape)
-			if err != nil {
-				return err
-			}
-			ys[i] = y
-		}
-		return strings.Join(ys, sep)
-	default:
-		return &expectedArrayError{v}
-	}
-}
-
-func toCSVTSV(typ string, v interface{}, escape func(string) string) (string, error) {
-	switch v := v.(type) {
-	case map[string]interface{}, []interface{}:
-		return "", &formatCsvTsvRowError{typ, v}
-	case string:
-		return escape(v), nil
-	default:
-		if s := jsonMarshal(v); s != "null" {
-			return s, nil
-		}
-		return "", nil
-	}
+	return formatJoin("tsv", v, "\t", tsvEscaper.Replace)
 }
 
 func funcToSh(v interface{}) interface{} {
-	var xs []interface{}
-	if w, ok := v.([]interface{}); ok {
-		xs = w
-	} else {
-		xs = []interface{}{v}
+	if _, ok := v.([]interface{}); !ok {
+		v = []interface{}{v}
 	}
-	var s strings.Builder
-	for i, x := range xs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
-		switch x := x.(type) {
-		case map[string]interface{}, []interface{}:
-			return &formatShError{x}
+	return formatJoin("sh", v, " ", func(s string) string {
+		return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+	})
+}
+
+func formatJoin(typ string, v interface{}, sep string, escape func(string) string) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"@" + typ, v}
+	}
+	ss := make([]string, len(vs))
+	for i, v := range vs {
+		switch v := v.(type) {
+		case []interface{}, map[string]interface{}:
+			return &formatRowError{typ, v}
 		case string:
-			s.WriteByte('\'')
-			s.WriteString(strings.ReplaceAll(x, "'", `'\''`))
-			s.WriteByte('\'')
+			ss[i] = escape(v)
 		default:
-			s.WriteString(jsonMarshal(x))
+			if s := jsonMarshal(v); s != "null" || typ == "sh" {
+				ss[i] = s
+			}
 		}
 	}
-	return s.String()
+	return strings.Join(ss, sep)
 }
 
 func funcToBase64(v interface{}) interface{} {
@@ -722,7 +875,7 @@ func funcToBase64d(v interface{}) interface{} {
 	}
 }
 
-func funcIndex(_, v, x interface{}) interface{} {
+func funcIndex2(_, v, x interface{}) interface{} {
 	switch x := x.(type) {
 	case string:
 		switch v := v.(type) {
@@ -734,23 +887,14 @@ func funcIndex(_, v, x interface{}) interface{} {
 			return &expectedObjectError{v}
 		}
 	case int, float64, *big.Int:
-		idx, _ := toInt(x)
+		i, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
 			return nil
 		case []interface{}:
-			return funcIndexSlice(nil, nil, &idx, v)
+			return index(v, i)
 		case string:
-			switch v := funcIndexSlice(nil, nil, &idx, explode(v)).(type) {
-			case []interface{}:
-				return implode(v)
-			case int:
-				return implode([]interface{}{v})
-			case nil:
-				return ""
-			default:
-				panic(v)
-			}
+			return indexString(v, i)
 		default:
 			return &expectedArrayError{v}
 		}
@@ -777,185 +921,156 @@ func funcIndex(_, v, x interface{}) interface{} {
 		}
 		return funcSlice(nil, v, end, start)
 	default:
-		return &objectKeyNotStringError{x}
+		switch v.(type) {
+		case []interface{}:
+			return &arrayIndexNotNumberError{x}
+		case string:
+			return &stringIndexNotNumberError{x}
+		default:
+			return &objectKeyNotStringError{x}
+		}
 	}
 }
 
-func indices(vs, xs []interface{}) interface{} {
-	var rs []interface{}
-	if len(xs) == 0 {
-		return rs
+func index(vs []interface{}, i int) interface{} {
+	i = clampIndex(i, -1, len(vs))
+	if 0 <= i && i < len(vs) {
+		return vs[i]
 	}
-	for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
-		var neq bool
-		for j, y := range xs {
-			if neq = compare(vs[i+j], y) != 0; neq {
+	return nil
+}
+
+func indexString(s string, i int) interface{} {
+	l := len([]rune(s))
+	i = clampIndex(i, -1, l)
+	if 0 <= i && i < l {
+		for _, r := range s {
+			if i--; i < 0 {
+				return string(r)
+			}
+		}
+	}
+	return nil
+}
+
+func funcSlice(_, v, e, s interface{}) (r interface{}) {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []interface{}:
+		return slice(v, e, s)
+	case string:
+		return sliceString(v, e, s)
+	default:
+		return &expectedArrayError{v}
+	}
+}
+
+func slice(vs []interface{}, e, s interface{}) interface{} {
+	var start, end int
+	if s != nil {
+		if i, ok := toInt(s); ok {
+			start = clampIndex(i, 0, len(vs))
+		} else {
+			return &arrayIndexNotNumberError{s}
+		}
+	}
+	if e != nil {
+		if i, ok := toInt(e); ok {
+			end = clampIndex(i, start, len(vs))
+		} else {
+			return &arrayIndexNotNumberError{e}
+		}
+	} else {
+		end = len(vs)
+	}
+	return vs[start:end]
+}
+
+func sliceString(v string, e, s interface{}) interface{} {
+	var start, end int
+	l := len([]rune(v))
+	if s != nil {
+		if i, ok := toInt(s); ok {
+			start = clampIndex(i, 0, l)
+		} else {
+			return &stringIndexNotNumberError{s}
+		}
+	}
+	if e != nil {
+		if i, ok := toInt(e); ok {
+			end = clampIndex(i, start, l)
+		} else {
+			return &stringIndexNotNumberError{e}
+		}
+	} else {
+		end = l
+	}
+	if start < l {
+		for i := range v {
+			if start--; start < 0 {
+				start = i
 				break
 			}
 		}
-		if !neq {
-			rs = append(rs, i)
-		}
+	} else {
+		start = len(v)
 	}
-	return rs
+	if end < l {
+		for i := range v {
+			if end--; end < 0 {
+				end = i
+				break
+			}
+		}
+	} else {
+		end = len(v)
+	}
+	return v[start:end]
 }
 
-func funcSlice(_, v, end, start interface{}) (r interface{}) {
-	if w, ok := v.(string); ok {
-		v = explode(w)
-		defer func() {
-			switch s := r.(type) {
-			case []interface{}:
-				r = implode(s)
-			case int:
-				r = implode([]interface{}{s})
-			case nil:
-				r = ""
-			case error:
-			default:
-				panic(r)
-			}
-		}()
+func clampIndex(i, min, max int) int {
+	if i < 0 {
+		i += max
 	}
-	switch v := v.(type) {
-	case nil:
-		return nil
-	case []interface{}:
-		if start != nil {
-			if start, ok := toInt(start); ok {
-				if end != nil {
-					if end, ok := toInt(end); ok {
-						return funcIndexSlice(&start, &end, nil, v)
-					}
-					return &arrayIndexNotNumberError{end}
-				}
-				return funcIndexSlice(&start, nil, nil, v)
-			}
-			return &arrayIndexNotNumberError{start}
-		}
-		if end != nil {
-			if end, ok := toInt(end); ok {
-				return funcIndexSlice(nil, &end, nil, v)
-			}
-			return &arrayIndexNotNumberError{end}
-		}
-		return v
-	default:
-		return &expectedArrayError{v}
-	}
-}
-
-func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
-	aa := a
-	if index != nil {
-		i := toIndex(aa, *index)
-		if i < 0 {
-			return nil
-		}
-		return a[i]
-	}
-	if end != nil {
-		i := toIndex(aa, *end)
-		if i == -1 {
-			i = len(a)
-		} else if i == -2 {
-			i = 0
-		}
-		a = a[:i]
-	}
-	if start != nil {
-		i := toIndex(aa, *start)
-		if i == -1 || len(a) < i {
-			i = len(a)
-		} else if i == -2 {
-			i = 0
-		}
-		a = a[i:]
-	}
-	return a
-}
-
-func toIndex(a []interface{}, i int) int {
-	l := len(a)
-	switch {
-	case i < -l:
-		return -2
-	case i < 0:
-		return l + i
-	case i < l:
+	if i < min {
+		return min
+	} else if i < max {
 		return i
-	default:
-		return -1
+	} else {
+		return max
 	}
 }
 
-func funcIndices(v, x interface{}) interface{} {
-	return indexFunc(v, x, indices)
-}
-
-func funcLindex(v, x interface{}) interface{} {
-	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
-		if len(xs) == 0 {
-			return nil
-		}
-		for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
-			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
-					break
-				}
-			}
-			if !neq {
-				return i
-			}
-		}
-		return nil
-	})
-}
-
-func funcRindex(v, x interface{}) interface{} {
-	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
-		if len(xs) == 0 {
-			return nil
-		}
-		i := len(vs) - 1
-		if j := len(vs) - len(xs); j < i {
-			i = j
-		}
-		for ; i >= 0; i-- {
-			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
-					break
-				}
-			}
-			if !neq {
-				return i
-			}
-		}
-		return nil
-	})
-}
-
-func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interface{} {
-	switch v := v.(type) {
-	case nil:
-		return nil
-	case []interface{}:
-		switch x := x.(type) {
-		case []interface{}:
-			return f(v, x)
-		default:
-			return f(v, []interface{}{x})
-		}
-	case string:
-		if x, ok := x.(string); ok {
-			return f(explode(v), explode(x))
-		}
-		return &expectedStringError{x}
-	default:
-		return &expectedArrayError{v}
+func funcFlatten(v interface{}, args []interface{}) interface{} {
+	vs, ok := values(v)
+	if !ok {
+		return &funcTypeError{"flatten", v}
 	}
+	var depth float64
+	if len(args) == 0 {
+		depth = -1
+	} else {
+		depth, ok = toFloat(args[0])
+		if !ok {
+			return &funcTypeError{"flatten", args[0]}
+		}
+		if depth < 0 {
+			return &flattenDepthError{depth}
+		}
+	}
+	return flatten(nil, vs, depth)
+}
+
+func flatten(xs, vs []interface{}, depth float64) []interface{} {
+	for _, v := range vs {
+		if vs, ok := v.([]interface{}); ok && depth != 0 {
+			xs = flatten(xs, vs, depth-1)
+		} else {
+			xs = append(xs, v)
+		}
+	}
+	return xs
 }
 
 type rangeIter struct {
@@ -982,43 +1097,59 @@ func funcRange(_ interface{}, xs []interface{}) interface{} {
 	return &rangeIter{xs[0], xs[1], xs[2]}
 }
 
+func funcMin(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"min", v}
+	}
+	return minMaxBy(vs, vs, true)
+}
+
 func funcMinBy(v, x interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"min_by", v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return &expectedArrayError{x}
+		return &funcTypeError{"min_by", x}
 	}
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"min_by", vs, xs}
 	}
-	return funcMinMaxBy(vs, xs, true)
+	return minMaxBy(vs, xs, true)
+}
+
+func funcMax(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"max", v}
+	}
+	return minMaxBy(vs, vs, false)
 }
 
 func funcMaxBy(v, x interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"max_by", v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return &expectedArrayError{x}
+		return &funcTypeError{"max_by", x}
 	}
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"max_by", vs, xs}
 	}
-	return funcMinMaxBy(vs, xs, false)
+	return minMaxBy(vs, xs, false)
 }
 
-func funcMinMaxBy(vs, xs []interface{}, isMin bool) interface{} {
+func minMaxBy(vs, xs []interface{}, isMin bool) interface{} {
 	if len(vs) == 0 {
 		return nil
 	}
 	i, j, x := 0, 0, xs[0]
 	for i++; i < len(xs); i++ {
-		if (compare(x, xs[i]) > 0) == isMin {
+		if compare(x, xs[i]) > 0 == isMin {
 			j, x = i, xs[i]
 		}
 	}
@@ -1029,8 +1160,38 @@ type sortItem struct {
 	value, key interface{}
 }
 
+func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return nil, &funcTypeError{name, v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return nil, &funcTypeError{name, x}
+	}
+	if len(vs) != len(xs) {
+		return nil, &lengthMismatchError{name, vs, xs}
+	}
+	items := make([]*sortItem, len(vs))
+	for i, v := range vs {
+		items[i] = &sortItem{v, xs[i]}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		return compare(items[i].key, items[j].key) < 0
+	})
+	return items, nil
+}
+
+func funcSort(v interface{}) interface{} {
+	return sortBy("sort", v, v)
+}
+
 func funcSortBy(v, x interface{}) interface{} {
-	items, err := sortItems("sort_by", v, x)
+	return sortBy("sort_by", v, x)
+}
+
+func sortBy(name string, v, x interface{}) interface{} {
+	items, err := sortItems(name, v, x)
 	if err != nil {
 		return err
 	}
@@ -1058,8 +1219,16 @@ func funcGroupBy(v, x interface{}) interface{} {
 	return rs
 }
 
+func funcUnique(v interface{}) interface{} {
+	return uniqueBy("unique", v, v)
+}
+
 func funcUniqueBy(v, x interface{}) interface{} {
-	items, err := sortItems("unique_by", v, x)
+	return uniqueBy("unique_by", v, x)
+}
+
+func uniqueBy(name string, v, x interface{}) interface{} {
+	items, err := sortItems(name, v, x)
 	if err != nil {
 		return err
 	}
@@ -1074,9 +1243,9 @@ func funcUniqueBy(v, x interface{}) interface{} {
 }
 
 func funcJoin(v, x interface{}) interface{} {
-	vs, ok := v.([]interface{})
+	vs, ok := values(v)
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"join", v}
 	}
 	if len(vs) == 0 {
 		return ""
@@ -1086,46 +1255,24 @@ func funcJoin(v, x interface{}) interface{} {
 		return &funcTypeError{"join", x}
 	}
 	ss := make([]string, len(vs))
-	for i, e := range vs {
-		switch e := e.(type) {
+	for i, v := range vs {
+		switch v := v.(type) {
 		case nil:
 		case string:
-			ss[i] = e
+			ss[i] = v
 		case bool:
-			if e {
+			if v {
 				ss[i] = "true"
 			} else {
 				ss[i] = "false"
 			}
 		case int, float64, *big.Int:
-			ss[i] = jsonMarshal(e)
+			ss[i] = jsonMarshal(v)
 		default:
-			return &unaryTypeError{"join", e}
+			return &joinTypeError{v}
 		}
 	}
 	return strings.Join(ss, sep)
-}
-
-func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
-	vs, ok := v.([]interface{})
-	if !ok {
-		return nil, &expectedArrayError{v}
-	}
-	xs, ok := x.([]interface{})
-	if !ok {
-		return nil, &expectedArrayError{x}
-	}
-	if len(vs) != len(xs) {
-		return nil, &lengthMismatchError{name, vs, xs}
-	}
-	items := make([]*sortItem, len(vs))
-	for i, v := range vs {
-		items[i] = &sortItem{v, xs[i]}
-	}
-	sort.SliceStable(items, func(i, j int) bool {
-		return compare(items[i].key, items[j].key) < 0
-	})
-	return items, nil
 }
 
 func funcSignificand(v float64) float64 {
@@ -1224,13 +1371,13 @@ func funcIsnormal(v interface{}) interface{} {
 	return ok && !math.IsNaN(x) && !math.IsInf(x, 0) && x != 0.0
 }
 
-func funcSetpath(v, p, w interface{}) interface{} {
+func funcSetpath(v, p, n interface{}) interface{} {
 	path, ok := p.([]interface{})
 	if !ok {
 		return &funcTypeError{"setpath", p}
 	}
 	var err error
-	if v, err = updatePaths(v, path, w, false); err != nil {
+	if v, err = update(v, path, n); err != nil {
 		if err, ok := err.(*funcTypeError); ok {
 			err.name = "setpath"
 		}
@@ -1254,173 +1401,47 @@ func funcDelpaths(v, p interface{}) interface{} {
 		if !ok {
 			return &funcTypeError{"delpaths", p}
 		}
-		if v, err = updatePaths(v, path, empty, true); err != nil {
+		if v, err = update(v, path, empty); err != nil {
 			return err
 		}
 	}
 	return deleteEmpty(v)
 }
 
-func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool) (interface{}, error) {
+func update(v interface{}, path []interface{}, n interface{}) (interface{}, error) {
 	if len(path) == 0 {
-		return w, nil
+		return n, nil
 	}
-	switch x := path[0].(type) {
+	switch p := path[0].(type) {
 	case string:
-		if v == nil {
-			if delpaths {
-				return v, nil
-			}
-			v = make(map[string]interface{})
-		}
-		switch uu := v.(type) {
+		switch v := v.(type) {
+		case nil:
+			return updateObject(nil, p, path[1:], n)
 		case map[string]interface{}:
-			if _, ok := uu[x]; !ok && delpaths {
-				return v, nil
-			}
-			u, err := updatePaths(uu[x], path[1:], w, delpaths)
-			if err != nil {
-				return nil, err
-			}
-			vs := make(map[string]interface{}, len(uu))
-			for k, v := range uu {
-				vs[k] = v
-			}
-			vs[x] = u
-			return vs, nil
+			return updateObject(v, p, path[1:], n)
 		case struct{}:
 			return v, nil
 		default:
 			return nil, &expectedObjectError{v}
 		}
 	case int, float64, *big.Int:
-		if v == nil {
-			if delpaths {
-				return v, nil
-			}
-			v = []interface{}{}
-		}
-		switch uu := v.(type) {
+		i, _ := toInt(p)
+		switch v := v.(type) {
+		case nil:
+			return updateArrayIndex(nil, i, path[1:], n)
 		case []interface{}:
-			y, _ := toInt(x)
-			l := len(uu)
-			var copied bool
-			if copied = y >= l; copied {
-				if delpaths {
-					return v, nil
-				}
-				if y > 0x3ffffff {
-					return nil, &arrayIndexTooLargeError{y}
-				}
-				l = y + 1
-				ys := make([]interface{}, l)
-				copy(ys, uu)
-				uu = ys
-			} else if y < -l {
-				if delpaths {
-					return v, nil
-				}
-				return nil, &funcTypeError{v: y}
-			} else if y < 0 {
-				y += l
-			}
-			u, err := updatePaths(uu[y], path[1:], w, delpaths)
-			if err != nil {
-				return nil, err
-			}
-			if copied {
-				uu[y] = u
-				return uu, nil
-			}
-			vs := make([]interface{}, l)
-			copy(vs, uu)
-			vs[y] = u
-			return vs, nil
+			return updateArrayIndex(v, i, path[1:], n)
 		case struct{}:
 			return v, nil
 		default:
 			return nil, &expectedArrayError{v}
 		}
 	case map[string]interface{}:
-		if len(x) == 0 {
-			switch v.(type) {
-			case []interface{}:
-				return nil, &arrayIndexNotNumberError{x}
-			default:
-				return nil, &objectKeyNotStringError{x}
-			}
-		}
-		if v == nil {
-			v = []interface{}{}
-		}
-		switch uu := v.(type) {
+		switch v := v.(type) {
+		case nil:
+			return updateArraySlice(nil, p, path[1:], n)
 		case []interface{}:
-			var start, end int
-			if x, ok := toInt(x["start"]); ok {
-				x := toIndex(uu, x)
-				if x > len(uu) || x == -1 {
-					start = len(uu)
-				} else if x == -2 {
-					start = 0
-				} else {
-					start = x
-				}
-			}
-			if x, ok := toInt(x["end"]); ok {
-				x := toIndex(uu, x)
-				if x == -1 {
-					end = len(uu)
-				} else if x < start {
-					end = start
-				} else {
-					end = x
-				}
-			} else {
-				end = len(uu)
-			}
-			if delpaths {
-				if start >= end {
-					return uu, nil
-				}
-				if len(path) > 1 {
-					u, err := updatePaths(uu[start:end], path[1:], w, delpaths)
-					if err != nil {
-						return nil, err
-					}
-					switch us := u.(type) {
-					case []interface{}:
-						vs := make([]interface{}, len(uu))
-						copy(vs, uu)
-						copy(vs[start:end], us)
-						return vs, nil
-					default:
-						return nil, &expectedArrayError{u}
-					}
-				}
-				vs := make([]interface{}, len(uu))
-				copy(vs, uu)
-				for y := start; y < end; y++ {
-					vs[y] = w
-				}
-				return vs, nil
-			}
-			if len(path) > 1 {
-				u, err := updatePaths(uu[start:end], path[1:], w, delpaths)
-				if err != nil {
-					return nil, err
-				}
-				w = u
-			}
-			switch v := w.(type) {
-			case []interface{}:
-				vs := make([]interface{}, start+len(v)+len(uu)-end)
-				copy(vs, uu[:start])
-				copy(vs[start:], v)
-				copy(vs[start+len(v):], uu[end:])
-				return vs, nil
-			default:
-				return nil, &expectedArrayError{v}
-			}
+			return updateArraySlice(v, p, path[1:], n)
 		case struct{}:
 			return v, nil
 		default:
@@ -1429,10 +1450,133 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 	default:
 		switch v.(type) {
 		case []interface{}:
-			return nil, &arrayIndexNotNumberError{x}
+			return nil, &arrayIndexNotNumberError{p}
 		default:
-			return nil, &objectKeyNotStringError{x}
+			return nil, &objectKeyNotStringError{p}
 		}
+	}
+}
+
+func updateObject(v map[string]interface{}, k string, path []interface{}, n interface{}) (interface{}, error) {
+	x, ok := v[k]
+	if !ok && n == struct{}{} {
+		return v, nil
+	}
+	u, err := update(x, path, n)
+	if err != nil {
+		return nil, err
+	}
+	w := make(map[string]interface{}, len(v)+1)
+	for k, v := range v {
+		w[k] = v
+	}
+	w[k] = u
+	return w, nil
+}
+
+func updateArrayIndex(v []interface{}, i int, path []interface{}, n interface{}) (interface{}, error) {
+	var x interface{}
+	if j := clampIndex(i, -1, len(v)); j < 0 {
+		if n == struct{}{} {
+			return v, nil
+		}
+		return nil, &funcTypeError{v: i}
+	} else if j < len(v) {
+		i = j
+		x = v[i]
+	} else {
+		if n == struct{}{} {
+			return v, nil
+		}
+		if i >= 0x8000000 {
+			return nil, &arrayIndexTooLargeError{i}
+		}
+	}
+	u, err := update(x, path, n)
+	if err != nil {
+		return nil, err
+	}
+	l := len(v)
+	if i >= l {
+		l = i + 1
+	}
+	w := make([]interface{}, l)
+	copy(w, v)
+	w[i] = u
+	return w, nil
+}
+
+func updateArraySlice(v []interface{}, m map[string]interface{}, path []interface{}, n interface{}) (interface{}, error) {
+	s, ok := m["start"]
+	if !ok {
+		return nil, &expectedStartEndError{m}
+	}
+	e, ok := m["end"]
+	if !ok {
+		return nil, &expectedStartEndError{m}
+	}
+	var start, end int
+	if i, ok := toInt(s); ok {
+		start = clampIndex(i, 0, len(v))
+	}
+	if i, ok := toInt(e); ok {
+		end = clampIndex(i, start, len(v))
+	} else {
+		end = len(v)
+	}
+	if start == end && n == struct{}{} {
+		return v, nil
+	}
+	u, err := update(v[start:end], path, n)
+	if err != nil {
+		return nil, err
+	}
+	switch u := u.(type) {
+	case []interface{}:
+		w := make([]interface{}, len(v)-(end-start)+len(u))
+		copy(w, v[:start])
+		copy(w[start:], u)
+		copy(w[start+len(u):], v[end:])
+		return w, nil
+	case struct{}:
+		w := make([]interface{}, len(v))
+		copy(w, v)
+		for i := start; i < end; i++ {
+			w[i] = u
+		}
+		return w, nil
+	default:
+		return nil, &expectedArrayError{u}
+	}
+}
+
+func deleteEmpty(v interface{}) interface{} {
+	switch v := v.(type) {
+	case struct{}:
+		return nil
+	case map[string]interface{}:
+		for k, w := range v {
+			if w == struct{}{} {
+				delete(v, k)
+			} else {
+				v[k] = deleteEmpty(w)
+			}
+		}
+		return v
+	case []interface{}:
+		var j int
+		for _, w := range v {
+			if w != struct{}{} {
+				v[j] = deleteEmpty(w)
+				j++
+			}
+		}
+		for i := j; i < len(v); i++ {
+			v[i] = nil
+		}
+		return v[:j]
+	default:
+		return v
 	}
 }
 
@@ -1444,14 +1588,12 @@ func funcGetpath(v, p interface{}) interface{} {
 	u := v
 	for _, x := range keys {
 		switch v.(type) {
-		case map[string]interface{}:
-		case []interface{}:
-		case nil:
+		case nil, []interface{}, map[string]interface{}:
+			v = funcIndex2(nil, v, x)
+			if _, ok := v.(error); ok {
+				return &getpathError{u, p}
+			}
 		default:
-			return &getpathError{u, p}
-		}
-		v = funcIndex(nil, v, x)
-		if _, ok := v.(error); ok {
 			return &getpathError{u, p}
 		}
 	}
@@ -1539,9 +1681,13 @@ func funcMktime(v interface{}) interface{} {
 		if err != nil {
 			return err
 		}
-		return float64(t.Unix())
+		return timeToEpoch(t)
 	}
 	return &funcTypeError{"mktime", v}
+}
+
+func timeToEpoch(t time.Time) float64 {
+	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 }
 
 func funcStrftime(v, x interface{}) interface{} {
@@ -1589,7 +1735,7 @@ func funcStrptime(v, x interface{}) interface{} {
 			if t == s {
 				return &funcTypeError{"strptime", v}
 			}
-			return epochToArray(float64(t.Unix())+float64(t.Nanosecond())/1e9, time.UTC)
+			return epochToArray(timeToEpoch(t), time.UTC)
 		}
 		return &funcTypeError{"strptime", x}
 	}
@@ -1637,8 +1783,7 @@ func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, e
 }
 
 func funcNow(interface{}) interface{} {
-	t := time.Now()
-	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
+	return timeToEpoch(time.Now())
 }
 
 func funcMatch(v, re, fs, testing interface{}) interface{} {
@@ -1728,6 +1873,27 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 	return r, nil
 }
 
+func funcCapture(v interface{}) interface{} {
+	vs, ok := v.(map[string]interface{})
+	if !ok {
+		return &expectedObjectError{v}
+	}
+	v = vs["captures"]
+	captures, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	w := make(map[string]interface{}, len(captures))
+	for _, capture := range captures {
+		if capture, ok := capture.(map[string]interface{}); ok {
+			if name, ok := capture["name"].(string); ok {
+				w[name] = capture["string"]
+			}
+		}
+	}
+	return w
+}
+
 func funcError(v interface{}, args []interface{}) interface{} {
 	if len(args) > 0 {
 		v = args[0]
@@ -1752,13 +1918,6 @@ func funcHaltError(v interface{}, args []interface{}) interface{} {
 		}
 	}
 	return &exitCodeError{v, code, true}
-}
-
-func internalfuncTypeError(v, x interface{}) interface{} {
-	if x, ok := x.(string); ok {
-		return &funcTypeError{x, v}
-	}
-	return &funcTypeError{"_type_error", v}
 }
 
 func toInt(x interface{}) (int, bool) {

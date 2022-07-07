@@ -84,7 +84,7 @@ type Getter interface {
 func Unmarshal(in []byte, out interface{}) (err error) {
 	defer handleErr(&err)
 	d := newDecoder()
-	p := newParser(in, UnmarshalMappingKeyTransform)
+	p := newParser(in)
 	defer p.destroy()
 	node := p.parse()
 	if node != nil {
@@ -144,17 +144,6 @@ func Marshal(in interface{}) (out []byte, err error) {
 	e.finish()
 	out = e.out
 	return
-}
-
-// UnmarshalMappingKeyTransform is a string transformation that is applied to
-// each mapping key in a YAML document before it is unmarshalled. By default,
-// UnmarshalMappingKeyTransform is an identity transform (no modification).
-var UnmarshalMappingKeyTransform transformString = identityTransform
-
-type transformString func(in string) (out string)
-
-func identityTransform(in string) (out string) {
-	return in
 }
 
 // --------------------------------------------------------------------------
