@@ -1,6 +1,6 @@
 name: dasel
 category: toolchain
-version: "1.25.0"
+version: "1.26.0"
 labels:
   github.repo: "dasel"
   github.owner: "TomWright"
