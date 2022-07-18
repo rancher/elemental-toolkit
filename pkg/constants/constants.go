@@ -216,6 +216,7 @@ func GetRunKeyEnvMap() map[string]string {
 		"poweroff": "POWEROFF",
 		"reboot":   "REBOOT",
 		"strict":   "STRICT",
+		"eject-cd": "EJECT_CD",
 	}
 }
 
