@@ -267,9 +267,9 @@ var _ = Describe("Install action tests", func() {
 
 		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {
 			spec.Target = device
-			spec.CloudInit = "http://my.config.org"
+			spec.CloudInit = []string{"http://my.config.org"}
 			utils.MkdirAll(fs, constants.OEMDir, constants.DirPerm)
-			_, err := fs.Create(filepath.Join(constants.OEMDir, "99_custom.yaml"))
+			_, err := fs.Create(filepath.Join(constants.OEMDir, "90_custom.yaml"))
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(installer.Run()).To(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
@@ -353,7 +353,7 @@ var _ = Describe("Install action tests", func() {
 
 		It("Fails if requested remote cloud config can't be downloaded", Label("cloud-config"), func() {
 			spec.Target = device
-			spec.CloudInit = "http://my.config.org"
+			spec.CloudInit = []string{"http://my.config.org"}
 			client.Error = true
 			Expect(installer.Run()).NotTo(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())

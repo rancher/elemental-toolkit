@@ -280,6 +280,8 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_INSTALL_SYSTEM", "itwillbeignored")
 				Expect(err).ShouldNot(HaveOccurred())
+				err = os.Setenv("ELEMENTAL_INSTALL_CLOUD_INIT", "path/to/file1.yaml,/absolute/path/to/file2.yaml")
+				Expect(err).ShouldNot(HaveOccurred())
 
 				spec, err := ReadInstallSpec(cfg, flags)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -290,6 +292,10 @@ var _ = Describe("Config", Label("config"), func() {
 				// Uses recovery and no-format defined in confing.yaml
 				Expect(spec.Recovery.Source.Value() == "recovery/image:latest")
 				Expect(spec.NoFormat == true)
+				// Gets multiple cloud-init files from env vars as comma separated values
+				Expect(len(spec.CloudInit)).To(Equal(2))
+				Expect(spec.CloudInit[0]).To(Equal("path/to/file1.yaml"))
+				Expect(spec.CloudInit[1]).To(Equal("/absolute/path/to/file2.yaml"))
 			})
 		})
 		Describe("Read ResetSpec", Label("install"), func() {

@@ -93,7 +93,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	pTableType := newEnumFlag([]string{v1.GPT, v1.MSDOS}, v1.GPT)
 
 	root.AddCommand(c)
-	c.Flags().StringP("cloud-init", "c", "", "Cloud-init config file")
+	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
 	c.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
 	c.Flags().StringP("partition-layout", "p", "", "Partitioning layout file")
 	_ = c.Flags().MarkDeprecated("partition-layout", "'partition-layout' is deprecated and ignored please use a config file instead")

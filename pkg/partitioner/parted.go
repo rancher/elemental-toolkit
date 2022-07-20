@@ -75,6 +75,7 @@ func (pc PartedCall) optionsBuilder() []string {
 		opts = append(opts, "rm", fmt.Sprintf("%d", partnum))
 	}
 
+	isFat, _ := regexp.Compile("fat|vfat")
 	for _, part := range pc.parts {
 		var pLabel string
 		if label == constants.GPT && part.PLabel != "" {
@@ -87,7 +88,7 @@ func (pc PartedCall) optionsBuilder() []string {
 
 		opts = append(opts, "mkpart", pLabel)
 
-		if matched, _ := regexp.MatchString("fat|vfat", part.FileSystem); matched { // nolint:staticcheck
+		if isFat.MatchString(part.FileSystem) {
 			opts = append(opts, "fat32")
 		} else {
 			opts = append(opts, part.FileSystem)

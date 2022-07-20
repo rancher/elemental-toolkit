@@ -137,7 +137,7 @@ type InstallSpec struct {
 	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
 	NoFormat     bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
 	Force        bool                `yaml:"force,omitempty" mapstructure:"force"`
-	CloudInit    string              `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	CloudInit    []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	Iso          string              `yaml:"iso,omitempty" mapstructure:"iso"`
 	GrubDefEntry string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Tty          string              `yaml:"tty,omitempty" mapstructure:"tty"`

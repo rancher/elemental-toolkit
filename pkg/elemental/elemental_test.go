@@ -872,19 +872,19 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		It("Copies the cloud config file", func() {
 			testString := "In a galaxy far far away..."
-			cloudInit := "/config.yaml"
-			err := fs.WriteFile(cloudInit, []byte(testString), cnst.FilePerm)
+			cloudInit := []string{"/config.yaml"}
+			err := fs.WriteFile(cloudInit[0], []byte(testString), cnst.FilePerm)
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 
 			err = e.CopyCloudConfig(cloudInit)
 			Expect(err).To(BeNil())
-			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/99_custom.yaml", cnst.OEMDir))
+			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", cnst.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})
 		It("Doesnt do anything if the config file is not set", func() {
-			err := e.CopyCloudConfig("")
+			err := e.CopyCloudConfig([]string{})
 			Expect(err).To(BeNil())
 		})
 	})
