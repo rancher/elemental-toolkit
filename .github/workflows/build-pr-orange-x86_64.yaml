@@ -14,8 +14,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build-orange-x86_64:
-    runs-on: [self-hosted, x64]
-    if: contains(fromJson('["mudler", "fgiudici", "frelon", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
+    runs-on: ubuntu-latest
     env:
       LUET_ARCH: x86_64
       FLAVOR: orange
@@ -28,44 +27,20 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-          sudo rm /usr/bin/luet || true
-          sudo rm -Rf /etc/luet/ || true
-          sudo rm -Rf /var/tmp/luet || true
-          sudo rm -Rf /var/luet || true
-          sudo rm -Rf root oem efi || true
-          docker system prune -f -a --volumes || true
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
-        uses: nick-fields/retry@v2
+        uses: actions/setup-go@v2
         with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-amd64.tar.gz -o go1.17.5.linux-amd64.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-amd64.tar.gz
-      - name: Install make
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y make
+            go-version: '1.17'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-          sudo rm /usr/bin/luet || true
-          sudo rm -Rf /etc/luet/ || true
-          sudo rm -Rf /var/tmp/luet || true
-          sudo rm -Rf /var/luet || true
-          sudo rm -Rf root oem efi || true
-          docker system prune -f -a --volumes || true
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
@@ -104,11 +79,5 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf build || true
-          sudo rm -rf bin || true
-          sudo rm /usr/bin/luet || true
-          sudo rm -Rf /etc/luet/ || true
-          sudo rm -Rf /var/tmp/luet || true
-          sudo rm -Rf /var/luet || true
-          sudo rm -Rf root oem efi || true
-          docker system prune -f -a --volumes || true
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
