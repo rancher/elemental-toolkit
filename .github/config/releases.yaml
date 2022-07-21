@@ -5,8 +5,8 @@ flavors:
     arches:
       x86_64:
         &x86_64
-        local_runner: true
-        runs_on: [ "self-hosted", "x64" ]
+        local_runner: false
+        runs_on: "ubuntu-latest"
         push_cache: true
         skip_build: false
         skip_docker_build: true
