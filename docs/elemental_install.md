@@ -9,7 +9,7 @@ elemental install DEVICE [flags]
 ### Options
 
 ```
-  -c, --cloud-init string                Cloud-init config file
+  -c, --cloud-init strings               Cloud-init config files
       --cosign                           Enable cosign verification (requires images with signatures)
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --eject-cd                         Try to eject the cd on reboot, only valid if booting from iso
