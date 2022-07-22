@@ -190,7 +190,7 @@ jobs:
         if: always()
         run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
   tests-raw-disk-deploy-orange:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: raw-images-orange
     steps:
       - name: Install Go

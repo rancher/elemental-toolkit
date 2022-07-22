@@ -210,7 +210,7 @@ jobs:
       ARCH: x86_64
       COS_TIMEOUT: 800
       PASSTHROUGH_ARGS: "-- --squashfs"
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     steps:
       - name: Install Go
@@ -283,7 +283,7 @@ jobs:
       ARCH: x86_64
       COS_TIMEOUT: 800
       PASSTHROUGH_ARGS: "-- --squashfs"
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     steps:
       - name: Install Go
@@ -431,7 +431,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   vbox-squashfs-teal:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     env:
       PKR_VAR_arch: x86_64
@@ -504,7 +504,7 @@ jobs:
       ARCH: x86_64
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: vbox-squashfs-teal
     strategy:
       matrix:
@@ -581,7 +581,7 @@ jobs:
     env:
       ARCH: x86_64
       COS_TIMEOUT: 800
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     steps:
       - name: Install Go
@@ -653,7 +653,7 @@ jobs:
     env:
       ARCH: x86_64
       COS_TIMEOUT: 800
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     steps:
       - name: Install Go
@@ -801,7 +801,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   vbox-nonsquashfs-teal:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-teal
     env:
       PKR_VAR_arch: x86_64
@@ -874,7 +874,7 @@ jobs:
       ARCH: x86_64
       VAGRANT_CPU: 3
       VAGRANT_MEMORY: 10240
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: vbox-nonsquashfs-teal
     strategy:
       matrix:
@@ -1210,7 +1210,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-raw-disk-deploy-teal:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: raw-images-teal
     steps:
       - name: Install Go

@@ -409,7 +409,7 @@
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
   vbox-{{{$subset}}}-{{{ $flavor }}}:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-{{{ $flavor }}}
     env:
       PKR_VAR_arch: {{{ $config.arch }}}
@@ -480,7 +480,7 @@
     runs-on: ubuntu-latest
     needs: qemu-{{{$subset}}}-{{{ $flavor }}}
     {{{else}}}
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: vbox-{{{$subset}}}-{{{ $flavor }}}
     {{{end}}}
     strategy:
@@ -584,7 +584,7 @@
     {{{- if eq $subset "squashfs" }}}
       PASSTHROUGH_ARGS: "-- --squashfs"
     {{{- end }}}
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: iso-nonsquashfs-{{{ $flavor }}}
     steps:
       - name: Install Go
@@ -927,7 +927,7 @@
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := . }}}
   tests-raw-disk-deploy-{{{ $flavor }}}:
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: raw-images-{{{ $flavor }}}
     steps:
       - name: Install Go
