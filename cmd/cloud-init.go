@@ -20,8 +20,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/rancher/elemental-cli/cmd/config"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
 
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ import (
 func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "cloud-init",
-		Short: "elemental cloud-init",
+		Short: "Run cloud-init",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			_ = viper.BindPFlags(cmd.Flags())

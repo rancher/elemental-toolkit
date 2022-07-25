@@ -26,12 +26,12 @@ import (
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "elemental",
-		Short: "elemental",
+		Short: "Elemental",
 	}
-	cmd.PersistentFlags().Bool("debug", false, "enable debug output")
-	cmd.PersistentFlags().String("config-dir", "/etc/elemental", "set config dir (default is /etc/elemental)")
-	cmd.PersistentFlags().String("logfile", "", "set logfile")
-	cmd.PersistentFlags().Bool("quiet", false, "do not output to stdout")
+	cmd.PersistentFlags().Bool("debug", false, "Enable debug output")
+	cmd.PersistentFlags().String("config-dir", "/etc/elemental", "Set config dir (default is /etc/elemental)")
+	cmd.PersistentFlags().String("logfile", "", "Set logfile")
+	cmd.PersistentFlags().Bool("quiet", false, "Do not output to stdout")
 	_ = viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
 	_ = viper.BindPFlag("config-dir", cmd.PersistentFlags().Lookup("config-dir"))
 	_ = viper.BindPFlag("logfile", cmd.PersistentFlags().Lookup("logfile"))

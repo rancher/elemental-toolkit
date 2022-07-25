@@ -19,17 +19,18 @@ package cmd
 import (
 	"os/exec"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/action"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
 )
 
 func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "reset",
-		Short: "elemental reset OS",
+		Short: "Reset OS",
 		Args:  cobra.ExactArgs(0),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {

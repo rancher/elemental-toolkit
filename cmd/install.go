@@ -20,12 +20,13 @@ import (
 	"errors"
 	"os/exec"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/action"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 // NewInstallCmd returns a new instance of the install subcommand and appends it to
@@ -34,7 +35,7 @@ import (
 func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "install DEVICE",
-		Short: "elemental installer",
+		Short: "Elemental installer",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {

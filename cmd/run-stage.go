@@ -17,17 +17,18 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
 func NewRunStage(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "run-stage STAGE",
-		Short: "elemental run-stage",
+		Short: "Run stage from cloud-init",
 		Args:  cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 

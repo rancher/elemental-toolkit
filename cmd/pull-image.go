@@ -20,17 +20,18 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/api/types"
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/luet"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/luet"
 )
 
 func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "pull-image IMAGE DESTINATION",
-		Short: "elemental pull-image",
+		Short: "Pull remote image to local file",
 		Args:  cobra.ExactArgs(2),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {

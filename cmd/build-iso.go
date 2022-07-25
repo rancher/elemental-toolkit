@@ -20,14 +20,15 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"k8s.io/mount-utils"
+
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
 )
 
 // NewBuildISO returns a new instance of the buid-iso subcommand and appends it to
@@ -36,8 +37,8 @@ import (
 func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "build-iso SOURCE",
-		Short: "builds bootable installation media ISOs",
-		Long: "builds bootable installation media ISOs\n\n" +
+		Short: "Build bootable installation media ISOs",
+		Long: "Build bootable installation media ISOs\n\n" +
 			"SOURCE - should be provided as uri in following format <sourceType>:<sourceName>\n" +
 			"    * <sourceType> - might be [\"dir\", \"file\", \"oci\", \"docker\", \"channel\"], as default is \"docker\"\n" +
 			"    * <sourceName> - is path to file or directory, image name with tag version or channel name",
