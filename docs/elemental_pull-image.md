@@ -1,6 +1,6 @@
 ## elemental pull-image
 
-elemental pull-image
+Pull remote image to local file
 
 ```
 elemental pull-image IMAGE DESTINATION [flags]
@@ -24,13 +24,13 @@ elemental pull-image IMAGE DESTINATION [flags]
 ### Options inherited from parent commands
 
 ```
-      --config-dir string   set config dir (default is /etc/elemental) (default "/etc/elemental")
-      --debug               enable debug output
-      --logfile string      set logfile
-      --quiet               do not output to stdout
+      --config-dir string   Set config dir (default is /etc/elemental) (default "/etc/elemental")
+      --debug               Enable debug output
+      --logfile string      Set logfile
+      --quiet               Do not output to stdout
 ```
 
 ### SEE ALSO
 
-* [elemental](elemental.md)	 - elemental
+* [elemental](elemental.md)	 - Elemental
 
