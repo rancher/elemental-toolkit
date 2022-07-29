@@ -172,7 +172,7 @@ func (u *UpgradeAction) Run() (err error) {
 	u.Info("deploying image %s to %s", upgradeImg.Source.Value(), upgradeImg.File)
 	upgradeMeta, err := e.DeployImage(&upgradeImg, true)
 	if err != nil {
-		u.Error("Failed deploying image to file %s", upgradeImg.File)
+		u.Error("Failed deploying image to file '%s': %s", upgradeImg.File, err)
 		return err
 	}
 	cleanup.Push(func() error { return e.UnmountImage(&upgradeImg) })
