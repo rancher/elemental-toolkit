@@ -541,7 +541,7 @@ func (e Elemental) SetDefaultGrubEntry(partMountPoint string, imgMountPoint stri
 			return nil
 		}
 	}
-	e.config.Logger.Infof("Setting default grub entry to %s", cnst.GrubDefEntry)
+	e.config.Logger.Infof("Setting default grub entry to %s", defaultEntry)
 	grub := utils.NewGrub(e.config)
 	return grub.SetPersistentVariables(
 		filepath.Join(partMountPoint, cnst.GrubOEMEnv),
