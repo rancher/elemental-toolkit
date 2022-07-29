@@ -219,15 +219,14 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	}
 
 	return &v1.InstallSpec{
-		Firmware:     firmware,
-		PartTable:    v1.GPT,
-		Partitions:   NewInstallElementalParitions(),
-		GrubDefEntry: constants.GrubDefEntry,
-		GrubConf:     constants.GrubConf,
-		Tty:          constants.DefaultTty,
-		Active:       activeImg,
-		Recovery:     recoveryImg,
-		Passive:      passiveImg,
+		Firmware:   firmware,
+		PartTable:  v1.GPT,
+		Partitions: NewInstallElementalParitions(),
+		GrubConf:   constants.GrubConf,
+		Tty:        constants.DefaultTty,
+		Active:     activeImg,
+		Recovery:   recoveryImg,
+		Passive:    passiveImg,
 	}
 }
 
