@@ -1,7 +1,7 @@
 packages:
   - name: "k3s"
     category: "selinux"
-    version: 1.1.1-6
+    version: 1.1.1-7
     labels:
       github.repo: "k3s-selinux"
       github.owner: "k3s-io"
