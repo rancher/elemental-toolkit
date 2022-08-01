@@ -22,6 +22,7 @@ packages:
     name: "branding"
     oem_file: "03_branding.yaml"
     templated: false
+    version: 0.4-4
   - !!merge <<: *base
     name: "accounting"
     oem_file: "04_accounting.yaml"
