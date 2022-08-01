@@ -3,7 +3,7 @@ packages:
     name: "helm"
     fips: false
     category: "utils"
-    version: "3.9.2"
+    version: 3.9.2-1
     description: "The Kubernetes Package Manager"
     license: "Apache-2.0 License"
     labels:
