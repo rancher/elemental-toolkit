@@ -1,6 +1,6 @@
 name: "yq"
 category: "toolchain"
-version: "4.26.1"
+version: 4.26.1-1
 uri:
   - https://github.com/mikefarah/yq
 license: "MIT"
