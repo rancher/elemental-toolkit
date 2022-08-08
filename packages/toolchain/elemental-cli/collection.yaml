@@ -2,7 +2,7 @@ packages:
   - &elemental
     name: "elemental-cli"
     category: "toolchain"
-    version: "0.20220803"
+    version: "0.20220808"
     bin_name: "elemental"
     fips: false
     labels:
