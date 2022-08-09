@@ -115,7 +115,7 @@ To fully remove the box you would need to manually do so with virsh (i.e. `$ vir
 ## Auto tags
 
 Currently there is a weekly job at `.github/workflows/autorelease.yaml` that runs each week and compares the current version of the system/cos package to the latest tag available in the repo.
-If there are different, the job auto tags the current commit (master) with that version from system/cos and pushes it to github. That results in the release pipeline auto triggering and creating a new release.
+If there are different, the job auto tags the current commit (main) with that version from system/cos and pushes it to github. That results in the release pipeline auto triggering and creating a new release.
 The job can also be manually run fron the actions tab in github, if a release is needed with the current version, and we need it to be released now.
 
 ## Repository tags/commits

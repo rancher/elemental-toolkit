@@ -1,10 +1,10 @@
-name: master-green-arm64
+name: main-green-arm64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-green-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-green-arm64:

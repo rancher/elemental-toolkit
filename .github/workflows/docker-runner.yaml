@@ -2,7 +2,7 @@ name: Build the github runner image and push to quay.io
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
 

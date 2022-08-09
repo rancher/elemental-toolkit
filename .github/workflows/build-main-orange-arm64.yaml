@@ -1,40 +1,69 @@
-name: master-blue-x86_64
+name: main-orange-arm64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-orange-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
-  build-blue-x86_64:
-    runs-on: ubuntu-latest
+  build-orange-arm64:
+    runs-on: [self-hosted, arm64]
+    if: contains(fromJson('["mudler", "fgiudici", "frelon", "mjura", "davidcassany", "itxaka", "kkaempf", "cOS-cibot"]'), github.actor)
     env:
-      LUET_ARCH: x86_64
-      FLAVOR: blue
-      ARCH: x86_64
-      FINAL_REPO: quay.io/costoolkit/releases-blue
+      LUET_ARCH: arm64
+      FLAVOR: orange
+      ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-orange-arm64
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-blue-cache
+      REPO_CACHE: quay.io/costoolkit/build-orange-cache-arm64
+      # For orange arm64 we need to disable buildkit
+      DOCKER_BUILDKIT: 0
+      # For non x86_64 archs, skip the *-fips build as there are no golang releases in other arches
+      SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/syslinux live/systemd-boot live/boot"
     steps:
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: nick-fields/retry@v2
         with:
-            go-version: '1.17'
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+      - name: Install make
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
@@ -82,44 +111,50 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-blue-x86_64
+          name: build-orange-arm64
           path: build
           if-no-files-found: error
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-  image-link-blue:
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
+  image-link-orange:
     runs-on: ubuntu-latest
-    needs: publish-blue
+    needs: publish-orange
     steps:
       - uses: actions/checkout@v2
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
           sudo -E make deps_ci
-      - name: Generate link for blue
+      - name: Generate link for orange
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-x86_64.txt
+            echo "quay.io/costoolkit/releases-orange-arm64:cos-system-${COS_VERSION}" > images-orange-arm64.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-blue-x86_64.txt
+          name: images-orange-arm64.txt
           path: |
-            images-blue-x86_64.txt
-  publish-blue:
+            images-orange-arm64.txt
+  publish-orange:
     runs-on: ubuntu-latest
     needs:
-    - build-blue-x86_64
+    - build-orange-arm64
     permissions:
       id-token: write  # undocumented OIDC support.
     env:
-      FLAVOR: blue
-      ARCH: x86_64
-      FINAL_REPO: quay.io/costoolkit/releases-blue
+      FLAVOR: orange
+      ARCH: arm64
+      FINAL_REPO: quay.io/costoolkit/releases-orange-arm64
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
       DOWNLOAD_FATAL_MISSING_PACKAGES: true
@@ -130,20 +165,44 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: nick-fields/retry@v2
         with:
-            go-version: '1.17'
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+      - name: Install make
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
         if: always()
         run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
@@ -165,7 +224,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-blue-x86_64
+          name: build-orange-arm64
           path: build
       - name: Add build repository
         run: |

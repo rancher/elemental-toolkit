@@ -1,10 +1,10 @@
-name: master-orange-x86_64
+name: main-orange-x86_64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-orange-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-orange-x86_64:

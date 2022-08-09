@@ -1,10 +1,10 @@
-name: master-teal-arm64
+name: main-teal-arm64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-teal-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-teal-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-teal-arm64:
@@ -134,7 +134,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -227,7 +227,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -308,7 +308,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -405,7 +405,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -486,7 +486,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -583,7 +583,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -631,7 +631,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -767,7 +767,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -875,7 +875,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-arm64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-arm64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",

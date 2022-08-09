@@ -11,7 +11,7 @@ flavors:
         skip_build: false
         skip_docker_build: true
 
-        pipeline: "master"
+        pipeline: "main"
         publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: true
@@ -47,7 +47,7 @@ flavors:
 
         on:
           push:
-            branches: ["master"]
+            branches: ["main"]
         slack_on_failure: true
       arm64:
         &arm64
@@ -58,7 +58,7 @@ flavors:
         skip_docker_build: true
         luet_override: ""
         luet_script_override: ""
-        pipeline: "master"
+        pipeline: "main"
         publishing_pipeline: true
         publish_cloud: false
         publish_toolchain: false
@@ -88,7 +88,7 @@ flavors:
 
         on:
           push:
-            branches: [ "master" ]
+            branches: [ "main" ]
         slack_on_failure: true
   orange:
     arches:

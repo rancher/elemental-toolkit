@@ -1,10 +1,10 @@
-name: master-teal-x86_64
+name: main-teal-x86_64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-teal-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-teal-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
   build-teal-x86_64:
@@ -101,7 +101,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -188,7 +188,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -261,7 +261,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -334,7 +334,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -413,7 +413,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -482,7 +482,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -560,7 +560,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -632,7 +632,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -704,7 +704,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -783,7 +783,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -852,7 +852,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -930,7 +930,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -978,7 +978,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1090,7 +1090,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1192,7 +1192,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1274,7 +1274,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1334,7 +1334,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1394,7 +1394,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1445,12 +1445,12 @@ jobs:
           # Set output parameters.
           echo ::set-output name=tags::quay.io/costoolkit/framework:${P_VERSION}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
+        uses: docker/setup-qemu-action@v2.0.0
         with:
           platforms: all
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@master
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Build
         uses: docker/build-push-action@v2
         with:
@@ -1471,7 +1471,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",
@@ -1522,12 +1522,12 @@ jobs:
           # Set output parameters.
           echo ::set-output name=tags::quay.io/costoolkit/framework:${P_VERSION}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
+        uses: docker/setup-qemu-action@v2.0.0
         with:
           platforms: all
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@master
+        uses: docker/setup-buildx-action@v2.0.0
       - name: Build
         uses: docker/build-push-action@v2
         with:
@@ -1548,7 +1548,7 @@ jobs:
                   "type": "section",
                     "text": {
                       "type": "mrkdwn",
-                      "text": "Workflow master-teal-x86_64 failed on job ${{ github.job }}"
+                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
                     },
                     "accessory": {
                       "type": "button",

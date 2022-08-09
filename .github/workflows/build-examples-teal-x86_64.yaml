@@ -11,7 +11,7 @@ on:
      - examples/**
  push:
    branches:
-     - master
+     - main
 concurrency:
   group: ci-Examples-teal-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true

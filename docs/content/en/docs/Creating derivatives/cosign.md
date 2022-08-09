@@ -35,7 +35,7 @@ If building a derivative, you can also sign and verify you final artifacts with 
 As keyless is only possible to do in an CI environment (as it needs an OIDC token) you would need to set up private/public signature and verification.
 
 {{% alert title="Note" %}}
-If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher/elemental-toolkit/blob/master/.github/workflows/build-master-teal-x86_64.yaml#L445)
+If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher/elemental-toolkit/blob/main/.github/workflows/build-main-teal-x86_64.yaml#L445)
 {{% /alert %}}
 
 
@@ -53,7 +53,7 @@ The {{<package package="meta/cos-verify" >}} is a meta package that will pull {{
 {{% /alert %}}
 
 
-And then making sure you call luet with `--plugin luet-cosign`. You can see an example of this in our [standard Dockerfile example](https://github.com/rancher/elemental-toolkit/tree/master/examples/standard) 
+And then making sure you call luet with `--plugin luet-cosign`. You can see an example of this in our [standard Dockerfile example](https://github.com/rancher/elemental-toolkit/tree/main/examples/standard) 
 
 That would verify the artifacts coming from our repository.
 

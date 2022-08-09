@@ -43,7 +43,7 @@ flavors:
             - "test-deploys-images-recovery"
         on:
           push:
-            branches: [ "master" ]
+            branches: [ "main" ]
           pull_request:
             paths:
               - 'conf/**'

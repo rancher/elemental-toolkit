@@ -83,7 +83,7 @@ The package `build` definition supports [templating](https://luet-lab.github.io/
 
 Values file can be specified during build time in luet with the ```--values``` flag (also multiple files are allowed) and, if you are familiar with `helm` it using the same engine under the hood, so all the functions are available as well.
 
-`elemental-toolkit` itself uses [default values files](https://github.com/rancher/elemental-toolkit/tree/master/values) for every supported distributions.
+`elemental-toolkit` itself uses [default values files](https://github.com/rancher/elemental-toolkit/tree/main/values) for every supported distributions.
 
 Templates uses cases are for: resharing common pieces between flavors, building for different platforms and architectures, ...
 
