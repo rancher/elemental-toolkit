@@ -8,7 +8,7 @@ description: >
 ---
 
 
-You can find the examples below in the [examples](https://github.com/rancher/elemental-toolkit/tree/master/examples) folder.
+You can find the examples below in the [examples](https://github.com/rancher/elemental-toolkit/tree/main/examples) folder.
 
 ## From standard images
 

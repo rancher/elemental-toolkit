@@ -40,7 +40,7 @@ A derivative automatically inherits the following featureset:
 
 ## Building Elemental derivatives
 
-The starting point to use elemental-toolkit is to check out our [examples](https://github.com/rancher/elemental-toolkit/tree/master/examples) and our [creating bootable images](../creating-derivatives/creating_bootable_images) section.
+The starting point to use elemental-toolkit is to check out our [examples](https://github.com/rancher/elemental-toolkit/tree/main/examples) and our [creating bootable images](../creating-derivatives/creating_bootable_images) section.
 
 The only requirement to build derivatives with `elemental-toolkit` is Docker installed. If you are interested in building elemental-toolkit itself, see [Development notes](../development).
 

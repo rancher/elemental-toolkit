@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - upstream_branch: "master"
+          - upstream_branch: "main"
             fork: "git@github.com:cos-ci-forks/cOS.git"
             upstream_repo: "https://github.com/mudler/cOS"
             name: "cOS"

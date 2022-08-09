@@ -1,22 +1,22 @@
-name: master-green-x86_64
+name: main-blue-x86_64
 on: 
  push:
    branches:
-     - master
+     - main
 concurrency:
-  group: ci-master-green-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-main-blue-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
-  build-green-x86_64:
+  build-blue-x86_64:
     runs-on: ubuntu-latest
     env:
       LUET_ARCH: x86_64
-      FLAVOR: green
+      FLAVOR: blue
       ARCH: x86_64
-      FINAL_REPO: quay.io/costoolkit/releases-green
+      FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: false
       PUSH_CACHE: true
-      REPO_CACHE: quay.io/costoolkit/build-green-cache
+      REPO_CACHE: quay.io/costoolkit/build-blue-cache
     steps:
       - name: Release space from worker ♻
         if: always()
@@ -82,7 +82,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v2
         with:
-          name: build-green-x86_64
+          name: build-blue-x86_64
           path: build
           if-no-files-found: error
       - name: Release space from worker ♻
@@ -90,36 +90,36 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-  image-link-green:
+  image-link-blue:
     runs-on: ubuntu-latest
-    needs: publish-green
+    needs: publish-blue
     steps:
       - uses: actions/checkout@v2
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
           sudo -E make deps_ci
-      - name: Generate link for green
+      - name: Generate link for blue
         run: |
             source .github/helpers.sh
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
-            echo "quay.io/costoolkit/releases-green:cos-system-${COS_VERSION}" > images-green-x86_64.txt
+            echo "quay.io/costoolkit/releases-blue:cos-system-${COS_VERSION}" > images-blue-x86_64.txt
       - uses: actions/upload-artifact@v2
         with:
-          name: images-green-x86_64.txt
+          name: images-blue-x86_64.txt
           path: |
-            images-green-x86_64.txt
-  publish-green:
+            images-blue-x86_64.txt
+  publish-blue:
     runs-on: ubuntu-latest
     needs:
-    - build-green-x86_64
+    - build-blue-x86_64
     permissions:
       id-token: write  # undocumented OIDC support.
     env:
-      FLAVOR: green
+      FLAVOR: blue
       ARCH: x86_64
-      FINAL_REPO: quay.io/costoolkit/releases-green
+      FINAL_REPO: quay.io/costoolkit/releases-blue
       DOWNLOAD_METADATA: true
       DOWNLOAD_ONLY: true
       DOWNLOAD_FATAL_MISSING_PACKAGES: true
@@ -165,7 +165,7 @@ jobs:
       - name: Download result for build
         uses: actions/download-artifact@v2
         with:
-          name: build-green-x86_64
+          name: build-blue-x86_64
           path: build
       - name: Add build repository
         run: |

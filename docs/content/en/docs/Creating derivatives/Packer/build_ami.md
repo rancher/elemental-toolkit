@@ -15,7 +15,7 @@ Requirements:
 * Packer
 * AWS access keys with the appropriate roles and permissions
 * A Vanilla AMI
-* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
+* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/main/packer)
 
 The suggested approach is based on using Packer templates to customize the
 deployment and automate the upload and publish to AWS of Elemental derivatives or Elemental itself. For all the details

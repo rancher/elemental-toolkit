@@ -2,7 +2,7 @@ name: Publish Site
 on:
   push:
     branches:
-      - master
+      - main
   schedule:
    - cron: 0 20 * * *
 jobs:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Install deps
@@ -22,7 +22,7 @@ jobs:
         run: |
            make docs-build
       - name: Deploy 🚀
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}

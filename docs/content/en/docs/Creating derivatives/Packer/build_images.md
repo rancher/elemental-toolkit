@@ -14,9 +14,9 @@ Requirements:
 * Packer
 * Either qemu or VirtualBox functioning in the build host
 * a Elemental or a [custom ISO](../../build_iso)
-* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
+* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/main/packer)
 
-The suggested approach is based on using [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer) to customize the
+The suggested approach is based on using [Packer templates](https://github.com/rancher/elemental-toolkit/tree/main/packer) to customize the
 deployment and automate creation of QCOW, Virtualbox and Vagrant images of Elemental derivatives or Elemental itself. For all the details
 and possibilties of Packer check the [official documentation](https://www.packer.io/guides/hcl).
 

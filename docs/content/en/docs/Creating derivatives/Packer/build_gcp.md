@@ -16,7 +16,7 @@ Requirements:
 * Google Compute Packer [plugin](https://www.packer.io/docs/builders/googlecompute)
 * [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 * A Vanilla AMI
-* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/master/packer)
+* [Packer templates](https://github.com/rancher/elemental-toolkit/tree/main/packer)
 
 The suggested approach is based on using Packer templates to customize the
 deployment and automate the upload and publish to GCP of Elemental derivatives or Elemental itself. For all the details

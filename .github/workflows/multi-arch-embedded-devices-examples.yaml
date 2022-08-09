@@ -4,7 +4,7 @@ name: 'Build multi-arch embedded devices example images'
 on:
   push:
     branches:
-      - master
+      - main
       - arm_adaptations
     tags:
       - '*'

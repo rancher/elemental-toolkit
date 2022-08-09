@@ -27,7 +27,7 @@ var _ = Describe("cOS Upgrade tests - Images signed", func() {
 	})
 	Context("After install", func() {
 		When("upgrading", func() {
-			It("upgrades to latest available (master) and reset", func() {
+			It("upgrades to latest available (main) and reset", func() {
 				out, err := s.Command(s.ElementalCmd("upgrade"))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
