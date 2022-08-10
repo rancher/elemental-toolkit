@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"github.com/mudler/luet/pkg/api/core/types"
@@ -116,14 +117,54 @@ func (w *logrusWrapper) Copy() (types.Logger, error) {
 	return copy, nil
 }
 
-func (w *logrusWrapper) Screen(t string) {
-	w.Infof(">>>%s", t)
-}
-
-// no-ops
 func (w *logrusWrapper) Success(r ...interface{}) {
+	// Will redirect to the Info method below and be cleaned there
 	w.Info(r...)
 }
+
+var emojiStrip = regexp.MustCompile(`[:][\w]+[:]`)
+
+func (w *logrusWrapper) Debug(args ...interface{}) {
+	converted := convert(args)
+	w.Logger.Debug(converted)
+}
+
+func (w *logrusWrapper) Info(args ...interface{}) {
+	converted := convert(args)
+	w.Logger.Info(converted)
+}
+
+func (w *logrusWrapper) Warn(args ...interface{}) {
+	converted := convert(args)
+	w.Logger.Warn(converted)
+}
+
+func (w *logrusWrapper) Error(args ...interface{}) {
+	converted := convert(args)
+	w.Logger.Error(converted)
+}
+
+func (w *logrusWrapper) Fatal(args ...interface{}) {
+	converted := convert(args)
+	w.Logger.Fatal(converted)
+}
+
+// convert changes a list of interfaces into a proper joined string ready to log
+func convert(args []interface{}) string {
+	var together []string
+	// Matches a :WORD: and any extra space after that and the next word to remove emojis
+	// which are like ":house: realMessageStartsHere"
+	emojiStrip = regexp.MustCompile(`[:][\w]+[:]\s`)
+	for _, a := range args {
+		toClean := fmt.Sprintf("%v", a)                     // coerce into string
+		cleaned := emojiStrip.ReplaceAllString(toClean, "") // remove any emoji
+		trimmed := strings.Trim(cleaned, " ")               // trim any spaces in prefix/suffix
+		together = append(together, trimmed)
+	}
+	return strings.Join(together, " ") // return them nicely joined with spaces like a normal phrase
+}
+
 func (w *logrusWrapper) SetContext(string) {}
 func (w *logrusWrapper) Spinner()          {}
 func (w *logrusWrapper) SpinnerStop()      {}
+func (w *logrusWrapper) Screen(t string)   {}
