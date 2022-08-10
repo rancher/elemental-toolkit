@@ -1,16 +1,21 @@
 name: Docker build and push
 on:
   push:
-    branch:
+    branches:
       - main
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # undocumented OIDC support.
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: cosign-installer
+        uses: sigstore/cosign-installer@v2.0.0
       - name: Install qemu-tools
         run: |
           sudo apt-get update
@@ -88,3 +93,10 @@ jobs:
           build-args: |
             ELEMENTAL_VERSION=${{ steps.export_tag.outputs.elemental_tag }}
             ELEMENTAL_COMMIT=${{ github.sha }}
+      - name: Sign image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run:
+          for value in ${{ steps.meta.outputs.tags }};do
+            cosign sign $value
+          done

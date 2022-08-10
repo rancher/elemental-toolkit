@@ -225,7 +225,7 @@ func (dev *Disk) NewPartitionTable(label string) (string, error) {
 	return out, nil
 }
 
-//Size is expressed in MiB here
+// Size is expressed in MiB here
 func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string, flags ...string) (int, error) {
 	pc := NewPartedCall(dev.String(), dev.runner)
 
@@ -323,7 +323,7 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 	return "", fmt.Errorf("could not find partition device '%s' for partition %d", device, partNum)
 }
 
-//Size is expressed in MiB here
+// Size is expressed in MiB here
 func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
 	pc := NewPartedCall(dev.String(), dev.runner)
 

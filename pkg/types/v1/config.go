@@ -124,7 +124,7 @@ type RunConfig struct {
 }
 
 // Sanitize checks the consistency of the struct, returns error
-//if unsolvable inconsistencies are found
+// if unsolvable inconsistencies are found
 func (r *RunConfig) Sanitize() error {
 	return r.Config.Sanitize()
 }
@@ -461,7 +461,7 @@ type BuildConfig struct {
 }
 
 // Sanitize checks the consistency of the struct, returns error
-//if unsolvable inconsistencies are found
+// if unsolvable inconsistencies are found
 func (b *BuildConfig) Sanitize() error {
 	return b.Config.Sanitize()
 }
