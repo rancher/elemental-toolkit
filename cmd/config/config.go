@@ -37,7 +37,6 @@ import (
 	"github.com/rancher/elemental-cli/internal/version"
 	"github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
-	"github.com/rancher/elemental-cli/pkg/luet"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
@@ -106,12 +105,9 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 		configDir = "."
 	}
 
-	l := luet.NewLuet(luet.WithLogger(logger))
-
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
 		config.WithMounter(mounter),
-		config.WithLuet(l),
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)
