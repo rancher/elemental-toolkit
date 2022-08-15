@@ -196,7 +196,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			err := ep.SetFirmwarePartitions(v1.BIOS, v1.MSDOS)
 			Expect(err).Should(HaveOccurred())
 		})
-		It("initalized an ElementalPartitions from a PartitionList", func() {
+		It("initializes an ElementalPartitions from a PartitionList", func() {
 			ep := v1.NewElementalPartitionsFromList(p)
 			Expect(ep.Persistent != nil).To(BeTrue())
 			Expect(ep.OEM != nil).To(BeTrue())
@@ -205,13 +205,62 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(ep.State == nil).To(BeTrue())
 			Expect(ep.Recovery == nil).To(BeTrue())
 		})
-		It("returns a partition list by install order", func() {
-			ep := v1.NewElementalPartitionsFromList(p)
-			lst := ep.PartitionsByInstallOrder()
-			Expect(len(lst)).To(Equal(2))
-			Expect(lst[0].Name == "oem").To(BeTrue())
-			Expect(lst[1].Name == "persistent").To(BeTrue())
+		Describe("returns a partition list by install order", func() {
+			It("with no extra parts", func() {
+				ep := v1.NewElementalPartitionsFromList(p)
+				lst := ep.PartitionsByInstallOrder([]*v1.Partition{})
+				Expect(len(lst)).To(Equal(2))
+				Expect(lst[0].Name == "oem").To(BeTrue())
+				Expect(lst[1].Name == "persistent").To(BeTrue())
+			})
+			It("with extra parts with size > 0", func() {
+				ep := v1.NewElementalPartitionsFromList(p)
+				var extraParts []*v1.Partition
+				extraParts = append(extraParts, &v1.Partition{Name: "extra", Size: 5})
+
+				lst := ep.PartitionsByInstallOrder(extraParts)
+				Expect(len(lst)).To(Equal(3))
+				Expect(lst[0].Name == "oem").To(BeTrue())
+				Expect(lst[1].Name == "extra").To(BeTrue())
+				Expect(lst[2].Name == "persistent").To(BeTrue())
+			})
+			It("with extra part with size == 0 and persistent.Size == 0", func() {
+				ep := v1.NewElementalPartitionsFromList(p)
+				var extraParts []*v1.Partition
+				extraParts = append(extraParts, &v1.Partition{Name: "extra", Size: 0})
+				lst := ep.PartitionsByInstallOrder(extraParts)
+				// Should ignore the wrong partition had have the persistent over it
+				Expect(len(lst)).To(Equal(2))
+				Expect(lst[0].Name == "oem").To(BeTrue())
+				Expect(lst[1].Name == "persistent").To(BeTrue())
+			})
+			It("with extra part with size == 0 and persistent.Size > 0", func() {
+				ep := v1.NewElementalPartitionsFromList(p)
+				ep.Persistent.Size = 10
+				var extraParts []*v1.Partition
+				extraParts = append(extraParts, &v1.Partition{Name: "extra", FilesystemLabel: "LABEL", Size: 0})
+				lst := ep.PartitionsByInstallOrder(extraParts)
+				// Will have our size == 0 partition the latest
+				Expect(len(lst)).To(Equal(3))
+				Expect(lst[0].Name == "oem").To(BeTrue())
+				Expect(lst[1].Name == "persistent").To(BeTrue())
+				Expect(lst[2].Name == "extra").To(BeTrue())
+			})
+			It("with several extra parts with size == 0 and persistent.Size > 0", func() {
+				ep := v1.NewElementalPartitionsFromList(p)
+				ep.Persistent.Size = 10
+				var extraParts []*v1.Partition
+				extraParts = append(extraParts, &v1.Partition{Name: "extra1", Size: 0})
+				extraParts = append(extraParts, &v1.Partition{Name: "extra2", Size: 0})
+				lst := ep.PartitionsByInstallOrder(extraParts)
+				// Should ignore the wrong partition had have the first partition with size 0 added last
+				Expect(len(lst)).To(Equal(3))
+				Expect(lst[0].Name == "oem").To(BeTrue())
+				Expect(lst[1].Name == "persistent").To(BeTrue())
+				Expect(lst[2].Name == "extra1").To(BeTrue())
+			})
 		})
+
 		It("returns a partition list by mount order", func() {
 			ep := v1.NewElementalPartitionsFromList(p)
 			lst := ep.PartitionsByMountPoint(false)
@@ -307,40 +356,72 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 	})
 	Describe("InstallSpec", func() {
-		It("runs sanitize method", func() {
+		var spec *v1.InstallSpec
+
+		BeforeEach(func() {
 			cfg := config.NewConfig(config.WithMounter(v1mocks.NewErrorMounter()))
-			spec := config.NewInstallSpec(*cfg)
-			Expect(spec.Partitions.EFI).To(BeNil())
-			Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
+			spec = config.NewInstallSpec(*cfg)
+		})
+		Describe("sanitize", func() {
+			It("runs method", func() {
+				Expect(spec.Partitions.EFI).To(BeNil())
+				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
 
-			// Creates firmware partitions
-			spec.Active.Source = v1.NewDirSrc("/dir")
-			spec.Firmware = v1.EFI
-			err := spec.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Partitions.EFI).NotTo(BeNil())
+				// Creates firmware partitions
+				spec.Active.Source = v1.NewDirSrc("/dir")
+				spec.Firmware = v1.EFI
+				err := spec.Sanitize()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Partitions.EFI).NotTo(BeNil())
 
-			// Sets recovery image file to squashfs file
-			spec.Recovery.FS = constants.SquashFs
-			err = spec.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoverySquashFile))
+				// Sets recovery image file to squashfs file
+				spec.Recovery.FS = constants.SquashFs
+				err = spec.Sanitize()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoverySquashFile))
 
-			// Sets recovery image file to img file
-			spec.Recovery.FS = constants.LinuxImgFs
-			err = spec.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoveryImgFile))
+				// Sets recovery image file to img file
+				spec.Recovery.FS = constants.LinuxImgFs
+				err = spec.Sanitize()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoveryImgFile))
 
-			// Fails without state partition
-			spec.Partitions.State = nil
-			err = spec.Sanitize()
-			Expect(err).Should(HaveOccurred())
+				// Fails without state partition
+				spec.Partitions.State = nil
+				err = spec.Sanitize()
+				Expect(err).Should(HaveOccurred())
 
-			// Fails without an install source
-			spec.Active.Source = v1.NewEmptySrc()
-			err = spec.Sanitize()
-			Expect(err).Should(HaveOccurred())
+				// Fails without an install source
+				spec.Active.Source = v1.NewEmptySrc()
+				err = spec.Sanitize()
+				Expect(err).Should(HaveOccurred())
+			})
+			Describe("with extra partitions", func() {
+				BeforeEach(func() {
+					// Set a source for the install
+					spec.Active.Source = v1.NewDirSrc("/dir")
+				})
+				It("fails if persistent and an extra partition have size == 0", func() {
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &v1.Partition{Size: 0})
+					err := spec.Sanitize()
+					Expect(err).Should(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("both persistent partition and extra partitions have size set to 0"))
+				})
+				It("fails if more than one extra partition has size == 0", func() {
+					spec.Partitions.Persistent.Size = 10
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &v1.Partition{Name: "1", Size: 0})
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &v1.Partition{Name: "2", Size: 0})
+					err := spec.Sanitize()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("more than one extra partition has its size set to 0"))
+				})
+				It("does not fail if persistent size is > 0 and an extra partition has size == 0", func() {
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &v1.Partition{Size: 0})
+					spec.Partitions.Persistent.Size = 10
+					err := spec.Sanitize()
+					Expect(err).ToNot(HaveOccurred())
+				})
+			})
 		})
 	})
 	Describe("ResetSpec", func() {

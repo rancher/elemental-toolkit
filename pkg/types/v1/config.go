@@ -131,20 +131,21 @@ func (r *RunConfig) Sanitize() error {
 
 // InstallSpec struct represents all the installation action details
 type InstallSpec struct {
-	Target       string              `yaml:"target,omitempty" mapstructure:"target"`
-	Firmware     string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
-	PartTable    string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
-	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	NoFormat     bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
-	Force        bool                `yaml:"force,omitempty" mapstructure:"force"`
-	CloudInit    []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	Iso          string              `yaml:"iso,omitempty" mapstructure:"iso"`
-	GrubDefEntry string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty          string              `yaml:"tty,omitempty" mapstructure:"tty"`
-	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	Passive      Image
-	GrubConf     string
+	Target          string              `yaml:"target,omitempty" mapstructure:"target"`
+	Firmware        string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
+	PartTable       string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
+	Partitions      ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	ExtraPartitions []*Partition        `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
+	NoFormat        bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	Force           bool                `yaml:"force,omitempty" mapstructure:"force"`
+	CloudInit       []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	Iso             string              `yaml:"iso,omitempty" mapstructure:"iso"`
+	GrubDefEntry    string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Tty             string              `yaml:"tty,omitempty" mapstructure:"tty"`
+	Active          Image               `yaml:"system,omitempty" mapstructure:"system"`
+	Recovery        Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	Passive         Image
+	GrubConf        string
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -165,6 +166,22 @@ func (i *InstallSpec) Sanitize() error {
 		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoverySquashFile)
 	} else {
 		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoveryImgFile)
+	}
+
+	// Check for extra partitions having set its size to 0
+	extraPartsSizeCheck := 0
+	for _, p := range i.ExtraPartitions {
+		if p.Size == 0 {
+			extraPartsSizeCheck++
+		}
+	}
+
+	if extraPartsSizeCheck > 1 {
+		return fmt.Errorf("more than one extra partition has its size set to 0. Only one partition can have its size set to 0 which means that it will take all the available disk space in the device")
+	}
+	// Check for both an extra partition and the persistent partition having size set to 0
+	if extraPartsSizeCheck == 1 && i.Partitions.Persistent.Size == 0 {
+		return fmt.Errorf("both persistent partition and extra partitions have size set to 0. Only one partition can have its size set to 0 which means that it will take all the available disk space in the device")
 	}
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
@@ -336,8 +353,10 @@ func NewElementalPartitionsFromList(pl PartitionList) ElementalPartitions {
 
 // PartitionsByInstallOrder sorts partitions according to the default layout
 // nil partitons are ignored
-func (ep ElementalPartitions) PartitionsByInstallOrder(excludes ...*Partition) PartitionList {
+// partition with 0 size is set last
+func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions []*Partition, excludes ...*Partition) PartitionList {
 	partitions := PartitionList{}
+	var lastPartition *Partition
 
 	inExcludes := func(part *Partition, list ...*Partition) bool {
 		for _, p := range list {
@@ -364,8 +383,31 @@ func (ep ElementalPartitions) PartitionsByInstallOrder(excludes ...*Partition) P
 		partitions = append(partitions, ep.State)
 	}
 	if ep.Persistent != nil && !inExcludes(ep.Persistent, excludes...) {
-		partitions = append(partitions, ep.Persistent)
+		// Check if we have to set this partition the latest due size == 0
+		if ep.Persistent.Size == 0 {
+			lastPartition = ep.Persistent
+		} else {
+			partitions = append(partitions, ep.Persistent)
+		}
 	}
+	for _, p := range extraPartitions {
+		// Check if we have to set this partition the latest due size == 0
+		// Also check that we didn't set already the persistent to last in which case ignore this
+		// InstallConfig.Sanitize should have already taken care of failing if this is the case, so this is extra protection
+		if p.Size == 0 {
+			if lastPartition != nil {
+				// Ignore this part, we are not setting 2 parts to have 0 size!
+				continue
+			}
+			lastPartition = p
+		} else {
+			partitions = append(partitions, p)
+		}
+	}
+
+	// Set the last partition in the list the partition which has 0 size, so it grows to use the rest of free space
+	partitions = append(partitions, lastPartition)
+
 	return partitions
 }
 
@@ -376,7 +418,7 @@ func (ep ElementalPartitions) PartitionsByMountPoint(descending bool, excludes .
 	mountPoints := []string{}
 	partitions := PartitionList{}
 
-	for _, p := range ep.PartitionsByInstallOrder(excludes...) {
+	for _, p := range ep.PartitionsByInstallOrder([]*Partition{}, excludes...) {
 		if p.MountPoint != "" {
 			mountPointKeys[p.MountPoint] = p
 			mountPoints = append(mountPoints, p.MountPoint)

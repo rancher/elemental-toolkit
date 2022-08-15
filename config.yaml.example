@@ -13,6 +13,16 @@ install:
   part-table: gpt
 
   # partitions setup
+  # setting a partition size key to 0 means that the partition will take over the rest of the free space on the disk
+  # after creating the rest of the partitions
+  # by default the persistent partition has a value of 0
+  # if you want any of the extra partitions to fill the rest of the space you will need to set the persistent partition
+  # size to a different value, for example
+  # partitions:
+  #   persistent:
+  #     size: 300
+
+  # default partitions
   # only 'oem', 'recovery', 'state' and 'persistent' objects allowed
   # size in MiB
   partitions:
@@ -24,6 +34,20 @@ install:
       label: COS_RECOVERY
       size: 4096
       fs: ext4
+
+  # extra partitions to create during install
+  # only size, label and fs are used
+  # if no fs is given the partition will be created but not formatted
+  # This partitions are not automounted only created and formatted
+  extra-partitions:
+    - Name: myPartition
+      size: 100
+      fs: ext4
+      label: EXTRA_PARTITION
+    - Name: myOtherPartition
+      size: 0
+      fs: ext4
+      label: EXTRA_PARTITION
 
   # no-format: true skips any disk partitioning and formatting
   # if set to true installation procedure will error out if expected

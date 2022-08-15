@@ -68,8 +68,7 @@ func (e *Elemental) PartitionAndFormatDevice(i *v1.InstallSpec) error {
 		return err
 	}
 
-	parts := i.Partitions.PartitionsByInstallOrder()
-
+	parts := i.Partitions.PartitionsByInstallOrder(i.ExtraPartitions)
 	return e.createPartitions(disk, parts)
 }
 
