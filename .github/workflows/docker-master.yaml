@@ -98,5 +98,5 @@ jobs:
           COSIGN_EXPERIMENTAL: 1
         run:
           for value in ${{ steps.meta.outputs.tags }};do
-            cosign sign $value
+            cosign sign "$value"
           done
