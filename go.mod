@@ -27,6 +27,7 @@ require (
 	github.com/spf13/viper v1.10.0
 	github.com/twpayne/go-vfs v1.7.2
 	github.com/zloylos/grsync v1.6.1
+	golang.org/x/tools v0.1.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/mount-utils v0.23.0
 )

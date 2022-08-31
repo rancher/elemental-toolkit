@@ -99,6 +99,6 @@ jobs:
       - name: Sign image
         env:
           COSIGN_EXPERIMENTAL: 1
-        run:
+        run: |
           cosign sign ${{ env.DOCKER_REPO }}:${{ steps.export_tag.outputs.elemental_tag }}-${GITHUB_SHA::7}
           cosign sign ${{ env.DOCKER_REPO }}:latest
