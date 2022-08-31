@@ -1,4 +1,4 @@
-image: registry.suse.com/suse/sle-micro-rancher/5.2
+image: registry.suse.com/suse/sle-micro-rancher/5.3
 distribution: "opensuse"
 codename: "teal"
 arch: "x86_64"
