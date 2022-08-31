@@ -4,7 +4,7 @@ codename: "teal"
 arch: "x86_64"
 golang_arch: "amd64"
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3
+tool_image: registry.opensuse.org/opensuse/leap:15.4
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc

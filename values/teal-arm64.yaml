@@ -1,13 +1,13 @@
 
 # skopeo inspect docker://registry.suse.com/suse/sle-micro-rancher/5.2:latest --override-arch arm64 | jq '.Digest'
-image: registry.suse.com/suse/sle-micro-rancher/5.2@sha256:27d9b24f7ecdede93a6b6cad87443907a33c6005c0b6495fd7f8804594a4df37
+image: registry.suse.com/suse/sle-micro-rancher/5.3@sha256:fb4b77662cd848be843a5ed76699e6117ec6d108e5eef22eea6f96c33c451671
 distribution: "opensuse"
 codename: "teal"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3.2.535@sha256:eee7bde22c0b6ad71c50f301a34ad430d1af4aeb1bdbcbd40c340048da136a97
+tool_image: registry.opensuse.org/opensuse/leap:15.4@sha256:1ae4d4d0eb2caa62224c44067bfdfb59c7635c5c0bb3281b2c779abbf4520699
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi
