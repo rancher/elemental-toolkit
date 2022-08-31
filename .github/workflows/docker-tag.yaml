@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: cosign-installer
-        uses: sigstore/cosign-installer@v2.0.0
+        uses: sigstore/cosign-installer@v2.5.1
       - name: Install qemu-tools
         run: |
           sudo apt-get update
@@ -94,5 +94,6 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign sign ${{ env.DOCKER_REPO }}:${{ steps.export_tag.outputs.elemental_tag }}
-          cosign sign ${{ env.DOCKER_REPO }}:latest
+          cosign sign -y ${{ env.DOCKER_REPO }}:latest
+          
+          cosign sign -y ${{ env.DOCKER_REPO }}:${{ steps.export_tag.outputs.elemental_tag }}
