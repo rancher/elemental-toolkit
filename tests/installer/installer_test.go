@@ -255,7 +255,7 @@ var _ = Describe("cOS Installer tests", func() {
 				By("Checking we booted from the installed cOS")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 				By("Checking config file was run")
-				out, err = s.Command("stat /oem/99_custom.yaml")
+				out, err = s.Command("stat /oem/90_custom.yaml")
 				Expect(err).To(BeNil())
 				out, err = s.Command("hostname")
 				Expect(err).To(BeNil())
