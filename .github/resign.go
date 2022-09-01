@@ -82,6 +82,8 @@ func main() {
 	for _, val := range packages.Packages {
 		imageTag := fmt.Sprintf("%s:%s", finalRepo, val.ImageTag())
 		checkAndSign(imageTag, ctx)
+		imageTagYaml := fmt.Sprintf("%s:%s.metadata.yaml", finalRepo, val.ImageTag())
+		checkAndSign(imageTagYaml, ctx)
 	}
 	repoFiles := getRepositoryFiles(repo)
 	for _, val := range repoFiles {
@@ -115,9 +117,9 @@ func checkAndSign(tag string, ctx *types.Context) {
 	if err != nil {
 		ctx.Warning("Artifact", tag, "has no signature, signing it")
 		if fulcioFlag != "" {
-			args = []string{"sign", fulcioFlag, tag}
+			args = []string{"sign", "-y", fulcioFlag, tag}
 		} else {
-			args = []string{"sign", tag}
+			args = []string{"sign", "-y", tag}
 		}
 		ctx.Debug("Calling cosing with the following args:", args)
 		out, err := exec.Command("cosign", args...).CombinedOutput()

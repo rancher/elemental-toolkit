@@ -24,7 +24,7 @@ on:
         description: Name of the repository.yaml that will be downloaded.
       cosign-version:
         required: false
-        default: "v1.4.1"
+        default: "v1.11.1"
         type: string
         description: Cosign version to install and use
       debug:
