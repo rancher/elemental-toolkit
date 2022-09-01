@@ -8,7 +8,7 @@ flavors:
         local_runner: false
         push_cache: false
         skip_build: false
-        skip_docker_build: false
+        skip_docker_build: true
 
         pipeline: "nightly"
         publishing_pipeline: false
