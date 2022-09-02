@@ -98,6 +98,11 @@ func checkAndSign(tag string, ctx *types.Context) {
 	var args []string
 	tag = strings.TrimSpace(tag)
 
+	referenceID := os.Getenv("REFERENCEID")
+	if referenceID == "" {
+		referenceID = "repository.yaml"
+	}
+
 	ctx.Info("Checking artifact", tag)
 	tmpDir, _ := os.MkdirTemp("", "sign-*")
 	defer os.RemoveAll(tmpDir)
@@ -116,10 +121,18 @@ func checkAndSign(tag string, ctx *types.Context) {
 	ctx.Debug("Verify output:", string(out))
 	if err != nil {
 		ctx.Warning("Artifact", tag, "has no signature, signing it")
+
+		args = []string{
+			"sign",
+			"-y",
+			"-a", "team=elemental",
+			"-a", fmt.Sprintf("referenceID=%s", referenceID),
+		}
+
 		if fulcioFlag != "" {
-			args = []string{"sign", "-y", fulcioFlag, tag}
+			args = append(args, fulcioFlag, tag)
 		} else {
-			args = []string{"sign", "-y", tag}
+			args = append(args, tag)
 		}
 		ctx.Debug("Calling cosing with the following args:", args)
 		out, err := exec.Command("cosign", args...).CombinedOutput()

@@ -260,9 +260,9 @@ jobs:
           export REFERENCEID=$(git rev-parse HEAD)-repository.yaml
           export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
-          go build -o resign resign.go
+          go build -o sign sign.go
           popd
-          sudo -E ./.github/resign
+          sudo -E ./.github/sign
           # Also sign the default repository.yaml files pushed along with the snapshot id
           export REFERENCEID=repository.yaml
-          sudo -E ./.github/resign
+          sudo -E ./.github/sign
