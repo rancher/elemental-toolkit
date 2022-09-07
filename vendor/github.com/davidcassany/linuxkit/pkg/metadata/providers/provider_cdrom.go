@@ -86,6 +86,7 @@ func FindCIs() []string {
 		fs, err := disk.GetFilesystem(0)
 		if err != nil {
 			log.Debugf("failed to get filesystem on partition 0 for device: %s: %v", dev, err)
+			_ = disk.File.Close()
 			continue
 		}
 		// get the label
@@ -94,6 +95,10 @@ func FindCIs() []string {
 		if label == "cidata" || label == "CIDATA" {
 			log.Debugf("adding device: %s", dev)
 			foundDevices = append(foundDevices, dev)
+		}
+		err = disk.File.Close()
+		if err != nil {
+			log.Debugf("failed closing device %s", dev)
 		}
 	}
 	return foundDevices

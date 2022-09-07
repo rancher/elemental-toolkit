@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -54,8 +55,9 @@ func templateSysData(l logger.Interface, s string) string {
 func download(url string) (string, error) {
 	var resp *http.Response
 	var err error
+	client:= getHttpClient()
 	for i := 0; i < 10; i++ {
-		resp, err = http.Get(url)
+		resp, err = client.Get(url)
 		if err == nil || strings.Contains(err.Error(), "unsupported protocol scheme") {
 			break
 		}
@@ -72,4 +74,16 @@ func download(url string) (string, error) {
 	}
 	bytes, err := ioutil.ReadAll(resp.Body)
 	return string(bytes), err
+}
+
+func getHttpClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{
+				Certificates:       []tls.Certificate{},
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 }

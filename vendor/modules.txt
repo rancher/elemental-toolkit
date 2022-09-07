@@ -168,7 +168,7 @@ github.com/cpuguy83/go-md2man/v2/md2man
 github.com/crillab/gophersat/bf
 github.com/crillab/gophersat/explain
 github.com/crillab/gophersat/solver
-# github.com/davidcassany/linuxkit/pkg/metadata v0.0.0-20220127113738-73e2e3a171a0
+# github.com/davidcassany/linuxkit/pkg/metadata v0.0.0-20220725140037-b49d0fec13b3
 github.com/davidcassany/linuxkit/pkg/metadata/providers
 # github.com/denisbrodbeck/machineid v1.0.1
 github.com/denisbrodbeck/machineid
@@ -555,7 +555,7 @@ github.com/mudler/luet/pkg/tree
 github.com/mudler/luet/pkg/versioner
 # github.com/mudler/topsort v0.0.0-20201103161459-db5c7901c290
 github.com/mudler/topsort
-# github.com/mudler/yip v0.0.0-20220704150701-30d215fa4ab0
+# github.com/mudler/yip v0.0.0-20220905202553-f9b5cdd6a56e
 ## explicit
 github.com/mudler/yip/pkg/executor
 github.com/mudler/yip/pkg/logger
