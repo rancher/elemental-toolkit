@@ -10,6 +10,7 @@ tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
     grub2
+    shim
     curl
     tar
     xz
@@ -29,6 +30,7 @@ packages: >-
     grub2
     grub2-i386-pc
     grub2-x86_64-efi
+    shim
     haveged
     iproute2
     jq

@@ -5,10 +5,10 @@ requires:
 prelude:
 {{ if .Values.arch }}
   {{if eq .Values.arch "x86_64"}}
-- zypper in -y --no-recommends syslinux grub2-i386-pc grub2-x86_64-efi
+- zypper in -y --no-recommends syslinux grub2-i386-pc grub2-x86_64-efi shim
   {{end}}
   {{if eq .Values.arch "aarch64"}}
-- zypper in -y --no-recommends syslinux-x86_64 grub2-i386-pc grub2-arm64-efi
+- zypper in -y --no-recommends syslinux-x86_64 grub2-i386-pc grub2-arm64-efi shim
   {{end}}
 - zypper cc
 - grub2-mkimage -O i386-pc -o /usr/share/grub2/i386-pc/core.img -p /boot/grub2 -d /usr/share/grub2/i386-pc ext2 iso9660 linux echo configfile search_label search_fs_file search search_fs_uuid ls normal gzio png fat gettext font minicmd gfxterm gfxmenu all_video xfs btrfs lvm luks gcry_rijndael gcry_sha256 gcry_sha512 crypto cryptodisk test true loadenv part_gpt part_msdos biosdisk vga vbe chain boot
@@ -34,10 +34,18 @@ steps:
 {{if eq .Values.name "grub2-efi-image"}}
   {{if .Values.arch }}
     {{if eq .Values.arch "x86_64"}}
-- mkdir -p /EFI/BOOT && cp /usr/share/grub2/x86_64-efi/grub.efi /EFI/BOOT/bootx64.efi
+- mkdir -p /EFI/BOOT
+# For removable drives the name of the efi needs to be bootx64.efi
+- cp /usr/share/efi/x86_64/shim.efi /EFI/BOOT/bootx64.efi
+- cp /usr/share/efi/x86_64/grub.efi /EFI/BOOT/grub.efi
+- cp /usr/share/efi/x86_64/MokManager.efi /EFI/BOOT/MokManager.efi
     {{end}}
     {{if eq .Values.arch "aarch64"}}
-- mkdir -p /EFI/BOOT && cp /usr/share/grub2/arm64-efi/grub.efi /EFI/BOOT/bootaa64.efi
+- mkdir -p /EFI/BOOT
+# For removable drives the name of the efi needs to be bootaa64.efi
+- cp /usr/share/efi/arm64-efi/shim.efi /EFI/BOOT/bootaa64.efi
+- cp /usr/share/efi/arm64-efi/grub.efi /EFI/BOOT/grub.efi
+- cp /usr/share/efi/arm64-efi/MokManager.efi /EFI/BOOT/MokManager.efi
     {{end}}
   {{end}}
 - cp config/grub_live_efi.cfg /EFI/BOOT/grub.cfg

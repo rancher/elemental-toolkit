@@ -9,6 +9,7 @@ tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
+    shim
     grub2
     curl
     tar
@@ -28,6 +29,7 @@ packages: >-
     grub-pc-bin
     grub2
     grub2-common
+    shim
     haveged
     iproute2
     multipath-tools

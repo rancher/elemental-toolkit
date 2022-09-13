@@ -19,5 +19,7 @@ tools_packages: >-
     tar
     xz
     curl
+    shim
+    efibootmgr
 
 kernel_package: ""

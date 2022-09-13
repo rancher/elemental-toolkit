@@ -10,6 +10,7 @@ tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi
     grub2
+    shim
     tar
     curl
     xz
@@ -27,6 +28,7 @@ packages: >-
     gptfdisk
     grub2
     grub2-arm64-efi
+    shim
     haveged
     iproute2
     jq
