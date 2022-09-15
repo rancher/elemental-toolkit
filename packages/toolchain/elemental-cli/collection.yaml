@@ -2,16 +2,16 @@ packages:
   - &elemental
     name: "elemental-cli"
     category: "toolchain"
-    version: "0.20220808"
+    version: "0.20220915"
     bin_name: "elemental"
     fips: false
     labels:
       github.repo: "elemental-cli"
-      github.owner: "rancher"
+      github.owner: "itxaka"
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
       autobump.git.branch: "main"
-      git.hash: "8a7e7a1098ca9e527a4a075240092b4a4d56b390"
+      git.hash: "0a4dd8f1b53e3e21185828ff44e88269b4b97b75"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
