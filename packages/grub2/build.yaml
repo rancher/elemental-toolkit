@@ -43,11 +43,11 @@ steps:
 - cp /usr/share/efi/x86_64/grub.efi /EFI/BOOT/bootx64.efi
         {{end}}
        {{if eq .Values.arch "aarch64"}}
-- cp /usr/share/efi/arm64-efi/shim.efi /EFI/BOOT/shim.efi
-- cp /usr/share/efi/arm64-efi/grub.efi /EFI/BOOT/grub.efi
-- cp /usr/share/efi/arm64-efi/MokManager.efi /EFI/BOOT/MokManager.efi
+- cp /usr/share/efi/aarch64/shim.efi /EFI/BOOT/shim.efi
+- cp /usr/share/efi/aarch64/grub.efi /EFI/BOOT/grub.efi
+- cp /usr/share/efi/aarch64/MokManager.efi /EFI/BOOT/MokManager.efi
   # Backwards compatible for elemental-cli versions <= 0ff8246e0f93e00ab3fd5b175c0d3e78d11df3be
-- cp /usr/share/efi/arm64-efi/grub.efi /EFI/BOOT/bootx64.efi
+- cp /usr/share/efi/aarch64/grub.efi /EFI/BOOT/bootaa64.efi
        {{end}}
      {{end}}
     {{else if eq .Values.tool_image_distribution "fedora"}}
