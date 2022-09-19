@@ -300,10 +300,8 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
-      - name: Add build repository
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make add_local_repo
+      {{{ tmpl.Exec  "make" "add_local_repo" }}}
+      {{{ tmpl.Exec  "make" "upgrade_deps" }}}
       - name: Install deps
         uses: nick-fields/retry@v2
         with:

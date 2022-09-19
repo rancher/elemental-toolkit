@@ -185,10 +185,12 @@ jobs:
         with:
           name: build-teal-arm64
           path: build
-      - name: Add build repository
+      - name: Run make add_local_repo
         run: |
-          export DOCKER_INSTALL=true
           sudo -E make add_local_repo
+      - name: Run make upgrade_deps
+        run: |
+          sudo -E make upgrade_deps
       - name: Install deps
         uses: nick-fields/retry@v2
         with:
