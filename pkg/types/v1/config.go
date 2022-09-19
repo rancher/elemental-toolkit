@@ -135,7 +135,7 @@ type InstallSpec struct {
 	Firmware        string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
 	PartTable       string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
 	Partitions      ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	ExtraPartitions []*Partition        `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
+	ExtraPartitions PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
 	NoFormat        bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
 	Force           bool                `yaml:"force,omitempty" mapstructure:"force"`
 	CloudInit       []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
@@ -354,7 +354,7 @@ func NewElementalPartitionsFromList(pl PartitionList) ElementalPartitions {
 // PartitionsByInstallOrder sorts partitions according to the default layout
 // nil partitons are ignored
 // partition with 0 size is set last
-func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions []*Partition, excludes ...*Partition) PartitionList {
+func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions PartitionList, excludes ...*Partition) PartitionList {
 	partitions := PartitionList{}
 	var lastPartition *Partition
 
@@ -406,7 +406,9 @@ func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions []*Partit
 	}
 
 	// Set the last partition in the list the partition which has 0 size, so it grows to use the rest of free space
-	partitions = append(partitions, lastPartition)
+	if lastPartition != nil {
+		partitions = append(partitions, lastPartition)
+	}
 
 	return partitions
 }
