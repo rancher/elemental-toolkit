@@ -188,6 +188,7 @@ func (i InstallAction) Run() (err error) {
 		i.spec.GrubConf,
 		i.spec.Tty,
 		i.spec.Firmware == v1.EFI,
+		i.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
 		return err

@@ -175,6 +175,7 @@ func (r ResetAction) Run() (err error) {
 		r.spec.GrubConf,
 		r.spec.Tty,
 		r.spec.Efi,
+		r.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
 		return err

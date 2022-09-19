@@ -123,6 +123,10 @@ const (
 	ArchAmd64 = "amd64"
 	Archx86   = "x86_64"
 	ArchArm64 = "arm64"
+
+	Fedora = "fedora"
+	Ubuntu = "ubuntu"
+	Suse   = "suse"
 )
 
 func GetCloudInitPaths() []string {

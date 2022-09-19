@@ -20,8 +20,10 @@ limitations under the License.
 package utils
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -176,4 +178,72 @@ func TempFile(fs v1.FS, dir, pattern string) (f *os.File, err error) {
 		break
 	}
 	return
+}
+
+// Walkdir with an FS implementation
+type statDirEntry struct {
+	info fs.FileInfo
+}
+
+func (d *statDirEntry) Name() string               { return d.info.Name() }
+func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
+func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
+func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
+
+// WalkDirFs is the same as filepath.WalkDir but accepts a v1.Fs so it can be run on any v1.Fs type
+func WalkDirFs(fs v1.FS, root string, fn fs.WalkDirFunc) error {
+	info, err := fs.Stat(root)
+	if err != nil {
+		err = fn(root, nil, err)
+	} else {
+		err = walkDir(fs, root, &statDirEntry{info}, fn)
+	}
+	if err == filepath.SkipDir {
+		return nil
+	}
+	return err
+}
+
+func walkDir(fs v1.FS, path string, d fs.DirEntry, walkDirFn fs.WalkDirFunc) error {
+	if err := walkDirFn(path, d, nil); err != nil || !d.IsDir() {
+		if err == filepath.SkipDir && d.IsDir() {
+			// Successfully skipped directory.
+			err = nil
+		}
+		return err
+	}
+
+	dirs, err := readDir(fs, path)
+	if err != nil {
+		// Second call, to report ReadDir error.
+		err = walkDirFn(path, d, err)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, d1 := range dirs {
+		path1 := filepath.Join(path, d1.Name())
+		if err := walkDir(fs, path1, d1, walkDirFn); err != nil {
+			if err == filepath.SkipDir {
+				break
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func readDir(fs v1.FS, dirname string) ([]fs.DirEntry, error) {
+	f, err := fs.Open(dirname)
+	if err != nil {
+		return nil, err
+	}
+	dirs, err := f.ReadDir(-1)
+	f.Close()
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(dirs, func(i, j int) bool { return dirs[i].Name() < dirs[j].Name() })
+	return dirs, nil
 }
