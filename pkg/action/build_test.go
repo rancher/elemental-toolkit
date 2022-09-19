@@ -82,9 +82,25 @@ var _ = Describe("Runtime Actions", func() {
 		var iso *v1.LiveISO
 		BeforeEach(func() {
 			iso = config.NewISO()
+
+			tmpDir, err := utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			cfg.Date = false
+			cfg.OutDir = tmpDir
+
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				switch cmd {
+				case "xorriso":
+					err := fs.WriteFile(filepath.Join(tmpDir, "elemental.iso"), []byte("profound thoughts"), constants.FilePerm)
+					return []byte{}, err
+				default:
+					return []byte{}, nil
+				}
+			}
 		})
 		It("Successfully builds an ISO from a Docker image", func() {
-			cfg.Date = true
+
 			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = []*v1.ImageSource{rootSrc}
 			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
@@ -139,6 +155,55 @@ var _ = Describe("Runtime Actions", func() {
 
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("Successfully builds an ISO using self contained binaries and including overlayed files", func() {
+			iso.BootloaderInRootFs = true
+
+			rootFs := []string{"channel:system/elemental", "dir:/overlay/dir"}
+			for _, src := range rootFs {
+				rootSrc, _ := v1.NewSrcFromURI(src)
+				iso.RootFS = append(iso.RootFS, rootSrc)
+			}
+
+			err := utils.MkdirAll(fs, "/overlay/dir/boot", constants.DirPerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create("/overlay/dir/boot/vmlinuz")
+			Expect(err).ShouldNot(HaveOccurred())
+			_, err = fs.Create("/overlay/dir/boot/initrd")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			liveBoot := &v1mock.LiveBootLoaderMock{}
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
+			err = buildISO.ISORun()
+
+			Expect(luet.UnpackChannelCalled()).To(BeTrue())
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("Fails on prepare EFI", func() {
+			iso.BootloaderInRootFs = true
+
+			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
+			iso.RootFS = append(iso.RootFS, rootSrc)
+
+			liveBoot := &v1mock.LiveBootLoaderMock{ErrorEFI: true}
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
+			err := buildISO.ISORun()
+
+			Expect(luet.UnpackChannelCalled()).To(BeTrue())
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails on prepare ISO", func() {
+			iso.BootloaderInRootFs = true
+
+			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
+			iso.RootFS = append(iso.RootFS, rootSrc)
+
+			liveBoot := &v1mock.LiveBootLoaderMock{ErrorISO: true}
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
+			err := buildISO.ISORun()
+
+			Expect(luet.UnpackChannelCalled()).To(BeTrue())
+			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails if kernel or initrd is not found in rootfs", func() {
 			rootSrc, _ := v1.NewSrcFromURI("dir:/local/dir")

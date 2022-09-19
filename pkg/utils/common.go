@@ -83,18 +83,20 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 // CopyFile Copies source file to target file using Fs interface. If target
 // is  directory source is copied into that directory using source name file.
 func CopyFile(fs v1.FS, source string, target string) (err error) {
+	return ConcatFiles(fs, []string{source}, target)
+}
+
+// ConcatFiles Copies source files to target file using Fs interface.
+// Source files are concatenated into target file in the given order.
+// If target is a directory source is copied into that directory using
+// 1st source name file.
+func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
+	if len(sources) == 0 {
+		return fmt.Errorf("Empty sources list")
+	}
 	if dir, _ := IsDir(fs, target); dir {
-		target = filepath.Join(target, filepath.Base(source))
+		target = filepath.Join(target, filepath.Base(sources[0]))
 	}
-	sourceFile, err := fs.Open(source)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err == nil {
-			err = sourceFile.Close()
-		}
-	}()
 
 	targetFile, err := fs.Create(target)
 	if err != nil {
@@ -103,10 +105,27 @@ func CopyFile(fs v1.FS, source string, target string) (err error) {
 	defer func() {
 		if err == nil {
 			err = targetFile.Close()
+		} else {
+			_ = fs.Remove(target)
 		}
 	}()
 
-	_, err = io.Copy(targetFile, sourceFile)
+	var sourceFile *os.File
+	for _, source := range sources {
+		sourceFile, err = fs.Open(source)
+		if err != nil {
+			break
+		}
+		_, err = io.Copy(targetFile, sourceFile)
+		if err != nil {
+			break
+		}
+		err = sourceFile.Close()
+		if err != nil {
+			break
+		}
+	}
+
 	return err
 }
 

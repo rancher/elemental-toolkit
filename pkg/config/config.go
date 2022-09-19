@@ -465,27 +465,11 @@ func NewRawDisk() *v1.RawDisk {
 }
 
 func NewISO() *v1.LiveISO {
-	var uefiSrc, imageSrc []*v1.ImageSource
-
-	defaultUEFI := constants.GetDefaultISOUEFI()
-	for _, imgSrc := range defaultUEFI {
-		src, _ := v1.NewSrcFromURI(imgSrc)
-		uefiSrc = append(uefiSrc, src)
-	}
-
-	defaultImage := constants.GetDefaultISOImage()
-	for _, imgSrc := range defaultImage {
-		src, _ := v1.NewSrcFromURI(imgSrc)
-		imageSrc = append(imageSrc, src)
-	}
-
 	return &v1.LiveISO{
-		Label:       constants.ISOLabel,
-		UEFI:        uefiSrc,
-		Image:       imageSrc,
-		HybridMBR:   constants.IsoHybridMBR,
-		BootFile:    constants.IsoBootFile,
-		BootCatalog: constants.IsoBootCatalog,
+		Label:     constants.ISOLabel,
+		GrubEntry: constants.GrubDefEntry,
+		UEFI:      []*v1.ImageSource{},
+		Image:     []*v1.ImageSource{},
 	}
 }
 

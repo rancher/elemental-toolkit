@@ -144,6 +144,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
 	c.Flags().String("label", "", "Label of the ISO volume")
 	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
+	c.Flags().Bool("bootloader-in-rootfs", false, "Fetch ISO bootloader binaries from the rootfs")
 	addArchFlags(c)
 	addCosignFlags(c)
 	addSquashFsCompressionFlags(c)
