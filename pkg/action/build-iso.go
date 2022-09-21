@@ -110,18 +110,20 @@ func (b *BuildISOAction) ISORun() (err error) {
 		return err
 	}
 
-	b.cfg.Logger.Infof("Preparing EFI image...")
-	if b.spec.BootloaderInRootFs {
-		err = b.liveBoot.PrepareEFI(rootDir, uefiDir)
+	if b.spec.Firmware == v1.EFI {
+		b.cfg.Logger.Infof("Preparing EFI image...")
+		if b.spec.BootloaderInRootFs {
+			err = b.liveBoot.PrepareEFI(rootDir, uefiDir)
+			if err != nil {
+				b.cfg.Logger.Errorf("Failed fetching EFI data: %v", err)
+				return err
+			}
+		}
+		err = b.applySources(uefiDir, b.spec.UEFI...)
 		if err != nil {
-			b.cfg.Logger.Errorf("Failed fetching EFI data: %v", err)
+			b.cfg.Logger.Errorf("Failed installing EFI packages: %v", err)
 			return err
 		}
-	}
-	err = b.applySources(uefiDir, b.spec.UEFI...)
-	if err != nil {
-		b.cfg.Logger.Errorf("Failed installing EFI packages: %v", err)
-		return err
 	}
 
 	b.cfg.Logger.Infof("Preparing ISO image root tree...")
@@ -138,14 +140,22 @@ func (b *BuildISOAction) ISORun() (err error) {
 		return err
 	}
 
-	err = b.prepareISORoot(isoDir, rootDir, uefiDir)
+	err = b.prepareISORoot(isoDir, rootDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
 		return err
 	}
 
+	if b.spec.Firmware == v1.EFI {
+		b.cfg.Logger.Info("Creating EFI image...")
+		err = b.createEFI(uefiDir, filepath.Join(isoTmpDir, constants.IsoEFIImg))
+		if err != nil {
+			return err
+		}
+	}
+
 	b.cfg.Logger.Infof("Creating ISO image...")
-	err = b.burnISO(isoDir)
+	err = b.burnISO(isoDir, filepath.Join(isoTmpDir, constants.IsoEFIImg))
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
 		return err
@@ -154,7 +164,7 @@ func (b *BuildISOAction) ISORun() (err error) {
 	return err
 }
 
-func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string, uefiDir string) error {
+func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
 	kernel, initrd, err := b.e.FindKernelInitrd(rootDir)
 	if err != nil {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
@@ -184,11 +194,6 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string, uefiDir st
 		return err
 	}
 
-	b.cfg.Logger.Info("Creating EFI image...")
-	err = b.createEFI(uefiDir, filepath.Join(isoDir, constants.IsoEFIPath))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -227,7 +232,7 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 	return nil
 }
 
-func (b BuildISOAction) burnISO(root string) error {
+func (b BuildISOAction) burnISO(root, efiImg string) error {
 	cmd := "xorriso"
 	var outputFile string
 	var isoFileName string
@@ -253,10 +258,10 @@ func (b BuildISOAction) burnISO(root string) error {
 	}
 
 	args := []string{
-		"-volid", b.spec.Label, "-joliet", "on", "-padding", "0",
+		"-volid", b.spec.Label /*"-joliet", "on"*/, "-padding", "0",
 		"-outdev", outputFile, "-map", root, "/", "-chmod", "0755", "--",
 	}
-	args = append(args, live.XorrisoBooloaderArgs(root)...)
+	args = append(args, live.XorrisoBooloaderArgs(root, efiImg, b.spec.Firmware)...)
 
 	out, err := b.cfg.Runner.Run(cmd, args...)
 	b.cfg.Logger.Debugf("Xorriso: %s", string(out))

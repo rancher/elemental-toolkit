@@ -458,6 +458,7 @@ type LiveISO struct {
 	Label              string         `yaml:"label,omitempty" mapstructure:"label"`
 	GrubEntry          string         `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	BootloaderInRootFs bool           `yaml:"bootloader-in-rootfs" mapstructure:"bootloader-in-rootfs"`
+	Firmware           string         `yaml:"firmware,omitempty" mapstructure:"firmware"`
 }
 
 // Sanitize checks the consistency of the struct, returns error

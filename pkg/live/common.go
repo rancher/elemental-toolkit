@@ -18,26 +18,24 @@ package live
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/rancher/elemental-cli/pkg/constants"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 const (
-	isoEFIPath            = "/boot/uefi.img"
 	efiBootPath           = "/EFI/BOOT"
-	isoLoaderPath         = "/boot/x86_64/loader"
-	grubArm64Path         = grubPrefixDir + "/arm64-efi"
 	grubEfiImagex86Dest   = efiBootPath + "/bootx64.efi"
 	grubEfiImageArm64Dest = efiBootPath + "/bootaa64.efi"
 	grubCfg               = "grub.cfg"
 	grubPrefixDir         = "/boot/grub2"
+	isoBootCatalog        = "/boot/boot.catalog"
 
-	// TODO document any custom bootloader must match this setup as these are not configurable
+	// TODO document any custom BIOS bootloader must match this setup as these are not configurable
 	// and coupled with the xorriso call
-	isoHybridMBR   = "/boot/x86_64/loader/boot_hybrid.img"
-	isoBootCatalog = "/boot/x86_64/boot.catalog"
-	isoBootFile    = "/boot/x86_64/loader/eltorito.img"
+	isoLoaderPath = "/boot/x86_64/loader"
+	isoHybridMBR  = isoLoaderPath + "/boot_hybrid.img"
+	isoBootFile   = isoLoaderPath + "/eltorito.img"
 
 	//TODO use some identifer known to be unique
 	grubEfiCfg = "search --no-floppy --file --set=root " + constants.IsoKernelPath +
@@ -45,32 +43,29 @@ const (
 		"\nconfigfile $prefix/" + grubCfg
 
 	// TODO not convinced having such a config here is the best idea
-	grubCfgTemplate = `search --no-floppy --file --set=root /boot/kernel                               
-	set default=0                                                                   
-	set timeout=10                                                                  
-	set timeout_style=menu                                                          
-	set linux=linux                                                                 
-	set initrd=initrd                                                               
+	grubCfgTemplate = `search --no-floppy --file --set=root /boot/kernel
+	set default=0
+	set timeout=10
+	set timeout_style=menu
+	set linux=linux
+	set initrd=initrd
 	if [ "${grub_cpu}" = "x86_64" -o "${grub_cpu}" = "i386" -o "${grub_cpu}" = "arm64" ];then
-		if [ "${grub_platform}" = "efi" ]; then                                     
-			if [ "${grub_cpu}" != "arm64" ]; then                                   
-				set linux=linuxefi                                                  
-				set initrd=initrdefi                                                
-			fi                                                                      
-		fi                                                                          
-	fi                                                                              
-	if [ "${grub_platform}" = "efi" ]; then                                         
-		echo "Please press 't' to show the boot menu on this console"               
-	fi                                                                              
-	set font=($root)/boot/${grub_cpu}/loader/grub2/fonts/unicode.pf2                
-	if [ -f ${font} ];then                                                          
-		loadfont ${font}                                                            
-	fi                                                                              
-	menuentry "%s" --class os --unrestricted {                                     
-		echo Loading kernel...                                                      
-		$linux ($root)/boot/kernel cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable
-		echo Loading initrd...                                                      
-		$initrd ($root)/boot/initrd                                                 
+		if [ "${grub_platform}" = "efi" ]; then
+			if [ "${grub_cpu}" != "arm64" ]; then
+				set linux=linuxefi
+				set initrd=initrdefi
+			fi
+		fi
+	fi
+	if [ "${grub_platform}" = "efi" ]; then
+		echo "Please press 't' to show the boot menu on this console"
+	fi
+
+	menuentry "%s" --class os --unrestricted {
+		echo Loading kernel...
+		$linux ($root)` + constants.IsoKernelPath + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable
+		echo Loading initrd...
+		$initrd ($root)` + constants.IsoInitrdPath + `
 	}                                                                               
 																					
 	if [ "${grub_platform}" = "efi" ]; then                                         
@@ -81,23 +76,32 @@ const (
 	fi`
 )
 
-func XorrisoBooloaderArgs(root string) []string {
-	args := []string{
-		"-boot_image", "grub", fmt.Sprintf("bin_path=%s", isoBootFile),
-		"-boot_image", "grub", fmt.Sprintf("grub2_mbr=%s/%s", root, isoHybridMBR),
-		"-boot_image", "grub", "grub2_boot_info=on",
-		"-boot_image", "any", "partition_offset=16",
-		"-boot_image", "any", fmt.Sprintf("cat_path=%s", isoBootCatalog),
-		"-boot_image", "any", "cat_hidden=on",
-		"-boot_image", "any", "boot_info_table=on",
-		"-boot_image", "any", "platform_id=0x00",
-		"-boot_image", "any", "emul_type=no_emulation",
-		"-boot_image", "any", "load_size=2048",
-		"-append_partition", "2", "0xef", filepath.Join(root, isoEFIPath),
-		"-boot_image", "any", "next",
-		"-boot_image", "any", "efi_path=--interval:appended_partition_2:all::",
-		"-boot_image", "any", "platform_id=0xef",
-		"-boot_image", "any", "emul_type=no_emulation",
+func XorrisoBooloaderArgs(root, efiImg, firmware string) []string {
+	switch firmware {
+	case v1.EFI:
+		args := []string{
+			"-append_partition", "2", "0xef", efiImg,
+			"-boot_image", "any", fmt.Sprintf("cat_path=%s", isoBootCatalog),
+			"-boot_image", "any", "cat_hidden=on",
+			"-boot_image", "any", "efi_path=--interval:appended_partition_2:all::",
+			"-boot_image", "any", "platform_id=0xef",
+			"-boot_image", "any", "appended_part_as=gpt",
+			"-boot_image", "any", "partition_offset=16",
+		}
+		return args
+	case v1.BIOS:
+		args := []string{
+			"-boot_image", "grub", fmt.Sprintf("bin_path=%s", isoBootFile),
+			"-boot_image", "grub", fmt.Sprintf("grub2_mbr=%s/%s", root, isoHybridMBR),
+			"-boot_image", "grub", "grub2_boot_info=on",
+			"-boot_image", "any", "partition_offset=16",
+			"-boot_image", "any", fmt.Sprintf("cat_path=%s", isoBootCatalog),
+			"-boot_image", "any", "cat_hidden=on",
+			"-boot_image", "any", "boot_info_table=on",
+			"-boot_image", "any", "platform_id=0x00",
+		}
+		return args
+	default:
+		return []string{}
 	}
-	return args
 }

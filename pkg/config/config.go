@@ -470,6 +470,7 @@ func NewISO() *v1.LiveISO {
 		GrubEntry: constants.GrubDefEntry,
 		UEFI:      []*v1.ImageSource{},
 		Image:     []*v1.ImageSource{},
+		Firmware:  v1.EFI,
 	}
 }
 

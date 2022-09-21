@@ -72,7 +72,6 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 
 func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 	const (
-		grubFont          = "/usr/share/grub2/unicode.pf2"
 		grubBootHybridImg = "/usr/share/grub2/i386-pc/boot_hybrid.img"
 		syslinuxFiles     = "/usr/share/syslinux/isolinux.bin " +
 			"/usr/share/syslinux/menu.c32 " +
@@ -85,41 +84,32 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 		return err
 	}
 
-	switch g.buildCfg.Arch {
-	case constants.ArchAmd64, constants.Archx86:
+	if g.spec.Firmware == v1.BIOS {
 		// Create eltorito image
 		eltorito, err := g.BuildEltoritoImg(rootDir)
 		if err != nil {
 			return err
 		}
 
-		// Inlude loaders in expected paths
+		// Create loaders folder
 		loaderDir := filepath.Join(imageDir, isoLoaderPath)
 		err = utils.MkdirAll(g.buildCfg.Fs, loaderDir, constants.DirPerm)
 		if err != nil {
 			return err
 		}
+		// Inlude loaders in expected paths
 		loaderFiles := []string{eltorito, grubBootHybridImg}
 		loaderFiles = append(loaderFiles, strings.Split(syslinuxFiles, " ")...)
 		for _, f := range loaderFiles {
-			err = utils.CopyFile(g.buildCfg.Fs, filepath.Join(rootDir, f), loaderDir)
+			err = utils.CopyFile(
+				g.buildCfg.Fs,
+				filepath.Join(rootDir, f),
+				filepath.Join(imageDir, isoLoaderPath),
+			)
 			if err != nil {
 				return err
 			}
 		}
-		fontsDir := filepath.Join(loaderDir, "/grub2/fonts")
-		err = utils.MkdirAll(g.buildCfg.Fs, fontsDir, constants.DirPerm)
-		if err != nil {
-			return err
-		}
-		err = utils.CopyFile(g.buildCfg.Fs, filepath.Join(rootDir, grubFont), fontsDir)
-		if err != nil {
-			return err
-		}
-	case constants.ArchArm64:
-		// TBC
-	default:
-		return fmt.Errorf("Not supported architecture: %v", g.buildCfg.Arch)
 	}
 
 	// Write grub.cfg file
@@ -132,8 +122,12 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 		return err
 	}
 
-	// Include EFI contents in iso root too
-	return g.PrepareEFI(rootDir, imageDir)
+	if g.spec.Firmware == v1.EFI {
+		// Include EFI contents in iso root too
+		return g.PrepareEFI(rootDir, imageDir)
+	}
+
+	return nil
 }
 
 func (g *GreenLiveBootLoader) BuildEltoritoImg(rootDir string) (string, error) {
