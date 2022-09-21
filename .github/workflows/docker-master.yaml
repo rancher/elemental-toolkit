@@ -70,7 +70,7 @@ jobs:
           qemu-img create -f raw disk-efi.img 30G
           # mount loop device and get the device
           LOOP=`sudo losetup -fP --show disk-efi.img`
-          docker run -v /dev/:/dev/ --privileged ${{ steps.docker_build.outputs.ImageID }} install --force-efi --debug -d quay.io/costoolkit/releases-green:cos-system-0.8.6 $LOOP
+          docker run -v /dev/:/dev/ --privileged ${{ steps.docker_build.outputs.ImageID }} install --force-efi --debug -d registry.opensuse.org/isv/rancher/elemental/teal53/15.4/rancher/elemental-node-image/5.3:latest $LOOP
           sudo losetup -D $LOOP
           rm disk-efi.img
       - name: Test elemental image install
@@ -79,7 +79,7 @@ jobs:
           qemu-img create -f raw disk.img 30G
           # mount loop device and get the device
           LOOP=`sudo losetup -fP --show disk.img`
-          docker run -v /dev/:/dev/ --privileged ${{ steps.docker_build.outputs.ImageID }} install --debug -d quay.io/costoolkit/releases-green:cos-system-0.8.6 $LOOP
+          docker run -v /dev/:/dev/ --privileged ${{ steps.docker_build.outputs.ImageID }} install --debug -d registry.opensuse.org/isv/rancher/elemental/teal53/15.4/rancher/elemental-node-image/5.3:latest $LOOP
           sudo losetup -D $LOOP
           rm disk.img
       - name: Push image  # should be a free build as everything has been cached and loaded
