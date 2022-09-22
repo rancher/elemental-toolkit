@@ -24,12 +24,12 @@ import (
 )
 
 const (
-	efiBootPath           = "/EFI/BOOT"
-	grubEfiImagex86Dest   = efiBootPath + "/bootx64.efi"
-	grubEfiImageArm64Dest = efiBootPath + "/bootaa64.efi"
-	grubCfg               = "grub.cfg"
-	grubPrefixDir         = "/boot/grub2"
-	isoBootCatalog        = "/boot/boot.catalog"
+	efiBootPath    = "/EFI/BOOT"
+	efiImgX86      = "bootx64.efi"
+	efiImgArm64    = "bootaa64.efi"
+	grubCfg        = "grub.cfg"
+	grubPrefixDir  = "/boot/grub2"
+	isoBootCatalog = "/boot/boot.catalog"
 
 	// TODO document any custom BIOS bootloader must match this setup as these are not configurable
 	// and coupled with the xorriso call

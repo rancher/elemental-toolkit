@@ -81,11 +81,56 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 		uefiDir, err = utils.TempDir(fs, "", "uefiDir")
 		Expect(err).ShouldNot(HaveOccurred())
 
+		// Create mock EFI files
+		err = utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi"), constants.DirPerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(
+			filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/grub.efi"),
+			[]byte("x86_64_efi"), constants.FilePerm,
+		)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		err = utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/efi/x86_64"), constants.DirPerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(
+			filepath.Join(rootDir, "/usr/share/efi/x86_64/shim.efi"),
+			[]byte("shim"), constants.FilePerm,
+		)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(
+			filepath.Join(rootDir, "/usr/share/efi/x86_64/MokManager.efi"),
+			[]byte("mokmanager"), constants.FilePerm,
+		)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		// Create mock BIOS files
 		i386BinChrootPath = "/usr/share/grub2/i386-pc"
 		err = utils.MkdirAll(fs, i386BinChrootPath, constants.DirPerm)
 		Expect(err).ShouldNot(HaveOccurred())
 
 		err = fs.WriteFile(filepath.Join(i386BinChrootPath, "cdboot.img"), []byte("cdboot.img"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		i386BinPath := filepath.Join(rootDir, i386BinChrootPath)
+		err = utils.MkdirAll(fs, i386BinPath, constants.DirPerm)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		err = fs.WriteFile(filepath.Join(i386BinPath, "eltorito.img"), []byte("eltorito"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(filepath.Join(i386BinPath, "boot_hybrid.img"), []byte("boot_hybrid"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		syslinuxPath := filepath.Join(rootDir, "/usr/share/syslinux")
+		err = utils.MkdirAll(fs, syslinuxPath, constants.DirPerm)
+		Expect(err).ShouldNot(HaveOccurred())
+
+		err = fs.WriteFile(filepath.Join(syslinuxPath, "isolinux.bin"), []byte("isolinux"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(filepath.Join(syslinuxPath, "menu.c32"), []byte("menu"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(filepath.Join(syslinuxPath, "chain.c32"), []byte("chain"), constants.FilePerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(filepath.Join(syslinuxPath, "mboot.c32"), []byte("mboot"), constants.FilePerm)
 		Expect(err).ShouldNot(HaveOccurred())
 	})
 	AfterEach(func() {
@@ -129,19 +174,36 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 		Expect(err).Should(HaveOccurred())
 	})
 	It("Copies the EFI image binaries for x86_64", func() {
-		err := utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi"), constants.DirPerm)
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err := green.PrepareEFI(rootDir, uefiDir)
 		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(
-			filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/grub.efi"),
-			[]byte("x86_64_efi"), constants.FilePerm,
-		)
+		exists, _ := utils.Exists(fs, filepath.Join(uefiDir, "EFI/BOOT/grub.cfg"))
+		Expect(exists).To(BeTrue())
+	})
+	It("Fails to copy the EFI image binaries if there is no shim", func() {
+		// Missing shim image
+		err := fs.RemoveAll(filepath.Join(rootDir, "/usr/share/efi/x86_64"))
 		Expect(err).ShouldNot(HaveOccurred())
 
 		green := live.NewGreenLiveBootLoader(cfg, iso)
 		err = green.PrepareEFI(rootDir, uefiDir)
+		Expect(err).Should(HaveOccurred())
+	})
+	It("Fails to copy the EFI image binaries if there is no grub", func() {
+		// Missing grub image
+		err := fs.RemoveAll(filepath.Join(rootDir, "/usr/share/grub2"))
 		Expect(err).ShouldNot(HaveOccurred())
-		exists, _ := utils.Exists(fs, filepath.Join(uefiDir, "EFI/BOOT/grub.cfg"))
-		Expect(exists).To(BeTrue())
+
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err = green.PrepareEFI(rootDir, uefiDir)
+		Expect(err).Should(HaveOccurred())
+	})
+	It("Fails to copy the EFI image binaries for unsupported arch", func() {
+		cfg.Arch = "unknown"
+
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err := green.PrepareEFI(rootDir, uefiDir)
+		Expect(err).Should(HaveOccurred())
 	})
 	It("Copies the EFI image binaries for arm64", func() {
 		cfg.Arch = constants.ArchArm64
@@ -153,40 +215,62 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 		)
 		Expect(err).ShouldNot(HaveOccurred())
 
+		err = utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/efi/aarch64"), constants.DirPerm)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(
+			filepath.Join(rootDir, "/usr/share/efi/aarch64/shim.efi"),
+			[]byte("shim"), constants.FilePerm,
+		)
+		Expect(err).ShouldNot(HaveOccurred())
+		err = fs.WriteFile(
+			filepath.Join(rootDir, "/usr/share/efi/aarch64/MokManager.efi"),
+			[]byte("mokmanager"), constants.FilePerm,
+		)
+		Expect(err).ShouldNot(HaveOccurred())
+
 		green := live.NewGreenLiveBootLoader(cfg, iso)
 		err = green.PrepareEFI(rootDir, uefiDir)
 		Expect(err).ShouldNot(HaveOccurred())
 		exists, _ := utils.Exists(fs, filepath.Join(uefiDir, "EFI/BOOT/grub.cfg"))
 		Expect(exists).To(BeTrue())
 	})
-	It("Prepares ISO root with bootloader files", func() {
-		i386BinPath := filepath.Join(rootDir, i386BinChrootPath)
-		err := utils.MkdirAll(fs, i386BinPath, constants.DirPerm)
+	It("Prepares ISO root with BIOS bootloader files", func() {
+		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+			switch cmd {
+			case "grub2-mkimage":
+				err := fs.WriteFile(filepath.Join(i386BinChrootPath, "core.img"), []byte("core.img"), constants.FilePerm)
+				return []byte{}, err
+			default:
+				return []byte{}, nil
+			}
+		}
+		iso.Firmware = v1.BIOS
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err := green.PrepareISO(rootDir, imageDir)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		err = fs.WriteFile(filepath.Join(i386BinPath, "eltorito.img"), []byte("eltorito"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(filepath.Join(i386BinPath, "boot_hybrid.img"), []byte("boot_hybrid"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-
-		syslinuxPath := filepath.Join(rootDir, "/usr/share/syslinux")
-		err = utils.MkdirAll(fs, syslinuxPath, constants.DirPerm)
-		Expect(err).ShouldNot(HaveOccurred())
-
-		err = fs.WriteFile(filepath.Join(syslinuxPath, "isolinux.bin"), []byte("isolinux"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(filepath.Join(syslinuxPath, "menu.c32"), []byte("menu"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(filepath.Join(syslinuxPath, "chain.c32"), []byte("chain"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(filepath.Join(syslinuxPath, "mboot.c32"), []byte("mboot"), constants.FilePerm)
-		Expect(err).ShouldNot(HaveOccurred())
-
-		fontsPath := filepath.Join(rootDir, "/usr/share/grub2")
-		err = utils.MkdirAll(fs, fontsPath, constants.DirPerm)
-		Expect(err).ShouldNot(HaveOccurred())
-
-		err = fs.WriteFile(filepath.Join(fontsPath, "unicode.pf2"), []byte("unicode"), constants.FilePerm)
+		exists, _ := utils.Exists(fs, filepath.Join(imageDir, "EFI/BOOT"))
+		Expect(exists).To(BeFalse())
+		exists, _ = utils.Exists(fs, filepath.Join(imageDir, "boot/grub2/grub.cfg"))
+		Expect(exists).To(BeTrue())
+	})
+	It("Failes to prepare ISO root with BIOS bootloader building grub image", func() {
+		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+			switch cmd {
+			case "grub2-mkimage":
+				return []byte{}, fmt.Errorf("failed building image")
+			default:
+				return []byte{}, nil
+			}
+		}
+		iso.Firmware = v1.BIOS
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err := green.PrepareISO(rootDir, imageDir)
+		Expect(err).Should(HaveOccurred())
+	})
+	It("Failes to prepare ISO root with BIOS bootloader files on missing syslinux loaders", func() {
+		// Missing grub image
+		err := fs.RemoveAll(filepath.Join(rootDir, "/usr/share/syslinux"))
 		Expect(err).ShouldNot(HaveOccurred())
 
 		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
@@ -198,19 +282,21 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 				return []byte{}, nil
 			}
 		}
-		err = utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi"), constants.DirPerm)
-		Expect(err).ShouldNot(HaveOccurred())
-		err = fs.WriteFile(
-			filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/grub.efi"),
-			[]byte("x86_64_efi"), constants.FilePerm,
-		)
-		Expect(err).ShouldNot(HaveOccurred())
-
+		iso.Firmware = v1.BIOS
 		green := live.NewGreenLiveBootLoader(cfg, iso)
 		err = green.PrepareISO(rootDir, imageDir)
+		Expect(err).Should(HaveOccurred())
+	})
+	It("Prepares ISO root with EFI bootloader files", func() {
+		green := live.NewGreenLiveBootLoader(cfg, iso)
+		err := green.PrepareISO(rootDir, imageDir)
 		Expect(err).ShouldNot(HaveOccurred())
 
-		exists, _ := utils.Exists(fs, filepath.Join(imageDir, "EFI/BOOT/grub.cfg"))
+		exists, _ := utils.Exists(fs, filepath.Join(imageDir, "EFI/BOOT/bootx64.efi"))
+		Expect(exists).To(BeTrue())
+		exists, _ = utils.Exists(fs, filepath.Join(imageDir, "EFI/BOOT/MokManager.efi"))
+		Expect(exists).To(BeTrue())
+		exists, _ = utils.Exists(fs, filepath.Join(imageDir, "boot/grub2/grub.cfg"))
 		Expect(exists).To(BeTrue())
 	})
 })

@@ -38,8 +38,12 @@ func NewGreenLiveBootLoader(cfg *v1.BuildConfig, spec *v1.LiveISO) *GreenLiveBoo
 
 func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 	const (
-		grubEfiImagex86   = "/usr/share/grub2/x86_64-efi/grub.efi"
+		grubEfiImageX86   = "/usr/share/grub2/x86_64-efi/grub.efi"
 		grubEfiImageArm64 = "/usr/share/grub2/arm64-efi/grub.efi"
+		shimBasePathX86   = "/usr/share/efi/x86_64"
+		shimBasePathArm64 = "/usr/share/efi/aarch64"
+		shimImg           = "shim.efi"
+		mokManager        = "MokManager.efi"
 	)
 
 	err := utils.MkdirAll(g.buildCfg.Fs, filepath.Join(uefiDir, efiBootPath), constants.DirPerm)
@@ -49,16 +53,20 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 
 	switch g.buildCfg.Arch {
 	case constants.ArchAmd64, constants.Archx86:
-		err = utils.CopyFile(
-			g.buildCfg.Fs,
-			filepath.Join(rootDir, grubEfiImagex86),
-			filepath.Join(uefiDir, grubEfiImagex86Dest),
+		err = g.copyEfiFiles(
+			uefiDir,
+			filepath.Join(rootDir, shimBasePathX86, shimImg),
+			filepath.Join(rootDir, shimBasePathX86, mokManager),
+			filepath.Join(rootDir, grubEfiImageX86),
+			efiImgX86,
 		)
 	case constants.ArchArm64:
-		err = utils.CopyFile(
-			g.buildCfg.Fs,
+		err = g.copyEfiFiles(
+			uefiDir,
+			filepath.Join(rootDir, shimBasePathArm64, shimImg),
+			filepath.Join(rootDir, shimBasePathArm64, mokManager),
 			filepath.Join(rootDir, grubEfiImageArm64),
-			filepath.Join(uefiDir, grubEfiImageArm64Dest),
+			efiImgArm64,
 		)
 	default:
 		err = fmt.Errorf("Not supported architecture: %v", g.buildCfg.Arch)
@@ -68,6 +76,18 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 	}
 
 	return g.buildCfg.Fs.WriteFile(filepath.Join(uefiDir, efiBootPath, grubCfg), []byte(grubEfiCfg), constants.FilePerm)
+}
+
+func (g *GreenLiveBootLoader) copyEfiFiles(uefiDir, shimImg, mokManager, grubImg, efiImg string) error {
+	err := utils.CopyFile(g.buildCfg.Fs, shimImg, filepath.Join(uefiDir, efiBootPath, efiImg))
+	if err != nil {
+		return err
+	}
+	err = utils.CopyFile(g.buildCfg.Fs, grubImg, filepath.Join(uefiDir, efiBootPath))
+	if err != nil {
+		return err
+	}
+	return utils.CopyFile(g.buildCfg.Fs, mokManager, filepath.Join(uefiDir, efiBootPath))
 }
 
 func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
