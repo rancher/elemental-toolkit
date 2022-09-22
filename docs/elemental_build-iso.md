@@ -18,6 +18,7 @@ elemental build-iso SOURCE [flags]
 
 ```
   -a, --arch string                      Arch to build the image for (default "x86_64")
+      --bootloader-in-rootfs             Fetch ISO bootloader binaries from the rootfs
       --cosign                           Enable cosign verification (requires images with signatures)
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --date                             Adds a date suffix into the generated ISO file

@@ -13,7 +13,7 @@ elemental install DEVICE [flags]
       --cosign                           Enable cosign verification (requires images with signatures)
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --eject-cd                         Try to eject the cd on reboot, only valid if booting from iso
-      --firmware string                  Firmware to install for ('esp' or 'bios') (default "efi")
+      --firmware string                  Firmware to install for: 'efi' or 'bios'. (defaults to 'efi') (default "efi")
       --force                            Force install
   -h, --help                             help for install
   -i, --iso string                       Performs an installation from the ISO url
