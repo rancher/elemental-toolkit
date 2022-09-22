@@ -131,17 +131,34 @@ func (c *Chroot) Close() error {
 
 // RunCallback runs the given callback in a chroot environment
 func (c *Chroot) RunCallback(callback func() error) (err error) {
-	// Store current root
-	oldRootF, err := os.Open("/") // Can't use afero here because doesn't support chdir done below
+	var currentPath string
+	var oldRootF *os.File
+
+	// Store current path
+	currentPath, err = os.Getwd()
 	if err != nil {
-		c.config.Logger.Errorf("Cant open /")
+		c.config.Logger.Error("Failed to get current path")
+		return err
+	}
+	defer func() {
+		tmpErr := os.Chdir(currentPath)
+		if err == nil && tmpErr != nil {
+			err = tmpErr
+		}
+	}()
+
+	// Store current root
+	oldRootF, err = c.config.Fs.Open("/")
+	if err != nil {
+		c.config.Logger.Errorf("Can't open current root")
 		return err
 	}
 	defer oldRootF.Close()
+
 	if len(c.activeMounts) == 0 {
 		err = c.Prepare()
 		if err != nil {
-			c.config.Logger.Errorf("Cant mount default mounts")
+			c.config.Logger.Errorf("Can't mount default mounts")
 			return err
 		}
 		defer func() {
@@ -154,13 +171,13 @@ func (c *Chroot) RunCallback(callback func() error) (err error) {
 	// Change to new dir before running chroot!
 	err = c.config.Syscall.Chdir(c.path)
 	if err != nil {
-		c.config.Logger.Errorf("Cant chdir %s: %s", c.path, err)
+		c.config.Logger.Errorf("Can't chdir %s: %s", c.path, err)
 		return err
 	}
 
 	err = c.config.Syscall.Chroot(c.path)
 	if err != nil {
-		c.config.Logger.Errorf("Cant chroot %s: %s", c.path, err)
+		c.config.Logger.Errorf("Can't chroot %s: %s", c.path, err)
 		return err
 	}
 
@@ -168,14 +185,14 @@ func (c *Chroot) RunCallback(callback func() error) (err error) {
 	defer func() {
 		tmpErr := oldRootF.Chdir()
 		if tmpErr != nil {
-			c.config.Logger.Errorf("Cant change to old root dir")
+			c.config.Logger.Errorf("Can't change to old root dir")
 			if err == nil {
 				err = tmpErr
 			}
 		} else {
 			tmpErr = c.config.Syscall.Chroot(".")
 			if tmpErr != nil {
-				c.config.Logger.Errorf("Cant chroot back to old root")
+				c.config.Logger.Errorf("Can't chroot back to old root")
 				if err == nil {
 					err = tmpErr
 				}

@@ -16,7 +16,9 @@ limitations under the License.
 
 package v1
 
-import "syscall"
+import (
+	"syscall"
+)
 
 type SyscallInterface interface {
 	Chroot(string) error
