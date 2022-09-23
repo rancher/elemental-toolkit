@@ -20,6 +20,6 @@ tools_packages: >-
     xz
     curl
     shim
-    efibootmgr
+    gzip
 
 kernel_package: ""
