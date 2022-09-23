@@ -15,12 +15,12 @@ builds:
     goarm:
       - 6
       - 7
-    hooks:
-      post:
-        - sh -c "COSIGN_EXPERIMENTAL=1 cosign sign-blob --output dist/{{ .ProjectName }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}.sig {{ .Path }}"
-release:
-  extra_files:
-    - glob: dist/*.sig
+signs:
+  - cmd: /usr/bin/cosign
+    args: ["sign-blob", "--output-signature=${signature}", "${artifact}"]
+    artifacts: all
+    env:
+      - COSIGN_EXPERIMENTAL=true
 source:
   enabled: true
   name_template: '{{ .ProjectName }}-{{ .Tag }}-source'
