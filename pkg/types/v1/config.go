@@ -131,21 +131,22 @@ func (r *RunConfig) Sanitize() error {
 
 // InstallSpec struct represents all the installation action details
 type InstallSpec struct {
-	Target          string              `yaml:"target,omitempty" mapstructure:"target"`
-	Firmware        string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
-	PartTable       string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
-	Partitions      ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	ExtraPartitions PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
-	NoFormat        bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
-	Force           bool                `yaml:"force,omitempty" mapstructure:"force"`
-	CloudInit       []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	Iso             string              `yaml:"iso,omitempty" mapstructure:"iso"`
-	GrubDefEntry    string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty             string              `yaml:"tty,omitempty" mapstructure:"tty"`
-	Active          Image               `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery        Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	Passive         Image
-	GrubConf        string
+	Target           string              `yaml:"target,omitempty" mapstructure:"target"`
+	Firmware         string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
+	PartTable        string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
+	Partitions       ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	ExtraPartitions  PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
+	NoFormat         bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	Force            bool                `yaml:"force,omitempty" mapstructure:"force"`
+	CloudInit        []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	Iso              string              `yaml:"iso,omitempty" mapstructure:"iso"`
+	GrubDefEntry     string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Tty              string              `yaml:"tty,omitempty" mapstructure:"tty"`
+	Active           Image               `yaml:"system,omitempty" mapstructure:"system"`
+	Recovery         Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	Passive          Image
+	GrubConf         string
+	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -191,15 +192,16 @@ type ResetSpec struct {
 	FormatPersistent bool `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
 	FormatOEM        bool `yaml:"reset-oem,omitempty" mapstructure:"reset-oem"`
 
-	GrubDefEntry string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty          string `yaml:"tty,omitempty" mapstructure:"tty"`
-	Active       Image  `yaml:"system,omitempty" mapstructure:"system"`
-	Passive      Image
-	Partitions   ElementalPartitions
-	Target       string
-	Efi          bool
-	GrubConf     string
-	State        *InstallState
+	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Tty              string `yaml:"tty,omitempty" mapstructure:"tty"`
+	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
+	Passive          Image
+	Partitions       ElementalPartitions
+	Target           string
+	Efi              bool
+	GrubConf         string
+	State            *InstallState
+	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
 }
 
 // Sanitize checks the consistency of the struct, returns error

@@ -73,6 +73,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	c.Flags().BoolP("reset-persistent", "", false, "Clear persistent partitions")
 	c.Flags().BoolP("reset-oem", "", false, "Clear OEM partitions")
+	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
 
 	addResetFlags(c)
 	return c

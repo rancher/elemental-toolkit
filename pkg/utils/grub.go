@@ -17,15 +17,21 @@ limitations under the License.
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	efi "github.com/canonical/go-efilib"
+	"github.com/canonical/nullboot/efibootmgr"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
+
+const bootEntryName = "elemental-shim"
 
 // Grub is the struct that will allow us to install grub to the target device
 type Grub struct {
@@ -41,7 +47,7 @@ func NewGrub(config *v1.Config) *Grub {
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, stateLabel string) (err error) { // nolint:gocyclo
+func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, stateLabel string, disableBootEntry bool, clearBootEntries bool) (err error) { // nolint:gocyclo
 	var grubargs []string
 	var grubdir, finalContent string
 	// only install grub on non-efi systems
@@ -155,6 +161,11 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 			g.config.Logger.Errorf("Error creating dirs: %s", err)
 			return err
 		}
+		err = MkdirAll(g.config.Fs, filepath.Join(cnst.EfiDir, "EFI/elemental/"), cnst.DirPerm)
+		if err != nil {
+			g.config.Logger.Errorf("Error creating dirs: %s", err)
+			return err
+		}
 
 		// Copy needed files for efi boot
 		system, err := IdentifySourceSystem(g.config.Fs, rootDir)
@@ -202,18 +213,26 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 						return nil
 					}
 
-					fileWriteName := filepath.Join(cnst.EfiDir, fmt.Sprintf("EFI/boot/%s", f))
-
-					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
-
 					fileContent, err := g.config.Fs.ReadFile(path)
 					if err != nil {
 						return fmt.Errorf("error reading %s: %s", path, err)
 					}
+
+					// Copy to fallback dir
+					fileWriteName := filepath.Join(cnst.EfiDir, fmt.Sprintf("EFI/boot/%s", f))
+					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
 					err = g.config.Fs.WriteFile(fileWriteName, fileContent, cnst.FilePerm)
 					if err != nil {
 						return fmt.Errorf("error writing %s: %s", fileWriteName, err)
 					}
+					// Copy to proper dir
+					fileWriteName = filepath.Join(cnst.EfiDir, fmt.Sprintf("EFI/elemental/%s", f))
+					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
+					err = g.config.Fs.WriteFile(fileWriteName, fileContent, cnst.FilePerm)
+					if err != nil {
+						return fmt.Errorf("error writing %s: %s", fileWriteName, err)
+					}
+
 					foundEfi = true
 					return nil
 				}
@@ -226,14 +245,10 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 
 		// Rename the shimName to the fallback name so the system boots from fallback. This means that we do not create
 		// any bootloader entries, so our recent installation has the lower priority if something else is on the bootloader
-		var writeShim string
+		writeShim := "bootx64.efi"
 
-		switch g.config.Arch {
-		case cnst.ArchArm64:
+		if g.config.Arch == cnst.ArchArm64 {
 			writeShim = "bootaa64.efi"
-		default:
-			writeShim = "bootx64.efi"
-
 		}
 
 		readShim, err := g.config.Fs.ReadFile(filepath.Join(cnst.EfiDir, "EFI/boot/", shimName))
@@ -250,12 +265,85 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 		// Notice that we set the config to /grub2/grub.cfg which means the above we need to copy the file from
 		// the installation source into that dir
 		grubCfgContent := []byte(fmt.Sprintf("search --no-floppy --label --set=root %s\nset prefix=($root)/grub2\nconfigfile ($root)/grub2/grub.cfg", stateLabel))
+		// Fallback
 		err = g.config.Fs.WriteFile(filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), grubCfgContent, cnst.FilePerm)
 		if err != nil {
 			return fmt.Errorf("error writing %s: %s", filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), err)
 		}
+		// Proper efi dir
+		err = g.config.Fs.WriteFile(filepath.Join(cnst.EfiDir, "EFI/elemental/grub.cfg"), grubCfgContent, cnst.FilePerm)
+		if err != nil {
+			return fmt.Errorf("error writing %s: %s", filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), err)
+		}
+
+		if !disableBootEntry {
+			efivars := efibootmgr.RealEFIVariables{}
+			if clearBootEntries {
+				err = g.ClearBootEntry(efivars)
+				if err != nil {
+					return err
+				}
+			}
+			err = g.CreateBootEntry(shimName, filepath.Join(cnst.EfiDir, "/EFI/elemental/"), efivars)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ClearBootEntry will go over the BootXXXX efi vars and remove any that matches our name
+// Used in install as we re-create the partitions, so the UUID of those partitions is no longer valid for the old entry
+// And we don't want to leave a broken entry around
+func (g Grub) ClearBootEntry(efiVariables efibootmgr.EFIVariables) error {
+	variables, _ := efiVariables.ListVariables()
+	for _, v := range variables {
+		if regexp.MustCompile(`Boot[0-9a-fA-F]{4}`).MatchString(v.Name) {
+			variable, _, _ := efi.ReadVariable(v.Name, v.GUID)
+			option, err := efi.ReadLoadOption(bytes.NewReader(variable))
+			if err != nil {
+				continue
+			}
+			// TODO: Find a way to identify the old VS new partition UUID and compare them before removing?
+			if option.Description == bootEntryName {
+				g.config.Logger.Debugf("Entry for %s already exists, removing it: %s", bootEntryName, option.String())
+				err := efibootmgr.DelVariable(efiVariables, v.GUID, v.Name)
+				if err != nil {
+					g.config.Logger.Errorf("failed to remove efi entry %s: %s", v.Name, err.Error())
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// CreateBootEntry will create an entry in the efi vars for our shim and set it to boot first in the bootorder
+func (g Grub) CreateBootEntry(shimName string, relativeTo string, efiVariables efibootmgr.EFIVariables) error {
+	g.config.Logger.Debugf("Creating boot entry for elemental pointing to shim /EFI/elemental/%s", shimName)
+	bm, err := efibootmgr.NewBootManagerForVariables(efiVariables)
+	if err != nil {
+		return err
 	}
 
+	// HINT: FindOrCreate does not find older entries if the partition UUID has changed, i.e. on a reinstall.
+	bootEntryNumber, err := bm.FindOrCreateEntry(efibootmgr.BootEntry{
+		Filename:    shimName,
+		Label:       bootEntryName,
+		Description: bootEntryName,
+	}, relativeTo)
+	if err != nil {
+		g.config.Logger.Errorf("error creating boot entry: %s", err.Error())
+		return err
+	}
+	// Commit the new boot order by prepending our entry to the current boot order
+	err = bm.PrependAndSetBootOrder([]int{bootEntryNumber})
+	if err != nil {
+		g.config.Logger.Errorf("error setting boot order: %s", err.Error())
+		return err
+	}
+	g.config.Logger.Infof("Entry created for %s in the EFI boot manager", bootEntryName)
 	return nil
 }
 

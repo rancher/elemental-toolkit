@@ -1,0 +1,7 @@
+This is a copy of debug/pe from go 1.14.2 (96745b980cfde139e8611772e2bc0c59a8e6cdf7)
+It exists here because debug/pe in go versions before 1.14 did not handle variable
+length optional headers (where the data directory is less than 16 entries) and
+therefore doesn't correctly decode kernel EFI images. Copying the code here avoids
+a hard dependency on go 1.14.
+
+See https://github.com/golang/go/commit/3b92f36d15c868e856be71c0fadfc7ff97039b96

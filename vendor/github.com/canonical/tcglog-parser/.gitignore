@@ -1,0 +1,4 @@
+tcglog-dump/tcglog-dump
+tcglog-parser.test
+tcglog-check/tcglog-check
+vendor/*/

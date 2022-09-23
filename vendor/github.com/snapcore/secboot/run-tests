@@ -1,0 +1,26 @@
+#!/bin/sh -e
+
+WITH_MSSIM=0
+MSSIM_ARGS=
+
+while [ $# -gt 0 ]; do
+        case "$1" in
+                --with-mssim)
+                        ENV="$ENV USE_MSSIM=1"
+                        shift
+                        ;;
+                --no-expensive-cryptsetup-tests)
+                        ENV="$ENV NO_EXPENSIVE_CRYPTSETUP_TESTS=1"
+                        shift
+                        ;;
+                --)
+                        shift
+                        break
+                        ;;
+                *)
+                        echo "Unrecognized flag $1"
+                        exit 1
+        esac
+done
+
+env $ENV go test -v -race -p 1 ./... -args -check.v $@

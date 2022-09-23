@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if ! which govendor >/dev/null; then
+        go get -u github.com/kardianos/govendor
+fi
+
+govendor sync
