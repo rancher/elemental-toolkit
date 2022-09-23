@@ -16,7 +16,7 @@ builds:
       - 6
       - 7
 signs:
-  - cmd: /usr/bin/cosign
+  - cmd: cosign
     args: ["sign-blob", "--output-signature=${signature}", "${artifact}"]
     artifacts: all
     env:
