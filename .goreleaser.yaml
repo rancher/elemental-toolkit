@@ -19,6 +19,7 @@ signs:
   - cmd: cosign
     args: ["sign-blob", "--output-signature=${signature}", "${artifact}"]
     artifacts: all
+    output: true
     env:
       - COSIGN_EXPERIMENTAL=true
 source:
