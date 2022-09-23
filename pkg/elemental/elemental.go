@@ -528,18 +528,24 @@ func (e Elemental) UpdateSourcesFormDownloadedISO(workDir string, activeImg *v1.
 // State partition mountpoint. If there is not a custom value in the os-release file, we do nothing
 // As the grub config already has a sane default
 func (e Elemental) SetDefaultGrubEntry(partMountPoint string, imgMountPoint string, defaultEntry string) error {
-	if defaultEntry == "" {
-		osRelease, err := utils.LoadEnvFile(e.config.Fs, filepath.Join(imgMountPoint, "etc", "os-release"))
-		if err != nil {
-			e.config.Logger.Warnf("Could not load os-release file: %v", err)
-			return nil
-		}
-		defaultEntry = osRelease["GRUB_ENTRY_NAME"]
-		// If its still empty then do nothing
-		if defaultEntry == "" {
-			return nil
+	var configEntry string
+	osRelease, err := utils.LoadEnvFile(e.config.Fs, filepath.Join(imgMountPoint, "etc", "os-release"))
+	e.config.Logger.Debugf("Looking for GRUB_ENTRY_NAME name in %s", filepath.Join(imgMountPoint, "etc", "os-release"))
+	if err != nil {
+		e.config.Logger.Warnf("Could not load os-release file: %v", err)
+	} else {
+		configEntry = osRelease["GRUB_ENTRY_NAME"]
+		// If its not empty override the defaultEntry and set the one set on the os-release file
+		if configEntry != "" {
+			defaultEntry = configEntry
 		}
 	}
+
+	if defaultEntry == "" {
+		e.config.Logger.Warn("No default entry name for grub, not setting a name")
+		return nil
+	}
+
 	e.config.Logger.Infof("Setting default grub entry to %s", defaultEntry)
 	grub := utils.NewGrub(e.config)
 	return grub.SetPersistentVariables(
