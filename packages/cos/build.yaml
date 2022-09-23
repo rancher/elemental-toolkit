@@ -28,6 +28,9 @@ requires:
 - name: "elemental-selinux"
   category: "system"
   version: ">=0"
+- name: "grub2-artifacts"
+  category: "system"
+  version: ">=0"
 {{end}}
 
 # Templated package https://luet-lab.github.io/docs/docs/concepts/packages/templates/
