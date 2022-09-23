@@ -208,11 +208,6 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 				}
 
 				if d.Name() == f {
-					// On suse systems check if the path contains the proper arch
-					if system == cnst.Suse && !strings.Contains(path, g.config.Arch) {
-						return nil
-					}
-
 					fileContent, err := g.config.Fs.ReadFile(path)
 					if err != nil {
 						return fmt.Errorf("error reading %s: %s", path, err)
