@@ -15,6 +15,12 @@ builds:
     goarm:
       - 6
       - 7
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args: ["sign-blob", "--oidc-issuer=https://token.actions.githubusercontent.com", "--output-certificate=${certificate}", "--output-signature=${signature}", "${artifact}"]
+    artifacts: all
 source:
   enabled: true
   name_template: '{{ .ProjectName }}-{{ .Tag }}-source'
