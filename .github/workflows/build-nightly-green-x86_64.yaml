@@ -1,5 +1,5 @@
 name: nightly-green-x86_64
-on: 
+on:
  schedule:
    - cron: 0 20 * * *
 concurrency:

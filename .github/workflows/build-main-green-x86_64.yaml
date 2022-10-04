@@ -1,5 +1,5 @@
 name: main-green-x86_64
-on: 
+on:
  push:
    branches:
      - main

@@ -9,7 +9,6 @@ iso:
   label: "COS_LIVE"
 
 name: "cOS-0"
-label: "COS_LIVE"
 
 # Raw disk creation values start
 raw_disk:
@@ -43,18 +42,6 @@ raw_disk:
       - name: channel:system/grub2-artifacts
         target: root/grub2
 # Raw disk creation values end
-
-# Additional packages to build
-build:
-  - utils/nerdctl
-  - utils/k9s
-  - utils/jq
-  - selinux/rancher
-  - selinux/k3s
-  - recovery/cos
-  - system/grub2-artifacts
-  - system/grub2-efi-image
-  - toolchain/elemental-cli
 
 repositories:
   - uri: quay.io/costoolkit/releases-teal

@@ -1,5 +1,5 @@
 name: main-orange-arm64
-on: 
+on:
  push:
    branches:
      - main

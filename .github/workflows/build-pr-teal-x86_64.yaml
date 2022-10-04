@@ -1,5 +1,5 @@
 name: PR-teal-x86_64
-on: 
+on:
  pull_request:
    paths:
      - conf/**
@@ -109,9 +109,8 @@ jobs:
         with:
           name: build-teal-x86_64
           path: build
-      - name: Add build repository
+      - name: Run make add_local_repo
         run: |
-          export DOCKER_INSTALL=true
           sudo -E make add_local_repo
       - name: Install deps
         uses: nick-fields/retry@v2
@@ -140,51 +139,6 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
-  tests-squashfs-teal-installer-efi:
-    env:
-      ARCH: x86_64
-      COS_TIMEOUT: 800
-      PASSTHROUGH_ARGS: "-- --squashfs"
-    runs-on: macos-12
-    needs: iso-nonsquashfs-teal
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
-      - uses: actions/checkout@v2
-      - name: Download iso
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nonsquashfs-teal-x86_64.iso.zip
-      - name: Prepare tests 🔧
-        run: |
-          make create_vm_from_iso_efi
-      - name: Run tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-installer-efi
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-test-installer-efi.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-test-installer-efi.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-test-installer-efi.record.zip
-          path: capture.webm
-          if-no-files-found: warn
   tests-squashfs-teal-installer-bios:
     env:
       ARCH: x86_64
@@ -370,50 +324,6 @@ jobs:
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-  tests-nonsquashfs-teal-installer-efi:
-    env:
-      ARCH: x86_64
-      COS_TIMEOUT: 800
-    runs-on: macos-12
-    needs: iso-nonsquashfs-teal
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-            go-version: '1.17'
-      - uses: actions/checkout@v2
-      - name: Download iso
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nonsquashfs-teal-x86_64.iso.zip
-      - name: Prepare tests 🔧
-        run: |
-          make create_vm_from_iso_efi
-      - name: Run tests 🔧
-        run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
-          make test-installer-efi
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-nonsquashfs-test-installer-efi.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-nonsquashfs-test-installer-efi.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-nonsquashfs-test-installer-efi.record.zip
           path: capture.webm
           if-no-files-found: warn
   tests-nonsquashfs-teal-installer-bios:

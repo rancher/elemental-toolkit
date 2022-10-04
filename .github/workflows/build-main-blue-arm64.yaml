@@ -1,5 +1,5 @@
 name: main-blue-arm64
-on: 
+on:
  push:
    branches:
      - main

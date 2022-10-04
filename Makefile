@@ -219,5 +219,8 @@ endif
 ci_deps: as_root
 	$(LUET) install -y toolchain/elemental-cli meta/cos-verify toolchain/luet-mtree utils/jq toolchain/yq
 
+upgrade_deps: as_root
+		$(LUET) upgrade -y
+
 clean: clean_build clean_iso clean_run clean_test
 	rm -rf $(ROOT_DIR)/*.sha256
