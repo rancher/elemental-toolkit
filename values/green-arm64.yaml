@@ -1,11 +1,11 @@
-image: registry.opensuse.org/opensuse/opensuse/tumbleweed:latest@sha256:8a4125581af3b64bd655e3519dd8fd85b6d7197c3bd7b4e7ae5f9dfe0d97e14e
+image: --platform=linux/arm64 registry.opensuse.org/opensuse/opensuse/tumbleweed:latest
 distribution: "opensuse"
 codename: "green"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3.2.535@sha256:eee7bde22c0b6ad71c50f301a34ad430d1af4aeb1bdbcbd40c340048da136a97
+tool_image: --platform=linux/arm64 registry.opensuse.org/opensuse/leap:15.3.2.535
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi

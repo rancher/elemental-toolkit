@@ -67,7 +67,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
-					Expect(out).To(ContainSubstring("Installing GRUB.."))
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
