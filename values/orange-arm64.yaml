@@ -1,4 +1,4 @@
-image: ubuntu:21.04@sha256:70493c1293aac4d5e1b49284cd4a82ebf64634892875f5b564ceda827f76d4f3
+image: ubuntu:22.04@sha256:35fb073f9e56eb84041b0745cb714eff0f7b225ea9e024f703cab56aaa5c7720
 distribution: "ubuntu"
 codename: "orange"
 arch: "aarch64"
