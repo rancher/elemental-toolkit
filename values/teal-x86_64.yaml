@@ -9,7 +9,7 @@ tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
-    shim-susesigned
+    shim
     gzip
     grub2
     curl

@@ -19,7 +19,7 @@ tools_packages: >-
     tar
     xz
     curl
-    shim-susesigned
+    shim
     gzip
 
 kernel_package: ""
