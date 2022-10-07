@@ -195,7 +195,7 @@ var _ = Describe("cOS Installer tests", func() {
 		Context("efi/gpt tests", func() {
 			It("forces gpt", func() {
 				By("Running the installer")
-				out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
+				out, err := s.Command(s.ElementalCmd("install", "--part-table gpt", "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
@@ -212,7 +212,7 @@ var _ = Describe("cOS Installer tests", func() {
 
 			It("forces efi", func() {
 				By("Running the installer")
-				out, err := s.Command(s.ElementalCmd("install", "--force-efi", "/dev/sda"))
+				out, err := s.Command(s.ElementalCmd("install", "--firmware efi", "/dev/sda"))
 				Expect(err).To(BeNil())
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))

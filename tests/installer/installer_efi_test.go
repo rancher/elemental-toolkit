@@ -64,7 +64,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command(s.ElementalCmd("install", "--force-gpt", "/dev/sda"))
+					out, err := s.Command(s.ElementalCmd("install", "--part-table gpt", "/dev/sda"))
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
