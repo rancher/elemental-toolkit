@@ -1,4 +1,4 @@
-image: registry.opensuse.org/opensuse/tumbleweed:latest@sha256:e91cfcefcb99517c7525babc94fafe041a236dfeeb5c57b0115868acbcd6572a
+image: registry.opensuse.org/opensuse/tumbleweed:latest
 distribution: "opensuse"
 codename: "green"
 arch: "aarch64"

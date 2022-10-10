@@ -1,4 +1,4 @@
-image: fedora:33@sha256:9ac1fdb859bf5d781617aec9703b16dbf803c177b3675ad4162a58c8a44eda4c
+image: fedora:33
 distribution: "fedora"
 codename: "blue"
 arch: "aarch64"
