@@ -1,15 +1,16 @@
-image: ubuntu:21.04@sha256:70493c1293aac4d5e1b49284cd4a82ebf64634892875f5b564ceda827f76d4f3
+image: ubuntu:22.04
 distribution: "ubuntu"
 codename: "orange"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3.2.535@sha256:eee7bde22c0b6ad71c50f301a34ad430d1af4aeb1bdbcbd40c340048da136a97
+tool_image: registry.opensuse.org/opensuse/leap:15.4@sha256:7632d4d7f04a79340118db056e4db548b9ed52b7a9f9a0b2192225340b08a603
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi
     grub2
+    shim
     tar
     curl
     xz
@@ -26,6 +27,7 @@ packages: >-
     grub-efi-arm64
     grub-efi-arm64-bin
     grub2-common
+    shim
     haveged
     iproute2
     multipath-tools

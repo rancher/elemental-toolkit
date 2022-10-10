@@ -1,16 +1,18 @@
-image: ubuntu:21.04
+image: ubuntu:22.04
 distribution: "ubuntu"
 codename: "orange"
 arch: "x86_64"
 golang_arch: "amd64"
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3
+tool_image: registry.opensuse.org/opensuse/leap:15.4
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
+    shim
     grub2
     curl
+    gzip
     tar
     git
     xz
@@ -28,6 +30,7 @@ packages: >-
     grub-pc-bin
     grub2
     grub2-common
+    shim
     haveged
     iproute2
     multipath-tools

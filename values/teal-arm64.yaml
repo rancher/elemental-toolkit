@@ -1,7 +1,7 @@
 
 # skopeo inspect docker://registry.suse.com/suse/sle-micro-rancher/5.2:latest --override-arch arm64 | jq '.Digest'
 
-image: registry.suse.com/suse/sle-micro-rancher/5.3@sha256:fb4b77662cd848be843a5ed76699e6117ec6d108e5eef22eea6f96c33c451671
+image: registry.suse.com/suse/sle-micro-rancher/5.3
 distribution: "opensuse"
 codename: "teal"
 arch: "aarch64"
@@ -19,5 +19,7 @@ tools_packages: >-
     tar
     xz
     curl
+    shim
+    gzip
 
 kernel_package: ""

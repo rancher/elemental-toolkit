@@ -4,13 +4,15 @@ codename: "green"
 arch: "x86_64"
 golang_arch: "amd64"
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3
+tool_image: registry.opensuse.org/opensuse/leap:15.4
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-i386-pc
     grub2-x86_64-efi
     grub2
+    shim
     curl
+    gzip
     tar
     xz
     git
@@ -29,6 +31,7 @@ packages: >-
     grub2
     grub2-i386-pc
     grub2-x86_64-efi
+    shim
     haveged
     iproute2
     jq

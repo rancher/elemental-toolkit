@@ -1,11 +1,11 @@
-image: fedora:33@sha256:9ac1fdb859bf5d781617aec9703b16dbf803c177b3675ad4162a58c8a44eda4c
+image: fedora:33
 distribution: "fedora"
 codename: "blue"
 arch: "aarch64"
 golang_arch: "arm64"
 skip_checksum: ["golang", "golang-fips"]
 
-tool_image: registry.opensuse.org/opensuse/leap:15.3.2.535@sha256:eee7bde22c0b6ad71c50f301a34ad430d1af4aeb1bdbcbd40c340048da136a97
+tool_image: registry.opensuse.org/opensuse/leap:15.4@sha256:7632d4d7f04a79340118db056e4db548b9ed52b7a9f9a0b2192225340b08a603
 tool_image_distribution: "opensuse"
 tools_packages: >-
     grub2-arm64-efi
