@@ -10,10 +10,8 @@ flavors:
         push_cache: true
         skip_build: false
         skip_docker_build: true
-
         pipeline: "release"
         publishing_pipeline: true
-        publish_cloud: true
         publish_toolchain: true
         repository: "releases"
         cache_repository: "build"
@@ -44,7 +42,6 @@ flavors:
             - "test-upgrades-local"
             - "test-deploys-images-recovery"
         arch: "x86_64"
-
         on:
           push:
             tags:
@@ -59,12 +56,9 @@ flavors:
         skip_docker_build: true
         luet_override: ""
         luet_script_override: ""
-
         pipeline: "release"
         publishing_pipeline: true
-        publish_cloud: false
         publish_toolchain: false
-
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
@@ -87,7 +81,6 @@ flavors:
         run_raw_image_test: false
         release_flavor: [ "teal" ]
         arch: "arm64"
-
         on:
           push:
             tags:
@@ -102,7 +95,6 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false
       arm64:
         <<: *arm64
@@ -111,7 +103,6 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false
   blue:
     arches:
@@ -122,7 +113,6 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false
       arm64:
         <<: *arm64
@@ -131,7 +121,6 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false
   green:
     arches:
@@ -142,7 +131,6 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false
       arm64:
         <<: *arm64
@@ -151,5 +139,4 @@ flavors:
         build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
-        publish_cloud: false
         publish_toolchain: false

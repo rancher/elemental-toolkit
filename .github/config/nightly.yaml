@@ -9,10 +9,8 @@ flavors:
         push_cache: false
         skip_build: false
         skip_docker_build: true
-
         pipeline: "nightly"
         publishing_pipeline: false
-        publish_cloud: false
         publish_toolchain: false
         repository: "releases"
         cache_repository: "build"
