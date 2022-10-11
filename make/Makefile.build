@@ -127,3 +127,8 @@ validate: $(LUET)
 
 clean_build:
 	sudo rm -rf $(DESTINATION)
+
+
+sign_artifacts:
+	cd ./.github && go build -o sign sign.go
+	$(ROOT_DIR)/.github/sign
