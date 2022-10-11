@@ -935,16 +935,10 @@ jobs:
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          # This exports the proper snapshot id to sign. On master its the commit and on tags is the tag
-          export REFERENCEID=$(git describe --abbrev=0 --tags )-repository.yaml
           export PATH=$PATH:/usr/local/go/bin
-          pushd ./.github
-          go build -o sign sign.go
-          popd
-          sudo -E ./.github/sign
+          sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
-          export REFERENCEID=repository.yaml
-          sudo -E ./.github/sign
+          sudo -E REFERENCEID=repository.yaml make sign_artifacts
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0
