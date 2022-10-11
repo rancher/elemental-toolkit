@@ -82,6 +82,7 @@ source "googlecompute" "cos" {
 }
 
 source "qemu" "cos" {
+  qemu_binary            = "qemu-system-x86_64"
   accelerator            = "${var.accelerator}"
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"

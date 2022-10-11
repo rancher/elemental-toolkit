@@ -20,7 +20,6 @@ flavors:
         skip_tests_flavor: ["blue","orange", "green"]
         skip_images_flavor: ["blue","orange", "green"]
         build_image_qemu: true
-        build_image_vbox: true
         build_raw_image: true
         luet_script_override: ""
         run_raw_image_test: true
