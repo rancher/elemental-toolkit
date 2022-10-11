@@ -169,7 +169,7 @@ jobs:
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-nonsquashfs-teal-x86_64.iso.zip

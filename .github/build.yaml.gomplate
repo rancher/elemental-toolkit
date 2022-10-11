@@ -320,7 +320,7 @@
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make iso
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
