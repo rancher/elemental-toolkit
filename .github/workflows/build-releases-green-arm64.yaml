@@ -1,5 +1,5 @@
 name: release-green-arm64
-on: 
+on:
  push:
    tags:
      - v*

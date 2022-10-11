@@ -1,5 +1,5 @@
 name: PR-blue-x86_64
-on: 
+on:
  pull_request:
    paths:
      - conf/**

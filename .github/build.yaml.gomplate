@@ -300,10 +300,7 @@
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
-      - name: Add build repository
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make add_local_repo
+      {{{ tmpl.Exec  "make" "add_local_repo" }}}
       - name: Install deps
         uses: nick-fields/retry@v2
         with:
@@ -487,7 +484,7 @@
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
-  {{{- range slice "efi" "bios" }}}
+  {{{- range slice "efi" }}}
   {{{ $variant := . }}}
   tests-{{{$subset}}}-{{{ $flavor }}}-installer-{{{$variant}}}:
     env:
@@ -546,7 +543,7 @@
   publish-{{{ $flavor }}}:
     runs-on: ubuntu-latest
     {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
-    needs: 
+    needs:
     {{{- if not $config.skip_build }}}
     - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
@@ -657,7 +654,7 @@
   github-release-{{{ $flavor }}}:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    needs: 
+    needs:
     {{{- if not $config.skip_build }}}
     - build-{{{ $flavor }}}-{{{ $config.arch }}}
     {{{- end }}}
@@ -1020,7 +1017,7 @@
 
 name: {{{$config.pipeline}}}-{{{ $config.flavor }}}-{{{ $config.arch }}}
 
-on: 
+on:
 {{{$config.on | toYAML | indent 1 }}}
 
 concurrency:
