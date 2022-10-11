@@ -1,5 +1,5 @@
 name: PR-green-x86_64
-on: 
+on:
  pull_request:
    paths:
      - conf/**

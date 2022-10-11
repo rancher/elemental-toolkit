@@ -1,5 +1,5 @@
 name: main-orange-x86_64
-on: 
+on:
  push:
    branches:
      - main

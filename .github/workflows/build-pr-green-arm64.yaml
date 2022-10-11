@@ -1,5 +1,5 @@
 name: PR-green-arm64
-on: 
+on:
  pull_request:
    types:
      - labeled
