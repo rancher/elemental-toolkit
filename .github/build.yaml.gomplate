@@ -572,7 +572,7 @@
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := index . "flavor" }}}
   {{{ $subset := index . "subset" }}}
-  {{{- range slice "bios" }}}
+  {{{- range slice "efi" }}}
   {{{ $variant := . }}}
   tests-{{{$subset}}}-{{{ $flavor }}}-installer-{{{$variant}}}:
     env:

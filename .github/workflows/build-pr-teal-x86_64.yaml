@@ -139,7 +139,7 @@ jobs:
             *.iso
             *.sha256
           if-no-files-found: error
-  tests-squashfs-teal-installer-bios:
+  tests-squashfs-teal-installer-efi:
     env:
       ARCH: x86_64
       COS_TIMEOUT: 800
@@ -158,30 +158,30 @@ jobs:
           name: cOS-nonsquashfs-teal-x86_64.iso.zip
       - name: Prepare tests 🔧
         run: |
-          make create_vm_from_iso_bios
+          make create_vm_from_iso_efi
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
-          make test-installer-bios
+          make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-squashfs-test-installer-bios.logs.zip
+          name: cOS-squashfs-test-installer-efi.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-squashfs-test-installer-bios.serial.zip
+          name: cOS-squashfs-test-installer-efi.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-squashfs-test-installer-bios.record.zip
+          name: cOS-squashfs-test-installer-efi.record.zip
           path: capture.webm
           if-no-files-found: warn
   qemu-squashfs-teal:
@@ -326,7 +326,7 @@ jobs:
           name: cOS-squashfs-${{ matrix.test }}.capture.zip
           path: capture.webm
           if-no-files-found: warn
-  tests-nonsquashfs-teal-installer-bios:
+  tests-nonsquashfs-teal-installer-efi:
     env:
       ARCH: x86_64
       COS_TIMEOUT: 800
@@ -344,30 +344,30 @@ jobs:
           name: cOS-nonsquashfs-teal-x86_64.iso.zip
       - name: Prepare tests 🔧
         run: |
-          make create_vm_from_iso_bios
+          make create_vm_from_iso_efi
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
-          make test-installer-bios
+          make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-nonsquashfs-test-installer-bios.logs.zip
+          name: cOS-nonsquashfs-test-installer-efi.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-nonsquashfs-test-installer-bios.serial.zip
+          name: cOS-nonsquashfs-test-installer-efi.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: cOS-nonsquashfs-test-installer-bios.record.zip
+          name: cOS-nonsquashfs-test-installer-efi.record.zip
           path: capture.webm
           if-no-files-found: warn
   qemu-nonsquashfs-teal:
