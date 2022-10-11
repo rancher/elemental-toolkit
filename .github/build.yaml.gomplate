@@ -339,6 +339,7 @@
     env:
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
+      PACKER_LOG: 1
       PKR_VAR_arch: {{{ $config.arch }}}
       PKR_VAR_flavor: {{{ $flavor }}}
       PKR_VAR_feature: vagrant

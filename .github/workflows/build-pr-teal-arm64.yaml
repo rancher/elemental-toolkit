@@ -179,6 +179,7 @@ jobs:
     env:
       FLAVOR: teal
       ARCH: arm64
+      PACKER_LOG: 1
       PKR_VAR_arch: arm64
       PKR_VAR_flavor: teal
       PKR_VAR_feature: vagrant
@@ -301,6 +302,7 @@ jobs:
     env:
       FLAVOR: teal
       ARCH: arm64
+      PACKER_LOG: 1
       PKR_VAR_arch: arm64
       PKR_VAR_flavor: teal
       PKR_VAR_feature: vagrant
