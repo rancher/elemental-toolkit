@@ -289,6 +289,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
       PACKER_TARGET: qemu.cos-squashfs
     steps:
       - uses: actions/checkout@v2
@@ -537,6 +538,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
