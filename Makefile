@@ -121,10 +121,13 @@ CURRENT_COMMIT ?= $(shell git rev-parse HEAD)
 # get the tag
 GIT_TAG ?= $(shell git describe --abbrev=0 --tags )
 # if both match, we are on a tag, so use that for snapshot id, otherwise use the current commit
+# also set the REFERENCEID for the signer
 ifeq ($(strip $(LAST_TAGGED_COMMIT)), $(strip $(CURRENT_COMMIT)))
 	export SNAPSHOT_ID?=$(GIT_TAG)
+	export REFERENCEID?=$(GIT_TAG)
 else
 	export SNAPSHOT_ID?=$(CURRENT_COMMIT)
+	export REFERENCEID?=$(CURRENT_COMMIT)
 endif
 
 #----------------------- end global variables -----------------------
