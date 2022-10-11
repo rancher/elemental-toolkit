@@ -1081,16 +1081,10 @@ jobs:
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          # This exports the proper snapshot id to sign. On master its the commit and on tags is the tag
-          export REFERENCEID=$(git describe --abbrev=0 --tags )-repository.yaml
           export PATH=$PATH:/usr/local/go/bin
-          pushd ./.github
-          go build -o sign sign.go
-          popd
-          sudo -E ./.github/sign
+          sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
-          export REFERENCEID=repository.yaml
-          sudo -E ./.github/sign
+          sudo -E REFERENCEID=repository.yaml make sign_artifacts
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0
@@ -1177,7 +1171,6 @@ jobs:
     - image-link-teal
     - tests-nonsquashfs-teal
     - tests-squashfs-teal
-    - publish-vanilla-ami
     - generate-repo-files-teal
     env:
       FLAVOR: teal
@@ -1236,10 +1229,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: images-teal-x86_64.txt
-          path: release
-      - uses: actions/download-artifact@v2
-        with:
-          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
           path: release
       - uses: actions/download-artifact@v2
         with:
@@ -1442,60 +1431,6 @@ jobs:
           name: cOS-raw_disk_test_deploy-teal.capture.zip
           path: capture.webm
           if-no-files-found: warn
-      - name: Send failed status to slack
-        if: failure()
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
-                    },
-                    "accessory": {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": ":github:",
-                         "emoji": true
-                        },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-  ami-publish-teal:
-    runs-on: ubuntu-latest
-    needs: publish-vanilla-ami
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      PKR_VAR_flavor: teal
-      PKR_VAR_git_sha: "${GITHUB_SHA}"
-      PACKER_TARGET: amazon-ebs.cos
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
-      - name: Public IP
-        id: ip
-        uses: haythem/public-ip@v1.2
-      - name: Build AMI for teal
-        run: |
-            source .github/helpers.sh
-            export PKR_VAR_cos_version=$(cos_package_version)
-            export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
-            export PKR_VAR_cos_deploy_args="cos-deploy --docker-image quay.io/costoolkit/releases-teal:cos-system-${COS_VERSION}"
-            make packer
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0
@@ -1770,100 +1705,6 @@ jobs:
           platforms: "linux/arm64,linux/amd64"
           push: true
           tags: ${{ steps.prep.outputs.tags }}
-      - name: Send failed status to slack
-        if: failure()
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
-                    },
-                    "accessory": {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": ":github:",
-                         "emoji": true
-                        },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-  # We need only a single vanilla image for any OS
-  # Vanilla image is always based on openSUSE
-  publish-vanilla-ami:
-    runs-on: ubuntu-latest
-    needs: [raw-images-teal, tests-squashfs-teal]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run make deps_ci
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make deps_ci
-      - name: Export cos version
-        run: |
-             source .github/helpers.sh
-             echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64
-          path: .
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: Upload and publish vanilla image
-        run: |
-          export github_sha="${GITHUB_SHA}"
-          export COPY_AMI_ALL_REGIONS="true"
-          export COS_VERSION="${COS_VERSION/+/-}"
-          export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION-x86_64"
-          make aws_vanilla_ami
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
-          path: |
-            ami_id.txt
-      - name: Send failed status to slack
-        if: failure()
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "Workflow release-teal-x86_64 failed on job ${{ github.job }}"
-                    },
-                    "accessory": {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": ":github:",
-                         "emoji": true
-                        },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0

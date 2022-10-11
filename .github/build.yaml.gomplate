@@ -706,24 +706,10 @@
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          # This exports the proper snapshot id to sign. On master its the commit and on tags is the tag
-          {{{ if eq $config.pipeline "release"}}}
-          export REFERENCEID=$(git describe --abbrev=0 --tags )-repository.yaml
-          {{{else}}}
-          export REFERENCEID=$(git rev-parse HEAD)-repository.yaml
-          {{{end}}}
-
-
           export PATH=$PATH:/usr/local/go/bin
-          pushd ./.github
-          go build -o sign sign.go
-          popd
-          sudo -E ./.github/sign
-
+          sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
-          export REFERENCEID=repository.yaml
-          sudo -E ./.github/sign
-
+          sudo -E REFERENCEID=repository.yaml make sign_artifacts
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
@@ -781,9 +767,6 @@
     {{{- else }}}
     - tests-nonsquashfs-{{{ $flavor }}}
     - tests-squashfs-{{{ $flavor }}}
-    {{{- end }}}
-    {{{- if $config.publish_cloud }}}
-    - publish-vanilla-ami
     {{{- end }}}
     - generate-repo-files-{{{ $flavor }}}
     env:
@@ -850,12 +833,6 @@
         with:
           name: images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
           path: release
-      {{{- if $config.publish_cloud }}}
-      - uses: actions/download-artifact@v2
-        with:
-          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
-          path: release
-      {{{- end }}}
       - uses: actions/download-artifact@v2
         with:
           name: cos-{{{ $config.arch }}}.yaml
@@ -1003,35 +980,6 @@
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
-{{{define "ami_publish"}}}
-  {{{ $config := (datasource "config") }}}
-  {{{ $flavor := . }}}
-  ami-publish-{{{ $flavor }}}:
-    runs-on: ubuntu-latest
-    needs: publish-vanilla-ami
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      PKR_VAR_flavor: {{{ $flavor }}}
-      PKR_VAR_git_sha: "${GITHUB_SHA}"
-      PACKER_TARGET: amazon-ebs.cos
-    steps:
-      - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps_ci" }}}
-      - name: Public IP
-        id: ip
-        uses: haythem/public-ip@v1.2
-      - name: Build AMI for {{{ $flavor }}}
-        run: |
-            source .github/helpers.sh
-            export PKR_VAR_cos_version=$(cos_package_version)
-            export PKR_VAR_aws_temporary_security_group_source_cidr="${{ steps.ip.outputs.ipv4 }}/32"
-            export PKR_VAR_cos_deploy_args="cos-deploy {{{ if (ne $flavor "teal") }}}--no-verify {{{ end }}}--docker-image {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}:cos-system-${COS_VERSION}"
-            make packer
-      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
-{{{ end }}}
-
 {{{define "image_link"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := . }}}
@@ -1052,49 +1000,6 @@
           name: images-{{{ $flavor }}}-{{{$config.arch}}}.txt
           path: |
             images-{{{ $flavor }}}-{{{$config.arch}}}.txt
-      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
-{{{ end }}}
-
-{{{define "publish_vanilla"}}}
-  {{{ $config := (datasource "config") }}}
-  {{{ $flavor := "teal" }}}
-  # We need only a single vanilla image for any OS
-  # Vanilla image is always based on openSUSE
-  publish-vanilla-ami:
-    runs-on: ubuntu-latest
-    {{{- if or $config.skip_tests (has $config.skip_tests_flavor $flavor) }}}
-    needs: raw-images-{{{ $flavor }}}
-    {{{- else }}}
-    needs: [raw-images-{{{ $flavor }}}, tests-squashfs-{{{ $flavor }}}]
-    {{{- end }}}
-
-    steps:
-      - uses: actions/checkout@v2
-      {{{ tmpl.Exec "make" "deps_ci" }}}
-      {{{ tmpl.Exec "cos_version" }}}
-      - name: Download result for build
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: .
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: Upload and publish vanilla image
-        run: |
-          export github_sha="${GITHUB_SHA}"
-          export COPY_AMI_ALL_REGIONS="true"
-          export COS_VERSION="${COS_VERSION/+/-}"
-          export AWS_DISK_NAME="cOS-Vanilla-$COS_VERSION-{{{ $config.arch }}}"
-          make aws_vanilla_ami
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ami-id-vanilla-${{ env.COS_VERSION }}.txt
-          path: |
-            ami_id.txt
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
@@ -1287,17 +1192,7 @@ jobs:
   {{{tmpl.Exec "raw_image_test_deploy" $flavor}}}
         {{{- end }}}
     {{{- end }}}
-
-      {{{- if $config.publish_cloud }}}
-  {{{tmpl.Exec "ami_publish" $flavor}}}
-      {{{- end }}}
 {{{- end }}}
 
 {{{tmpl.Exec "toolchain_images"}}}
 {{{tmpl.Exec "framework_images"}}}
-{{{- if $config.publish_cloud }}}
-{{{tmpl.Exec "publish_vanilla"}}}
-{{{- if $config.slack_on_failure }}}
-{{{tmpl.Exec "post_failed_status_slack"}}}
-{{{- end }}}
-{{{- end }}}

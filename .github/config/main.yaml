@@ -10,10 +10,8 @@ flavors:
         push_cache: true
         skip_build: false
         skip_docker_build: true
-
         pipeline: "main"
         publishing_pipeline: true
-        publish_cloud: false
         publish_toolchain: true
         luet_override: ""
         luet_script_override: ""
@@ -44,7 +42,6 @@ flavors:
             - "test-deploys-images-recovery"
         release_flavor: []
         arch: "x86_64"
-
         on:
           push:
             branches: ["main"]
@@ -60,9 +57,7 @@ flavors:
         luet_script_override: ""
         pipeline: "main"
         publishing_pipeline: true
-        publish_cloud: false
         publish_toolchain: false
-
         repository: "releases"
         cache_repository: "build"
         organization: "quay.io/costoolkit"
@@ -85,7 +80,6 @@ flavors:
         run_raw_image_test: false
         release_flavor: [ ]
         arch: "arm64"
-
         on:
           push:
             branches: [ "main" ]

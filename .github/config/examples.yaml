@@ -8,7 +8,6 @@ flavors:
         pipeline: "Examples"
         push_cache: false
         publishing_pipeline: false
-        publish_cloud: false
         publish_toolchain: false
         skip_build: true
         luet_script_override: ""
