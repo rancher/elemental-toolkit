@@ -226,6 +226,13 @@ jobs:
           export PKR_VAR_build=$(cos_version)
           make packer
       - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cOS-Packer-squashfs-teal-QEMU-x86_64.log
+          path: |
+            packer/*.log
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-squashfs-teal-QEMU-x86_64.qcow
           path: |
@@ -391,6 +398,13 @@ jobs:
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.log
+          path: |
+            packer/*.log
+          if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.qcow

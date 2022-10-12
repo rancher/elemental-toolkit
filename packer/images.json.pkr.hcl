@@ -90,7 +90,6 @@ source "qemu" "cos" {
   firmware               = "${var.firmware}"
   disk_interface         = "virtio-scsi"
   disk_size              = "${var.disk_size}"
-  cdrom_interface        = "virtio-scsi"
   format                 = "qcow2"
   headless               = true
   iso_checksum           = "none"
@@ -102,13 +101,8 @@ source "qemu" "cos" {
   ssh_username           = "${var.root_username}"
   vm_name                = "cOS"
   qemuargs               = [
-    ["-boot", "menu=on,strict=on"], # Override the default packer -boot flag which is not valid on UEFI
-    [ "-device", "virtio-scsi-pci" ], # Add virtio scsi device
-    [ "-device", "scsi-cd,drive=cdrom0,bootindex=0" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
-    [ "-device", "scsi-hd,drive=drive0,bootindex=1" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
-    [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
-    [ "-drive", "if=none,file=output-cos/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
-    ["-serial", "stdio"],
+    ["-chardev", "stdio,id=char0,logfile=serial.log,signal=off"],
+    ["-serial", "chardev:char0"],
   ]
 }
 
@@ -135,6 +129,8 @@ source "qemu" "cos-arm64" {
     [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
     [ "-drive", "if=none,file=output-cos-arm64/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
     ["-cpu", "cortex-a57"],
+    ["-chardev", "stdio,id=char0,logfile=serial.log,signal=off"],
+    ["-serial", "chardev:char0"],
   ]
   shutdown_command       = "shutdown -hP now"
   ssh_handshake_attempts = "20"
