@@ -101,8 +101,7 @@ source "qemu" "cos" {
   ssh_username           = "${var.root_username}"
   vm_name                = "cOS"
   qemuargs               = [
-    ["-chardev", "stdio,id=char0,logfile=serial.log,signal=off"],
-    ["-serial", "chardev:char0"],
+    ["-serial", "file:serial.log"],
   ]
 }
 
@@ -129,8 +128,7 @@ source "qemu" "cos-arm64" {
     [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
     [ "-drive", "if=none,file=output-cos-arm64/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
     ["-cpu", "cortex-a57"],
-    ["-chardev", "stdio,id=char0,logfile=serial.log,signal=off"],
-    ["-serial", "chardev:char0"],
+    ["-serial", "file:serial.log"],
   ]
   shutdown_command       = "shutdown -hP now"
   ssh_handshake_attempts = "20"
