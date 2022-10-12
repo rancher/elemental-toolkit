@@ -290,7 +290,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
-      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
+      PKR_VAR_firmware: /usr/share/qemu/OVMF.fd
       PACKER_TARGET: qemu.cos-squashfs
     steps:
       - uses: actions/checkout@v2
@@ -310,9 +310,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-        with:
-            packer-version: 1.7.3
+        uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
@@ -547,7 +545,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
-      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
+      PKR_VAR_firmware: /usr/share/qemu/OVMF.fd
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -567,9 +565,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-        with:
-            packer-version: 1.7.3
+        uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
