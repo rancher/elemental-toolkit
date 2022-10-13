@@ -121,7 +121,7 @@ test-installer-efi:
 
 RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
 
-raw_disk_test_deploy: create_vm_from_raw_image go run github.com/onsi/ginkgo/v2/ginkgo
+raw_disk_test_deploy: create_vm_from_raw_image
 	# run tests
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery-raw-disk
 
