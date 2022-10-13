@@ -5,11 +5,6 @@
 
 GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
 
-GINKGO?=$(shell which ginkgo 2> /dev/null)
-ifeq ("$(GINKGO)","")
-GINKGO="/usr/bin/ginkgo"
-endif
-
 VAGRANT?=$(shell which vagrant 2> /dev/null)
 ifeq ("$(VAGRANT)","")
 VAGRANT="/usr/bin/vagrant"
@@ -72,56 +67,52 @@ $(VAGRANT):
 	@echo "'vagrant' not found."
 	@exit 1
 
-test-fallback: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./fallback
+test-fallback:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
 
-test-features: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./features
+test-features:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./features
 
-test-hooks: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./hooks
+test-hooks:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
 
-test-upgrades-images-signed: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-signed
+test-upgrades-images-signed:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
 
-test-upgrades-images-unsigned: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-images-unsigned
+test-upgrades-images-unsigned:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
 
-test-upgrades-local: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./upgrades-local
+test-upgrades-local:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-local
 	
-test-smoke: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./smoke
+test-smoke:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
 
-test-recovery: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery
+test-recovery:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
 
 # Individual test recovery for arm64 in order to run them in parallel on the CI, otherwise the full test is too long
 
-test-recovery1: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "first-test" ./recovery
+test-recovery1:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "first-test" ./recovery
 
-test-recovery2: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "second-test" ./recovery
+test-recovery2:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "second-test" ./recovery
 
-test-recovery3: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "third-test" ./recovery
+test-recovery3:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "third-test" ./recovery
 
-test-recovery4: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --label-filter "fourth-test" ./recovery
+test-recovery4:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "fourth-test" ./recovery
 
-test-deploys-images-recovery: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
+test-deploys-images-recovery:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
 
-test-installer-bios: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using bios" ./installer $(PASSTHROUGH_ARGS)
+test-installer-bios:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "Using bios" ./installer $(PASSTHROUGH_ARGS)
 
-test-installer-efi: $(GINKGO)
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) --focus "Using efi" ./installer $(PASSTHROUGH_ARGS)
-
-$(GINKGO):
-	@echo "'ginkgo' not found."
-	@exit 1
+test-installer-efi:
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "Using efi" ./installer $(PASSTHROUGH_ARGS)
 
 
 #
@@ -130,9 +121,9 @@ $(GINKGO):
 
 RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
 
-raw_disk_test_deploy: create_vm_from_raw_image $(GINKGO)
+raw_disk_test_deploy: create_vm_from_raw_image go run github.com/onsi/ginkgo/v2/ginkgo
 	# run tests
-	cd $(ROOT_DIR)/tests && $(GINKGO) $(GINKGO_ARGS) ./recovery-raw-disk
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery-raw-disk
 
 create_vm_from_raw_image: as_root $(VBOXMANAGE)
 ifeq ("$(RAW)","")
