@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
             # due to this option below, its not possible for vagrant to destroy the machine,
             # you would need to do it manually with virsh and --nvram option i.e. `virsh undefine --nvram tests_cos-arm64`
             # but if nvram is not enabled, we get no serial output
-            libvirt.nvram = "/tmp/vagrant.fd"
+            #libvirt.nvram = "/tmp/vagrant.fd"
             #libvirt.features = ["acpi", "gic version='2'"] #arm64 requires gic
             libvirt.management_network_mac = "52:54:00:00:00:01"
             #libvirt.disk_bus = "virtio"
