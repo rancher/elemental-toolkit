@@ -14,7 +14,7 @@ for i in $(ls config); do
       for arch in $(${YQ} ".flavors.$flavor.arches|keys|join(\" \")" config/"$i" ); do
         # Use explode(.) so anchors are fully resolved before parsing
         ${YQ} "explode(.)|.flavors.$flavor.arches.$arch" config/"$i" | gomplate --left-delim "{{{" --right-delim "}}}" -V --datasource config="stdin:/?type=application/yaml" --file build.yaml.gomplate --out workflows/build-"$filename"-"$flavor"-"$arch".yaml
-        sed -i "" '/^[[:space:]]*$/d' workflows/build-"$filename"-"$flavor"-"$arch".yaml
+        sed -i '/^[[:space:]]*$/d' workflows/build-"$filename"-"$flavor"-"$arch".yaml
       done
     done
 done

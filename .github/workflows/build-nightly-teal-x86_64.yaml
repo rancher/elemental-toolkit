@@ -274,7 +274,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
-      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
       PACKER_TARGET: qemu.cos-squashfs
     steps:
       - uses: actions/checkout@v2
@@ -292,7 +292,7 @@ jobs:
           max_attempts: 3
           command: |
             sudo apt-get update
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
@@ -352,7 +352,7 @@ jobs:
       ARCH: x86_64
       VAGRANT_CPU: 2
       VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
@@ -381,7 +381,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -529,7 +529,7 @@ jobs:
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
-      PKR_VAR_firmware: /usr/share/qemu-efi/QEMU_EFI.fd
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -547,7 +547,7 @@ jobs:
           max_attempts: 3
           command: |
             sudo apt-get update
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
@@ -607,7 +607,7 @@ jobs:
       ARCH: x86_64
       VAGRANT_CPU: 2
       VAGRANT_MEMORY: 5120
-      VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
     runs-on: ubuntu-latest
@@ -636,7 +636,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
