@@ -250,6 +250,7 @@ jobs:
       VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
+      TEST_VERSION: 0.9.1
     runs-on: ubuntu-latest
     needs: qemu-squashfs-teal
     strategy:
@@ -421,6 +422,7 @@ jobs:
       VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
+      TEST_VERSION: 0.9.1
     runs-on: ubuntu-latest
     needs: qemu-nonsquashfs-teal
     strategy:
