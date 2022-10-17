@@ -362,10 +362,12 @@ func GetTempDir(config *v1.Config, suffix string) string {
 	elementalTmpDir := fmt.Sprintf("elemental-%s", suffix)
 	dir := os.Getenv("TMPDIR")
 	if dir != "" {
+		config.Logger.Debugf("Got tmpdir from TMPDIR var: %s", dir)
 		return filepath.Join(dir, elementalTmpDir)
 	}
 	parts, err := GetAllPartitions()
 	if err != nil {
+		config.Logger.Debug("Could not get partitions, defaulting to /tmp")
 		return filepath.Join("/", "tmp", elementalTmpDir)
 	}
 	// Check persistent and if its mounted
@@ -373,9 +375,11 @@ func GetTempDir(config *v1.Config, suffix string) string {
 	persistent := ep.Persistent
 	if persistent != nil {
 		if mnt, _ := IsMounted(config, persistent); mnt {
-			return filepath.Join(persistent.MountPoint, elementalTmpDir)
+			config.Logger.Debugf("Using tmpdir on persistent volume: %s", persistent.MountPoint)
+			return filepath.Join(persistent.MountPoint, "tmp", elementalTmpDir)
 		}
 	}
+	config.Logger.Debug("Could not get any valid tmpdir, defaulting to /tmp")
 	return filepath.Join("/", "tmp", elementalTmpDir)
 }
 

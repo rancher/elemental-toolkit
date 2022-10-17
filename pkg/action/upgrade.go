@@ -150,15 +150,24 @@ func (u *UpgradeAction) Run() (err error) {
 	// Cleanup transition image file before leaving
 	cleanup.Push(func() error { return u.remove(upgradeImg.File) })
 
-	// Recovery does not mount persistent, so try to mount it. Ignore errors, as its not mandatory.
+	// Recovery does not mount persistent, so try to mount it. Ignore errors, as it's not mandatory.
 	persistentPart := u.spec.Partitions.Persistent
-	if mnt, err := utils.IsMounted(&u.config.Config, persistentPart); !mnt && err == nil {
-		u.Debug("mounting persistent partition")
-		err := e.MountPartition(persistentPart, "rw")
-		if err != nil {
-			u.config.Logger.Warn("could not mount persistent partition")
-		} else {
-			cleanup.Push(func() error { return e.UnmountPartition(persistentPart) })
+	if persistentPart != nil {
+		// Create the dir otherwise the check for mounted dir fails
+		_ = utils.MkdirAll(u.config.Fs, persistentPart.MountPoint, constants.DirPerm)
+		if mnt, err := utils.IsMounted(&u.config.Config, persistentPart); !mnt && err == nil {
+			u.Debug("mounting persistent partition")
+			umount, err = e.MountRWPartition(persistentPart)
+			if err != nil {
+				u.config.Logger.Warn("could not mount persistent partition: %s", err.Error())
+			} else {
+				// Set luet tempdir
+				tmpdir := utils.GetTempDir(&u.config.Config, "")
+				u.config.Luet.SetTempDir(tmpdir)
+				// Remove the tmpdir before unmounting
+				cleanup.Push(func() error { return u.config.Fs.RemoveAll(tmpdir) })
+				cleanup.Push(umount)
+			}
 		}
 	}
 

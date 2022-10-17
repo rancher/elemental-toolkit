@@ -81,3 +81,5 @@ func (l *FakeLuet) GetPlugins() []string {
 func (l *FakeLuet) SetArch(arch string) {
 	l.arch = arch
 }
+
+func (l *FakeLuet) SetTempDir(s string) {}

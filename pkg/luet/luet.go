@@ -20,6 +20,7 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/docker/go-units"
 	"github.com/mudler/luet/pkg/api/core/bus"
 	"github.com/mudler/luet/pkg/api/core/context"
+	gc "github.com/mudler/luet/pkg/api/core/garbagecollector"
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
 	"github.com/mudler/luet/pkg/database"
 	"github.com/mudler/luet/pkg/helpers/docker"
@@ -385,4 +387,13 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 		config.System.DatabasePath = l.TmpDir
 	}
 	return config
+}
+
+// SetTempDir re-sets the temp dir for all the luet stuff
+func (l *Luet) SetTempDir(tmpdir string) {
+	l.TmpDir = tmpdir
+	l.context.Config.System.TmpDirBase = l.TmpDir
+	l.context.Config.System.PkgsCachePath = l.TmpDir
+	l.context.Config.System.DatabasePath = l.TmpDir
+	l.context.GarbageCollector = gc.GarbageCollector(filepath.Join(tmpdir, "tmpluet"))
 }

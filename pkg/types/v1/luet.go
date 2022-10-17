@@ -22,4 +22,5 @@ type LuetInterface interface {
 	SetPlugins(...string)
 	GetPlugins() []string
 	SetArch(string)
+	SetTempDir(string)
 }
