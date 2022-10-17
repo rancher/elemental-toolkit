@@ -632,7 +632,7 @@ jobs:
     needs: qemu-nonsquashfs-teal
     strategy:
       matrix:
-        test: [ test-features, test-hooks, test-smoke, test-fallback, test-recovery, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
+        test: [ test-hooks, test-smoke, test-fallback, test-recovery, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2

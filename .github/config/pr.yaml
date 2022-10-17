@@ -27,7 +27,6 @@ flavors:
           squashfs:
             - "test-recovery"
           nonsquashfs:
-            - "test-features"
             - "test-hooks"
             - "test-smoke"
             - "test-fallback"

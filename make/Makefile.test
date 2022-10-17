@@ -41,7 +41,7 @@ else
 VMNAME=cos-arm64
 endif
 
-test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-features test-hooks test-fallback test-recovery test-deploys-images-recovery
+test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-hooks test-fallback test-recovery test-deploys-images-recovery
 
 #
 # remove test artifacts
@@ -69,9 +69,6 @@ $(VAGRANT):
 
 test-fallback:
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
-
-test-features:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./features
 
 test-hooks:
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
