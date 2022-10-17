@@ -138,7 +138,6 @@ source "qemu" "cos-arm64" {
   vm_name                = "${var.name}"
 }
 
-
 source "virtualbox-iso" "cos" {
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"

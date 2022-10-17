@@ -2,6 +2,7 @@
 # as the recovery image. `/run/initramfs/live/rootfs.squashfs` is the
 # squashed container inside the ISO.
 install:
+  squash-no-compression: true
   recovery-system:
     fs: squashfs
     uri: file:/run/initramfs/live/rootfs.squashfs
