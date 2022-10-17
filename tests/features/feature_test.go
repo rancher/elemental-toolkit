@@ -52,7 +52,7 @@ var _ = Describe("cOS Feature tests", func() {
 				out, _ := s.Command("k3s --data-dir /usr/local/rancher/k3s/ kubectl get pods -A")
 				return out
 
-			}, time.Duration(time.Duration(400)*time.Second), time.Duration(5*time.Second)).Should(ContainSubstring("local-path-provisioner"))
+			}, time.Duration(time.Duration(1800)*time.Second), time.Duration(5*time.Second)).Should(ContainSubstring("local-path-provisioner"))
 
 			_, err = s.Command("k3s --data-dir /usr/local/rancher/k3s/ kubectl create deployment test-sut-deployment --image nginx")
 			Expect(err).ToNot(HaveOccurred())
@@ -62,7 +62,7 @@ var _ = Describe("cOS Feature tests", func() {
 				out, _ := s.Command("k3s --data-dir /usr/local/rancher/k3s/ kubectl get pods -A")
 				return out
 
-			}, time.Duration(time.Duration(900)*time.Second), time.Duration(5*time.Second)).Should(ContainSubstring("test-sut-deployment"))
+			}, time.Duration(time.Duration(1800)*time.Second), time.Duration(5*time.Second)).Should(ContainSubstring("test-sut-deployment"))
 
 			out, err = s.Command("cos-feature disable k3s")
 			Expect(err).ToNot(HaveOccurred())
