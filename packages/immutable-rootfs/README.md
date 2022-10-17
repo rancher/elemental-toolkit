@@ -24,7 +24,7 @@ of the `rootfs.before`, `rootfs` or `rootfs.after` cloud-init stages.
 
 ## Kernel configuraton paramters
 
-The immutable rootfs can be configured witht he following kernel parameters:
+The immutable rootfs can be configured with the following kernel parameters:
 
 * `cos-img/filename=<imgfile>`: This is one of the main parameters, it defines
   the location of the image file to boot from.
