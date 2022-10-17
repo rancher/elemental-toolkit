@@ -161,7 +161,7 @@ jobs:
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-arm64" make local-iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-teal-${{ env.COS_VERSION }}-arm64" make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
