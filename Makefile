@@ -124,10 +124,10 @@ GIT_TAG ?= $(shell git describe --abbrev=0 --tags )
 # also set the REFERENCEID for the signer
 ifeq ($(strip $(LAST_TAGGED_COMMIT)), $(strip $(CURRENT_COMMIT)))
 	export SNAPSHOT_ID?=$(GIT_TAG)
-	export REFERENCEID?=$(GIT_TAG)
+	export REFERENCEID?=$(GIT_TAG)-repository.yaml
 else
 	export SNAPSHOT_ID?=$(CURRENT_COMMIT)
-	export REFERENCEID?=$(CURRENT_COMMIT)
+	export REFERENCEID?=$(CURRENT_COMMIT)-repository.yaml
 endif
 
 #----------------------- end global variables -----------------------
