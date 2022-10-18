@@ -32,11 +32,12 @@ func getRepo(repo string, ctx *types.Context) *installer.LuetSystemRepository {
 	ctx.Config.GetSystem().Rootfs = "/"
 	ctx.Config.GetSystem().TmpDirBase = tmpdir
 	re, err := d.Sync(ctx, false)
+	if err != nil {
+		fmt.Printf("Error syncing repo: %s\n", err.Error())
+		return nil
+	}
 	// Copy the reference as it's lost after sync :o
 	re.ReferenceID = d.ReferenceID
-	if err != nil {
-		panic(err)
-	}
 	return re
 }
 
@@ -78,6 +79,9 @@ func main() {
 		os.Exit(1)
 	}
 	repo := getRepo(finalRepo, ctx)
+	if repo == nil {
+		return
+	}
 	packages := getRepositoryPackages(repo)
 	for _, val := range packages.Packages {
 		imageTag := fmt.Sprintf("%s:%s", finalRepo, val.ImageTag())
