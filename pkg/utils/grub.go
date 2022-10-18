@@ -130,7 +130,7 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 		g.config.Logger.Infof("Generating grub files for efi on %s", target)
 		var foundModules bool
 		var foundEfi bool
-		for _, m := range []string{"loopback.mod", "squash4.mod"} {
+		for _, m := range []string{"loopback.mod", "squash4.mod", "xzio.mod"} {
 			err = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
