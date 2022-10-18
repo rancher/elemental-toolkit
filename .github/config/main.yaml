@@ -23,19 +23,23 @@ flavors:
         skip_tests_flavor: ["blue","orange", "green"]
         skip_images_flavor: ["blue","orange", "green"]
         build_image_qemu: true
-        build_image_vbox: true
         build_raw_image: true
         run_raw_image_test: true
         run_installer_test: true
         run_tests:
           squashfs:
-            - "test-recovery"
+            - "test-recovery1"
+            - "test-recovery2"
+            - "test-recovery3"
+            - "test-recovery4"
           nonsquashfs:
-            - "test-features"
             - "test-hooks"
             - "test-smoke"
             - "test-fallback"
-            - "test-recovery"
+            - "test-recovery1"
+            - "test-recovery2"
+            - "test-recovery3"
+            - "test-recovery4"
             - "test-upgrades-images-signed"
             - "test-upgrades-images-unsigned"
             - "test-upgrades-local"
@@ -75,7 +79,6 @@ flavors:
         skip_tests_flavor: [ "blue","orange", "green"]
         skip_images_flavor: [ "blue","orange", "green" ]
         build_image_qemu: true
-        build_image_vbox: false
         build_raw_image: true
         run_raw_image_test: false
         release_flavor: [ ]
@@ -90,7 +93,6 @@ flavors:
         <<: *x86_64
         flavor: "orange"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false
@@ -98,7 +100,6 @@ flavors:
         <<: *arm64
         flavor: "orange"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false
@@ -108,7 +109,6 @@ flavors:
         <<: *x86_64
         flavor: "blue"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false
@@ -116,7 +116,6 @@ flavors:
         <<: *arm64
         flavor: "blue"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false
@@ -126,7 +125,6 @@ flavors:
         <<: *x86_64
         flavor: "green"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false
@@ -134,7 +132,6 @@ flavors:
         <<: *arm64
         flavor: "green"
         publish_toolchain: false
-        build_image_vbox: false
         build_raw_image: false
         run_raw_image_test: false
         slack_on_failure: false

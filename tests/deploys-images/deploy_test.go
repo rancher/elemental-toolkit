@@ -37,10 +37,12 @@ var _ = Describe("cOS Deploy tests", func() {
 
 				out := s.GetOSRelease("VERSION")
 				Expect(out).ToNot(Equal(""))
+				By(fmt.Sprintf("Starting from version %s", out))
 
 				version := out
-
-				_, err = s.Command(s.ElementalCmd("reset", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
+				cmd := s.ElementalCmd("reset", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion))
+				By(fmt.Sprintf("Runnning %s", cmd))
+				_, err = s.Command(cmd)
 				Expect(err).NotTo(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))

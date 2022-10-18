@@ -313,11 +313,11 @@
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make local-iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make iso
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
@@ -339,15 +339,19 @@
     env:
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
+      PACKER_LOG: 1
       PKR_VAR_arch: {{{ $config.arch }}}
       PKR_VAR_flavor: {{{ $flavor }}}
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      {{{if eq $config.arch "x86_64" }}}
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
+      {{{- end }}}
       {{{if eq $config.arch "arm64" }}}
       PKR_VAR_qemu_binary: qemu-system-aarch64
-      PKR_VAR_firmware: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+      PKR_VAR_firmware: /usr/share/AAVMF/AAVMF_CODE.fd
       {{{if eq $subset "squashfs" }}}
       PACKER_TARGET: qemu.cos-arm64-squashfs
       {{{else}}}
@@ -376,16 +380,21 @@
           max_attempts: 3
           command: |
             sudo apt-get update
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-        with:
-            packer-version: 1.7.3
+        uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.log
+          path: |
+            packer/*.log
+          if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
@@ -401,58 +410,6 @@
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
-{{{define "build_vbox"}}}
-  {{{ $config := (datasource "config") }}}
-  {{{ $flavor := index . "flavor" }}}
-  {{{ $subset := index . "subset" }}}
-  vbox-{{{$subset}}}-{{{ $flavor }}}:
-    runs-on: macos-12
-    needs: iso-nonsquashfs-{{{ $flavor }}}
-    env:
-      PKR_VAR_arch: {{{ $config.arch }}}
-      PKR_VAR_flavor: {{{ $flavor }}}
-      PKR_VAR_feature: vagrant
-      {{{if eq $subset "squashfs" }}}
-      PACKER_TARGET: virtualbox-iso.cos-squashfs
-      {{{else}}}
-      PACKER_TARGET: virtualbox-iso.cos
-      {{{- end}}}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
-      - name: Install deps
-        run: |
-            brew install yq
-      - name: Build VBox Image 🔧
-        run: |
-          export YQ=/usr/local/bin/yq
-          source .github/helpers.sh
-          export PKR_VAR_build=$(cos_version)
-          make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.ova
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
-{{{ end }}}
-
 {{{define "test"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := index . "flavor" }}}
@@ -463,23 +420,19 @@
   tests-{{{$subset}}}-{{{ $flavor }}}:
     env:
       ARCH: {{{ $config.arch }}}
-      {{{ if eq $config.arch "arm64" }}}
       VAGRANT_CPU: 2
       VAGRANT_MEMORY: 5120
+      {{{if eq $config.arch "x86_64" }}}
+      VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
+      {{{- end }}}
+      {{{if eq $config.arch "arm64" }}}
       VAGRANT_FIRMWARE: /usr/share/AAVMF/AAVMF_CODE.fd
+      {{{- end }}}
       COS_HOST: "192.168.122.50:22"
       COS_TIMEOUT: 1800
-      {{{else}}}
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-      {{{end}}}
-    {{{ if eq $config.arch "arm64" }}}
+      TEST_VERSION: 0.9.1
     runs-on: ubuntu-latest
     needs: qemu-{{{$subset}}}-{{{ $flavor }}}
-    {{{else}}}
-    runs-on: macos-12
-    needs: vbox-{{{$subset}}}-{{{ $flavor }}}
-    {{{end}}}
     strategy:
       matrix:
         test: [ {{{  join $subset_tests ", " }}} ]
@@ -492,13 +445,8 @@
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          {{{ if eq $config.arch "arm64" }}}
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
-          {{{else}}}
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
-          {{{end}}}
           path: packer
-      {{{ if eq $config.arch "arm64" }}}
       - name: Install deps
         run: sudo -E make deps
       - name: Install deps (apt-get)
@@ -509,7 +457,7 @@
           command: |
             sudo apt-get update
             sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 vagrant make libvirt-daemon-system bridge-utils ovmf
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -523,13 +471,8 @@
         run: |
           # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
-      {{{end}}}
       - name: Prepare tests 🔧
         run: |
-          {{{ if ne $config.arch "arm64" }}}
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
-          {{{end}}}
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
@@ -543,28 +486,12 @@
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      {{{ if eq $config.arch "arm64" }}}
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
           path: serial_log.log
           if-no-files-found: warn
-      {{{end}}}
-      {{{ if ne $config.arch "arm64" }}}
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-{{{$subset}}}-${{ matrix.test }}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      {{{end}}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
@@ -751,9 +678,6 @@
     {{{- if $config.build_raw_image }}}
     - raw-images-{{{ $flavor }}}
     {{{- end }}}
-    {{{- if $config.build_image_vbox }}}
-    - vbox-nonsquashfs-{{{ $flavor }}}
-    {{{- end }}}
     {{{- if $config.build_image_qemu }}}
     - qemu-nonsquashfs-{{{ $flavor }}}
     {{{- end }}}
@@ -783,18 +707,6 @@
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
           path: iso-release
-      {{{- if $config.build_image_vbox }}}
-      - name: Download vagrant box (vbox)
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.box
-          path: release
-      - name: Download OVA image
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-vbox-{{{ $config.arch }}}.ova
-          path: release
-      {{{- end }}}
       {{{- if $config.build_image_qemu }}}
       - name: Download vagrant box (qemu)
         uses: actions/download-artifact@v2
@@ -1162,9 +1074,6 @@ jobs:
         {{{- end}}}
         {{{- if $config.build_image_qemu }}}
   {{{ tmpl.Exec "build_qemu" $context }}}
-        {{{- end }}}
-        {{{- if $config.build_image_vbox }}}
-  {{{ tmpl.Exec "build_vbox" $context }}}
         {{{- end }}}
     {{{- end }}}
 

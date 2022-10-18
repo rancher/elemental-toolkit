@@ -20,7 +20,6 @@ flavors:
         skip_tests_flavor: ["blue","orange", "green"]
         skip_images_flavor: ["blue","orange", "green"]
         build_image_qemu: true
-        build_image_vbox: true
         build_raw_image: true
         luet_script_override: ""
         run_raw_image_test: true
@@ -32,11 +31,13 @@ flavors:
           squashfs:
             - "test-recovery"
           nonsquashfs:
-            - "test-features"
             - "test-hooks"
             - "test-smoke"
             - "test-fallback"
-            - "test-recovery"
+            - "test-recovery1"
+            - "test-recovery2"
+            - "test-recovery3"
+            - "test-recovery4"
             - "test-upgrades-images-signed"
             - "test-upgrades-images-unsigned"
             - "test-upgrades-local"

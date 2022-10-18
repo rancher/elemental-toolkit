@@ -141,6 +141,6 @@ requires_final_images: true
 package_dir: "/output"
 steps:
   - mkdir /output
-  - mksquashfs /recovery /output/recovery.squashfs -b 1024k -comp xz -Xbcj x86
+  - mksquashfs /recovery /output/recovery.squashfs -b 1024k
 {{- end}}
 #### recovery/cos-img ends here

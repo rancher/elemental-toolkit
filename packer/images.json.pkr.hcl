@@ -82,23 +82,27 @@ source "googlecompute" "cos" {
 }
 
 source "qemu" "cos" {
+  qemu_binary            = "qemu-system-x86_64"
   accelerator            = "${var.accelerator}"
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"
+  memory                 = "${var.memory}"
   firmware               = "${var.firmware}"
-  disk_interface         = "ide"
+  disk_interface         = "virtio-scsi"
   disk_size              = "${var.disk_size}"
   format                 = "qcow2"
   headless               = true
   iso_checksum           = "none"
   iso_url                = "${var.iso}"
-  qemuargs               = [["-m", "${var.memory}M"]]
   shutdown_command       = "shutdown -hP now"
   ssh_handshake_attempts = "20"
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
   vm_name                = "cOS"
+  qemuargs               = [
+    ["-serial", "file:serial.log"],
+  ]
 }
 
 source "qemu" "cos-arm64" {
@@ -124,6 +128,7 @@ source "qemu" "cos-arm64" {
     [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
     [ "-drive", "if=none,file=output-cos-arm64/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
     ["-cpu", "cortex-a57"],
+    ["-serial", "file:serial.log"],
   ]
   shutdown_command       = "shutdown -hP now"
   ssh_handshake_attempts = "20"
@@ -132,7 +137,6 @@ source "qemu" "cos-arm64" {
   ssh_username           = "${var.root_username}"
   vm_name                = "${var.name}"
 }
-
 
 source "virtualbox-iso" "cos" {
   boot_wait              = "${var.sleep}"

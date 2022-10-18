@@ -9,21 +9,28 @@ Vagrant.configure("2") do |config|
     config.ssh.private_key_path = ['~/.vagrant.d/insecure_private_key']
     config.vm.box_check_update = false
 
-    config.vm.define "cos", primary: true do |cos|
+    config.vm.define "cos" do |cos|
         cos.vm.box = "cos"
-        cos.vm.provider :virtualbox do |vb|
-            vb.check_guest_additions = false
-            vb.memory = ENV['VAGRANT_MEMORY'] || "4096"
-            vb.cpus = ENV['VAGRANT_CPU'] || "2"
-            # This 2 below are so virtualbox uses the host dns resolution
-            vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
-            vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
-            # Enable serial output to file
-            vb.customize ["modifyvm", :id, "--uart1", "0x3f8", "4"]
-            vb.customize ["modifyvm", :id, "--uartmode1", "file", "../serial_port1.log"]
-            if ENV['ENABLE_VIDEO_CAPTURE']
-                vb.customize ["modifyvm", :id, "--recording", "on", "--recordingscreens", "0","--recordingfile", "../capture.webm"]
-            end
+        cos.vm.guest = :suse
+        cos.vm.provider :libvirt do |libvirt|
+            libvirt.qemu_use_session = true
+            libvirt.loader = ENV["VAGRANT_FIRMWARE"]
+            # due to this option below, its not possible for vagrant to destroy the machine,
+            # you would need to do it manually with virsh and --nvram option i.e. `virsh undefine --nvram tests_cos-arm64`
+            # but if nvram is not enabled, we get no serial output
+            #libvirt.nvram = "/tmp/vagrant.fd"
+            #libvirt.features = ["acpi", "gic version='2'"] #arm64 requires gic
+            libvirt.management_network_mac = "52:54:00:00:00:01"
+            #libvirt.disk_bus = "virtio"
+            #libvirt.inputs = [] # override the inputs otherwise it tries to insert a ps2 mouse lmao
+            #libvirt.cpu_mode = "custom"
+            #libvirt.cpu_model = "cortex-a57"
+            libvirt.memory = ENV['VAGRANT_MEMORY'] || "4096"
+            libvirt.cpus = ENV['VAGRANT_CPU'] || "2"
+            #libvirt.machine_type = "virt"
+            #libvirt.machine_arch = "aarch64"
+            libvirt.graphics_type = "none" # we dont need no stinking graphics
+            libvirt.random :model => 'random'
         end
     end
 

@@ -164,11 +164,11 @@ jobs:
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make local-iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make local-iso
       - name: Build ISO from remote repositories 🔧
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
-          sudo -E MAKEISO_ARGS="--name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
+          sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-teal-${{ env.COS_VERSION }}-x86_64" make iso
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-nonsquashfs-teal-x86_64.iso.zip
@@ -283,12 +283,14 @@ jobs:
     env:
       FLAVOR: teal
       ARCH: x86_64
+      PACKER_LOG: 1
       PKR_VAR_arch: x86_64
       PKR_VAR_flavor: teal
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
       PACKER_TARGET: qemu.cos-squashfs
     steps:
       - uses: actions/checkout@v2
@@ -306,16 +308,21 @@ jobs:
           max_attempts: 3
           command: |
             sudo apt-get update
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-        with:
-            packer-version: 1.7.3
+        uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cOS-Packer-squashfs-teal-QEMU-x86_64.log
+          path: |
+            packer/*.log
+          if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-squashfs-teal-QEMU-x86_64.qcow
@@ -356,85 +363,20 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-  vbox-squashfs-teal:
-    runs-on: macos-12
-    needs: iso-nonsquashfs-teal
-    env:
-      PKR_VAR_arch: x86_64
-      PKR_VAR_flavor: teal
-      PKR_VAR_feature: vagrant
-      PACKER_TARGET: virtualbox-iso.cos-squashfs
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nonsquashfs-teal-x86_64.iso.zip
-      - name: Install deps
-        run: |
-            brew install yq
-      - name: Build VBox Image 🔧
-        run: |
-          export YQ=/usr/local/bin/yq
-          source .github/helpers.sh
-          export PKR_VAR_build=$(cos_version)
-          make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-squashfs-teal-vbox-x86_64.ova
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-squashfs-teal-vbox-x86_64.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-Packer-squashfs-teal-vbox-x86_64.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      - name: Send failed status to slack
-        if: failure()
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
-                    },
-                    "accessory": {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": ":github:",
-                         "emoji": true
-                        },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-squashfs-teal:
     env:
       ARCH: x86_64
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-    runs-on: macos-12
-    needs: vbox-squashfs-teal
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
+      VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
+      COS_HOST: "192.168.122.50:22"
+      COS_TIMEOUT: 1800
+      TEST_VERSION: 0.9.1
+    runs-on: ubuntu-latest
+    needs: qemu-squashfs-teal
     strategy:
       matrix:
-        test: [ test-recovery ]
+        test: [ test-recovery1, test-recovery2, test-recovery3, test-recovery4 ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -444,12 +386,34 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Packer-squashfs-teal-vbox-x86_64.box
+          name: cOS-Packer-squashfs-teal-QEMU-x86_64.box
           path: packer
+      - name: Install deps
+        run: sudo -E make deps
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get remove -y apparmor*
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
@@ -467,13 +431,7 @@ jobs:
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-squashfs-${{ matrix.test }}.capture.zip
-          path: capture.webm
+          path: serial_log.log
           if-no-files-found: warn
       - name: Send failed status to slack
         if: failure()
@@ -581,12 +539,14 @@ jobs:
     env:
       FLAVOR: teal
       ARCH: x86_64
+      PACKER_LOG: 1
       PKR_VAR_arch: x86_64
       PKR_VAR_flavor: teal
       PKR_VAR_feature: vagrant
       PKR_VAR_accelerator: tcg
       PKR_VAR_cpus: 2
       PKR_VAR_memory: 4096
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
       PACKER_TARGET: qemu.cos
     steps:
       - uses: actions/checkout@v2
@@ -604,16 +564,21 @@ jobs:
           max_attempts: 3
           command: |
             sudo apt-get update
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v1
-        with:
-            packer-version: 1.7.3
+        uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
         run: |
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.log
+          path: |
+            packer/*.log
+          if-no-files-found: error
       - uses: actions/upload-artifact@v2
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.qcow
@@ -654,85 +619,20 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-  vbox-nonsquashfs-teal:
-    runs-on: macos-12
-    needs: iso-nonsquashfs-teal
-    env:
-      PKR_VAR_arch: x86_64
-      PKR_VAR_flavor: teal
-      PKR_VAR_feature: vagrant
-      PACKER_TARGET: virtualbox-iso.cos
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download ISO
-        uses: actions/download-artifact@v2
-        with:
-          name: cOS-nonsquashfs-teal-x86_64.iso.zip
-      - name: Install deps
-        run: |
-            brew install yq
-      - name: Build VBox Image 🔧
-        run: |
-          export YQ=/usr/local/bin/yq
-          source .github/helpers.sh
-          export PKR_VAR_build=$(cos_version)
-          make packer
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.ova
-          path: |
-            packer/*.tar.gz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.box
-          path: |
-            packer/*.box
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      - name: Send failed status to slack
-        if: failure()
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "Workflow main-teal-x86_64 failed on job ${{ github.job }}"
-                    },
-                    "accessory": {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": ":github:",
-                         "emoji": true
-                        },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
   tests-nonsquashfs-teal:
     env:
       ARCH: x86_64
-      VAGRANT_CPU: 3
-      VAGRANT_MEMORY: 10240
-    runs-on: macos-12
-    needs: vbox-nonsquashfs-teal
+      VAGRANT_CPU: 2
+      VAGRANT_MEMORY: 5120
+      VAGRANT_FIRMWARE: /usr/share/OVMF/OVMF_CODE.fd
+      COS_HOST: "192.168.122.50:22"
+      COS_TIMEOUT: 1800
+      TEST_VERSION: 0.9.1
+    runs-on: ubuntu-latest
+    needs: qemu-nonsquashfs-teal
     strategy:
       matrix:
-        test: [ test-features, test-hooks, test-smoke, test-fallback, test-recovery, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
+        test: [ test-hooks, test-smoke, test-fallback, test-recovery1, test-recovery2, test-recovery3, test-recovery4, test-upgrades-images-signed, test-upgrades-images-unsigned, test-upgrades-local, test-deploys-images-recovery ]
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -742,12 +642,34 @@ jobs:
       - name: Download vagrant box
         uses: actions/download-artifact@v2
         with:
-          name: cOS-Packer-nonsquashfs-teal-vbox-x86_64.box
+          name: cOS-Packer-nonsquashfs-teal-QEMU-x86_64.box
           path: packer
+      - name: Install deps
+        run: sudo -E make deps
+      - name: Install deps (apt-get)
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get remove -y apparmor*
+            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
+      - name: Prepare libvirt
+        run: |
+          # Create bridge conf
+          sudo mkdir -p /etc/qemu/
+          echo "allow all" | sudo tee -a /etc/qemu/bridge.conf
+          sudo chmod u+r /etc/qemu/bridge.conf
+          sudo chmod u+s $(find /usr/ -name qemu-bridge-helper -print -quit|xargs)
+          # Set a static ip for our VM
+          sudo virsh net-update default add ip-dhcp-host "<host mac='52:54:00:00:00:01' name='jojo' ip='192.168.122.50' />" --live --config
+      - name: Enable serial for default vagrant-libvirt machine
+        run: |
+          # vagrant-libvirt does not support adding serials from config yet so we need to modify the default template directly
+          sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           go get -u github.com/onsi/gomega/...
           make test-clean
@@ -765,13 +687,7 @@ jobs:
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: cOS-nonsquashfs-${{ matrix.test }}.capture.zip
-          path: capture.webm
+          path: serial_log.log
           if-no-files-found: warn
       - name: Send failed status to slack
         if: failure()
