@@ -7,11 +7,11 @@ packages:
     fips: false
     labels:
       github.repo: "elemental-cli"
-      github.owner: "rancher"
+      github.owner: "itxaka"
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
       autobump.git.branch: "main"
-      git.hash: "1898af73e32848fe9c5a0f1dcdcaedc376472956"
+      git.hash: "e8ec5c9bf6ec1618bf05c779483bc348323e9d5a"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
