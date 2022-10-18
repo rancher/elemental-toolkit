@@ -171,8 +171,8 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	// WARNING this changed the order in which this is applied, now it is before mounting/preparing image area as in install/reset
-	err = u.upgradeHook("before-upgrade", false)
+	// before upgrade hook happens once partitions are RW mounted, just before image OS is deployed
+	err = u.upgradeHook(constants.BeforeUpgradeHook, false)
 	if err != nil {
 		u.Error("Error while running hook before-upgrade: %s", err)
 		return err
@@ -208,7 +208,7 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	err = u.upgradeHook("after-upgrade-chroot", true)
+	err = u.upgradeHook(constants.AfterUpgradeChrootHook, true)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
 		return err
@@ -223,12 +223,6 @@ func (u *UpgradeAction) Run() (err error) {
 			u.Error("failed setting default entry")
 			return err
 		}
-	}
-
-	err = u.upgradeHook("after-upgrade", false)
-	if err != nil {
-		u.Error("Error running hook after-upgrade: %s", err)
-		return err
 	}
 
 	err = e.UnmountImage(&upgradeImg)
@@ -269,6 +263,12 @@ func (u *UpgradeAction) Run() (err error) {
 	u.Info("Finished moving %s to %s", upgradeImg.File, finalImageFile)
 
 	_, _ = u.config.Runner.Run("sync")
+
+	err = u.upgradeHook(constants.AfterUpgradeHook, false)
+	if err != nil {
+		u.Error("Error running hook after-upgrade: %s", err)
+		return err
+	}
 
 	// Update state.yaml file on recovery and state partitions
 	err = u.upgradeInstallStateYaml(upgradeMeta, upgradeImg)

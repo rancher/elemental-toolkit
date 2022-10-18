@@ -121,11 +121,6 @@ func (i InstallAction) Run() (err error) {
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	err = i.installHook(cnst.BeforeInstallHook, false)
-	if err != nil {
-		return err
-	}
-
 	// Set installation sources from a downloaded ISO
 	if i.spec.Iso != "" {
 		tmpDir, err := e.GetIso(i.spec.Iso)
@@ -166,6 +161,12 @@ func (i InstallAction) Run() (err error) {
 	cleanup.Push(func() error {
 		return e.UnmountPartitions(i.spec.Partitions.PartitionsByMountPoint(true))
 	})
+
+	// Before install hook happens after partitioning but before the image OS is applied
+	err = i.installHook(cnst.BeforeInstallHook, false)
+	if err != nil {
+		return err
+	}
 
 	// Deploy active image
 	systemMeta, err := e.DeployImage(&i.spec.Active, true)

@@ -112,11 +112,6 @@ func (r ResetAction) Run() (err error) {
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
-	err = r.resetHook(cnst.BeforeResetHook, false)
-	if err != nil {
-		return err
-	}
-
 	// Unmount partitions if any is already mounted before formatting
 	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	if err != nil {
@@ -158,6 +153,12 @@ func (r ResetAction) Run() (err error) {
 	cleanup.Push(func() error {
 		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	})
+
+	// Before reset hook happens once partitions are aready and before deploying the OS image
+	err = r.resetHook(cnst.BeforeResetHook, false)
+	if err != nil {
+		return err
+	}
 
 	// Deploy active image
 	meta, err := e.DeployImage(&r.spec.Active, true)
