@@ -30,7 +30,7 @@ install() {
     # Include utilities required for cos-setup services,
     # probably a devoted cos-setup dracut module makes sense
     inst_multiple -o \
-        "$systemdutildir"/systemd-fsck partprobe sync udevadm lsblk parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount elemental
+        "$systemdutildir"/systemd-fsck partprobe sync udevadm lsblk parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount sgdisk elemental
     inst_hook cmdline 30 "${moddir}/parse-cos-cmdline.sh"
     inst_script "${moddir}/cos-generator.sh" \
         "${systemdutildir}/system-generators/dracut-cos-generator"
