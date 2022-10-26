@@ -1225,7 +1225,7 @@ k8s.io/mount-utils
 k8s.io/utils/exec
 k8s.io/utils/io
 k8s.io/utils/keymutex
-# maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066
+# maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066 => github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066
 ## explicit
 maze.io/x/crypto/afis
 # pault.ag/go/modprobe v0.1.2
@@ -1235,3 +1235,4 @@ pault.ag/go/modprobe
 ## explicit; go 1.16
 pault.ag/go/topsort
 # github.com/snapcore/secboot => github.com/chrisccoulson/secboot v0.0.0-20211101133820-41f32b803753
+# maze.io/x/crypto => github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066

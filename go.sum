@@ -1571,6 +1571,8 @@ github.com/snapcore/bolt v1.3.2-0.20210908134111-63c8bfcf7af8/go.mod h1:Z6z3sf12
 github.com/snapcore/go-gettext v0.0.0-20191107141714-82bbea49e785/go.mod h1:D3SsWAXK7wCCBZu+Vk5hc1EuKj/L3XN1puEMXTU4LrQ=
 github.com/snapcore/go-gettext v0.0.0-20201130093759-38740d1bd3d2 h1:nETXPg0CiJrMAwC2gqkcam9BiBWYGvTsSYRfrjOz2Kg=
 github.com/snapcore/go-gettext v0.0.0-20201130093759-38740d1bd3d2/go.mod h1:D3SsWAXK7wCCBZu+Vk5hc1EuKj/L3XN1puEMXTU4LrQ=
+github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066 h1:InG0EmriMOiI4YgtQNOo+6fNxzLCYioo3Q3BCVLdMCE=
+github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066/go.mod h1:VuAdaITF1MrGzxPU+8GxagM1HW2vg7QhEFEeGHbmEMU=
 github.com/snapcore/secboot v0.0.0-20211018143212-802bb19ca263/go.mod h1:72paVOkm4sJugXt+v9ItmnjXgO921D8xqsbH2OekouY=
 github.com/snapcore/secboot v0.0.0-20211207204151-239d06c34009/go.mod h1:72paVOkm4sJugXt+v9ItmnjXgO921D8xqsbH2OekouY=
 github.com/snapcore/secboot v0.0.0-20220406084634-6e724131009b h1:I1pAZFTtwoZ2oCjrMw1a6iSHkL4bQrBu3aOpB1FgBgg=

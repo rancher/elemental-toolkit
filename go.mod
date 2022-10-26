@@ -10,6 +10,9 @@ replace github.com/zloylos/grsync v1.6.1 => github.com/rancher-sandbox/grsync v1
 // This is directly coming from nullboot go.mod
 replace github.com/snapcore/secboot => github.com/chrisccoulson/secboot v0.0.0-20211101133820-41f32b803753
 
+// maze.io/x/crypto/afis imported by github.com/snapcore/secboot/tpm2
+replace maze.io/x/crypto => github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066
+
 require (
 	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
 	github.com/canonical/nullboot v0.4.0
