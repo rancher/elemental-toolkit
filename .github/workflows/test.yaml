@@ -9,19 +9,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.1.0
         with:
           fetch-depth: 0
       - name: Check if only Dockerfile has changed
         id: changed-docker-files
-        uses: tj-actions/changed-files@v18.2
+        uses: tj-actions/changed-files@v33
         with:
           files: |
             Dockerfile
             .github/workflows/docker.yaml
       - name: Install Go
         if: steps.changed-docker-files.outputs.only_changed == 'false'
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3.3.1
         with:
           go-version: '^1.17'
       - name: Deps
@@ -40,6 +40,6 @@ jobs:
           grep -v "mode: atomic" coverage_root.txt >> coverage.out
       - name: Codecov
         if: steps.changed-docker-files.outputs.only_changed == 'false'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3.1.1
         with:
           file: ./coverage.out
