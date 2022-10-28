@@ -164,7 +164,7 @@ jobs:
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          cd tests && go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -294,7 +294,7 @@ jobs:
       - name: Prepare tests 🔧
         run: |
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          cd tests && go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -336,7 +336,7 @@ jobs:
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          cd tests && go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -466,7 +466,7 @@ jobs:
       - name: Prepare tests 🔧
         run: |
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          cd tests && go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -582,7 +582,7 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          cd tests && go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
