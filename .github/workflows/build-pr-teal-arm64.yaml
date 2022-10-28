@@ -39,8 +39,8 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+            curl -L https://golang.org/dl/go1.18.7.linux-arm64.tar.gz -o go1.18.7.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.7.linux-arm64.tar.gz
       - name: Install make
         uses: nick-fields/retry@v2
         with:
@@ -250,7 +250,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -379,7 +379,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2

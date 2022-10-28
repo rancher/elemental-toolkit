@@ -1,4 +1,5 @@
 {{{ $config := (datasource "config") }}}
+{{{ define "go_version" }}}1.18.7{{{- end }}}
 
 {{{define "cos_version" }}}
       - name: Export cos version
@@ -86,13 +87,13 @@
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-{{{ $arch }}}.tar.gz -o go1.17.5.linux-{{{ $arch }}}.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-{{{ $arch }}}.tar.gz
+            curl -L https://golang.org/dl/go{{{ tmpl.Exec "go_version" }}}.linux-{{{ $arch }}}.tar.gz -o go{{{ tmpl.Exec "go_version" }}}.linux-{{{ $arch }}}.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go{{{ tmpl.Exec "go_version" }}}.linux-{{{ $arch }}}.tar.gz
   {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '{{{ tmpl.Exec "go_version" }}}'
   {{{- end }}}
   {{{- if $config.local_runner }}}
       - name: Install make
@@ -440,7 +441,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '{{{ tmpl.Exec "go_version" }}}'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -514,7 +515,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '{{{ tmpl.Exec "go_version" }}}'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -839,7 +840,7 @@
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '{{{ tmpl.Exec "go_version" }}}'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools

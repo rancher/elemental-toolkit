@@ -25,7 +25,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -199,7 +199,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -365,7 +365,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -455,7 +455,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -621,7 +621,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -810,7 +810,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18.7'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
