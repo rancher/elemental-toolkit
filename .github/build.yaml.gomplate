@@ -475,7 +475,6 @@
       - name: Prepare tests 🔧
         run: |
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -529,7 +528,6 @@
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           make test-installer-{{{$variant}}}
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -856,9 +854,8 @@
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
         if: failure()

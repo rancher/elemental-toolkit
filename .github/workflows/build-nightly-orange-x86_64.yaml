@@ -171,9 +171,8 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
         if: failure()

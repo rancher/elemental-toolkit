@@ -382,7 +382,6 @@ jobs:
       - name: Prepare tests 🔧
         run: |
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -567,7 +566,6 @@ jobs:
       - name: Prepare tests 🔧
         run: |
           go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          cd tests && go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
