@@ -23,13 +23,13 @@
 " />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/reference/packages/system-immutable-rootfs/" /><meta property="article:section" content="docs" />
-<meta property="article:published_time" content="2022-10-19T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-10-19T00:00:00+00:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:published_time" content="2022-10-31T00:00:00+00:00" />
+<meta property="article:modified_time" content="2022-10-31T00:00:00+00:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
 <meta itemprop="name" content="system/immutable-rootfs">
 <meta itemprop="description" content="Documentation for the system/immutable-rootfs package
-"><meta itemprop="datePublished" content="2022-10-19T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-10-19T00:00:00+00:00" />
+"><meta itemprop="datePublished" content="2022-10-31T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2022-10-31T00:00:00+00:00" />
 <meta itemprop="wordCount" content="977">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="system/immutable-rootfs"/>
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.ea839d239d31e8b3d9a189c0931d801f.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.f411dbb9752742334219a36daa4e0b2f.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.ea839d239d31e8b3d9a189c0931d801f.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.f411dbb9752742334219a36daa4e0b2f.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2191,7 +2191,7 @@ This package ships the <code>immutable-rootfs</code> dracut module responsible o
 boot time with the immutable specific setup. The immutability concept refers
 to read only root (<code>/</code>) system. To ensure the linux OS is still functional
 certain paths or areas are required to be writable, in those cases an
-ephemeral overaly tmpfs is set in place. Additionaly, the immutable rootfs
+ephemeral overlay tmpfs is set in place. Additionaly, the immutable rootfs
 module can also mount a custom list of device blocks with read write
 permissions, those are mostly devoted to store persistent data.</p>
 <p>The dracut module is mostly configured via kernel command line parameters or
@@ -2316,7 +2316,7 @@ volumes are mounted. Persistent state paths can&rsquo;t be an already existing m
 point. If the persistent state requires any of the paths that are part of the
 ephemeral area by default, then <code>RW_PATHS</code> needs to be defined to avoid
 overlapping paths.</p>
-<p>For exmaple a common cOS configuration can be expressed as part of the
+<p>For example a common cOS configuration can be expressed as part of the
 cloud-init configuration as follows:</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">example</span><span style="color:#f8f8f8;text-decoration:underline">
 </span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stage</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
