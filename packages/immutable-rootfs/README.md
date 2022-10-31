@@ -2,7 +2,7 @@ This package ships the `immutable-rootfs` dracut module responsible of mounting 
 boot time with the immutable specific setup. The immutability concept refers
 to read only root (`/`) system. To ensure the linux OS is still functional
 certain paths or areas are required to be writable, in those cases an
-ephemeral overaly tmpfs is set in place. Additionaly, the immutable rootfs
+ephemeral overlay tmpfs is set in place. Additionaly, the immutable rootfs
 module can also mount a custom list of device blocks with read write
 permissions, those are mostly devoted to store persistent data.
 
@@ -124,7 +124,7 @@ point. If the persistent state requires any of the paths that are part of the
 ephemeral area by default, then `RW_PATHS` needs to be defined to avoid
 overlapping paths.
 
-For exmaple a common cOS configuration can be expressed as part of the
+For example a common cOS configuration can be expressed as part of the
 cloud-init configuration as follows:
 
 ```yaml
