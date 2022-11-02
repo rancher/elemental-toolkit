@@ -167,7 +167,7 @@ func (u *UpgradeAction) Run() (err error) { // nolint:gocyclo
 			upgradeStateDir = constants.RecoveryDir
 		} else { // We are updating active
 			// Remount state partition RW
-			statePart, _ := utils.GetFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
+			statePart, _ := utils.GetcOSActiveFullDeviceByLabel(u.Config.Runner, u.Config.StateLabel, 2)
 			err = u.Config.Mounter.Mount(statePart.Path, statePart.MountPoint, "auto", []string{"remount", "rw"})
 			if err != nil {
 				u.Error("Error mounting %s: %s", statePart.MountPoint, err)

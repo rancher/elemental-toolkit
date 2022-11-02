@@ -76,6 +76,25 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 	return nil, errors.New("no device found")
 }
 
+// GetcOSActiveFullDeviceByLabel works like GetDeviceByLabel, but it will try to get as much info as possible from the existing
+// partition and make sure they are running(active)
+func GetcOSActiveFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Partition, error) {
+	for tries := 0; tries < attempts; tries++ {
+		_, _ = runner.Run("udevadm", "settle")
+		parts, err := GetAllPartitions()
+		if err != nil {
+			return nil, err
+		}
+		for _, part := range parts {
+			if part.Label == label && part.MountPoint == cnst.RunningStateDir {
+				return part, nil
+			}
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return nil, errors.New("no device found")
+}
+
 // CopyFile Copies source file to target file using Fs interface. If target
 // is  directory source is copied into that directory using source name file.
 func CopyFile(fs v1.FS, source string, target string) (err error) {

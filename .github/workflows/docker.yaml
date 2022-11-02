@@ -1,12 +1,5 @@
 name: Docker build and push
 on:
-  pull_request:
-    paths:
-      - Dockerfile
-      - .github/workflows/docker.yaml
-  push:
-    branches:
-      - main
     tags:
       - 'v*'
 jobs:
@@ -17,10 +10,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Install qemu-tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-utils
       - name: Export tag
         id: export_tag
         run: |
@@ -32,7 +21,7 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: |
-            quay.io/costoolkit/elemental
+            quay.io/costoolkit/elemental-ci
           tags: |
             type=semver,pattern=v{{version}}
             type=sha,format=short,prefix=${{ steps.export_tag.outputs.elemental_tag }}-
@@ -40,48 +29,13 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Quay
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_TOKEN }}
-      - name: Build image
+      - name: Push image
         uses: docker/build-push-action@v2
-        with:
-          context: .
-          tags: ${{ steps.meta.outputs.tags }}
-          load: true # loads it locally, so it can be used from docker client
-          # cache into GitHub actions cache, nice
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          target: elemental
-          build-args: |
-            ELEMENTAL_VERSION=${{ steps.export_tag.outputs.elemental_tag }}
-            ELEMENTAL_COMMIT=${{ github.sha }}
-      - name: Test elemental image version
-        run: docker run ${{ steps.meta.outputs.tags }} version --long
-      - name: Test elemental image install with --force-efi
-        run: |
-          # create a 30Gb file
-          qemu-img create -f raw disk-efi.img 30G
-          # mount loop device and get the device
-          LOOP=`sudo losetup -fP --show disk-efi.img`
-          docker run -v /dev/:/dev/ --privileged ${{ steps.meta.outputs.tags }} install --force-efi --debug -d quay.io/costoolkit/releases-green:cos-system-0.8.6 $LOOP
-          sudo losetup -D $LOOP
-          rm disk-efi.img
-      - name: Test elemental image install
-        run: |
-          # create a 30Gb file
-          qemu-img create -f raw disk.img 30G
-          # mount loop device and get the device
-          LOOP=`sudo losetup -fP --show disk.img`
-          docker run -v /dev/:/dev/ --privileged ${{ steps.meta.outputs.tags }} install --debug -d quay.io/costoolkit/releases-green:cos-system-0.8.6 $LOOP
-          sudo losetup -D $LOOP
-          rm disk.img
-      - name: Push image  # should be a free build as everything has been cached and loaded
-        uses: docker/build-push-action@v2
-        if: ${{ github.event_name != 'pull_request' }}
         with:
           context: .
           push: true

@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const source = "https://github.com/rancher-sandbox/elemental/releases/download/v0.0.13/elemental-v0.0.13-Linux-x86_64.tar.gz"
+const source = "https://github.com/rancher/elemental-cli/releases/download/v0.0.13/elemental-v0.0.13-Linux-x86_64.tar.gz"
 
 var _ = Describe("HTTPClient", Label("http"), func() {
 	var client *http.Client
