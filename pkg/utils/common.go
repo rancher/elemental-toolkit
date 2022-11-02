@@ -72,10 +72,9 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 		if err != nil {
 			return nil, err
 		}
-		for _, part := range parts {
-			if part.FilesystemLabel == label {
-				return part, nil
-			}
+		part := parts.GetByLabel(label)
+		if part != nil {
+			return part, nil
 		}
 		time.Sleep(1 * time.Second)
 	}

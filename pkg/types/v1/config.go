@@ -263,22 +263,32 @@ type PartitionList []*Partition
 
 // GetByName gets a partitions by its name from the PartitionList
 func (pl PartitionList) GetByName(name string) *Partition {
+	var part *Partition
+
 	for _, p := range pl {
 		if p.Name == name {
-			return p
+			part = p
+			if part.MountPoint != "" {
+				return part
+			}
 		}
 	}
-	return nil
+	return part
 }
 
 // GetByLabel gets a partition by its label from the PartitionList
 func (pl PartitionList) GetByLabel(label string) *Partition {
+	var part *Partition
+
 	for _, p := range pl {
 		if p.FilesystemLabel == label {
-			return p
+			part = p
+			if part.MountPoint != "" {
+				return part
+			}
 		}
 	}
-	return nil
+	return part
 }
 
 type ElementalPartitions struct {
