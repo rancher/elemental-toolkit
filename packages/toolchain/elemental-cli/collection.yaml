@@ -3,7 +3,7 @@ packages:
     name: "elemental-cli"
     bin_name: "elemental"
     category: "toolchain"
-    version: 0.20220419-1
+    version: 0.20220419-2
     fips: false
     labels:
       github.repo: "elemental"
@@ -11,7 +11,12 @@ packages:
       autobump.revdeps: "true"
       autobump.strategy: "git_hash"
       autobump.git.branch: "main"
-      git.hash: "edc412b0dd1c219a07e023d16cafb6251f7280cd"
+      # This points to a special branch created to fix a harvester upgrade 1.0.3 -> 1.1.0
+      # See:
+      # - https://github.com/rancher/elemental-cli/issues/348
+      # - https://github.com/harvester/harvester/issues/3070
+      # - elemental-cli branch: https://github.com/rancher/elemental-cli/tree/v0.0.14-harvester1
+      git.hash: "a04be02459e24df61fa9aea34945d6123daeab75"
 # - !!merge <<: *elemental
 #   category: "toolchain-fips"
 #   fips: true
