@@ -5,8 +5,7 @@ flavors:
     arches:
       x86_64:
         &x86_64
-        local_runner: true
-        runs_on: [ "self-hosted", "x64" ]
+        local_runner: false
         push_cache: true
         skip_build: false
         skip_docker_build: true
@@ -34,7 +33,7 @@ flavors:
 
         on:
           push:
-            branches: ["master"]
+            branches: ["master", "v0.8.9-11-harvester1"]
       arm64:
         &arm64
         local_runner: true
@@ -66,7 +65,7 @@ flavors:
 
         on:
           push:
-            branches: [ "master" ]
+            branches: [ "master", "v0.8.9-11-harvester1" ]
   orange:
     arches:
       x86_64:

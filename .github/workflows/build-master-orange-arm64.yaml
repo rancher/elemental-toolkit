@@ -3,6 +3,7 @@ on:
  push:
    branches:
      - master
+     - v0.8.9-11-harvester1
 concurrency:
   group: ci-master-orange-arm64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
