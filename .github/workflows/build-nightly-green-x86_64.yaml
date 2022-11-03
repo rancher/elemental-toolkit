@@ -25,7 +25,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -155,7 +155,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -171,8 +171,6 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
