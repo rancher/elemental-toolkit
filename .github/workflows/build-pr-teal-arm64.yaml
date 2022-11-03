@@ -283,8 +283,8 @@ jobs:
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          go install github.com/onsi/ginkgo/v2/ginkgo@latest
+          go install github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -412,8 +412,8 @@ jobs:
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
+          go install github.com/onsi/ginkgo/v2/ginkgo@latest
+          go install github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
