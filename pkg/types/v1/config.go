@@ -21,9 +21,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/rancher/elemental-cli/pkg/constants"
 	"gopkg.in/yaml.v3"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/pkg/constants"
 )
 
 const (
@@ -252,8 +253,8 @@ type Partition struct {
 	Name            string
 	FilesystemLabel string   `yaml:"label,omitempty" mapstructure:"label"`
 	Size            uint     `yaml:"size,omitempty" mapstructure:"size"`
-	FS              string   `yaml:"fs,omitempty" mapstrcuture:"fs"`
-	Flags           []string `yaml:"flags,omitempty" mapstrcuture:"flags"`
+	FS              string   `yaml:"fs,omitempty" mapstructure:"fs"`
+	Flags           []string `yaml:"flags,omitempty" mapstructure:"flags"`
 	MountPoint      string
 	Path            string
 	Disk            string
