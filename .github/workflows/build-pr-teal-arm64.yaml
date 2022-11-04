@@ -49,7 +49,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y make
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
@@ -93,7 +93,7 @@ jobs:
         run: |
           sudo -E make create-repo
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-teal-arm64
           path: build
@@ -117,7 +117,7 @@ jobs:
       FLAVOR: teal
       ARCH: arm64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
@@ -139,7 +139,7 @@ jobs:
           export DOCKER_INSTALL=true
           sudo -E make deps_ci
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-teal-arm64
           path: build
@@ -166,7 +166,7 @@ jobs:
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
           sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-teal-${{ env.COS_VERSION }}-arm64" make iso
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-nonsquashfs-teal-arm64.iso.zip
           path: |
@@ -190,9 +190,9 @@ jobs:
       PKR_VAR_firmware: /usr/share/AAVMF/AAVMF_CODE.fd
       PACKER_TARGET: qemu.cos-arm64-squashfs
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download ISO
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-teal-arm64.iso.zip
       - name: Install deps
@@ -213,20 +213,20 @@ jobs:
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cOS-Packer-squashfs-teal-QEMU-arm64.log
           path: |
             packer/*.log
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-squashfs-teal-QEMU-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-squashfs-teal-QEMU-arm64.box
           path: |
@@ -248,12 +248,12 @@ jobs:
         test: [ test-recovery1, test-recovery2, test-recovery3, test-recovery4 ]
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download vagrant box
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Packer-squashfs-teal-QEMU-arm64.box
           path: packer
@@ -288,13 +288,13 @@ jobs:
       - name: Run tests 🔧
         run: |
           make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-squashfs-${{ matrix.test }}.serial.zip
@@ -317,9 +317,9 @@ jobs:
       PKR_VAR_firmware: /usr/share/AAVMF/AAVMF_CODE.fd
       PACKER_TARGET: qemu.cos-arm64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download ISO
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-teal-arm64.iso.zip
       - name: Install deps
@@ -340,20 +340,20 @@ jobs:
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.log
           path: |
             packer/*.log
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.box
           path: |
@@ -375,12 +375,12 @@ jobs:
         test: [ test-smoke, test-upgrades-images-unsigned ]
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download vagrant box
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.box
           path: packer
@@ -415,13 +415,13 @@ jobs:
       - name: Run tests 🔧
         run: |
           make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-nonsquashfs-${{ matrix.test }}.serial.zip
@@ -454,9 +454,9 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-teal-arm64
           path: build
@@ -486,19 +486,19 @@ jobs:
           mv disk.raw cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64.raw
           mv disk.raw.vhd cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64.vhd
           mv disk.raw.tar.gz cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64
           path: |
             cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64.raw
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64
           path: |
             cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64.vhd
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64
           path: |

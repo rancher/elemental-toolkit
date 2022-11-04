@@ -42,7 +42,7 @@
 
 {{{define "prepare_worker" }}}
   {{{ $config := (datasource "config") }}}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
   {{{ tmpl.Exec "runner_cleanup" }}}
@@ -90,7 +90,7 @@
             sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-{{{ $arch }}}.tar.gz
   {{{- else }}}
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
   {{{- end }}}
@@ -270,7 +270,7 @@
       {{{ tmpl.Exec "git_permissions" }}}
       {{{ tmpl.Exec "make" "create-repo" }}}
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
@@ -296,7 +296,7 @@
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
@@ -318,7 +318,7 @@
         if: github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/')
         run: |
           sudo -E MAKEISO_ARGS="--squash-no-compression --name cOS-Seed-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}" make iso
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-{{{$subset}}}-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
           path: |
@@ -365,9 +365,9 @@
       {{{- end}}}
       {{{- end}}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download ISO
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Install deps
@@ -388,20 +388,20 @@
           source .github/helpers.sh
           export PKR_VAR_build=$(cos_version)
           make packer
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.log
           path: |
             packer/*.log
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
           path: |
             packer/*.tar.gz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           path: |
@@ -438,12 +438,12 @@
         test: [ {{{  join $subset_tests ", " }}} ]
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download vagrant box
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           path: packer
@@ -478,13 +478,13 @@
       - name: Run tests 🔧
         run: |
           make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-{{{$subset}}}-${{ matrix.test }}.serial.zip
@@ -510,12 +510,12 @@
     needs: iso-nonsquashfs-{{{ $flavor }}}
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download iso
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
       - name: Prepare tests 🔧
@@ -526,19 +526,19 @@
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
           make test-installer-{{{$variant}}}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-{{{$subset}}}-test-installer-{{{$variant}}}.record.zip
@@ -604,7 +604,7 @@
       {{{- end }}}
       {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
@@ -645,12 +645,12 @@
       LUET_REPO_ARCH: {{{ if eq $config.arch "x86_64"}}}amd64{{{else}}}{{{$config.arch}}}{{{end}}}
       FINAL_REPO: {{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: mikefarah/yq@v4.25.1
       - run: |
           yq '.urls = ["${{ env.FINAL_REPO }}"]' .github/cos.yaml.template | yq '.reference = "${{ github.ref_name }}-repository.yaml"' | yq '.arch = "${{ env.LUET_REPO_ARCH }}"'> cos-{{{ $config.arch }}}.yaml
       - name: upload repo file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cos-{{{ $config.arch }}}.yaml
           path: cos-{{{ $config.arch }}}.yaml
@@ -693,52 +693,52 @@
       LUET_INSTALL_FROM_COS_REPO: {{{ $config.luet_install_from_cos_repo }}}
     {{{- end }}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       {{{- if and $config.skip_images_flavor (has $config.skip_images_flavor $flavor) }}}
       {{{- else }}}
       - name: Download ISO
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
           path: iso-release
       {{{- if $config.build_image_qemu }}}
       - name: Download vagrant box (qemu)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           path: release
       - name: Download QCOW image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
           path: release
       {{{- end }}}
       {{{- if $config.build_raw_image }}}
       - name: Download GCE RAW image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: release
       - name: Download AZURE RAW image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: release
       - name: Download RAW image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: release
       {{{- end }}}
       {{{- end}}}
       - name: Download Image links
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
           path: release
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: cos-{{{ $config.arch }}}.yaml
           path: release
@@ -781,9 +781,9 @@
           command: |
             sudo apt-get update
             sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
@@ -801,19 +801,19 @@
           mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
           mv disk.raw.vhd cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
           mv disk.raw.tar.gz cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.tar.gz
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: |
             cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: |
             cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
           if-no-files-found: error
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: |
@@ -833,10 +833,10 @@
     needs: raw-images-{{{ $flavor }}}
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install deps
         run: brew install yq cdrtools
       - name: Export cos version
@@ -845,7 +845,7 @@
           source .github/helpers.sh
           echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
       - name: Download RAW image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
       - name: Run tests 🔧
@@ -862,19 +862,19 @@
           sudo chown $USER_ID:$GROUP_ID capture.webm || true
           sudo chmod 777 serial_port1.log
           sudo chmod 777 capture.webm || true
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.logs.zip
           path: tests/**/logs/*
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.serial.zip
           path: serial_port1.log
           if-no-files-found: warn
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.capture.zip
@@ -890,7 +890,7 @@
     runs-on: ubuntu-latest
     needs: publish-{{{$flavor}}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Generate link for {{{ $flavor }}}
         run: |
@@ -898,7 +898,7 @@
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
             echo "{{{$config.organization}}}/{{{$config.repository}}}-{{{ $flavor }}}{{{- if ne $config.arch "x86_64"}}}-{{{$config.arch}}}{{{end}}}:cos-system-${COS_VERSION}" > images-{{{ $flavor }}}-{{{ $config.arch }}}.txt
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: images-{{{ $flavor }}}-{{{$config.arch}}}.txt
           path: |
@@ -925,7 +925,7 @@
         shell: 'script -q -e -c "bash {0}"'
         run: |
           docker save {{{ $dir }}}:latest -o {{{ $dir }}}.tar
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: {{{ $dir }}}.tar
           path: |
@@ -984,7 +984,7 @@
           tag="{{{$tag}}}"
           P_VERSION="${tag/+/-}"
           # Set output parameters.
-          echo ::set-output name=tags::quay.io/costoolkit/framework:${P_VERSION}
+          echo "tags=quay.io/costoolkit/framework:${P_VERSION}" >> $GITHUB_OUTPUT
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2.0.0
         with:

@@ -51,7 +51,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y make
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
@@ -95,7 +95,7 @@ jobs:
         run: |
           sudo -E make create-repo
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-orange-arm64
           path: build
