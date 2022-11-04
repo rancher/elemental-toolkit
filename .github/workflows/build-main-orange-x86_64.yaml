@@ -24,10 +24,10 @@ jobs:
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
@@ -80,7 +80,7 @@ jobs:
         run: |
           sudo -E make create-repo
       - name: Upload results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-orange-x86_64
           path: build
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish-orange
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Run make deps_ci
         run: |
           export DOCKER_INSTALL=true
@@ -105,7 +105,7 @@ jobs:
             PACKAGE_VERSION=$(cos_package_version)
             export COS_VERSION="${PACKAGE_VERSION/+/-}"
             echo "quay.io/costoolkit/releases-orange:cos-system-${COS_VERSION}" > images-orange-x86_64.txt
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: images-orange-x86_64.txt
           path: |
@@ -132,10 +132,10 @@ jobs:
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
             go-version: '1.18'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
       - name: Release space from worker ♻
@@ -170,7 +170,7 @@ jobs:
           export DOCKER_INSTALL=true
           sudo -E make deps_ci
       - name: Download result for build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: build-orange-x86_64
           path: build
