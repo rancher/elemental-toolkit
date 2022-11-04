@@ -38,8 +38,9 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+            curl -L https://golang.org/dl/go1.18.8.linux-arm64.tar.gz -o go1.18.8.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
       - name: Install make
         uses: nick-fields/retry@v2
         with:
@@ -76,7 +77,6 @@ jobs:
           sudo -E make validate
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go
@@ -345,10 +345,34 @@ jobs:
       matrix:
         test: [ test-recovery1, test-recovery2, test-recovery3, test-recovery4 ]
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: nick-fields/retry@v2
         with:
-            go-version: '1.18'
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.18.8.linux-arm64.tar.gz -o go1.18.8.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
+      - name: Install make
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v3
       - name: Download vagrant box
         uses: actions/download-artifact@v3
@@ -528,10 +552,34 @@ jobs:
       matrix:
         test: [ test-smoke, test-upgrades-images-unsigned ]
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf build || true
+          sudo rm -rf bin || true
+          sudo rm /usr/bin/luet || true
+          sudo rm -Rf /etc/luet/ || true
+          sudo rm -Rf /var/tmp/luet || true
+          sudo rm -Rf /var/luet || true
+          sudo rm -Rf root oem efi || true
+          docker system prune -f -a --volumes || true
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: nick-fields/retry@v2
         with:
-            go-version: '1.18'
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            curl -L https://golang.org/dl/go1.18.8.linux-arm64.tar.gz -o go1.18.8.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
+      - name: Install make
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y make
       - uses: actions/checkout@v3
       - name: Download vagrant box
         uses: actions/download-artifact@v3
@@ -689,8 +737,9 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+            curl -L https://golang.org/dl/go1.18.8.linux-arm64.tar.gz -o go1.18.8.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
       - name: Install make
         uses: nick-fields/retry@v2
         with:
@@ -750,7 +799,6 @@ jobs:
           sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
           go build -o build build.go
           popd
@@ -767,7 +815,6 @@ jobs:
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
           sudo -E REFERENCEID=repository.yaml make sign_artifacts

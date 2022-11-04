@@ -39,8 +39,9 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-arm64.tar.gz -o go1.17.5.linux-arm64.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-arm64.tar.gz
+            curl -L https://golang.org/dl/go1.18.8.linux-arm64.tar.gz -o go1.18.8.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
       - name: Install make
         uses: nick-fields/retry@v2
         with:
@@ -75,7 +76,6 @@ jobs:
           sudo -E make validate
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go

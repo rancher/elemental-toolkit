@@ -53,7 +53,6 @@ jobs:
           sudo -E make validate
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go

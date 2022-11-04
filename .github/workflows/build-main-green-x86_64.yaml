@@ -49,7 +49,6 @@ jobs:
           sudo -E make validate
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go
@@ -180,7 +179,6 @@ jobs:
           sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
           go build -o build build.go
           popd
@@ -197,7 +195,6 @@ jobs:
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
           sudo -E REFERENCEID=repository.yaml make sign_artifacts

@@ -46,7 +46,6 @@ jobs:
           sudo -E make validate
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go
@@ -152,6 +151,11 @@ jobs:
     runs-on: macos-12
     needs: raw-images-green
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -170,8 +174,6 @@ jobs:
           name: cOS-Vanilla-RAW-green-${{ env.COS_VERSION }}-x86_64
       - name: Run tests 🔧
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
         if: failure()
