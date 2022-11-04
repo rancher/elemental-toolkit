@@ -26,7 +26,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -215,7 +215,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -228,8 +228,6 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -381,7 +379,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -414,8 +412,6 @@ jobs:
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -471,7 +467,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Download iso
         uses: actions/download-artifact@v2
@@ -484,8 +480,6 @@ jobs:
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           make test-installer-efi
       - uses: actions/upload-artifact@v2
         if: failure()
@@ -637,7 +631,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Download vagrant box
         uses: actions/download-artifact@v2
@@ -670,8 +664,6 @@ jobs:
           sudo sed -i "s|<serial type='pty'>|<serial type='file'><source path='$GITHUB_WORKSPACE/serial_log.log'/>|" $(sudo find /usr/share -name "domain.xml.erb" -print -quit|xargs)
       - name: Prepare tests 🔧
         run: |
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           make test-clean
           make prepare-test
       - name: Run tests 🔧
@@ -788,7 +780,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
@@ -1143,7 +1135,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-            go-version: '1.17'
+            go-version: '1.18'
       - uses: actions/checkout@v2
       - name: Install deps
         run: brew install yq cdrtools
@@ -1159,8 +1151,6 @@ jobs:
       - name: Run tests 🔧
         run: |
           export GOPATH="/Users/runner/go"
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
