@@ -45,7 +45,6 @@
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-  {{{ tmpl.Exec "runner_cleanup" }}}
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
@@ -53,10 +52,11 @@
 
 {{{define "runner_cleanup" }}}
   {{{ $config := (datasource "config") }}}
+  {{{ $local_runner := . }}}
       - name: Release space from worker ♻
         if: always()
         run: |
-  {{{- if $config.local_runner }}}
+  {{{- if $local_runner }}}
           sudo rm -rf build || true
           sudo rm -rf bin || true
           sudo rm /usr/bin/luet || true
@@ -73,9 +73,9 @@
 
 {{{define "prepare_build" }}}
   {{{ $config := (datasource "config") }}}
-  {{{ tmpl.Exec "runner_cleanup" }}}
+  {{{ $local_runner := . }}}
 
-  {{{- if $config.local_runner }}}
+  {{{- if $local_runner }}}
   {{{ $arch := $config.arch }}}
   {{{ if eq $arch "x86_64" }}}
   {{{ $arch = "amd64" }}}
@@ -86,15 +86,16 @@
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.17.5.linux-{{{ $arch }}}.tar.gz -o go1.17.5.linux-{{{ $arch }}}.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.5.linux-{{{ $arch }}}.tar.gz
+            curl -L https://golang.org/dl/go1.18.8.linux-{{{ $arch }}}.tar.gz -o go1.18.8.linux-{{{ $arch }}}.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-{{{ $arch }}}.tar.gz
+            echo "/usr/local/go/bin" >> $GITHUB_PATH
   {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v3
         with:
             go-version: '1.18'
   {{{- end }}}
-  {{{- if $config.local_runner }}}
+  {{{- if $local_runner }}}
       - name: Install make
         uses: nick-fields/retry@v2
         with:
@@ -181,6 +182,7 @@
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       - name: Docker meta
         id: meta
@@ -234,7 +236,8 @@
       SKIP_PACKAGES: "build/golang-fips toolchain-fips/yip toolchain-fips/luet-makeiso toolchain-fips/luet live/syslinux live/systemd-boot live/boot"
       {{{- end }}}
     steps:
-      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
+      {{{ tmpl.Exec "prepare_build" $config.local_runner }}}
       {{{ tmpl.Exec "prepare_worker" }}}
   {{{- if or $config.publishing_pipeline $config.push_cache }}}
       - name: Login to Quay Registry
@@ -244,7 +247,6 @@
       {{{ tmpl.Exec "make" "validate" }}}
       - name: Build packages 🔧
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           mkdir build || true
           pushd ./.github
           go build -o build build.go
@@ -275,7 +277,7 @@
           name: build-{{{ $flavor }}}-{{{ $config.arch }}}
           path: build
           if-no-files-found: error
-      {{{ tmpl.Exec "runner_cleanup" }}}
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{end}}}
 
@@ -293,6 +295,7 @@
       FLAVOR: {{{ $flavor }}}
       ARCH: {{{ $config.arch }}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" false }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Download result for build
@@ -437,10 +440,8 @@
       matrix:
         test: [ {{{  join $subset_tests ", " }}} ]
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-            go-version: '1.18'
+      {{{ tmpl.Exec "runner_cleanup" false }}} 
+      {{{ tmpl.Exec "prepare_build" false }}}
       - uses: actions/checkout@v3
       - name: Download vagrant box
         uses: actions/download-artifact@v3
@@ -509,10 +510,7 @@
     runs-on: macos-12
     needs: iso-nonsquashfs-{{{ $flavor }}}
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-            go-version: '1.18'
+      {{{ tmpl.Exec "prepare_build" false }}}
       - uses: actions/checkout@v3
       - name: Download iso
         uses: actions/download-artifact@v3
@@ -523,8 +521,6 @@
           make create_vm_from_iso_{{{$variant}}}
       - name: Run tests 🔧
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           make test-installer-{{{$variant}}}
       - uses: actions/upload-artifact@v3
         if: failure()
@@ -579,7 +575,8 @@
       {{{- end }}}
       COSIGN_EXPERIMENTAL: 1 # use keyless signing
     steps:
-      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "runner_cleanup" false }}}
+      {{{ tmpl.Exec "prepare_build" false }}}
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{- if or $config.publishing_pipeline $config.push_cache }}}
       - name: cosign-installer
@@ -614,7 +611,6 @@
           sudo -E make add_local_repo
       - name: Grab metadata from remotes
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           pushd ./.github
           go build -o build build.go
           popd
@@ -626,7 +622,6 @@
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
-          export PATH=$PATH:/usr/local/go/bin
           sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
           sudo -E REFERENCEID=repository.yaml make sign_artifacts
@@ -772,7 +767,7 @@
       ARCH: {{{ $config.arch }}}
       LUET_ARCH: {{{ $config.arch }}}
     steps:
-    {{{ tmpl.Exec "runner_cleanup" }}}
+    {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       - name: Install OS deps
         uses: nick-fields/retry@v2
         with:
@@ -832,10 +827,7 @@
     runs-on: macos-12
     needs: raw-images-{{{ $flavor }}}
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-            go-version: '1.18'
+      {{{ tmpl.Exec "prepare_build" false }}}
       - uses: actions/checkout@v3
       - name: Install deps
         run: brew install yq cdrtools
@@ -850,8 +842,6 @@
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
       - name: Run tests 🔧
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           sudo -E make raw_disk_test_deploy
       - name: Change logs ownership
         if: failure()
@@ -913,8 +903,9 @@
     {{{ tmpl.Exec "runner" }}}
     {{{tmpl.Exec "if_with_labels" }}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       {{{ tmpl.Exec "prepare_worker" }}}
-      {{{ tmpl.Exec "prepare_build" }}}
+      {{{ tmpl.Exec "prepare_build" $config.local_runner }}}
       {{{ tmpl.Exec "make" "deps_ci" }}}
       - name: Build {{{ $dir }}} 🔧
         shell: 'script -q -e -c "bash {0}"'
@@ -958,6 +949,7 @@
     {{{ tmpl.Exec "runner" }}}
     needs: publish-{{{$flavor}}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       {{{tmpl.Exec "toolchain_images_steps" "${{ env.COS_VERSION }}"}}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
   build-toolchain-latest:
@@ -965,6 +957,7 @@
     {{{ tmpl.Exec "runner" }}}
     needs: publish-{{{$flavor}}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       {{{tmpl.Exec "toolchain_images_steps" "latest"}}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{- end}}}
@@ -1012,6 +1005,7 @@
     runs-on: ubuntu-latest
     needs: publish-{{{$flavor}}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" false }}}
       {{{tmpl.Exec "framework_images_steps" "${{ env.COS_VERSION }}"}}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
   build-framework-latest:
@@ -1019,6 +1013,7 @@
     runs-on: ubuntu-latest
     needs: publish-{{{$flavor}}}
     steps:
+      {{{ tmpl.Exec "runner_cleanup" false }}}
       {{{tmpl.Exec "framework_images_steps" "latest"}}}
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{- end}}}
