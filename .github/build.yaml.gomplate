@@ -74,6 +74,7 @@
 {{{define "prepare_build" }}}
   {{{ $config := (datasource "config") }}}
   {{{ $local_runner := . }}}
+  {{{ $go_version := "1.18.8" }}}
 
   {{{- if $local_runner }}}
   {{{ $arch := $config.arch }}}
@@ -86,14 +87,14 @@
           timeout_minutes: 5
           max_attempts: 3
           command: |
-            curl -L https://golang.org/dl/go1.18.8.linux-{{{ $arch }}}.tar.gz -o go1.18.8.linux-{{{ $arch }}}.tar.gz
-            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-{{{ $arch }}}.tar.gz
+            curl -L https://golang.org/dl/go{{{ $go_version }}}.linux-{{{ $arch }}}.tar.gz -o go{{{ $go_version }}}.linux-{{{ $arch }}}.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go{{{ $go_version }}}.linux-{{{ $arch }}}.tar.gz
             echo "/usr/local/go/bin" >> $GITHUB_PATH
   {{{- else }}}
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-            go-version: '1.18'
+            go-version: '{{{ $go_version }}}'
   {{{- end }}}
   {{{- if $local_runner }}}
       - name: Install make
