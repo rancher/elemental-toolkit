@@ -19,22 +19,17 @@ jobs:
   docker-build-example-cos-official:
     runs-on: ubuntu-latest
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -60,22 +55,17 @@ jobs:
   docker-build-example-scratch:
     runs-on: ubuntu-latest
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -101,22 +91,17 @@ jobs:
   docker-build-example-standard:
     runs-on: ubuntu-latest
     steps:
+      - name: Release space from worker ♻
+        if: always()
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install CI plugins
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Release space from worker ♻
-        if: always()
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
       - name: Install Go
         uses: actions/setup-go@v3
         with:
