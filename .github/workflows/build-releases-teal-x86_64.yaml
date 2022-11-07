@@ -788,7 +788,7 @@ jobs:
         run: |
             sudo cp -rfv .github/plugins/* /usr/bin/
       - name: cosign-installer
-        uses: sigstore/cosign-installer@v2.5.1
+        uses: sigstore/cosign-installer@v2
       - name: Fix cosign binary for root
         run: |
           cosign_bin="$HOME/.cosign/cosign"
