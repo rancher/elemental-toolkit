@@ -24,7 +24,7 @@ on:
         description: Name of the repository.yaml that will be downloaded.
       cosign-version:
         required: false
-        default: "v1.11.1"
+        default: "v1.13.1"
         type: string
         description: Cosign version to install and use
       debug:
@@ -48,7 +48,7 @@ jobs:
       DEBUGLOGLEVEL: ${{ github.event.inputs.debug }}
     steps:
       - name: Install Cosign
-        uses: sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@v2
         with:
           cosign-release: ${{ github.event.inputs.cosign-version }}
       - name: Fix cosign binary for root

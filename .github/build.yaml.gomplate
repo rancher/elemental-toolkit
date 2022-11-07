@@ -580,7 +580,7 @@
       {{{ tmpl.Exec "prepare_worker" }}}
       {{{- if or $config.publishing_pipeline $config.push_cache }}}
       - name: cosign-installer
-        uses: sigstore/cosign-installer@v2.5.1
+        uses: sigstore/cosign-installer@v2
       - name: Fix cosign binary for root
         run: |
           cosign_bin="$HOME/.cosign/cosign"
