@@ -522,7 +522,7 @@ func (c Elemental) SetDefaultGrubEntry() error {
 	part = c.config.Partitions.GetByName(cnst.StatePartName)
 	if part == nil {
 		// Try to fall back to get it via StateLabel
-		p, err := utils.GetFullDeviceByLabel(c.config.Runner, c.config.StateLabel, 5)
+		p, err := utils.GetcOSActiveFullDeviceByLabel(c.config.Runner, c.config.StateLabel, 5)
 		if err != nil {
 			return errors.New("state partition not found. Cannot set grub env file")
 		} else if p.MountPoint == "" {
