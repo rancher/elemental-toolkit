@@ -19,6 +19,7 @@ package cmd
 import (
 	"os"
 
+	eleError "github.com/rancher/elemental-cli/pkg/error"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,6 +48,12 @@ var rootCmd = NewRootCmd()
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		switch t := err.(type) {
+		case *eleError.ElementalError:
+			os.Exit(t.ExitCode())
+		default:
+			os.Exit(1)
+
+		}
 	}
 }

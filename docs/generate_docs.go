@@ -18,7 +18,14 @@ package main
 
 import (
 	"fmt"
+	"go/ast"
+	godoc "go/doc"
+	"go/parser"
+	"go/token"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/rancher/elemental-cli/cmd"
 	"github.com/spf13/cobra"
@@ -49,4 +56,64 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	generateExitCodes()
+}
+
+func generateExitCodes() {
+	fset := token.NewFileSet()
+	files := []*ast.File{
+		mustParse(fset, "../pkg/error/exit-codes.go"),
+	}
+	p, err := godoc.NewFromFiles(fset, files, "github.com/rancher/elemental-cli")
+	if err != nil {
+		panic(err)
+	}
+	var exitCodes []*ErrorCode
+
+	for _, c := range p.Consts {
+		// Cast it, its safe as these are constants
+		v := c.Decl.Specs[0].(*ast.ValueSpec)
+		val := v.Values[0].(*ast.BasicLit)
+		code, _ := strconv.Atoi(val.Value)
+		exitCodes = append(exitCodes, &ErrorCode{code: code, doc: c.Doc})
+	}
+
+	sort.Slice(exitCodes[:], func(i, j int) bool {
+		return exitCodes[i].code < exitCodes[j].code
+	})
+
+	exitCodesFile, err := os.Create("elemental_exit-codes.md")
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	defer func() {
+		_ = exitCodesFile.Close()
+	}()
+
+	_, _ = exitCodesFile.WriteString("# Exit codes for elemental CLI\n\n\n")
+	_, _ = exitCodesFile.WriteString("| Exit code | Meaning |\n")
+	_, _ = exitCodesFile.WriteString("| :----: | :---- |\n")
+	for _, code := range exitCodes {
+		_, err = exitCodesFile.WriteString(fmt.Sprintf("| %d | %s|\n", code.code, strings.Replace(code.doc, "\n", "", 1)))
+		if err != nil {
+			return
+		}
+	}
+
+}
+
+func mustParse(fset *token.FileSet, filename string) *ast.File {
+	f, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+type ErrorCode struct {
+	code int
+	doc  string
 }

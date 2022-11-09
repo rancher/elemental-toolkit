@@ -17,7 +17,7 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
+	eleError "github.com/rancher/elemental-cli/pkg/error"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -49,12 +49,12 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			flags := cmd.Flags()
 			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), flags, mounter)
 			if err != nil {
-				return err
+				return eleError.NewFromError(err, eleError.ReadingBuildConfig)
 			}
 
 			err = validateCosignFlags(cfg.Logger, flags)
 			if err != nil {
-				return err
+				return eleError.NewFromError(err, eleError.CosignWrongFlags)
 			}
 
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
@@ -64,7 +64,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			spec, err := config.ReadBuildDisk(cfg, flags)
 			if err != nil {
 				cfg.Logger.Errorf("invalid install command setup %v", err)
-				return err
+				return eleError.NewFromError(err, eleError.ReadingBuildDiskConfig)
 			}
 
 			// Get the spec for the arch only
@@ -89,15 +89,10 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if exists, _ := utils.Exists(cfg.Fs, output); exists {
 				cfg.Logger.Errorf("Output file %s exists, refusing to continue", output)
-				return fmt.Errorf("output file %s exists, refusing to continue", output)
+				return eleError.NewFromError(err, eleError.OutFileExists)
 			}
 
-			err = action.BuildDiskRun(cfg, specArch, imgType, oemLabel, recoveryLabel, output)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return action.BuildDiskRun(cfg, specArch, imgType, oemLabel, recoveryLabel, output)
 		},
 	}
 	root.AddCommand(c)
