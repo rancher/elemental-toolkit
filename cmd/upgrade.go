@@ -25,6 +25,7 @@ import (
 
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 )
 
 // NewUpgradeCmd returns a new instance of the upgrade subcommand and appends it to
@@ -52,10 +53,12 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
 			if err := validateInstallUpgradeFlags(cfg.Logger, cmd.Flags()); err != nil {
-				return err
+				cfg.Logger.Errorf("Error reading install/upgrade flags: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingInstallUpgradeFlags)
 			}
 
 			// Adapt 'docker-image' and 'directory'  deprecated flags to 'system' syntax
@@ -67,8 +70,8 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags())
 			if err != nil {
-				cfg.Logger.Errorf("invalid upgrade command setup %v", err)
-				return err
+				cfg.Logger.Errorf("Invalid upgrade command setup %v", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
 			cfg.Logger.Infof("Upgrade called")

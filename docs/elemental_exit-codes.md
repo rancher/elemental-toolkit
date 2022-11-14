@@ -24,4 +24,21 @@
 | 28 | Error running stat on a file|
 | 29 | Error creating a tar archive|
 | 30 | Error truncating a file|
+| 31 | Error reading the run config|
+| 32 | Error reading the install/upgrade flags|
+| 33 | Error reading the upgrade config|
+| 34 | Error mounting state partition|
+| 35 | Error mounting recovery partition|
+| 36 | Error during before-upgrade hook|
+| 37 | Error during before-upgrade-chroot hook|
+| 38 | Error during after-upgrade hook|
+| 39 | Error during after-upgrade-chroot hook|
+| 40 | Error moving file|
+| 41 | Error occurred during cleanup|
+| 42 | Error occurred trying to reboot|
+| 43 | Error occurred trying to shutdown|
+| 44 | Error occurred when unmounting image|
+| 44 | Error occurred when labeling partition|
+| 45 | Error setting default grub entry|
+| 46 | Error occurred during selinux relabeling|
 | 255 | Unknown error|

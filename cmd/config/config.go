@@ -29,7 +29,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sanity-io/litter"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -142,15 +141,15 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 
 	configLogger(cfg.Logger, cfg.Fs)
 
-	// TODO: is this really needed? It feels quite wrong, shouldn't it be loaded
-	// as regular environment variables?
-	// IMHO loading os-release as env variables should be sufficient here
-	cfgDefault := []string{"/etc/os-release"}
-	for _, c := range cfgDefault {
-		if exists, _ := utils.Exists(cfg.Fs, c); exists {
-			viper.SetConfigFile(c)
-			viper.SetConfigType("env")
-			cobra.CheckErr(viper.MergeInConfig())
+	const cfgDefault = "/etc/os-release"
+	if exists, _ := utils.Exists(cfg.Fs, cfgDefault); exists {
+		viper.SetConfigFile(cfgDefault)
+		viper.SetConfigType("env")
+
+		err := viper.MergeInConfig()
+		if err != nil {
+			cfg.Logger.Warnf("error merging os-release file: %s", err)
+			return cfg, err
 		}
 	}
 
@@ -163,6 +162,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 		err := viper.MergeInConfig()
 		if err != nil {
 			cfg.Logger.Warnf("error merging config files: %s", err)
+			return cfg, err
 		}
 	}
 
@@ -170,14 +170,20 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
 	if exists, _ := utils.Exists(cfg.Fs, cfgExtra); exists {
 		viper.AddConfigPath(cfgExtra)
-		_ = filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
 				viper.SetConfigType("yaml")
 				viper.SetConfigName(strings.TrimSuffix(d.Name(), ".yaml"))
-				cobra.CheckErr(viper.MergeInConfig())
+
+				return viper.MergeInConfig()
 			}
 			return nil
 		})
+
+		if err != nil {
+			cfg.Logger.Warnf("error merging extra config files: %s", err)
+			return cfg, err
+		}
 	}
 
 	// Bind runconfig flags
@@ -256,6 +262,7 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, er
 	err = vp.Unmarshal(upgrade, setDecoder, decodeHook)
 	if err != nil {
 		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
+		return nil, err
 	}
 	err = upgrade.Sanitize()
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))

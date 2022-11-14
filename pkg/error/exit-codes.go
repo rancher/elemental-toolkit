@@ -91,5 +91,56 @@ const TarHeader = 29
 // Error truncating a file
 const TruncateFile = 30
 
+// Error reading the run config
+const ReadingRunConfig = 31
+
+// Error reading the install/upgrade flags
+const ReadingInstallUpgradeFlags = 32
+
+// Error reading the upgrade config
+const ReadingUpgradeConfig = 33
+
+// Error mounting state partition
+const MountStatePartition = 34
+
+// Error mounting recovery partition
+const MountRecoveryPartition = 35
+
+// Error during before-upgrade hook
+const HookBeforeUpgrade = 36
+
+// Error during before-upgrade-chroot hook
+const HookBeforeUpgradeChroot = 37
+
+// Error during after-upgrade hook
+const HookAfterUpgrade = 38
+
+// Error during after-upgrade-chroot hook
+const HookAfterUpgradeChroot = 39
+
+// Error moving file
+const MoveFile = 40
+
+// Error occurred during cleanup
+const Cleanup = 41
+
+// Error occurred trying to reboot
+const Reboot = 42
+
+// Error occurred trying to shutdown
+const Shutdown = 43
+
+// Error occurred when labeling partition
+const LabelImage = 44
+
+// Error occurred when unmounting image
+const UnmountImage = 44
+
+// Error setting default grub entry
+const SetDefaultGrubEntry = 45
+
+// Error occurred during selinux relabeling
+const SelinuxRelabel = 46
+
 // Unknown error
 const Unknown int = 255
