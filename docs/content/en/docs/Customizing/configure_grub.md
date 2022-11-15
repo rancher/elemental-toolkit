@@ -90,13 +90,8 @@ Use `grub2-editenv` command line utility to define the desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /oem/grubenv set next_entry=recovery
+> grub2-editenv /run/cos-state/grub2/grub_oem_env set next_entry=recovery
 ```
-
-{{% alert title="Note" %}}
-The examples below make of the `COS_OEM` device, however it could use any device
-detected by GRUB2 that includes the file `/grubenv`. First match wins.
-{{% /alert %}}
 
 ### Default boot entry
 
@@ -117,13 +112,13 @@ Use `grub2-editenv` command line utility to define desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /oem/grubenv set next_entry=recovery
+> grub2-editenv /run/cos-state/grub2/grub_oem_env set next_entry=recovery
 ```
 
 Or to set the default entry to `fallback` system:
 
 ```bash
-> grub2-editenv /oem/grubenv set saved_entry=fallback
+> grub2-editenv /run/cos-state/grub2/grub_oem_env set saved_entry=fallback
 ```
 
 ## Boot menu
@@ -149,13 +144,13 @@ will automatically set the GRUB menu entries for active, passive and recovery to
 The grub menu boot entry can also be set with `grub2-editenv`:
 
 ```bash
-> grub2-editenv /oem/grubenv set default_menu_entry=fooOS
+> grub2-editenv /run/cos-state/grub2/grub_oem_env set default_menu_entry=fooOS
 ```
 
 {{% alert title="Additional menu entries" %}}
 
-Since {{<package package="system/grub2-config" >}} >= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a `/grubmenu` config file in one of the available partitions detected by GRUB2 during boot. The file will be loaded from the first partition found by GRUB that have the `grubmenu` file. First match wins. 
-The `grubmenu` file will be sourced at the end of the boot process, and can contain several `menuentry` blocks.
+Since {{<package package="system/grub2-config" >}} >= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a `/grub2/grubcustom` config file in the state partition. The file will be loaded from the state partition. 
+The `grubcustom` file will be sourced at the end of the boot process, and can contain several `menuentry` blocks.
 
 {{% /alert %}}
 
@@ -176,7 +171,7 @@ By default Elemental boots into active, and if there are failures will boot into
 It is possible to override the default fallback logic by setting `default_fallback` as grub environment, consider for example:
 
 ```bash
-> grub2-editenv /oem/grubenv set default_fallback="2 0 1"
+> grub2-editenv /run/cos-state/grub2/grub_oem_env set default_fallback="2 0 1"
 ```
 
 Will set the default fallback to "2 0 1" instead of the default "0 1 2".

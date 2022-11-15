@@ -10,14 +10,14 @@ The boot assessment process works in the following way:
 
 The grub sentinel files are in the COS_STATE partition, and get installed automatically after reset, install and upgrade:
 
-- `/boot_assessment` - contains the GRUB env sentinel variables
-- `/grub_boot_assessment` - contains the GRUB logic for booting into fallback
+- `/grub2/boot_assessment` - contains the GRUB env sentinel variables
+- `/grub2/grub_boot_assessment` - contains the GRUB logic for booting into fallback
 
-Note: The extra GRUB logic is installed and sourced into `/grubcustom` inside `COS_STATE`.
+Note: The extra GRUB logic is installed and sourced into `/grub2/grubcustom` inside `COS_STATE`.
 
 When a boot failure is detected and the fallback is automatically selected, it will be created a `/run/cos/upgrade_failure` sentinel file during the boot process, which is accessible under the `boot` cloud-init stage.
 
-To enable boot assessment besides upgrades, `enable_boot_assessment_always` can be set to `yes` in the grub environment ( for example in `/oem/grubenv` ).
+To enable boot assessment besides upgrades, `enable_boot_assessment_always` can be set to `yes` in the grub environment ( for example in `/run/cos-state/grub2/grubenv` ).
 
 ## Manually enabling boot assessment
 
@@ -25,7 +25,7 @@ To manually trigger the boot assessment for the next boot, you can run the follo
 
 ```
 sudo mount -o rw,remount /run/initramfs/cos-state
-grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=yes
+grub2-editenv /run/initramfs/cos-state/grub2/boot_assessment set enable_boot_assessment=yes
 sudo mount -o ro,remount /run/initramfs/cos-state
 ```
 
@@ -37,7 +37,7 @@ If you are planning to do manual intervention and want to hook up with that cons
 
 ```
 sudo mount -o rw,remount /run/initramfs/cos-state
-grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
-grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
+grub2-editenv /run/initramfs/cos-state/grub2/boot_assessment set enable_boot_assessment=
+grub2-editenv /run/initramfs/cos-state/grub2/boot_assessment set boot_assessment_tentative=
 sudo mount -o ro,remount /run/initramfs/cos-state
 ```

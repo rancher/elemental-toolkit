@@ -1,27 +1,15 @@
 set timeout=10
 
-# Load custom env file
-set env_file="/grubenv"
-search --no-floppy --file --set=env_blk "${env_file}"
+# Load env file if file exists and size its not 0
+search --no-floppy --label --set=customenv @STATE_LABEL@
 
-# Load custom env file
-set oem_env_file="/grub_oem_env"
-search --no-floppy --file --set=oem_blk "${oem_env_file}"
-
-# Load custom config file
-set custom_menu="/grubmenu"
-search --no-floppy --file --set=menu_blk "${custom_menu}"
-
-# Load custom config file
-set custom="/grubcustom"
-search --no-floppy --file --set=custom_blk "${custom}"
-
-if [ "${oem_blk}" ] ; then
-  load_env -f "(${oem_blk})${oem_env_file}"
+if [ test -s (${customenv})/grub_oem_env ] ; then
+  load_env -f "(${customenv})/grub_oem_env"
 fi
 
-if [ "${env_blk}" ] ; then
-  load_env -f "(${env_blk})${env_file}"
+# Load extra config if file exists and size its not 0
+if [ test -s (${customenv})/grubcustom ]; then
+  source "(${customenv})/grubcustom"
 fi
 
 # Save default
@@ -92,11 +80,3 @@ menuentry "${display_name} recovery" --id recovery {
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_recovery_cmdline}
   initrd (loop0)$initramfs
 }
-
-if [ "${menu_blk}" ]; then
-  source "(${menu_blk})${custom_menu}"
-fi
-
-if [ "${custom_blk}" ]; then
-  source "(${custom_blk})${custom}"
-fi

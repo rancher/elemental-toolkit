@@ -5,7 +5,7 @@ packages:
     oem_dir: "/system/oem"
     templated: true
     category: cloud-config
-    version: "0.4-3"
+    version: "0.5"
     requires:
       - name: "cos-setup"
         category: "system"
