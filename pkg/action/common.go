@@ -17,9 +17,11 @@ limitations under the License.
 package action
 
 import (
+	"github.com/sirupsen/logrus"
+
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
-	"github.com/sirupsen/logrus"
 )
 
 // Hook is RunStage wrapper that only adds logic to ignore errors
@@ -42,4 +44,28 @@ func ChrootHook(config *v1.Config, hook string, strict bool, chrootDir string, b
 		return Hook(config, hook, strict, cloudInitPaths...)
 	}
 	return utils.ChrootedCallback(config, chrootDir, bindMounts, callback)
+}
+
+// PowerAction executes a power-action (Reboot/PowerOff) after completed
+// install or upgrade and returns any encountered error.
+func PowerAction(cfg *v1.RunConfig) error {
+	// Reboot, poweroff or nothing
+	var (
+		err  error
+		code int
+	)
+
+	if cfg.Reboot {
+		cfg.Logger.Infof("Rebooting in 5 seconds")
+		if err = utils.Reboot(cfg.Runner, 5); err != nil {
+			code = elementalError.Reboot
+		}
+	} else if cfg.PowerOff {
+		cfg.Logger.Infof("Shutting down in 5 seconds")
+		if err = utils.Shutdown(cfg.Runner, 5); err != nil {
+			code = elementalError.PowerOff
+		}
+	}
+
+	return elementalError.NewFromError(err, code)
 }

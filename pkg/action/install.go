@@ -23,6 +23,7 @@ import (
 
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
@@ -125,12 +126,12 @@ func (i InstallAction) Run() (err error) {
 	if i.spec.Iso != "" {
 		tmpDir, err := e.GetIso(i.spec.Iso)
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.DownloadFile)
 		}
 		cleanup.Push(func() error { return i.cfg.Fs.RemoveAll(tmpDir) })
 		err = e.UpdateSourcesFormDownloadedISO(tmpDir, &i.spec.Active, &i.spec.Recovery)
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.MoveFile)
 		}
 	}
 
@@ -139,24 +140,24 @@ func (i InstallAction) Run() (err error) {
 		// Check force flag against current device
 		labels := []string{i.spec.Active.Label, i.spec.Recovery.Label}
 		if e.CheckActiveDeployment(labels) && !i.spec.Force {
-			return fmt.Errorf("use `force` flag to run an installation over the current running deployment")
+			return elementalError.New("use `force` flag to run an installation over the current running deployment", elementalError.AlreadyInstalled)
 		}
 	} else {
 		// Deactivate any active volume on target
 		err = e.DeactivateDevices()
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.DeactivatingDevices)
 		}
 		// Partition device
 		err = e.PartitionAndFormatDevice(i.spec)
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.PartitioningDevice)
 		}
 	}
 
 	err = e.MountPartitions(i.spec.Partitions.PartitionsByMountPoint(false))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.MountPartitions)
 	}
 	cleanup.Push(func() error {
 		return e.UnmountPartitions(i.spec.Partitions.PartitionsByMountPoint(true))
@@ -165,20 +166,20 @@ func (i InstallAction) Run() (err error) {
 	// Before install hook happens after partitioning but before the image OS is applied
 	err = i.installHook(cnst.BeforeInstallHook, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookBeforeInstall)
 	}
 
 	// Deploy active image
 	systemMeta, err := e.DeployImage(&i.spec.Active, true)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 	cleanup.Push(func() error { return e.UnmountImage(&i.spec.Active) })
 
 	// Copy cloud-init if any
 	err = e.CopyCloudConfig(i.spec.CloudInit)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 	// Install grub
 	grub := utils.NewGrub(&i.cfg.Config)
@@ -194,7 +195,7 @@ func (i InstallAction) Run() (err error) {
 		true,
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.InstallGrub)
 	}
 
 	// Relabel SELinux
@@ -209,12 +210,12 @@ func (i InstallAction) Run() (err error) {
 		&i.cfg.Config, i.spec.Active.MountPoint, binds, func() error { return e.SelinuxRelabel("/", true) },
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
 	err = i.installHook(cnst.AfterInstallChrootHook, true)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookAfterInstallChroot)
 	}
 
 	// Installation rebrand (only grub for now)
@@ -224,40 +225,40 @@ func (i InstallAction) Run() (err error) {
 		i.spec.GrubDefEntry,
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
 	// Unmount active image
 	err = e.UnmountImage(&i.spec.Active)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.UnmountImage)
 	}
 	// Install Recovery
 	recoveryMeta, err := e.DeployImage(&i.spec.Recovery, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 	// Install Passive
 	_, err = e.DeployImage(&i.spec.Passive, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 
 	err = i.installHook(cnst.AfterInstallHook, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookAfterInstall)
 	}
 
 	// Add state.yaml file on state and recovery partitions
 	err = i.createInstallStateYaml(systemMeta, recoveryMeta)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 
 	// Do not reboot/poweroff on cleanup errors
 	err = cleanup.Cleanup(err)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.Cleanup)
 	}
 
 	// If we want to eject the cd, create the required executable so the cd is ejected at shutdown
@@ -269,13 +270,5 @@ func (i InstallAction) Run() (err error) {
 		}
 	}
 
-	// Reboot, poweroff or nothing
-	if i.cfg.Reboot {
-		i.cfg.Logger.Infof("Rebooting in 5 seconds")
-		return utils.Reboot(i.cfg.Runner, 5)
-	} else if i.cfg.PowerOff {
-		i.cfg.Logger.Infof("Shutting down in 5 seconds")
-		return utils.Shutdown(i.cfg.Runner, 5)
-	}
-	return err
+	return PowerAction(i.cfg)
 }

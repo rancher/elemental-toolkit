@@ -26,7 +26,7 @@
 | 30 | Error truncating a file|
 | 31 | Error reading the run config|
 | 32 | Error reading the install/upgrade flags|
-| 33 | Error reading the upgrade config|
+| 33 | Error reading the config for the command|
 | 34 | Error mounting state partition|
 | 35 | Error mounting recovery partition|
 | 36 | Error during before-upgrade hook|
@@ -37,8 +37,19 @@
 | 41 | Error occurred during cleanup|
 | 42 | Error occurred trying to reboot|
 | 43 | Error occurred trying to shutdown|
-| 44 | Error occurred when unmounting image|
 | 44 | Error occurred when labeling partition|
+| 44 | Error occurred when unmounting image|
 | 45 | Error setting default grub entry|
 | 46 | Error occurred during selinux relabeling|
+| 47 | Error invalid device specified|
+| 48 | Error deploying image to file|
+| 49 | Error installing GRUB|
+| 50 | Error during before-install hook|
+| 51 | Error during after-install hook|
+| 52 | Error during after-install-chroot hook|
+| 53 | Error during file download|
+| 54 | Error mounting partitions|
+| 55 | Error deactivating active devices|
+| 56 | Error during device partitioning|
+| 57 | Device already contains an install|
 | 255 | Unknown error|

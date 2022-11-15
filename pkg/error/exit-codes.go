@@ -97,8 +97,8 @@ const ReadingRunConfig = 31
 // Error reading the install/upgrade flags
 const ReadingInstallUpgradeFlags = 32
 
-// Error reading the upgrade config
-const ReadingUpgradeConfig = 33
+// Error reading the config for the command
+const ReadingSpecConfig = 33
 
 // Error mounting state partition
 const MountStatePartition = 34
@@ -128,7 +128,7 @@ const Cleanup = 41
 const Reboot = 42
 
 // Error occurred trying to shutdown
-const Shutdown = 43
+const PowerOff = 43
 
 // Error occurred when labeling partition
 const LabelImage = 44
@@ -141,6 +141,39 @@ const SetDefaultGrubEntry = 45
 
 // Error occurred during selinux relabeling
 const SelinuxRelabel = 46
+
+// Error invalid device specified
+const InvalidTarget = 47
+
+// Error deploying image to file
+const DeployImage = 48
+
+// Error installing GRUB
+const InstallGrub = 49
+
+// Error during before-install hook
+const HookBeforeInstall = 50
+
+// Error during after-install hook
+const HookAfterInstall = 51
+
+// Error during after-install-chroot hook
+const HookAfterInstallChroot = 52
+
+// Error during file download
+const DownloadFile = 53
+
+// Error mounting partitions
+const MountPartitions = 54
+
+// Error deactivating active devices
+const DeactivatingDevices = 55
+
+// Error during device partitioning
+const PartitioningDevice = 56
+
+// Device already contains an install
+const AlreadyInstalled = 57
 
 // Unknown error
 const Unknown int = 255

@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"os/exec"
 
 	"github.com/spf13/cobra"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
@@ -53,10 +53,12 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
 			if err := validateInstallUpgradeFlags(cfg.Logger, cmd.Flags()); err != nil {
-				return err
+				cfg.Logger.Errorf("Error reading install/upgrade flags: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingInstallUpgradeFlags)
 			}
 
 			// Manage deprecated flags
@@ -70,7 +72,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			spec, err := config.ReadInstallSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("invalid install command setup %v", err)
-				return err
+				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
 			if len(args) == 1 {
@@ -78,16 +80,12 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			if spec.Target == "" {
-				return errors.New("at least a target device must be supplied")
+				return elementalError.New("at least a target device must be supplied", elementalError.InvalidTarget)
 			}
 
 			cfg.Logger.Infof("Install called")
 			install := action.NewInstallAction(cfg, spec)
-			err = install.Run()
-			if err != nil {
-				return err
-			}
-			return nil
+			return install.Run()
 		},
 	}
 	firmType := newEnumFlag([]string{v1.EFI, v1.BIOS}, v1.EFI)

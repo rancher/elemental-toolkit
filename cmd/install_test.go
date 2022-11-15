@@ -22,6 +22,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
+
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 )
 
 var _ = Describe("Install", Label("install", "cmd"), func() {
@@ -47,11 +49,20 @@ var _ = Describe("Install", Label("install", "cmd"), func() {
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(ContainSubstring("Usage:"))
 		Expect(err.Error()).To(ContainSubstring("flags docker-image, directory and system are mutually exclusive"))
+		Expect(err.(*elementalError.ElementalError)).ToNot(BeNil())
+		Expect(err.(*elementalError.ElementalError).ExitCode()).To(Equal(elementalError.ReadingInstallUpgradeFlags))
 	})
 	It("Errors out if no installation source is defined", Label("args"), func() {
 		_, _, err := executeCommandC(rootCmd, "install")
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(ContainSubstring("undefined system source to install"))
+	})
+	It("Errors out if no installation target is defined", Label("args"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--directory", "dir")
+		Expect(err).ToNot(BeNil())
+		Expect(buf.String()).To(ContainSubstring("at least a target device must be supplied"))
+		Expect(err.(*elementalError.ElementalError)).ToNot(BeNil())
+		Expect(err.(*elementalError.ElementalError).ExitCode()).To(Equal(elementalError.InvalidTarget))
 	})
 	It("Errors out setting reboot and poweroff at the same time", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "install", "--reboot", "--poweroff", "/dev/whatever")

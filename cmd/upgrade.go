@@ -71,7 +71,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("Invalid upgrade command setup %v", err)
-				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
+				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
 			cfg.Logger.Infof("Upgrade called")

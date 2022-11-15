@@ -121,7 +121,9 @@ func (u *UpgradeAction) Run() (err error) {
 	var finalImageFile string
 
 	cleanup := utils.NewCleanStack()
-	defer func() { err = cleanup.Cleanup(err) }()
+	defer func() {
+		err = cleanup.Cleanup(err)
+	}()
 
 	e := elemental.NewElemental(&u.config.Config)
 
@@ -183,7 +185,7 @@ func (u *UpgradeAction) Run() (err error) {
 	upgradeMeta, err := e.DeployImage(&upgradeImg, true)
 	if err != nil {
 		u.Error("Failed deploying image to file '%s': %s", upgradeImg.File, err)
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 	cleanup.Push(func() error { return e.UnmountImage(&upgradeImg) })
 
@@ -285,18 +287,8 @@ func (u *UpgradeAction) Run() (err error) {
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.Cleanup)
 	}
-	if u.config.Reboot {
-		u.Info("Rebooting in 5 seconds")
-		if err = utils.Reboot(u.config.Runner, 5); err != nil {
-			return elementalError.NewFromError(err, elementalError.Reboot)
-		}
-	} else if u.config.PowerOff {
-		u.Info("Shutting down in 5 seconds")
-		if err = utils.Shutdown(u.config.Runner, 5); err != nil {
-			return elementalError.NewFromError(err, elementalError.Shutdown)
-		}
-	}
-	return err
+
+	return PowerAction(u.config)
 }
 
 // remove attempts to remove the given path. Does nothing if it doesn't exist

@@ -262,7 +262,6 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, er
 	err = vp.Unmarshal(upgrade, setDecoder, decodeHook)
 	if err != nil {
 		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
-		return nil, err
 	}
 	err = upgrade.Sanitize()
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))

@@ -562,14 +562,16 @@ var _ = Describe("Runtime Actions", func() {
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", "disk.raw")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("no packages in the config for arch %s", cfg.Arch)))
-			Expect(err.ExitCode()).To(Equal(eleError.NoPackagesForArch))
+			Expect(err.(*eleError.ElementalError)).ToNot(BeNil())
+			Expect(err.(*eleError.ElementalError).ExitCode()).To(Equal(eleError.NoPackagesForArch))
 		})
 		It("Fails if config has no repos", func() {
 			cfg.Repos = []v1.Repository{}
 			err := action.BuildDiskRun(cfg, rawDisk.X86_64, "raw", "OEM", "REC", "disk.raw")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("no repositories configured"))
-			Expect(err.ExitCode()).To(Equal(eleError.NoReposConfigured))
+			Expect(err.(*eleError.ElementalError)).ToNot(BeNil())
+			Expect(err.(*eleError.ElementalError).ExitCode()).To(Equal(eleError.NoReposConfigured))
 		})
 	})
 })
