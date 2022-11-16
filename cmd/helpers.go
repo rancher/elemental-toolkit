@@ -17,14 +17,15 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"os"
+
+	errors "github.com/rancher/elemental-cli/pkg/error"
 )
 
 // CheckRoot is a helper to return on PreRunE, so we can add it to commands that require root
 func CheckRoot() error {
 	if os.Geteuid() != 0 {
-		return errors.New("this command requires root privileges")
+		return errors.New("this command requires root privileges", errors.RequiresRoot)
 	}
 	return nil
 }

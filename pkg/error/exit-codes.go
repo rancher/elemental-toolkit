@@ -175,5 +175,23 @@ const PartitioningDevice = 56
 // Device already contains an install
 const AlreadyInstalled = 57
 
+// Command requires root privileges
+const RequiresRoot = 58
+
+// Error occurred when unmounting partitions
+const UnmountPartitions = 59
+
+// Error occurred when formatting partitions
+const FormatPartitions = 60
+
+// Error during before-reset hook
+const HookBeforeReset = 61
+
+// Error during after-reset-chroot hook
+const HookAfterResetChroot = 62
+
+// Error during after-reset hook
+const HookAfterReset = 63
+
 // Unknown error
 const Unknown int = 255

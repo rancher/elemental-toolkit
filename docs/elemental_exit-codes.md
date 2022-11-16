@@ -52,4 +52,10 @@
 | 55 | Error deactivating active devices|
 | 56 | Error during device partitioning|
 | 57 | Device already contains an install|
+| 58 | Command requires root privileges|
+| 59 | Error occurred when unmounting partitions|
+| 60 | Error occurred when formatting partitions|
+| 61 | Error during before-reset hook|
+| 62 | Error during after-reset-chroot hook|
+| 63 | Error during after-reset hook|
 | 255 | Unknown error|

@@ -23,6 +23,7 @@ import (
 
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
@@ -115,13 +116,13 @@ func (r ResetAction) Run() (err error) {
 	// Unmount partitions if any is already mounted before formatting
 	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.UnmountPartitions)
 	}
 
 	// Reformat state partition
 	err = e.FormatPartition(r.spec.Partitions.State)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.FormatPartitions)
 	}
 
 	// Reformat persistent partition
@@ -130,7 +131,7 @@ func (r ResetAction) Run() (err error) {
 		if persistent != nil {
 			err = e.FormatPartition(persistent)
 			if err != nil {
-				return err
+				return elementalError.NewFromError(err, elementalError.FormatPartitions)
 			}
 		}
 	}
@@ -141,14 +142,14 @@ func (r ResetAction) Run() (err error) {
 		if oem != nil {
 			err = e.FormatPartition(oem)
 			if err != nil {
-				return err
+				return elementalError.NewFromError(err, elementalError.FormatPartitions)
 			}
 		}
 	}
 	// Mount configured partitions
 	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.MountPartitions)
 	}
 	cleanup.Push(func() error {
 		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
@@ -157,13 +158,13 @@ func (r ResetAction) Run() (err error) {
 	// Before reset hook happens once partitions are aready and before deploying the OS image
 	err = r.resetHook(cnst.BeforeResetHook, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookBeforeReset)
 	}
 
 	// Deploy active image
 	meta, err := e.DeployImage(&r.spec.Active, true)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 	cleanup.Push(func() error { return e.UnmountImage(&r.spec.Active) })
 
@@ -181,7 +182,7 @@ func (r ResetAction) Run() (err error) {
 		false,
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.InstallGrub)
 	}
 
 	// Relabel SELinux
@@ -199,12 +200,12 @@ func (r ResetAction) Run() (err error) {
 		func() error { return e.SelinuxRelabel("/", true) },
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
 	err = r.resetHook(cnst.AfterResetChrootHook, true)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookAfterResetChroot)
 	}
 
 	// installation rebrand (only grub for now)
@@ -214,44 +215,36 @@ func (r ResetAction) Run() (err error) {
 		r.spec.GrubDefEntry,
 	)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
 	// Unmount active image
 	err = e.UnmountImage(&r.spec.Active)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.UnmountImage)
 	}
 
 	// Install Passive
 	_, err = e.DeployImage(&r.spec.Passive, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 
 	err = r.resetHook(cnst.AfterResetHook, false)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookAfterReset)
 	}
 
 	err = r.updateInstallState(e, cleanup, meta)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 
 	// Do not reboot/poweroff on cleanup errors
 	err = cleanup.Cleanup(err)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.Cleanup)
 	}
 
-	// Reboot, poweroff or nothing
-	if r.cfg.Reboot {
-		r.cfg.Logger.Infof("Rebooting in 5 seconds")
-		return utils.Reboot(r.cfg.Runner, 5)
-	} else if r.cfg.PowerOff {
-		r.cfg.Logger.Infof("Shutting down in 5 seconds")
-		return utils.Shutdown(r.cfg.Runner, 5)
-	}
-	return err
+	return PowerAction(r.cfg)
 }
