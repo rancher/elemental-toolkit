@@ -22,7 +22,7 @@ Elemental comes also with vanilla images that can be used to boot directly conta
 
 Elemental allows to create custom OS versions in your cluster with standard container images with a high degree of customization. It can also be used in its vanilla form - Elemental enables then everyone to build their own derivative and access it in various formats. 
 
-To build a bootable image is as simple as running `docker build`.
+Building a bootable image is as simple as running `docker build`.
 
 * **What is it good for?**: Embedded, Cloud, Containers, VM, Baremetals, Servers, IoT, Edge
 
@@ -37,8 +37,8 @@ To build a bootable image is as simple as running `docker build`.
 - A/B updates
 - Easy to customize
 - Cryptographically verified
-- instant switch from different versions
-- recovery mechanism with `Elemental` vanilla images (or bring your own)
+- Instant switch from different versions
+- Recovery mechanism with `Elemental` vanilla images (or bring your own)
 
 ## Mission
 

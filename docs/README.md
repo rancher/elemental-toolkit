@@ -1,4 +1,4 @@
-The website content it is deployed automatically in the `gh-pages` branch by Github Actions, and no manual intevention is needed.
+The website content it is deployed automatically in the `gh-pages` branch by Github Actions, and no manual intervention is needed.
 
 ## Test your changes
 
