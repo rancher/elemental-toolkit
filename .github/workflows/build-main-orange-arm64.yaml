@@ -44,13 +44,9 @@ jobs:
             sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
             echo "/usr/local/go/bin" >> $GITHUB_PATH
       - name: Install make
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow

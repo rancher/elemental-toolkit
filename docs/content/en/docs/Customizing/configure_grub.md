@@ -7,7 +7,7 @@ description: >
   GRUB 2 Configuration
 ---
 
-COS is set to deploy a persistent `grub.cfg` into the `COS_RECOVERY` partition during
+COS is set to deploy a persistent `grub.cfg` into the `COS_STATE` partition during
 the system installation or image creation. COS grub configuration
 includes three menu entries: first for the main OS system, second for the
 fallback OS system and a third for the recovery OS.
@@ -28,7 +28,7 @@ menuentry "cOS" --id cos {
 ```
 
 {{% alert title="Kernel parameters" %}}
-The kernel parameters are not part of the persistent `grub.cfg` file stored in `COS_RECOVERY` partition. 
+The kernel parameters are not part of the persistent `grub.cfg` file stored in `COS_STATE` partition. 
 Kernel parameters are sourced from the loop device of the OS image to boot. This is mainly to
 keep kernel parameters consistent across different potential OS images or
 system upgrades. 
@@ -90,12 +90,15 @@ Use `grub2-editenv` command line utility to define the desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /run/cos-state/grub2/grub_oem_env set next_entry=recovery
+> grub2-editenv /oem/grub_oem_env set next_entry=recovery
 ```
+{{% alert title="Note" %}}
+The examples below make of the `COS_OEM` device.
+{{% /alert %}}
 
 ### Default boot entry
 
-The default grub configuration loads the `/grubenv` of any available device
+The default grub configuration loads the `/grub_oem_env` from the COS_OEM partition
 and evaluates on `next_entry` variable and `saved_entry` variable. By default
 none is set.
 
@@ -107,18 +110,16 @@ boot. If `next_entry` variable is set this is only being used once, GRUB2 will
 unset it after reading it for the first time. This is helpful to define the menu entry
 to reboot to without having to make any permanent config change.
 
-Use `grub2-editenv` command line utility to define desired values.
-
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /run/cos-state/grub2/grub_oem_env set next_entry=recovery
+> grub2-editenv /oem/grub_oem_env set next_entry=recovery
 ```
 
 Or to set the default entry to `fallback` system:
 
 ```bash
-> grub2-editenv /run/cos-state/grub2/grub_oem_env set saved_entry=fallback
+> grub2-editenv /oem/grub_oem_env set saved_entry=fallback
 ```
 
 ## Boot menu
@@ -141,16 +142,10 @@ install:
 
 will automatically set the GRUB menu entries for active, passive and recovery to the specified value.
 
-The grub menu boot entry can also be set with `grub2-editenv`:
-
-```bash
-> grub2-editenv /run/cos-state/grub2/grub_oem_env set default_menu_entry=fooOS
-```
-
 {{% alert title="Additional menu entries" %}}
 
-Since {{<package package="system/grub2-config" >}} >= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a `/grub2/grubcustom` config file in the state partition. The file will be loaded from the state partition. 
-The `grubcustom` file will be sourced at the end of the boot process, and can contain several `menuentry` blocks.
+Since {{<package package="system/grub2-config" >}} >= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a `/grubcustom` config file in the state partition. The file will be loaded from the state partition. 
+The `grubcustom` file will be sourced in grub.cfg, and can contain several `menuentry` blocks.
 
 {{% /alert %}}
 
@@ -164,14 +159,15 @@ It is possible to define persistent boot flag for each menu entry also via `grub
 - `extra_cmdline`: will be applied to each boot entry
 
 
+
 ## Customizing fallback logic
 
-By default Elemental boots into active, and if there are failures will boot into the passive, and finally if keeps failing, will boot into recovery.
+By default, Elemental boots into active, and if there are failures will boot into the passive, and finally if keeps failing, will boot into recovery.
 
 It is possible to override the default fallback logic by setting `default_fallback` as grub environment, consider for example:
 
 ```bash
-> grub2-editenv /run/cos-state/grub2/grub_oem_env set default_fallback="2 0 1"
+> grub2-editenv /oem/grub_oem_env set default_fallback="2 0 1"
 ```
 
 Will set the default fallback to "2 0 1" instead of the default "0 1 2".

@@ -1,23 +1,27 @@
 set timeout=10
 
-# Load env file if file exists and size its not 0
-search --no-floppy --label --set=customenv @STATE_LABEL@
+# This below allows for overriding the default values of grub. Its on OEM because its writable, otherwise it makes no sense.
+search --no-floppy --label --set=rootOEM @OEM_LABEL@
 
-if [ test -s (${customenv})/grub_oem_env ] ; then
-  load_env -f "(${customenv})/grub_oem_env"
+if [ test -s ($rootOEM)/grub_oem_env ] ; then
+  load_env -f ($rootOEM)/grub_oem_env
 fi
 
 # Load extra config if file exists and size its not 0
-if [ test -s (${customenv})/grubcustom ]; then
-  source "(${customenv})/grubcustom"
+if [ test -s ($rootOEM)/grubcustom ]; then
+  source ($rootOEM)/grubcustom
 fi
+
+
+# Set root to the state label
+search --no-floppy --label --set=root @STATE_LABEL@
 
 # Save default
 if [ "${next_entry}" ]; then
   set default="${next_entry}"
   set selected_entry="${next_entry}"
   set next_entry=
-  save_env -f "(${env_blk})${env_file}" next_entry
+  save_env -f /grub_oem_env next_entry
 else
   set default="${saved_entry}"
 fi
@@ -41,25 +45,20 @@ set gfxpayload=keep
 insmod all_video
 insmod gfxterm
 insmod loopback
-insmod squash4
 
 menuentry "${display_name}" --id cos {
-  search --no-floppy --label --set=root @STATE_LABEL@
   set img=/cOS/active.img
   set label=@ACTIVE_LABEL@
   loopback loop0 /$img
-  set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_active_cmdline}
   initrd (loop0)$initramfs
 }
 
 menuentry "${display_name} (fallback)" --id fallback {
-  search --no-floppy --label --set=root @STATE_LABEL@
   set img=/cOS/passive.img
   set label=@PASSIVE_LABEL@
   loopback loop0 /$img
-  set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_passive_cmdline}
   initrd (loop0)$initramfs
@@ -67,6 +66,7 @@ menuentry "${display_name} (fallback)" --id fallback {
 
 menuentry "${display_name} recovery" --id recovery {
   if search --no-floppy --file /cOS/recovery.squashfs ; then
+    insmod squash4
     set img=/cOS/recovery.squashfs
     set recoverylabel=@RECOVERY_LABEL@
   else
