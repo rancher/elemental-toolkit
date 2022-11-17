@@ -59,4 +59,4 @@ The AMI Owner ID is `053594193760`.
 
 ## What to do next?
 
-Check out [the customization section](../../customizing) to customize `Elemental` or [the tutorial section](../tutorials) for some already prepared recipe examples.
+Check out [the customization section](../../customizing) to customize `Elemental` or [the example section](../../examples) for some already prepared recipe examples.
