@@ -146,7 +146,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 
 	if c.Luet == nil {
 		tmpDir := utils.GetTempDir(c, "")
-		c.Luet = luet.NewLuet(luet.WithFs(c.Fs), luet.WithLogger(log), luet.WithLuetTempDir(tmpDir))
+		c.Luet = luet.NewLuet(luet.WithFs(c.Fs), luet.WithLogger(c.Logger), luet.WithLuetTempDir(tmpDir))
 	}
 	return c
 }
