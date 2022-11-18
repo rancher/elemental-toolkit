@@ -23,6 +23,7 @@ import (
 	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-cli/cmd/config"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/spf13/cobra"
@@ -40,8 +41,9 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 			if err != nil {
-				return err
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
+
 			stage, _ := cmd.Flags().GetString("stage")
 			dot, _ := cmd.Flags().GetBool("dotnotation")
 
@@ -54,13 +56,14 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			if fromStdin {
 				std, err := ioutil.ReadAll(os.Stdin)
 				if err != nil {
-					return err
+					return elementalError.NewFromError(err, elementalError.ReadFile)
 				}
 
 				args = []string{string(std)}
 			}
 
-			return cfg.CloudInitRunner.Run(stage, args...)
+			err = cfg.CloudInitRunner.Run(stage, args...)
+			return elementalError.NewFromError(err, elementalError.CloudInitRunStage)
 		},
 	}
 	root.AddCommand(c)

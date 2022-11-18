@@ -38,7 +38,6 @@
 | 42 | Error occurred trying to reboot|
 | 43 | Error occurred trying to shutdown|
 | 44 | Error occurred when labeling partition|
-| 44 | Error occurred when unmounting image|
 | 45 | Error setting default grub entry|
 | 46 | Error occurred during selinux relabeling|
 | 47 | Error invalid device specified|
@@ -58,4 +57,12 @@
 | 61 | Error during before-reset hook|
 | 62 | Error during after-reset-chroot hook|
 | 63 | Error during after-reset hook|
+| 64 | Unsupported flavor|
+| 65 | Error encountered during cloud-init run-stage|
+| 66 | Error unpacking image|
+| 67 | Error reading file|
+| 68 | No source was provided for the command|
+| 69 | Error removing a file|
+| 70 | Error calculating checksum|
+| 71 | Error occurred when unmounting image|
 | 255 | Unknown error|

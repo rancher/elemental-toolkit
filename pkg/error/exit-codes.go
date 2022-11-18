@@ -133,9 +133,6 @@ const PowerOff = 43
 // Error occurred when labeling partition
 const LabelImage = 44
 
-// Error occurred when unmounting image
-const UnmountImage = 44
-
 // Error setting default grub entry
 const SetDefaultGrubEntry = 45
 
@@ -192,6 +189,30 @@ const HookAfterResetChroot = 62
 
 // Error during after-reset hook
 const HookAfterReset = 63
+
+// Unsupported flavor
+const UnsupportedFlavor = 64
+
+// Error encountered during cloud-init run-stage
+const CloudInitRunStage = 65
+
+// Error unpacking image
+const UnpackImage = 66
+
+// Error reading file
+const ReadFile = 67
+
+// No source was provided for the command
+const NoSourceProvided = 68
+
+// Error removing a file
+const RemoveFile = 69
+
+// Error calculating checksum
+const CalculateChecksum = 70
+
+// Error occurred when unmounting image
+const UnmountImage = 71
 
 // Unknown error
 const Unknown int = 255

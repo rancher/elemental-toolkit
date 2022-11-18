@@ -25,6 +25,7 @@ import (
 	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-cli/cmd/config"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	"github.com/rancher/elemental-cli/pkg/luet"
 )
 
@@ -41,16 +42,16 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
-
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
 			image := args[0]
 			destination, err := filepath.Abs(args[1])
 			if err != nil {
 				cfg.Logger.Errorf("Invalid path %s", destination)
-				return err
+				return elementalError.NewFromError(err, elementalError.StatFile)
 			}
 
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
@@ -82,7 +83,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if err != nil {
 				cfg.Logger.Error(err.Error())
-				return err
+				return elementalError.NewFromError(err, elementalError.UnpackImage)
 			}
 
 			return nil

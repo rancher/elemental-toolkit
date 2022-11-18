@@ -18,14 +18,16 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-getter"
-	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 )
 
 func NewDerivativeCmd(root *cobra.Command) *cobra.Command {
@@ -37,34 +39,36 @@ func NewDerivativeCmd(root *cobra.Command) *cobra.Command {
 		SilenceErrors: true, // Do not propagate errors down the line, we control them
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
-
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
-			flavor := args[0]
+			flavor := strings.ToLower(args[0])
 			if flavor != "opensuse" && flavor != "ubuntu" && flavor != "fedora" {
 				cfg.Logger.Errorf("Unsupported flavor")
-				return errors.New("unsupported flavor")
+				return elementalError.New("unsupported flavor", elementalError.UnsupportedFlavor)
 			}
 
 			client := &getter.Client{
 				Ctx:  context.Background(),
 				Dst:  fmt.Sprintf("derivatives/%s", flavor),
 				Dir:  true,
-				Src:  "github.com/rancher-sandbox/cOS-toolkit//examples/standard",
+				Src:  "github.com/rancher/elemental-toolkit/examples/standard",
 				Mode: getter.ClientModeDir,
 				Detectors: []getter.Detector{
 					&getter.GitHubDetector{},
 				},
 			}
 
+			cfg.Logger.Infof("Downloading template...")
 			err = client.Get()
 			if err != nil {
 				cfg.Logger.Errorf("Unable to create derivative")
-				return err
+				return elementalError.NewFromError(err, elementalError.DownloadFile)
 			}
 
+			cfg.Logger.Infof("New derivative created successfully")
 			return nil
 		},
 	}

@@ -27,9 +27,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rancher/elemental-cli/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+
+	"github.com/rancher/elemental-cli/cmd"
 )
 
 func main() {
@@ -56,10 +57,14 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	generateExitCodes()
+
+	if err := generateExitCodes(); err != nil {
+		fmt.Printf("error generating exit-codes: %v\n", err)
+		os.Exit(1)
+	}
 }
 
-func generateExitCodes() {
+func generateExitCodes() error {
 	fset := token.NewFileSet()
 	files := []*ast.File{
 		mustParse(fset, "../pkg/error/exit-codes.go"),
@@ -68,13 +73,24 @@ func generateExitCodes() {
 	if err != nil {
 		panic(err)
 	}
-	var exitCodes []*ErrorCode
+	var (
+		exitCodes []*ErrorCode
+		used      map[int]bool
+	)
+
+	used = make(map[int]bool)
 
 	for _, c := range p.Consts {
 		// Cast it, its safe as these are constants
 		v := c.Decl.Specs[0].(*ast.ValueSpec)
 		val := v.Values[0].(*ast.BasicLit)
 		code, _ := strconv.Atoi(val.Value)
+
+		if _, ok := used[code]; ok {
+			return fmt.Errorf("duplicate exit-code found: %v", code)
+		}
+
+		used[code] = true
 		exitCodes = append(exitCodes, &ErrorCode{code: code, doc: c.Doc})
 	}
 
@@ -86,7 +102,7 @@ func generateExitCodes() {
 
 	if err != nil {
 		fmt.Print(err)
-		return
+		return err
 	}
 
 	defer func() {
@@ -99,10 +115,11 @@ func generateExitCodes() {
 	for _, code := range exitCodes {
 		_, err = exitCodesFile.WriteString(fmt.Sprintf("| %d | %s|\n", code.code, strings.Replace(code.doc, "\n", "", 1)))
 		if err != nil {
-			return
+			return err
 		}
 	}
 
+	return nil
 }
 
 func mustParse(fset *token.FileSet, filename string) *ast.File {

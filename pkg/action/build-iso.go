@@ -23,6 +23,7 @@ import (
 
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	"github.com/rancher/elemental-cli/pkg/live"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
@@ -62,39 +63,43 @@ func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOAc
 }
 
 // BuildISORun will install the system from a given configuration
-func (b *BuildISOAction) ISORun() (err error) {
+func (b *BuildISOAction) ISORun() error {
 	cleanup := utils.NewCleanStack()
+	var err error
 	defer func() { err = cleanup.Cleanup(err) }()
 
 	isoTmpDir, err := utils.TempDir(b.cfg.Fs, "", "elemental-iso")
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CreateTempDir)
 	}
 	cleanup.Push(func() error { return b.cfg.Fs.RemoveAll(isoTmpDir) })
 
 	rootDir := filepath.Join(isoTmpDir, "rootfs")
 	err = utils.MkdirAll(b.cfg.Fs, rootDir, constants.DirPerm)
 	if err != nil {
-		return err
+		b.cfg.Logger.Errorf("Failed creating rootfs dir: %s", rootDir)
+		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
 	uefiDir := filepath.Join(isoTmpDir, "uefi")
 	err = utils.MkdirAll(b.cfg.Fs, uefiDir, constants.DirPerm)
 	if err != nil {
-		return err
+		b.cfg.Logger.Errorf("Failed creating uefi dir: %s", uefiDir)
+		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
 	isoDir := filepath.Join(isoTmpDir, "iso")
 	err = utils.MkdirAll(b.cfg.Fs, isoDir, constants.DirPerm)
 	if err != nil {
-		return err
+		b.cfg.Logger.Errorf("Failed creating iso dir: %s", isoDir)
+		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
 	if b.cfg.OutDir != "" {
 		err = utils.MkdirAll(b.cfg.Fs, b.cfg.OutDir, constants.DirPerm)
 		if err != nil {
-			b.cfg.Logger.Errorf("Failed creating output folder: %s", b.cfg.OutDir)
-			return err
+			b.cfg.Logger.Errorf("Failed creating output dir: %s", b.cfg.OutDir)
+			return elementalError.NewFromError(err, elementalError.CreateDir)
 		}
 	}
 
@@ -107,7 +112,7 @@ func (b *BuildISOAction) ISORun() (err error) {
 	err = utils.CreateDirStructure(b.cfg.Fs, rootDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed creating root directory structure: %v", err)
-		return err
+		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
 	if b.spec.Firmware == v1.EFI {
@@ -116,7 +121,7 @@ func (b *BuildISOAction) ISORun() (err error) {
 			err = b.liveBoot.PrepareEFI(rootDir, uefiDir)
 			if err != nil {
 				b.cfg.Logger.Errorf("Failed fetching EFI data: %v", err)
-				return err
+				return elementalError.NewFromError(err, elementalError.CopyData)
 			}
 		}
 		err = b.applySources(uefiDir, b.spec.UEFI...)
@@ -131,7 +136,7 @@ func (b *BuildISOAction) ISORun() (err error) {
 		err = b.liveBoot.PrepareISO(rootDir, isoDir)
 		if err != nil {
 			b.cfg.Logger.Errorf("Failed fetching bootloader binaries: %v", err)
-			return err
+			return elementalError.NewFromError(err, elementalError.CreateFile)
 		}
 	}
 	err = b.applySources(isoDir, b.spec.Image...)
@@ -168,33 +173,29 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
 	kernel, initrd, err := b.e.FindKernelInitrd(rootDir)
 	if err != nil {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
-		return err
+		return elementalError.NewFromError(err, elementalError.StatFile)
 	}
 	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, "boot"), constants.DirPerm)
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 	//TODO document boot/kernel and boot/initrd expectation in bootloader config
 	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
 	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.IsoKernelPath))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 
 	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
 	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.IsoInitrdPath))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 
 	b.cfg.Logger.Info("Creating squashfs...")
 	squashOptions := append(constants.GetDefaultSquashfsOptions(), b.cfg.SquashFsCompressionConfig...)
 	err = utils.CreateSquashFS(b.cfg.Runner, b.cfg.Logger, rootDir, filepath.Join(isoDir, constants.IsoRootFile), squashOptions)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return elementalError.NewFromError(err, elementalError.MKFSCall)
 }
 
 func (b BuildISOAction) createEFI(root string, img string) error {
@@ -253,7 +254,7 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 		b.cfg.Logger.Warnf("Overwriting already existing %s", outputFile)
 		err := b.cfg.Fs.Remove(outputFile)
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.RemoveFile)
 		}
 	}
 
@@ -266,16 +267,18 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 	out, err := b.cfg.Runner.Run(cmd, args...)
 	b.cfg.Logger.Debugf("Xorriso: %s", string(out))
 	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.CommandRun)
 	}
 
 	checksum, err := utils.CalcFileChecksum(b.cfg.Fs, outputFile)
 	if err != nil {
-		return fmt.Errorf("checksum computation failed: %w", err)
+		b.cfg.Logger.Errorf("checksum computation failed: %v", err)
+		return elementalError.NewFromError(err, elementalError.CalculateChecksum)
 	}
 	err = b.cfg.Fs.WriteFile(fmt.Sprintf("%s.sha256", outputFile), []byte(fmt.Sprintf("%s %s\n", checksum, isoFileName)), 0644)
 	if err != nil {
-		return fmt.Errorf("cannot write checksum file: %w", err)
+		b.cfg.Logger.Errorf("cannot write checksum file: %v", err)
+		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 
 	return nil
@@ -285,7 +288,7 @@ func (b BuildISOAction) applySources(target string, sources ...*v1.ImageSource) 
 	for _, src := range sources {
 		_, err := b.e.DumpSource(target, src)
 		if err != nil {
-			return err
+			return elementalError.NewFromError(err, elementalError.DumpSource)
 		}
 	}
 	return nil

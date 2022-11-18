@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/action"
-	"github.com/rancher/elemental-cli/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mountUtils "k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-cli/cmd/config"
+	"github.com/rancher/elemental-cli/pkg/action"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
+	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
 var outputAllowed = []string{"azure", "gce"}
@@ -49,7 +51,7 @@ func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
-				return err
+				return elementalError.NewFromError(err, elementalError.ReadingBuildConfig)
 			}
 
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
@@ -61,8 +63,9 @@ func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			rawDisk := args[0]
 
 			if exists, _ := utils.Exists(cfg.Fs, rawDisk); !exists {
-				cfg.Logger.Errorf("Raw image %s doesnt exist", rawDisk)
-				return fmt.Errorf("raw image %s doesnt exist", rawDisk)
+				msg := fmt.Sprintf("Raw image %s doesnt exist", rawDisk)
+				cfg.Logger.Errorf(msg)
+				return elementalError.New(msg, elementalError.StatFile)
 			}
 
 			switch imgType {

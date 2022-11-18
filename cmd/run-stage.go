@@ -22,6 +22,7 @@ import (
 	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-cli/cmd/config"
+	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
@@ -35,12 +36,13 @@ func NewRunStage(root *cobra.Command) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
-
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
+				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
-			return utils.RunStage(&cfg.Config, args[0], cfg.Strict)
+			err = utils.RunStage(&cfg.Config, args[0], cfg.Strict)
+			return elementalError.NewFromError(err, elementalError.CloudInitRunStage)
 		},
 	}
 	root.AddCommand(c)
