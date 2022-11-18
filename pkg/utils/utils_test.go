@@ -1099,65 +1099,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(mnt).To(BeFalse())
 		})
 	})
-	Describe("HasSquashedRecovery", Label("squashedRec"), func() {
-		var squashedImg string
-		var part *v1.Partition
-		BeforeEach(func() {
-			squashedImg = filepath.Join(constants.LiveDir, "cOS", constants.RecoverySquashFile)
-			part = &v1.Partition{
-				MountPoint: constants.LiveDir,
-				Path:       "/some/device",
-			}
-		})
-		It("has squashed image from a mounted recovery", func() {
-			// mount recovery
-			err := mounter.Mount(part.Path, constants.LiveDir, "auto", []string{})
-			Expect(err).ShouldNot(HaveOccurred())
-
-			// create squashfs
-			err = utils.MkdirAll(config.Fs, filepath.Dir(squashedImg), constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = config.Fs.Create(squashedImg)
-			Expect(err).ShouldNot(HaveOccurred())
-
-			squash, err := utils.HasSquashedRecovery(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(squash).To(BeTrue())
-		})
-		It("does not have squashed image from a mounted recovery", func() {
-			// mount recovery
-			err := mounter.Mount(part.Path, constants.LiveDir, "auto", []string{})
-			Expect(err).ShouldNot(HaveOccurred())
-
-			squash, err := utils.HasSquashedRecovery(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(squash).To(BeFalse())
-		})
-		It("has squashed image from a not mounted recovery", func() {
-			// squashed image on temp dir
-			squashedImg = filepath.Join("/tmp/elemental", "cOS", constants.RecoverySquashFile)
-			// create squashfs
-			err := utils.MkdirAll(config.Fs, filepath.Dir(squashedImg), constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = config.Fs.Create(squashedImg)
-			Expect(err).ShouldNot(HaveOccurred())
-
-			squash, err := utils.HasSquashedRecovery(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(squash).To(BeTrue())
-		})
-		It("does not have squashed image from a not mounted recovery", func() {
-			squash, err := utils.HasSquashedRecovery(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(squash).To(BeFalse())
-		})
-		It("fails to mount recovery", func() {
-			mounter.ErrorOnMount = true
-			squash, err := utils.HasSquashedRecovery(config, part)
-			Expect(err).Should(HaveOccurred())
-			Expect(squash).To(BeFalse())
-		})
-	})
 	Describe("CleanStack", Label("CleanStack"), func() {
 		var cleaner *utils.CleanStack
 		BeforeEach(func() {

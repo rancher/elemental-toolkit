@@ -99,6 +99,11 @@ func (i *InstallAction) createInstallStateYaml(sysMeta, recMeta interface{}) err
 			FSLabel: i.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
+	if i.spec.Partitions.EFI != nil {
+		installState.Partitions[cnst.EfiPartName] = &v1.PartitionState{
+			FSLabel: i.spec.Partitions.EFI.FilesystemLabel,
+		}
+	}
 
 	return i.cfg.WriteInstallState(
 		installState,

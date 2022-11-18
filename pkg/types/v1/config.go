@@ -292,6 +292,15 @@ func (pl PartitionList) GetByLabel(label string) *Partition {
 	return part
 }
 
+// GetByNameOrLabel gets a partition by its name or label. It tries by name first
+func (pl PartitionList) GetByNameOrLabel(name, label string) *Partition {
+	part := pl.GetByName(name)
+	if part == nil {
+		part = pl.GetByLabel(label)
+	}
+	return part
+}
+
 type ElementalPartitions struct {
 	BIOS       *Partition
 	EFI        *Partition
@@ -336,31 +345,32 @@ func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable 
 
 // NewElementalPartitionsFromList fills an ElementalPartitions instance from given
 // partitions list. First tries to match partitions by partition label, if not,
-// it tries to match partitions by default filesystem label
-// TODO find a way to map custom labels when partition labels are not available
-func NewElementalPartitionsFromList(pl PartitionList) ElementalPartitions {
+// it tries to match partitions by filesystem label
+func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) ElementalPartitions {
 	ep := ElementalPartitions{}
+
+	lm := map[string]string{
+		constants.EfiPartName:        constants.EfiLabel,
+		constants.OEMPartName:        constants.OEMLabel,
+		constants.RecoveryPartName:   constants.RecoveryLabel,
+		constants.StatePartName:      constants.StateLabel,
+		constants.PersistentPartName: constants.PersistentLabel,
+	}
+	if state != nil {
+		for k := range lm {
+			if state.Partitions[k] != nil {
+				lm[k] = state.Partitions[k].FSLabel
+			}
+		}
+	}
+
 	ep.BIOS = pl.GetByName(constants.BiosPartName)
-	ep.EFI = pl.GetByName(constants.EfiPartName)
-	if ep.EFI == nil {
-		ep.EFI = pl.GetByLabel(constants.EfiLabel)
-	}
-	ep.OEM = pl.GetByName(constants.OEMPartName)
-	if ep.OEM == nil {
-		ep.OEM = pl.GetByLabel(constants.OEMLabel)
-	}
-	ep.Recovery = pl.GetByName(constants.RecoveryPartName)
-	if ep.Recovery == nil {
-		ep.Recovery = pl.GetByLabel(constants.RecoveryLabel)
-	}
-	ep.State = pl.GetByName(constants.StatePartName)
-	if ep.State == nil {
-		ep.State = pl.GetByLabel(constants.StateLabel)
-	}
-	ep.Persistent = pl.GetByName(constants.PersistentPartName)
-	if ep.Persistent == nil {
-		ep.Persistent = pl.GetByLabel(constants.PersistentLabel)
-	}
+	ep.EFI = pl.GetByNameOrLabel(constants.EfiPartName, lm[constants.EfiPartName])
+	ep.OEM = pl.GetByNameOrLabel(constants.OEMPartName, lm[constants.OEMPartName])
+	ep.Recovery = pl.GetByNameOrLabel(constants.RecoveryPartName, lm[constants.RecoveryPartName])
+	ep.State = pl.GetByNameOrLabel(constants.StatePartName, lm[constants.StatePartName])
+	ep.Persistent = pl.GetByNameOrLabel(constants.PersistentPartName, lm[constants.PersistentLabel])
+
 	return ep
 }
 

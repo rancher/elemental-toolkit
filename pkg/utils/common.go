@@ -322,32 +322,6 @@ func IsMounted(config *v1.Config, part *v1.Partition) (bool, error) {
 	return !notMnt, nil
 }
 
-// HasSquashedRecovery returns true if a squashed recovery image is found in the system
-func HasSquashedRecovery(config *v1.Config, recovery *v1.Partition) (squashed bool, err error) {
-	mountPoint := recovery.MountPoint
-	if mnt, _ := IsMounted(config, recovery); !mnt {
-		tmpMountDir, err := TempDir(config.Fs, "", "elemental")
-		if err != nil {
-			config.Logger.Errorf("failed creating temporary dir: %v", err)
-			return false, err
-		}
-		defer config.Fs.RemoveAll(tmpMountDir) // nolint:errcheck
-		err = config.Mounter.Mount(recovery.Path, tmpMountDir, "auto", []string{})
-		if err != nil {
-			config.Logger.Errorf("failed mounting recovery partition: %v", err)
-			return false, err
-		}
-		mountPoint = tmpMountDir
-		defer func() {
-			err = config.Mounter.Unmount(tmpMountDir)
-			if err != nil {
-				squashed = false
-			}
-		}()
-	}
-	return Exists(config.Fs, filepath.Join(mountPoint, "cOS", cnst.RecoverySquashFile))
-}
-
 // GetTempDir returns the dir for storing related temporal files
 // It will respect TMPDIR and use that if exists, fallback to try the persistent partition if its mounted
 // and finally the default /tmp/ dir
@@ -370,7 +344,8 @@ func GetTempDir(config *v1.Config, suffix string) string {
 		return filepath.Join("/", "tmp", elementalTmpDir)
 	}
 	// Check persistent and if its mounted
-	ep := v1.NewElementalPartitionsFromList(parts)
+	state, _ := config.LoadInstallState()
+	ep := v1.NewElementalPartitionsFromList(parts, state)
 	persistent := ep.Persistent
 	if persistent != nil {
 		if mnt, _ := IsMounted(config, persistent); mnt {

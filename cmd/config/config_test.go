@@ -301,7 +301,7 @@ var _ = Describe("Config", Label("config"), func() {
 			var ghwTest v1mock.GhwMock
 
 			BeforeEach(func() {
-				bootedFrom = constants.SystemLabel
+				bootedFrom = constants.RecoveryImgFile
 				flags = pflag.NewFlagSet("testflags", 1)
 				flags.String("system.uri", "", "testing flag")
 				flags.Set("system.uri", "docker:image/from:flag")

@@ -459,7 +459,22 @@ var _ = Describe("Runtime Actions", func() {
 				BeforeEach(func() {
 					// Mount recovery partition as it is expected to be mounted when booting from recovery
 					mounter.Mount("device5", constants.LiveDir, "auto", []string{"ro"})
-					// Create recoveryImgSquash so ti identifies that we are using squash recovery
+					// Create installState with squashed recovery
+					statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
+					installState := &v1.InstallState{
+						Partitions: map[string]*v1.PartitionState{
+							constants.RecoveryPartName: {
+								FSLabel: constants.RecoveryLabel,
+								Images: map[string]*v1.ImageState{
+									constants.RecoveryImgName: {
+										FS: constants.SquashFs,
+									},
+								},
+							},
+						},
+					}
+					err = config.WriteInstallState(installState, statePath, statePath)
+					Expect(err).ShouldNot(HaveOccurred())
 					err = fs.WriteFile(recoveryImgSquash, []byte("recovery"), constants.FilePerm)
 					Expect(err).ShouldNot(HaveOccurred())
 

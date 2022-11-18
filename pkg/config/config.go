@@ -270,9 +270,46 @@ func NewInstallElementalParitions() v1.ElementalPartitions {
 	return partitions
 }
 
+// getActivePassiveAndRecovery returns active, passive and recovery states from a given install state. It
+// returns default values for any missing field.
+func getActivePassiveAndRecoveryState(state *v1.InstallState) (active, passive, recovery *v1.ImageState) {
+	recovery = &v1.ImageState{
+		FS:    constants.LinuxImgFs,
+		Label: constants.RecoveryLabel,
+	}
+	passive = &v1.ImageState{
+		FS:    constants.LinuxImgFs,
+		Label: constants.PassiveLabel,
+	}
+	active = &v1.ImageState{
+		FS:    constants.LinuxImgFs,
+		Label: constants.ActiveLabel,
+	}
+
+	if state != nil {
+		sPart := state.Partitions[constants.StatePartName]
+		if sPart != nil {
+			if sPart.Images[constants.ActiveImgName] != nil {
+				active = sPart.Images[constants.ActiveImgName]
+			}
+			if sPart.Images[constants.PassiveImgName] != nil {
+				passive = sPart.Images[constants.PassiveImgName]
+			}
+		}
+		rPart := state.Partitions[constants.RecoveryPartName]
+		if rPart != nil {
+			if rPart.Images[constants.RecoveryImgName] != nil {
+				recovery = rPart.Images[constants.RecoveryImgName]
+			}
+		}
+	}
+
+	return active, passive, recovery
+}
+
 // NewUpgradeSpec returns an UpgradeSpec struct all based on defaults and current host state
 func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
-	var recLabel, recFs, recMnt string
+	var aState, pState, rState *v1.ImageState
 	var active, passive, recovery v1.Image
 
 	installState, err := cfg.LoadInstallState()
@@ -280,36 +317,25 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
 	}
 
+	aState, pState, rState = getActivePassiveAndRecoveryState(installState)
+
 	parts, err := utils.GetAllPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
 	}
-	ep := v1.NewElementalPartitionsFromList(parts)
+	ep := v1.NewElementalPartitionsFromList(parts, installState)
 
 	if ep.Recovery != nil {
 		if ep.Recovery.MountPoint == "" {
 			ep.Recovery.MountPoint = constants.RecoveryDir
 		}
 
-		squashedRec, err := utils.HasSquashedRecovery(&cfg, ep.Recovery)
-		if err != nil {
-			return nil, fmt.Errorf("failed checking for squashed recovery")
-		}
-
-		if squashedRec {
-			recFs = constants.SquashFs
-		} else {
-			recLabel = constants.SystemLabel
-			recFs = constants.LinuxImgFs
-			recMnt = constants.TransitionDir
-		}
-
 		recovery = v1.Image{
 			File:       filepath.Join(ep.Recovery.MountPoint, "cOS", constants.TransitionImgFile),
 			Size:       constants.ImgSize,
-			Label:      recLabel,
-			FS:         recFs,
-			MountPoint: recMnt,
+			Label:      rState.Label,
+			FS:         rState.FS,
+			MountPoint: constants.TransitionDir,
 			Source:     v1.NewEmptySrc(),
 		}
 	}
@@ -322,15 +348,15 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 		active = v1.Image{
 			File:       filepath.Join(ep.State.MountPoint, "cOS", constants.TransitionImgFile),
 			Size:       constants.ImgSize,
-			Label:      constants.ActiveLabel,
-			FS:         constants.LinuxImgFs,
+			Label:      aState.Label,
+			FS:         aState.FS,
 			MountPoint: constants.TransitionDir,
 			Source:     v1.NewEmptySrc(),
 		}
 
 		passive = v1.Image{
 			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
-			Label:  constants.PassiveLabel,
+			Label:  pState.Label,
 			Source: v1.NewFileSrc(active.File),
 			FS:     active.FS,
 		}
@@ -357,10 +383,10 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 // NewResetSpec returns a ResetSpec struct all based on defaults and current host state
 func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	var imgSource *v1.ImageSource
+	var aState, pState *v1.ImageState
 
-	//TODO find a way to pre-load current state values such as labels
 	if !utils.BootedFrom(cfg.Runner, constants.RecoverySquashFile) &&
-		!utils.BootedFrom(cfg.Runner, constants.SystemLabel) {
+		!utils.BootedFrom(cfg.Runner, constants.RecoveryImgFile) {
 		return nil, fmt.Errorf("reset can only be called from the recovery system")
 	}
 
@@ -370,12 +396,13 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	if err != nil {
 		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
 	}
+	aState, pState, _ = getActivePassiveAndRecoveryState(installState)
 
 	parts, err := utils.GetAllPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
 	}
-	ep := v1.NewElementalPartitionsFromList(parts)
+	ep := v1.NewElementalPartitionsFromList(parts, installState)
 
 	if efiExists {
 		if ep.EFI == nil {
@@ -442,18 +469,18 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		GrubConf:     constants.GrubConf,
 		Tty:          constants.DefaultTty,
 		Active: v1.Image{
-			Label:      constants.ActiveLabel,
+			Label:      aState.Label,
 			Size:       constants.ImgSize,
 			File:       activeFile,
-			FS:         constants.LinuxImgFs,
+			FS:         aState.FS,
 			Source:     imgSource,
 			MountPoint: constants.ActiveDir,
 		},
 		Passive: v1.Image{
 			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
-			Label:  constants.PassiveLabel,
+			Label:  pState.Label,
 			Source: v1.NewFileSrc(activeFile),
-			FS:     constants.LinuxImgFs,
+			FS:     aState.FS,
 		},
 		State: installState,
 	}, nil

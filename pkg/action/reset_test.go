@@ -122,7 +122,7 @@ var _ = Describe("Reset action tests", func() {
 			ghwTest.CreateDevices()
 
 			fs.Create(constants.EfiDevice)
-			bootedFrom = constants.SystemLabel
+			bootedFrom = constants.RecoveryImgFile
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == cmdFail {
 					return []byte{}, errors.New("Command failed")

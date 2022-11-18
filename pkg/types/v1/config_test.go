@@ -162,7 +162,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				&v1.Partition{
 					FilesystemLabel: "SOMETHING",
 					Size:            0,
-					Name:            "somethingelse",
+					Name:            "somename",
 					FS:              "",
 					Flags:           nil,
 					MountPoint:      "",
@@ -197,35 +197,50 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("initializes an ElementalPartitions from a PartitionList", func() {
-			ep := v1.NewElementalPartitionsFromList(p)
+			// Use custom label for recovery partition
+			ep := v1.NewElementalPartitionsFromList(p, &v1.InstallState{
+				Partitions: map[string]*v1.PartitionState{
+					constants.RecoveryPartName: {
+						FSLabel: "SOMETHING",
+					},
+				},
+			})
 			Expect(ep.Persistent != nil).To(BeTrue())
 			Expect(ep.OEM != nil).To(BeTrue())
 			Expect(ep.BIOS == nil).To(BeTrue())
 			Expect(ep.EFI == nil).To(BeTrue())
 			Expect(ep.State == nil).To(BeTrue())
-			Expect(ep.Recovery == nil).To(BeTrue())
+			Expect(ep.Recovery != nil).To(BeTrue())
 		})
 		Describe("returns a partition list by install order", func() {
 			It("with no extra parts", func() {
-				ep := v1.NewElementalPartitionsFromList(p)
+				ep := v1.NewElementalPartitionsFromList(p, nil)
 				lst := ep.PartitionsByInstallOrder([]*v1.Partition{})
 				Expect(len(lst)).To(Equal(2))
 				Expect(lst[0].Name == "oem").To(BeTrue())
 				Expect(lst[1].Name == "persistent").To(BeTrue())
 			})
 			It("with extra parts with size > 0", func() {
-				ep := v1.NewElementalPartitionsFromList(p)
+				// Use custom label for state partition
+				ep := v1.NewElementalPartitionsFromList(p, &v1.InstallState{
+					Partitions: map[string]*v1.PartitionState{
+						constants.StatePartName: {
+							FSLabel: "SOMETHING",
+						},
+					},
+				})
 				var extraParts []*v1.Partition
 				extraParts = append(extraParts, &v1.Partition{Name: "extra", Size: 5})
 
 				lst := ep.PartitionsByInstallOrder(extraParts)
-				Expect(len(lst)).To(Equal(3))
+				Expect(len(lst)).To(Equal(4))
 				Expect(lst[0].Name == "oem").To(BeTrue())
-				Expect(lst[1].Name == "extra").To(BeTrue())
-				Expect(lst[2].Name == "persistent").To(BeTrue())
+				Expect(lst[1].Name == "somename").To(BeTrue())
+				Expect(lst[2].Name == "extra").To(BeTrue())
+				Expect(lst[3].Name == "persistent").To(BeTrue())
 			})
 			It("with extra part with size == 0 and persistent.Size == 0", func() {
-				ep := v1.NewElementalPartitionsFromList(p)
+				ep := v1.NewElementalPartitionsFromList(p, &v1.InstallState{})
 				var extraParts []*v1.Partition
 				extraParts = append(extraParts, &v1.Partition{Name: "extra", Size: 0})
 				lst := ep.PartitionsByInstallOrder(extraParts)
@@ -235,7 +250,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(lst[1].Name == "persistent").To(BeTrue())
 			})
 			It("with extra part with size == 0 and persistent.Size > 0", func() {
-				ep := v1.NewElementalPartitionsFromList(p)
+				ep := v1.NewElementalPartitionsFromList(p, nil)
 				ep.Persistent.Size = 10
 				var extraParts []*v1.Partition
 				extraParts = append(extraParts, &v1.Partition{Name: "extra", FilesystemLabel: "LABEL", Size: 0})
@@ -247,7 +262,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(lst[2].Name == "extra").To(BeTrue())
 			})
 			It("with several extra parts with size == 0 and persistent.Size > 0", func() {
-				ep := v1.NewElementalPartitionsFromList(p)
+				ep := v1.NewElementalPartitionsFromList(p, nil)
 				ep.Persistent.Size = 10
 				var extraParts []*v1.Partition
 				extraParts = append(extraParts, &v1.Partition{Name: "extra1", Size: 0})
@@ -262,14 +277,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 
 		It("returns a partition list by mount order", func() {
-			ep := v1.NewElementalPartitionsFromList(p)
+			ep := v1.NewElementalPartitionsFromList(p, nil)
 			lst := ep.PartitionsByMountPoint(false)
 			Expect(len(lst)).To(Equal(2))
 			Expect(lst[0].Name == "persistent").To(BeTrue())
 			Expect(lst[1].Name == "oem").To(BeTrue())
 		})
 		It("returns a partition list by mount reverse order", func() {
-			ep := v1.NewElementalPartitionsFromList(p)
+			ep := v1.NewElementalPartitionsFromList(p, nil)
 			lst := ep.PartitionsByMountPoint(true)
 			Expect(len(lst)).To(Equal(2))
 			Expect(lst[0].Name == "oem").To(BeTrue())
