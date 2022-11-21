@@ -114,11 +114,18 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 		cfg.Logger.Info("reading configuration form '%s'", configDir)
 	}
 
-	viper.AddConfigPath(configDir)
-	viper.SetConfigType("yaml")
-	viper.SetConfigName("manifest.yaml")
-	// If a config file is found, read it in.
-	_ = viper.MergeInConfig()
+	// merge yaml config files on top of default runconfig
+	if exists, _ := utils.Exists(cfg.Fs, filepath.Join(configDir, "manifest.yaml")); exists {
+		viper.AddConfigPath(configDir)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("manifest")
+		// If a config file is found, read it in.
+		err := viper.MergeInConfig()
+		if err != nil {
+			cfg.Logger.Error("error merging config files: %s", err)
+			return cfg, err
+		}
+	}
 
 	// Bind buildconfig flags
 	bindGivenFlags(viper.GetViper(), flags)

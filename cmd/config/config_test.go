@@ -101,6 +101,10 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(err).To(BeNil())
 			Expect(cfg.Name).To(Equal("randomname"))
 		})
+		It("fails on bad yaml manifest file", func() {
+			_, err := ReadConfigBuild("../../tests/fixtures/badconfig/", nil, mounter)
+			Expect(err).Should(HaveOccurred())
+		})
 	})
 	Describe("Read build specs", Label("build"), func() {
 		var cfg *v1.BuildConfig
@@ -146,7 +150,6 @@ var _ = Describe("Config", Label("config"), func() {
 		AfterEach(func() {
 			cleanup()
 		})
-
 		Describe("LiveISO spec", Label("iso"), func() {
 			It("initiates a LiveISO spec", func() {
 				iso, err := ReadBuildISO(cfg, nil)
