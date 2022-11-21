@@ -98,6 +98,7 @@ const (
 	BuildImgName           = "elemental"
 	UsrLocalPath           = "/usr/local"
 	OEMPath                = "/oem"
+	ConfigDir              = "/etc/elemental"
 
 	// SELinux targeted policy paths
 	SELinuxTargetedPath        = "/etc/selinux/targeted"

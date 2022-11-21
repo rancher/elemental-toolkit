@@ -30,7 +30,7 @@ func NewRootCmd() *cobra.Command {
 		Short: "Elemental",
 	}
 	cmd.PersistentFlags().Bool("debug", false, "Enable debug output")
-	cmd.PersistentFlags().String("config-dir", "/etc/elemental", "Set config dir (default is /etc/elemental)")
+	cmd.PersistentFlags().String("config-dir", "", "Set config dir")
 	cmd.PersistentFlags().String("logfile", "", "Set logfile")
 	cmd.PersistentFlags().Bool("quiet", false, "Do not output to stdout")
 	_ = viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))

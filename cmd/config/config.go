@@ -100,9 +100,6 @@ func bindGivenFlags(vp *viper.Viper, flagSet *pflag.FlagSet) {
 
 func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Interface) (*v1.BuildConfig, error) {
 	logger := v1.NewLogger()
-	if configDir == "" {
-		configDir = "."
-	}
 
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
@@ -110,6 +107,12 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)
+	if configDir == "" {
+		configDir = "."
+		cfg.Logger.Info("reading configuration from current directory")
+	} else {
+		cfg.Logger.Info("reading configuration form '%s'", configDir)
+	}
 
 	viper.AddConfigPath(configDir)
 	viper.SetConfigType("yaml")
@@ -138,8 +141,11 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 		config.WithLogger(v1.NewLogger()),
 		config.WithMounter(mounter),
 	)
-
 	configLogger(cfg.Logger, cfg.Fs)
+	if configDir == "" {
+		configDir = constants.ConfigDir
+	}
+	cfg.Logger.Info("reading configuration form '%s'", configDir)
 
 	const cfgDefault = "/etc/os-release"
 	if exists, _ := utils.Exists(cfg.Fs, cfgDefault); exists {
@@ -148,40 +154,40 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 
 		err := viper.MergeInConfig()
 		if err != nil {
-			cfg.Logger.Warnf("error merging os-release file: %s", err)
+			cfg.Logger.Error("error merging os-release file: %s", err)
 			return cfg, err
 		}
 	}
 
 	// merge yaml config files on top of default runconfig
-	if exists, _ := utils.Exists(cfg.Fs, configDir); exists {
+	if exists, _ := utils.Exists(cfg.Fs, filepath.Join(configDir, "config.yaml")); exists {
 		viper.AddConfigPath(configDir)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("config")
 		// If a config file is found, read it in.
 		err := viper.MergeInConfig()
 		if err != nil {
-			cfg.Logger.Warnf("error merging config files: %s", err)
+			cfg.Logger.Error("error merging config files: %s", err)
 			return cfg, err
 		}
 	}
 
 	// Load extra config files on configdir/config.d/ so we can override config values
-	cfgExtra := fmt.Sprintf("%s/config.d/", strings.TrimSuffix(configDir, "/"))
+	cfgExtra := filepath.Join(configDir, "config.d")
 	if exists, _ := utils.Exists(cfg.Fs, cfgExtra); exists {
 		viper.AddConfigPath(cfgExtra)
 		err := filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
+			fmt.Println(path)
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
 				viper.SetConfigType("yaml")
 				viper.SetConfigName(strings.TrimSuffix(d.Name(), ".yaml"))
-
 				return viper.MergeInConfig()
 			}
 			return nil
 		})
 
 		if err != nil {
-			cfg.Logger.Warnf("error merging extra config files: %s", err)
+			cfg.Logger.Error("error merging extra config files: %s", err)
 			return cfg, err
 		}
 	}

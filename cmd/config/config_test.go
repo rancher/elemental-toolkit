@@ -177,6 +177,13 @@ var _ = Describe("Config", Label("config"), func() {
 			flags.Set("cosign", "true")
 			flags.Set("cosign-key", "someOtherKey")
 		})
+		It("fails on bad yaml config file", func() {
+			_, err := ReadConfigRun("../../tests/fixtures/badconfig/", nil, mounter)
+			Expect(err).Should(HaveOccurred())
+
+			_, err = ReadConfigRun("../../tests/fixtures/badextraconfig/", nil, mounter)
+			Expect(err).Should(HaveOccurred())
+		})
 		It("uses defaults if no configs are provided", func() {
 			cfg, err := ReadConfigRun("", nil, mounter)
 			Expect(err).ShouldNot(HaveOccurred())
