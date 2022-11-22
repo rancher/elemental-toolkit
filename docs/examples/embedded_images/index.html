@@ -24,13 +24,13 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/examples/embedded_images/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2022-11-17T12:58:55+01:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:modified_time" content="2022-11-22T15:23:09+01:00" /><meta property="og:site_name" content="Elemental toolkit" />
 
 <meta itemprop="name" content="Creating embedded images">
 <meta itemprop="description" content="This document is a step-by-step guide to build a customized embedded system that can be used in Elemental
 "><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2022-11-17T12:58:55+01:00" />
-<meta itemprop="wordCount" content="1605">
+<meta itemprop="dateModified" content="2022-11-22T15:23:09+01:00" />
+<meta itemprop="wordCount" content="1607">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Creating embedded images"/>
 <meta name="twitter:description" content="This document is a step-by-step guide to build a customized embedded system that can be used in Elemental
@@ -132,7 +132,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.ba7b643f2dccfa18fd2b9dbc341e4318.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.5a4f6339a8b225da6f0fb9d7ea1f58f1.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +168,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.ba7b643f2dccfa18fd2b9dbc341e4318.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.5a4f6339a8b225da6f0fb9d7ea1f58f1.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2194,9 +2194,10 @@ if (!doNotTrack) {
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">ARG</span> <span style="color:#000">K3S_VERSION</span><span style="color:#ce5c00;font-weight:bold">=</span>v1.20.4+k3s1<span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">ARG</span> <span style="color:#000">ARCH</span><span style="color:#ce5c00;font-weight:bold">=</span>amd64
 </span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">ENV</span> <span style="color:#000">ARCH</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">${</span><span style="color:#000">ARCH</span><span style="color:#4e9a06">}</span><span style="color:#a40000">
-</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
-</span></span></span><span style="display:flex;"><span><span style="color:#a40000">
-</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Copy the luet config file pointing to the upgrade repository</span><span style="color:#a40000">
+</span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">ENV</span> <span style="color:#000">LUET_NOLOCK</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Copy the luet config file pointing to the upgrade repository</span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#204a87;font-weight:bold">COPY</span> repositories.yaml /etc/luet/luet.yaml<span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000">
 </span></span></span><span style="display:flex;"><span><span style="color:#a40000"></span><span style="color:#8f5902;font-style:italic"># Copy luet from the official images</span><span style="color:#a40000">
@@ -2584,8 +2585,8 @@ RUN echo &#34;welcome to our derivative&#34; &gt;&gt; /etc/issue.d/01-derivative
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    November 17, 2022
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/0d0f9a7a7fa79d5254389ddaff646fecaea98a8c">docs: Small changes (#1645) (0d0f9a7)</a>
+    November 22, 2022
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/1342bae7ee59872032b6cfb11c7e2391170a2e75">Add LUET_NOLOCK for example Dockerfile (#1651) (1342bae)</a>
 
 </div>
 
