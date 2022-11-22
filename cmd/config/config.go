@@ -111,7 +111,7 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 		configDir = "."
 		cfg.Logger.Info("reading configuration from current directory")
 	} else {
-		cfg.Logger.Info("reading configuration form '%s'", configDir)
+		cfg.Logger.Infof("reading configuration from '%s'", configDir)
 	}
 
 	// merge yaml config files on top of default runconfig
