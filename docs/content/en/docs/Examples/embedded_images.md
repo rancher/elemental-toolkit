@@ -36,6 +36,7 @@ FROM registry.suse.com/suse/sle-micro-rancher/5.2
 ARG K3S_VERSION=v1.20.4+k3s1
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
+ENV LUET_NOLOCK=true
 
 
 # Copy the luet config file pointing to the upgrade repository
