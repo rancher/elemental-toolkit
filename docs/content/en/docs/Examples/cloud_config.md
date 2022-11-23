@@ -11,9 +11,9 @@ You can find here examples on how to tweak a system via cloud-config various asp
 
 The examples are meant to be placed as yaml files under `/oem` ore either `/usr/local/cloud-config`. They can be also given as input cloud-config while calling `elemental install`.
 
-## Networking with wicked
+## Networking with NetworkManager
 
-By default all interfaces will get automatically an IP address, however, there are situations where a static IP is desired, or custom configuration to be specified, here you can find some network settings with wicked.
+By default all interfaces will get automatically an IP address, however, there are situations where a static IP is desired, or custom configuration to be specified, here you can find some network settings with NetworkManager.
 
 ### Additional NIC
 
@@ -24,7 +24,7 @@ name: "Default network configuration"
 stages:
    boot:
      - commands:
-       - wicked ifup eth1
+       - nmcli dev up eth1
      - name: "Setup network"
        files:
        - path: /etc/sysconfig/network/ifcfg-eth1
@@ -45,7 +45,7 @@ name: "Default network configuration"
 stages:
    boot:
      - commands:
-       - wicked ifup eth0
+       - nmcli dev up eth0
    initramfs:
      - name: "Setup network"
        files:
@@ -65,7 +65,7 @@ name: "Default network configuration"
 stages:
    boot:
      - commands:
-       - wicked ifup eth1
+       - nmcli dev up eth1
    initramfs:
      - name: "Setup network"
        files:
