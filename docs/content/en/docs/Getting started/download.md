@@ -38,24 +38,12 @@ _Note_: `elemental install` supports other options as well. Run `elemental insta
 
 Elemental has 4 variants:
 
-- [teal](https://quay.io/repository/costoolkit/releases-teal): sle-micro-rancher based one, shipping packages from Sle Micro 5.2.
-- [green](https://quay.io/repository/costoolkit/releases-green): openSUSE based one, shipping packages from OpenSUSE Leap 15.3 repositories.
+- [teal](https://quay.io/repository/costoolkit/releases-teal): SLE Micro for Rancher based one, shipping packages from Sle Micro 5.3.
+- [green](https://quay.io/repository/costoolkit/releases-green): openSUSE based one, shipping packages from OpenSUSE Leap 15.4 repositories.
 - [blue](https://quay.io/repository/costoolkit/releases-blue): Fedora based one, shipping packages from Fedora 33 repositories
 - [orange](https://quay.io/repository/costoolkit/releases-orange): Ubuntu based one, shipping packages form Ubuntu 20.10 repositories
 
 We currently support and test only the **teal** variant.
-
-## Published AMI images
-
-We publish AMI images for each release, you can find them into ec2 for example with:
-
-```bash
-aws ec2 describe-images --filters 'Name=description,Values=cOS*'
-```
-
-The list of all the published AMI is released as part of the [releases](https://github.com/rancher/elemental-toolkit/releases) assets with the `ami_id.txt.tar.xz` file, e.g. [v0.6.7](https://github.com/rancher/elemental-toolkit/releases/download/v0.6.7/ami_id.txt.tar.xz)
-
-The AMI Owner ID is `053594193760`.
 
 ## What to do next?
 

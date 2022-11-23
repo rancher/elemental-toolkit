@@ -38,7 +38,7 @@ version: 0.0.1
 ```
 
 
-Example mypolicy.te (generated with `audit2alllow`)
+Example mypolicy.te (generated with `audit2allow`)
 ```
 #==== Elemental SELinux targeted policy module ========
 #
@@ -58,7 +58,7 @@ require {
 	type initrc_t;
 	type bin_t;
 	type tmpfs_t;
-	type wicked_t;
+	type NetworkManager_t;
 	type systemd_logind_t;
 	type sshd_t;
 	type lib_t;
@@ -116,8 +116,8 @@ allow unconfined_service_t bin_t:file execmod;
 #!!!! This avc can be allowed using the boolean 'selinuxuser_execmod'
 allow unconfined_t bin_t:file execmod;
 
-#============= wicked_t ==============
-allow wicked_t tmpfs_t:dir read;
-allow wicked_t tmpfs_t:file { getattr open read };
-allow wicked_t tmpfs_t:lnk_file read;
+#============= NetworkManager_t ==============
+allow NetworkManager_t tmpfs_t:dir read;
+allow NetworkManager_t tmpfs_t:file { getattr open read };
+allow NetworkManager_t tmpfs_t:lnk_file read;
 ```

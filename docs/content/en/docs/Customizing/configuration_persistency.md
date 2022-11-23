@@ -36,9 +36,6 @@ stages:
             permissions: 0644
             owner: 0
             group: 0
-          systemctl:
-            disable:
-            - wicked
         - name: "After install (second step)"
           files:
           - path: /etc/motd

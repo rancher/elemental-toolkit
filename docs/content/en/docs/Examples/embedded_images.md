@@ -180,7 +180,7 @@ stages:
           /var/log
           /var/lib/rancher
           /var/lib/kubelet
-          /var/lib/wicked
+          /var/lib/NetworkManager
           /var/lib/longhorn
           /var/lib/cni
         PERSISTENT_STATE_BIND: "true"
