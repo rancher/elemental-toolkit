@@ -92,7 +92,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml(meta interface{}, img v1.Image) 
 		recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
 		if recoveryPart == nil {
 			recoveryPart = &v1.PartitionState{
-				Images: map[string]*v1.ImageState{},
+				Images:  map[string]*v1.ImageState{},
+				FSLabel: u.spec.Partitions.Recovery.FilesystemLabel,
 			}
 			u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
 		}
@@ -101,11 +102,22 @@ func (u *UpgradeAction) upgradeInstallStateYaml(meta interface{}, img v1.Image) 
 		statePart := u.spec.State.Partitions[constants.StatePartName]
 		if statePart == nil {
 			statePart = &v1.PartitionState{
-				Images: map[string]*v1.ImageState{},
+				Images:  map[string]*v1.ImageState{},
+				FSLabel: u.spec.Partitions.State.FilesystemLabel,
 			}
 			u.spec.State.Partitions[constants.StatePartName] = statePart
 		}
-		statePart.Images[constants.PassiveImgName] = statePart.Images[constants.ActiveImgName]
+		if statePart.Images[constants.PassiveImgName] == nil {
+			statePart.Images[constants.PassiveImgName] = &v1.ImageState{
+				Label: u.spec.Passive.Label,
+			}
+		}
+		if statePart.Images[constants.ActiveImgName] != nil {
+			// Do not copy the label from the old active image
+			statePart.Images[constants.PassiveImgName].Source = statePart.Images[constants.ActiveImgName].Source
+			statePart.Images[constants.PassiveImgName].SourceMetadata = statePart.Images[constants.ActiveImgName].SourceMetadata
+			statePart.Images[constants.PassiveImgName].FS = statePart.Images[constants.ActiveImgName].FS
+		}
 		statePart.Images[constants.ActiveImgName] = imgState
 	}
 
