@@ -32,7 +32,7 @@ func ghwPartitionToInternalPartition(partition *block.Partition) *v1.Partition {
 	return &v1.Partition{
 		FilesystemLabel: partition.FilesystemLabel,
 		Size:            uint(partition.SizeBytes / (1024 * 1024)), // Converts B to MB
-		Name:            partition.Name,
+		Name:            partition.Label,
 		FS:              partition.Type,
 		Flags:           nil,
 		MountPoint:      partition.MountPoint,

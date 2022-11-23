@@ -128,6 +128,9 @@ func NewLuet(opts ...Options) *Luet {
 	if luet.context == nil {
 		luetConfig := luet.createLuetConfig()
 		luet.context = context.NewContext(context.WithConfig(luetConfig), context.WithLogger(luet.log))
+		if luet.TmpDir != "" {
+			luet.context.GarbageCollector = gc.GarbageCollector(filepath.Join(luet.TmpDir, "tmpluet"))
+		}
 	}
 
 	if luet.auth == nil {
@@ -392,8 +395,12 @@ func (l Luet) createLuetConfig() *luetTypes.LuetConfig {
 // SetTempDir re-sets the temp dir for all the luet stuff
 func (l *Luet) SetTempDir(tmpdir string) {
 	l.TmpDir = tmpdir
-	l.context.Config.System.TmpDirBase = l.TmpDir
-	l.context.Config.System.PkgsCachePath = l.TmpDir
-	l.context.Config.System.DatabasePath = l.TmpDir
-	l.context.GarbageCollector = gc.GarbageCollector(filepath.Join(tmpdir, "tmpluet"))
+	if l.context != nil {
+		if l.context.Config != nil {
+			l.context.Config.System.TmpDirBase = l.TmpDir
+			l.context.Config.System.PkgsCachePath = l.TmpDir
+			l.context.Config.System.DatabasePath = l.TmpDir
+		}
+		l.context.GarbageCollector = gc.GarbageCollector(filepath.Join(tmpdir, "tmpluet"))
+	}
 }

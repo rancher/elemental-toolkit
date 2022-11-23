@@ -249,13 +249,13 @@ var _ = Describe("Utils", Label("utils"), func() {
 		It("returns all found partitions", func() {
 			parts, err := utils.GetAllPartitions()
 			Expect(err).To(BeNil())
-			var partNames []string
+			var devices []string
 			for _, p := range parts {
-				partNames = append(partNames, p.Name)
+				devices = append(devices, p.Path)
 			}
-			Expect(partNames).To(ContainElement("sda1Test"))
-			Expect(partNames).To(ContainElement("sda1Test"))
-			Expect(partNames).To(ContainElement("sdb1Test"))
+			Expect(devices).To(ContainElement(ContainSubstring("sda1Test")))
+			Expect(devices).To(ContainElement(ContainSubstring("sda2Test")))
+			Expect(devices).To(ContainElement(ContainSubstring("sdb1Test")))
 		})
 	})
 	Describe("GetPartitionFS", Label("lsblk", "partitions"), func() {

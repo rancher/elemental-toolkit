@@ -152,7 +152,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	if configDir == "" {
 		configDir = constants.ConfigDir
 	}
-	cfg.Logger.Info("reading configuration form '%s'", configDir)
+	cfg.Logger.Infof("reading configuration form '%s'", configDir)
 
 	const cfgDefault = "/etc/os-release"
 	if exists, _ := utils.Exists(cfg.Fs, cfgDefault); exists {
@@ -161,7 +161,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 
 		err := viper.MergeInConfig()
 		if err != nil {
-			cfg.Logger.Error("error merging os-release file: %s", err)
+			cfg.Logger.Errorf("error merging os-release file: %s", err)
 			return cfg, err
 		}
 	}
@@ -174,7 +174,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 		// If a config file is found, read it in.
 		err := viper.MergeInConfig()
 		if err != nil {
-			cfg.Logger.Error("error merging config files: %s", err)
+			cfg.Logger.Errorf("error merging config files: %s", err)
 			return cfg, err
 		}
 	}
@@ -184,7 +184,6 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	if exists, _ := utils.Exists(cfg.Fs, cfgExtra); exists {
 		viper.AddConfigPath(cfgExtra)
 		err := filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
-			fmt.Println(path)
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
 				viper.SetConfigType("yaml")
 				viper.SetConfigName(strings.TrimSuffix(d.Name(), ".yaml"))
@@ -194,7 +193,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 		})
 
 		if err != nil {
-			cfg.Logger.Error("error merging extra config files: %s", err)
+			cfg.Logger.Errorf("error merging extra config files: %s", err)
 			return cfg, err
 		}
 	}
