@@ -1,0 +1,19 @@
+packages:
+  - category: "toolchain-fips"
+    name: "yip"
+    upx: false
+    fips: true
+    version: 0.11.3
+    labels:
+      github.repo: "yip"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
+  - category: "toolchain"
+    name: "yip"
+    upx: false
+    fips: false
+    version: 0.11.3
+    labels:
+      github.repo: "yip"
+      github.owner: "mudler"
+      autobump.revdeps: "true"
