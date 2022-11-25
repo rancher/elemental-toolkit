@@ -239,14 +239,4 @@ build {
     only   = ["qemu.cos", "qemu.cos-arm64", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
     output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.box"
   }
-
-  post-processor "compress" {
-    only   = ["virtualbox-iso.cos", "virtualbox-iso.cos-squashfs"]
-    output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.tar.gz"
-  }
-
-  post-processor "compress" {
-    only   = ["qemu.cos", "qemu.cos-arm64", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
-    output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.tar.gz"
-  }
 }
