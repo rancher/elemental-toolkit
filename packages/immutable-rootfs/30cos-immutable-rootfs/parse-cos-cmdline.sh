@@ -44,6 +44,21 @@ esac
 info "root device set to root=${root}"
 
 wait_for_dev -n "${root}"
-/sbin/initqueue --settled --unique /sbin/cos-loop-img "${cos_img}"
+
+# Only run filesystem checks on force mode
+fsck_mode=$(getarg fsck.mode=)
+if [ "${fsck_mode}" == "force" ]; then
+    /sbin/initqueue --settled --unique /sbin/cos-fsck
+fi
+
+# set sentinel file for boot mode
+case "${cos_img}" in
+    *recovery*)
+        echo 1 > /run/cos/recovery_mode ;;
+    *active*)
+        echo 1 > /run/cos/active_mode ;;
+    *passive*)
+        echo 1 > /run/cos/passive_mode ;;
+esac
 
 return 0

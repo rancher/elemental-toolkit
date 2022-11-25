@@ -1,0 +1,58 @@
+# Compatibility upgrade hook for grub2
+#
+# This file is part of cOS and will get reset during upgrades.
+#
+# Before you change this file manually,
+# consider copying this file to /usr/local/cloud-config or
+# copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
+name: "Adapt grub2 configuration on updates"
+stages:
+  after-upgrade-chroot:
+    - name: "Install grub updater in OEM"
+      commands:
+      - |
+        if mountpoint -q /oem; then
+          cp /system/oem/01_upgrade_grub_hook.yaml /oem
+        fi
+  after-upgrade.before:
+    - name: "Check upgrade is needed"
+      commands:
+      - |
+        new="/run/cos/transition/etc/cos/grub.cfg"
+        original="/etc/cos/grub.cfg"
+        current="/run/cos/state/etc/cos/grub.cfg"
+        if [ ! -f "${current}" ]; then
+          current="/run/initramfs/cos-state/etc/cos/grub.cfg"
+        fi
+
+        [ -f "${current}" ] || exit 1
+        [ -f "${original}" ] || exit 1
+        [ -f "${new}" ] || exit 1
+
+        if ! cmp -s "${current}" "${original}"; then
+          2>&1 echo "Customized grub.cfg detected! No grub upgrade is done"
+          2>&1 echo "Manually adjusting grub.cfg is likely to be required to boot upgraded OS"
+          exit 1
+        fi
+
+        if ! cmp -s "${current}" "${new}"; then
+          echo "1" > "/run/cos/grub_update_needed"
+        fi
+
+  after-upgrade:
+    - if: '[ -f "/run/cos/grub_update_needed" ]'
+      name: "Upgrade grub"
+      commands:
+      - |
+        # TODO labels should be loaded from state.yaml
+        # Forward compatibility
+        grub2-editenv /oem/grubenv set label=COS_PASSIVE
+        # Forward compatibility
+        grub2-editenv /oem/grubenv set partlabel=COS_STATE
+        
+  after-upgrade.after:
+    - if: '[ -f "/run/cos/grub_upgrade_succeeded" ]'
+      name: "Uninstall hook from OEM"
+      commands:
+      - |
+        rm -f /oem/01_upgrade_grub_hook.yaml

@@ -48,30 +48,24 @@ else
   set fallback="0 1 2"
 fi
 
-set gfxmode=auto
-set gfxpayload=keep
 insmod all_video
 insmod gfxterm
 insmod loopback
 insmod squash4
 
 menuentry "${display_name}" --id cos {
-  search --no-floppy --label --set=root @STATE_LABEL@
+  set partlabel=@STATE_LABEL@
   set img=/cOS/active.img
-  set label=@ACTIVE_LABEL@
   loopback loop0 /$img
-  set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_active_cmdline}
   initrd (loop0)$initramfs
 }
 
 menuentry "${display_name} (fallback)" --id fallback {
-  search --no-floppy --label --set=root @STATE_LABEL@
+  set partlabel=@STATE_LABEL@
   set img=/cOS/passive.img
-  set label=@PASSIVE_LABEL@
   loopback loop0 /$img
-  set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_passive_cmdline}
   initrd (loop0)$initramfs
@@ -80,14 +74,12 @@ menuentry "${display_name} (fallback)" --id fallback {
 menuentry "${display_name} recovery" --id recovery {
   if search --no-floppy --file /cOS/recovery.squashfs ; then
     set img=/cOS/recovery.squashfs
-    set recoverylabel=@RECOVERY_LABEL@
   else
     set img=/cOS/recovery.img
   fi
-  search --no-floppy --label --set=root @RECOVERY_LABEL@
-  set label=@SYSTEM_LABEL@
+  set partlabel=@RECOVERY_LABEL@
+  search --no-floppy --label --set=root $partlabel
   loopback loop0 /$img
-  set root=($root)
   source (loop0)/etc/cos/bootargs.cfg
   linux (loop0)$kernel $kernelcmd ${extra_cmdline} ${extra_recovery_cmdline}
   initrd (loop0)$initramfs

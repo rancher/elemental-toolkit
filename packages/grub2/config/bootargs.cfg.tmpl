@@ -1,8 +1,4 @@
+# TODO we could sanity check $partlabel is set here so we can error out before even attempting to boot
 set kernel=/boot/vmlinuz
-if [ -n "$recoverylabel" ]; then
-    set kernelcmd="console=tty1 console=ttyS0 root=live:LABEL=$recoverylabel rd.live.dir=/ rd.live.squashimg=$img panic=5 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@"
-else
-    set kernelcmd="console=tty1 console=ttyS0 root=LABEL=$label cos-img/filename=$img panic=5 security=selinux selinux=1 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@ fsck.mode=force fsck.repair=yes"
-fi
-
+set kernelcmd="console=tty1 console=ttyS0 root=LABEL=$partlabel cos-img/filename=$img panic=5 security=selinux selinux=1 rd.neednet=1 rd.cos.oemlabel=@OEM_LABEL@ fsck.mode=force fsck.repair=yes"
 set initramfs=/boot/initrd
