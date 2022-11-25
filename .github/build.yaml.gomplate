@@ -98,13 +98,9 @@
   {{{- end }}}
   {{{- if $local_runner }}}
       - name: Install make
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
   {{{- end }}}
 
 {{{ end }}}
@@ -306,13 +302,9 @@
           path: build
       {{{ tmpl.Exec  "make" "add_local_repo" }}}
       - name: Install deps
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y xorriso squashfs-tools mtools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools mtools
       {{{ tmpl.Exec "cos_version" }}}
       - name: Build ISO from local build 🔧
         if: github.event_name != 'schedule' && !startsWith(github.ref, 'refs/tags/')
@@ -378,13 +370,9 @@
         run: |
           sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
@@ -398,12 +386,6 @@
           name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.log
           path: |
             packer/*.log
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Packer-{{{$subset}}}-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
-          path: |
-            packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v3
         with:
@@ -441,7 +423,7 @@
       matrix:
         test: [ {{{  join $subset_tests ", " }}} ]
     steps:
-      {{{ tmpl.Exec "runner_cleanup" false }}} 
+      {{{ tmpl.Exec "runner_cleanup" false }}}
       {{{ tmpl.Exec "prepare_build" false }}}
       - uses: actions/checkout@v3
       - name: Download vagrant box
@@ -452,14 +434,10 @@
       - name: Install deps
         run: sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
+        run: |
+          sudo apt-get update
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -698,30 +676,8 @@
         uses: actions/download-artifact@v3
         with:
           name: cOS-nonsquashfs-{{{ $flavor }}}-{{{ $config.arch }}}.iso.zip
-          path: iso-release
-      {{{- if $config.build_image_qemu }}}
-      - name: Download vagrant box (qemu)
-        uses: actions/download-artifact@v3
-        with:
-          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.box
           path: release
-      - name: Download QCOW image
-        uses: actions/download-artifact@v3
-        with:
-          name: cOS-Packer-nonsquashfs-{{{ $flavor }}}-QEMU-{{{ $config.arch }}}.qcow
-          path: release
-      {{{- end }}}
       {{{- if $config.build_raw_image }}}
-      - name: Download GCE RAW image
-        uses: actions/download-artifact@v3
-        with:
-          name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: release
-      - name: Download AZURE RAW image
-        uses: actions/download-artifact@v3
-        with:
-          name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: release
       - name: Download RAW image
         uses: actions/download-artifact@v3
         with:
@@ -738,19 +694,12 @@
         with:
           name: cos-{{{ $config.arch }}}.yaml
           path: release
-      - name: Release
-        uses: fnkr/github-action-ghr@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GHR_COMPRESS: xz
-          GHR_PATH: release/
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Release ISO
-        uses: fnkr/github-action-ghr@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GHR_PATH: iso-release/
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: GH Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: |
+            release/*
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
@@ -770,13 +719,9 @@
     steps:
     {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
       - name: Install OS deps
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v3
       - name: Download result for build
         uses: actions/download-artifact@v3
@@ -790,30 +735,14 @@
       {{{ tmpl.Exec "make" "deps_ci" }}}
       {{{ tmpl.Exec "cos_version" }}}
       {{{ tmpl.Exec "make" "raw_disk" }}}
-      {{{ tmpl.Exec "make" "azure_disk" }}}
-      {{{ tmpl.Exec "make" "gce_disk" }}}
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
-          mv disk.raw.vhd cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.tar.gz
       - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: |
             cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: |
-            cOS-Vanilla-AZURE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.vhd
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: |
-            cOS-Vanilla-GCE-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.tar.gz
           if-no-files-found: error
       - name: cleanup leftovers
         if: always()

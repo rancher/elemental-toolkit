@@ -43,13 +43,9 @@ jobs:
             sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.18.8.linux-arm64.tar.gz
             echo "/usr/local/go/bin" >> $GITHUB_PATH
       - name: Install make
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
@@ -130,13 +126,9 @@ jobs:
         run: |
           sudo -E make add_local_repo
       - name: Install deps
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y xorriso squashfs-tools mtools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xorriso squashfs-tools mtools
       - name: Export cos version
         run: |
              source .github/helpers.sh
@@ -182,13 +174,9 @@ jobs:
         run: |
           sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
@@ -202,12 +190,6 @@ jobs:
           name: cOS-Packer-squashfs-teal-QEMU-arm64.log
           path: |
             packer/*.log
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Packer-squashfs-teal-QEMU-arm64.qcow
-          path: |
-            packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v3
         with:
@@ -248,14 +230,10 @@ jobs:
       - name: Install deps
         run: sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
+        run: |
+          sudo apt-get update
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -314,13 +292,9 @@ jobs:
         run: |
           sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
       - name: Install Packer
         uses: hashicorp-contrib/setup-packer@v2
       - name: Build QEMU Image 🔧
@@ -334,12 +308,6 @@ jobs:
           name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.log
           path: |
             packer/*.log
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Packer-nonsquashfs-teal-QEMU-arm64.qcow
-          path: |
-            packer/*.tar.gz
           if-no-files-found: error
       - uses: actions/upload-artifact@v3
         with:
@@ -380,14 +348,10 @@ jobs:
       - name: Install deps
         run: sudo -E make deps
       - name: Install deps (apt-get)
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get remove -y apparmor*
-            sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
+        run: |
+          sudo apt-get update
+          sudo apt-get remove -y apparmor*
+          sudo apt-get install -y qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi vagrant make libvirt-daemon-system bridge-utils ovmf
       - name: Prepare libvirt
         run: |
           # Create bridge conf
@@ -440,13 +404,9 @@ jobs:
           sudo rm -Rf root oem efi || true
           docker system prune -f -a --volumes || true
       - name: Install OS deps
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
       - uses: actions/checkout@v3
       - name: Download result for build
         uses: actions/download-artifact@v3
@@ -468,34 +428,14 @@ jobs:
       - name: Run make raw_disk
         run: |
           sudo -E make raw_disk
-      - name: Run make azure_disk
-        run: |
-          sudo -E make azure_disk
-      - name: Run make gce_disk
-        run: |
-          sudo -E make gce_disk
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64.raw
-          mv disk.raw.vhd cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64.vhd
-          mv disk.raw.tar.gz cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64.tar.gz
       - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64
           path: |
             cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-arm64.raw
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64
-          path: |
-            cOS-Vanilla-AZURE-teal-${{ env.COS_VERSION }}-arm64.vhd
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64
-          path: |
-            cOS-Vanilla-GCE-teal-${{ env.COS_VERSION }}-arm64.tar.gz
           if-no-files-found: error
       - name: cleanup leftovers
         if: always()
