@@ -4,11 +4,16 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
 cos_unit="cos-immutable-rootfs.service"
 cos_layout="/run/cos/cos-layout.env"
+root_part_mnt="/run/initramfs/cos-state" # TODO change to something under /run/cos
 
 # Omit any immutable roofs module logic if disabled
 if getargbool 0 rd.cos.disable; then
     exit 0
 fi
+
+# Omit any immutable rootfs module logic if no image path provided
+cos_img=$(getarg cos-img/filename=)
+[ -z "${cos_img}" ] && exit 0
 
 [ -z "${root}" ] && root=$(getarg root=)
 
@@ -105,20 +110,24 @@ esac
 [ "${rootok}" != "1" ] && exit 0
 
 dev=$(dev_unit_name "${root}")
+root_part_unit="${root_part_mnt#/}"
+root_part_unit="${root_part_unit//-/\\x2d}"
+root_part_unit="${root_part_unit//\//-}.mount"
+
 {
     echo "[Unit]"
     echo "Before=initrd-root-fs.target"
     echo "DefaultDependencies=no"
     echo "[Mount]"
-    echo "Where=/sysroot"
+    echo "Where=${root_part_mnt}"
     echo "What=${root}"
     echo "Options=${cos_root_perm},suid,dev,exec,auto,nouser,async"
-} > "$GENERATOR_DIR"/sysroot.mount
+} > "$GENERATOR_DIR/${root_part_unit}"
 
-if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/sysroot.mount" ]; then
+if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/${root_part_unit}" ]; then
     mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
-    ln -s "$GENERATOR_DIR"/sysroot.mount \
-        "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
+    ln -s "$GENERATOR_DIR/${root_part_unit}" \
+        "$GENERATOR_DIR/initrd-root-fs.target.requires/${root_part_unit}"
 fi
 
 mkdir -p "$GENERATOR_DIR/$dev.device.d"
@@ -127,3 +136,20 @@ mkdir -p "$GENERATOR_DIR/$dev.device.d"
     echo "JobTimeoutSec=300"
     echo "JobRunningTimeoutSec=300"
 } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
+
+{
+    echo "[Unit]"
+    echo "Before=initrd-root-fs.target"
+    echo "DefaultDependencies=no"
+    echo "RequiresMountsFor=${root_part_mnt}"
+    echo "[Mount]"
+    echo "Where=/sysroot"
+    echo "What=${root_part_mnt}/${cos_img#/}"
+    echo "Options=${cos_root_perm},suid,dev,exec,auto,nouser,async"
+} > "$GENERATOR_DIR"/sysroot.mount
+
+if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/sysroot.mount" ]; then
+    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
+    ln -s "$GENERATOR_DIR"/sysroot.mount \
+        "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
+fi

@@ -226,8 +226,9 @@ declare etc_conf="/sysroot/etc/systemd/system/etc.mount.d"
 declare cos_layout="/run/cos/cos-layout.env"
 declare root_fstype=$(findmnt -rno FSTYPE /sysroot)
 declare root=$(findmnt -rno SOURCE /sysroot)
+declare base_part=$(findmnt -rno SOURCE /run/cos/root)
+declare partname
 declare fstab
-declare state_label
 declare state_paths
 declare state_bind
 declare state_target
@@ -238,10 +239,8 @@ readCOSLayoutConfig
 
 # If sysroot is already an overlay do not prepare the rw overlay
 if [ "${root_fstype}" != "overlay" ]; then
-    state_label=$(ls /tmp/cosloop-*)
-    state_label="${state_label##/tmp/cosloop-}"
-    if [ -f "/dev/disk/by-label/${state_label}" ]; then
-        fstab="/dev/disk/by-label/${state_label} /run/initramfs/cos-state auto ${cos_root_perm} 0 0\n"
+    if [ -f "${base_part}" ]; then
+        fstab="${base_part} /run/initramfs/cos-state auto ${cos_root_perm} 0 0\n"
     fi
     fstab+="${root} / auto ${cos_root_perm} 0 0\n"
     fstab+=$(mountOverlayBase)
@@ -255,8 +254,9 @@ for mount in "${mountpoints[@]}"; do
             fstab+=$(mountOverlay "${mount%%:*}")
         fi
     else
-        # FSCK
-        systemd-fsck "${mount#*:}"
+        # ensure filesystem check is not done twice for this device
+        part_name=$(basename $(realpath "${mount#*:}"))
+        [ -e "/tmp/cos-fsck-${part_name}" ] || systemd-fsck "${mount#*:}"
         fstab+=$(mountPersistent "${mount}")
     fi
 done

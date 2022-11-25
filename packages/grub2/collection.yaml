@@ -7,7 +7,7 @@ packages:
         version: ">0.0.2"
   - name: "grub2-config"
     category: "system"
-    version: 0.0.17-3
+    version: 0.0.18
     provides:
       - name: "grub-config"
         version: ">0.0.12"

@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.24"
+    version: "0.24.1"
     requires:
       - category: toolchain
         name: elemental-cli
@@ -141,3 +141,5 @@ packages:
         name: "default-services"
       - !!merge <<: *config
         name: "selinux"
+      - !!merge <<: *cc
+        name: "upgrade_grub_hooks"
