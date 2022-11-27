@@ -1,7 +1,7 @@
 packages:
   - name: "grub2"
     category: "live"
-    version: 0.0.4
+    version: 0.0.4-1
     description: "Grub2 booloader for live systems"
   - name: "grub2-efi-image"
     category: "live"
