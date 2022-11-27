@@ -18,3 +18,4 @@ packages:
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"
+    version: 0.9.6-1
