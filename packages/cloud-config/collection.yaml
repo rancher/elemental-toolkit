@@ -14,6 +14,7 @@ packages:
     name: "defaults"
     oem_file: "01_defaults.yaml"
     templated: false
+    version: 0.4-4
   - !!merge <<: *base
     name: "upgrades"
     oem_file: "02_upgrades.yaml"
