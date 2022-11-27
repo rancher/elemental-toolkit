@@ -1,4 +1,4 @@
 name: "base-dracut-modules"
 category: "system"
-version: 0.2.0-1
+version: 0.2.0-2
 description: "Base modules for creating an initrd with dracut for cOS derivatives"
