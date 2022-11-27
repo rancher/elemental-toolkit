@@ -1,6 +1,6 @@
 name: "nerdctl"
 category: "utils"
-version: "1.0.0"
+version: 1.0.0-1
 platform: linux
 labels:
   github.repo: "nerdctl"
