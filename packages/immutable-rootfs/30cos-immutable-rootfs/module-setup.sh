@@ -24,7 +24,7 @@ install() {
     declare systemdsystemunitdir=${systemdsystemunitdir}
 
     inst_multiple \
-        mount mountpoint sort rmdir findmnt rsync cut
+        mount mountpoint sort rmdir findmnt rsync cut basename
 
     # Include utilities required for cos-setup services,
     # probably a devoted cos-setup dracut module makes sense
