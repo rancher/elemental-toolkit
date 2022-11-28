@@ -1,6 +1,6 @@
 category: "live"
 name: "systemd-boot"
-version: 26-3
+version: 26-4
 package_version: "26-May-2018"
 labels:
   package.checksum: "371099b6382e787596363eb4a87bd9d59ebb6183e78840c14a9611d01c81cee1"
