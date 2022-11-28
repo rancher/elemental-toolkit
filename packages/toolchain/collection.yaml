@@ -2,7 +2,7 @@ packages:
   - &luet
     category: "toolchain"
     name: "luet"
-    version: "0.33.0"
+    version: 0.33.0-1
     branch: ""
     upx: false
     fips: false
@@ -13,7 +13,7 @@ packages:
   - &luet-fips
     category: "toolchain-fips"
     name: "luet"
-    version: "0.33.0"
+    version: 0.33.0-1
     branch: ""
     upx: false
     fips: true
@@ -23,7 +23,7 @@ packages:
       autobump.revdeps: "true"
   - name: "luet-makeiso"
     category: "toolchain"
-    version: 0.4.0-7
+    version: 0.4.0-8
     upx: false
     fips: false
     labels:
@@ -35,7 +35,7 @@ packages:
         version: "<1.0.0"
   - name: "luet-makeiso"
     category: "toolchain-fips"
-    version: 0.3.8-35
+    version: 0.3.8-36
     upx: false
     fips: true
     labels:
