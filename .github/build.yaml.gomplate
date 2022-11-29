@@ -738,11 +738,14 @@
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
+      - name: Compress RAW image
+        run: |
+          tar -cvzf cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
       - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
           path: |
-            cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
+            cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz
           if-no-files-found: error
       - name: cleanup leftovers
         if: always()
@@ -770,6 +773,9 @@
         uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
+      - name: Untar RAW image
+        run: |
+          tar -xvf cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz
       - name: Run tests 🔧
         run: |
           sudo -E make raw_disk_test_deploy

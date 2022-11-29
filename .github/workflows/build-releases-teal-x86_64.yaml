@@ -1001,11 +1001,14 @@ jobs:
       - name: Rename images
         run: |
           mv disk.raw cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw
+      - name: Compress RAW image
+        run: |
+          tar -cvzf cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw.tar.gz cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw
       - uses: actions/upload-artifact@v3
         with:
           name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64
           path: |
-            cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw
+            cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw.tar.gz
           if-no-files-found: error
       - name: cleanup leftovers
         if: always()
@@ -1058,6 +1061,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64
+      - name: Untar RAW image
+        run: |
+          tar -xvf cOS-Vanilla-RAW-teal-${{ env.COS_VERSION }}-x86_64.raw.tar.gz
       - name: Run tests 🔧
         run: |
           sudo -E make raw_disk_test_deploy
