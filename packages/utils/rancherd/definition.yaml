@@ -1,6 +1,9 @@
 name: "rancherd"
 category: "utils"
-version: 0.0.1-alpha13-14
+# our default versioner removes the last -XX values from the version, to avoid using our own bumped versions whcih add a -XX
+# to it, so in the case of rancherd which already includes a -alphaXX we have to append another -XX so the real version
+# will be maintained and cloned, i.e 0.0.1-alpha14, otherwise it will remove the -alpha14 and fail to build
+version: 0.0.1-alpha14-14
 platform: linux
 upx: false
 labels:
