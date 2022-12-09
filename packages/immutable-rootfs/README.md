@@ -2,7 +2,7 @@ This package ships the `immutable-rootfs` dracut module responsible of mounting 
 boot time with the immutable specific setup. The immutability concept refers
 to read only root (`/`) system. To ensure the linux OS is still functional
 certain paths or areas are required to be writable, in those cases an
-ephemeral overlay tmpfs is set in place. Additionaly, the immutable rootfs
+ephemeral overlay tmpfs is set in place. Additionally, the immutable rootfs
 module can also mount a custom list of device blocks with read write
 permissions, those are mostly devoted to store persistent data.
 
@@ -22,7 +22,7 @@ before `initramfs` stage. So immutable rootfs configuration via cloud-init
 using the `/run/cos/cos-layout.env` file is only effective if called in any
 of the `rootfs.before`, `rootfs` or `rootfs.after` cloud-init stages.
 
-## Kernel configuraton paramters
+## Kernel configuration parameters
 
 The immutable rootfs can be configured with the following kernel parameters:
 
@@ -47,7 +47,7 @@ The immutable rootfs can be configured with the following kernel parameters:
   persistent block device labelled `COS_OEM` which is used to keep some
   configuration data (mostly cloud-init files). The immutable rootfs tries
   to mount this device at very early stages of the boot even before applying
-  the immutable rootfs configs. It done this way to enable to configure the
+  the immutable rootfs configs. It's done this way to enable to configure the
   immutable rootfs module within the cloud-init files. As the `COS_OEM` device
   might not be always present the boot process just continues without failing
   after a certain timeout. This option configures such a timeout. Defaults to
@@ -72,7 +72,7 @@ only effective if called in any of the `rootfs.before`, `rootfs` or
 `rootfs.after` cloud-init stages.
 
 
-In the environment file few options are available:
+In the environment file the following options are available:
 
 
 * `VOLUMES=LABEL=<blk_label>:<mountpoint>`: This variable expects a block device
@@ -108,17 +108,17 @@ In the environment file few options are available:
   `PERSISTENT_STATE_TARGET`. By default this variable is empty, which means
   no persistent state area is created or used.
 
-  **Note**: The specified paths needs either to exist or be located in an area 
+  **Note**: The specified paths needs to either exist or be located in an area 
             which is writeable ( for example, inside locations specified with `RW_PATHS`).
-            The dracut module will attempt to create non-existant directories, 
-            but might fail if the mountpoint where are located is read-only.
+            The dracut module will attempt to create nonexistent directories, 
+            but might fail if the mountpoint where they are located is read-only.
 
 * `PERSISTENT_STATE_BIND="true|false"`: When this variable is set to true
   the persistent state paths are bind mounted (instead of using overlayfs)
   after being mirrored with the original content. By default this variable is
   set to `false`.
 
-Note that persistent state are is setup once the ephemeral paths and persistent
+Note that persistent state is setup once the ephemeral paths and persistent
 volumes are mounted. Persistent state paths can't be an already existing mount
 point. If the persistent state requires any of the paths that are part of the
 ephemeral area by default, then `RW_PATHS` needs to be defined to avoid

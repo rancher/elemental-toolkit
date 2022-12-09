@@ -405,7 +405,3 @@ Finally, we start k3s. Note, we could have tweaked that part slightly to provide
        - |
         chmod 600 /etc/systemd/system/k3s.service.env
 ```
-
-## References
-
-You can find the complete example [here](https://github.com/mudler/c3os) where this article was made from.
