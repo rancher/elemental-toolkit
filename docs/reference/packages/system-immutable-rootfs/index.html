@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="generator" content="Hugo 0.107.0"><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
+<meta name="generator" content="Hugo 0.108.0"><META NAME="ROBOTS" CONTENT="INDEX, FOLLOW">
 
 
 <link rel="shortcut icon" href="https://rancher.github.io/elemental-toolkit/favicons/favicon.ico" >
@@ -25,12 +25,11 @@
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/reference/packages/system-immutable-rootfs/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2022-12-12T00:00:00+00:00" />
 <meta property="article:modified_time" content="2022-12-12T00:00:00+00:00" /><meta property="og:site_name" content="Elemental toolkit" />
-
 <meta itemprop="name" content="system/immutable-rootfs">
 <meta itemprop="description" content="Documentation for the system/immutable-rootfs package
 "><meta itemprop="datePublished" content="2022-12-12T00:00:00+00:00" />
 <meta itemprop="dateModified" content="2022-12-12T00:00:00+00:00" />
-<meta itemprop="wordCount" content="977">
+<meta itemprop="wordCount" content="978">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="system/immutable-rootfs"/>
 <meta name="twitter:description" content="Documentation for the system/immutable-rootfs package
@@ -132,7 +131,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.2f5a536e36502168cc81e85092639d64.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.99066fb039bbe12031f5a9a901a0d5e5.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -168,7 +167,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.2f5a536e36502168cc81e85092639d64.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.99066fb039bbe12031f5a9a901a0d5e5.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -2073,7 +2072,7 @@ if (!doNotTrack) {
 
 <div class="td-toc"><nav id="TableOfContents">
   <ul>
-    <li><a href="#kernel-configuraton-paramters">Kernel configuraton paramters</a>
+    <li><a href="#kernel-configuration-parameters">Kernel configuration parameters</a>
       <ul>
         <li><a href="#configuration-with-an-environment-file">Configuration with an environment file</a></li>
       </ul>
@@ -2191,7 +2190,7 @@ This package ships the <code>immutable-rootfs</code> dracut module responsible o
 boot time with the immutable specific setup. The immutability concept refers
 to read only root (<code>/</code>) system. To ensure the linux OS is still functional
 certain paths or areas are required to be writable, in those cases an
-ephemeral overlay tmpfs is set in place. Additionaly, the immutable rootfs
+ephemeral overlay tmpfs is set in place. Additionally, the immutable rootfs
 module can also mount a custom list of device blocks with read write
 permissions, those are mostly devoted to store persistent data.</p>
 <p>The dracut module is mostly configured via kernel command line parameters or
@@ -2206,7 +2205,7 @@ in initrd before switching root and after <code>rootfs</code> cloud-init stage b
 before <code>initramfs</code> stage. So immutable rootfs configuration via cloud-init
 using the <code>/run/cos/cos-layout.env</code> file is only effective if called in any
 of the <code>rootfs.before</code>, <code>rootfs</code> or <code>rootfs.after</code> cloud-init stages.</p>
-<h2 id="kernel-configuraton-paramters">Kernel configuraton paramters</h2>
+<h2 id="kernel-configuration-parameters">Kernel configuration parameters</h2>
 <p>The immutable rootfs can be configured with the following kernel parameters:</p>
 <ul>
 <li>
@@ -2235,7 +2234,7 @@ multiple times.</p>
 persistent block device labelled <code>COS_OEM</code> which is used to keep some
 configuration data (mostly cloud-init files). The immutable rootfs tries
 to mount this device at very early stages of the boot even before applying
-the immutable rootfs configs. It done this way to enable to configure the
+the immutable rootfs configs. It&rsquo;s done this way to enable to configure the
 immutable rootfs module within the cloud-init files. As the <code>COS_OEM</code> device
 might not be always present the boot process just continues without failing
 after a certain timeout. This option configures such a timeout. Defaults to
@@ -2260,7 +2259,7 @@ configuration is applied in initrd before switching root and after
 configuration via cloud-init using the <code>/run/cos/cos-layout.env</code> file is
 only effective if called in any of the <code>rootfs.before</code>, <code>rootfs</code> or
 <code>rootfs.after</code> cloud-init stages.</p>
-<p>In the environment file few options are available:</p>
+<p>In the environment file the following options are available:</p>
 <ul>
 <li>
 <p><code>VOLUMES=LABEL=&lt;blk_label&gt;:&lt;mountpoint&gt;</code>: This variable expects a block device
@@ -2299,10 +2298,10 @@ will be stored, if any. Default value is <code>/usr/local/.state</code>.</p>
 the paths that will become writable and store its data inside
 <code>PERSISTENT_STATE_TARGET</code>. By default this variable is empty, which means
 no persistent state area is created or used.</p>
-<p><strong>Note</strong>: The specified paths needs either to exist or be located in an area
+<p><strong>Note</strong>: The specified paths needs to either exist or be located in an area
 which is writeable ( for example, inside locations specified with <code>RW_PATHS</code>).
-The dracut module will attempt to create non-existant directories,
-but might fail if the mountpoint where are located is read-only.</p>
+The dracut module will attempt to create nonexistent directories,
+but might fail if the mountpoint where they are located is read-only.</p>
 </li>
 <li>
 <p><code>PERSISTENT_STATE_BIND=&quot;true|false&quot;</code>: When this variable is set to true
@@ -2311,7 +2310,7 @@ after being mirrored with the original content. By default this variable is
 set to <code>false</code>.</p>
 </li>
 </ul>
-<p>Note that persistent state are is setup once the ephemeral paths and persistent
+<p>Note that persistent state is setup once the ephemeral paths and persistent
 volumes are mounted. Persistent state paths can&rsquo;t be an already existing mount
 point. If the persistent state requires any of the paths that are part of the
 ephemeral area by default, then <code>RW_PATHS</code> needs to be defined to avoid
