@@ -13,4 +13,4 @@ By default you can login with the user `root` and `cos` in a vanilla Elemental i
 You can change this by overriding `/system/oem/04_accounting.yaml` in the container image if present, or via [cloud-init](../../reference/cloud_init/#stagesstage_idstep_nameusers).
 
 ### Examples
-- [Example accounting file](https://github.com/mudler/c3os/blob/master/files/system/oem/10_accounting.yaml)
+- [Example accounting file](https://github.com/rancher/elemental/blob/main/framework/files/system/oem/04_accounting.yaml)

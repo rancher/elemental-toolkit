@@ -5,7 +5,7 @@ Some helpful tips and docs for development
 ## Enable video capture on virtualbox (packer, tests)
 
 When building the images with packer or running the tests with virtualbox, there is a possibility of enabling video capture of the machine output for easy troubleshooting.
-This is helful on situations when we cannot access the machine directly like in CI tests.
+This is helpful in situations where we cannot access the machine directly like in CI tests.
 
 This is disabled by default but can be enabled so the output is captured. The CI is prepared to save the resulting artifacts if this is enabled.
 
@@ -34,16 +34,6 @@ The test setup is done via the `make/Makefile.test` with `create_vm_from_iso_bio
 The test run is done via ginkgo, test suites are under the `test/installer` directory.
 
 The full test workflow for this is as follows:
-
-For bios:
-
- - *(Makefile)* Create a vbox machine
- - *(Makefile)* Set bios
- - *(Makefile)* Set the boot order, so it boots from disk first, then dvd. This works because the initial disk is empty, so it will force booting from dvd on the first boot and allows us to test the installer from ISO.
- - *(Ginkgo)* Run test suite
- - *(Ginkgo)* Reboot. Now because of the boot order, the VM will boot from disk properly as it contains grub
- - *(Ginkgo)* Tests will check to see if whatever was run in the test was correctly (i.e. layout, partitions, config files, etc...)
- - *(Ginkgo)* After each test, the disk partition table is wiped out so the next test will see an empty disk and boot from dvd again.
 
 For efi:
 

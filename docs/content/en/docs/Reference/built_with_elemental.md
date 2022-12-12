@@ -25,4 +25,4 @@ Open up an issue or create a PR to get yours added to the list!
 
 | Name      | Description                                                                                                     | Link                                   |
 |-----------|-----------------------------------------------------------------------------------------------------------------|----------------------------------------|
-| c3os      | Immutable OS for Automated (Decentralized) Kubernetes clusters with k3s, for homelab and beyond                 | https://github.com/c3os-io/c3os        |
+| Kairos    | Immutable OS for Automated (Decentralized) Kubernetes clusters with k3s, for homelab and beyond                 | https://github.com/kairos-io/kairos    |
