@@ -38,9 +38,6 @@ endif
 test_deps:
 	go mod download
 	go get github.com/onsi/gomega/...
-	go get github.com/onsi/ginkgo/v2/ginkgo/internal@v2.1.4
-	go get github.com/onsi/ginkgo/v2/ginkgo/generators@v2.1.4
-	go get github.com/onsi/ginkgo/v2/ginkgo/labels@v2.1.4
 	go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
 
 test: $(GINKGO)
