@@ -182,6 +182,7 @@ func GetInstallKeyEnvMap() map[string]string {
 		"no-format":           "NO_FORMAT",
 		"tty":                 "TTY",
 		"grub-entry-name":     "GRUB_ENTRY_NAME",
+		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
 	}
 }
 

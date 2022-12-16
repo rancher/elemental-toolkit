@@ -289,6 +289,8 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_INSTALL_CLOUD_INIT", "path/to/file1.yaml,/absolute/path/to/file2.yaml")
 				Expect(err).ShouldNot(HaveOccurred())
+				err = os.Setenv("ELEMENTAL_INSTALL_DISABLE_BOOT_ENTRY", "true")
+				Expect(err).ShouldNot(HaveOccurred())
 
 				spec, err := ReadInstallSpec(cfg, flags)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -296,6 +298,8 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(spec.Target == "/env/disk")
 				// Overwrites system image, flags have priority over files and env vars
 				Expect(spec.Active.Source.Value() == "image/from:flag")
+				// Overwerites default value for DisableBootEntry from an env var
+				Expect(spec.DisableBootEntry).To(BeTrue())
 				// Uses recovery and no-format defined in confing.yaml
 				Expect(spec.Recovery.Source.Value() == "recovery/image:latest")
 				Expect(spec.NoFormat == true)
