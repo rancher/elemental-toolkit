@@ -1,6 +1,6 @@
 name: cos-features
 category: system
-version: 0.5-15
+version: 0.5-16
 requires:
   - name: "elemental-cli"
     category: "toolchain"
