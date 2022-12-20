@@ -207,6 +207,10 @@ func (r ResetAction) Run() (err error) {
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookAfterResetChroot)
 	}
+	err = r.resetHook(cnst.AfterResetHook, false)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.HookAfterReset)
+	}
 
 	// installation rebrand (only grub for now)
 	err = e.SetDefaultGrubEntry(
@@ -230,9 +234,9 @@ func (r ResetAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 
-	err = r.resetHook(cnst.AfterResetHook, false)
+	err = r.resetHook(cnst.PostResetHook, false)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.HookAfterReset)
+		return elementalError.NewFromError(err, elementalError.HookPostReset)
 	}
 
 	err = r.updateInstallState(e, cleanup, meta)

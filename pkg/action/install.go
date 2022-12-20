@@ -222,6 +222,10 @@ func (i InstallAction) Run() (err error) {
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookAfterInstallChroot)
 	}
+	err = i.installHook(cnst.AfterInstallHook, false)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.HookAfterInstall)
+	}
 
 	// Installation rebrand (only grub for now)
 	err = e.SetDefaultGrubEntry(
@@ -249,9 +253,9 @@ func (i InstallAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 
-	err = i.installHook(cnst.AfterInstallHook, false)
+	err = i.installHook(cnst.PostInstallHook, false)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.HookAfterInstall)
+		return elementalError.NewFromError(err, elementalError.HookPostInstall)
 	}
 
 	// Add state.yaml file on state and recovery partitions

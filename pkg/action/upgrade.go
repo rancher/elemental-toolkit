@@ -228,6 +228,11 @@ func (u *UpgradeAction) Run() (err error) {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
 		return elementalError.NewFromError(err, elementalError.HookAfterUpgradeChroot)
 	}
+	err = u.upgradeHook(constants.AfterUpgradeHook, false)
+	if err != nil {
+		u.Error("Error running hook after-upgrade: %s", err)
+		return elementalError.NewFromError(err, elementalError.HookAfterUpgrade)
+	}
 
 	// Only apply rebrand stage for system upgrades
 	if !u.spec.RecoveryUpgrade {
@@ -279,10 +284,10 @@ func (u *UpgradeAction) Run() (err error) {
 
 	_, _ = u.config.Runner.Run("sync")
 
-	err = u.upgradeHook(constants.AfterUpgradeHook, false)
+	err = u.upgradeHook(constants.PostUpgradeHook, false)
 	if err != nil {
-		u.Error("Error running hook after-upgrade: %s", err)
-		return elementalError.NewFromError(err, elementalError.HookAfterUpgrade)
+		u.Error("Error running hook post-upgrade: %s", err)
+		return elementalError.NewFromError(err, elementalError.HookPostUpgrade)
 	}
 
 	// Update state.yaml file on recovery and state partitions

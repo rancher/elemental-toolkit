@@ -214,5 +214,14 @@ const CalculateChecksum = 70
 // Error occurred when unmounting image
 const UnmountImage = 71
 
+// Error occurred during post-upgrade hook
+const HookPostUpgrade = 72
+
+// Error occurred during post-reset hook
+const HookPostReset = 73
+
+// Error occurred during post-install hook
+const HookPostInstall = 74
+
 // Unknown error
 const Unknown int = 255
