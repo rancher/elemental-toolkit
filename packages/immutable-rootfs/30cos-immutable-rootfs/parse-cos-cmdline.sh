@@ -52,13 +52,14 @@ if [ "${fsck_mode}" == "force" ]; then
 fi
 
 # set sentinel file for boot mode
+mkdir -p /run/cos
 case "${cos_img}" in
     *recovery*)
-        echo 1 > /run/cos/recovery_mode ;;
+        echo -n 1 > /run/cos/recovery_mode ;;
     *active*)
-        echo 1 > /run/cos/active_mode ;;
+        echo -n 1 > /run/cos/active_mode ;;
     *passive*)
-        echo 1 > /run/cos/passive_mode ;;
+        echo -n 1 > /run/cos/passive_mode ;;
 esac
 
 return 0

@@ -11,18 +11,21 @@ stages:
     - name: "Install grub updater in OEM"
       commands:
       - |
+        hook="/system/oem/01_upgrade_grub_hook.yaml"
+
         if mountpoint -q /oem; then
-          cp /system/oem/01_upgrade_grub_hook.yaml /oem
+          [ -f "${hook}" ] || exit 0
+          cp "${hook}" /oem
         fi
   after-upgrade.before:
     - name: "Check upgrade is needed"
       commands:
       - |
-        new="/run/cos/transition/etc/cos/grub.cfg"
         original="/etc/cos/grub.cfg"
-        current="/run/cos/state/etc/cos/grub.cfg"
+        new="/run/cos/transition${original}"
+        current="/run/cos/state/grub2/grub.cfg"
         if [ ! -f "${current}" ]; then
-          current="/run/initramfs/cos-state/etc/cos/grub.cfg"
+          current="/run/initramfs/cos-state/grub2/grub.cfg"
         fi
 
         [ -f "${current}" ] || exit 1
@@ -38,21 +41,32 @@ stages:
         if ! cmp -s "${current}" "${new}"; then
           echo "1" > "/run/cos/grub_update_needed"
         fi
-
-  after-upgrade:
-    - if: '[ -f "/run/cos/grub_update_needed" ]'
-      name: "Upgrade grub"
-      commands:
-      - |
-        # TODO labels should be loaded from state.yaml
-        # Forward compatibility
-        grub2-editenv /oem/grubenv set label=COS_PASSIVE
-        # Forward compatibility
-        grub2-editenv /oem/grubenv set partlabel=COS_STATE
-        
   after-upgrade.after:
-    - if: '[ -f "/run/cos/grub_upgrade_succeeded" ]'
+    - if: '[ -f "/oem/01_upgrade_grub_hook.yaml" ]'
       name: "Uninstall hook from OEM"
       commands:
       - |
-        rm -f /oem/01_upgrade_grub_hook.yaml
+        rm /oem/01_upgrade_grub_hook.yaml
+  after-install:
+    - &grubenv
+      name: "Set grub env variables"
+      commands:
+      - |
+        statemnt="/run/cos/state"
+        if [ ! -f "${statemnt}/grub2/grub.cfg" ]; then
+          statemnt="/run/initramfs/cos-state"
+        fi
+
+        # TODO this should be part of the elemental install command
+        grub2-editenv ${statemnt}/grub_oem_env set state_label=COS_STATE
+        grub2-editenv ${statemnt}/grub_oem_env set active_label=COS_ACTIVE
+        grub2-editenv ${statemnt}/grub_oem_env set passive_label=COS_PASSIVE
+        grub2-editenv ${statemnt}/grub_oem_env set recovery_label=COS_RECOVERY
+        grub2-editenv ${statemnt}/grub_oem_env set system_label=COS_SYSTEM
+        grub2-editenv ${statemnt}/grub_oem_env set oem_label=COS_OEM
+  after-reset:
+    - <<: *grubenv
+  after-upgrade:
+    # TODO labels should be parsed from state.yaml
+    - <<: *grubenv
+      if: '[ -f "/run/cos/grub_update_needed" ]'
