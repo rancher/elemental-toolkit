@@ -7,16 +7,6 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "Recovery partition boot setup"
 stages:
-   rootfs.before:
-     - if: |
-            [ -n "$(blkid -L @SYSTEM_LABEL@ || true)" ] || cat /proc/cmdline | grep -q "@RECOVERY_LABEL@"
-       name: "Identify recovery mode"
-       files:
-       - path: /run/cos/recovery_mode
-         content: "1"
-         permissions: 0600
-         owner: 0
-         group: 0
    boot:
      - name: "Recovery"
        if: '[ -f "/run/cos/recovery_mode" ]'

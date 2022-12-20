@@ -16,9 +16,7 @@ prelude:
 
 steps:
 {{if eq .Values.name "grub2-config"}}
-- cp config/grub.cfg.tmpl config/bootargs.cfg.tmpl /etc/cos
-- cos-tmpl-render /etc/cos/bootargs.cfg.tmpl
-- cos-tmpl-render /etc/cos/grub.cfg.tmpl
+- cp config/grub.cfg config/bootargs.cfg /etc/cos
   {{if .Values.tool_image_distribution}}
     {{if eq .Values.tool_image_distribution "ubuntu"}}
 - grub-editenv /etc/cos/grubenv_firstboot set next_entry=recovery
