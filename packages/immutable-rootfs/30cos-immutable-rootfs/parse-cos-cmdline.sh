@@ -48,7 +48,7 @@ wait_for_dev -n "${root}"
 # Only run filesystem checks on force mode
 fsck_mode=$(getarg fsck.mode=)
 if [ "${fsck_mode}" == "force" ]; then
-    /sbin/initqueue --settled --unique /sbin/cos-fsck
+    /sbin/initqueue --finished --unique /sbin/cos-fsck
 fi
 
 # set sentinel file for boot mode
