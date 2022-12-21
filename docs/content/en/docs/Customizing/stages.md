@@ -149,7 +149,7 @@ stages:
           touch /run/sentinel
 ```
 
-### `after-install`
+### `post-install`
 
 This stage is executed after installation of the OS has ended (last step of `elemental install`).
 
@@ -157,7 +157,7 @@ Example:
 ```yaml
 name: "Run something after installation"
 stages:
-   after-install:
+   post-install:
      - name: "Setting"
        if: '[ ! -f "/run/cos/recovery_mode" ]'
        commands:
@@ -172,10 +172,10 @@ stages:
 
 ### `after-install-chroot`
 
-This stage is executed after installation of the OS has ended (last step of `elemental install`).
+This stage is executed after installation of the OS filesystem image has completed.
 {{% alert title="Note" %}}
 Steps executed at this stage are running *inside* the new OS as chroot, allowing to write persisting changes to the image,
-for example by downloading and installing additional software.
+for example by installing additional software.
 {{% /alert %}}
 
 Example:
@@ -189,8 +189,27 @@ stages:
          ...
 ```
 
+### `after-install`
 
-### `after-upgrade`
+This stage is executed after installation of the OS filesystem image has completed and just after the chroot hook.
+{{% alert title="Note" %}}
+Steps executed at this stage are running when the new image and all the relevant partitions are still mounted in rw mode, allowing to write persisting changes to the image,
+for example installing additional software.
+{{% /alert %}}
+
+Example:
+```yaml
+name: "Run something after installation"
+stages:
+   after-install:
+     - name: "Setting"
+       commands:
+       - |
+         ...
+```
+
+
+### `post-upgrade`
 
 This stage is executed after upgrade of the OS has ended (last step of `elemental upgrade`).
 
@@ -198,7 +217,7 @@ Example:
 ```yaml
 name: "Run something after upgrade"
 stages:
-   after-upgrade:
+   post-upgrade:
      - name: "Setting"
        if: '[ ! -f "/run/cos/recovery_mode" ]'
        commands:
@@ -213,15 +232,20 @@ stages:
 
 ### `after-upgrade-chroot`
 
-This stage is executed after upgrade of the OS has ended (after calling `elemental upgrade`).
+This stage is executed after installation of the OS filesystem image has completed.
 {{% alert title="Note" %}}
 Steps executed at this stage are running *inside* the new OS as chroot, allowing to write persisting changes to the image,
 for example by downloading and installing additional software.
 {{% /alert %}}
 
+{{% alert title="Note" %}}
+Steps executed at this stage are based on stages found within the chroot, hence any new (not present in the current host) upgrade specific
+hook that requires to be executed during upgrade should be included here. Otherwise it will not be seen by elemental-cli during the upgrade.
+{{% /alert %}}
+
 Example:
 ```yaml
-name: "Run something after installation"
+name: "Run something after upgrade"
 stages:
    after-upgrade-chroot:
      - name: "Setting"
@@ -230,7 +254,23 @@ stages:
          ...
 ```
 
-### `after-reset`
+### `after-upgrade`
+
+This stage is executed after installation of the OS filesystem image has completed and just after the chroot hook.
+
+
+Example:
+```yaml
+name: "Run something after upgrade"
+stages:
+   after-upgrade:
+     - name: "Setting"
+       commands:
+       - |
+         ...
+```
+
+### `post-reset`
 
 This stage is executed after reset of the OS has ended (last step of `elemental reset`).
 
@@ -238,7 +278,7 @@ Example:
 ```yaml
 name: "Run something after reset"
 stages:
-   after-reset:
+   post-reset:
      - name: "Setting"
        if: '[ ! -f "/run/cos/recovery_mode" ]'
        commands:
@@ -253,10 +293,10 @@ stages:
 
 ### `after-reset-chroot`
 
-This stage is executed after reset of the OS has ended (last step of `elemental reset`).
+This stage is executed after installation of the OS filesystem image has completed.
 {{% alert title="Note" %}}
 Steps executed at this stage are running *inside* the new OS as chroot, allowing to write persisting changes to the image,
-for example by downloading and installing additional software.
+for example by installing additional software.
 {{% /alert %}}
 
 Example:
@@ -264,6 +304,21 @@ Example:
 name: "Run something after installation"
 stages:
    after-reset-chroot:
+     - name: "Setting"
+       commands:
+       - |
+         ...
+```
+
+### `after-reset`
+
+This stage is executed after installation of the OS filesystem image has completed and just after the chroot hook.
+
+Example:
+```yaml
+name: "Run something after installation"
+stages:
+   after-reset:
      - name: "Setting"
        commands:
        - |
