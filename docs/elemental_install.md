@@ -35,7 +35,7 @@ elemental install DEVICE [flags]
 ### Options inherited from parent commands
 
 ```
-      --config-dir string   Set config dir (default is /etc/elemental) (default "/etc/elemental")
+      --config-dir string   Set config dir
       --debug               Enable debug output
       --logfile string      Set logfile
       --quiet               Do not output to stdout

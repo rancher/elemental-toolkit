@@ -5,7 +5,7 @@ Elemental
 ### Options
 
 ```
-      --config-dir string   Set config dir (default is /etc/elemental) (default "/etc/elemental")
+      --config-dir string   Set config dir
       --debug               Enable debug output
   -h, --help                help for elemental
       --logfile string      Set logfile

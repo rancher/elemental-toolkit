@@ -65,4 +65,7 @@
 | 69 | Error removing a file|
 | 70 | Error calculating checksum|
 | 71 | Error occurred when unmounting image|
+| 72 | Error occurred during post-upgrade hook|
+| 73 | Error occurred during post-reset hook|
+| 74 | Error occurred during post-install hook|
 | 255 | Unknown error|
