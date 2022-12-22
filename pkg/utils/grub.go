@@ -24,10 +24,10 @@ import (
 	"regexp"
 	"strings"
 
-	efi "github.com/canonical/go-efilib"
-	"github.com/canonical/nullboot/efibootmgr"
+	efilib "github.com/canonical/go-efilib"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
+	eleefi "github.com/rancher/elemental-cli/pkg/efi"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
@@ -272,9 +272,9 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 		}
 
 		if !disableBootEntry {
-			efivars := efibootmgr.RealEFIVariables{}
+			efivars := eleefi.RealEFIVariables{}
 			if clearBootEntries {
-				err = g.ClearBootEntry(efivars)
+				err = g.ClearBootEntry()
 				if err != nil {
 					return err
 				}
@@ -291,19 +291,24 @@ func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, 
 // ClearBootEntry will go over the BootXXXX efi vars and remove any that matches our name
 // Used in install as we re-create the partitions, so the UUID of those partitions is no longer valid for the old entry
 // And we don't want to leave a broken entry around
-func (g Grub) ClearBootEntry(efiVariables efibootmgr.EFIVariables) error {
-	variables, _ := efiVariables.ListVariables()
+func (g Grub) ClearBootEntry() error {
+	variables, _ := efilib.ListVariables()
 	for _, v := range variables {
 		if regexp.MustCompile(`Boot[0-9a-fA-F]{4}`).MatchString(v.Name) {
-			variable, _, _ := efi.ReadVariable(v.Name, v.GUID)
-			option, err := efi.ReadLoadOption(bytes.NewReader(variable))
+			variable, _, _ := efilib.ReadVariable(v.Name, v.GUID)
+			option, err := efilib.ReadLoadOption(bytes.NewReader(variable))
 			if err != nil {
 				continue
 			}
 			// TODO: Find a way to identify the old VS new partition UUID and compare them before removing?
 			if option.Description == bootEntryName {
 				g.config.Logger.Debugf("Entry for %s already exists, removing it: %s", bootEntryName, option.String())
-				err := efibootmgr.DelVariable(efiVariables, v.GUID, v.Name)
+				_, attrs, err := efilib.ReadVariable(v.Name, v.GUID)
+				if err != nil {
+					g.config.Logger.Errorf("failed to remove efi entry %s: %s", v.Name, err.Error())
+					return err
+				}
+				err = efilib.WriteVariable(v.Name, v.GUID, attrs, nil)
 				if err != nil {
 					g.config.Logger.Errorf("failed to remove efi entry %s: %s", v.Name, err.Error())
 					return err
@@ -315,15 +320,15 @@ func (g Grub) ClearBootEntry(efiVariables efibootmgr.EFIVariables) error {
 }
 
 // CreateBootEntry will create an entry in the efi vars for our shim and set it to boot first in the bootorder
-func (g Grub) CreateBootEntry(shimName string, relativeTo string, efiVariables efibootmgr.EFIVariables) error {
+func (g Grub) CreateBootEntry(shimName string, relativeTo string, efiVariables eleefi.Variables) error {
 	g.config.Logger.Debugf("Creating boot entry for elemental pointing to shim /EFI/elemental/%s", shimName)
-	bm, err := efibootmgr.NewBootManagerForVariables(efiVariables)
+	bm, err := eleefi.NewBootManagerForVariables(efiVariables)
 	if err != nil {
 		return err
 	}
 
 	// HINT: FindOrCreate does not find older entries if the partition UUID has changed, i.e. on a reinstall.
-	bootEntryNumber, err := bm.FindOrCreateEntry(efibootmgr.BootEntry{
+	bootEntryNumber, err := bm.FindOrCreateEntry(eleefi.BootEntry{
 		Filename:    shimName,
 		Label:       bootEntryName,
 		Description: bootEntryName,

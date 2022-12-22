@@ -156,25 +156,12 @@ github.com/canonical/go-efilib/linux
 github.com/canonical/go-efilib/mbr
 # github.com/canonical/go-sp800.108-kdf v0.0.0-20210315104021-ead800bbf9a0
 ## explicit; go 1.9
-github.com/canonical/go-sp800.108-kdf
 # github.com/canonical/go-sp800.90a-drbg v0.0.0-20210314144037-6eeb1040d6c3
 ## explicit; go 1.9
-github.com/canonical/go-sp800.90a-drbg
 # github.com/canonical/go-tpm2 v0.1.0
 ## explicit; go 1.9
-github.com/canonical/go-tpm2
-github.com/canonical/go-tpm2/internal
-github.com/canonical/go-tpm2/linux
-github.com/canonical/go-tpm2/mu
-github.com/canonical/go-tpm2/templates
-github.com/canonical/go-tpm2/util
-# github.com/canonical/nullboot v0.4.0
-## explicit; go 1.16
-github.com/canonical/nullboot/efibootmgr
 # github.com/canonical/tcglog-parser v0.0.0-20220314144800-471071956aa1
 ## explicit; go 1.13
-github.com/canonical/tcglog-parser
-github.com/canonical/tcglog-parser/internal/ioerr
 # github.com/cavaliercoder/grab v1.0.1-0.20201108051000-98a5bfe305ec
 ## explicit; go 1.14
 github.com/cavaliercoder/grab
@@ -409,9 +396,10 @@ github.com/go-logr/logr/funcr
 ## explicit; go 1.12
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
+# github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0
+## explicit; go 1.13
 # github.com/godbus/dbus v4.1.0+incompatible
 ## explicit
-github.com/godbus/dbus
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
@@ -467,6 +455,8 @@ github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/tarball
 github.com/google/go-containerregistry/pkg/v1/types
+# github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
+## explicit; go 1.14
 # github.com/google/renameio v1.0.0
 ## explicit; go 1.13
 github.com/google/renameio
@@ -813,44 +803,10 @@ github.com/shopspring/decimal
 github.com/sirupsen/logrus
 # github.com/snapcore/go-gettext v0.0.0-20201130093759-38740d1bd3d2
 ## explicit; go 1.13
-github.com/snapcore/go-gettext
-github.com/snapcore/go-gettext/pluralforms
-# github.com/snapcore/secboot v0.0.0-20220913200412-67afe3f3c110 => github.com/chrisccoulson/secboot v0.0.0-20211101133820-41f32b803753
+# github.com/snapcore/secboot v0.0.0-20220913200412-67afe3f3c110
 ## explicit
-github.com/snapcore/secboot
-github.com/snapcore/secboot/efi
-github.com/snapcore/secboot/internal/keyring
-github.com/snapcore/secboot/internal/luks2
-github.com/snapcore/secboot/internal/paths
-github.com/snapcore/secboot/internal/pe1.14
-github.com/snapcore/secboot/internal/tcg
-github.com/snapcore/secboot/internal/tcti
-github.com/snapcore/secboot/internal/truststore
-github.com/snapcore/secboot/tpm2
 # github.com/snapcore/snapd v0.0.0-20220921113335-7b37d59869cc
 ## explicit; go 1.13
-github.com/snapcore/snapd/arch
-github.com/snapcore/snapd/asserts
-github.com/snapcore/snapd/asserts/internal
-github.com/snapcore/snapd/dbusutil
-github.com/snapcore/snapd/dirs
-github.com/snapcore/snapd/httputil
-github.com/snapcore/snapd/i18n
-github.com/snapcore/snapd/logger
-github.com/snapcore/snapd/metautil
-github.com/snapcore/snapd/osutil
-github.com/snapcore/snapd/osutil/sys
-github.com/snapcore/snapd/randutil
-github.com/snapcore/snapd/release
-github.com/snapcore/snapd/sandbox/apparmor
-github.com/snapcore/snapd/snap
-github.com/snapcore/snapd/snap/channel
-github.com/snapcore/snapd/snap/naming
-github.com/snapcore/snapd/snapdenv
-github.com/snapcore/snapd/spdx
-github.com/snapcore/snapd/strutil
-github.com/snapcore/snapd/timeout
-github.com/snapcore/snapd/timeutil
 # github.com/spf13/afero v1.8.2
 ## explicit; go 1.13
 github.com/spf13/afero
@@ -941,7 +897,6 @@ github.com/zloylos/grsync
 go.etcd.io/bbolt
 # go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 ## explicit; go 1.11
-go.mozilla.org/pkcs7
 # go.opencensus.io v0.23.0
 ## explicit; go 1.13
 go.opencensus.io
@@ -985,13 +940,8 @@ golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-golang.org/x/crypto/openpgp/elgamal
-golang.org/x/crypto/openpgp/errors
-golang.org/x/crypto/openpgp/packet
-golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-golang.org/x/crypto/sha3
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
@@ -1061,6 +1011,8 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
+# golang.org/x/tools v0.4.0
+## explicit; go 1.18
 # golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 ## explicit; go 1.17
 golang.org/x/xerrors
@@ -1190,10 +1142,8 @@ gopkg.in/djherbis/times.v1
 gopkg.in/ini.v1
 # gopkg.in/retry.v1 v1.0.3
 ## explicit; go 1.12
-gopkg.in/retry.v1
 # gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
 ## explicit
-gopkg.in/tomb.v2
 # gopkg.in/warnings.v0 v0.1.2
 ## explicit
 gopkg.in/warnings.v0
@@ -1220,14 +1170,11 @@ k8s.io/mount-utils
 k8s.io/utils/exec
 k8s.io/utils/io
 k8s.io/utils/keymutex
-# maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066 => github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066
+# maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066
 ## explicit
-maze.io/x/crypto/afis
 # pault.ag/go/modprobe v0.1.2
 ## explicit; go 1.15
 pault.ag/go/modprobe
 # pault.ag/go/topsort v0.1.1
 ## explicit; go 1.16
 pault.ag/go/topsort
-# github.com/snapcore/secboot => github.com/chrisccoulson/secboot v0.0.0-20211101133820-41f32b803753
-# maze.io/x/crypto => github.com/snapcore/maze.io-x-crypto v0.0.0-20190131090603-9b94c9afe066

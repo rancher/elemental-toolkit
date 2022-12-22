@@ -22,13 +22,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	eleefi "github.com/rancher/elemental-cli/pkg/efi"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	efi "github.com/canonical/go-efilib"
-	"github.com/canonical/nullboot/efibootmgr"
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -922,11 +922,11 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})
 		})
 		Describe("CreateBootEntry", Label("bootentry"), func() {
-			var efivars efibootmgr.EFIVariables
+			var efivars eleefi.Variables
 			var relativeTo string
 
 			BeforeEach(func() {
-				efivars = &efibootmgr.MockEFIVariables{}
+				efivars = &eleefi.MockEFIVariables{}
 				err := fs.Mkdir("/EFI", constants.DirPerm)
 				Expect(err).ToNot(HaveOccurred())
 				err = fs.WriteFile("/EFI/test.efi", []byte(""), constants.FilePerm)

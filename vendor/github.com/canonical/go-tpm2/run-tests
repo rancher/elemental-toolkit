@@ -1,3 +1,0 @@
-#!/bin/sh -e
-
-go test -v -race -p 1 ./... -check.v -args $@
