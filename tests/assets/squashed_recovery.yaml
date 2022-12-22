@@ -1,7 +1,5 @@
 # This configuration sets to use the squashfs root from a live media
-# as the recovery image. `/run/initramfs/live/rootfs.squashfs` is the
-# squashed container inside the ISO.
+# as the recovery image.
 install:
   recovery-system:
     fs: squashfs
-    uri: file:/run/initramfs/live/rootfs.squashfs
