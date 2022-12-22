@@ -26,8 +26,3 @@ jobs:
           signoff: true
           title: "[auto] Update cmd docs"
           delete-branch: true
-          reviewers: |
-            itxaka
-            davidcassany
-            mudler
-            mjura
