@@ -59,4 +59,4 @@ packages:
     name: "selinux"
     oem_file: "10_selinux.yaml"
     templated: false
-    version: 0.4-5
+    version: 0.4-6
