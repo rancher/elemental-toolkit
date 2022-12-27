@@ -1,6 +1,6 @@
 name: "hugo"
 category: "toolchain"
-version: 0.108.0-1
+version: "0.109.0"
 uri:
   - https://github.com/gohugoio/hugo
 license: "Apache 2.0"
