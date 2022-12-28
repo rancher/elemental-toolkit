@@ -7,7 +7,7 @@ packages:
     requires:
       - category: toolchain
         name: elemental-cli
-        version: ">0.0.10"
+        version: ">0.1.0"
       - category: toolchain
         name: luet
         version: ">=0"
@@ -15,9 +15,6 @@ packages:
     name: "fips-toolchain"
     description: "Meta package for cOS toolchain with fips support"
     requires:
-      # - category: toolchain-fips
-      #   name: elemental-cli
-      #   version: ">=0"
       - category: toolchain-fips
         name: luet
         version: ">=0"

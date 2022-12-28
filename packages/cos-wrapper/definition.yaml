@@ -5,7 +5,7 @@ description: "Installer, Upgrade and reset utilities wrappers for backward compa
 requires:
   - name: "elemental-cli"
     category: "toolchain"
-    version: ">0.20220216"
+    version: ">0.1.0"
 provides:
   - name: "installer"
     category: "utils"
