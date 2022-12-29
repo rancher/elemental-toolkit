@@ -21,8 +21,29 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
+          du -hcs /var/lib/snapd/snaps/* 
+          # from https://github.com/apache/flink/blob/master/tools/azure-pipelines/free_disk_space.sh
+          df -h
+          sudo apt-get remove -y '^dotnet-.*' || true
+          sudo apt-get remove -y '^llvm-.*' || true
+          sudo apt-get remove -y 'php.*' || true
+          sudo apt-get remove -y '^mongodb-.*' || true
+          sudo apt-get remove -y '^mysql-.*' || true
+          sudo apt-get remove -y '^temurin-.*' || true
+          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          # https://github.com/actions/virtual-environments/issues/2840
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf /opt/ghc # removes haskell
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" # removes all pre-cached tools (node, go, python, ruby) to free around 6Gb
+          sudo rm -rf /usr/local/graalvm/
+          sudo rm -rf /usr/local/.ghcup/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          df -h
       - name: Install Go
         uses: actions/setup-go@v3
         with:
@@ -82,8 +103,29 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
+          du -hcs /var/lib/snapd/snaps/* 
+          # from https://github.com/apache/flink/blob/master/tools/azure-pipelines/free_disk_space.sh
+          df -h
+          sudo apt-get remove -y '^dotnet-.*' || true
+          sudo apt-get remove -y '^llvm-.*' || true
+          sudo apt-get remove -y 'php.*' || true
+          sudo apt-get remove -y '^mongodb-.*' || true
+          sudo apt-get remove -y '^mysql-.*' || true
+          sudo apt-get remove -y '^temurin-.*' || true
+          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          # https://github.com/actions/virtual-environments/issues/2840
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf /opt/ghc # removes haskell
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" # removes all pre-cached tools (node, go, python, ruby) to free around 6Gb
+          sudo rm -rf /usr/local/graalvm/
+          sudo rm -rf /usr/local/.ghcup/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          df -h
       - name: Send failed status to slack
         if: failure()
         uses: slackapi/slack-github-action@v1.18.0
@@ -179,8 +221,29 @@ jobs:
       - name: Release space from worker ♻
         if: always()
         run: |
+          du -hcs /var/lib/snapd/snaps/* 
+          # from https://github.com/apache/flink/blob/master/tools/azure-pipelines/free_disk_space.sh
+          df -h
+          sudo apt-get remove -y '^dotnet-.*' || true
+          sudo apt-get remove -y '^llvm-.*' || true
+          sudo apt-get remove -y 'php.*' || true
+          sudo apt-get remove -y '^mongodb-.*' || true
+          sudo apt-get remove -y '^mysql-.*' || true
+          sudo apt-get remove -y '^temurin-.*' || true
+          sudo apt-get remove -y azure-cli google-cloud-sdk microsoft-edge-stable google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          # https://github.com/actions/virtual-environments/issues/2840
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo rm -rf /opt/ghc # removes haskell
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" # removes all pre-cached tools (node, go, python, ruby) to free around 6Gb
+          sudo rm -rf /usr/local/graalvm/
+          sudo rm -rf /usr/local/.ghcup/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          df -h
       - name: Install Go
         uses: actions/setup-go@v3
         with:
