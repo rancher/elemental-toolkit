@@ -129,6 +129,15 @@ clean_build:
 	sudo rm -rf $(DESTINATION)
 
 
-sign_artifacts:
+build_signer:
 	cd ./.github && go build -o sign sign.go
+
+# sign artifacts requires root privs as we use luet installer to get the remote repository metadata and list of artifacts
+# that downloads stuff under /tmp and tries to chown it, which fails unless you are root, probably the original metadata has
+# the root owner so only root chan chown it.
+sign_artifacts:
+ifneq ($(shell id -u), 0)
+	@echo "Please run 'make $@' as root"
+	@exit 1
+endif
 	$(ROOT_DIR)/.github/sign

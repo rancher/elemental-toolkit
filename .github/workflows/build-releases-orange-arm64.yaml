@@ -288,6 +288,7 @@ jobs:
           sudo -E make publish-repo
       - name: Sign artifacts
         run: |
+          make build_signer
           sudo -E make sign_artifacts
           # Also sign the default repository.yaml files pushed along with the snapshot id
           sudo -E REFERENCEID=repository.yaml make sign_artifacts
