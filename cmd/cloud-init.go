@@ -17,7 +17,7 @@ limitations under the License.
 package cmd
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	"k8s.io/mount-utils"
@@ -54,7 +54,7 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			}
 
 			if fromStdin {
-				std, err := ioutil.ReadAll(os.Stdin)
+				std, err := io.ReadAll(os.Stdin)
 				if err != nil {
 					return elementalError.NewFromError(err, elementalError.ReadFile)
 				}

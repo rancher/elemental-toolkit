@@ -18,7 +18,6 @@ package mocks
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,13 +84,13 @@ func (g *GhwMock) CreateDevices() {
 			// For each partition we create the /sys/block/DISK_NAME/PARTITION_NAME
 			_ = os.Mkdir(filepath.Join(diskPath, partition.Name), 0755)
 			// Create the /sys/block/DISK_NAME/PARTITION_NAME/dev file which contains the major:minor of the partition
-			_ = ioutil.WriteFile(filepath.Join(diskPath, partition.Name, "dev"), []byte(fmt.Sprintf("%d:6%d\n", indexDisk, indexPart)), 0644)
+			_ = os.WriteFile(filepath.Join(diskPath, partition.Name, "dev"), []byte(fmt.Sprintf("%d:6%d\n", indexDisk, indexPart)), 0644)
 			// Create the /run/udev/data/bMAJOR:MINOR file with the data inside to mimic the udev database
 			data := []string{fmt.Sprintf("E:ID_FS_LABEL=%s\n", partition.FilesystemLabel)}
 			if partition.Type != "" {
 				data = append(data, fmt.Sprintf("E:ID_FS_TYPE=%s\n", partition.Type))
 			}
-			_ = ioutil.WriteFile(filepath.Join(g.paths.RunUdevData, fmt.Sprintf("b%d:6%d", indexDisk, indexPart)), []byte(strings.Join(data, "")), 0644)
+			_ = os.WriteFile(filepath.Join(g.paths.RunUdevData, fmt.Sprintf("b%d:6%d", indexDisk, indexPart)), []byte(strings.Join(data, "")), 0644)
 			// If we got a mountpoint, add it to our fake /proc/self/mounts
 			if partition.MountPoint != "" {
 				// Check if the partition has a fs, otherwise default to ext4
@@ -106,7 +105,7 @@ func (g *GhwMock) CreateDevices() {
 		}
 	}
 	// Finally, write all the mounts
-	_ = ioutil.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
+	_ = os.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
 }
 
 // RemoveDisk will remove the files for a disk. It makes no effort to check if the disk exists or not
@@ -127,7 +126,7 @@ func (g *GhwMock) RemoveDisk(disk string) {
 	}
 	g.mounts = newMounts
 	// Write the mounts again
-	_ = ioutil.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
+	_ = os.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
 }
 
 // RemovePartitionFromDisk will remove the files for a partition
@@ -136,7 +135,7 @@ func (g *GhwMock) RemovePartitionFromDisk(diskName string, partitionName string)
 	var newMounts []string
 	diskPath := filepath.Join(g.paths.SysBlock, diskName)
 	// Read the dev major:minor
-	devName, _ := ioutil.ReadFile(filepath.Join(diskPath, partitionName, "dev"))
+	devName, _ := os.ReadFile(filepath.Join(diskPath, partitionName, "dev"))
 	// Remove the MAJOR:MINOR file from the udev database
 	_ = os.RemoveAll(filepath.Join(g.paths.RunUdevData, fmt.Sprintf("b%s", devName)))
 	// Remove the /sys/block/DISK/PARTITION dir
@@ -152,7 +151,7 @@ func (g *GhwMock) RemovePartitionFromDisk(diskName string, partitionName string)
 	}
 	g.mounts = newMounts
 	// Write the mounts again
-	_ = ioutil.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
+	_ = os.WriteFile(g.paths.ProcMounts, []byte(strings.Join(g.mounts, "")), 0644)
 	// Remove it from the partitions list
 	for index, disk := range g.disks {
 		if disk.Name == diskName {
