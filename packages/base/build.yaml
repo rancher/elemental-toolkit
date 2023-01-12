@@ -18,7 +18,7 @@ steps:
 - dnf install -y {{.Values.packages}}
 - dnf clean all
 {{else if eq .Values.distribution "ubuntu" }}
-# Note for future issues with grub: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1879558 https://github.com/rancher-sandbox/cOS-toolkit/pull/101#discussion_r621929109
+# Note for future issues with grub: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1879558 https://github.com/rancher/elemental-toolkit/pull/101#discussion_r621929109
 - apt-get update && apt-get install -y {{.Values.packages}}
 - apt-get clean
 - ln -s /usr/sbin/grub-install /usr/sbin/grub2-install

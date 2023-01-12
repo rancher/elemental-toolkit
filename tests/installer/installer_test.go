@@ -8,7 +8,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Installer tests", func() {
+var _ = Describe("Elemental Installer tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
@@ -64,9 +64,9 @@ var _ = Describe("cOS Installer tests", func() {
 					// Check the squashfs image is used as recovery
 					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
-				// Reboot so we boot into the just installed cos
+				// Reboot so we boot into the just installed system
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 			PIt("from url", func() {})
@@ -82,9 +82,9 @@ var _ = Describe("cOS Installer tests", func() {
 					// Check the squashfs image is used as recovery
 					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
-				// Reboot so we boot into the just installed cos
+				// Reboot so we boot into the just installed system
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
 			})
@@ -107,7 +107,7 @@ var _ = Describe("cOS Installer tests", func() {
 						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 					}
 					s.Reboot()
-					By("Checking we booted from the installed cOS")
+					By("Checking we booted from the installed system")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 
 					// check partition values
@@ -156,7 +156,7 @@ var _ = Describe("cOS Installer tests", func() {
 						Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 					}
 					s.Reboot()
-					By("Checking we booted from the installed cOS")
+					By("Checking we booted from the installed system")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 
 					// check partition values
@@ -206,7 +206,7 @@ var _ = Describe("cOS Installer tests", func() {
 					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 
@@ -245,7 +245,7 @@ var _ = Describe("cOS Installer tests", func() {
 					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 				By("Checking config file was run")
 				out, err = s.Command("stat /oem/90_custom.yaml")

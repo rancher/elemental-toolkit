@@ -9,5 +9,5 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS hooks test Suite")
+	RunSpecs(t, "Elemental hooks test Suite")
 }

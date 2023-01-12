@@ -15,7 +15,7 @@ Elemental allows to (optionally) add features that can be disabled/enabled in ru
 $> cos-feature list
 
 ====================
-cOS features list
+Elemental features list
 
 To enable, run: cos-feature enable <feature>
 To disable, run: cos-feature disable <feature>

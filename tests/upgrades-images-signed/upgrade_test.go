@@ -8,7 +8,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Upgrade tests - Images signed", func() {
+var _ = Describe("Elemental Upgrade tests - Images signed", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {

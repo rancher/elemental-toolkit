@@ -1,7 +1,7 @@
 name: "installer"
 category: "utils"
 version: "0.30.0"
-description: "Installer, Upgrade and reset utilities to manage cOS derivatives"
+description: "Installer, Upgrade and reset utilities to manage Elemental derivatives"
 requires:
 - name: "luet-mtree"
   category: "toolchain"

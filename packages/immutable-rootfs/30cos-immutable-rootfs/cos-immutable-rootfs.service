@@ -1,5 +1,5 @@
 [Unit]
-Description=cOS system immutable rootfs mounts
+Description=Elemental system immutable rootfs mounts
 DefaultDependencies=no
 After=initrd-root-fs.target cos-setup-rootfs.service
 Requires=initrd-root-fs.target

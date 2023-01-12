@@ -18,7 +18,7 @@ After enabling one of those vars, and only if the job fails, you will get the ca
 
 # Test setups
 
-There is currently 3 different test setups that we use to verify cOS
+There is currently 3 different test setups that we use to verify Elemental
 
  - Installer tests from ISO (With 2 variations, bios and efi)
  - Raw image tests
@@ -28,7 +28,7 @@ The main difference in the tests are the source from which we boot, as they cove
 
 ## Tests from ISO
 
-In the case of the installer tests, we boot from the ISO, simulating how and end user would install cOS into a baremetal machine.
+In the case of the installer tests, we boot from the ISO, simulating how and end user would install Elemental into a baremetal machine.
 
 The test setup is done via the `make/Makefile.test` with `create_vm_from_iso_bios` or `create_vm_from_iso_efi` targets.
 The test run is done via ginkgo, test suites are under the `test/installer` directory.
@@ -44,7 +44,7 @@ For efi:
 - *(Ginkgo)* Force unmount the dvd. This is mandatory as otherwise we cannot boot from disk and test that the installation was correct.
 - *(Ginkgo)* Reboot. Now because we removed the dvd, it will boot from disk.
 - *(Ginkgo)* Tests will check to see if whatever was run in the test was correctly (i.e. layout, partitions, config files, etc...)
-- *(Ginkgo)* After each test, we store the location of the ISO and mount the cOS iso again so the new test will boot from dvd. Wipe the disk partition table as well.
+- *(Ginkgo)* After each test, we store the location of the ISO and mount the elemental iso again so the new test will boot from dvd. Wipe the disk partition table as well.
 
 
 If running this locally, there is an extra target in the `make/Makefile.test` to clean up the existing machine so it doesn't leave anything around. 

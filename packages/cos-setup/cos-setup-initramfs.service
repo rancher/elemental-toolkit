@@ -1,5 +1,5 @@
 [Unit]
-Description=cOS system initramfs setup before switch root
+Description=Elemental system initramfs setup before switch root
 DefaultDependencies=no
 After=initrd-fs.target
 Requires=initrd-fs.target

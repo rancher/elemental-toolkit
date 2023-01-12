@@ -8,7 +8,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Installer EFI tests", func() {
+var _ = Describe("Elemental Installer EFI tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
@@ -95,9 +95,9 @@ var _ = Describe("cOS Installer EFI tests", func() {
 
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
-					// Reboot so we boot into the just installed cos
+					// Reboot so we boot into the just installed system
 					s.Reboot()
-					By("Checking we booted from the installed cOS")
+					By("Checking we booted from the installed system")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 					// check partition values
 					// Values have to match the yaml under ../assets/layout.yaml
@@ -147,9 +147,9 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					}
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
-					// Reboot so we boot into the just installed cos
+					// Reboot so we boot into the just installed system
 					s.Reboot()
-					By("Checking we booted from the installed cOS")
+					By("Checking we booted from the installed system")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 					// check partition values
 					// Values have to match the yaml under ../assets/layout.yaml
@@ -200,9 +200,9 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
-				// Reboot so we boot into the just installed cos
+				// Reboot so we boot into the just installed system
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 			PIt("from url", func() {})
@@ -219,9 +219,9 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("/run/initramfs/live/rootfs.squashfs into /run/cos/recovery/cOS/recovery.squashfs"))
 				}
 				s.EjectCOSCD()
-				// Reboot so we boot into the just installed cos
+				// Reboot so we boot into the just installed system
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 				Expect(s.GetOSRelease("VERSION")).To(Equal(s.TestVersion))
 			})
@@ -245,7 +245,7 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
-				By("Checking we booted from the installed cOS")
+				By("Checking we booted from the installed system")
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 			It("forces efi", func() {

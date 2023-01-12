@@ -594,7 +594,7 @@ get_image()
 
 do_copy()
 {
-    echo "Copying cOS.."
+    echo "Copying Elemental.."
 
     rsync -aqAX --exclude='mnt' --exclude='proc' --exclude='sys' --exclude='dev' --exclude='tmp' ${_DISTRO}/ ${_TARGET}
     if [ -n "$_COS_INSTALL_CONFIG_URL" ]; then

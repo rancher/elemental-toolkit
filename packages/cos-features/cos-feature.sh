@@ -38,7 +38,7 @@ usage()
 list() {
   echo ""
   echo "===================="
-  echo "cOS features list"
+  echo "Elemental features list"
   echo ""
   echo "To enable, run: cos-feature enable <feature>"
   echo "To disable, run: cos-feature disable <feature>"

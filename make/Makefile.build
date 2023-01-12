@@ -1,5 +1,5 @@
 #
-# cOS-toolkit Makefile.build
+# Elemental-toolkit Makefile.build
 #
 #
 
@@ -99,7 +99,7 @@ endif
     --output $(FINAL_REPO) \
     --packages $(DESTINATION) \
     --name "cOS" \
-    --descr "cOS $(FLAVOR)" \
+    --descr "Elemental $(FLAVOR)" \
     --urls "" \
     --tree-compression $(COMPRESSION) \
     --tree-filename tree.tar \

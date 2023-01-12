@@ -1,7 +1,7 @@
 # Default cOS OEM configuration file
 # Default cOS OEM configuration file
 #
-# This file is part of cOS and will get reset during upgrades.
+# This file is part of Elemental and will get reset during upgrades.
 #
 # Before you change this file manually,
 # consider copying this file to /usr/local/cloud-config or

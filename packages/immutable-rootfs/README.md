@@ -43,8 +43,8 @@ The immutable rootfs can be configured with the following kernel parameters:
   defined by UUID (`UUID=<blk_uuid>:<mountpoint>`). This option can be passed
   multiple times.
 
-* `rd.cos.oemtimeout=<seconds>`: cOS by default assumes the existence of a
-  persistent block device labelled `COS_OEM` which is used to keep some
+* `rd.cos.oemtimeout=<seconds>`: Elemental by default assumes the existence of
+  a persistent block device labelled `COS_OEM` which is used to keep some
   configuration data (mostly cloud-init files). The immutable rootfs tries
   to mount this device at very early stages of the boot even before applying
   the immutable rootfs configs. It's done this way to enable to configure the
@@ -75,8 +75,9 @@ only effective if called in any of the `rootfs.before`, `rootfs` or
 In the environment file the following options are available:
 
 
-* `VOLUMES=LABEL=<blk_label>:<mountpoint>`: This variable expects a block device
-  and it mountpoint pair space separated list. The default cOS configuration is:
+* `VOLUMES=LABEL=<blk_label>:<mountpoint>`: This variable expects a block
+  device and it mountpoint pair space separated list. The default Elemental
+  configuration is:
 
   `VOLUMES="LABEL=COS_OEM:/oem LABEL=COS_PERSISTENT:/usr/local"`
   
@@ -124,7 +125,7 @@ point. If the persistent state requires any of the paths that are part of the
 ephemeral area by default, then `RW_PATHS` needs to be defined to avoid
 overlapping paths.
 
-For example a common cOS configuration can be expressed as part of the
+For example a common Elemental configuration can be expressed as part of the
 cloud-init configuration as follows:
 
 ```yaml

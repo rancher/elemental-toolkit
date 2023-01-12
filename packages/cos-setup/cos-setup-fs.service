@@ -1,5 +1,5 @@
 [Unit]
-Description=cOS system after FS setup
+Description=Elemental system after FS setup
 DefaultDependencies=no
 After=local-fs.target
 Wants=local-fs.target

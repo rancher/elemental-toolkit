@@ -28,7 +28,7 @@ description: >
 ---
 
 {{% alert title="Note" %}}
-{{<package package="$pc/$pn" >}} is part of the cOS toolkit repository and can be installed with:
+{{<package package="$pc/$pn" >}} is part of the Elemental toolkit repository and can be installed with:
 
 \`\`\`bash
 luet install -y $pc/$pn

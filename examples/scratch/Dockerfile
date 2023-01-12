@@ -10,7 +10,7 @@ FROM scratch
 COPY --from=luet /usr/bin/luet /usr/bin/luet
 COPY --from=ca /etc/ssl/certs/. /etc/ssl/certs/
 
-# Copy the luet config file pointing to the cOS repository
+# Copy the luet config file pointing to the Elemental repository
 ADD conf/luet.yaml /etc/luet/luet.yaml
 ENV USER=root
 ENV LUET_NOLOCK=true

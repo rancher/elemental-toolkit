@@ -1,5 +1,5 @@
-# cOS configuration file
-# This file allows to tweak cOS configuration such as: default upgrade/recovery image and GRUB menu entry
+# Elemental configuration file
+# This file allows to tweak Elemental configuration such as: default upgrade/recovery image and GRUB menu entry
 
 # Disable/enable image verification during upgrades ( default: false )
 #NO_VERIFY=false
@@ -11,10 +11,10 @@
 #UPGRADE_IMAGE="quay.io/mudler/cos-test:cos-standard"
 
 # Default recovery image to use when upgrading the recovery partition
-# ( defaults to recovery/cos in vanilla cOS images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).
+# ( defaults to recovery/cos in vanilla Elemental images with channel CHANNEL_UPGRADES enabled. Otherwise it defaults to UPGRADE_IMAGE ).
 #RECOVERY_IMAGE="quay.io/mudler/cos-test:cos-standard"
 
-# GRUB entry to display on boot. ( defaults: cOS )
+# GRUB entry to display on boot. ( defaults: Elemental )
 #GRUB_ENTRY_NAME="example"
 
 # Space separated list of additional paths that are used to

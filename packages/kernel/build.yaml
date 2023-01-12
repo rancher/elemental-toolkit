@@ -42,7 +42,7 @@ steps:
     kernel=$(ls /boot/vmlinuz-* | head -n1) && \
     ln -sf "${kernel#/boot/}" /boot/vmlinuz
 {{else if eq .Values.distribution "ubuntu" }}
-# Note for future issues with grub: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1879558 https://github.com/rancher-sandbox/cOS-toolkit/pull/101#discussion_r621929109
+# Note for future issues with grub: https://bugs.launchpad.net/ubuntu/+source/grub2/+bug/1879558 https://github.com/rancher/elemental-toolkit/pull/101#discussion_r621929109
 - apt-get update && apt-get install -y {{.Values.kernel_package}}
 - apt-get clean
 - |

@@ -8,7 +8,7 @@ iso:
     - channel:live/grub2-efi-image
   label: "COS_LIVE"
 
-name: "cOS-0"
+name: "elemental-0"
 
 # Raw disk creation values start
 raw_disk:

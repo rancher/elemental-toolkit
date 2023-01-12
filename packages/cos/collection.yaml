@@ -3,19 +3,29 @@ packages:
     name: "cos"
     category: "system"
     version: 0.9.8-2
-    description: "cOS base image, used to build cOS live ISOs"
-    brand_name: "cOS"
+    description: "Elemental base image, used to build Elemental live ISOs"
+    brand_name: "Elemental"
+    version: 0.9.7-4
+    description: "Elemental base image, used to build Elemental live ISOs"
+    brand_name: "Elemental"
     labels:
       autobump.revdeps: "true"
   - !!merge <<: *cos
     name: "cos-container"
-    description: "cOS container image, used to build cOS derivatives from scratch"
+    description: "Elemental container image, used to build Elemental derivatives from scratch"
     version: 0.9.8-3
   - !!merge <<: *cos
     category: "recovery"
-    brand_name: "cOS recovery"
-    description: "cOS recovery image, used to boot cOS for troubleshooting"
+    brand_name: "Elemental recovery"
+    description: "Elemental recovery image, used to boot Elemental for troubleshooting"
     version: 0.9.8-2
+    description: "Elemental container image, used to build Elemental derivatives from scratch"
+    version: 0.9.7-5
+  - !!merge <<: *cos
+    category: "recovery"
+    brand_name: "Elemental recovery"
+    description: "Elemental recovery image, used to boot Elemental for troubleshooting"
+    version: 0.9.7-4
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"

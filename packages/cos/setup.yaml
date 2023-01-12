@@ -25,4 +25,4 @@ stages:
         DOCUMENTATION_URL: "https://github.com/rancher/elemental-toolkit"
         VERSION: ":VERSION:"
         PRETTY_NAME: ":PRETTY_NAME:"
-        GRUB_ENTRY_NAME: "cOS :VERSION:"
+        GRUB_ENTRY_NAME: "Elemental :VERSION:"

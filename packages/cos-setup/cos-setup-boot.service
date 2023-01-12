@@ -1,5 +1,5 @@
 [Unit]
-Description=cOS system configuration
+Description=Elemental system configuration
 Before=getty.target
 
 [Service]

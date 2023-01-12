@@ -6,7 +6,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Smoke tests", func() {
+var _ = Describe("Elemental Smoke tests", func() {
 	var s *sut.SUT
 	BeforeEach(func() {
 		s = sut.NewSUT()
@@ -86,7 +86,7 @@ var _ = Describe("cOS Smoke tests", func() {
 
 			out, err = s.Command("source /etc/os-release && echo $PRETTY_NAME")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("cOS"))
+			Expect(out).Should(ContainSubstring("Elemental"))
 		})
 
 		It("has default date in UTC format from cloud-init", func() {

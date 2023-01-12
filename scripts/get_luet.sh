@@ -72,7 +72,7 @@ system:
   tmpdir_base: "/var/tmp/luet"
 repositories:
 - name: "cos"
-  description: "cOS official"
+  description: "Elemental official"
   type: "docker"
   enable: true
   cached: true

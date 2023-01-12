@@ -1,4 +1,4 @@
-# The only difference with main cOS is that we don't require the OEM partition here
+# The only difference with main Elemental is that we don't require the OEM partition here
 name: "Rootfs Layout Settings"
 stages:
   rootfs.before:

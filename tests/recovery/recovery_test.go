@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cOS Recovery upgrade tests", func() {
+var _ = Describe("Elemental Recovery upgrade tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {

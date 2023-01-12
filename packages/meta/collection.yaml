@@ -2,7 +2,7 @@ packages:
   - &metabase
     category: "meta"
     name: "toolchain"
-    description: "Meta package for cOS toolchain"
+    description: "Meta package for elemental toolchain"
     version: "0.24"
     requires:
       - category: toolchain
@@ -13,7 +13,7 @@ packages:
         version: ">=0"
   - !!merge <<: *metabase
     name: "fips-toolchain"
-    description: "Meta package for cOS toolchain with fips support"
+    description: "Meta package for elemental toolchain with fips support"
     requires:
       # - category: toolchain-fips
       #   name: elemental-cli
@@ -23,7 +23,7 @@ packages:
         version: ">=0"
   - !!merge <<: *metabase
     name: "cos-modules"
-    description: "Meta package for cOS core modules. It includes cos-setup, dracut and grub configuration"
+    description: "Meta package for Elemental core modules. It includes cos-setup, dracut and grub configuration"
     requires:
       - name: "cos-config"
         category: "system"
@@ -43,7 +43,7 @@ packages:
   - !!merge <<: *metabase
     name: "cos-light"
     description: |
-        cOS light package. It includes a small selection of cloud-config ready to go for most situations.
+        Elemental light package. It includes a small selection of cloud-config ready to go for most situations.
         Note: it doesn't bring any compiled binary, can be used in conjunction with meta/toolchain.
     requires:
       - category: meta
@@ -63,7 +63,7 @@ packages:
         name: "default-services"
   - !!merge <<: *metabase
     name: "cos-core"
-    description: "cOS core package. It includes toolchain and base grub/dracut configuration"
+    description: "Elemental core package. It includes toolchain and base grub/dracut configuration"
     requires:
       - category: meta
         name: toolchain
@@ -85,7 +85,7 @@ packages:
         version: ">=0"
   - !!merge <<: *metabase
     name: "cos-minimal"
-    description: "cOS minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
+    description: "Elemental minimal package. It includes toolchain, grub/dracut configuration and a default cloud-init preset"
     requires:
       - category: meta
         name: cos-core

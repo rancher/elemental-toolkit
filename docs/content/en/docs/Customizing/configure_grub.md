@@ -15,7 +15,7 @@ fallback OS system and a third for the recovery OS.
 For example the main OS system menu entry could be something like:
 
 ```
-menuentry "cOS" --id cos {
+menuentry "Elemental" --id cos {
   search.fs_label COS_STATE root
   set img=/cOS/active.img
   set label=COS_ACTIVE
