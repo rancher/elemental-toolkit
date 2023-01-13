@@ -54,7 +54,7 @@ packages:
     name: "default-services"
     oem_file: "09_services.yaml"
     templated: false
-    version: 0.4-5
+    version: 0.4-6
   - !!merge <<: *base
     name: "selinux"
     oem_file: "10_selinux.yaml"
