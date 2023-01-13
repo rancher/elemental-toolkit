@@ -39,7 +39,7 @@ packages:
     name: "recovery"
     oem_file: "06_recovery.yaml.tmpl"
     templated: true
-    version: 0.4-5
+    version: 0.4-6
   - !!merge <<: *base
     name: "live"
     oem_file: "07_live.yaml"
