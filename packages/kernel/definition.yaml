@@ -1,4 +1,4 @@
 name: "kernel"
 category: "system"
-version: 0.2.0-6
+version: 0.2.0-7
 description: "Kernel extracted from the upstream repositories"
