@@ -49,7 +49,7 @@ packages:
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
     templated: false
-    version: 0.4-5
+    version: 0.4-6
   - !!merge <<: *base
     name: "default-services"
     oem_file: "09_services.yaml"
