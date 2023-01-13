@@ -14,7 +14,7 @@ packages:
         curl -s -L "https://github.com/{{.Values.labels.github.owner}}/{{.Values.labels.github.repo}}/releases/download/{{.Values.labels.github.tag}}/sha256sum-centos7-noarch.txt" | grep "noarch" | cut -d" " -f 1
   - name: "rancher"
     category: "selinux"
-    version: 0.2.1-13
+    version: 0.2.1-14
     labels:
       github.repo: "rancher-selinux"
       github.owner: "rancher"
