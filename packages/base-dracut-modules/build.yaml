@@ -1,7 +1,0 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
-
-steps:
-- cp 50-cos-initrd.conf /etc/dracut.conf.d

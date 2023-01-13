@@ -1,7 +1,0 @@
-requires:
-- name: "base"
-  category: "distro"
-  version: ">=0"
-
-steps:
-- cp -rfv suc-upgrade.sh /usr/sbin/suc-upgrade && chmod +x /usr/sbin/suc-upgrade

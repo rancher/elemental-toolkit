@@ -1,7 +1,0 @@
-{{define "do_checksum"}}
-  {{- if and .values.skip_checksum (has .values.name .values.skip_checksum ) }}
-- echo "Skipping checksum check"
-  {{else}}
-- echo "{{ ( index .values.labels "package.checksum" ) }}  {{ .filename }}" | sha256sum -c
-  {{end}}
-{{end}}

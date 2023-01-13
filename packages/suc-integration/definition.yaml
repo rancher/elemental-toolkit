@@ -1,4 +1,0 @@
-name: "suc-integration"
-category: "system"
-version: 0.1-16
-description: "Minimal example integration script for system-upgrade-controller"
