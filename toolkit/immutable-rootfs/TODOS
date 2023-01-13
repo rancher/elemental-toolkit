@@ -1,0 +1,3 @@
+* Remanem cos-immutable-rootfs to something like elemental-immutable-rootfs
+* Split module in two: rootfs layout and specific elemental stuff ?
+* Include in this folder the dracut configuration too

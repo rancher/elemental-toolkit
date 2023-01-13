@@ -1,1 +1,0 @@
-The `cos-verify` meta package pulls `cosign` and the `luet-cosign` plugin to enable container image signature verification.

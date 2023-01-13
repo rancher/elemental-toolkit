@@ -1,5 +1,0 @@
-name: "base"
-category: "distro"
-version: "0.20230106"
-labels:
-  autobump.strategy: "snapshot"

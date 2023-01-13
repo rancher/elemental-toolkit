@@ -1,9 +1,0 @@
-name: gomplate
-category: utils
-version: 3.11.3-4
-labels:
-  github.repo: "gomplate"
-  github.owner: "hairyhenderson"
-uri:
-  - https://github.com/hairyhenderson/gomplate
-license: "MIT"

@@ -1,7 +1,0 @@
-name: "immutable-rootfs"
-category: "system"
-version: 0.8.8
-requires:
-  - name: "cos-setup"
-    category: "system"
-    version: ">0.6.1"

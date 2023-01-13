@@ -1,7 +1,0 @@
-name: "cosign"
-category: "toolchain"
-version: 1.13.1-4
-labels:
-  github.repo: "cosign"
-  github.owner: "sigstore"
-  autobump.revdeps: "true"
