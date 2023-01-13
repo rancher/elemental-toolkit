@@ -1,6 +1,6 @@
 name: "tool"
 category: "distro"
-version: "0.20221223"
+version: "0.20230113"
 hidden: true
 labels:
   autobump.strategy: "snapshot"
