@@ -15,7 +15,7 @@ packages:
     category: "recovery"
     brand_name: "cOS recovery"
     description: "cOS recovery image, used to boot cOS for troubleshooting"
-    version: 0.9.8-2
+    version: 0.9.8-3
   - !!merge <<: *cos
     name: "cos-img"
     category: "recovery"
