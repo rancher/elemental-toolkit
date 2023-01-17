@@ -452,10 +452,11 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}
 
 	recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+	recoverySquashImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoverySquashFile)
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
 		imgSource = v1.NewFileSrc(recoveryImg)
-	} else if exists, _ = utils.Exists(cfg.Fs, constants.IsoBaseTree); exists {
-		imgSource = v1.NewDirSrc(constants.IsoBaseTree)
+	} else if exists, _ = utils.Exists(cfg.Fs, recoverySquashImg); exists {
+		imgSource = v1.NewFileSrc(recoverySquashImg)
 	} else {
 		imgSource = v1.NewEmptySrc()
 	}

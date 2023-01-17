@@ -223,5 +223,14 @@ const HookPostReset = 73
 // Error occurred during post-install hook
 const HookPostInstall = 74
 
+// Error occurred while preparing the image root tree
+const DeployImgTree = 75
+
+// Error occurred while creating the OS filesystem image
+const CreateImgFromTree = 76
+
+// Error occurred while copying the filesystem image and setting new labels
+const CopyFileImg = 77
+
 // Unknown error
 const Unknown int = 255

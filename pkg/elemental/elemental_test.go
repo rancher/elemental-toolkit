@@ -34,6 +34,7 @@ import (
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 	"k8s.io/mount-utils"
 )
@@ -477,120 +478,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			})
 		})
 	})
-	Describe("DeployImage", Label("DeployImage"), func() {
-		var el *elemental.Elemental
-		var img *v1.Image
-		var cmdFail string
-		BeforeEach(func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
-			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elemental")
-			Expect(err).ShouldNot(HaveOccurred())
-			cmdFail = ""
-			el = elemental.NewElemental(config)
-			img = &v1.Image{
-				FS:         constants.LinuxImgFs,
-				Size:       16,
-				Source:     v1.NewDirSrc(sourceDir),
-				MountPoint: destDir,
-				File:       filepath.Join(destDir, "image.img"),
-				Label:      "some_label",
-			}
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmdFail == cmd {
-					return []byte{}, errors.New("Command failed")
-				}
-				switch cmd {
-				case "losetup":
-					return []byte("/dev/loop"), nil
-				default:
-					return []byte{}, nil
-				}
-			}
-		})
-		It("Deploys an image from a directory and leaves it mounted", func() {
-			Expect(el.DeployImage(img, true)).To(BeNil())
-		})
-		It("Deploys an image from a directory and leaves it unmounted", func() {
-			Expect(el.DeployImage(img, false)).To(BeNil())
-		})
-		It("Deploys an squashfs image from a directory", func() {
-			img.FS = constants.SquashFs
-			Expect(el.DeployImage(img, true)).To(BeNil())
-			Expect(runner.MatchMilestones([][]string{
-				{
-					"mksquashfs", "/tmp/elemental-tmp", "/tmp/elemental/image.img",
-					"-b", "1024k", "-comp", "xz", "-Xbcj", "x86",
-				},
-			}))
-		})
-		It("Deploys a file image and mounts it", func() {
-			sourceImg := "/source.img"
-			_, err := fs.Create(sourceImg)
-			Expect(err).To(BeNil())
-			destDir, err := utils.TempDir(fs, "", "elemental")
-			Expect(err).To(BeNil())
-			img.Source = v1.NewFileSrc(sourceImg)
-			img.MountPoint = destDir
-			Expect(el.DeployImage(img, true)).To(BeNil())
-		})
-		It("Deploys a file image and fails to mount it", func() {
-			sourceImg := "/source.img"
-			_, err := fs.Create(sourceImg)
-			Expect(err).To(BeNil())
-			destDir, err := utils.TempDir(fs, "", "elemental")
-			Expect(err).To(BeNil())
-			img.Source = v1.NewFileSrc(sourceImg)
-			img.MountPoint = destDir
-			mounter.ErrorOnMount = true
-			_, err = el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-		})
-		It("Deploys a file image and fails to label it", func() {
-			sourceImg := "/source.img"
-			_, err := fs.Create(sourceImg)
-			Expect(err).To(BeNil())
-			destDir, err := utils.TempDir(fs, "", "elemental")
-			Expect(err).To(BeNil())
-			img.Source = v1.NewFileSrc(sourceImg)
-			img.MountPoint = destDir
-			cmdFail = "tune2fs"
-			_, err = el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-		})
-		It("Fails creating the squashfs filesystem", func() {
-			cmdFail = "mksquashfs"
-			img.FS = constants.SquashFs
-			_, err := el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{
-				{
-					"mksquashfs", "/tmp/elemental-tmp", "/tmp/elemental/image.img",
-					"-b", "1024k", "-comp", "xz", "-Xbcj", "x86",
-				},
-			}))
-		})
-		It("Fails formatting the image", func() {
-			cmdFail = "mkfs.ext2"
-			_, err := el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-		})
-		It("Fails mounting the image", func() {
-			mounter.ErrorOnMount = true
-			_, err := el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-		})
-		It("Fails copying the image if source does not exist", func() {
-			img.Source = v1.NewDirSrc("/welp")
-			_, err := el.DeployImage(img, true)
-			Expect(err).NotTo(BeNil())
-		})
-		It("Fails unmounting the image after copying", func() {
-			mounter.ErrorOnUnmount = true
-			_, err := el.DeployImage(img, false)
-			Expect(err).NotTo(BeNil())
-		})
-	})
 	Describe("DumpSource", Label("dump"), func() {
 		var e *elemental.Elemental
 		var destDir string
@@ -650,9 +537,18 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err = fs.Stat(destFile)
 			Expect(err).To(BeNil())
 		})
-		It("Fails to copy, source file is not present", func() {
+		It("Fails to copy, source can't be mounted", func() {
+			mounter.ErrorOnMount = true
 			_, err := e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
+		})
+		It("Fails to copy, no write permissions", func() {
+			sourceImg := "/source.img"
+			_, err := fs.Create(sourceImg)
+			Expect(err).To(BeNil())
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			_, err = e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
+			Expect(err).To(HaveOccurred())
 		})
 		It("Unpacks from channel to target", func() {
 			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
@@ -664,6 +560,239 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
 			Expect(err).NotTo(BeNil())
 			Expect(luet.UnpackChannelCalled()).To(BeTrue())
+		})
+	})
+	Describe("DeployImgTree", Label("deployImgTree"), func() {
+		var e *elemental.Elemental
+		var imgFile, srcDir, root string
+		var img *v1.Image
+
+		BeforeEach(func() {
+			e = elemental.NewElemental(config)
+
+			imgFile = "/statePart/dst.img"
+			root = "/workingDir"
+
+			srcDir = "/srcDir"
+			Expect(utils.MkdirAll(fs, srcDir, constants.DirPerm)).To(Succeed())
+
+			img = &v1.Image{
+				File:   imgFile,
+				Source: v1.NewDirSrc(srcDir),
+			}
+		})
+		It("Creates an image including including the root tree contents", func() {
+			_, cleaner, err := e.DeployImgTree(img, root)
+			Expect(err).ShouldNot(HaveOccurred())
+			exists, _ := utils.Exists(fs, root)
+			Expect(exists).To(BeTrue())
+			Expect(cleaner()).To(Succeed())
+			exists, _ = utils.Exists(fs, root)
+			Expect(exists).To(BeFalse())
+		})
+		It("Fails without write permissions", func() {
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			_, _, err := e.DeployImgTree(img, root)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails setting a bind mount to root", func() {
+			mounter.ErrorOnMount = true
+			_, _, err := e.DeployImgTree(img, root)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails dumping source if image source does not exist", func() {
+			img.Source = v1.NewDirSrc("/nonexistingdir")
+			_, _, err := e.DeployImgTree(img, root)
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("CreateImgFromTree", Label("createImg"), func() {
+		var e *elemental.Elemental
+		var imgFile, root string
+		var img *v1.Image
+		var cleaned bool
+
+		BeforeEach(func() {
+			cleaned = false
+			e = elemental.NewElemental(config)
+			destDir, err := utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+			root, err = utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			imgFile = filepath.Join(destDir, "dst.img")
+			sf, err := fs.Create(filepath.Join(root, "somefile"))
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(sf.Truncate(32 * 1024 * 1024)).To(Succeed())
+			Expect(sf.Close()).To(Succeed())
+
+			Expect(err).ShouldNot(HaveOccurred())
+			img = &v1.Image{
+				FS:         constants.LinuxImgFs,
+				File:       imgFile,
+				MountPoint: "/some/mountpoint",
+			}
+		})
+		It("Creates an image including including the root tree contents", func() {
+			cleaner := func() error {
+				cleaned = true
+				return nil
+			}
+			err := e.CreateImgFromTree(root, img, cleaner)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
+			Expect(exists).To(BeTrue())
+			Expect(cleaned).To(BeTrue())
+		})
+		It("Creates an squashfs image", func() {
+			img.FS = constants.SquashFs
+			err := e.CreateImgFromTree(root, img, nil)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(img.Size).To(Equal(uint(0)))
+			Expect(runner.IncludesCmds([][]string{{"mksquashfs"}}))
+		})
+		It("Creates an image of an specific size including including the root tree contents", func() {
+			img.Size = 64
+			err := e.CreateImgFromTree(root, img, nil)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(img.Size).To(Equal(uint(64)))
+			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
+			Expect(exists).To(BeTrue())
+		})
+		It("Fails to mount created filesystem image", func() {
+			mounter.ErrorOnMount = true
+			err := e.CreateImgFromTree(root, img, nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+			Expect(cleaned).To(BeFalse())
+		})
+		It("Fails to mount created filesystem image", func() {
+			mounter.ErrorOnUnmount = true
+			err := e.CreateImgFromTree(root, img, nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+			Expect(cleaned).To(BeFalse())
+			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
+			Expect(exists).To(BeTrue())
+		})
+		It("Fails to create image, no write permissions", func() {
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			err := e.CreateImgFromTree(root, img, nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+		})
+	})
+	Describe("DeployImage", Label("deployImg"), func() {
+		var e *elemental.Elemental
+		var imgFile, srcDir string
+		var img *v1.Image
+
+		BeforeEach(func() {
+			e = elemental.NewElemental(config)
+			destDir, err := utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+			srcDir, err = utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			imgFile = filepath.Join(destDir, "dst.img")
+
+			sf, err := fs.Create(filepath.Join(srcDir, "somefile"))
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(sf.Truncate(32 * 1024 * 1024)).To(Succeed())
+			Expect(sf.Close()).To(Succeed())
+
+			Expect(err).ShouldNot(HaveOccurred())
+			img = &v1.Image{
+				FS:         constants.LinuxImgFs,
+				File:       imgFile,
+				MountPoint: "/some/mountpoint",
+				Source:     v1.NewDirSrc(srcDir),
+			}
+		})
+		It("Deploys image source into a filesystem image", func() {
+			_, err := e.DeployImage(img)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).To(Succeed())
+			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+		})
+		It("Fails to dump source without write permissions", func() {
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			_, err := e.DeployImage(img)
+			Expect(err).Should(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).NotTo(Succeed())
+		})
+		It("Fails to create filesystem", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == "mkfs.ext2" {
+					return []byte{}, fmt.Errorf("Failed calling mkfs.ext2")
+				}
+				return []byte{}, nil
+			}
+			_, err := e.DeployImage(img)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("calling mkfs.ext2"))
+			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).To(Succeed())
+		})
+	})
+	Describe("CopyImgFile", Label("copyimg"), func() {
+		var e *elemental.Elemental
+		var imgFile, srcFile string
+		var img *v1.Image
+		var fileContent []byte
+		BeforeEach(func() {
+			e = elemental.NewElemental(config)
+			destDir, err := utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+			imgFile = filepath.Join(destDir, "dst.img")
+			srcFile = filepath.Join(destDir, "src.img")
+			fileContent = []byte("imagefile")
+			err = fs.WriteFile(srcFile, fileContent, constants.FilePerm)
+			Expect(err).ShouldNot(HaveOccurred())
+			img = &v1.Image{
+				Label:  "myLabel",
+				FS:     constants.LinuxImgFs,
+				File:   imgFile,
+				Source: v1.NewFileSrc(srcFile),
+			}
+		})
+		It("Copies image file and sets new label", func() {
+			err := e.CopyFileImg(img)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"tune2fs", "-L", img.Label, img.File}})).To(BeNil())
+			data, err := fs.ReadFile(imgFile)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(data).To(Equal(fileContent))
+		})
+		It("Copies image file and without setting a new label", func() {
+			img.FS = constants.SquashFs
+			err := e.CopyFileImg(img)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"tune2fs", "-L", img.Label, img.File}})).NotTo(BeNil())
+			data, err := fs.ReadFile(imgFile)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(data).To(Equal(fileContent))
+		})
+		It("Fails to copy image if source is not of file type", func() {
+			img.Source = v1.NewEmptySrc()
+			err := e.CopyFileImg(img)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails to copy image if source does not exist", func() {
+			img.Source = v1.NewFileSrc("whatever")
+			err := e.CopyFileImg(img)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails to copy image if it can't create target dir", func() {
+			img.File = "/new/path.img"
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			err := e.CopyFileImg(img)
+			Expect(err).Should(HaveOccurred())
+		})
+		It("Fails to copy image if it can't write a new file", func() {
+			config.Fs = vfs.NewReadOnlyFS(fs)
+			err := e.CopyFileImg(img)
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 	Describe("CheckActiveDeployment", Label("check"), func() {

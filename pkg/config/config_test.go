@@ -239,7 +239,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Active.Source.Value()).To(Equal(constants.IsoBaseTree))
 					Expect(spec.Partitions.EFI.MountPoint).To(Equal(constants.EfiDir))
 				})
 				It("sets reset defaults on bios from non-squashed recovery", func() {

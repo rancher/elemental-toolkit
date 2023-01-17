@@ -28,20 +28,21 @@ import (
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
-func (r *ResetAction) resetHook(hook string, chroot bool) error {
-	if chroot {
-		extraMounts := map[string]string{}
-		persistent := r.spec.Partitions.Persistent
-		if persistent != nil && persistent.MountPoint != "" {
-			extraMounts[persistent.MountPoint] = cnst.UsrLocalPath
-		}
-		oem := r.spec.Partitions.OEM
-		if oem != nil && oem.MountPoint != "" {
-			extraMounts[oem.MountPoint] = cnst.OEMPath
-		}
-		return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, r.spec.Active.MountPoint, extraMounts, r.cfg.CloudInitPaths...)
-	}
+func (r *ResetAction) resetHook(hook string) error {
 	return Hook(&r.cfg.Config, hook, r.cfg.Strict, r.cfg.CloudInitPaths...)
+}
+
+func (r *ResetAction) resetChrootHook(hook string, root string) error {
+	extraMounts := map[string]string{}
+	persistent := r.spec.Partitions.Persistent
+	if persistent != nil && persistent.MountPoint != "" {
+		extraMounts[persistent.MountPoint] = cnst.UsrLocalPath
+	}
+	oem := r.spec.Partitions.OEM
+	if oem != nil && oem.MountPoint != "" {
+		extraMounts[oem.MountPoint] = cnst.OEMPath
+	}
+	return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, root, extraMounts, r.cfg.CloudInitPaths...)
 }
 
 type ResetAction struct {
@@ -156,23 +157,23 @@ func (r ResetAction) Run() (err error) {
 	})
 
 	// Before reset hook happens once partitions are aready and before deploying the OS image
-	err = r.resetHook(cnst.BeforeResetHook, false)
+	err = r.resetHook(cnst.BeforeResetHook)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookBeforeReset)
 	}
 
 	// Deploy active image
-	meta, err := e.DeployImage(&r.spec.Active, true)
+	meta, treeCleaner, err := e.DeployImgTree(&r.spec.Active, cnst.WorkingImgDir)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.DeployImage)
+		return elementalError.NewFromError(err, elementalError.DeployImgTree)
 	}
-	cleanup.Push(func() error { return e.UnmountImage(&r.spec.Active) })
+	cleanup.Push(func() error { return treeCleaner() })
 
 	// install grub
 	grub := utils.NewGrub(&r.cfg.Config)
 	err = grub.Install(
 		r.spec.Target,
-		r.spec.Active.MountPoint,
+		cnst.WorkingImgDir,
 		r.spec.Partitions.State.MountPoint,
 		r.spec.GrubConf,
 		r.spec.Tty,
@@ -196,18 +197,18 @@ func (r ResetAction) Run() (err error) {
 		binds[r.spec.Partitions.OEM.MountPoint] = cnst.OEMPath
 	}
 	err = utils.ChrootedCallback(
-		&r.cfg.Config, r.spec.Active.MountPoint, binds,
+		&r.cfg.Config, cnst.WorkingImgDir, binds,
 		func() error { return e.SelinuxRelabel("/", true) },
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
-	err = r.resetHook(cnst.AfterResetChrootHook, true)
+	err = r.resetChrootHook(cnst.AfterResetChrootHook, cnst.WorkingImgDir)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookAfterResetChroot)
 	}
-	err = r.resetHook(cnst.AfterResetHook, false)
+	err = r.resetHook(cnst.AfterResetHook)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookAfterReset)
 	}
@@ -215,26 +216,25 @@ func (r ResetAction) Run() (err error) {
 	// installation rebrand (only grub for now)
 	err = e.SetDefaultGrubEntry(
 		r.spec.Partitions.State.MountPoint,
-		r.spec.Active.MountPoint,
+		cnst.WorkingImgDir,
 		r.spec.GrubDefEntry,
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
-	// Unmount active image
-	err = e.UnmountImage(&r.spec.Active)
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, treeCleaner)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.UnmountImage)
+		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}
 
 	// Install Passive
-	_, err = e.DeployImage(&r.spec.Passive, false)
+	err = e.CopyFileImg(&r.spec.Passive)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 
-	err = r.resetHook(cnst.PostResetHook, false)
+	err = r.resetHook(cnst.PostResetHook)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookPostReset)
 	}

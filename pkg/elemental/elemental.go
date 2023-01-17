@@ -248,7 +248,7 @@ func (e Elemental) UnmountImage(img *v1.Image) error {
 	return err
 }
 
-// CreateFileSystemImage creates the image file for config.target
+// CreateFileSystemImage creates the image file for the given image
 func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
 	e.config.Logger.Infof("Creating file system image %s", img.File)
 	err := utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
@@ -281,68 +281,139 @@ func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
 	return nil
 }
 
-// DeployImage will deploy the given image into the target. This method
-// creates the filesystem image file, mounts it and unmounts it as needed.
-func (e *Elemental) DeployImage(img *v1.Image, leaveMounted bool) (info interface{}, err error) {
-	target := img.MountPoint
-	if !img.Source.IsFile() {
-		if img.FS != cnst.SquashFs {
-			err = e.CreateFileSystemImage(img)
-			if err != nil {
-				return nil, err
-			}
+// DeployImgTree will deploy the given image into the given root tree. Returns source metadata in info,
+// a tree cleaner function and error. The given root will be a bind mount of a temporary directory into the same
+// filesystem of img.File, this is helpful to make the deployment easily accessible in after-* hooks.
+func (e *Elemental) DeployImgTree(img *v1.Image, root string) (info interface{}, cleaner func() error, err error) {
+	// We prepare the rootTree next to the target image file, in the same base path
+	e.config.Logger.Infof("Preparing root tree for image: %s", img.File)
+	tmp := strings.TrimSuffix(img.File, filepath.Ext(img.File))
+	tmp += ".imgTree"
+	err = utils.MkdirAll(e.config.Fs, tmp, cnst.DirPerm)
+	if err != nil {
+		return nil, nil, err
+	}
 
-			err = e.MountImage(img, "rw")
-			if err != nil {
-				return nil, err
+	err = utils.MkdirAll(e.config.Fs, root, cnst.DirPerm)
+	if err != nil {
+		_ = e.config.Fs.RemoveAll(tmp)
+		return nil, nil, err
+	}
+	err = e.config.Mounter.Mount(tmp, root, "bind", []string{"bind"})
+	if err != nil {
+		_ = e.config.Fs.RemoveAll(tmp)
+		_ = e.config.Fs.RemoveAll(root)
+		return nil, nil, err
+	}
+
+	cleaner = func() error {
+		_ = e.config.Mounter.Unmount(root)
+		err := e.config.Fs.RemoveAll(root)
+		if err != nil {
+			return err
+		}
+		return e.config.Fs.RemoveAll(tmp)
+	}
+
+	info, err = e.DumpSource(root, img.Source)
+	if err != nil {
+		_ = cleaner()
+		return nil, nil, err
+	}
+	err = utils.CreateDirStructure(e.config.Fs, root)
+	if err != nil {
+		_ = cleaner()
+		return nil, nil, err
+	}
+
+	return info, cleaner, err
+}
+
+// CreateImgFromTree creates the given image from with the contents of the tree for the given root.
+func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func() error) (err error) {
+	if cleaner != nil {
+		defer func() {
+			cErr := cleaner()
+			if cErr != nil && err == nil {
+				err = cErr
 			}
-		} else {
-			target = utils.GetTempDir(e.config, "")
-			err := utils.MkdirAll(e.config.Fs, target, cnst.DirPerm)
-			if err != nil {
-				return nil, err
-			}
-			defer e.config.Fs.RemoveAll(target) // nolint:errcheck
+		}()
+	}
+
+	if img.FS == cnst.SquashFs {
+		e.config.Logger.Infof("Creating squashed image: %s", img.File)
+		squashOptions := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)
+		err = utils.CreateSquashFS(e.config.Runner, e.config.Logger, root, img.File, squashOptions)
+		if err != nil {
+			return err
 		}
 	} else {
-		target = img.File
-	}
-	info, err = e.DumpSource(target, img.Source)
-	if err != nil {
-		_ = e.UnmountImage(img)
-		return nil, err
-	}
-	if !img.Source.IsFile() {
-		err = utils.CreateDirStructure(e.config.Fs, target)
-		if err != nil {
-			return nil, err
-		}
-		if img.FS == cnst.SquashFs {
-			squashOptions := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)
-			err = utils.CreateSquashFS(e.config.Runner, e.config.Logger, target, img.File, squashOptions)
+		e.config.Logger.Infof("Creating filesystem image: %s", img.File)
+		if img.Size == 0 {
+			size, err := utils.DirSizeMB(e.config.Fs, root)
 			if err != nil {
-				return nil, err
+				return err
 			}
+			img.Size = size + cnst.ImgOverhead
 		}
-	} else if img.Label != "" && img.FS != cnst.SquashFs {
-		_, err = e.config.Runner.Run("tune2fs", "-L", img.Label, img.File)
+		err = e.CreateFileSystemImage(img)
 		if err != nil {
-			e.config.Logger.Errorf("Failed to apply label %s to $s", img.Label, img.File)
-			_ = e.config.Fs.Remove(img.File)
-			return nil, err
+			return err
 		}
-	}
-	if leaveMounted && img.Source.IsFile() {
 		err = e.MountImage(img, "rw")
 		if err != nil {
-			return nil, err
+			return err
+		}
+		defer func() {
+			mErr := e.UnmountImage(img)
+			if err == nil && mErr != nil {
+				err = mErr
+			}
+		}()
+		err = utils.SyncData(e.config.Logger, e.config.Fs, root, img.MountPoint)
+		if err != nil {
+			return err
 		}
 	}
-	if !leaveMounted {
-		err = e.UnmountImage(img)
-		if err != nil {
-			return nil, err
-		}
+	return err
+}
+
+// CopyFileImg copies the files target as the source of this image. It also applies the img label over the copied image.
+func (e *Elemental) CopyFileImg(img *v1.Image) error {
+	if !img.Source.IsFile() {
+		return fmt.Errorf("Copying a file image requires an image source of file type")
+	}
+
+	err := utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
+	if err != nil {
+		return err
+	}
+
+	e.config.Logger.Infof("Copying image %s to %s", img.Source.Value(), img.File)
+	err = utils.CopyFile(e.config.Fs, img.Source.Value(), img.File)
+	if err != nil {
+		return err
+	}
+
+	if img.FS != cnst.SquashFs && img.Label != "" {
+		e.config.Logger.Infof("Setting label: %s ", img.Label)
+		_, err = e.config.Runner.Run("tune2fs", "-L", img.Label, img.File)
+	}
+	return err
+}
+
+// DeployImage will deploy the given image into the target. This method
+// creates the filesystem image file and fills it with the correspondant data
+func (e *Elemental) DeployImage(img *v1.Image) (interface{}, error) {
+	e.config.Logger.Infof("Deploying image: %s", img.File)
+	info, cleaner, err := e.DeployImgTree(img, cnst.WorkingImgDir)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, img, cleaner)
+	if err != nil {
+		return nil, err
 	}
 	return info, nil
 }
@@ -379,11 +450,18 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info inte
 			return nil, err
 		}
 	} else if imgSrc.IsFile() {
-		err := utils.MkdirAll(e.config.Fs, filepath.Dir(target), cnst.DirPerm)
+		err = utils.MkdirAll(e.config.Fs, cnst.ImgSrcDir, cnst.DirPerm)
 		if err != nil {
 			return nil, err
 		}
-		err = utils.CopyFile(e.config.Fs, imgSrc.Value(), target)
+		img := &v1.Image{File: imgSrc.Value(), MountPoint: cnst.ImgSrcDir}
+		err = e.MountImage(img, "auto", "ro")
+		if err != nil {
+			return nil, err
+		}
+		defer e.UnmountImage(img) // nolint:errcheck
+		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
+		err = utils.SyncData(e.config.Logger, e.config.Fs, cnst.ImgSrcDir, target, excludes...)
 		if err != nil {
 			return nil, err
 		}

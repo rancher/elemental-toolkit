@@ -83,20 +83,25 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 
 // CopyFile Copies source file to target file using Fs interface. If target
 // is  directory source is copied into that directory using source name file.
-func CopyFile(fs v1.FS, source string, target string) (err error) {
+// File mode is preserved
+func CopyFile(fs v1.FS, source string, target string) error {
 	return ConcatFiles(fs, []string{source}, target)
 }
 
 // ConcatFiles Copies source files to target file using Fs interface.
 // Source files are concatenated into target file in the given order.
 // If target is a directory source is copied into that directory using
-// 1st source name file.
+// 1st source name file. The result keeps the file mode of the 1st source.
 func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 	if len(sources) == 0 {
 		return fmt.Errorf("Empty sources list")
 	}
 	if dir, _ := IsDir(fs, target); dir {
 		target = filepath.Join(target, filepath.Base(sources[0]))
+	}
+	fInf, err := fs.Stat(sources[0])
+	if err != nil {
+		return err
 	}
 
 	targetFile, err := fs.Create(target)
@@ -115,22 +120,23 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 	for _, source := range sources {
 		sourceFile, err = fs.Open(source)
 		if err != nil {
-			break
+			return err
 		}
 		_, err = io.Copy(targetFile, sourceFile)
 		if err != nil {
-			break
+			return err
 		}
 		err = sourceFile.Close()
 		if err != nil {
-			break
+			return err
 		}
 	}
 
-	return err
+	return fs.Chmod(target, fInf.Mode())
 }
 
-// Copies source file to target file using Fs interface
+// CreateDirStructure creates essentials directories under the root tree that might not be present
+// within a container image (/dev, /run, etc.)
 func CreateDirStructure(fs v1.FS, target string) error {
 	for _, dir := range []string{"/run", "/dev", "/boot", "/usr/local", "/oem"} {
 		err := MkdirAll(fs, filepath.Join(target, dir), cnst.DirPerm)

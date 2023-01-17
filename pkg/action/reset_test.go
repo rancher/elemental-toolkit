@@ -141,7 +141,7 @@ var _ = Describe("Reset action tests", func() {
 
 			spec.Active.Size = 16
 
-			grubCfg := filepath.Join(spec.Active.MountPoint, spec.GrubConf)
+			grubCfg := filepath.Join(constants.WorkingImgDir, spec.GrubConf)
 			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(grubCfg)

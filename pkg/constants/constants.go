@@ -22,55 +22,76 @@ import (
 )
 
 const (
-	GrubConf               = "/etc/cos/grub.cfg"
-	GrubOEMEnv             = "grub_oem_env"
-	GrubDefEntry           = "cOS"
-	DefaultTty             = "tty1"
-	BiosPartName           = "bios"
-	EfiLabel               = "COS_GRUB"
-	EfiPartName            = "efi"
-	ActiveLabel            = "COS_ACTIVE"
-	PassiveLabel           = "COS_PASSIVE"
-	SystemLabel            = "COS_SYSTEM"
-	RecoveryLabel          = "COS_RECOVERY"
-	RecoveryPartName       = "recovery"
-	StateLabel             = "COS_STATE"
-	StatePartName          = "state"
-	InstallStateFile       = "state.yaml"
-	PersistentLabel        = "COS_PERSISTENT"
-	PersistentPartName     = "persistent"
-	OEMLabel               = "COS_OEM"
-	OEMPartName            = "oem"
-	MountBinary            = "/usr/bin/mount"
-	EfiDevice              = "/sys/firmware/efi"
-	LinuxFs                = "ext4"
-	LinuxImgFs             = "ext2"
-	SquashFs               = "squashfs"
-	EfiFs                  = "vfat"
-	BiosFs                 = ""
-	EfiSize                = uint(64)
-	OEMSize                = uint(64)
-	StateSize              = uint(15360)
-	RecoverySize           = uint(8192)
-	PersistentSize         = uint(0)
-	BiosSize               = uint(1)
-	ImgSize                = uint(3072)
-	HTTPTimeout            = 60
-	PartStage              = "partitioning"
-	LiveDir                = "/run/initramfs/live"
-	RecoveryDir            = "/run/cos/recovery"
-	StateDir               = "/run/cos/state"
-	OEMDir                 = "/run/cos/oem"
-	PersistentDir          = "/run/cos/persistent"
-	ActiveDir              = "/run/cos/active"
-	TransitionDir          = "/run/cos/transition"
-	EfiDir                 = "/run/cos/efi"
-	RecoverySquashFile     = "recovery.squashfs"
-	ActiveImgFile          = "active.img"
-	PassiveImgFile         = "passive.img"
-	RecoveryImgFile        = "recovery.img"
-	IsoBaseTree            = "/run/rootfsbase"
-	CosSetup               = "/usr/bin/cos-setup"
+	GrubConf           = "/etc/cos/grub.cfg"
+	GrubOEMEnv         = "grub_oem_env"
+	GrubDefEntry       = "cOS"
+	DefaultTty         = "tty1"
+	BiosPartName       = "bios"
+	EfiLabel           = "COS_GRUB"
+	EfiPartName        = "efi"
+	ActiveLabel        = "COS_ACTIVE"
+	PassiveLabel       = "COS_PASSIVE"
+	SystemLabel        = "COS_SYSTEM"
+	RecoveryLabel      = "COS_RECOVERY"
+	RecoveryPartName   = "recovery"
+	StateLabel         = "COS_STATE"
+	StatePartName      = "state"
+	InstallStateFile   = "state.yaml"
+	PersistentLabel    = "COS_PERSISTENT"
+	PersistentPartName = "persistent"
+	OEMLabel           = "COS_OEM"
+	OEMPartName        = "oem"
+	ActiveImgName      = "active"
+	PassiveImgName     = "passive"
+	RecoveryImgName    = "recovery"
+	MountBinary        = "/usr/bin/mount"
+	EfiDevice          = "/sys/firmware/efi"
+	LinuxFs            = "ext4"
+	LinuxImgFs         = "ext2"
+	SquashFs           = "squashfs"
+	EfiFs              = "vfat"
+	BiosFs             = ""
+	EfiSize            = uint(64)
+	OEMSize            = uint(64)
+	StateSize          = uint(15360)
+	RecoverySize       = uint(8192)
+	PersistentSize     = uint(0)
+	BiosSize           = uint(1)
+	ImgSize            = uint(0)
+	ImgOverhead        = uint(256)
+	HTTPTimeout        = 60
+	CosSetup           = "/usr/bin/cos-setup"
+	GPT                = "gpt"
+	BuildImgName       = "elemental"
+	UsrLocalPath       = "/usr/local"
+	OEMPath            = "/oem"
+	ConfigDir          = "/etc/elemental"
+
+	// Mountpoints of images and partitions
+	RecoveryDir     = "/run/cos/recovery"
+	StateDir        = "/run/cos/state"
+	OEMDir          = "/run/cos/oem"
+	PersistentDir   = "/run/cos/persistent"
+	ActiveDir       = "/run/cos/active"
+	TransitionDir   = "/run/cos/transition"
+	EfiDir          = "/run/cos/efi"
+	ImgSrcDir       = "/run/cos/imgsrc"
+	WorkingImgDir   = "/run/cos/workingtree"
+	RunningStateDir = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
+
+	// Live image mountpoints
+	IsoBaseTree = "/run/rootfsbase"
+	LiveDir     = "/run/initramfs/live"
+
+	// Image file names
+	RecoverySquashFile   = "recovery.squashfs"
+	ActiveImgFile        = "active.img"
+	PassiveImgFile       = "passive.img"
+	RecoveryImgFile      = "recovery.img"
+	TransitionImgFile    = "transition.img"
+	TransitionSquashFile = "transition.squashfs"
+
+	// Yip stages evaluated on reset/upgrade/install action
 	AfterInstallChrootHook = "after-install-chroot"
 	AfterInstallHook       = "after-install"
 	PostInstallHook        = "post-install"
@@ -83,25 +104,13 @@ const (
 	AfterUpgradeHook       = "after-upgrade"
 	PostUpgradeHook        = "post-upgrade"
 	BeforeUpgradeHook      = "before-upgrade"
-	LuetCosignPlugin       = "luet-cosign"
-	LuetMtreePlugin        = "luet-mtree"
-	LuetDefaultRepoURI     = "quay.io/costoolkit/releases-green"
-	LuetRepoMaxPrio        = 1
-	LuetDefaultRepoPrio    = 90
-	UpgradeActive          = "active"
-	UpgradeRecovery        = "recovery"
-	ChannelSource          = "system/cos"
-	TransitionImgFile      = "transition.img"
-	TransitionSquashFile   = "transition.squashfs"
-	RunningStateDir        = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
-	ActiveImgName          = "active"
-	PassiveImgName         = "passive"
-	RecoveryImgName        = "recovery"
-	GPT                    = "gpt"
-	BuildImgName           = "elemental"
-	UsrLocalPath           = "/usr/local"
-	OEMPath                = "/oem"
-	ConfigDir              = "/etc/elemental"
+
+	// Luet constants
+	LuetCosignPlugin    = "luet-cosign"
+	LuetMtreePlugin     = "luet-mtree"
+	LuetDefaultRepoURI  = "quay.io/costoolkit/releases-green"
+	LuetRepoMaxPrio     = 1
+	LuetDefaultRepoPrio = 90
 
 	// SELinux targeted policy paths
 	SELinuxTargetedPath        = "/etc/selinux/targeted"

@@ -22,11 +22,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	eleefi "github.com/rancher/elemental-cli/pkg/efi"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	eleefi "github.com/rancher/elemental-cli/pkg/efi"
 
 	efi "github.com/canonical/go-efilib"
 	"github.com/jaypipes/ghw/pkg/block"

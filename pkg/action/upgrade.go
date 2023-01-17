@@ -50,24 +50,26 @@ func (u UpgradeAction) Error(s string, args ...interface{}) {
 	u.config.Logger.Errorf(s, args...)
 }
 
-func (u UpgradeAction) upgradeHook(hook string, chroot bool) error {
+func (u UpgradeAction) upgradeHook(hook string) error {
 	u.Info("Applying '%s' hook", hook)
-	if chroot {
-		mountPoints := map[string]string{}
-
-		oemDevice := u.spec.Partitions.OEM
-		if oemDevice != nil && oemDevice.MountPoint != "" {
-			mountPoints[oemDevice.MountPoint] = constants.OEMPath
-		}
-
-		persistentDevice := u.spec.Partitions.Persistent
-		if persistentDevice != nil && persistentDevice.MountPoint != "" {
-			mountPoints[persistentDevice.MountPoint] = constants.UsrLocalPath
-		}
-
-		return ChrootHook(&u.config.Config, hook, u.config.Strict, u.spec.Active.MountPoint, mountPoints, u.config.CloudInitPaths...)
-	}
 	return Hook(&u.config.Config, hook, u.config.Strict, u.config.CloudInitPaths...)
+}
+
+func (u UpgradeAction) upgradeChrootHook(hook string, root string) error {
+	u.Info("Applying '%s' hook", hook)
+	mountPoints := map[string]string{}
+
+	oemDevice := u.spec.Partitions.OEM
+	if oemDevice != nil && oemDevice.MountPoint != "" {
+		mountPoints[oemDevice.MountPoint] = constants.OEMPath
+	}
+
+	persistentDevice := u.spec.Partitions.Persistent
+	if persistentDevice != nil && persistentDevice.MountPoint != "" {
+		mountPoints[persistentDevice.MountPoint] = constants.UsrLocalPath
+	}
+
+	return ChrootHook(&u.config.Config, hook, u.config.Strict, root, mountPoints, u.config.CloudInitPaths...)
 }
 
 func (u *UpgradeAction) upgradeInstallStateYaml(meta interface{}, img v1.Image) error {
@@ -187,19 +189,20 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// before upgrade hook happens once partitions are RW mounted, just before image OS is deployed
-	err = u.upgradeHook(constants.BeforeUpgradeHook, false)
+	err = u.upgradeHook(constants.BeforeUpgradeHook)
 	if err != nil {
 		u.Error("Error while running hook before-upgrade: %s", err)
 		return elementalError.NewFromError(err, elementalError.HookBeforeUpgrade)
 	}
 
 	u.Info("deploying image %s to %s", upgradeImg.Source.Value(), upgradeImg.File)
-	upgradeMeta, err := e.DeployImage(&upgradeImg, true)
+	// Deploy active image
+	upgradeMeta, treeCleaner, err := e.DeployImgTree(&upgradeImg, constants.WorkingImgDir)
 	if err != nil {
 		u.Error("Failed deploying image to file '%s': %s", upgradeImg.File, err)
-		return elementalError.NewFromError(err, elementalError.DeployImage)
+		return elementalError.NewFromError(err, elementalError.DeployImgTree)
 	}
-	cleanup.Push(func() error { return e.UnmountImage(&upgradeImg) })
+	cleanup.Push(func() error { return treeCleaner() })
 
 	// Selinux relabel
 	// Doesn't make sense to relabel a readonly filesystem
@@ -215,7 +218,7 @@ func (u *UpgradeAction) Run() (err error) {
 			binds[u.spec.Partitions.OEM.MountPoint] = constants.OEMPath
 		}
 		err = utils.ChrootedCallback(
-			&u.config.Config, upgradeImg.MountPoint, binds,
+			&u.config.Config, constants.WorkingImgDir, binds,
 			func() error { return e.SelinuxRelabel("/", true) },
 		)
 		if err != nil {
@@ -223,12 +226,12 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	err = u.upgradeHook(constants.AfterUpgradeChrootHook, true)
+	err = u.upgradeChrootHook(constants.AfterUpgradeChrootHook, constants.WorkingImgDir)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)
 		return elementalError.NewFromError(err, elementalError.HookAfterUpgradeChroot)
 	}
-	err = u.upgradeHook(constants.AfterUpgradeHook, false)
+	err = u.upgradeHook(constants.AfterUpgradeHook)
 	if err != nil {
 		u.Error("Error running hook after-upgrade: %s", err)
 		return elementalError.NewFromError(err, elementalError.HookAfterUpgrade)
@@ -238,17 +241,17 @@ func (u *UpgradeAction) Run() (err error) {
 	if !u.spec.RecoveryUpgrade {
 		u.Info("rebranding")
 
-		err = e.SetDefaultGrubEntry(u.spec.Partitions.State.MountPoint, upgradeImg.MountPoint, u.spec.GrubDefEntry)
+		err = e.SetDefaultGrubEntry(u.spec.Partitions.State.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
 		if err != nil {
 			u.Error("failed setting default entry")
 			return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 		}
 	}
 
-	err = e.UnmountImage(&upgradeImg)
+	err = e.CreateImgFromTree(constants.WorkingImgDir, &upgradeImg, treeCleaner)
 	if err != nil {
-		u.Error("failed unmounting transition image")
-		return elementalError.NewFromError(err, elementalError.UnmountImage)
+		u.Error("failed creating transition image")
+		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}
 
 	// If not upgrading recovery, backup active into passive
@@ -284,7 +287,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	_, _ = u.config.Runner.Run("sync")
 
-	err = u.upgradeHook(constants.PostUpgradeHook, false)
+	err = u.upgradeHook(constants.PostUpgradeHook)
 	if err != nil {
 		u.Error("Error running hook post-upgrade: %s", err)
 		return elementalError.NewFromError(err, elementalError.HookPostUpgrade)

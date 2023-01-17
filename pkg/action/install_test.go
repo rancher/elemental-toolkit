@@ -145,7 +145,7 @@ var _ = Describe("Install action tests", func() {
 			spec = conf.NewInstallSpec(config.Config)
 			spec.Active.Size = 16
 
-			grubCfg := filepath.Join(spec.Active.MountPoint, constants.GrubConf)
+			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubConf)
 			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(grubCfg)

@@ -20,6 +20,7 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -35,7 +36,7 @@ import (
 	"github.com/twpayne/go-vfs/vfst"
 )
 
-// DirSize returns the accumulated size of all files in folder
+// DirSize returns the accumulated size of all files in folder. Result in bytes
 func DirSize(fs v1.FS, path string) (int64, error) {
 	var size int64
 	err := vfs.Walk(fs, path, func(_ string, info os.FileInfo, err error) error {
@@ -48,6 +49,21 @@ func DirSize(fs v1.FS, path string) (int64, error) {
 		return err
 	})
 	return size, err
+}
+
+// DirSizeMB returns the accumulated size of all files in folder. Result in Megabytes
+func DirSizeMB(fs v1.FS, path string) (uint, error) {
+	size, err := DirSize(fs, path)
+	if err != nil {
+		return 0, err
+	}
+
+	MB := int64(1024 * 1024)
+	sizeMB := (size/MB*MB + MB) / MB
+	if sizeMB > 0 {
+		return uint(sizeMB), nil
+	}
+	return 0, fmt.Errorf("Negative size calculation: %d", sizeMB)
 }
 
 // Check if a file or directory exists.
