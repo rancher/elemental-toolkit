@@ -68,4 +68,7 @@
 | 72 | Error occurred during post-upgrade hook|
 | 73 | Error occurred during post-reset hook|
 | 74 | Error occurred during post-install hook|
+| 75 | Error occurred while preparing the image root tree|
+| 76 | Error occurred while creating the OS filesystem image|
+| 77 | Error occurred while copying the filesystem image and setting new labels|
 | 255 | Unknown error|
