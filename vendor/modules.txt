@@ -154,14 +154,6 @@ github.com/canonical/go-efilib/internal/uefi
 github.com/canonical/go-efilib/internal/unix
 github.com/canonical/go-efilib/linux
 github.com/canonical/go-efilib/mbr
-# github.com/canonical/go-sp800.108-kdf v0.0.0-20210315104021-ead800bbf9a0
-## explicit; go 1.9
-# github.com/canonical/go-sp800.90a-drbg v0.0.0-20210314144037-6eeb1040d6c3
-## explicit; go 1.9
-# github.com/canonical/go-tpm2 v0.1.0
-## explicit; go 1.9
-# github.com/canonical/tcglog-parser v0.0.0-20220314144800-471071956aa1
-## explicit; go 1.13
 # github.com/cavaliercoder/grab v1.0.1-0.20201108051000-98a5bfe305ec
 ## explicit; go 1.14
 github.com/cavaliercoder/grab
@@ -396,10 +388,6 @@ github.com/go-logr/logr/funcr
 ## explicit; go 1.12
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
-# github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0
-## explicit; go 1.13
-# github.com/godbus/dbus v4.1.0+incompatible
-## explicit
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
@@ -455,8 +443,6 @@ github.com/google/go-containerregistry/pkg/v1/remote/transport
 github.com/google/go-containerregistry/pkg/v1/stream
 github.com/google/go-containerregistry/pkg/v1/tarball
 github.com/google/go-containerregistry/pkg/v1/types
-# github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1
-## explicit; go 1.14
 # github.com/google/renameio v1.0.0
 ## explicit; go 1.13
 github.com/google/renameio
@@ -687,7 +673,7 @@ github.com/mudler/yip/pkg/plugins
 github.com/mudler/yip/pkg/schema
 github.com/mudler/yip/pkg/schema/cloudinit
 github.com/mudler/yip/pkg/utils
-# github.com/onsi/ginkgo/v2 v2.6.1
+# github.com/onsi/ginkgo/v2 v2.7.0
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -699,7 +685,7 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.24.2
+# github.com/onsi/gomega v1.25.0
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -801,12 +787,6 @@ github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.8.1
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/snapcore/go-gettext v0.0.0-20201130093759-38740d1bd3d2
-## explicit; go 1.13
-# github.com/snapcore/secboot v0.0.0-20220913200412-67afe3f3c110
-## explicit
-# github.com/snapcore/snapd v0.0.0-20220921113335-7b37d59869cc
-## explicit; go 1.13
 # github.com/spf13/afero v1.8.2
 ## explicit; go 1.13
 github.com/spf13/afero
@@ -949,7 +929,7 @@ golang.org/x/crypto/ssh/knownhosts
 # golang.org/x/mod v0.7.0
 ## explicit; go 1.17
 golang.org/x/mod/sumdb/dirhash
-# golang.org/x/net v0.4.0
+# golang.org/x/net v0.5.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -977,7 +957,7 @@ golang.org/x/oauth2/jwt
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.3.0
+# golang.org/x/sys v0.4.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -986,10 +966,10 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.3.0
+# golang.org/x/term v0.4.0
 ## explicit; go 1.17
 golang.org/x/term
-# golang.org/x/text v0.5.0
+# golang.org/x/text v0.6.0
 ## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
@@ -1011,8 +991,6 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.4.0
-## explicit; go 1.18
 # golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 ## explicit; go 1.17
 golang.org/x/xerrors
@@ -1140,10 +1118,6 @@ gopkg.in/djherbis/times.v1
 # gopkg.in/ini.v1 v1.66.6
 ## explicit
 gopkg.in/ini.v1
-# gopkg.in/retry.v1 v1.0.3
-## explicit; go 1.12
-# gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
-## explicit
 # gopkg.in/warnings.v0 v0.1.2
 ## explicit
 gopkg.in/warnings.v0
@@ -1170,8 +1144,6 @@ k8s.io/mount-utils
 k8s.io/utils/exec
 k8s.io/utils/io
 k8s.io/utils/keymutex
-# maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066
-## explicit
 # pault.ag/go/modprobe v0.1.2
 ## explicit; go 1.15
 pault.ag/go/modprobe
