@@ -94,7 +94,7 @@ github.com/asottile/dockerfile
 # github.com/atomicgo/cursor v0.0.1
 ## explicit; go 1.15
 github.com/atomicgo/cursor
-# github.com/aws/aws-sdk-go v1.31.6
+# github.com/aws/aws-sdk-go v1.33.0
 ## explicit; go 1.11
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn

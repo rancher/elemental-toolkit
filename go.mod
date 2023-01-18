@@ -48,7 +48,7 @@ require (
 	github.com/asdine/storm v0.0.0-20190418133842-e0f77eada154 // indirect
 	github.com/asottile/dockerfile v3.1.0+incompatible // indirect
 	github.com/atomicgo/cursor v0.0.1 // indirect
-	github.com/aws/aws-sdk-go v1.31.6 // indirect
+	github.com/aws/aws-sdk-go v1.33.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/cavaliercoder/grab v1.0.1-0.20201108051000-98a5bfe305ec // indirect
