@@ -165,12 +165,10 @@ cp %{S:2} .
 %{__install} -D -m 644 packages/cos-setup/02-cos-setup-initramfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-cos-setup-initramfs.conf
 
 # elemental-grub-config
-%{__install} -D -m 644 packages/grub2/config/grub.cfg.tmpl %{buildroot}%{_sysconfdir}/cos/grub.cfg.tmpl
-./packages/cos-config/cos-tmpl-render.sh %{buildroot}%{_sysconfdir}/cos/grub.cfg.tmpl ./packages/cos-config/cos-config
+%{__install} -D -m 644 packages/grub2/config/grub.cfg %{buildroot}%{_sysconfdir}/cos/grub.cfg
 
 # elemental-grub-bootargs
-%{__install} -D -m 644 packages/grub2/config/bootargs.cfg.tmpl %{buildroot}%{_sysconfdir}/cos/bootargs.cfg.tmpl
-./packages/cos-config/cos-tmpl-render.sh %{buildroot}%{_sysconfdir}/cos/bootargs.cfg.tmpl ./packages/cos-config/cos-config
+%{__install} -D -m 644 packages/grub2/config/bootargs.cfg %{buildroot}%{_sysconfdir}/cos/bootargs.cfg
 
 # elemental-dracut-config
 %{__install} -D -m 644 packages/base-dracut-modules/50-cos-initrd.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-cos-initrd.conf
@@ -183,8 +181,7 @@ cp %{S:2} .
 %{__install} -D -m 644 packages/cloud-config/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
 
 # elemental-init-recovery
-%{__install} -D -m 644 packages/cloud-config/oem/06_recovery.yaml.tmpl %{buildroot}%{oemdir}/06_recovery.yaml.tmpl
-./packages/cos-config/cos-tmpl-render.sh %{buildroot}%{oemdir}/06_recovery.yaml.tmpl ./packages/cos-config/cos-config
+%{__install} -D -m 644 packages/cloud-config/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
 
 # elemental-init-live
 %{__install} -D -m 644 packages/cloud-config/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
