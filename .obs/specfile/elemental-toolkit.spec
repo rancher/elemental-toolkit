@@ -118,7 +118,7 @@ Provides basic Elemental init yaml files to enable/disable additional systemd se
 
 %package -n elemental-upgrade-hooks
 Summary:        Elemental hook yaml files for extra steps on install or upgrade
-Requires:       elemental-cli = %{version}-%{release}
+Requires:       elemental-cli
 
 %description -n elemental-upgrade-hooks
 Provides Elemental hook yaml files to fine tune installation and/or upgrade procedures
