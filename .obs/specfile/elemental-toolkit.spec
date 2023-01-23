@@ -65,6 +65,7 @@ Requires:       elemental-init-recovery = %{version}-%{release}
 Requires:       elemental-init-live = %{version}-%{release}
 Requires:       elemental-init-boot-assessment = %{version}-%{release}
 Requires:       elemental-init-services = %{version}-%{release}
+Requires:       elemental-upgrade-hooks = %{version}-%{release}
 
 %description -n elemental-init-config
 Provides Elemental default initialization configuration files
@@ -115,6 +116,12 @@ Requires:       elemental-init-setup = %{version}-%{release}
 %description -n elemental-init-services
 Provides basic Elemental init yaml files to enable/disable additional systemd services
 
+%package -n elemental-upgrade-hooks
+Summary:        Elemental hook yaml files for extra steps on install or upgrade
+Requires:       elemental-cli = %{version}-%{release}
+
+%description -n elemental-upgrade-hooks
+Provides Elemental hook yaml files to fine tune installation and/or upgrade procedures
 
 %package -n elemental-grub-config
 Summary:        Elemental grub configuration files
@@ -191,6 +198,9 @@ cp %{S:2} .
 
 # elemental-init-services
 %{__install} -D -m 644 packages/cloud-config/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
+
+# elemental-upgrade-hooks
+%{__install} -D -m 644 packages/cloud-config/oem/01_upgrade_grub_hook.yaml %{buildroot}%{oemdir}/01_upgrade_grub_hook.yaml
 
 
 %pre -n elemental-init-setup
@@ -317,6 +327,13 @@ cp %{S:2} .
 %dir %{systemdir}
 %dir %{oemdir}
 %{oemdir}/09_services.yaml
+
+%files -n elemental-upgrade-hooks
+%defattr(-,root,root,-)
+%license LICENSE
+%dir %{systemdir}
+%dir %{oemdir}
+%{oemdir}/01_upgrade_grub_hook.yaml
 
 %files -n elemental-init-config
 %defattr(-,root,root,-)
