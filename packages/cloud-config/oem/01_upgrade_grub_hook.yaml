@@ -13,10 +13,7 @@ stages:
       name: "Set grub env variables"
       commands:
       - |
-        statemnt="/run/cos/state"
-        if [ ! -f "${statemnt}/grub2/grub.cfg" ]; then
-          statemnt="/run/initramfs/cos-state"
-        fi
+        statemnt="$(findmnt /dev/disk/by-label/COS_STATE -n -o target | head -n1)"
 
         grub2-editenv ${statemnt}/grub_oem_env set state_label=COS_STATE
         grub2-editenv ${statemnt}/grub_oem_env set active_label=COS_ACTIVE
