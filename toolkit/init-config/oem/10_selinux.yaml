@@ -11,6 +11,8 @@ stages:
    initramfs:
      - name: "Relabelling"
        commands:
-       - |
+       - | 
+         if grep -q "selinux=1" /proc/cmdline; then
            load_policy -i
            restorecon -R -i -v /etc /root /opt /srv /var /home /usr/local /oem
+         fi
