@@ -77,7 +77,7 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 		if strings.Contains(line, "=") {
 			lineSplit := strings.Split(line, "=")
 			if lineSplit[0] == "cos.setup" {
-				cloudInitPaths = append(cloudInitPaths, lineSplit[1])
+				cloudInitPaths = append(cloudInitPaths, strings.TrimSpace(lineSplit[1]))
 				cfg.Logger.Debugf("Found cos.setup stanza on cmdline with value %s", lineSplit[1])
 			}
 		}
