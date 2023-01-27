@@ -118,11 +118,12 @@ const (
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
 
 	// Kernel and initrd paths are arbitrary and coupled to grub.cfg
-	IsoKernelPath = "/boot/kernel"
-	IsoInitrdPath = "/boot/initrd"
-	IsoRootFile   = "rootfs.squashfs"
-	IsoEFIImg     = "uefi.img"
-	ISOLabel      = "COS_LIVE"
+	IsoKernelPath    = "/boot/kernel"
+	IsoInitrdPath    = "/boot/initrd"
+	IsoRootFile      = "rootfs.squashfs"
+	IsoEFIImg        = "uefi.img"
+	ISOLabel         = "COS_LIVE"
+	ISOCloudInitPath = LiveDir + "/iso-config"
 
 	// Default directory and file fileModes
 	DirPerm        = os.ModeDir | os.ModePerm
