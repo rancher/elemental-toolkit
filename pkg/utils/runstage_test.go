@@ -149,10 +149,17 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 		// Symlinks to existing directoryes are also valid
 		Expect(fs.Symlink("/existing", "/symlinkToExistingDir")).To(Succeed())
 
-		Expect(utils.RunStage(config, "stage", strict, "/nonexisting", "/existing", "/symlinkToExistingDir")).To(BeNil())
+		writeCmdline("cos.setup=/wrongpath", fs)
+
+		Expect(utils.RunStage(
+			config, "stage", strict, "/nonexisting", "/existing",
+			"/symlinkToExistingDir", "https://my.domain.org/cloud-file",
+		)).To(BeNil())
 
 		Expect(ci.GetStageArgs("stage")).To(ContainElement("/existing"))
 		Expect(ci.GetStageArgs("stage")).To(ContainElement("/symlinkToExistingDir"))
+		Expect(ci.GetStageArgs("stage")).To(ContainElement("https://my.domain.org/cloud-file"))
 		Expect(ci.GetStageArgs("stage")).NotTo(ContainElement("/nonexisting"))
+		Expect(ci.GetStageArgs("stage")).NotTo(ContainElement("/wrongpath"))
 	})
 })

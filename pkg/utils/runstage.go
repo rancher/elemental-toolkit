@@ -58,21 +58,10 @@ func checkYAMLError(cfg *v1.Config, allErrors, err error) error {
 
 // RunStage will run yip
 func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...string) error {
-	var cmdLineYipURI string
 	var allErrors error
 
 	cloudInitPaths = append(constants.GetCloudInitPaths(), cloudInitPaths...)
 	cfg.Logger.Debugf("Cloud-init paths set to %v", cloudInitPaths)
-
-	// Filter cloud init paths to existing ones, ignore any non existing configured path
-	filteredPaths := []string{}
-	for _, cp := range cloudInitPaths {
-		if ok, _ := IsDir(cfg.Fs, cp); !ok {
-			cfg.Logger.Debugf("Ignoring cloud-init config path %s, not a directory")
-			continue
-		}
-		filteredPaths = append(filteredPaths, cp)
-	}
 
 	stageBefore := fmt.Sprintf("%s.before", stage)
 	stageAfter := fmt.Sprintf("%s.after", stage)
@@ -83,33 +72,22 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 		allErrors = multierror.Append(allErrors, err)
 	}
 
-	cmdLine := strings.Split(string(cmdLineOut), " ")
-	for _, line := range cmdLine {
+	cmdLineArgs := strings.Split(string(cmdLineOut), " ")
+	for _, line := range cmdLineArgs {
 		if strings.Contains(line, "=") {
 			lineSplit := strings.Split(line, "=")
 			if lineSplit[0] == "cos.setup" {
-				cmdLineYipURI = lineSplit[1]
-				cfg.Logger.Debugf("Found cos.setup stanza on cmdline with value %s", cmdLineYipURI)
+				cloudInitPaths = append(cloudInitPaths, lineSplit[1])
+				cfg.Logger.Debugf("Found cos.setup stanza on cmdline with value %s", lineSplit[1])
 			}
 		}
 	}
 
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
 	for _, s := range []string{stageBefore, stage, stageAfter} {
-		err = cfg.CloudInitRunner.Run(s, filteredPaths...)
+		err = cfg.CloudInitRunner.Run(s, filterNonExistingLocalURIs(cfg, cloudInitPaths...)...)
 		if err != nil {
 			allErrors = multierror.Append(allErrors, err)
-		}
-	}
-
-	// Run the stages if cmdline contains the cos.setup stanza
-	if cmdLineYipURI != "" {
-		cmdLineArgs := []string{cmdLineYipURI}
-		for _, s := range []string{stageBefore, stage, stageAfter} {
-			err = cfg.CloudInitRunner.Run(s, cmdLineArgs...)
-			if err != nil {
-				allErrors = multierror.Append(allErrors, err)
-			}
 		}
 	}
 
@@ -135,4 +113,20 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 	}
 
 	return allErrors
+}
+
+// filterNonExistingLocalURIs attempts to remove non existing local paths from the given URI slice.
+// Returns the filtered slice.
+func filterNonExistingLocalURIs(cfg *v1.Config, uris ...string) []string {
+	filteredPaths := []string{}
+	for _, cp := range uris {
+		if local, _ := IsLocalURI(cp); local {
+			if ok, _ := Exists(cfg.Fs, cp); !ok {
+				cfg.Logger.Debugf("Ignoring cloud-init local config path %s. Could not find it.", cp)
+				continue
+			}
+		}
+		filteredPaths = append(filteredPaths, cp)
+	}
+	return filteredPaths
 }
