@@ -53,7 +53,6 @@ func Execute() {
 			os.Exit(t.ExitCode())
 		default:
 			os.Exit(1)
-
 		}
 	}
 }

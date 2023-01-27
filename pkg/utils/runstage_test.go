@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rancher/elemental-cli/pkg/cloudinit"
 	conf "github.com/rancher/elemental-cli/pkg/config"
+	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
@@ -139,5 +140,19 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 		Expect(utils.RunStage(config, "leia", strict)).To(BeNil())
 		Expect(memLog.String()).To(ContainSubstring("/proc/cmdline parsing returned errors while unmarshalling"))
 		Expect(memLog.String()).ToNot(ContainSubstring("Some errors found but were ignored. Enable --strict mode to fail on those or --debug to see them in the log"))
+	})
+
+	It("ignores non existing cloud-init paths", func() {
+		ci := &v1mock.FakeCloudInitRunner{}
+		config.CloudInitRunner = ci
+		Expect(utils.MkdirAll(fs, "/existing", constants.DirPerm)).To(Succeed())
+		// Symlinks to existing directoryes are also valid
+		Expect(fs.Symlink("/existing", "/symlinkToExistingDir")).To(Succeed())
+
+		Expect(utils.RunStage(config, "stage", strict, "/nonexisting", "/existing", "/symlinkToExistingDir")).To(BeNil())
+
+		Expect(ci.GetStageArgs("stage")).To(ContainElement("/existing"))
+		Expect(ci.GetStageArgs("stage")).To(ContainElement("/symlinkToExistingDir"))
+		Expect(ci.GetStageArgs("stage")).NotTo(ContainElement("/nonexisting"))
 	})
 })

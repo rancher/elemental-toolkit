@@ -64,12 +64,14 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 	cloudInitPaths = append(constants.GetCloudInitPaths(), cloudInitPaths...)
 	cfg.Logger.Debugf("Cloud-init paths set to %v", cloudInitPaths)
 
-	// Make sure cloud init path specified are existing in the system
+	// Filter cloud init paths to existing ones, ignore any non existing configured path
+	filteredPaths := []string{}
 	for _, cp := range cloudInitPaths {
-		err := MkdirAll(cfg.Fs, cp, constants.DirPerm)
-		if err != nil {
-			cfg.Logger.Debugf("Failed creating cloud-init config path: %s %s", cp, err.Error())
+		if ok, _ := IsDir(cfg.Fs, cp); !ok {
+			cfg.Logger.Debugf("Ignoring cloud-init config path %s, not a directory")
+			continue
 		}
+		filteredPaths = append(filteredPaths, cp)
 	}
 
 	stageBefore := fmt.Sprintf("%s.before", stage)
@@ -94,7 +96,7 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
 	for _, s := range []string{stageBefore, stage, stageAfter} {
-		err = cfg.CloudInitRunner.Run(s, cloudInitPaths...)
+		err = cfg.CloudInitRunner.Run(s, filteredPaths...)
 		if err != nil {
 			allErrors = multierror.Append(allErrors, err)
 		}

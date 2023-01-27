@@ -25,9 +25,28 @@ import (
 type FakeCloudInitRunner struct {
 	ExecStages []string
 	Error      bool
+	stageArgs  map[string][]string
+}
+
+func appendIfMissing(slice []string, item string) []string {
+	for _, it := range slice {
+		if it == item {
+			return slice
+		}
+	}
+	return append(slice, item)
 }
 
 func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
+	if ci.stageArgs == nil {
+		ci.stageArgs = map[string][]string{}
+	}
+
+	// keeps a list of unique arguments passed to each stage
+	for _, arg := range args {
+		ci.stageArgs[stage] = appendIfMissing(ci.stageArgs[stage], arg)
+	}
+
 	ci.ExecStages = append(ci.ExecStages, stage)
 	if ci.Error {
 		return errors.New("cloud init failure")
@@ -36,4 +55,8 @@ func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
 }
 
 func (ci *FakeCloudInitRunner) SetModifier(modifier schema.Modifier) {
+}
+
+func (ci *FakeCloudInitRunner) GetStageArgs(stage string) []string {
+	return ci.stageArgs[stage]
 }

@@ -36,4 +36,5 @@ type FS interface {
 	Remove(name string) error
 	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
 	WriteFile(filename string, data []byte, perm os.FileMode) error
+	Symlink(oldname, newname string) error
 }
