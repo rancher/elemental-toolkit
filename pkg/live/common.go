@@ -38,7 +38,7 @@ const (
 	isoBootFile   = isoLoaderPath + "/eltorito.img"
 
 	//TODO use some identifer known to be unique
-	grubEfiCfg = "search --no-floppy --file --set=root " + constants.IsoKernelPath +
+	grubEfiCfg = "search --no-floppy --file --set=root " + constants.ISOKernelPath +
 		"\nset prefix=($root)" + grubPrefixDir +
 		"\nconfigfile $prefix/" + grubCfg
 
@@ -63,9 +63,9 @@ const (
 
 	menuentry "%s" --class os --unrestricted {
 		echo Loading kernel...
-		$linux ($root)` + constants.IsoKernelPath + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
+		$linux ($root)` + constants.ISOKernelPath + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
 		echo Loading initrd...
-		$initrd ($root)` + constants.IsoInitrdPath + `
+		$initrd ($root)` + constants.ISOInitrdPath + `
 	}                                                                               
 																					
 	if [ "${grub_platform}" = "efi" ]; then                                         

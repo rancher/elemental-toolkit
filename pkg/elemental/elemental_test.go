@@ -287,9 +287,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				File:       filepath.Join(cnst.StateDir, "cOS", cnst.ActiveImgFile),
 				FS:         cnst.LinuxImgFs,
 				MountPoint: cnst.ActiveDir,
-				Source:     v1.NewDirSrc(cnst.IsoBaseTree),
+				Source:     v1.NewDirSrc(cnst.ISOBaseTree),
 			}
-			_ = utils.MkdirAll(fs, cnst.IsoBaseTree, cnst.DirPerm)
+			_ = utils.MkdirAll(fs, cnst.ISOBaseTree, cnst.DirPerm)
 			el = elemental.NewElemental(config)
 		})
 

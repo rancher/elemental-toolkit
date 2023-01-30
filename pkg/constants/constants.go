@@ -80,7 +80,7 @@ const (
 	RunningStateDir = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
 
 	// Live image mountpoints
-	IsoBaseTree = "/run/rootfsbase"
+	ISOBaseTree = "/run/rootfsbase"
 	LiveDir     = "/run/initramfs/live"
 
 	// Image file names
@@ -118,10 +118,10 @@ const (
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
 
 	// Kernel and initrd paths are arbitrary and coupled to grub.cfg
-	IsoKernelPath    = "/boot/kernel"
-	IsoInitrdPath    = "/boot/initrd"
-	IsoRootFile      = "rootfs.squashfs"
-	IsoEFIImg        = "uefi.img"
+	ISOKernelPath    = "/boot/kernel"
+	ISOInitrdPath    = "/boot/initrd"
+	ISORootFile      = "rootfs.squashfs"
+	ISOEFIImg        = "uefi.img"
 	ISOLabel         = "COS_LIVE"
 	ISOCloudInitPath = LiveDir + "/iso-config"
 

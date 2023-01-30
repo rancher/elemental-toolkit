@@ -570,7 +570,7 @@ func (e *Elemental) GetIso(iso string) (tmpDir string, err error) {
 	if err != nil {
 		return "", err
 	}
-	err = e.config.Mounter.Mount(filepath.Join(isoMnt, cnst.IsoRootFile), rootfsMnt, "auto", []string{})
+	err = e.config.Mounter.Mount(filepath.Join(isoMnt, cnst.ISORootFile), rootfsMnt, "auto", []string{})
 	return tmpDir, err
 }
 

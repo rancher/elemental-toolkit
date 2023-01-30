@@ -173,9 +173,9 @@ var _ = Describe("Reset action tests", func() {
 			Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}}))
 		})
 		It("Successfully resets from a squashfs recovery image", Label("channel"), func() {
-			err := utils.MkdirAll(config.Fs, constants.IsoBaseTree, constants.DirPerm)
+			err := utils.MkdirAll(config.Fs, constants.ISOBaseTree, constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
-			spec.Active.Source = v1.NewDirSrc(constants.IsoBaseTree)
+			spec.Active.Source = v1.NewDirSrc(constants.ISOBaseTree)
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {

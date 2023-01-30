@@ -139,7 +139,7 @@ var _ = Describe("Install action tests", func() {
 				}
 			}
 			// Need to create the IsoBaseTree, like if we are booting from iso
-			err = utils.MkdirAll(fs, constants.IsoBaseTree, constants.DirPerm)
+			err = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
 			Expect(err).To(BeNil())
 
 			spec = conf.NewInstallSpec(config.Config)

@@ -179,7 +179,7 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	// Check if current host has EFI firmware
 	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
 	// Check the default ISO installation media is available
-	isoRootExists, _ := utils.Exists(cfg.Fs, constants.IsoBaseTree)
+	isoRootExists, _ := utils.Exists(cfg.Fs, constants.ISOBaseTree)
 	// Check the default ISO recovery installation media is available)
 	recoveryExists, _ := utils.Exists(cfg.Fs, recoveryImgFile)
 
@@ -195,7 +195,7 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	activeImg.FS = constants.LinuxImgFs
 	activeImg.MountPoint = constants.ActiveDir
 	if isoRootExists {
-		activeImg.Source = v1.NewDirSrc(constants.IsoBaseTree)
+		activeImg.Source = v1.NewDirSrc(constants.ISOBaseTree)
 	} else {
 		activeImg.Source = v1.NewEmptySrc()
 	}
