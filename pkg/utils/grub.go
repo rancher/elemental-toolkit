@@ -25,13 +25,24 @@ import (
 	"strings"
 
 	efilib "github.com/canonical/go-efilib"
-	"github.com/rancher/elemental-cli/pkg/constants"
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	eleefi "github.com/rancher/elemental-cli/pkg/efi"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
-const bootEntryName = "elemental-shim"
+const (
+	bootEntryName   = "elemental-shim"
+	grubConfDir     = "grub2"
+	entryEFIPath    = "/EFI/elemental"
+	fallbackEFIPath = "/EFI/boot"
+	grubCfgFile     = "grub.cfg"
+
+	grubEFICfgTmpl = `
+search --no-floppy --label --set=root %s
+set prefix=($root)/` + grubConfDir + `
+configfile ($root)/` + grubConfDir + `/%s
+`
+)
 
 // Grub is the struct that will allow us to install grub to the target device
 type Grub struct {
@@ -46,246 +57,240 @@ func NewGrub(config *v1.Config) *Grub {
 	return g
 }
 
-// Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, stateLabel string, disableBootEntry bool, clearBootEntries bool) (err error) { // nolint:gocyclo
+// InstallBIOS runs grub2-install for legacy BIOS firmware
+func (g Grub) InstallBIOS(target, rootDir, bootDir string) error {
 	var grubargs []string
-	var grubdir, finalContent string
-	// only install grub on non-efi systems
-	if !efi {
-		g.config.Logger.Info("Installing GRUB..")
 
-		grubargs = append(
-			grubargs,
-			fmt.Sprintf("--root-directory=%s", rootDir),
-			fmt.Sprintf("--boot-directory=%s", bootDir),
-			"--target=i386-pc",
-			target,
-		)
-		g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
-		out, err := g.config.Runner.Run("grub2-install", grubargs...)
-		if err != nil {
-			g.config.Logger.Errorf(string(out))
-			return err
-		}
-		g.config.Logger.Infof("Grub install to device %s complete", target)
-	}
+	g.config.Logger.Info("Installing GRUB..")
 
-	// At this point the active mountpoint has all the data from the installation source, so we should be able to use
-	// the grub.cfg bundled in there
-	grubdir = filepath.Join(rootDir, grubConf)
-	g.config.Logger.Infof("Using grub config dir %s", grubdir)
+	grubargs = append(
+		grubargs,
+		fmt.Sprintf("--root-directory=%s", rootDir),
+		fmt.Sprintf("--boot-directory=%s", bootDir),
+		"--target=i386-pc",
+		target,
+	)
+	g.config.Logger.Debugf("Running grub with the following args: %s", grubargs)
 
-	grubCfg, err := g.config.Fs.ReadFile(grubdir)
+	// TODOS:
+	//   * should be executed in a chroot (host might have a different grub version or different bootloader)
+	//   * should find the proper binary grub2-install vs grub-install
+	out, err := g.config.Runner.Run("grub2-install", grubargs...)
 	if err != nil {
-		g.config.Logger.Errorf("Failed reading grub config file: %s", filepath.Join(rootDir, grubConf))
+		g.config.Logger.Errorf(string(out))
 		return err
 	}
+	g.config.Logger.Infof("Grub install to device %s complete", target)
+
+	return nil
+}
+
+// InstallConfig installs grub configuraton files to the expected location.  rootDir is the root
+// of the OS image, bootDir is the folder grub read the configuration from, usually state partition mountpoint
+func (g Grub) InstallConfig(rootDir, bootDir, grubConf string) error {
+	grubFile := filepath.Join(rootDir, grubConf)
+	dstGrubFile := filepath.Join(bootDir, grubConfDir, grubCfgFile)
+
+	g.config.Logger.Infof("Using grub config file %s", grubFile)
 
 	// Create Needed dir under state partition to store the grub.cfg and any needed modules
-	err = MkdirAll(g.config.Fs, filepath.Join(bootDir, fmt.Sprintf("grub2/%s-efi", g.config.Arch)), cnst.DirPerm)
+	err := MkdirAll(g.config.Fs, filepath.Join(bootDir, grubConfDir), cnst.DirPerm)
 	if err != nil {
 		return fmt.Errorf("error creating grub dir: %s", err)
 	}
 
-	grubConfTarget, err := g.config.Fs.Create(filepath.Join(bootDir, "grub2/grub.cfg"))
+	g.config.Logger.Infof("Copying grub config file from %s to %s", grubFile, dstGrubFile)
+	err = CopyFile(g.config.Fs, grubFile, dstGrubFile)
 	if err != nil {
-		return err
+		g.config.Logger.Errorf("Failed copying grub config file: %s", err)
+	}
+	return err
+}
+
+// DoEFIEntries creates clears any previous entry if requested and creates a new one with the given shim name.
+func (g Grub) DoEFIEntries(shimName, efiDir string, clearBootEntries bool) error {
+	efivars := eleefi.RealEFIVariables{}
+	if clearBootEntries {
+		err := g.ClearBootEntry()
+		if err != nil {
+			return err
+		}
+	}
+	return g.CreateBootEntry(shimName, filepath.Join(efiDir, entryEFIPath), efivars)
+}
+
+// InstallEFI installs EFI binaries into the EFI location
+func (g Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) (string, error) {
+	// Copy required extra modules to boot dir under the state partition
+	// otherwise if we insmod it will fail to find them
+	// We no longer call grub-install here so the modules are not setup automatically in the state partition
+	// as they were before. We now use the bundled grub.efi provided by the shim package
+	var err error
+	g.config.Logger.Infof("Generating grub files for efi on %s", efiDir)
+
+	// Create Needed dir under state partition to store the grub.cfg and any needed modules
+	err = MkdirAll(g.config.Fs, filepath.Join(bootDir, grubConfDir, fmt.Sprintf("%s-efi", g.config.Arch)), cnst.DirPerm)
+	if err != nil {
+		return "", fmt.Errorf("error creating grub dir: %s", err)
 	}
 
-	defer grubConfTarget.Close()
-
-	if tty == "" {
-		// Get current tty and remove /dev/ from its name
-		out, err := g.config.Runner.Run("tty")
-		tty = strings.TrimPrefix(strings.TrimSpace(string(out)), "/dev/")
-		if err != nil {
-			g.config.Logger.Warnf("failed to find current tty, leaving it unset")
-			tty = ""
+	var foundModules bool
+	var foundEfi bool
+	for _, m := range []string{"loopback.mod", "squash4.mod", "xzio.mod"} {
+		err = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.Name() == m && strings.Contains(path, g.config.Arch) {
+				fileWriteName := filepath.Join(bootDir, grubConfDir, fmt.Sprintf("%s-efi", g.config.Arch), m)
+				g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
+				err = CopyFile(g.config.Fs, path, fileWriteName)
+				if err != nil {
+					return fmt.Errorf("error copying %s to %s: %s", path, fileWriteName, err.Error())
+				}
+				foundModules = true
+				return nil
+			}
+			return err
+		})
+		if !foundModules {
+			return "", fmt.Errorf("did not find grub modules under %s (err: %s)", rootDir, err)
 		}
 	}
 
-	ttyExists, _ := Exists(g.config.Fs, fmt.Sprintf("/dev/%s", tty))
-
-	if ttyExists && tty != "" && tty != "console" && tty != constants.DefaultTty {
-		// We need to add a tty to the grub file
-		g.config.Logger.Infof("Adding extra tty (%s) to grub.cfg", tty)
-		defConsole := fmt.Sprintf("console=%s", constants.DefaultTty)
-		finalContent = strings.Replace(string(grubCfg), defConsole, fmt.Sprintf("%s console=%s", defConsole, tty), -1)
-	} else {
-		// We don't add anything, just read the file
-		finalContent = string(grubCfg)
-	}
-
-	g.config.Logger.Infof("Copying grub contents from %s to %s", grubdir, filepath.Join(bootDir, "grub2/grub.cfg"))
-	_, err = grubConfTarget.WriteString(finalContent)
+	err = MkdirAll(g.config.Fs, filepath.Join(efiDir, fallbackEFIPath), cnst.DirPerm)
 	if err != nil {
-		return err
+		g.config.Logger.Errorf("Error creating dirs: %s", err)
+		return "", err
 	}
+	err = MkdirAll(g.config.Fs, filepath.Join(efiDir, entryEFIPath), cnst.DirPerm)
+	if err != nil {
+		g.config.Logger.Errorf("Error creating dirs: %s", err)
+		return "", err
+	}
+
+	// Copy needed files for efi boot
+	system, err := IdentifySourceSystem(g.config.Fs, rootDir)
+	if err != nil {
+		return "", err
+	}
+	g.config.Logger.Infof("Identified source system as %s", system)
+
+	var shimFiles []string
+	var shimName string
+
+	switch system {
+	case cnst.Fedora:
+		switch g.config.Arch {
+		case cnst.ArchArm64:
+			shimFiles = []string{"shimaa64.efi", "mmaa64.efi", "grubx64.efi"}
+			shimName = "shimaa64.efi"
+		default:
+			shimFiles = []string{"shimx64.efi", "mmx64.efi", "grubx64.efi"}
+			shimName = "shimx64.efi"
+		}
+	case cnst.Ubuntu:
+		switch g.config.Arch {
+		case cnst.ArchArm64:
+			shimFiles = []string{"shimaa64.efi.signed", "mmaa64.efi", "grubx64.efi.signed"}
+			shimName = "shimaa64.efi.signed"
+		default:
+			shimFiles = []string{"shimx64.efi.signed", "mmx64.efi", "grubx64.efi.signed"}
+			shimName = "shimx64.efi.signed"
+		}
+	case cnst.Suse:
+		shimFiles = []string{"shim.efi", "MokManager.efi", "grub.efi"}
+		shimName = "shim.efi"
+	}
+
+	for _, f := range shimFiles {
+		_ = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if d.Name() == f {
+				// Copy to fallback dir
+				fileWriteName := filepath.Join(efiDir, fallbackEFIPath, f)
+				g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
+				err = CopyFile(g.config.Fs, path, fileWriteName)
+				if err != nil {
+					return fmt.Errorf("failed copying %s to %s: %s", path, fileWriteName, err.Error())
+				}
+
+				// Copy to proper dir
+				fileWriteName = filepath.Join(efiDir, entryEFIPath, f)
+				g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
+				err = CopyFile(g.config.Fs, path, fileWriteName)
+				if err != nil {
+					return fmt.Errorf("failed copying %s to %s: %s", path, fileWriteName, err.Error())
+				}
+
+				foundEfi = true
+				return nil
+			}
+			return err
+		})
+		if !foundEfi {
+			return "", fmt.Errorf("did not find efi artifacts under %s", rootDir)
+		}
+	}
+
+	// Rename the shimName to the fallback name so the system boots from fallback. This means that we do not create
+	// any bootloader entries, so our recent installation has the lower priority if something else is on the bootloader
+	writeShim := "bootx64.efi"
+
+	if g.config.Arch == cnst.ArchArm64 {
+		writeShim = "bootaa64.efi"
+	}
+
+	err = CopyFile(g.config.Fs, filepath.Join(efiDir, fallbackEFIPath, shimName), filepath.Join(efiDir, fallbackEFIPath, writeShim))
+	if err != nil {
+		return "", fmt.Errorf("failed copying shim %s: %s", writeShim, err.Error())
+	}
+
+	// Add grub.cfg in EFI that chainloads the grub.cfg in recovery
+	// Notice that we set the config to /grub2/grub.cfg which means the above we need to copy the file from
+	// the installation source into that dir
+	grubCfgContent := []byte(fmt.Sprintf(grubEFICfgTmpl, deviceLabel, grubCfgFile))
+	// Fallback
+	err = g.config.Fs.WriteFile(filepath.Join(efiDir, fallbackEFIPath, grubCfgFile), grubCfgContent, cnst.FilePerm)
+	if err != nil {
+		return "", fmt.Errorf("error writing %s: %s", filepath.Join(efiDir, fallbackEFIPath, grubCfgFile), err)
+	}
+	// Proper efi dir
+	err = g.config.Fs.WriteFile(filepath.Join(efiDir, entryEFIPath, grubCfgFile), grubCfgContent, cnst.FilePerm)
+	if err != nil {
+		return "", fmt.Errorf("error writing %s: %s", filepath.Join(efiDir, entryEFIPath, grubCfgFile), err)
+	}
+
+	return shimName, nil
+}
+
+// Install installs grub into the device, copy the config file and add any extra TTY to grub
+func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, stateLabel string, disableBootEntry bool, clearBootEntries bool) (err error) {
+	var shimName string
 
 	if efi {
-		// Copy required extra modules to boot dir under the state partition
-		// otherwise if we insmod it will fail to find them
-		// We no longer call grub-install here so the modules are not setup automatically in the state partition
-		// as they were before. We now use the bundled grub.efi provided by the shim package
-		g.config.Logger.Infof("Generating grub files for efi on %s", target)
-		var foundModules bool
-		var foundEfi bool
-		for _, m := range []string{"loopback.mod", "squash4.mod", "xzio.mod"} {
-			err = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-				if d.Name() == m && strings.Contains(path, g.config.Arch) {
-					fileWriteName := filepath.Join(bootDir, fmt.Sprintf("grub2/%s-efi/%s", g.config.Arch, m))
-					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
-					fileContent, err := g.config.Fs.ReadFile(path)
-					if err != nil {
-						return fmt.Errorf("error reading %s: %s", path, err)
-					}
-					err = g.config.Fs.WriteFile(fileWriteName, fileContent, cnst.FilePerm)
-					if err != nil {
-						return fmt.Errorf("error writing %s: %s", fileWriteName, err)
-					}
-					foundModules = true
-					return nil
-				}
-				return err
-			})
-			if !foundModules {
-				return fmt.Errorf("did not find grub modules under %s", rootDir)
-			}
-		}
-
-		err = MkdirAll(g.config.Fs, filepath.Join(cnst.EfiDir, "EFI/boot/"), cnst.DirPerm)
-		if err != nil {
-			g.config.Logger.Errorf("Error creating dirs: %s", err)
-			return err
-		}
-		err = MkdirAll(g.config.Fs, filepath.Join(cnst.EfiDir, "EFI/elemental/"), cnst.DirPerm)
-		if err != nil {
-			g.config.Logger.Errorf("Error creating dirs: %s", err)
-			return err
-		}
-
-		// Copy needed files for efi boot
-		system, err := IdentifySourceSystem(g.config.Fs, rootDir)
+		shimName, err = g.InstallEFI(rootDir, bootDir, cnst.EfiDir, stateLabel)
 		if err != nil {
 			return err
-		}
-		g.config.Logger.Infof("Identified source system as %s", system)
-
-		var shimFiles []string
-		var shimName string
-
-		switch system {
-		case cnst.Fedora:
-			switch g.config.Arch {
-			case cnst.ArchArm64:
-				shimFiles = []string{"shimaa64.efi", "mmaa64.efi", "grubx64.efi"}
-				shimName = "shimaa64.efi"
-			default:
-				shimFiles = []string{"shimx64.efi", "mmx64.efi", "grubx64.efi"}
-				shimName = "shimx64.efi"
-			}
-		case cnst.Ubuntu:
-			switch g.config.Arch {
-			case cnst.ArchArm64:
-				shimFiles = []string{"shimaa64.efi.signed", "mmaa64.efi", "grubx64.efi.signed"}
-				shimName = "shimaa64.efi.signed"
-			default:
-				shimFiles = []string{"shimx64.efi.signed", "mmx64.efi", "grubx64.efi.signed"}
-				shimName = "shimx64.efi.signed"
-			}
-		case cnst.Suse:
-			shimFiles = []string{"shim.efi", "MokManager.efi", "grub.efi"}
-			shimName = "shim.efi"
-		}
-
-		for _, f := range shimFiles {
-			_ = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-
-				if d.Name() == f {
-					fileContent, err := g.config.Fs.ReadFile(path)
-					if err != nil {
-						return fmt.Errorf("error reading %s: %s", path, err)
-					}
-
-					// Copy to fallback dir
-					fileWriteName := filepath.Join(cnst.EfiDir, fmt.Sprintf("EFI/boot/%s", f))
-					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
-					err = g.config.Fs.WriteFile(fileWriteName, fileContent, cnst.FilePerm)
-					if err != nil {
-						return fmt.Errorf("error writing %s: %s", fileWriteName, err)
-					}
-					// Copy to proper dir
-					fileWriteName = filepath.Join(cnst.EfiDir, fmt.Sprintf("EFI/elemental/%s", f))
-					g.config.Logger.Debugf("Copying %s to %s", path, fileWriteName)
-					err = g.config.Fs.WriteFile(fileWriteName, fileContent, cnst.FilePerm)
-					if err != nil {
-						return fmt.Errorf("error writing %s: %s", fileWriteName, err)
-					}
-
-					foundEfi = true
-					return nil
-				}
-				return err
-			})
-			if !foundEfi {
-				return fmt.Errorf("did not find efi artifacts under %s", rootDir)
-			}
-		}
-
-		// Rename the shimName to the fallback name so the system boots from fallback. This means that we do not create
-		// any bootloader entries, so our recent installation has the lower priority if something else is on the bootloader
-		writeShim := "bootx64.efi"
-
-		if g.config.Arch == cnst.ArchArm64 {
-			writeShim = "bootaa64.efi"
-		}
-
-		readShim, err := g.config.Fs.ReadFile(filepath.Join(cnst.EfiDir, "EFI/boot/", shimName))
-		if err != nil {
-			return fmt.Errorf("could not read shim file %s at dir %s", shimName, cnst.EfiDir)
-		}
-
-		err = g.config.Fs.WriteFile(filepath.Join(cnst.EfiDir, "EFI/boot/", writeShim), readShim, cnst.FilePerm)
-		if err != nil {
-			return fmt.Errorf("could nto write shim file %s at dir %s", shimName, cnst.EfiDir)
-		}
-
-		// Add grub.cfg in EFI that chainloads the grub.cfg in recovery
-		// Notice that we set the config to /grub2/grub.cfg which means the above we need to copy the file from
-		// the installation source into that dir
-		grubCfgContent := []byte(fmt.Sprintf("search --no-floppy --label --set=root %s\nset prefix=($root)/grub2\nconfigfile ($root)/grub2/grub.cfg", stateLabel))
-		// Fallback
-		err = g.config.Fs.WriteFile(filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), grubCfgContent, cnst.FilePerm)
-		if err != nil {
-			return fmt.Errorf("error writing %s: %s", filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), err)
-		}
-		// Proper efi dir
-		err = g.config.Fs.WriteFile(filepath.Join(cnst.EfiDir, "EFI/elemental/grub.cfg"), grubCfgContent, cnst.FilePerm)
-		if err != nil {
-			return fmt.Errorf("error writing %s: %s", filepath.Join(cnst.EfiDir, "EFI/boot/grub.cfg"), err)
 		}
 
 		if !disableBootEntry {
-			efivars := eleefi.RealEFIVariables{}
-			if clearBootEntries {
-				err = g.ClearBootEntry()
-				if err != nil {
-					return err
-				}
-			}
-			err = g.CreateBootEntry(shimName, filepath.Join(cnst.EfiDir, "/EFI/elemental/"), efivars)
+			err = g.DoEFIEntries(shimName, cnst.EfiDir, clearBootEntries)
 			if err != nil {
 				return err
 			}
 		}
+	} else {
+		err = g.InstallBIOS(target, rootDir, bootDir)
+		if err != nil {
+			return err
+		}
 	}
-	return nil
+
+	return g.InstallConfig(rootDir, bootDir, grubConf)
 }
 
 // ClearBootEntry will go over the BootXXXX efi vars and remove any that matches our name
@@ -321,7 +326,7 @@ func (g Grub) ClearBootEntry() error {
 
 // CreateBootEntry will create an entry in the efi vars for our shim and set it to boot first in the bootorder
 func (g Grub) CreateBootEntry(shimName string, relativeTo string, efiVariables eleefi.Variables) error {
-	g.config.Logger.Debugf("Creating boot entry for elemental pointing to shim /EFI/elemental/%s", shimName)
+	g.config.Logger.Debugf("Creating boot entry for elemental pointing to shim %s/%s", entryEFIPath, shimName)
 	bm, err := eleefi.NewBootManagerForVariables(efiVariables)
 	if err != nil {
 		return err

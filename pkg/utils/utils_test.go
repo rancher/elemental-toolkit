@@ -875,29 +875,13 @@ var _ = Describe("Utils", Label("utils"), func() {
 				Expect(err.Error()).To(ContainSubstring("efi"))
 				Expect(err.Error()).To(ContainSubstring("artifacts"))
 			})
-			It("installs with extra tty", func() {
-				err := fs.Mkdir("/dev", constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				_, err = fs.Create("/dev/serial")
-				Expect(err).ShouldNot(HaveOccurred())
-
-				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, "serial", false, "", true, false)
-				Expect(err).To(BeNil())
-
-				Expect(buf.String()).To(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
-				Expect(err).To(BeNil())
-				Expect(targetGrub).To(ContainSubstring("console=tty1 console=serial"))
-			})
 			It("Fails if it can't read grub config file", func() {
 				err := fs.RemoveAll(filepath.Join(rootDir, constants.GrubConf))
 				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
 				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, "", false, "", true, false)).NotTo(BeNil())
 
-				Expect(buf).To(ContainSubstring("Failed reading grub config file"))
+				Expect(buf).To(ContainSubstring("Failed copying grub config file"))
 			})
 		})
 		Describe("SetPersistentVariables", func() {
