@@ -142,7 +142,6 @@ type InstallSpec struct {
 	CloudInit        []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	Iso              string              `yaml:"iso,omitempty" mapstructure:"iso"`
 	GrubDefEntry     string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty              string              `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active           Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery         Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	Passive          Image
@@ -194,7 +193,6 @@ type ResetSpec struct {
 	FormatOEM        bool `yaml:"reset-oem,omitempty" mapstructure:"reset-oem"`
 
 	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Tty              string `yaml:"tty,omitempty" mapstructure:"tty"`
 	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
 	Passive          Image
 	Partitions       ElementalPartitions

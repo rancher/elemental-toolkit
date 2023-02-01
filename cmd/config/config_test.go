@@ -372,7 +372,7 @@ var _ = Describe("Config", Label("config"), func() {
 				// Overwrites system image, flags have priority over files and env vars
 				Expect(spec.Active.Source.Value() == "image/from:flag")
 				// From config files
-				Expect(spec.Tty == "ttyS1")
+				Expect(spec.DisableBootEntry).To(BeTrue())
 			})
 		})
 		Describe("Read UpgradeSpec", Label("install"), func() {

@@ -268,7 +268,7 @@ func (g Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) (string, 
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g Grub) Install(target, rootDir, bootDir, grubConf, tty string, efi bool, stateLabel string, disableBootEntry bool, clearBootEntries bool) (err error) {
+func (g Grub) Install(target, rootDir, bootDir, grubConf string, efi bool, stateLabel string, disableBootEntry bool, clearBootEntries bool) (err error) {
 	var shimName string
 
 	if efi {

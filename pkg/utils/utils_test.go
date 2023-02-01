@@ -794,7 +794,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})
 			It("installs with default values", func() {
 				grub := utils.NewGrub(config)
-				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, "", false, "", true, false)
+				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, false, "", true, false)
 				Expect(err).To(BeNil())
 
 				Expect(buf).To(ContainSubstring("Installing GRUB.."))
@@ -825,7 +825,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				err = fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"suse\""), constants.FilePerm)
 				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, "", true, "", true, false)
+				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				// Check everything was copied
@@ -847,7 +847,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})
 			It("fails with efi if no modules files exist", Label("efi"), func() {
 				grub := utils.NewGrub(config)
-				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, "", true, "", true, false)
+				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("grub"))
 				Expect(err.Error()).To(ContainSubstring("modules"))
@@ -858,7 +858,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				err = fs.WriteFile(filepath.Join(rootDir, "/x86_64/loopback.mod"), []byte(""), constants.FilePerm)
 				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, "", true, "", true, false)
+				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("os-release"))
 			})
@@ -870,7 +870,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				err = fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"suse\""), constants.FilePerm)
 				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, "", true, "", true, false)
+				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("efi"))
 				Expect(err.Error()).To(ContainSubstring("artifacts"))
@@ -879,7 +879,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				err := fs.RemoveAll(filepath.Join(rootDir, constants.GrubConf))
 				Expect(err).ShouldNot(HaveOccurred())
 				grub := utils.NewGrub(config)
-				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, "", false, "", true, false)).NotTo(BeNil())
+				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, false, "", true, false)).NotTo(BeNil())
 
 				Expect(buf).To(ContainSubstring("Failed copying grub config file"))
 			})

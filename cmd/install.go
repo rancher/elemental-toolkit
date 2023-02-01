@@ -107,6 +107,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Var(pTableType, "part-table", "Partition table type to use")
 
 	c.Flags().String("tty", "", "Add named tty to grub")
+	_ = c.Flags().MarkDeprecated("tty", "'tty' is deprecated and ignored please set console as part of the extra kernel command line arguments as grub2 variables")
 	c.Flags().Bool("force", false, "Force install")
 	c.Flags().Bool("eject-cd", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")

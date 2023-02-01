@@ -176,7 +176,6 @@ func (r ResetAction) Run() (err error) {
 		cnst.WorkingImgDir,
 		r.spec.Partitions.State.MountPoint,
 		r.spec.GrubConf,
-		r.spec.Tty,
 		r.spec.Efi,
 		r.spec.Partitions.State.FilesystemLabel,
 		r.spec.DisableBootEntry,

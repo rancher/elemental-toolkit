@@ -18,7 +18,7 @@ install:
     uri: docker:recovery/image:latest
 
 reset:
-  tty: ttyS1
+  disable-boot-entry: true
 
 upgrade:
   system:

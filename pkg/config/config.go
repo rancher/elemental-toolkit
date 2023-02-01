@@ -223,7 +223,6 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 		PartTable:  v1.GPT,
 		Partitions: NewInstallElementalParitions(),
 		GrubConf:   constants.GrubConf,
-		Tty:        constants.DefaultTty,
 		Active:     activeImg,
 		Recovery:   recoveryImg,
 		Passive:    passiveImg,
@@ -468,7 +467,6 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		Efi:          efiExists,
 		GrubDefEntry: constants.GrubDefEntry,
 		GrubConf:     constants.GrubConf,
-		Tty:          constants.DefaultTty,
 		Active: v1.Image{
 			Label:      aState.Label,
 			Size:       constants.ImgSize,

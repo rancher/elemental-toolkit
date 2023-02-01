@@ -73,6 +73,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	root.AddCommand(c)
 	c.Flags().BoolP("tty", "", false, "Add named tty to grub")
+	_ = c.Flags().MarkDeprecated("tty", "'tty' is deprecated and ignored please set console as part of the extra kernel command line arguments as grub2 variables")
 	c.Flags().BoolP("reset-persistent", "", false, "Clear persistent partitions")
 	c.Flags().BoolP("reset-oem", "", false, "Clear OEM partitions")
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
