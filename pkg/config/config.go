@@ -475,6 +475,76 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
+func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
+	imgExt := ".img"
+
+	partitions := v1.ElementalPartitions{}
+
+	partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+	partitions.EFI.MountPoint = ""
+	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+imgExt)
+
+	partitions.OEM = &v1.Partition{
+		FilesystemLabel: constants.OEMLabel,
+		Size:            constants.OEMSize,
+		Name:            constants.OEMPartName,
+		FS:              constants.LinuxFs,
+		Path:            filepath.Join(workdir, constants.OEMPartName+imgExt),
+		Flags:           []string{},
+	}
+
+	partitions.Recovery = &v1.Partition{
+		FilesystemLabel: constants.RecoveryLabel,
+		Size:            constants.RecoverySize,
+		Name:            constants.RecoveryPartName,
+		FS:              constants.LinuxFs,
+		Path:            filepath.Join(workdir, constants.RecoveryPartName+imgExt),
+		Flags:           []string{},
+	}
+
+	partitions.State = &v1.Partition{
+		FilesystemLabel: constants.StateLabel,
+		Size:            constants.StateSize,
+		Name:            constants.StatePartName,
+		FS:              constants.LinuxFs,
+		Path:            filepath.Join(workdir, constants.StatePartName+imgExt),
+		Flags:           []string{},
+	}
+	return partitions
+}
+
+func NewDisk(cfg *v1.BuildConfig) *v1.Disk {
+	var workdir string
+	var recoveryImg, activeImg, passiveImg v1.Image
+
+	workdir = filepath.Join(cfg.OutDir, constants.DiskWorkDir)
+
+	recoveryImg.Size = constants.ImgSize
+	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, "cOS", constants.RecoveryImgFile)
+	recoveryImg.FS = constants.SquashFs
+	recoveryImg.Source = v1.NewEmptySrc()
+
+	// By default active is set as the recovery image
+	activeImg.Size = constants.ImgSize
+	activeImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.ActiveImgFile)
+	activeImg.FS = constants.SquashFs
+	activeImg.Source = v1.NewFileSrc(recoveryImg.File)
+
+	passiveImg.Size = constants.ImgSize
+	passiveImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.PassiveImgFile)
+	passiveImg.FS = constants.SquashFs
+	passiveImg.Source = v1.NewFileSrc(activeImg.File)
+
+	return &v1.Disk{
+		Partitions: NewDiskElementalParitions(workdir),
+		GrubConf:   constants.GrubConf,
+		Active:     activeImg,
+		Recovery:   recoveryImg,
+		Passive:    passiveImg,
+		Type:       constants.RawType,
+	}
+}
+
 func NewISO() *v1.LiveISO {
 	return &v1.LiveISO{
 		Label:     constants.ISOLabel,

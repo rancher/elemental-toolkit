@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
@@ -250,6 +251,13 @@ func (e Elemental) UnmountImage(img *v1.Image) error {
 
 // CreateFileSystemImage creates the image file for the given image
 func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
+	return e.CreatePreLoadedFileSystemImage(img, "")
+}
+
+// CreatePreLoadedFileSystemImage creates the image file for the given image including the contents of the rootDir.
+// If rootDir is empty it simply creates an empty filesystem image
+func (e Elemental) CreatePreLoadedFileSystemImage(img *v1.Image, rootDir string) error {
+	e.config.Logger.Infof("Creating filesystem image %s with size: %d", img.File, img.Size)
 	err := utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
 		return err
@@ -271,7 +279,19 @@ func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
 		return err
 	}
 
-	mkfs := partitioner.NewMkfsCall(img.File, img.FS, img.Label, e.config.Runner)
+	var extraOpts []string
+
+	// Only add the rootDir if it's not empty
+	match, _ := regexp.MatchString("ext[2-4]", img.FS)
+	exists, _ := utils.Exists(e.config.Fs, rootDir)
+	if !match && exists {
+		e.config.Logger.Infof("Pre-loaded image creataion is only available for ext[2-4] filesystems, ignoring options for %s", img.FS)
+	}
+	if exists && match {
+		extraOpts = []string{"-d", rootDir}
+	}
+
+	mkfs := partitioner.NewMkfsCall(img.File, img.FS, img.Label, e.config.Runner, extraOpts...)
 	_, err = mkfs.Apply()
 	if err != nil {
 		_ = e.config.Fs.RemoveAll(img.File)
@@ -330,6 +350,17 @@ func (e *Elemental) DeployImgTree(img *v1.Image, root string) (info interface{},
 
 // CreateImgFromTree creates the given image from with the contents of the tree for the given root.
 func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func() error) (err error) {
+	return e.createImgFromTree(root, img, false, cleaner)
+}
+
+// CreateImgFromTree creates the given image from with the contents of the tree for the given root.
+func (e *Elemental) CreateImgFromTreeNoMounts(root string, img *v1.Image, cleaner func() error) (err error) {
+	return e.createImgFromTree(root, img, true, cleaner)
+}
+
+// createImgFromTree creates the given image from with the contents of the tree for the given root.
+// mountless flag allows formatting an image including its contents (experimental and ext* specific)
+func (e *Elemental) createImgFromTree(root string, img *v1.Image, mountLess bool, cleaner func() error) (err error) {
 	if cleaner != nil {
 		defer func() {
 			cErr := cleaner()
@@ -337,6 +368,11 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func()
 				err = cErr
 			}
 		}()
+	}
+
+	var preLoadRoot string
+	if mountLess {
+		preLoadRoot = root
 	}
 
 	if img.FS == cnst.SquashFs {
@@ -347,7 +383,6 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func()
 			return err
 		}
 	} else {
-		e.config.Logger.Infof("Creating filesystem image: %s", img.File)
 		if img.Size == 0 {
 			size, err := utils.DirSizeMB(e.config.Fs, root)
 			if err != nil {
@@ -355,23 +390,26 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func()
 			}
 			img.Size = size + cnst.ImgOverhead
 		}
-		err = e.CreateFileSystemImage(img)
+		err = e.CreatePreLoadedFileSystemImage(img, preLoadRoot)
 		if err != nil {
 			return err
 		}
-		err = e.MountImage(img, "rw")
-		if err != nil {
-			return err
-		}
-		defer func() {
-			mErr := e.UnmountImage(img)
-			if err == nil && mErr != nil {
-				err = mErr
+
+		if !mountLess {
+			err = e.MountImage(img, "rw")
+			if err != nil {
+				return err
 			}
-		}()
-		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, root, img.MountPoint)
-		if err != nil {
-			return err
+			defer func() {
+				mErr := e.UnmountImage(img)
+				if err == nil && mErr != nil {
+					err = mErr
+				}
+			}()
+			err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, root, img.MountPoint)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return err

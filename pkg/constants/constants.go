@@ -115,6 +115,12 @@ const (
 	ISOLabel         = "COS_LIVE"
 	ISOCloudInitPath = LiveDir + "/iso-config"
 
+	// Constants related to disk builds
+	DiskWorkDir = "build"
+	RawType     = "raw"
+	AzureType   = "azure"
+	GCEType     = "gce"
+
 	// Default directory and file fileModes
 	DirPerm        = os.ModeDir | os.ModePerm
 	FilePerm       = 0666

@@ -131,8 +131,13 @@ func (pc *PartedCall) WriteChanges() (string, error) {
 	return string(out), err
 }
 
-func (pc *PartedCall) SetPartitionTableLabel(label string) {
+func (pc *PartedCall) SetPartitionTableLabel(label string) error {
+	match, _ := regexp.MatchString("msdos|gpt", label)
+	if !match {
+		return fmt.Errorf("Invalid partition table type, only msdos and gpt are supported")
+	}
 	pc.label = label
+	return nil
 }
 
 func (pc *PartedCall) CreatePartition(p *Partition) {

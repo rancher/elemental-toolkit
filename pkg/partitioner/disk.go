@@ -207,12 +207,11 @@ func (dev Disk) computeFreeSpaceWithoutLast() uint {
 }
 
 func (dev *Disk) NewPartitionTable(label string) (string, error) {
-	match, _ := regexp.MatchString("msdos|gpt", label)
-	if !match {
-		return "", errors.New("Invalid partition table type, only msdos and gpt are supported")
-	}
 	pc := NewPartedCall(dev.String(), dev.runner)
-	pc.SetPartitionTableLabel(label)
+	err := pc.SetPartitionTableLabel(label)
+	if err != nil {
+		return "", err
+	}
 	pc.WipeTable(true)
 	out, err := pc.WriteChanges()
 	if err != nil {

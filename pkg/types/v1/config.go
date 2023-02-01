@@ -323,6 +323,18 @@ type Partition struct {
 
 type PartitionList []*Partition
 
+// ToImage returns an image object that matches the partition. This is helpful if the partition
+// is managed as an image.
+func (p Partition) ToImage() *Image {
+	return &Image{
+		File:   p.Path,
+		Label:  p.FilesystemLabel,
+		Size:   p.Size,
+		FS:     p.FS,
+		Source: NewEmptySrc(),
+	}
+}
+
 // GetByName gets a partitions by its name from the PartitionList
 func (pl PartitionList) GetByName(name string) *Partition {
 	var part *Partition
@@ -592,6 +604,44 @@ type BuildConfig struct {
 // if unsolvable inconsistencies are found
 func (b *BuildConfig) Sanitize() error {
 	return b.Config.Sanitize()
+}
+
+type Disk struct {
+	Size         uint                `yaml:"size,omitempty" mapstructure:"partitions"`
+	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	RecoveryOnly bool                `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
+	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
+	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	Passive      Image
+	GrubConf     string
+	CloudInit    []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	GrubDefEntry string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Type         string   `yaml:"type,omitempty" mapstructure:"type"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+// if unsolvable inconsistencies are found
+func (d *Disk) Sanitize() error {
+	// Set passive filesystem as active
+	d.Passive.FS = d.Active.FS
+
+	// Set default label for non squashed images or unset it otherwise
+	if d.Active.FS != constants.SquashFs && (d.Active.Label == "" || d.Passive.Label == "") {
+		d.Active.Label = constants.ActiveLabel
+		d.Passive.Label = constants.PassiveLabel
+	} else if d.Active.FS == constants.SquashFs {
+		d.Active.Label = ""
+		d.Passive.Label = ""
+	}
+	if d.Recovery.FS != constants.SquashFs && d.Recovery.Label == "" {
+		d.Recovery.Label = constants.RecoveryLabel
+	} else if d.Recovery.FS == constants.SquashFs {
+		d.Recovery.Label = ""
+	}
+
+	// TODO verify disk type
+
+	return nil
 }
 
 // InstallState tracks the installation data of the whole system
