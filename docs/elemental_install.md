@@ -28,7 +28,6 @@ elemental install DEVICE [flags]
       --squash-no-compression            Disable squashfs compression. Overrides any values on squash-compression
       --strict                           Enable strict check of hooks (They need to exit with 0)
       --system.uri string                Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
-      --tty string                       Add named tty to grub
       --verify                           Enable mtree checksum verification (requires images manifests generated with mtree separately)
 ```
 

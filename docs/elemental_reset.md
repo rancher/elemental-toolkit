@@ -19,7 +19,6 @@ elemental reset [flags]
       --reset-persistent     Clear persistent partitions
       --strict               Enable strict check of hooks (They need to exit with 0)
       --system.uri string    Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
-      --tty                  Add named tty to grub
       --verify               Enable mtree checksum verification (requires images manifests generated with mtree separately)
 ```
 
