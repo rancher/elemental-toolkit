@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -82,6 +83,7 @@ func (c *Chroot) Prepare() error {
 		if err != nil {
 			return err
 		}
+		c.config.Logger.Debugf("Mounting %s to chroot", mountPoint)
 		err = c.config.Mounter.Mount(mnt, mountPoint, "bind", mountOptions)
 		if err != nil {
 			return err
@@ -99,6 +101,7 @@ func (c *Chroot) Prepare() error {
 		if err != nil {
 			return err
 		}
+		c.config.Logger.Debugf("Mounting %s to chroot", mountPoint)
 		err = c.config.Mounter.Mount(k, mountPoint, "bind", mountOptions)
 		if err != nil {
 			return err
@@ -112,6 +115,11 @@ func (c *Chroot) Prepare() error {
 // Close will unmount all active mounts created in Prepare on reverse order
 func (c *Chroot) Close() error {
 	failures := []string{}
+	// syncing before unmounting chroot paths as it has been noted that on
+	// empty, trivial or super fast callbacks unmounting fails with a device busy error.
+	// Having lazy unmount could also fix it, but continuing without being sure they were
+	// really unmounted is dangerous.
+	_, _ = c.config.Runner.Run("sync")
 	for len(c.activeMounts) > 0 {
 		curr := c.activeMounts[len(c.activeMounts)-1]
 		c.config.Logger.Debugf("Unmounting %s from chroot", curr)
@@ -146,6 +154,13 @@ func (c *Chroot) RunCallback(callback func() error) (err error) {
 			err = tmpErr
 		}
 	}()
+
+	// Chroot to an absolute path
+	if !filepath.IsAbs(c.path) {
+		oldPath := c.path
+		c.path = filepath.Clean(filepath.Join(currentPath, c.path))
+		c.config.Logger.Warnf("Requested chroot path %s is not absolute, changing it to %s", oldPath, c.path)
+	}
 
 	// Store current root
 	oldRootF, err = c.config.Fs.Open("/")

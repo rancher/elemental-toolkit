@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
 	eleError "github.com/rancher/elemental-cli/pkg/error"
@@ -36,208 +37,345 @@ import (
 )
 
 const (
-	MB = int64(1024 * 1024)
-	GB = 1024 * MB
+	MB             = int64(1024 * 1024)
+	GB             = 1024 * MB
+	rootSuffix     = ".root"
+	layoutSetStage = "rootfs.before"
+	deployStage    = "network"
+	postResetHook  = "post-reset"
+	cloudinitFile  = "00_disk_layout_setup.yaml"
+	successCheck   = `[ -f "/oem/` + constants.ActiveImgFile + `" ]`
+	defSectorSize  = 512
 )
 
-func BuildDiskRun(cfg *v1.BuildConfig, spec *v1.Disk) error {
-	var err error
-	//var recInfo, activeInfo interface{}
-	cfg.Logger.Infof("Building disk image type %s for arch %s", spec.Type, cfg.Arch)
+type BuildDiskAction struct {
+	cfg  *v1.BuildConfig
+	spec *v1.Disk
+	// holds the root path within the working directory of all partitions
+	roots map[string]string
+}
 
-	e := elemental.NewElemental(&cfg.Config)
+func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.Disk) *BuildDiskAction {
+	return &BuildDiskAction{cfg: cfg, spec: spec}
+}
+
+func (b *BuildDiskAction) buildDiskHook(hook string) error {
+	return Hook(&b.cfg.Config, hook, b.cfg.Strict, b.cfg.CloudInitPaths...)
+}
+
+func (b *BuildDiskAction) buildDiskChrootHook(hook string, root string) error {
+	extraMounts := map[string]string{}
+	return ChrootHook(&b.cfg.Config, hook, b.cfg.Strict, root, extraMounts, b.cfg.CloudInitPaths...)
+}
+
+func (b *BuildDiskAction) preparePartitionsRoot() error {
+	var err error
+	var exclude *v1.Partition
+
+	rootMap := map[string]string{}
+
+	if b.spec.RecoveryOnly {
+		exclude = b.spec.Partitions.Persistent
+	}
+	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, exclude) {
+		rootMap[part.Name] = strings.TrimSuffix(part.Path, filepath.Ext(part.Path))
+		err = utils.MkdirAll(b.cfg.Fs, rootMap[part.Name], constants.DirPerm)
+		if err != nil {
+			return err
+		}
+	}
+	b.roots = rootMap
+	return nil
+}
+
+func (b *BuildDiskAction) BuildDiskRun() (err error) {
+	var recInfo, activeInfo interface{}
+	var rawImg string
+
+	b.cfg.Logger.Infof("Building disk image type %s for arch %s", b.spec.Type, b.cfg.Arch)
+
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
+	workdir := filepath.Join(b.cfg.OutDir, constants.DiskWorkDir)
+	cleanup.Push(func() error { return b.cfg.Fs.RemoveAll(workdir) })
 
-	cleanup.Push(func() error {
-		return cfg.Fs.RemoveAll(filepath.Join(cfg.OutDir, constants.DiskWorkDir))
-	})
+	e := elemental.NewElemental(&b.cfg.Config)
+
+	// Set output image file
+	if b.cfg.Date {
+		currTime := time.Now()
+		rawImg = fmt.Sprintf("%s.%s.raw", b.cfg.Name, currTime.Format("20060102"))
+	} else {
+		rawImg = fmt.Sprintf("%s.raw", b.cfg.Name)
+	}
+	rawImg = filepath.Join(b.cfg.OutDir, rawImg)
+
+	// Before disk hook happens before doing anything
+	err = b.buildDiskHook(constants.BeforeDiskHook)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.HookBeforeDisk)
+	}
+
+	// Prepare partition root folders
+	err = b.preparePartitionsRoot()
+	if err != nil {
+		return err
+	}
+
+	recRoot := filepath.Join(workdir, filepath.Base(b.spec.Recovery.File)+rootSuffix)
+	// Assume active and recovery image source is the same, later will check if they differ
+	activeRoot := recRoot
 
 	// Create recovery root
-	recRoot := strings.TrimSuffix(spec.Recovery.File, filepath.Ext(spec.Recovery.File))
-	activeRoot := recRoot
-	// TODO keep and store meta
-	_, err = e.DumpSource(recRoot, spec.Recovery.Source)
+	recInfo, err = e.DumpSource(recRoot, b.spec.Recovery.Source)
 	if err != nil {
 		return err
 	}
 
-	// Create recovery image
-	err = e.CreateImgFromTreeNoMounts(recRoot, &spec.Recovery, nil)
-	if err != nil {
-		return err
-	}
-
-	if !spec.RecoveryOnly {
-		//activeInfo = recInfo
-		if spec.Active.Source.Value() != spec.Recovery.File {
+	if !b.spec.RecoveryOnly {
+		activeInfo = recInfo
+		// Check if active and recovery sources are configured differently
+		if !b.spec.Active.Source.IsEmpty() {
 			// Create active root
-			activeRoot = strings.TrimSuffix(spec.Active.File, filepath.Ext(spec.Active.File))
-			// TODO keep and store meta
-			_, err = e.DumpSource(recRoot, spec.Active.Source)
+			activeRoot = filepath.Join(workdir, filepath.Base(b.spec.Active.File)+rootSuffix)
+			activeInfo, err = e.DumpSource(recRoot, b.spec.Active.Source)
 			if err != nil {
 				return err
 			}
 		}
+	}
 
+	// Copy cloud-init if any
+	err = e.CopyCloudConfig(b.roots[constants.OEMPartName], b.spec.CloudInit)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.CopyFile)
+	}
+
+	// Install grub
+	grub := utils.NewGrub(&b.cfg.Config)
+	err = grub.InstallConfig(activeRoot, b.roots[constants.StatePartName], b.spec.GrubConf)
+	if err != nil {
+		return err
+	}
+	// TODO set next_entry to default to recovery in case of expandable images
+	err = grub.SetPersistentVariables(
+		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
+		map[string]string{
+			"efi_label":        b.spec.Partitions.EFI.FilesystemLabel,
+			"oem_label":        b.spec.Partitions.OEM.FilesystemLabel,
+			"recovery_label":   b.spec.Partitions.Recovery.FilesystemLabel,
+			"state_label":      b.spec.Partitions.State.FilesystemLabel,
+			"persistent_label": b.spec.Partitions.Persistent.FilesystemLabel,
+			"active_label":     b.spec.Active.Label,
+			"passive_label":    b.spec.Passive.Label,
+			"system_label":     b.spec.Recovery.Label,
+		},
+	)
+	_, err = grub.InstallEFI(
+		activeRoot, b.roots[constants.StatePartName],
+		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Rebrand
+	err = e.SetDefaultGrubEntry(b.roots[constants.StatePartName], activeRoot, b.spec.GrubDefEntry)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
+	}
+	// TODO set grub labels
+
+	// Relabel SELinux
+	err = b.applySelinuxLabels(e, activeRoot, b.spec.NoMounts)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
+	}
+
+	// After disk hook happens after deploying the OS tree into a temporary folder
+	if !b.spec.NoMounts {
+		err = b.buildDiskChrootHook(constants.AfterDiskChrootHook, activeRoot)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.HookAfterDiskChroot)
+		}
+	}
+	err = b.buildDiskHook(constants.AfterDiskHook)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.HookAfterDisk)
+	}
+
+	// Create OS images
+	if !b.spec.RecoveryOnly {
 		// Create active image
-		err = e.CreateImgFromTreeNoMounts(activeRoot, &spec.Active, nil)
+		err = e.CreateImgFromTree(activeRoot, &b.spec.Active, b.spec.NoMounts, nil)
 		if err != nil {
 			return err
 		}
 
 		// Create passive image
-		err = e.CreateImgFromTreeNoMounts(activeRoot, &spec.Passive, nil)
+		err = e.CreateImgFromTree(activeRoot, &b.spec.Passive, b.spec.NoMounts, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Prepare partition images
-	efiImg := spec.Partitions.EFI.ToImage()
-	oemImg := spec.Partitions.OEM.ToImage()
-	recoveryImg := spec.Partitions.Recovery.ToImage()
-	stateImg := spec.Partitions.State.ToImage()
-
-	stateRoot := strings.TrimSuffix(stateImg.File, filepath.Ext(stateImg.File))
-	recoveryRoot := strings.TrimSuffix(recoveryImg.File, filepath.Ext(recoveryImg.File))
-	oemRoot := strings.TrimSuffix(oemImg.File, filepath.Ext(oemImg.File))
-	efiRoot := strings.TrimSuffix(efiImg.File, filepath.Ext(efiImg.File))
-
-	// Install grub
-	grub := utils.NewGrub(&cfg.Config)
-	err = grub.InstallConfig(activeRoot, stateRoot, spec.GrubConf)
-	if err != nil {
-		return err
-	}
-	_, err = grub.InstallEFI(activeRoot, stateRoot, efiRoot, spec.Partitions.State.FilesystemLabel)
-	if err != nil {
-		return err
-	}
-	cleanup.Push(func() error { return cfg.Fs.RemoveAll(efiRoot) })
-
-	// Rebrand
-	err = e.SetDefaultGrubEntry(stateRoot, activeRoot, spec.GrubDefEntry)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
-	}
-
-	// Include additional cloud-init files
-	err = e.CopyCloudConfig(oemRoot, spec.CloudInit)
+	// Create recovery image and removes recovery and active roots when done
+	err = e.CreateImgFromTree(
+		recRoot, &b.spec.Recovery, b.spec.NoMounts,
+		func() error {
+			cErr := b.cfg.Fs.RemoveAll(recRoot)
+			if cErr == nil {
+				cErr = b.cfg.Fs.RemoveAll(activeRoot)
+			}
+			return cErr
+		},
+	)
 	if err != nil {
 		return err
 	}
 
-	// Remove prepared root trees, they are already synched
-	err = cfg.Fs.RemoveAll(recRoot)
-	if err != nil {
-		return err
-	}
-	err = cfg.Fs.RemoveAll(activeRoot)
-	if err != nil {
-		return err
-	}
-
-	// TODO create state yaml files for recovery and state partitions
-
-	// Create EFI part image
-	err = e.CreateFileSystemImage(efiImg)
-	if err != nil {
-		return err
-	}
-	_, err = cfg.Runner.Run("mcopy", "-s", "-i", efiImg.File, filepath.Join(efiRoot, "EFI"), "::EFI")
-	if err != nil {
-		return eleError.NewFromError(err, eleError.CommandRun)
+	if b.spec.RecoveryOnly {
+		err = b.SetExpandableCloudInitStage()
+		if err != nil {
+			return err
+		}
+		// Omit persistent partition and minimize state partition size
+		b.spec.Partitions.State.Size = constants.MinPartSize
 	}
 
-	// Create OEM part image
-	err = e.CreateImgFromTreeNoMounts(oemRoot, oemImg, func() error { return cfg.Fs.RemoveAll(oemRoot) })
+	// Add state.yaml file on state and recovery partitions
+	err = b.createBuildDiskStateYaml(
+		activeInfo, recInfo, b.roots[constants.StatePartName],
+		b.roots[constants.RecoveryPartName],
+	)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.CreateFile)
+	}
+
+	// Creates RAW disk image
+	err = b.CreateRAWDisk(e, rawImg)
 	if err != nil {
 		return err
 	}
 
-	// Create recovery part image
-	err = e.CreateImgFromTreeNoMounts(recoveryRoot, recoveryImg, func() error { return cfg.Fs.RemoveAll(recoveryRoot) })
+	err = b.buildDiskHook(constants.PostDiskHook)
 	if err != nil {
-		return err
-	}
-
-	// Create state part image
-	err = e.CreateImgFromTreeNoMounts(stateRoot, stateImg, func() error { return cfg.Fs.RemoveAll(stateRoot) })
-	if err != nil {
-		return err
-	}
-
-	// TODO set persistent partition
-	/*if !spec.RecoveryOnly {
-		// Create persistent part image
-	}*/
-
-	// Ensamble disk
-	rawImg, err := CreateDiskImage(cfg, efiImg, oemImg, recoveryImg, stateImg)
-	if err != nil {
-		return err
-	}
-
-	// Write partition headers to disk
-	err = CreateDiskPartitionTable(cfg, spec, rawImg)
-	if err != nil {
-		return err
+		return elementalError.NewFromError(err, elementalError.HookPostDisk)
 	}
 
 	// Convert image to desired format
-	switch spec.Type {
+	switch b.spec.Type {
 	case constants.RawType:
 		// Nothing to do here
-		cfg.Logger.Infof("Done! Image created at %s", rawImg)
+		b.cfg.Logger.Infof("Done! Image created at %s", rawImg)
 	case constants.AzureType:
-		err = Raw2Azure(rawImg, cfg.Fs, cfg.Logger, false)
+		err = Raw2Azure(rawImg, b.cfg.Fs, b.cfg.Logger, false)
 		if err != nil {
 			return err
 		}
-		cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.vhd", rawImg))
+		b.cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.vhd", rawImg))
 	case constants.GCEType:
-		err = Raw2Gce(rawImg, cfg.Fs, cfg.Logger, false)
+		err = Raw2Gce(rawImg, b.cfg.Fs, b.cfg.Logger, false)
 		if err != nil {
 			return err
 		}
-		cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.tar.gz", rawImg))
+		b.cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.tar.gz", rawImg))
 	}
 
 	return eleError.NewFromError(err, eleError.Unknown)
 }
 
+// CreateRAWDisk creates the RAW disk image file including all required partitions
+func (b *BuildDiskAction) CreateRAWDisk(e *elemental.Elemental, rawImg string) error {
+	// Creates all partition image files
+	images, err := b.CreatePartitionImages(e)
+	if err != nil {
+		return err
+	}
+
+	// Ensamble disk with all partitions
+	err = b.CreateDiskImage(rawImg, images...)
+	if err != nil {
+		return err
+	}
+
+	// Write partition headers to disk
+	err = b.CreateDiskPartitionTable(rawImg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreatePartitionImage creates partition image files and returns a slice of the created images
+func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.Image, error) {
+	var err error
+	var img *v1.Image
+	var images []*v1.Image
+	var excludes v1.PartitionList
+
+	excludes = append(excludes, b.spec.Partitions.EFI)
+	if b.spec.RecoveryOnly {
+		excludes = append(excludes, b.spec.Partitions.Persistent)
+	}
+
+	b.cfg.Logger.Infof("Creating EFI partition image")
+	img = b.spec.Partitions.EFI.ToImage()
+	err = e.CreateFileSystemImage(img)
+	if err != nil {
+		return nil, err
+	}
+	_, err = b.cfg.Runner.Run("mcopy", "-s", "-i", img.File, filepath.Join(b.roots[constants.EfiPartName], "EFI"), "::EFI")
+	if err != nil {
+		return nil, eleError.NewFromError(err, eleError.CommandRun)
+	}
+	images = append(images, img)
+
+	// Create all partitions after EFI
+	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...) {
+		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
+		img = part.ToImage()
+		err = e.CreateImgFromTree(
+			b.roots[part.Name], img, b.spec.NoMounts,
+			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
+		)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, img)
+	}
+
+	return images, nil
+}
+
 // CreateDiskImage creates the final image by truncating the image with the proper size and
 // concatenating the contents of the given partitions. No partition table is written
-func CreateDiskImage(cfg *v1.BuildConfig, partImgs ...*v1.Image) (string, error) {
-	var rawDiskFile, initDiskFile string
+func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Image) error {
+	var initDiskFile, endDiskFile string
+	var err error
 	var partFiles []string
 
-	if cfg.Date {
-		currTime := time.Now()
-		rawDiskFile = fmt.Sprintf("%s.%s.raw", cfg.Name, currTime.Format("20060102"))
-	} else {
-		rawDiskFile = fmt.Sprintf("%s.raw", cfg.Name)
-	}
-	rawDiskFile = filepath.Join(cfg.OutDir, rawDiskFile)
-	initDiskFile = filepath.Join(cfg.OutDir, constants.DiskWorkDir, "initdisk.img")
+	initDiskFile = filepath.Join(b.cfg.OutDir, constants.DiskWorkDir, "initdisk.img")
+	endDiskFile = filepath.Join(b.cfg.OutDir, constants.DiskWorkDir, "enddisk.img")
+
+	b.cfg.Logger.Infof("Creating RAW disk %s", rawDiskFile)
 
 	// create 1MB of initial free space to disk for proper alignment and leave
-	// room for GPT headers. This extra space will be appended at the end too.
-	initImg, err := cfg.Fs.Create(initDiskFile)
+	// room for GPT headers. Extra space of, at least, 1MB is also considered at the
+	// end of the disk for GPT headers.
+	err = utils.CreateRAWFile(b.cfg.Fs, initDiskFile, 1)
 	if err != nil {
-		return "", eleError.NewFromError(err, eleError.CreateFile)
+		return err
 	}
-	err = initImg.Truncate(1 * MB)
-	if err != nil {
-		initImg.Close()
-		_ = cfg.Fs.RemoveAll(initDiskFile)
-		return "", eleError.NewFromError(err, eleError.TruncateFile)
+
+	// Compute extra space required at the end
+	eSize := uint(1)
+	if b.spec.Size > 0 {
+		eSize = b.spec.Size - b.spec.MinDiskSize()
 	}
-	err = initImg.Close()
+	err = utils.CreateRAWFile(b.cfg.Fs, endDiskFile, eSize)
 	if err != nil {
-		_ = cfg.Fs.RemoveAll(initDiskFile)
-		return "", eleError.NewFromError(err, eleError.CloseFile)
+		return err
 	}
 
 	// List and concatenate all image files
@@ -245,13 +383,13 @@ func CreateDiskImage(cfg *v1.BuildConfig, partImgs ...*v1.Image) (string, error)
 	for _, img := range partImgs {
 		partFiles = append(partFiles, img.File)
 	}
-	partFiles = append(partFiles, initDiskFile)
-	err = utils.ConcatFiles(cfg.Fs, partFiles, rawDiskFile)
+	partFiles = append(partFiles, endDiskFile)
+	err = utils.ConcatFiles(b.cfg.Fs, partFiles, rawDiskFile)
 	if err != nil {
-		return "", eleError.NewFromError(err, eleError.CopyData)
+		return eleError.NewFromError(err, eleError.CopyData)
 	}
 
-	return rawDiskFile, nil
+	return nil
 }
 
 // Raw2Gce transforms an image from RAW format into GCE format
@@ -364,20 +502,25 @@ func Raw2Azure(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) err
 	return nil
 }
 
-func CreateDiskPartitionTable(cfg *v1.BuildConfig, spec *v1.Disk, disk string) error {
+func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	var secSize, startS, sizeS uint
+	var excludes v1.PartitionList
 
-	gd := partitioner.NewGdiskCall(disk, cfg.Runner)
+	gd := partitioner.NewGdiskCall(disk, b.cfg.Runner)
 	dData, err := gd.Print()
 	if err != nil {
 		return err
 	}
 	secSize, err = gd.GetSectorSize(dData)
 	if err != nil {
-		return err
+		secSize = defSectorSize
+		b.cfg.Logger.Warnf("Could not determine disk sector size, using default value (%d bytes)", defSectorSize)
 	}
 
-	elParts := spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{})
+	if b.spec.RecoveryOnly {
+		excludes = append(excludes, b.spec.Partitions.Persistent)
+	}
+	elParts := b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...)
 	for i, part := range elParts {
 		if i == 0 {
 			//First partition is aligned at 1MiB
@@ -396,10 +539,155 @@ func CreateDiskPartitionTable(cfg *v1.BuildConfig, spec *v1.Disk, disk string) e
 		gd.CreatePartition(&gdPart)
 	}
 	out, err := gd.WriteChanges()
-	cfg.Logger.Debugf("sgdisk output: %s", out)
 	if err != nil {
-		cfg.Logger.Errorf("Failed creating partition: %v", err)
+		b.cfg.Logger.Errorf("Failed creating partitions. stdout: %s\nerr:%v", out, err)
 		return err
 	}
 	return nil
+}
+
+// applySelinuxLabels sets SELinux extended attributes to the root-tree being installed. Swallows errors, label on a best effort
+func (i *BuildDiskAction) applySelinuxLabels(e *elemental.Elemental, root string, noMounts bool) error {
+	if noMounts {
+		// Swallow errors, label on a best effort when not chrooting
+		return e.SelinuxRelabel(root, false)
+	}
+	binds := map[string]string{}
+	return utils.ChrootedCallback(
+		&i.cfg.Config, root, binds, func() error { return e.SelinuxRelabel("/", true) },
+	)
+}
+
+func (b *BuildDiskAction) createBuildDiskStateYaml(sysMeta, recMeta interface{}, stateRoot, recoveryRoot string) error {
+	if b.spec.Partitions.State == nil || b.spec.Partitions.Recovery == nil {
+		return fmt.Errorf("undefined state or recovery partition")
+	}
+
+	// If active sources is empty recovery one is used
+	activeSource := b.spec.Recovery.Source
+	if !b.spec.Active.Source.IsEmpty() {
+		activeSource = b.spec.Active.Source
+	}
+
+	systemImages := map[string]*v1.ImageState{}
+	if !b.spec.RecoveryOnly {
+		systemImages = map[string]*v1.ImageState{
+			constants.ActiveImgName: {
+				Source:         activeSource,
+				SourceMetadata: sysMeta,
+				Label:          b.spec.Active.Label,
+				FS:             b.spec.Active.FS,
+			},
+			constants.PassiveImgName: {
+				Source:         b.spec.Active.Source,
+				SourceMetadata: sysMeta,
+				Label:          b.spec.Passive.Label,
+				FS:             b.spec.Passive.FS,
+			},
+		}
+	}
+
+	installState := &v1.InstallState{
+		Date: time.Now().Format(time.RFC3339),
+		Partitions: map[string]*v1.PartitionState{
+			constants.StatePartName: {
+				FSLabel: b.spec.Partitions.State.FilesystemLabel,
+				Images:  systemImages,
+			},
+			constants.RecoveryPartName: {
+				FSLabel: b.spec.Partitions.Recovery.FilesystemLabel,
+				Images: map[string]*v1.ImageState{
+					constants.RecoveryImgName: {
+						Source:         b.spec.Recovery.Source,
+						SourceMetadata: recMeta,
+						Label:          b.spec.Recovery.Label,
+						FS:             b.spec.Recovery.FS,
+					},
+				},
+			},
+		},
+	}
+
+	if b.spec.Partitions.OEM != nil {
+		installState.Partitions[constants.OEMPartName] = &v1.PartitionState{
+			FSLabel: b.spec.Partitions.OEM.FilesystemLabel,
+		}
+	}
+	if b.spec.Partitions.Persistent != nil {
+		installState.Partitions[constants.PersistentPartName] = &v1.PartitionState{
+			FSLabel: b.spec.Partitions.Persistent.FilesystemLabel,
+		}
+	}
+	if b.spec.Partitions.EFI != nil {
+		installState.Partitions[constants.EfiPartName] = &v1.PartitionState{
+			FSLabel: b.spec.Partitions.EFI.FilesystemLabel,
+		}
+	}
+
+	return b.cfg.WriteInstallState(
+		installState,
+		filepath.Join(stateRoot, constants.InstallStateFile),
+		filepath.Join(recoveryRoot, constants.InstallStateFile),
+	)
+}
+
+func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
+	var deployCmd []string
+
+	deployCmd = []string{"elemental", "--debug", "reset", "--reboot"}
+	if !b.spec.Active.Source.IsEmpty() {
+		deployCmd = append(deployCmd, "--system.uri", b.spec.Active.Source.String())
+	}
+
+	conf := &schema.YipConfig{
+		Name: "Expand disk layout",
+		Stages: map[string][]schema.Stage{
+			layoutSetStage: {
+				schema.Stage{
+					Name: "Expand state partition",
+					Layout: schema.Layout{
+						Device: &schema.Device{
+							Label: b.spec.Partitions.State.FilesystemLabel,
+						},
+						Expand: &schema.Expand{
+							Size: b.spec.Partitions.State.Size,
+						},
+					},
+				}, schema.Stage{
+					Name: "Add persistent partition",
+					Layout: schema.Layout{
+						Device: &schema.Device{
+							Label: b.spec.Partitions.State.FilesystemLabel,
+						},
+						Parts: []schema.Partition{
+							{
+								FSLabel:    b.spec.Partitions.Persistent.FilesystemLabel,
+								Size:       b.spec.Partitions.Persistent.Size,
+								PLabel:     b.spec.Partitions.Persistent.Name,
+								FileSystem: b.spec.Partitions.Persistent.FS,
+							},
+						},
+					},
+				},
+			}, deployStage: {
+				schema.Stage{
+					If:   `[ -f "/run/cos/recovery_mode" ]`,
+					Name: "Deploy active system",
+					Commands: []string{
+						strings.Join(deployCmd, " "),
+					},
+				},
+			}, postResetHook: {
+				schema.Stage{
+					If:   `[ -f "/oem/` + cloudinitFile + `" ]`,
+					Name: "Cleanup expand disk init stages",
+					Commands: []string{
+						fmt.Sprintf("rm /oem/%s", cloudinitFile),
+					},
+				},
+			},
+		},
+	}
+
+	return b.cfg.CloudInitRunner.CloudInitFileRender(filepath.Join(b.roots[constants.OEMPartName], cloudinitFile), conf)
 }

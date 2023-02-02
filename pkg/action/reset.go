@@ -238,7 +238,7 @@ func (r ResetAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
-	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, treeCleaner)
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, false, treeCleaner)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}

@@ -18,6 +18,7 @@ package mocks
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/mudler/yip/pkg/schema"
 )
@@ -25,6 +26,7 @@ import (
 type FakeCloudInitRunner struct {
 	ExecStages []string
 	Error      bool
+	RenderErr  bool
 	stageArgs  map[string][]string
 }
 
@@ -59,4 +61,11 @@ func (ci *FakeCloudInitRunner) SetModifier(_ schema.Modifier) {
 
 func (ci *FakeCloudInitRunner) GetStageArgs(stage string) []string {
 	return ci.stageArgs[stage]
+}
+
+func (ci *FakeCloudInitRunner) CloudInitFileRender(target string, config *schema.YipConfig) error {
+	if ci.RenderErr == true {
+		return fmt.Errorf("failed redering yip file")
+	}
+	return nil
 }

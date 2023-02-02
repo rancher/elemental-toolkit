@@ -17,10 +17,15 @@ limitations under the License.
 package cloudinit
 
 import (
+	"path/filepath"
+
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 	"github.com/twpayne/go-vfs"
+	"gopkg.in/yaml.v3"
 
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
@@ -80,4 +85,16 @@ func (ci *YipCloudInitRunner) SetModifier(m schema.Modifier) {
 // Useful for testing purposes
 func (ci *YipCloudInitRunner) SetFs(fs vfs.FS) {
 	ci.fs = fs
+}
+
+func (ci *YipCloudInitRunner) CloudInitFileRender(target string, config *schema.YipConfig) error {
+	out, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+	err = utils.MkdirAll(ci.fs, filepath.Dir(target), constants.DirPerm)
+	if err != nil {
+		return err
+	}
+	return ci.fs.WriteFile(target, out, constants.FilePerm)
 }

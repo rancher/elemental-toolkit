@@ -17,6 +17,8 @@ limitations under the License.
 package cmd
 
 import (
+	"os/exec"
+
 	"github.com/rancher/elemental-cli/pkg/constants"
 	eleError "github.com/rancher/elemental-cli/pkg/error"
 	elementalError "github.com/rancher/elemental-cli/pkg/error"
@@ -24,7 +26,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	mountUtils "k8s.io/mount-utils"
+	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
@@ -37,7 +39,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "build-disk image",
 		Short: "Build a disk image using the given image",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {
 				return CheckRoot()
@@ -55,7 +57,11 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				}
 			}()
 
-			mounter := &mountUtils.FakeMounter{}
+			path, err := exec.LookPath("mount")
+			if err != nil {
+				return err
+			}
+			mounter := mount.New(path)
 
 			flags := cmd.Flags()
 			cfg, err = config.ReadConfigBuild(viper.GetString("config-dir"), flags, mounter)
@@ -78,16 +84,20 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return eleError.NewFromError(err, eleError.ReadingBuildDiskConfig)
 			}
 
-			imgSource, err = v1.NewSrcFromURI(args[0])
-			if err != nil {
-				cfg.Logger.Errorf("not a valid image argument: %s", args[0])
-				return elementalError.NewFromError(err, elementalError.IdentifySource)
+			if len(args) > 0 {
+				imgSource, err = v1.NewSrcFromURI(args[0])
+				if err != nil {
+					cfg.Logger.Errorf("not a valid image argument: %s", args[0])
+					return elementalError.NewFromError(err, elementalError.IdentifySource)
+				}
+				spec.Recovery.Source = imgSource
 			}
-			spec.Recovery.Source = imgSource
 
-			// TODO logic for an already existing output file
+			// TODO add logic for an already existing output file
 
-			return action.BuildDiskRun(cfg, spec)
+			builder := action.NewBuildDiskAction(cfg, spec)
+
+			return builder.BuildDiskRun()
 		},
 	}
 	root.AddCommand(c)
@@ -96,6 +106,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().StringP("output", "o", "", "Output directory (defaults to current directory)")
 	c.Flags().Bool("date", false, "Adds a date suffix into the generated disk file")
 	c.Flags().Bool("recovery-only", false, "Only sets the recovery image into the disk")
+	c.Flags().Bool("no-mounts", false, "Runs the build without doing any mount, useful to build in non-privileged containers (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
 	// TODO verify cross-arch builds are possible
 	//addArchFlags(c)

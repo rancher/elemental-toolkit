@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
@@ -30,6 +31,11 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/http"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
+)
+
+const (
+	partSuffix  = ".part"
+	mountSuffix = ".mount"
 )
 
 type GenericOptions func(a *v1.Config) error
@@ -476,20 +482,18 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 }
 
 func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
-	imgExt := ".img"
-
 	partitions := v1.ElementalPartitions{}
 
 	partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
-	partitions.EFI.MountPoint = ""
-	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+imgExt)
+	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+partSuffix)
 
 	partitions.OEM = &v1.Partition{
 		FilesystemLabel: constants.OEMLabel,
 		Size:            constants.OEMSize,
 		Name:            constants.OEMPartName,
 		FS:              constants.LinuxFs,
-		Path:            filepath.Join(workdir, constants.OEMPartName+imgExt),
+		MountPoint:      filepath.Join(workdir, constants.OEMPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.OEMPartName+partSuffix),
 		Flags:           []string{},
 	}
 
@@ -498,7 +502,8 @@ func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
 		Size:            constants.RecoverySize,
 		Name:            constants.RecoveryPartName,
 		FS:              constants.LinuxFs,
-		Path:            filepath.Join(workdir, constants.RecoveryPartName+imgExt),
+		MountPoint:      filepath.Join(workdir, constants.RecoveryPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.RecoveryPartName+partSuffix),
 		Flags:           []string{},
 	}
 
@@ -507,7 +512,18 @@ func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
 		Size:            constants.StateSize,
 		Name:            constants.StatePartName,
 		FS:              constants.LinuxFs,
-		Path:            filepath.Join(workdir, constants.StatePartName+imgExt),
+		MountPoint:      filepath.Join(workdir, constants.StatePartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.StatePartName+partSuffix),
+		Flags:           []string{},
+	}
+
+	partitions.Persistent = &v1.Partition{
+		FilesystemLabel: constants.PersistentLabel,
+		Size:            constants.PersistentSize,
+		Name:            constants.PersistentPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      filepath.Join(workdir, constants.PersistentPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.PersistentPartName+partSuffix),
 		Flags:           []string{},
 	}
 	return partitions
@@ -523,17 +539,31 @@ func NewDisk(cfg *v1.BuildConfig) *v1.Disk {
 	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, "cOS", constants.RecoveryImgFile)
 	recoveryImg.FS = constants.SquashFs
 	recoveryImg.Source = v1.NewEmptySrc()
+	recoveryImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.RecoveryImgFile, filepath.Ext(constants.RecoveryImgFile),
+		)+mountSuffix,
+	)
 
-	// By default active is set as the recovery image
 	activeImg.Size = constants.ImgSize
 	activeImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.ActiveImgFile)
 	activeImg.FS = constants.SquashFs
-	activeImg.Source = v1.NewFileSrc(recoveryImg.File)
+	activeImg.Source = v1.NewEmptySrc()
+	activeImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.ActiveImgFile, filepath.Ext(constants.ActiveImgFile),
+		)+mountSuffix,
+	)
 
 	passiveImg.Size = constants.ImgSize
 	passiveImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.PassiveImgFile)
 	passiveImg.FS = constants.SquashFs
-	passiveImg.Source = v1.NewFileSrc(activeImg.File)
+	passiveImg.Source = v1.NewEmptySrc()
+	activeImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.PassiveImgFile, filepath.Ext(constants.PassiveImgFile),
+		)+mountSuffix,
+	)
 
 	return &v1.Disk{
 		Partitions: NewDiskElementalParitions(workdir),

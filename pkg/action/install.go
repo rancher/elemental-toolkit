@@ -28,6 +28,15 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
+type InstallAction struct {
+	cfg  *v1.RunConfig
+	spec *v1.InstallSpec
+}
+
+func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec) *InstallAction {
+	return &InstallAction{cfg: cfg, spec: spec}
+}
+
 func (i *InstallAction) installHook(hook string) error {
 	return Hook(&i.cfg.Config, hook, i.cfg.Strict, i.cfg.CloudInitPaths...)
 }
@@ -111,15 +120,6 @@ func (i *InstallAction) createInstallStateYaml(sysMeta, recMeta interface{}) err
 		filepath.Join(i.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
 		filepath.Join(i.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
 	)
-}
-
-type InstallAction struct {
-	cfg  *v1.RunConfig
-	spec *v1.InstallSpec
-}
-
-func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec) *InstallAction {
-	return &InstallAction{cfg: cfg, spec: spec}
 }
 
 // InstallRun will install the system from a given configuration
@@ -220,7 +220,7 @@ func (i InstallAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
-	err = e.CreateImgFromTree(cnst.WorkingImgDir, &i.spec.Active, treeCleaner)
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, &i.spec.Active, false, treeCleaner)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}

@@ -249,7 +249,7 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	err = e.CreateImgFromTree(constants.WorkingImgDir, &upgradeImg, treeCleaner)
+	err = e.CreateImgFromTree(constants.WorkingImgDir, &upgradeImg, false, treeCleaner)
 	if err != nil {
 		u.Error("failed creating transition image")
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)

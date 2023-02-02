@@ -78,14 +78,13 @@ func (gd GdiskCall) buildOptions() []string {
 			opts = append(opts, fmt.Sprintf("-c=%d:%s", part.Number, part.PLabel))
 		}
 
+		// Assumes any fat partition is for EFI
 		if isFat.MatchString(part.FileSystem) {
 			opts = append(opts, fmt.Sprintf("-t=%d:%s", part.Number, efiType))
 		} else if part.FileSystem != "" {
 			opts = append(opts, fmt.Sprintf("-t=%d:%s", part.Number, linuxType))
 		}
 	}
-
-	// TODO Handle flags
 
 	if len(opts) == 0 {
 		return nil
@@ -113,6 +112,9 @@ func (gd *GdiskCall) WriteChanges() (string, error) {
 	gd.SetPretend(false)
 	opts = gd.buildOptions()
 	out, err = gd.runner.Run("sgdisk", opts...)
+
+	// Notify kernel of partition table changes, swallows errors, just a best effort call
+	_, _ = gd.runner.Run("partprobe", gd.dev)
 	return string(out), err
 }
 
@@ -157,7 +159,7 @@ func (gd GdiskCall) GetLastSector(printOut string) (uint, error) {
 
 // Parses the output of a GdiskCall.Print call
 func (gd GdiskCall) GetSectorSize(printOut string) (uint, error) {
-	re := regexp.MustCompile("sector size: (\\d+)")
+	re := regexp.MustCompile("[Ss]ector size.* (\\d+) bytes")
 	match := re.FindStringSubmatch(printOut)
 	if match != nil {
 		size, err := strconv.ParseUint(match[1], 10, 0)

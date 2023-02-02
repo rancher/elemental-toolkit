@@ -327,11 +327,12 @@ type PartitionList []*Partition
 // is managed as an image.
 func (p Partition) ToImage() *Image {
 	return &Image{
-		File:   p.Path,
-		Label:  p.FilesystemLabel,
-		Size:   p.Size,
-		FS:     p.FS,
-		Source: NewEmptySrc(),
+		File:       p.Path,
+		Label:      p.FilesystemLabel,
+		Size:       p.Size,
+		FS:         p.FS,
+		Source:     NewEmptySrc(),
+		MountPoint: p.MountPoint,
 	}
 }
 
@@ -610,6 +611,7 @@ type Disk struct {
 	Size         uint                `yaml:"size,omitempty" mapstructure:"partitions"`
 	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
 	RecoveryOnly bool                `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
+	NoMounts     bool                `yaml:"no-mounts,omitempty" mapstructure:"no-mounts"`
 	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	Passive      Image
@@ -639,9 +641,30 @@ func (d *Disk) Sanitize() error {
 		d.Recovery.Label = ""
 	}
 
-	// TODO verify disk type
+	// The disk size is enough for all partitions
+	minSize := d.MinDiskSize()
+	if d.Size != 0 && !d.RecoveryOnly && d.Size <= minSize {
+		return fmt.Errorf("Requested disk size (%dMB) is not enough, it should be, at least, of %d", d.Size, minSize)
+	}
 
 	return nil
+}
+
+// minDiskSize counts the minimum size (MB) required for the disk given the partitions setup
+func (d *Disk) MinDiskSize() uint {
+	var minDiskSize uint
+
+	// First partition is aligned at the first 1MB and the last one ends at -1MB
+	minDiskSize = 2
+	for _, part := range d.Partitions.PartitionsByInstallOrder(PartitionList{}) {
+		if part.Size == 0 {
+			minDiskSize += constants.MinPartSize
+		} else {
+			minDiskSize += part.Size
+		}
+	}
+
+	return minDiskSize
 }
 
 // InstallState tracks the installation data of the whole system

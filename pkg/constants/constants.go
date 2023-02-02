@@ -50,8 +50,9 @@ const (
 	SquashFs           = "squashfs"
 	EfiFs              = "vfat"
 	BiosFs             = ""
-	EfiSize            = uint(64)
-	OEMSize            = uint(64)
+	MinPartSize        = uint(64)
+	EfiSize            = MinPartSize
+	OEMSize            = MinPartSize
 	StateSize          = uint(8192)
 	RecoverySize       = uint(4096)
 	PersistentSize     = uint(0)
@@ -88,7 +89,7 @@ const (
 	RecoveryImgFile   = "recovery.img"
 	TransitionImgFile = "transition.img"
 
-	// Yip stages evaluated on reset/upgrade/install action
+	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"
 	AfterInstallHook       = "after-install"
 	PostInstallHook        = "post-install"
@@ -101,6 +102,10 @@ const (
 	AfterUpgradeHook       = "after-upgrade"
 	PostUpgradeHook        = "post-upgrade"
 	BeforeUpgradeHook      = "before-upgrade"
+	AfterDiskChrootHook    = "after-disk-chroot"
+	AfterDiskHook          = "after-disk"
+	PostDiskHook           = "post-disk"
+	BeforeDiskHook         = "before-disk"
 
 	// SELinux targeted policy paths
 	SELinuxTargetedPath        = "/etc/selinux/targeted"
