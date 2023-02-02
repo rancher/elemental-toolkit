@@ -1020,16 +1020,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("CommandExists", Label("CommandExists"), func() {
-		It("returns false if command does not exists", func() {
-			exists := utils.CommandExists("THISCOMMANDSHOULDNOTBETHERECOMEON")
-			Expect(exists).To(BeFalse())
-		})
-		It("returns true if command exists", func() {
-			exists := utils.CommandExists("true")
-			Expect(exists).To(BeTrue())
-		})
-	})
 	Describe("LoadEnvFile", Label("LoadEnvFile"), func() {
 		BeforeEach(func() {
 			fs.Mkdir("/etc", constants.DirPerm)

@@ -18,6 +18,7 @@ package v1_test
 
 import (
 	"bytes"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
@@ -52,13 +53,30 @@ var _ = Describe("Runner", Label("types", "runner"), func() {
 	})
 
 	It("logs the command when on debug", func() {
-
 		memLog := &bytes.Buffer{}
 		logger := v1.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		r := v1.RealRunner{Logger: logger}
-		_, err := r.Run("command", "with", "args")
-		Expect(err).ToNot(BeNil()) // Command will fail
-		Expect(memLog.String()).To(ContainSubstring("command with args"))
+		_, err := r.Run("echo", "-n", "Some message")
+		Expect(err).To(BeNil())
+		Expect(memLog.String()).To(ContainSubstring("echo -n Some message"))
+	})
+	It("logs when command is not found", func() {
+		memLog := &bytes.Buffer{}
+		logger := v1.NewBufferLogger(memLog)
+		r := v1.RealRunner{Logger: logger}
+		_, err := r.Run("IAmMissing")
+		Expect(err).NotTo(BeNil())
+		Expect(memLog.String()).To(ContainSubstring("not found"))
+	})
+	It("returns false if command does not exists", func() {
+		r := v1.RealRunner{}
+		exists := r.CommandExists("THISCOMMANDSHOULDNOTBETHERECOMEON")
+		Expect(exists).To(BeFalse())
+	})
+	It("returns true if command exists", func() {
+		r := v1.RealRunner{}
+		exists := r.CommandExists("true")
+		Expect(exists).To(BeTrue())
 	})
 })

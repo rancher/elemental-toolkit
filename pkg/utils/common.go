@@ -26,7 +26,6 @@ import (
 	random "math/rand"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -40,11 +39,6 @@ import (
 	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
-
-func CommandExists(command string) bool {
-	_, err := exec.LookPath(command)
-	return err == nil
-}
 
 // BootedFrom will check if we are booting from the given label
 func BootedFrom(runner v1.Runner, label string) bool {

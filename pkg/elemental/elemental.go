@@ -494,7 +494,7 @@ func (e *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
 	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(e.config.Fs, contextFile)
 
-	if err == nil && contextExists && utils.CommandExists("setfiles") {
+	if err == nil && contextExists && e.config.Runner.CommandExists("setfiles") {
 		var out []byte
 		var err error
 		if rootDir == "/" || rootDir == "" {
