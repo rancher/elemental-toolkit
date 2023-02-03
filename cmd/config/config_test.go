@@ -205,8 +205,7 @@ var _ = Describe("Config", Label("config"), func() {
 			// Flags overwrite the cosign-key set in config
 			Expect(cfg.CosignPubKey == "someOtherKey").To(BeTrue())
 			// Config.d overwrites the main config.yaml
-			Expect(len(cfg.CloudInitPaths) == 1).To(BeTrue())
-			Expect(cfg.CloudInitPaths[0] == "some/other/path").To(BeTrue())
+			Expect(cfg.CloudInitPaths).To(Equal(append(constants.GetCloudInitPaths(), "some/other/path")))
 			Expect(len(cfg.Repos)).To(Equal(1))
 			Expect(cfg.Repos[0].Name == "testrepo").To(BeTrue())
 		})

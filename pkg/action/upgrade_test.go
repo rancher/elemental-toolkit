@@ -69,6 +69,7 @@ var _ = Describe("Runtime Actions", func() {
 			conf.WithClient(client),
 			conf.WithCloudInitRunner(cloudInit),
 		)
+		Expect(config.Sanitize()).To(Succeed())
 	})
 
 	AfterEach(func() { cleanup() })

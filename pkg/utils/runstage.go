@@ -22,7 +22,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"gopkg.in/yaml.v3"
 )
@@ -60,7 +59,6 @@ func checkYAMLError(cfg *v1.Config, allErrors, err error) error {
 func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...string) error {
 	var allErrors error
 
-	cloudInitPaths = append(constants.GetCloudInitPaths(), cloudInitPaths...)
 	cfg.Logger.Debugf("Cloud-init paths set to %v", cloudInitPaths)
 
 	stageBefore := fmt.Sprintf("%s.before", stage)
@@ -84,10 +82,12 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 	}
 
 	// Run all stages for each of the default cloud config paths + extra cloud config paths
-	for _, s := range []string{stageBefore, stage, stageAfter} {
-		err = cfg.CloudInitRunner.Run(s, filterNonExistingLocalURIs(cfg, cloudInitPaths...)...)
-		if err != nil {
-			allErrors = multierror.Append(allErrors, err)
+	if len(cloudInitPaths) > 0 {
+		for _, s := range []string{stageBefore, stage, stageAfter} {
+			err = cfg.CloudInitRunner.Run(s, filterNonExistingLocalURIs(cfg, cloudInitPaths...)...)
+			if err != nil {
+				allErrors = multierror.Append(allErrors, err)
+			}
 		}
 	}
 

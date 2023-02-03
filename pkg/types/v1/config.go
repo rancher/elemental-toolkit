@@ -56,6 +56,8 @@ type Config struct {
 	Arch                      string       `yaml:"arch,omitempty" mapstructure:"arch"`
 	SquashFsCompressionConfig []string     `yaml:"squash-compression,omitempty" mapstructure:"squash-compression"`
 	SquashFsNoCompression     bool         `yaml:"squash-no-compression,omitempty" mapstructure:"squash-no-compression"`
+	CloudInitPaths            []string     `yaml:"cloud-init-paths,omitempty" mapstructure:"cloud-init-paths"`
+	Strict                    bool         `yaml:"strict,omitempty" mapstructure:"strict"`
 }
 
 // WriteInstallState writes the state.yaml file to the given state and recovery paths
@@ -113,11 +115,9 @@ func (c *Config) Sanitize() error {
 }
 
 type RunConfig struct {
-	Strict         bool     `yaml:"strict,omitempty" mapstructure:"strict"`
-	Reboot         bool     `yaml:"reboot,omitempty" mapstructure:"reboot"`
-	PowerOff       bool     `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
-	CloudInitPaths []string `yaml:"cloud-init-paths,omitempty" mapstructure:"cloud-init-paths"`
-	EjectCD        bool     `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
+	Reboot   bool `yaml:"reboot,omitempty" mapstructure:"reboot"`
+	PowerOff bool `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
+	EjectCD  bool `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
 
 	// 'inline' and 'squash' labels ensure config fields
 	// are embedded from a yaml and map PoV
@@ -127,6 +127,8 @@ type RunConfig struct {
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (r *RunConfig) Sanitize() error {
+	// Always include default cloud-init paths
+	r.CloudInitPaths = append(constants.GetCloudInitPaths(), r.CloudInitPaths...)
 	return r.Config.Sanitize()
 }
 
