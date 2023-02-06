@@ -7,6 +7,7 @@
 
 function getOverlayMountpoints {
     local mountpoints
+    local path
 
     for path in "${rw_paths[@]}"; do
         if ! hasMountpoint "${path}" "${cos_mounts[@]}"; then
@@ -19,6 +20,7 @@ function getOverlayMountpoints {
 function getStateMountpoints {
     local mountpoints=$1
     local state_mounts
+    local path
 
     for path in "${state_paths[@]}"; do
         if ! hasMountpoint "${path}" "${mountpoints}"; then
@@ -32,6 +34,7 @@ function hasMountpoint {
     local path=$1
     shift
     local mounts=("$@")
+    local mount
     
     for mount in "${mounts[@]}"; do
         if [ "${path}" = "${mount#*:}" ]; then
@@ -70,6 +73,7 @@ function parseCOSMount {
 }
 
 function readCOSLayoutConfig {
+    local mount
     local mounts=()
     : "${MERGE:=true}"
 
@@ -117,6 +121,7 @@ function readCOSLayoutConfig {
 }
 
 function getCOSMounts {
+    local mount
     local mounts
 
     for mount in "${cos_mounts[@]}"; do
@@ -232,6 +237,7 @@ declare fstab
 declare state_paths
 declare state_bind
 declare state_target
+declare mount
 
 readCOSLayoutConfig
 
