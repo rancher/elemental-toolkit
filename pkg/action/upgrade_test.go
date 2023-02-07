@@ -19,20 +19,23 @@ package action_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	"github.com/rancher/elemental-cli/pkg/action"
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/sirupsen/logrus"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 )
 
 var _ = Describe("Runtime Actions", func() {
@@ -170,6 +173,14 @@ var _ = Describe("Runtime Actions", func() {
 						_ = fs.WriteFile(activeImg, source, constants.FilePerm)
 						_ = fs.RemoveAll(spec.Active.File)
 					}
+					if command == "grub2-editenv" && args[1] == "set" {
+						f, err := fs.OpenFile(args[0], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+						Expect(err).To(BeNil())
+
+						_, err = f.Write([]byte(fmt.Sprintf("%s\n", args[2])))
+						Expect(err).To(BeNil())
+					}
+
 					return []byte{}, nil
 				}
 				config.Runner = runner
@@ -274,6 +285,74 @@ var _ = Describe("Runtime Actions", func() {
 					state.Partitions[constants.StatePartName].
 						Images[constants.PassiveImgName].Label).
 					To(Equal("CUSTOM_PASSIVE_LABEL"))
+			})
+			It("Writes filesystem labels to GRUB oem env file", Label("grub"), func() {
+				statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
+				installState := &v1.InstallState{
+					Partitions: map[string]*v1.PartitionState{
+						constants.RecoveryPartName: {
+							FSLabel: "COS_RECOVERY",
+							Images: map[string]*v1.ImageState{
+								constants.RecoveryImgName: {
+									Label: "CUSTOM_RECOVERYIMG_LABEL",
+									FS:    constants.LinuxImgFs,
+								},
+							},
+						},
+						constants.StatePartName: {
+							FSLabel: "COS_STATE",
+							Images: map[string]*v1.ImageState{
+								constants.ActiveImgName: {
+									Label: "CUSTOM_ACTIVE_LABEL",
+									FS:    constants.LinuxImgFs,
+								},
+								constants.PassiveImgName: {
+									Label: "CUSTOM_PASSIVE_LABEL",
+									FS:    constants.LinuxImgFs,
+								},
+							},
+						},
+					},
+				}
+
+				err = config.WriteInstallState(installState, statePath, statePath)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				spec, err = conf.NewUpgradeSpec(config.Config)
+				spec.Active.Source = v1.NewDockerSrc("alpine")
+				upgrade = action.NewUpgradeAction(config, spec)
+				err := upgrade.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				actualBytes, err := fs.ReadFile(filepath.Join(constants.RunningStateDir, "grub_oem_env"))
+				Expect(err).To(BeNil())
+
+				expected := map[string]string{
+					"state_label":        "COS_STATE",
+					"active_label":       "CUSTOM_ACTIVE_LABEL",
+					"passive_label":      "CUSTOM_PASSIVE_LABEL",
+					"recovery_label":     "COS_RECOVERY",
+					"system_label":       "CUSTOM_RECOVERYIMG_LABEL",
+					"oem_label":          "COS_OEM",
+					"persistent_label":   "COS_PERSISTENT",
+					"default_menu_entry": "TESTOS",
+				}
+
+				lines := strings.Split(string(actualBytes), "\n")
+
+				By(string(actualBytes))
+
+				Expect(len(lines)).To(Equal(len(expected)))
+
+				for _, line := range lines {
+					if line == "" {
+						continue
+					}
+
+					split := strings.SplitN(line, "=", 2)
+
+					Expect(split[1]).To(Equal(expected[split[0]]))
+				}
 			})
 			It("Successfully reboots after upgrade from docker image", Label("docker"), func() {
 				spec.Active.Source = v1.NewDockerSrc("alpine")

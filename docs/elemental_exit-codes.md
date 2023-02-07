@@ -71,4 +71,5 @@
 | 75 | Error occurred while preparing the image root tree|
 | 76 | Error occurred while creating the OS filesystem image|
 | 77 | Error occurred while copying the filesystem image and setting new labels|
+| 78 | Error setting persistent GRUB variables|
 | 255 | Unknown error|

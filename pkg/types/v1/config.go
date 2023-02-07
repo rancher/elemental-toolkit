@@ -369,7 +369,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	ep.OEM = pl.GetByNameOrLabel(constants.OEMPartName, lm[constants.OEMPartName])
 	ep.Recovery = pl.GetByNameOrLabel(constants.RecoveryPartName, lm[constants.RecoveryPartName])
 	ep.State = pl.GetByNameOrLabel(constants.StatePartName, lm[constants.StatePartName])
-	ep.Persistent = pl.GetByNameOrLabel(constants.PersistentPartName, lm[constants.PersistentLabel])
+	ep.Persistent = pl.GetByNameOrLabel(constants.PersistentPartName, lm[constants.PersistentPartName])
 
 	return ep
 }

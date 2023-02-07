@@ -20,20 +20,23 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	"github.com/rancher/elemental-cli/pkg/action"
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 )
 
 const printOutput = `BYT;
@@ -132,6 +135,16 @@ var _ = Describe("Install action tests", func() {
 				case "cat":
 					if args[0] == "/proc/cmdline" {
 						return cmdline()
+					}
+					return []byte{}, nil
+				case "grub2-editenv":
+					if args[1] == "set" {
+						f, err := fs.OpenFile(args[0], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+						Expect(err).To(BeNil())
+
+						_, err = f.Write([]byte(fmt.Sprintf("%s\n", args[2])))
+						Expect(err).To(BeNil())
 					}
 					return []byte{}, nil
 				default:
@@ -263,6 +276,41 @@ var _ = Describe("Install action tests", func() {
 			config.Luet = luet
 			Expect(installer.Run()).To(BeNil())
 			Expect(luet.UnpackCalled()).To(BeTrue())
+		})
+
+		It("Successfully sets GRUB labels", Label("grub"), func() {
+			spec.Target = device
+			Expect(installer.Run()).To(BeNil())
+
+			grubOemEnvPath := filepath.Join(constants.StateDir, "grub_oem_env")
+			Expect(utils.Exists(fs, grubOemEnvPath)).To(BeTrue())
+
+			actualBytes, err := fs.ReadFile(filepath.Join(constants.StateDir, "grub_oem_env"))
+			Expect(err).To(BeNil())
+
+			expected := map[string]string{
+				"state_label":      "COS_STATE",
+				"active_label":     "COS_ACTIVE",
+				"passive_label":    "COS_PASSIVE",
+				"recovery_label":   "COS_RECOVERY",
+				"system_label":     "COS_SYSTEM",
+				"oem_label":        "COS_OEM",
+				"persistent_label": "COS_PERSISTENT",
+			}
+
+			lines := strings.Split(string(actualBytes), "\n")
+
+			Expect(len(lines) - 1).To(Equal(len(expected)))
+
+			for _, line := range lines {
+				if line == "" {
+					continue
+				}
+
+				split := strings.SplitN(line, "=", 2)
+
+				Expect(split[1]).To(Equal(expected[split[0]]))
+			}
 		})
 
 		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {

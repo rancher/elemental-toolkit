@@ -232,5 +232,8 @@ const CreateImgFromTree = 76
 // Error occurred while copying the filesystem image and setting new labels
 const CopyFileImg = 77
 
+// Error setting persistent GRUB variables
+const SetGrubVariables = 78
+
 // Unknown error
 const Unknown int = 255

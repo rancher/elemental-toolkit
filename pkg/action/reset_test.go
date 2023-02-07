@@ -19,19 +19,23 @@ package action_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	"github.com/rancher/elemental-cli/pkg/action"
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 )
 
 var _ = Describe("Reset action tests", func() {
@@ -151,6 +155,13 @@ var _ = Describe("Reset action tests", func() {
 				if cmdFail == cmd {
 					return []byte{}, errors.New("Command failed")
 				}
+				if cmd == "grub2-editenv" && args[1] == "set" {
+					f, err := fs.OpenFile(args[0], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+					Expect(err).To(BeNil())
+
+					_, err = f.Write([]byte(fmt.Sprintf("%s\n", args[2])))
+					Expect(err).To(BeNil())
+				}
 				return []byte{}, nil
 			}
 			reset = action.NewResetAction(config, spec)
@@ -181,6 +192,39 @@ var _ = Describe("Reset action tests", func() {
 		It("Successfully resets despite having errors on hooks", func() {
 			cloudInit.Error = true
 			Expect(reset.Run()).To(BeNil())
+		})
+		It("Successfully writes GRUB labels to oem_env file", func() {
+			Expect(reset.Run()).To(BeNil())
+
+			actualBytes, err := fs.ReadFile(filepath.Join(constants.StateDir, "grub_oem_env"))
+			Expect(err).To(BeNil())
+
+			expected := map[string]string{
+				"state_label":        "COS_STATE",
+				"active_label":       "COS_ACTIVE",
+				"passive_label":      "COS_PASSIVE",
+				"recovery_label":     "COS_RECOVERY",
+				"system_label":       "COS_SYSTEM",
+				"oem_label":          "COS_OEM",
+				"persistent_label":   "COS_PERSISTENT",
+				"default_menu_entry": "cOS",
+			}
+
+			lines := strings.Split(string(actualBytes), "\n")
+
+			By(string(actualBytes))
+
+			Expect(len(lines)).To(Equal(len(expected)))
+
+			for _, line := range lines {
+				if line == "" {
+					continue
+				}
+
+				split := strings.SplitN(line, "=", 2)
+
+				Expect(split[1]).To(Equal(expected[split[0]]))
+			}
 		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
 			spec.Active.Source = v1.NewDockerSrc("my/image:latest")

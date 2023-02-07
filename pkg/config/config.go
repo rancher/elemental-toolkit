@@ -274,7 +274,7 @@ func NewInstallElementalParitions() v1.ElementalPartitions {
 func getActivePassiveAndRecoveryState(state *v1.InstallState) (active, passive, recovery *v1.ImageState) {
 	recovery = &v1.ImageState{
 		FS:    constants.LinuxImgFs,
-		Label: constants.RecoveryLabel,
+		Label: constants.SystemLabel,
 	}
 	passive = &v1.ImageState{
 		FS:    constants.LinuxImgFs,
