@@ -65,7 +65,6 @@ Requires:       elemental-init-recovery = %{version}-%{release}
 Requires:       elemental-init-live = %{version}-%{release}
 Requires:       elemental-init-boot-assessment = %{version}-%{release}
 Requires:       elemental-init-services = %{version}-%{release}
-Requires:       elemental-upgrade-hooks = %{version}-%{release}
 
 %description -n elemental-init-config
 Provides Elemental default initialization configuration files
