@@ -7,9 +7,19 @@
 # copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
 name: "Adapt grub2 configuration on updates"
 stages:
-  after-install:
+  after-upgrade-chroot:
+    - &installhook
+      name: "Install grub updater in OEM"
+      commands:
+      - |
+        hook="/system/oem/01_upgrade_grub_hook.yaml"
+
+        if mountpoint -q /oem; then
+          [ -f "${hook}" ] || exit 0
+          cp "${hook}" /oem
+        fi
+  after-upgrade:
     - &grubenv
-      # TODO this should be part of the elemental install command
       name: "Set grub env variables"
       commands:
       - |
@@ -24,20 +34,6 @@ stages:
         grub2-editenv ${statemnt}/grub_oem_env set recovery_label=COS_RECOVERY
         grub2-editenv ${statemnt}/grub_oem_env set system_label=COS_SYSTEM
         grub2-editenv ${statemnt}/grub_oem_env set oem_label=COS_OEM
-  after-upgrade-chroot:
-    - &installhook
-      name: "Install grub updater in OEM"
-      commands:
-      - |
-        hook="/system/oem/01_upgrade_grub_hook.yaml"
-
-        if mountpoint -q /oem; then
-          [ -f "${hook}" ] || exit 0
-          cp "${hook}" /oem
-        fi
-  after-upgrade:
-    # TODO labels should be parsed from state.yaml
-    - <<: *grubenv
   after-upgrade.after:
     - &uninstallhook
       if: '[ -f "/oem/01_upgrade_grub_hook.yaml" ]'
@@ -48,7 +44,6 @@ stages:
   after-reset-chroot:
     - <<: *installhook
   after-reset:
-    # TODO labels should be parsed from state.yaml
     - <<: *grubenv
   after-reset.after:
     - <<: *uninstallhook
