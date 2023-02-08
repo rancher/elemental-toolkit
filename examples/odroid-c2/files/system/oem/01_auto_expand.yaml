@@ -1,9 +1,0 @@
-name: "Expand COS_PERSISTENT"
-stages:
-   rootfs:
-     - name: "Expand persistent partition"
-       layout:
-         device:
-           label: "COS_PERSISTENT"
-         expand_partition:
-           size: 0
