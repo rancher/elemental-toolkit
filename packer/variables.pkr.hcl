@@ -1,5 +1,5 @@
 variable "firmware" {
-  default = ""
+  default = "/usr/share/qemu/ovmf-x86_64-ms.bin"
 }
 
 variable "accelerator" {
@@ -246,7 +246,7 @@ variable "iso" {
 
 variable "memory" {
   type    = string
-  default = "8192"
+  default = "2048"
 }
 
 variable "root_password" {

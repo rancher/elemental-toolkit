@@ -18,6 +18,8 @@ RUN zypper --non-interactive install -- \
   haveged \
   systemd \
   NetworkManager \
+  openssh-server \
+  openssh-clients \
   timezone \
   parted \
   e2fsprogs \
@@ -51,6 +53,9 @@ RUN systemctl enable cos-setup-rootfs.service && \
     systemctl enable cos-setup-fs.service && \
     systemctl enable cos-setup-boot.service && \
     systemctl enable cos-setup-network.service
+
+# Enable essential services
+RUN systemctl enable NetworkManager.service
 
 # Recreate the initrd according to the elemental config and modules
 RUN mkinitrd
