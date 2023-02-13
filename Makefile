@@ -37,7 +37,7 @@ ifeq ("$(PACKER)","")
 PACKER="/usr/bin/packer"
 endif
 
-BOXFILE=$(shell ls $(ROOT_DIR)/packer/*$(ARCH).box 2> /dev/null)
+BOXFILE=$(shell ls $(ROOT_DIR)/packer/*.box 2> /dev/null)
 ifeq ("$(BOXFILE)","")
 BOXFILE="$(ROOT_DIR)/packer/cOS.box"
 endif
@@ -45,6 +45,15 @@ endif
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 
 PACKER_TARGET?=qemu.cos
+
+ARCH?=x86_64
+GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
+
+ifeq ($(strip $(ARCH)), x86_64)
+VMNAME=cos
+else
+VMNAME=cos-arm64
+endif
 
 #
 # target 'packer' creates a compressed tarball with an 'ova' file
@@ -76,3 +85,6 @@ prepare-test: $(VAGRANT) $(BOXFILE)
 test-clean:
 	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
 	(vagrant box remove cos) 2> /dev/null || true
+
+test-smoke: 
+	$(ROOT_DIR)/scripts/run_test.sh $(GINKGO_ARGS) ./smoke
