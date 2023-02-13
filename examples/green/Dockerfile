@@ -35,6 +35,7 @@ RUN zypper --non-interactive install -- \
   vim \
   which \
   less \
+  sudo \
   sed
 
 # Create non FHS paths
@@ -56,6 +57,9 @@ RUN systemctl enable cos-setup-rootfs.service && \
 
 # Enable essential services
 RUN systemctl enable NetworkManager.service
+
+# Enable /tmp to be on tmpfs
+RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Recreate the initrd according to the elemental config and modules
 RUN mkinitrd

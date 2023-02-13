@@ -16,6 +16,7 @@ stages:
             password: ""
        commands:
        - mkdir -p /run/tmp/vagrant
+       - echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
      - name: "Setup pubkey"
        authorized_keys:
         vagrant: 
