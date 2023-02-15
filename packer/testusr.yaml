@@ -5,19 +5,19 @@ stages:
        - path: /etc/passwd
          entity: |
             kind: "user"
-            username: "vagrant"
+            username: "testusr"
             password: "x"
-            homedir: "/run/tmp/vagrant"
+            homedir: "/run/tmp/testusr"
             shell: "/bin/bash"
        - path: /etc/shadow
          entity: |
             kind: "shadow"
-            username: "vagrant"
+            username: "testusr"
             password: ""
        commands:
-       - mkdir -p /run/tmp/vagrant
-       - echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
+       - mkdir -p /run/tmp/testusr
+       - echo "testusr ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/testusr
      - name: "Setup pubkey"
        authorized_keys:
-        vagrant: 
-        - https://raw.githubusercontent.com/hashicorp/vagrant/main/keys/vagrant.pub
+        testusr: 
+        - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH0dshOQKCrF/dBENx+24UtIJ8S0sZgbu02LBrJsK5gx" 

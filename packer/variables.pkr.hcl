@@ -236,7 +236,7 @@ variable "feature" {
 
 variable "flavor" {
   type    = string
-  default = "teal"
+  default = "undefined"
 }
 
 variable "iso" {

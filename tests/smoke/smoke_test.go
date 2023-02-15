@@ -84,9 +84,9 @@ var _ = Describe("cOS Smoke tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("uri: channel:system/cos"))
 
-			out, err = s.Command("source /etc/os-release && echo $PRETTY_NAME")
+			out, err = s.Command("source /etc/os-release && echo $GRUB_ENTRY_NAME")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("cOS"))
+			Expect(out).Should(ContainSubstring("Elemental"))
 		})
 
 		It("has default date in UTC format from cloud-init", func() {
