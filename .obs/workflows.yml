@@ -18,9 +18,6 @@ tag_workflow:
         project: isv:Rancher:Elemental:Dev
         package: elemental-toolkit
   filters:
-    branches:
-      only:
-        - main
     event: tag_push
 
 pr_workflow:
