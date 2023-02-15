@@ -3,6 +3,23 @@
 #
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+PACKER?=$(shell which packer 2> /dev/null)
+ifeq ("$(PACKER)","")
+PACKER="/usr/bin/packer"
+endif
+
+QCOW2=$(shell ls $(ROOT_DIR)/packer/build/*.qcow2 2> /dev/null)
+ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
+PACKER_TARGET?=qemu.cos
+FLAVOR?=green
+ARCH?=x86_64
+GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
+VERSION?=$(shell git describe --tags)
+ifeq ("$(PACKER)","")
+VERSION="latest"
+endif
+REPO?=local/elemental-$(FLAVOR)
+
 .PHONY: build
 build:
 	docker build toolkit -t local/elemental-toolkit
@@ -10,81 +27,53 @@ build:
 # TODO requires local/elemental-cli to be built, we should find
 # a way to build it here, I guess elemetal-toolkit and elemental-cli repos
 # should be merged.
-.PHONY: build-green
-build-green: build
-	docker build examples/green -t local/elemental-green
+.PHONY: build-example-os
+build-example-os: build
+	docker build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 # TODO requires local/elemental-cli to be built, we should find
 # a way to build it here, I guess elemetal-toolkit and elemental-cli repos
 # should be merged.
-.PHONY: build-green-iso
-build-green-iso: build-green
-	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build local/elemental-cli --debug build-iso --bootloader-in-rootfs -n elemental-green --date --local --squash-no-compression -o /build local/elemental-green 
+.PHONY: build-example-iso
+build-example-iso: build-example-os
+	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build local/elemental-cli --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) --date --local --squash-no-compression -o /build $(REPO):$(VERSION)
 
+.PHONY: clean-iso
+clean-iso:
+	docker run --rm -ti -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash local/elemental-cli -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
-VAGRANT?=$(shell which vagrant 2> /dev/null)
-ifeq ("$(VAGRANT)","")
-VAGRANT="/usr/bin/vagrant"
-endif
-
-VBOXMANAGE?=$(shell which VBoxManage 2> /dev/null)
-ifeq ("$(VBOXMANAGE)","")
-VBOXMANAGE="/usr/bin/VBoxManage"
-endif
-
-PACKER?=$(shell which packer 2> /dev/null)
-ifeq ("$(PACKER)","")
-PACKER="/usr/bin/packer"
-endif
-
-BOXFILE=$(shell ls $(ROOT_DIR)/packer/*.box 2> /dev/null)
-ifeq ("$(BOXFILE)","")
-BOXFILE="$(ROOT_DIR)/packer/cOS.box"
-endif
-
-ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
-
-PACKER_TARGET?=qemu.cos
-
-ARCH?=x86_64
-GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
-
-ifeq ($(strip $(ARCH)), x86_64)
-VMNAME=cos
-else
-VMNAME=cos-arm64
-endif
-
-#
-# target 'packer' creates a compressed tarball with an 'ova' file
-#
 .PHONY: packer
-packer: $(BOXFILE)
-
-.PHONY: packer-clean
-packer-clean:
-	rm -rf $(BOXFILE)
-
-$(BOXFILE): $(PACKER)
+packer:
 ifeq ("$(PACKER)","/usr/sbin/packer")
 	@echo "The 'packer' binary at $(PACKER) might be from cracklib"
 	@echo "Please set PACKER to the correct binary before calling make"
 	@exit 1
 endif
-	export PKR_VAR_iso=$(ISO) && cd $(ROOT_DIR)/packer && $(PACKER) build -only $(PACKER_TARGET) .
+ifeq ("$(ISO)","")
+	@echo "No ISO image found"
+	@exit 1
+endif
+	export PKR_VAR_iso=$(ISO) && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && $(PACKER) build -only $(PACKER_TARGET) .
 
-vagrantfile: $(ROOT_DIR)/tests/Vagrantfile $(VAGRANT)
+.PHONY: packer-clean
+packer-clean:
+	rm -rf $(ROOT_DIR)/packer/build
 
-$(ROOT_DIR)/tests/Vagrantfile: $(VAGRANT)
-	cd $(ROOT_DIR)/tests && vagrant init cos
+.PHONY: prepare-test
+prepare-test:
+ifeq ("$(QCOW2)","")
+	@echo "No qcow2 disk found, run make packer first"
+	@exit 1
+endif
+	@scripts/run_vm.sh start $(QCOW2)
+	@echo "VM started from $(QCOW2)"
 
-prepare-test: $(VAGRANT) $(BOXFILE)
-	vagrant box add --force cos $(BOXFILE)
-	cd $(ROOT_DIR)/tests && vagrant up $(VMNAME) || true
-
+# TODO this target is leaving behind the machine base disk in libvirt storage, we should either delete it
+# or make user it gets overwritten on every 'vagrant box add --force cos'
 test-clean:
-	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
-	(vagrant box remove cos) 2> /dev/null || true
+	@scripts/run_vm.sh stop
+	@scripts/run_vm.sh clean
 
-test-smoke: 
-	$(ROOT_DIR)/scripts/run_test.sh $(GINKGO_ARGS) ./smoke
+test-smoke: prepare-test
+	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
+

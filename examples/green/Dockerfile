@@ -6,6 +6,9 @@ FROM local/elemental-toolkit as TOOLKIT
 
 # OS base image of our choice
 FROM opensuse/leap:15.4 as OS
+ARG REPO
+ARG VERSION
+ENV VERSION=${VERSION}
 
 # install kernel, systemd, dracut, grub2 and other basic tools
 RUN zypper --non-interactive install -- \
@@ -63,6 +66,13 @@ RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Recreate the initrd according to the elemental config and modules
 RUN mkinitrd
+
+# Update os-release file with some metadata
+RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
+    echo IMAGE_TAG=\"${VERSION}\"           >> /etc/os-release && \
+    echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
+    echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release
+RUN echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
 
 # Good for validation after the build
 CMD /bin/bash

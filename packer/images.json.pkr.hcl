@@ -94,12 +94,13 @@ source "qemu" "cos" {
   headless               = true
   iso_checksum           = "none"
   iso_url                = "${var.iso}"
+  output_directory       = "build"
   shutdown_command       = "shutdown -hP now"
   ssh_handshake_attempts = "20"
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
-  vm_name                = "cOS"
+  vm_name                = "elemental-${var.flavor}-disk-example-x86_64.qcow2"
   qemuargs               = [
     ["-serial", "file:serial.log"],
   ]
@@ -161,7 +162,7 @@ source "virtualbox-iso" "cos" {
 }
 
 build {
-  description = "cOS"
+  description = "elemental"
 
   sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
 
@@ -191,15 +192,13 @@ build {
 
   provisioner "file" {
     except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
-    destination = "/vagrant.yaml"
-    source      = "vagrant.yaml"
+    destination = "/testusr.yaml"
+    source      = "testusr.yaml"
   }
 
   provisioner "shell" {
     except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
-    inline = ["INTERACTIVE=false elemental install --debug --cloud-init /90_custom.yaml,/vagrant.yaml /dev/sda",
-      "if [ -n \"${var.feature}\" ]; then mount /dev/disk/by-label/COS_OEM /oem; cos-feature enable ${var.feature}; fi"
-    ]
+    inline = ["elemental install --debug --cloud-init /90_custom.yaml,/testusr.yaml /dev/sda"]
     pause_after = "30s"
   }
 
@@ -228,15 +227,5 @@ build {
       "sync"
     ]
     pause_after = "30s"
-  }
-
-  post-processor "vagrant" {
-    only   = ["virtualbox-iso.cos", "virtualbox-iso.cos-squashfs"]
-    output = "cOS-Packer-${var.flavor}-${var.build}-vbox-${var.arch}.box"
-  }
-
-  post-processor "vagrant" {
-    only   = ["qemu.cos", "qemu.cos-arm64", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
-    output = "cOS-Packer-${var.flavor}-${var.build}-QEMU-${var.arch}.box"
   }
 }
