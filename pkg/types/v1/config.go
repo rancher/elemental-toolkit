@@ -200,6 +200,11 @@ func (i *InstallSpec) Sanitize() error {
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
 
+type InitSpec struct {
+	RunMkinitrd bool `yaml:"mkinitrd,omitempty" mapstructure:"mkinitrd"`
+	Force       bool `yaml:"force,omitempty" mapstructure:"force"`
+}
+
 // ResetSpec struct represents all the reset action details
 type ResetSpec struct {
 	FormatPersistent bool `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`

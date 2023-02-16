@@ -1,0 +1,10 @@
+[Unit]
+Description=Elemental setup reconciler
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=60min
+Unit=elemental-setup-reconcile.service
+
+[Install]
+WantedBy=multi-user.target

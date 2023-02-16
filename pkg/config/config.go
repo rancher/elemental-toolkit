@@ -212,6 +212,14 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	}
 }
 
+// NewInitSpec returns an InitSpec struct all based on defaults
+func NewInitSpec(cfg v1.Config) *v1.InitSpec {
+	return &v1.InitSpec{
+		RunMkinitrd: true,
+		Force:       false,
+	}
+}
+
 func NewInstallElementalParitions() v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 	partitions.OEM = &v1.Partition{
