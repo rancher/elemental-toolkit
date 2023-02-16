@@ -1,6 +1,7 @@
 [Unit]
 Description=cOS setup after network
 After=network-online.target
+Wants=network-online.target
 
 [Service]
 Nice=19
