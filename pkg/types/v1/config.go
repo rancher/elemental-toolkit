@@ -165,11 +165,7 @@ func (i *InstallSpec) Sanitize() error {
 	if i.Partitions.Recovery != nil && i.Partitions.Recovery.MountPoint != "" {
 		recoveryMnt = i.Partitions.Recovery.MountPoint
 	}
-	if i.Recovery.FS == constants.SquashFs {
-		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoverySquashFile)
-	} else {
-		i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoveryImgFile)
-	}
+	i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoveryImgFile)
 
 	// Check for extra partitions having set its size to 0
 	extraPartsSizeCheck := 0

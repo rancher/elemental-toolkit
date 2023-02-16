@@ -84,12 +84,10 @@ const (
 	LiveDir     = "/run/initramfs/live"
 
 	// Image file names
-	RecoverySquashFile   = "recovery.squashfs"
-	ActiveImgFile        = "active.img"
-	PassiveImgFile       = "passive.img"
-	RecoveryImgFile      = "recovery.img"
-	TransitionImgFile    = "transition.img"
-	TransitionSquashFile = "transition.squashfs"
+	ActiveImgFile     = "active.img"
+	PassiveImgFile    = "passive.img"
+	RecoveryImgFile   = "recovery.img"
+	TransitionImgFile = "transition.img"
 
 	// Yip stages evaluated on reset/upgrade/install action
 	AfterInstallChrootHook = "after-install-chroot"

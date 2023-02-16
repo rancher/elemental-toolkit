@@ -527,79 +527,52 @@ func (e *Elemental) CheckActiveDeployment(labels []string) bool {
 	return false
 }
 
-// GetIso will try to:
-// download the iso into a temporary folder and mount the iso file as loop
-// in cnst.DownloadedIsoMnt
-func (e *Elemental) GetIso(iso string) (tmpDir string, err error) {
-	//TODO support ISO download in persistent storage?
-	tmpDir, err = utils.TempDir(e.config.Fs, "", "elemental")
+// UpdateSourceISO downloads an ISO in a temporary folder, mounts it and updates active image to use the ISO squashfs image as
+// source. Returns a cleaner method to unmount and remove the temporary folder afterwards.
+func (e Elemental) UpdateSourceFormISO(iso string, activeImg *v1.Image) (func() error, error) {
+	nilErr := func() error { return nil }
+
+	tmpDir, err := utils.TempDir(e.config.Fs, "", "elemental")
 	if err != nil {
-		return "", err
+		return nilErr, err
 	}
-	defer func() {
-		if err != nil {
-			_ = e.config.Fs.RemoveAll(tmpDir)
-		}
-	}()
 
-	isoMnt := filepath.Join(tmpDir, "iso")
-	rootfsMnt := filepath.Join(tmpDir, "rootfs")
+	cleanTmpDir := func() error { return e.config.Fs.RemoveAll(tmpDir) }
 
-	tmpFile := filepath.Join(tmpDir, "cOs.iso")
+	tmpFile := filepath.Join(tmpDir, "elemental.iso")
 	err = utils.GetSource(e.config, iso, tmpFile)
 	if err != nil {
-		return "", err
+		return cleanTmpDir, err
 	}
+
+	isoMnt := filepath.Join(tmpDir, "iso")
 	err = utils.MkdirAll(e.config.Fs, isoMnt, cnst.DirPerm)
 	if err != nil {
-		return "", err
+		return cleanTmpDir, err
 	}
+
 	e.config.Logger.Infof("Mounting iso %s into %s", tmpFile, isoMnt)
 	err = e.config.Mounter.Mount(tmpFile, isoMnt, "auto", []string{"loop"})
 	if err != nil {
-		return "", err
+		return cleanTmpDir, err
 	}
-	defer func() {
-		if err != nil {
-			_ = e.config.Mounter.Unmount(isoMnt)
+
+	cleanAll := func() error {
+		cErr := e.config.Mounter.Unmount(isoMnt)
+		if cErr != nil {
+			return cErr
 		}
-	}()
-
-	e.config.Logger.Infof("Mounting squashfs image from iso into %s", rootfsMnt)
-	err = utils.MkdirAll(e.config.Fs, rootfsMnt, cnst.DirPerm)
-	if err != nil {
-		return "", err
+		return cleanTmpDir()
 	}
-	err = e.config.Mounter.Mount(filepath.Join(isoMnt, cnst.ISORootFile), rootfsMnt, "auto", []string{})
-	return tmpDir, err
-}
 
-// UpdateSourcesFormDownloadedISO checks a downaloaded and mounted ISO in workDir and updates the active and recovery image
-// descriptions to use the squashed rootfs from the downloaded ISO.
-func (e Elemental) UpdateSourcesFormDownloadedISO(workDir string, activeImg *v1.Image, recoveryImg *v1.Image) error {
-	rootfsMnt := filepath.Join(workDir, "rootfs")
-	isoMnt := filepath.Join(workDir, "iso")
+	squashfsImg := filepath.Join(isoMnt, cnst.ISORootFile)
+	ok, _ := utils.Exists(e.config.Fs, squashfsImg)
+	if !ok {
+		return cleanAll, fmt.Errorf("squashfs image not found in ISO: %s", squashfsImg)
+	}
+	activeImg.Source = v1.NewFileSrc(squashfsImg)
 
-	if activeImg != nil {
-		activeImg.Source = v1.NewDirSrc(rootfsMnt)
-	}
-	if recoveryImg != nil {
-		squashedImgSource := filepath.Join(isoMnt, cnst.RecoverySquashFile)
-		if exists, _ := utils.Exists(e.config.Fs, squashedImgSource); exists {
-			recoveryImg.Source = v1.NewFileSrc(squashedImgSource)
-			recoveryImg.FS = cnst.SquashFs
-		} else if activeImg != nil {
-			recoveryImg.Source = v1.NewFileSrc(activeImg.File)
-			recoveryImg.FS = cnst.LinuxImgFs
-			// Only update label if unset, it could happen if the host is running form another ISO.
-			if recoveryImg.Label == "" {
-				recoveryImg.Label = cnst.SystemLabel
-			}
-		} else {
-			return fmt.Errorf("can't set recovery image from ISO, source image is missing")
-		}
-	}
-	return nil
+	return cleanAll, nil
 }
 
 // SetDefaultGrubEntry Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in

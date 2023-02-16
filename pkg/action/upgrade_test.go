@@ -84,7 +84,7 @@ var _ = Describe("Runtime Actions", func() {
 		var l *v1mock.FakeLuet
 		activeImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.ActiveImgFile)
 		passiveImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.PassiveImgFile)
-		recoveryImgSquash := fmt.Sprintf("%s/cOS/%s", constants.LiveDir, constants.RecoverySquashFile)
+
 		recoveryImg := fmt.Sprintf("%s/cOS/%s", constants.LiveDir, constants.RecoveryImgFile)
 
 		BeforeEach(func() {
@@ -610,7 +610,7 @@ var _ = Describe("Runtime Actions", func() {
 					}
 					err = config.WriteInstallState(installState, statePath, statePath)
 					Expect(err).ShouldNot(HaveOccurred())
-					err = fs.WriteFile(recoveryImgSquash, []byte("recovery"), constants.FilePerm)
+					err = fs.WriteFile(recoveryImg, []byte("recovery"), constants.FilePerm)
 					Expect(err).ShouldNot(HaveOccurred())
 
 					spec, err = conf.NewUpgradeSpec(config.Config)
@@ -628,10 +628,10 @@ var _ = Describe("Runtime Actions", func() {
 							// create the transition img for squash to fake it
 							_, _ = fs.Create(spec.Recovery.File)
 						}
-						if command == "mv" && args[0] == "-f" && args[1] == spec.Recovery.File && args[2] == recoveryImgSquash {
+						if command == "mv" && args[0] == "-f" && args[1] == spec.Recovery.File && args[2] == recoveryImg {
 							// fake "move"
 							f, _ := fs.ReadFile(spec.Recovery.File)
-							_ = fs.WriteFile(recoveryImgSquash, f, constants.FilePerm)
+							_ = fs.WriteFile(recoveryImg, f, constants.FilePerm)
 							_ = fs.RemoveAll(spec.Recovery.File)
 						}
 						return []byte{}, nil
@@ -640,12 +640,12 @@ var _ = Describe("Runtime Actions", func() {
 				})
 				It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 					// This should be the old image
-					info, err := fs.Stat(recoveryImgSquash)
+					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := fs.ReadFile(recoveryImgSquash)
+					f, _ := fs.ReadFile(recoveryImg)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					spec.Recovery.Source = v1.NewDockerSrc("alpine")
@@ -656,12 +656,12 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(l.UnpackCalled()).To(BeTrue())
 
 					// This should be the new image
-					info, err = fs.Stat(recoveryImgSquash)
+					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically("==", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ = fs.ReadFile(recoveryImgSquash)
+					f, _ = fs.ReadFile(recoveryImg)
 					Expect(f).ToNot(ContainSubstring("recovery"))
 
 					// Transition squash should not exist
@@ -680,7 +680,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(err).ToNot(HaveOccurred())
 
 					// This should be the new image
-					info, err := fs.Stat(recoveryImgSquash)
+					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically("==", 0))
@@ -693,12 +693,12 @@ var _ = Describe("Runtime Actions", func() {
 				})
 				It("Successfully upgrades recovery from channel upgrade", Label("channel"), func() {
 					// This should be the old image
-					info, err := fs.Stat(recoveryImgSquash)
+					info, err := fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically(">", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ := fs.ReadFile(recoveryImgSquash)
+					f, _ := fs.ReadFile(recoveryImg)
 					Expect(f).To(ContainSubstring("recovery"))
 
 					upgrade = action.NewUpgradeAction(config, spec)
@@ -708,12 +708,12 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(l.UnpackChannelCalled()).To(BeTrue())
 
 					// This should be the new image
-					info, err = fs.Stat(recoveryImgSquash)
+					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
 					// Image size should be empty
 					Expect(info.Size()).To(BeNumerically("==", 0))
 					Expect(info.IsDir()).To(BeFalse())
-					f, _ = fs.ReadFile(recoveryImgSquash)
+					f, _ = fs.ReadFile(recoveryImg)
 					Expect(f).ToNot(ContainSubstring("recovery"))
 
 					// Transition squash should not exist
@@ -778,7 +778,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(info.Size()).To(BeNumerically("==", int64(spec.Recovery.Size*1024*1024)))
 
 					// Expect the rest of the images to not be there
-					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
+					for _, img := range []string{activeImg, passiveImg} {
 						_, err := fs.Stat(img)
 						Expect(err).To(HaveOccurred())
 					}
@@ -837,7 +837,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(info.Size()).To(BeNumerically("==", int64(spec.Recovery.Size*1024*1024)))
 
 					// Expect the rest of the images to not be there
-					for _, img := range []string{activeImg, passiveImg, recoveryImgSquash} {
+					for _, img := range []string{activeImg, passiveImg} {
 						_, err := fs.Stat(img)
 						Expect(err).To(HaveOccurred())
 					}

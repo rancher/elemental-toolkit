@@ -143,11 +143,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	if u.spec.RecoveryUpgrade {
 		upgradeImg = u.spec.Recovery
-		if upgradeImg.FS == constants.SquashFs {
-			finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoverySquashFile)
-		} else {
-			finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoveryImgFile)
-		}
+		finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoveryImgFile)
 	} else {
 		upgradeImg = u.spec.Active
 		finalImageFile = filepath.Join(u.spec.Partitions.State.MountPoint, "cOS", constants.ActiveImgFile)

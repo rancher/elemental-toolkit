@@ -130,14 +130,10 @@ func (i InstallAction) Run() (err error) {
 
 	// Set installation sources from a downloaded ISO
 	if i.spec.Iso != "" {
-		tmpDir, err := e.GetIso(i.spec.Iso)
+		isoCleaner, err := e.UpdateSourceFormISO(i.spec.Iso, &i.spec.Active)
+		cleanup.Push(isoCleaner)
 		if err != nil {
-			return elementalError.NewFromError(err, elementalError.DownloadFile)
-		}
-		cleanup.Push(func() error { return i.cfg.Fs.RemoveAll(tmpDir) })
-		err = e.UpdateSourcesFormDownloadedISO(tmpDir, &i.spec.Active, &i.spec.Recovery)
-		if err != nil {
-			return elementalError.NewFromError(err, elementalError.MoveFile)
+			return elementalError.NewFromError(err, elementalError.Unknown)
 		}
 	}
 

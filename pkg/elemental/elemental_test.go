@@ -29,7 +29,6 @@ import (
 	. "github.com/onsi/gomega"
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
-	cnst "github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
@@ -81,7 +80,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			parts = conf.NewInstallElementalParitions()
 
-			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
@@ -145,7 +144,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			parts = conf.NewInstallElementalParitions()
 
-			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
@@ -193,7 +192,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		BeforeEach(func() {
 			parts = conf.NewInstallElementalParitions()
 
-			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
@@ -282,14 +281,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var img *v1.Image
 		BeforeEach(func() {
 			img = &v1.Image{
-				Label:      cnst.ActiveLabel,
+				Label:      constants.ActiveLabel,
 				Size:       32,
-				File:       filepath.Join(cnst.StateDir, "cOS", cnst.ActiveImgFile),
-				FS:         cnst.LinuxImgFs,
-				MountPoint: cnst.ActiveDir,
-				Source:     v1.NewDirSrc(cnst.ISOBaseTree),
+				File:       filepath.Join(constants.StateDir, "cOS", constants.ActiveImgFile),
+				FS:         constants.LinuxImgFs,
+				MountPoint: constants.ActiveDir,
+				Source:     v1.NewDirSrc(constants.ISOBaseTree),
 			}
-			_ = utils.MkdirAll(fs, cnst.ISOBaseTree, cnst.DirPerm)
+			_ = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
 			el = elemental.NewElemental(config)
 		})
 
@@ -341,7 +340,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			install = conf.NewInstallSpec(*config)
 			install.Target = "/some/device"
 
-			err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
@@ -352,7 +351,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			var efiPartCmds, partCmds, biosPartCmds [][]string
 			BeforeEach(func() {
 				partNum, printOut = 0, printOutput
-				err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+				err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 				Expect(err).To(BeNil())
 				efiPartCmds = [][]string{
 					{
@@ -432,7 +431,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		Describe("Run with failures", func() {
 			var runFunc func(cmd string, args ...string) ([]byte, error)
 			BeforeEach(func() {
-				err := utils.MkdirAll(fs, "/some", cnst.DirPerm)
+				err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 				Expect(err).To(BeNil())
 				partNum, printOut = 0, printOutput
 				runFunc = func(cmd string, args ...string) ([]byte, error) {
@@ -801,7 +800,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",
-					FilesystemLabel: cnst.ActiveLabel,
+					FilesystemLabel: constants.ActiveLabel,
 				},
 			}}
 			ghwTest.AddDisk(disk)
@@ -810,17 +809,17 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner.ReturnValue = []byte(
 				fmt.Sprintf(
 					`{"blockdevices": [{"label": "%s", "type": "loop", "path": "/some/device"}]}`,
-					cnst.ActiveLabel,
+					constants.ActiveLabel,
 				),
 			)
 			e := elemental.NewElemental(config)
-			Expect(e.CheckActiveDeployment([]string{cnst.ActiveLabel, cnst.PassiveLabel})).To(BeTrue())
+			Expect(e.CheckActiveDeployment([]string{constants.ActiveLabel, constants.PassiveLabel})).To(BeTrue())
 		})
 
 		It("Should not error out", func() {
 			runner.ReturnValue = []byte("")
 			e := elemental.NewElemental(config)
-			Expect(e.CheckActiveDeployment([]string{cnst.ActiveLabel, cnst.PassiveLabel})).To(BeFalse())
+			Expect(e.CheckActiveDeployment([]string{constants.ActiveLabel, constants.PassiveLabel})).To(BeFalse())
 		})
 	})
 	Describe("SelinuxRelabel", Label("SelinuxRelabel", "selinux"), func() {
@@ -916,82 +915,58 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 	Describe("GetIso", Label("GetIso", "iso"), func() {
 		var e *elemental.Elemental
+		var activeImg *v1.Image
 		BeforeEach(func() {
+			activeImg = &v1.Image{}
 			e = elemental.NewElemental(config)
 		})
-		It("Gets the iso and returns the temporary where it is stored", func() {
+		It("Gets the iso, mounts it and updates image source", func() {
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), constants.FilePerm)
 			Expect(err).To(BeNil())
 			iso := fmt.Sprintf("%s/fake.iso", tmpDir)
-			isoDir, err := e.GetIso(iso)
+
+			// Create the internal ISO file structure
+			rootfsImg := filepath.Join(os.TempDir(), "/elemental/iso", constants.ISORootFile)
+			Expect(utils.MkdirAll(fs, filepath.Dir(rootfsImg), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(rootfsImg, []byte{}, constants.FilePerm)).To(Succeed())
+
+			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
 			Expect(err).To(BeNil())
-			// Confirm that the iso is stored in isoDir
-			utils.Exists(fs, filepath.Join(isoDir, "cOs.iso"))
+			Expect(activeImg.Source.IsFile()).To(BeTrue())
+			Expect(isoClean()).To(Succeed())
 		})
 		It("Fails if it cant find the iso", func() {
 			iso := "whatever"
 			e := elemental.NewElemental(config)
-			_, err := e.GetIso(iso)
+			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
 			Expect(err).ToNot(BeNil())
+			Expect(isoClean()).To(Succeed())
+		})
+		It("Fails creating the mountpoint", func() {
+			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
+			Expect(err).To(BeNil())
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), constants.FilePerm)
+			Expect(err).To(BeNil())
+			iso := fmt.Sprintf("%s/fake.iso", tmpDir)
+			config.Fs = vfs.NewReadOnlyFS(fs)
+
+			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
+			Expect(err).ToNot(BeNil())
+			Expect(isoClean()).To(Succeed())
 		})
 		It("Fails if it cannot mount the iso", func() {
 			mounter.ErrorOnMount = true
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
-			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), cnst.FilePerm)
+			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), constants.FilePerm)
 			Expect(err).To(BeNil())
 			iso := fmt.Sprintf("%s/fake.iso", tmpDir)
-			_, err = e.GetIso(iso)
+			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("mount error"))
-		})
-	})
-	Describe("UpdateSourcesFormDownloadedISO", Label("iso"), func() {
-		var e *elemental.Elemental
-		var activeImg, recoveryImg *v1.Image
-		BeforeEach(func() {
-			activeImg, recoveryImg = nil, nil
-			e = elemental.NewElemental(config)
-		})
-		It("updates active image", func() {
-			activeImg = &v1.Image{}
-			err := e.UpdateSourcesFormDownloadedISO("/some/dir", activeImg, recoveryImg)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(activeImg.Source.IsDir()).To(BeTrue())
-			Expect(activeImg.Source.Value()).To(Equal("/some/dir/rootfs"))
-			Expect(recoveryImg).To(BeNil())
-		})
-		It("updates active and recovery image", func() {
-			activeImg = &v1.Image{File: "activeFile"}
-			recoveryImg = &v1.Image{}
-			err := e.UpdateSourcesFormDownloadedISO("/some/dir", activeImg, recoveryImg)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(recoveryImg.Source.IsFile()).To(BeTrue())
-			Expect(recoveryImg.Source.Value()).To(Equal("activeFile"))
-			Expect(recoveryImg.Label).To(Equal(cnst.SystemLabel))
-			Expect(activeImg.Source.IsDir()).To(BeTrue())
-			Expect(activeImg.Source.Value()).To(Equal("/some/dir/rootfs"))
-		})
-		It("updates recovery only image", func() {
-			recoveryImg = &v1.Image{}
-			isoMnt := "/some/dir/iso"
-			err := utils.MkdirAll(fs, isoMnt, cnst.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			recoverySquash := filepath.Join(isoMnt, cnst.RecoverySquashFile)
-			_, err = fs.Create(recoverySquash)
-			Expect(err).ShouldNot(HaveOccurred())
-			err = e.UpdateSourcesFormDownloadedISO("/some/dir", activeImg, recoveryImg)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(recoveryImg.Source.IsFile()).To(BeTrue())
-			Expect(recoveryImg.Source.Value()).To(Equal(recoverySquash))
-			Expect(activeImg).To(BeNil())
-		})
-		It("fails to update recovery from active file", func() {
-			recoveryImg = &v1.Image{}
-			err := e.UpdateSourcesFormDownloadedISO("/some/dir", activeImg, recoveryImg)
-			Expect(err).Should(HaveOccurred())
+			Expect(isoClean()).To(Succeed())
 		})
 	})
 	Describe("CloudConfig", Label("CloudConfig", "cloud-config"), func() {
@@ -1002,13 +977,13 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Copies the cloud config file", func() {
 			testString := "In a galaxy far far away..."
 			cloudInit := []string{"/config.yaml"}
-			err := fs.WriteFile(cloudInit[0], []byte(testString), cnst.FilePerm)
+			err := fs.WriteFile(cloudInit[0], []byte(testString), constants.FilePerm)
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 
 			err = e.CopyCloudConfig(cloudInit)
 			Expect(err).To(BeNil())
-			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", cnst.OEMDir))
+			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", constants.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})

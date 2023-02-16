@@ -174,14 +174,10 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	var firmware string
 	var recoveryImg, activeImg, passiveImg v1.Image
 
-	recoveryImgFile := filepath.Join(constants.LiveDir, constants.RecoverySquashFile)
-
 	// Check if current host has EFI firmware
 	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
 	// Check the default ISO installation media is available
 	isoRootExists, _ := utils.Exists(cfg.Fs, constants.ISOBaseTree)
-	// Check the default ISO recovery installation media is available)
-	recoveryExists, _ := utils.Exists(cfg.Fs, recoveryImgFile)
 
 	if efiExists {
 		firmware = v1.EFI
@@ -200,16 +196,10 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 		activeImg.Source = v1.NewEmptySrc()
 	}
 
-	if recoveryExists {
-		recoveryImg.Source = v1.NewFileSrc(recoveryImgFile)
-		recoveryImg.FS = constants.SquashFs
-		recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoverySquashFile)
-	} else {
-		recoveryImg.Source = v1.NewFileSrc(activeImg.File)
-		recoveryImg.FS = constants.LinuxImgFs
-		recoveryImg.Label = constants.SystemLabel
-		recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoveryImgFile)
-	}
+	recoveryImg.Source = v1.NewFileSrc(activeImg.File)
+	recoveryImg.FS = constants.LinuxImgFs
+	recoveryImg.Label = constants.SystemLabel
+	recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoveryImgFile)
 
 	passiveImg = v1.Image{
 		File:   filepath.Join(constants.StateDir, "cOS", constants.PassiveImgFile),
@@ -384,8 +374,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	var imgSource *v1.ImageSource
 	var aState, pState *v1.ImageState
 
-	if !utils.BootedFrom(cfg.Runner, constants.RecoverySquashFile) &&
-		!utils.BootedFrom(cfg.Runner, constants.RecoveryImgFile) {
+	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgFile) {
 		return nil, fmt.Errorf("reset can only be called from the recovery system")
 	}
 
@@ -451,11 +440,9 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}
 
 	recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
-	recoverySquashImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoverySquashFile)
+
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
 		imgSource = v1.NewFileSrc(recoveryImg)
-	} else if exists, _ = utils.Exists(cfg.Fs, recoverySquashImg); exists {
-		imgSource = v1.NewFileSrc(recoverySquashImg)
 	} else {
 		imgSource = v1.NewEmptySrc()
 	}

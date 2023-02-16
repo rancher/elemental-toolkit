@@ -124,17 +124,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				_, err = fs.Create(constants.ISOBaseTree)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				// Set recovery image detection detection
-				recoveryImgFile := filepath.Join(constants.LiveDir, constants.RecoverySquashFile)
-				err = utils.MkdirAll(fs, filepath.Dir(recoveryImgFile), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				_, err = fs.Create(recoveryImgFile)
-				Expect(err).ShouldNot(HaveOccurred())
-
 				spec := config.NewInstallSpec(*c)
 				Expect(spec.Firmware).To(Equal(v1.EFI))
 				Expect(spec.Active.Source.Value()).To(Equal(constants.ISOBaseTree))
-				Expect(spec.Recovery.Source.Value()).To(Equal(recoveryImgFile))
+				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
 				Expect(spec.PartTable).To(Equal(v1.GPT))
 
 				// No firmware partitions added yet

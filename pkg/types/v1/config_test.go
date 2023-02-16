@@ -389,12 +389,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 
-				// Sets recovery image file to squashfs file
-				spec.Recovery.FS = constants.SquashFs
-				err = spec.Sanitize()
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoverySquashFile))
-
 				// Sets recovery image file to img file
 				spec.Recovery.FS = constants.LinuxImgFs
 				err = spec.Sanitize()
