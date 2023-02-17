@@ -389,11 +389,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 
-				// Sets recovery image file to img file
-				spec.Recovery.FS = constants.LinuxImgFs
+				// Sets image labels to empty string on squashfs
+				spec.Active.FS = constants.SquashFs
+				spec.Recovery.FS = constants.SquashFs
 				err = spec.Sanitize()
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(spec.Recovery.File).To(ContainSubstring(constants.RecoveryImgFile))
+				Expect(spec.Recovery.Label).To(BeEmpty())
+				Expect(spec.Active.Label).To(BeEmpty())
+				Expect(spec.Passive.Label).To(BeEmpty())
 
 				// Fails without state partition
 				spec.Partitions.State = nil
@@ -448,6 +451,13 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			err := spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
 
+			// Sets image labels to empty string on squashfs
+			spec.Active.FS = constants.SquashFs
+			err = spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(spec.Active.Label).To(BeEmpty())
+			Expect(spec.Passive.Label).To(BeEmpty())
+
 			//Fails on missing state partition
 			spec.Partitions.State = nil
 			err = spec.Sanitize()
@@ -479,6 +489,15 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			}
 			err := spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
+
+			// Sets image labels to empty string on squashfs
+			spec.Active.FS = constants.SquashFs
+			spec.Recovery.FS = constants.SquashFs
+			err = spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(spec.Recovery.Label).To(BeEmpty())
+			Expect(spec.Active.Label).To(BeEmpty())
+			Expect(spec.Passive.Label).To(BeEmpty())
 
 			//Fails on empty source for active upgrade
 			spec.Active.Source = v1.NewEmptySrc()
