@@ -160,12 +160,15 @@ func (i *InstallSpec) Sanitize() error {
 	if i.Partitions.State == nil || i.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
 	}
-	// Set the image file name depending on the filesystem
-	recoveryMnt := constants.RecoveryDir
-	if i.Partitions.Recovery != nil && i.Partitions.Recovery.MountPoint != "" {
-		recoveryMnt = i.Partitions.Recovery.MountPoint
+
+	// Unset labels for squashfs filesystem
+	if i.Active.FS == constants.SquashFs {
+		i.Active.Label = ""
+		i.Passive.Label = ""
 	}
-	i.Recovery.File = filepath.Join(recoveryMnt, "cOS", constants.RecoveryImgFile)
+	if i.Recovery.FS == constants.SquashFs {
+		i.Recovery.Label = ""
+	}
 
 	// Check for extra partitions having set its size to 0
 	extraPartsSizeCheck := 0
@@ -210,6 +213,11 @@ func (r *ResetSpec) Sanitize() error {
 	if r.Partitions.State == nil || r.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
 	}
+	// Unset labels for squashfs filesystem
+	if r.Active.FS == constants.SquashFs {
+		r.Active.Label = ""
+		r.Passive.Label = ""
+	}
 	return nil
 }
 
@@ -240,6 +248,14 @@ func (u *UpgradeSpec) Sanitize() error {
 		if u.Active.Source.IsEmpty() {
 			return fmt.Errorf("undefined upgrade source")
 		}
+	}
+	// Unset labels for squashfs filesystem
+	if u.Active.FS == constants.SquashFs {
+		u.Active.Label = ""
+		u.Passive.Label = ""
+	}
+	if u.Recovery.FS == constants.SquashFs {
+		u.Recovery.Label = ""
 	}
 	return nil
 }
