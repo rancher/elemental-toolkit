@@ -1,4 +1,4 @@
 name: "dracut-initrd"
 category: "system"
-version: 0.4.3-4
+version: 0.4.3-5
 description: "Dracut-based generated initrd"
