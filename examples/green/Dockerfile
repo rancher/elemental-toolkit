@@ -1,6 +1,3 @@
-# run `make elemental` to build local/elemental image
-FROM local/elemental-cli as CLI
-
 # run `make elemental-toolkit` to build local/elemental-toolkit image
 FROM local/elemental-toolkit as TOOLKIT
 
@@ -10,7 +7,7 @@ ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
 
-# install kernel, systemd, dracut, grub2 and other basic tools
+# install kernel, systemd, dracut, grub2 and other required tools
 RUN zypper --non-interactive install -- \
   kernel-default \
   device-mapper \
@@ -27,6 +24,8 @@ RUN zypper --non-interactive install -- \
   parted \
   e2fsprogs \
   dosfstools \
+  mtools \
+  xorriso \
   findutils \
   gptfdisk \
   rsync \
@@ -46,9 +45,6 @@ RUN mkdir -p /oem /system
 
 # Just add the elemental toolkit including
 COPY --from=TOOLKIT /install-root /
-
-# Just add the elemental-cli
-COPY --from=CLI /usr/bin/elemental /usr/bin/elemental
 
 # Enable cloud-init services
 RUN systemctl enable cos-setup-rootfs.service && \
