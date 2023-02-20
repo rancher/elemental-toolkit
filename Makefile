@@ -3,6 +3,9 @@
 #
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+# Elemental client version to use
+ELEMENTAL_CLI?=v0.2.1
+
 PACKER?=$(shell which packer 2> /dev/null)
 ifeq ("$(PACKER)","")
 PACKER="/usr/bin/packer"
@@ -22,25 +25,21 @@ REPO?=local/elemental-$(FLAVOR)
 
 .PHONY: build
 build:
-	docker build toolkit -t local/elemental-toolkit
+	docker build toolkit --build-arg=$(ELEMENTAL_CLI) -t local/elemental-toolkit
 
-# TODO requires local/elemental-cli to be built, we should find
-# a way to build it here, I guess elemetal-toolkit and elemental-cli repos
-# should be merged.
 .PHONY: build-example-os
 build-example-os: build
 	docker build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
-# TODO requires local/elemental-cli to be built, we should find
-# a way to build it here, I guess elemetal-toolkit and elemental-cli repos
-# should be merged.
 .PHONY: build-example-iso
 build-example-iso: build-example-os
-	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build local/elemental-cli --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) --date --local --squash-no-compression -o /build $(REPO):$(VERSION)
+	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) \
+		--date --local --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
-clean-iso:
-	docker run --rm -ti -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash local/elemental-cli -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
+clean-iso: build-example-os
+	docker run --rm -ti -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
 .PHONY: packer
 packer:
@@ -68,8 +67,6 @@ endif
 	@scripts/run_vm.sh start $(QCOW2)
 	@echo "VM started from $(QCOW2)"
 
-# TODO this target is leaving behind the machine base disk in libvirt storage, we should either delete it
-# or make user it gets overwritten on every 'vagrant box add --force cos'
 test-clean:
 	@scripts/run_vm.sh stop
 	@scripts/run_vm.sh clean

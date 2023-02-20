@@ -23,7 +23,7 @@ function start {
   local base_disk=$1
   local bios_arg="-bios ${ELMNTL_FIRMWARE}"
   local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
-  local kvm_arg="-enable-kvm"
+  local kvm_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
   local disk_arg="-hda ${ELMNTL_TESTDISK}"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
@@ -44,6 +44,9 @@ function start {
       rm "${ELMNTL_PIDFILE}"
     fi
   fi
+
+  [ -e "/dev/kvm" ] && kvm_arg="-enable-kvm"
+
   qemu-img create -f qcow2 -b "${base_disk}" -F qcow2 "${ELMNTL_TESTDISK}" > /dev/null
   qemu-system-x86_64 ${disk_arg} ${bios_arg} ${usrnet_arg} ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} ${daemon_arg} ${display_arg}
 }
