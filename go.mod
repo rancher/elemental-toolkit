@@ -20,7 +20,7 @@ require (
 	github.com/mudler/luet v0.0.0-20220526130937-264bf53fe7ab
 	github.com/mudler/yip v0.0.0-20220905202553-f9b5cdd6a56e
 	github.com/onsi/ginkgo/v2 v2.8.1
-	github.com/onsi/gomega v1.27.0
+	github.com/onsi/gomega v1.27.1
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.5.0
