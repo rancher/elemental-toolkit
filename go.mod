@@ -126,7 +126,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/buildkit v0.10.1 // indirect
 	github.com/moby/libnetwork v0.8.0-dev.2.0.20200612180813-9e99af28df21 // indirect
-	github.com/moby/moby v20.10.9+incompatible // indirect
+	github.com/moby/moby v20.10.20+incompatible // indirect
 	github.com/moby/sys/mount v0.3.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect

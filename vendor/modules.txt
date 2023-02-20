@@ -616,7 +616,7 @@ github.com/moby/buildkit/util/stack
 # github.com/moby/libnetwork v0.8.0-dev.2.0.20200612180813-9e99af28df21
 ## explicit
 github.com/moby/libnetwork/resolvconf
-# github.com/moby/moby v20.10.9+incompatible
+# github.com/moby/moby v20.10.20+incompatible
 ## explicit
 github.com/moby/moby/pkg/archive
 # github.com/moby/sys/mount v0.3.0
