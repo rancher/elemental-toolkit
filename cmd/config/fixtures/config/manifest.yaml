@@ -7,5 +7,24 @@ iso:
     - oci:recovery/cos-img
   label: "LIVE_LABEL"
 
+disk:
+  size: 32768
+  partitions:
+    oem:
+      size: 32
+    state:
+      size: 8192
+    recovery:
+      size: 2048
+    persistent:
+      size: 0
+      fs: xfs
+  no-mounts: true
+  recovery-only: true
+  recovery-system:
+    uri: some.registry.org/my/image:mytag
+    fs: squashfs
+  type: raw
+
 name: "cOS-0"
 date: true

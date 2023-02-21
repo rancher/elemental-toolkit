@@ -328,14 +328,14 @@ func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.Disk, error) {
 	// Bind build-disk cmd flags
 	bindGivenFlags(vp, flags)
 	// Bind build-disk env vars
-	viperReadEnv(vp, "RAWDISK", constants.GetDiskKeyEnvMap())
+	viperReadEnv(vp, "DISK", constants.GetDiskKeyEnvMap())
 
 	err := vp.Unmarshal(disk, setDecoder, decodeHook)
 	if err != nil {
-		b.Logger.Warnf("error unmarshalling RawDisk: %s", err)
+		b.Logger.Warnf("error unmarshalling Disk: %s", err)
 	}
 	err = disk.Sanitize()
-	b.Logger.Debugf("Loaded RawDisk: %s", litter.Sdump(disk))
+	b.Logger.Debugf("Loaded Disk: %s", litter.Sdump(disk))
 	return disk, err
 }
 

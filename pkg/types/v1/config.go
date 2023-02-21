@@ -608,7 +608,7 @@ func (b *BuildConfig) Sanitize() error {
 }
 
 type Disk struct {
-	Size         uint                `yaml:"size,omitempty" mapstructure:"partitions"`
+	Size         uint                `yaml:"size,omitempty" mapstructure:"size"`
 	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
 	RecoveryOnly bool                `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
 	NoMounts     bool                `yaml:"no-mounts,omitempty" mapstructure:"no-mounts"`
@@ -627,17 +627,12 @@ func (d *Disk) Sanitize() error {
 	// Set passive filesystem as active
 	d.Passive.FS = d.Active.FS
 
-	// Set default label for non squashed images or unset it otherwise
-	if d.Active.FS != constants.SquashFs && (d.Active.Label == "" || d.Passive.Label == "") {
-		d.Active.Label = constants.ActiveLabel
-		d.Passive.Label = constants.PassiveLabel
-	} else if d.Active.FS == constants.SquashFs {
+	// Unset default label for squashed images
+	if d.Active.FS == constants.SquashFs {
 		d.Active.Label = ""
 		d.Passive.Label = ""
 	}
-	if d.Recovery.FS != constants.SquashFs && d.Recovery.Label == "" {
-		d.Recovery.Label = constants.RecoveryLabel
-	} else if d.Recovery.FS == constants.SquashFs {
+	if d.Recovery.FS == constants.SquashFs {
 		d.Recovery.Label = ""
 	}
 
