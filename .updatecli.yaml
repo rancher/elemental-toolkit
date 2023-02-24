@@ -1,0 +1,43 @@
+name: Elemental CLI update
+
+sources:
+  goversion:
+    name: Get Go Release
+    kind: file
+    transformers:
+        - trimprefix: 'go '
+    spec:
+      file: go.mod
+      line: 3
+
+conditions:
+  dockerTag:
+      name: Is docker image golang:{{ source "goversion" }} published
+      kind: dockerimage
+      spec:
+          image: golang
+          tag: '{{ source "goversion" }}-alpine'
+      sourceid: goversion
+
+targets:
+  githubActions:
+    name: "Update Github Actions files with new go-version"
+    kind: yaml
+    sourceid: goversion
+    spec:
+      key: env.GO_VERSION
+      files:
+        - .github/workflows/build.yaml
+        - .github/workflows/test.yaml
+        - .github/workflows/docs.yaml
+        - .github/workflows/lint.yaml
+        - .github/workflows/release.yaml
+  goDockerfile:
+    name: "Update the value of ARG GO_VERSION in the Dockerfile"
+    sourceid: goversion
+    kind: dockerfile
+    spec:
+      file: Dockerfile
+      instruction:
+        keyword: "ARG"
+        matcher: "GO_VERSION"

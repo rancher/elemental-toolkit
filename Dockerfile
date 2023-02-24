@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_VERSION=1.17-alpine
+ARG GO_VERSION=1.18
 ARG COSIGN_VERSION=1.4.1-5
 ARG LEAP_VERSION=15.4
 
@@ -6,7 +6,7 @@ FROM quay.io/costoolkit/releases-green:cosign-toolchain-$COSIGN_VERSION AS cosig
 
 
 
-FROM golang:$GOLANG_IMAGE_VERSION as elemental-bin
+FROM golang:${GO_VERSION}-alpine as elemental-bin
 ENV CGO_ENABLED=0
 WORKDIR /src/
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
