@@ -33,13 +33,13 @@ build-example-os: build
 
 .PHONY: build-example-iso
 build-example-iso: build-example-os
-	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) \
 		--date --local --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
 clean-iso: build-example-os
-	docker run --rm -ti -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
+	docker run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
 .PHONY: packer
 packer:
