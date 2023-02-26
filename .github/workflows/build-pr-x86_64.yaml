@@ -1,0 +1,99 @@
+name: PR-x86_64
+on:
+ pull_request:
+   paths:
+     - conf/**
+     - toolkit/**
+     - tests/**
+     - make/**
+     - .github/**
+     - Makefile
+     - tests/**
+concurrency:
+  group: ci-PR-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
+jobs:
+  build-x86_64:
+    runs-on: ubuntu-latest
+    env:
+      # TODO pull flavor from labels?
+      FLAVOR: green
+      ARCH: x86_64
+      PACKER_LOG: 1
+      PKR_VAR_accelerator: tcg
+      PKR_VAR_cpus: 2
+      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          git fetch --prune --unshallow
+      - name: Install CI plugins
+        run: |
+            sudo cp -rfv .github/plugins/* /usr/bin/
+      - name: Run make deps_ci
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install -y packer qemu-kvm
+      - name: Run make deps_ci
+        run: |
+          if [ -e "/dev/kvm" ]; then
+            echo "Setting KVM"
+            sudo adduser $USER kvm
+            sudo chown -R $USER /dev/kvm
+          fi
+      - name: Build toolkit
+        run: |
+          make build
+    # - name: Fix git permissions for CVE-2022-24765
+    #   # This fixes running git commands on our git directory under sudo user
+    #   # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
+    #   run: |
+    #     sudo git config --global --add safe.directory ${{ github.workspace }}
+    #     git config --global --add safe.directory ${{ github.workspace }}
+      - name: Build example OS
+        run: |
+          make build-example-os
+      - name: Build example ISO
+        run: |
+          make build-example-iso
+      - name: Install to disk with Packer
+        run: |
+          make packer
+      - name: Upload ISO
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-iso-x86_64
+          path: build
+          if-no-files-found: error
+      - name: Upload disk
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-disk-x86_64
+          path: packer/build
+          if-no-files-found: error
+  test-smoke:
+    runs-on: ubuntu-latest
+    needs: build-x86_64
+    env:
+      FLAVOR: green
+      ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          git fetch --prune --unshallow
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y qemu-kvm
+      - name: Download result for build
+        uses: actions/download-artifact@v3
+        with:
+          name: build-disk-x86_64
+          path: packer/build
+      - name: Prepare test
+        run: |
+          make prepare-test
+      - name: Run test-smoke
+        run: |
+          make test-smoke
+
