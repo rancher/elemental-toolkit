@@ -19,10 +19,10 @@ jobs:
       # TODO pull flavor from labels?
       FLAVOR: green
       ARCH: x86_64
-      PACKER_LOG: 1
-      PKR_VAR_accelerator: tcg
-      PKR_VAR_cpus: 2
-      PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
+      #PACKER_LOG: 1
+      #PKR_VAR_accelerator: tcg
+      #PKR_VAR_cpus: 2
+      #PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -57,15 +57,44 @@ jobs:
       - name: Build example ISO
         run: |
           make build-example-iso
-      - name: Install to disk with Packer
-        run: |
-          make packer
       - name: Upload ISO
         uses: actions/upload-artifact@v3
         with:
           name: build-iso-x86_64
           path: build
           if-no-files-found: error
+  install-to-vm:
+    runs-on: macos-12
+    needs: build-x86_64
+    env:
+      FLAVOR: green
+      ARCH: x86_64
+      PACKER_LOG: 1
+      PKR_VAR_accelerator: hvf
+      PKR_VAR_cpus: 2
+      PKR_VAR_machine_type: q35
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
+      - run: |
+          git fetch --prune --unshallow
+      - name: Install dependencies
+        run: |
+          brew tap hashicorp/tap
+          time brew install qemu bash coreutils curl hashicorp/tap/packer
+      - name: Download ISO
+        uses: actions/download-artifact@v3
+        with:
+          name: build-iso-x86_64
+          path: build
+      - name: Install to disk with Packer
+        run: |
+          export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit)
+          ls -lRah /usr/local/Cellar/qemu/7.2.0/share/qemu/
+          make packer
       - name: Upload disk
         uses: actions/upload-artifact@v3
         with:
@@ -73,18 +102,25 @@ jobs:
           path: packer/build
           if-no-files-found: error
   test-smoke:
-    runs-on: ubuntu-latest
-    needs: build-x86_64
+    runs-on: macos-12
+    needs: install-to-vm
     env:
       FLAVOR: green
       ARCH: x86_64
+      PACKER_LOG: 1
+      PKR_VAR_accelerator: hvf
+      PKR_VAR_cpus: 2
     steps:
       - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
       - run: |
           git fetch --prune --unshallow
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y qemu-kvm
+          time brew install qemu bash coreutils curl
       - name: Download result for build
         uses: actions/download-artifact@v3
         with:
@@ -95,5 +131,9 @@ jobs:
           make prepare-test
       - name: Run test-smoke
         run: |
+          export GOPATH="/Users/runner/go"
+          PATH=$PATH:$GOPATH/bin
+          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
+          go get -u github.com/onsi/gomega/...
           make test-smoke
 

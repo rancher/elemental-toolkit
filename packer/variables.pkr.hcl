@@ -7,6 +7,11 @@ variable "accelerator" {
   default = "kvm"
 }
 
+variable "machine_type" {
+  type    = string
+  default = "q35"
+}
+
 variable "arch" {
   type    = string
   default = "amd64"
