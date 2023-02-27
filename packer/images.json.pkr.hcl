@@ -84,6 +84,8 @@ source "googlecompute" "cos" {
 source "qemu" "cos" {
   qemu_binary            = "qemu-system-x86_64"
   accelerator            = "${var.accelerator}"
+  machine_type           = "${var.machine_type}"
+  cpu_model              = "host"
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"
   memory                 = "${var.memory}"
@@ -103,6 +105,9 @@ source "qemu" "cos" {
   vm_name                = "elemental-${var.flavor}-disk-example-x86_64.qcow2"
   qemuargs               = [
     ["-serial", "file:serial.log"],
+    ["-drive", "if=pflash,format=raw,readonly=on,file=${var.firmware}"],
+    ["-drive", "if=none,file=build/elemental-${var.flavor}-disk-example-x86_64.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
+    ["-drive", "file=${var.iso},media=cdrom"],
   ]
 }
 
