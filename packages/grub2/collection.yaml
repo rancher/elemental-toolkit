@@ -1,19 +1,19 @@
 packages:
   - name: "grub2-artifacts"
     category: "system"
-    version: 0.0.3-15
+    version: 0.0.3-16
     provides:
       - name: "grub-artifacts"
         version: ">0.0.2"
   - name: "grub2-config"
     category: "system"
-    version: 0.1.1
+    version: 0.1.2
     provides:
       - name: "grub-config"
         version: ">0.0.12"
   - name: "grub2-efi-image"
     category: "system"
-    version: 0.0.2-7
+    version: 0.0.2-8
     # TODO: Modules list could be refined
     efi_modules: ext2 iso9660 linux echo configfile search_label search_fs_file search search_fs_uuid ls normal gzio png fat gettext font minicmd gfxterm gfxmenu all_video xfs gcry_rijndael gcry_sha256 gcry_sha512 test true loadenv part_gpt part_msdos efi_gop efi_uga
     efi_modules_arm64: ext2 iso9660 linux echo configfile search_label search_fs_file search search_fs_uuid ls normal gzio png fat gettext font minicmd gfxterm gfxmenu all_video xfs gcry_rijndael gcry_sha256 gcry_sha512 test true loadenv part_gpt part_msdos efi_gop
