@@ -11,7 +11,7 @@ ifeq ("$(PACKER)","")
 PACKER="/usr/bin/packer"
 endif
 
-QCOW2=$(shell ls $(ROOT_DIR)/packer/build/*.qcow2 2> /dev/null)
+QCOW2=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 PACKER_TARGET?=qemu.cos
 FLAVOR?=green
@@ -29,13 +29,14 @@ build:
 
 .PHONY: build-example-os
 build-example-os: build
+	mkdir -p $(ROOT_DIR)/build
 	docker build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: build-example-iso
 build-example-iso: build-example-os
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) \
-		--date --local --squash-no-compression -o /build $(REPO):$(VERSION)
+		--local --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
 clean-iso: build-example-os
@@ -53,10 +54,12 @@ ifeq ("$(ISO)","")
 	@exit 1
 endif
 	export PKR_VAR_iso=$(ISO) && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && $(PACKER) build -only $(PACKER_TARGET) .
+	mv $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
 
 .PHONY: packer-clean
 packer-clean:
 	rm -rf $(ROOT_DIR)/packer/build
+	rm -f $(ROOT_DIR)/build/.*qcow2
 
 .PHONY: prepare-test
 prepare-test:
