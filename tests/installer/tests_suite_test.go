@@ -1,7 +1,6 @@
 package cos_test
 
 import (
-	"flag"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,10 +18,4 @@ func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry) {
 	Expect(err).To(BeNil())
 	Expect((part.Size / 1024) / 1024).To(Equal(entry.Size))
 	Expect(part.FsType).To(Equal(entry.FsType))
-}
-
-var squashfs bool
-
-func init() {
-	flag.BoolVar(&squashfs, "squashfs", false, "Sets the installation of squashfs recovery")
 }

@@ -1,190 +1,27 @@
-#
-# cOS-toolkit Makefile.test
-#
-#
-
-GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
-
-VAGRANT?=$(shell which vagrant 2> /dev/null)
-ifeq ("$(VAGRANT)","")
-VAGRANT="/usr/bin/vagrant"
-endif
-
-#
-# VirtualBox
-#
-
-VBOXMANAGE?=$(shell which VBoxManage 2> /dev/null)
-ifeq ("$(VBOXMANAGE)","")
-VBOXMANAGE="/usr/bin/VBoxManage"
-endif
-
-#
-# VBoxManage is used to run a headless VirtualBox instance
-#
-$(VBOXMANAGE):
-ifneq ($(shell id -u), 0)
-	@echo "'$@' is missing and you must be root to install it."
-	@exit 1
-else
-	@echo "Please install VirtualBox."
+.PHONY: prepare-test
+prepare-test:
+ifeq ("$(QCOW2)","")
+	@echo "No qcow2 disk found, run make packer first"
 	@exit 1
 endif
+	@scripts/run_vm.sh start $(QCOW2)
+	@echo "VM started from $(QCOW2)"
 
-#
-# ------------ actual test targets ------------
-#
-
-ifeq ($(strip $(ARCH)), x86_64)
-VMNAME=cos
-else
-VMNAME=cos-arm64
+.PHONY: prepare-installer-test
+prepare-installer-test:
+ifeq ("$(ISO)","")
+	@echo "No ISO image found, run make build-example-iso first"
+	@exit 1
 endif
-
-test: test-clean vagrantfile prepare-test test-smoke test-upgrades-images-signed test-upgrades-images-unsigned test-hooks test-fallback test-recovery test-deploys-images-recovery
-
-#
-# remove test artifacts
-#
-
-clean_test: test-clean
-
-
-prepare-test: $(VAGRANT) $(BOXFILE)
-	vagrant box add --force cos $(BOXFILE)
-	cd $(ROOT_DIR)/tests && vagrant up $(VMNAME) || true
-
-vagrantfile: $(ROOT_DIR)/tests/Vagrantfile $(VAGRANT)
-
-$(ROOT_DIR)/tests/Vagrantfile: $(VAGRANT)
-	cd $(ROOT_DIR)/tests && vagrant init cos
+	@scripts/run_vm.sh start $(ISO)
+	@echo "VM started from $(ISO)"
 
 test-clean:
-	(cd $(ROOT_DIR)/tests && vagrant destroy) 2> /dev/null || true
-	(vagrant box remove cos) 2> /dev/null || true
+	@scripts/run_vm.sh stop
+	@scripts/run_vm.sh clean
 
-$(VAGRANT):
-	@echo "'vagrant' not found."
-	@exit 1
+test-smoke: prepare-test
+	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
 
-test-fallback:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
-
-test-hooks:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
-
-test-upgrades-images-signed:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
-
-test-upgrades-images-unsigned:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-unsigned
-
-test-upgrades-local:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-local
-	
-test-smoke:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
-
-test-recovery:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
-
-# Individual test recovery for arm64 in order to run them in parallel on the CI, otherwise the full test is too long
-
-test-recovery1:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "first-test" ./recovery
-
-test-recovery2:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "second-test" ./recovery
-
-test-recovery3:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "third-test" ./recovery
-
-test-recovery4:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --label-filter "fourth-test" ./recovery
-
-test-deploys-images-recovery:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "From recovery" ./deploys-images
-
-test-installer-bios:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "Using bios" ./installer $(PASSTHROUGH_ARGS)
-
-test-installer-efi:
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) --focus "Using efi" ./installer $(PASSTHROUGH_ARGS)
-
-
-#
-# ------------ test for raw image  ------------
-#
-
-RAW?=$(shell ls $(ROOT_DIR)/*.raw 2> /dev/null)
-
-raw_disk_test_deploy: create_vm_from_raw_image
-	# run tests
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery-raw-disk
-
-create_vm_from_raw_image: as_root $(VBOXMANAGE)
-ifeq ("$(RAW)","")
-	@echo "Raw image does not exists, please run make raw_disk first"
-	@exit 1
-else
-	# transform the raw image
-	VBoxManage convertdd $(RAW) sda.vdi --format VDI
-	# increase disk size to 15Gb
-	VBoxManage modifymedium disk sda.vdi --compact --resize 16000
-	# creatre user-data iso (NoCloud)
-	cp packer/user-data/aws.yaml user-data
-	mkisofs -o cidata.iso -V CIDATA -J -r user-data
-	# create vm
-	VBoxManage createvm --name "test" --register
-	# increase memory, otherwise grub fails to boot
-	VBoxManage modifyvm "test" --memory 10240 --cpus 3
-ifneq ("$(ENABLE_VIDEO_CAPTURE)", "")
-	# Record the machine screen
-	VBoxManage modifyvm "test" --recording on --recordingscreens 0 --recordingfile $(ROOT_DIR)/capture.webm
-endif
-	# config vm options, i.e. efi boot, nat, serial to file, etc...
-	VBoxManage modifyvm "test" --firmware efi --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --natpf1 "guestssh,tcp,,2222,,22"
-	# add sata controller
-	VBoxManage storagectl "test" --name "sata controller" --add sata --portcount 2
-	# attach the disk to the machine
-	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
-	# attach the user-data iso
-	VBoxManage storageattach "test" --storagectl "sata controller" --port 1 --device 0 --type dvddrive --medium $(ROOT_DIR)/cidata.iso
-	# startvm and detach
-	VBoxManage startvm "test" --type headless
-endif
-
-clean_raw_disk_test: as_root
-	VBoxManage controlvm "test" poweroff &>/dev/null || true
-	VBoxManage unregistervm "test" --delete &>/dev/null || true
-	rm $(ROOT_DIR)/sda.vdi &>/dev/null || true
-	rm $(ROOT_DIR)/user-data &>/dev/null || true
-	rm $(ROOT_DIR)/cidata.iso &>/dev/null || true
-	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
-
-
-_create_vm_from_iso: $(VBOXMANAGE) $(ISO)
-	VBoxManage createmedium disk --filename sda.vdi --size 30000
-	VBoxManage createvm --name "test" --register
-	VBoxManage modifyvm "test" --memory 10240 --cpus 3
-ifneq ("$(ENABLE_VIDEO_CAPTURE)", "")
-	VBoxManage modifyvm "test" --recording on --recordingscreens 0 --recordingfile $(ROOT_DIR)/capture.webm
-endif
-	VBoxManage modifyvm "test" --uart1 0x3f8 4 --uartmode1 file $(ROOT_DIR)/serial_port1.log --nic1 nat --boot1 disk --boot2 dvd --natpf1 "guestssh,tcp,,2222,,22"
-	VBoxManage storagectl "test" --name "sata controller" --add sata --portcount 2 --hostiocache off
-	VBoxManage storageattach "test" --storagectl "sata controller" --port 0 --device 0 --type hdd --medium $(ROOT_DIR)/sda.vdi
-	VBoxManage storageattach "test" --storagectl "sata controller" --port 1 --device 0 --type dvddrive --medium $(ISO)
-
-create_vm_from_iso_bios: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
-	VBoxManage startvm "test" --type headless
-
-create_vm_from_iso_efi: $(VBOXMANAGE) $(ISO) _create_vm_from_iso
-	# uefi firmware does not respect boot order (https://www.virtualbox.org/ticket/19364) and no plans to fix it :/
-	VBoxManage modifyvm "test" --firmware efi
-	VBoxManage startvm "test" --type headless
-
-clean_vm_from_iso: $(VBOXMANAGE)
-	VBoxManage controlvm "test" poweroff &>/dev/null || true
-	VBoxManage unregistervm "test" --delete &>/dev/null || true
-	VBoxManage closemedium disk sda.vdi --delete &>/dev/null || true
-	rm $(ROOT_DIR)/serial_port1.log  &>/dev/null || true
+test-installer: prepare-installer-test
+	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./installer
