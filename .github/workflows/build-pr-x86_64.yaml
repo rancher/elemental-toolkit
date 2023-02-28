@@ -16,53 +16,33 @@ jobs:
   build-x86_64:
     runs-on: ubuntu-latest
     env:
-      # TODO pull flavor from labels?
       FLAVOR: green
       ARCH: x86_64
-      #PACKER_LOG: 1
-      #PKR_VAR_accelerator: tcg
-      #PKR_VAR_cpus: 2
-      #PKR_VAR_firmware: /usr/share/OVMF/OVMF_CODE.fd
     steps:
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Install CI plugins
-        run: |
-            sudo cp -rfv .github/plugins/* /usr/bin/
-      - name: Run make deps_ci
-        run: |
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-          sudo apt-get update && sudo apt-get install -y packer qemu-kvm
-      - name: Run make deps_ci
-        run: |
-          if [ -e "/dev/kvm" ]; then
-            echo "Setting KVM"
-            sudo adduser $USER kvm
-            sudo chown -R $USER /dev/kvm
-          fi
-      - name: Build toolkit
+      - name: Cached ISO
+        id: cache-iso
+        uses: actions/cache@v3
+        env:
+          cache-name: pr-iso-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+        name: Build toolkit
         run: |
           make build
-    # - name: Fix git permissions for CVE-2022-24765
-    #   # This fixes running git commands on our git directory under sudo user
-    #   # See https://github.blog/2022-04-12-git-security-vulnerability-announced/ for more info
-    #   run: |
-    #     sudo git config --global --add safe.directory ${{ github.workspace }}
-    #     git config --global --add safe.directory ${{ github.workspace }}
-      - name: Build example OS
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+        name: Build example OS
         run: |
           make build-example-os
-      - name: Build example ISO
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+        name: Build example ISO
         run: |
           make build-example-iso
-      - name: Upload ISO
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-iso-x86_64
-          path: build
-          if-no-files-found: error
+  
   install-to-vm:
     runs-on: macos-12
     needs: build-x86_64
@@ -75,65 +55,69 @@ jobs:
       PKR_VAR_machine_type: q35
     steps:
       - uses: actions/checkout@v3
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.17'
       - run: |
           git fetch --prune --unshallow
-      - name: Install dependencies
-        run: |
-          brew tap hashicorp/tap
-          time brew install qemu bash coreutils curl hashicorp/tap/packer
-      - name: Download ISO
-        uses: actions/download-artifact@v3
+      - name: Cached ISO
+        id: cache-iso
+        uses: actions/cache@v3
+        env:
+          cache-name: pr-iso-build
         with:
-          name: build-iso-x86_64
-          path: build
-      - name: Install to disk with Packer
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          fail-on-cache-miss: true
+      - name: Cached Disk
+        id: cache-disk
+        uses: actions/cache@v3
+        env:
+          cache-name: pr-disk-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
+        name: Install to disk with Packer
         run: |
           export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit)
-          ls -lRah /usr/local/Cellar/qemu/7.2.0/share/qemu/
           make packer
-      - name: Upload disk
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-disk-x86_64
-          path: packer/build
-          if-no-files-found: error
+  
   test-smoke:
     runs-on: macos-12
     needs: install-to-vm
     env:
       FLAVOR: green
       ARCH: x86_64
-      PACKER_LOG: 1
-      PKR_VAR_accelerator: hvf
-      PKR_VAR_cpus: 2
+      ELMNTL_ACCEL: hvf
     steps:
       - uses: actions/checkout@v3
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.17'
+          go-version: '1.18'
       - run: |
           git fetch --prune --unshallow
-      - name: Install dependencies
-        run: |
-          time brew install qemu bash coreutils curl
-      - name: Download result for build
-        uses: actions/download-artifact@v3
+      - name: Cached Disk
+        id: cache-disk
+        uses: actions/cache@v3
+        env:
+          cache-name: pr-disk-build
         with:
-          name: build-disk-x86_64
-          path: packer/build
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          fail-on-cache-miss: true
+      - name: Run VM script dependencies
+        run: |
+          brew install bash coreutils
       - name: Prepare test
         run: |
+          export ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit)
           make prepare-test
       - name: Run test-smoke
         run: |
           export GOPATH="/Users/runner/go"
           PATH=$PATH:$GOPATH/bin
-          go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
-          go get -u github.com/onsi/gomega/...
           make test-smoke
+      - name: Stop test VM
+        if: always()
+        run: |
+          make test-clean
 

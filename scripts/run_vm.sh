@@ -14,6 +14,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_PIDFILE:=${TESTS_PATH}/testvm.pid}"
 : "${ELMNTL_TESTDISK:=${TESTS_PATH}/testdisk.qcow2}"
 : "${ELMNTL_DISPLAY:=none}"
+: "${ELMNTL_ACCEL:=kvm}"
 
 function _abort {
     echo "$@" && exit 1
@@ -21,15 +22,17 @@ function _abort {
 
 function start {
   local base_disk=$1
-  local bios_arg="-bios ${ELMNTL_FIRMWARE}"
   local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
-  local kvm_arg
+  local accel_arg="-accel ${ELMNTL_ACCEL}"
   local memory_arg="-m ${ELMNTL_MEMORY}"
+  local firmware_arg="-bios ${ELMNTL_FIRMWARE} -drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
   local disk_arg="-hda ${ELMNTL_TESTDISK}"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
   local daemon_arg="-daemonize"
+  local machine_arg="-machine type=q35"
+  local cpu_arg
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
@@ -45,18 +48,27 @@ function start {
     fi
   fi
 
-  [ -e "/dev/kvm" ] && kvm_arg="-enable-kvm"
+  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
+  [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
   qemu-img create -f qcow2 -b "${base_disk}" -F qcow2 "${ELMNTL_TESTDISK}" > /dev/null
-  qemu-system-x86_64 ${disk_arg} ${bios_arg} ${usrnet_arg} ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} ${daemon_arg} ${display_arg}
+  qemu-system-x86_64 ${disk_arg} ${firmware_arg} ${usrnet_arg} ${kvm_arg} \
+      ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} ${daemon_arg} \
+      ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }
 
 function stop {
   local vmpid
+  local killprog
 
   if [ -f "${ELMNTL_PIDFILE}" ]; then
     vmpid=$(cat "${ELMNTL_PIDFILE}")
-    $(which kill) --verbose --timeout 1000 TERM --timeout 5000 KILL --signal QUIT ${vmpid}
+    killprog=$(which kill)
+    if ${killprog} --version | grep -q util-linux; then
+        ${killprog} --verbose --timeout 1000 TERM --timeout 5000 KILL --signal QUIT ${vmpid}
+    else
+        ${killprog} -9 ${vmpid}
+    fi
     rm -f "${ELMNTL_PIDFILE}"
   else
     echo "No pidfile ${ELMNTL_PIDFILE} found, nothing to stop"

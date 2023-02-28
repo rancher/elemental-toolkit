@@ -102,11 +102,11 @@ source "qemu" "cos" {
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
-  vm_name                = "elemental-${var.flavor}-disk-example-x86_64.qcow2"
+  vm_name                = "elemental-${var.flavor}.qcow2"
   qemuargs               = [
     ["-serial", "file:serial.log"],
     ["-drive", "if=pflash,format=raw,readonly=on,file=${var.firmware}"],
-    ["-drive", "if=none,file=build/elemental-${var.flavor}-disk-example-x86_64.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
+    ["-drive", "if=none,file=build/elemental-${var.flavor}.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
     ["-drive", "file=${var.iso},media=cdrom"],
   ]
 }
