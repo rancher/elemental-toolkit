@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 set -e
 
@@ -13,6 +13,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_LOGFILE:=${TESTS_PATH}/serial.log}"
 : "${ELMNTL_PIDFILE:=${TESTS_PATH}/testvm.pid}"
 : "${ELMNTL_TESTDISK:=${TESTS_PATH}/testdisk.qcow2}"
+: "${ELMNTL_DISKSIZE:=32G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
 
@@ -32,6 +33,7 @@ function start {
   local display_arg="-display ${ELMNTL_DISPLAY}"
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=q35"
+  local cdrom_arg
   local cpu_arg
   local vmpid
 
@@ -48,13 +50,25 @@ function start {
     fi
   fi
 
+  case "${base_disk}" in
+      *.qcow2)
+        qemu-img create -f qcow2 -b "${base_disk}" -F qcow2 "${ELMNTL_TESTDISK}" > /dev/null
+        ;;
+      *.iso)
+        qemu-img create -f qcow2 "${ELMNTL_TESTDISK}" "${ELMNTL_DISKSIZE}" > /dev/null
+        cdrom_arg="-cdrom ${base_disk}"
+        ;;
+      *)
+        _abort "Expected a *.qcow2 or *.iso file"
+        ;;
+  esac
+
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
   [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
-  qemu-img create -f qcow2 -b "${base_disk}" -F qcow2 "${ELMNTL_TESTDISK}" > /dev/null
-  qemu-system-x86_64 ${disk_arg} ${firmware_arg} ${usrnet_arg} ${kvm_arg} \
-      ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} ${daemon_arg} \
-      ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
+  qemu-system-x86_64 ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+      ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
+      ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }
 
 function stop {

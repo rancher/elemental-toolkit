@@ -1,6 +1,4 @@
-#
 # Directory of Makefile
-#
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 # Elemental client version to use
@@ -22,6 +20,14 @@ ifeq ("$(PACKER)","")
 VERSION="latest"
 endif
 REPO?=local/elemental-$(FLAVOR)
+
+
+#----------------------- includes -----------------------
+
+include make/Makefile.test
+
+
+#----------------------- targets ------------------------
 
 .PHONY: build
 build:
@@ -60,20 +66,3 @@ endif
 packer-clean:
 	rm -rf $(ROOT_DIR)/packer/build
 	rm -f $(ROOT_DIR)/build/.*qcow2
-
-.PHONY: prepare-test
-prepare-test:
-ifeq ("$(QCOW2)","")
-	@echo "No qcow2 disk found, run make packer first"
-	@exit 1
-endif
-	@scripts/run_vm.sh start $(QCOW2)
-	@echo "VM started from $(QCOW2)"
-
-test-clean:
-	@scripts/run_vm.sh stop
-	@scripts/run_vm.sh clean
-
-test-smoke: prepare-test
-	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
-

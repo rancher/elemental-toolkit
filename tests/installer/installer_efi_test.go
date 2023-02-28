@@ -31,13 +31,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
 			s.EmptyDisk("/dev/sda")
 			_, _ = s.Command("sync")
-
-			// squashfs comes from a command line flag at suite level
-			if squashfs {
-				By("Setting the squashfs recovery install")
-				err = s.SendFile("../assets/squashed_recovery.yaml", "/etc/elemental/config.d/install_recovery.yaml", "0770")
-				Expect(err).ToNot(HaveOccurred())
-			}
 		})
 		AfterEach(func() {
 			if CurrentSpecReport().Failed() {
@@ -70,10 +63,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
-					if squashfs {
-						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("Creating squashed image:"))
-					}
 				})
 
 				// This section of the test is flaky in our CI w/EFI. Commenting it out for the time being
@@ -88,10 +77,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
-					if squashfs {
-						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("Creating squashed image:"))
-					}
 
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
@@ -141,10 +126,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
-					if squashfs {
-						// Check the squashfs image is used as recovery
-						Expect(out).To(ContainSubstring("Creating squashed image:"))
-					}
 					// Remove iso so we boot directly from the disk
 					s.EjectCOSCD()
 					// Reboot so we boot into the just installed cos
@@ -194,10 +175,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
-				if squashfs {
-					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("Creating squashed image:"))
-				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -214,10 +191,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
-				if squashfs {
-					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("Creating squashed image:"))
-				}
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
@@ -237,10 +210,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
-				if squashfs {
-					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("Creating squashed image:"))
-				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
@@ -256,10 +225,6 @@ var _ = Describe("cOS Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
-				if squashfs {
-					// Check the squashfs image is used as recovery
-					Expect(out).To(ContainSubstring("Creating squashed image:"))
-				}
 				// Remove iso so we boot directly from the disk
 				s.EjectCOSCD()
 				// Reboot so we boot into the just installed cos
