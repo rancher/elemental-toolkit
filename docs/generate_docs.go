@@ -42,7 +42,6 @@ func main() {
 		cmd.NewCloudInitCmd(rootCmd),
 		cmd.NewConvertDisk(rootCmd, false),
 		cmd.NewInstallCmd(rootCmd, false),
-		cmd.NewDerivativeCmd(rootCmd),
 		cmd.NewPullImageCmd(rootCmd, false),
 		cmd.NewResetCmd(rootCmd, false),
 		cmd.NewRunStage(rootCmd),
