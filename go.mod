@@ -19,8 +19,8 @@ require (
 	github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e
 	github.com/mudler/luet v0.0.0-20220526130937-264bf53fe7ab
 	github.com/mudler/yip v0.0.0-20220905202553-f9b5cdd6a56e
-	github.com/onsi/ginkgo/v2 v2.8.1
-	github.com/onsi/gomega v1.27.1
+	github.com/onsi/ginkgo/v2 v2.8.4
+	github.com/onsi/gomega v1.27.2
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.5.0
@@ -81,12 +81,14 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-containerregistry v0.7.0 // indirect
+	github.com/google/pprof v0.0.0-20230228050547-1710fef4ab10 // indirect
 	github.com/google/renameio v1.0.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -178,13 +180,14 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.62.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
