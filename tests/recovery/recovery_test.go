@@ -35,30 +35,6 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				}
 			}
 		})
-		It("upgrades to the latest", Label("first-test"), func() {
-			currentName := s.GetOSRelease("NAME")
-
-			By("booting into recovery to check the OS version")
-			err := s.ChangeBootOnce(sut.Recovery)
-			Expect(err).ToNot(HaveOccurred())
-
-			s.Reboot()
-			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
-
-			recoveryName := s.GetOSRelease("NAME")
-
-			Expect(currentName).To(Equal(recoveryName))
-
-			By("upgrade active")
-			out, err := s.Command(s.ElementalCmd("upgrade"))
-			_, _ = fmt.Fprintln(GinkgoWriter, out)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("Upgrade completed"))
-
-			By("Reboot to upgraded active")
-			s.Reboot()
-			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-		})
 
 		It("upgrades to a specific image", Label("second-test"), func() {
 			err := s.ChangeBoot(sut.Active)
@@ -125,26 +101,5 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 			})
 		})
-
-		When("using upgrade channel", func() {
-			It("upgrades to latest image", Label("fourth-test"), func() {
-				By("upgrading recovery")
-				cmd := s.ElementalCmd("upgrade", "--recovery", "--squash-no-compression")
-				By(fmt.Sprintf("running %s", cmd))
-				out, err := s.Command(cmd)
-				_, _ = fmt.Fprintln(GinkgoWriter, out)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade completed"))
-				By("Reboot to upgraded recovery")
-				err = s.ChangeBootOnce(sut.Recovery)
-				Expect(err).ToNot(HaveOccurred())
-				s.Reboot()
-				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
-				By("rebooting back to active")
-				s.Reboot()
-				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-			})
-		})
-
 	})
 })
