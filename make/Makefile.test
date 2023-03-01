@@ -20,8 +20,29 @@ test-clean:
 	@scripts/run_vm.sh stop
 	@scripts/run_vm.sh clean
 
+# TODO review and clean installer test code, many tests are disabled
+test-installer: prepare-installer-test
+	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./installer
+
 test-smoke: prepare-test
 	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
 
-test-installer: prepare-installer-test
-	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./installer
+# TODO missing an image to upgrade to
+#test-hooks: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
+
+#test-recovery: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
+
+#test-fallback: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
+
+#test-reset: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./reset
+
+#test-upgrades-local: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-local
+
+# TODO missing signed and unsigned images to upgrade to
+#test-upgrades-images-signed: prepare-test
+#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
