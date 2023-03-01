@@ -34,6 +34,7 @@ stages:
         grub2-editenv ${statemnt}/grub_oem_env set recovery_label=COS_RECOVERY
         grub2-editenv ${statemnt}/grub_oem_env set system_label=COS_SYSTEM
         grub2-editenv ${statemnt}/grub_oem_env set oem_label=COS_OEM
+        grub2-editenv ${statemnt}/grub_oem_env set persistent_label=COS_PERSISTENT
   after-upgrade.after:
     - &uninstallhook
       if: '[ -f "/oem/01_upgrade_grub_hook.yaml" ]'
