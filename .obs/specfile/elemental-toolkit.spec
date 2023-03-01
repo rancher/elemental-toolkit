@@ -180,8 +180,7 @@ cp %{S:2} .
 %{__install} -D -m 644 packages/base-dracut-modules/50-cos-initrd.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-cos-initrd.conf
 
 # elemental-init-rootfs
-%{__install} -D -m 644 packages/cloud-config/oem/00_rootfs.yaml.tmpl %{buildroot}%{oemdir}/00_rootfs.yaml.tmpl
-./packages/cos-config/cos-tmpl-render.sh %{buildroot}%{oemdir}/00_rootfs.yaml.tmpl ./packages/cos-config/cos-config
+%{__install} -D -m 644 packages/cloud-config/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
 
 # elemental-init-network
 %{__install} -D -m 644 packages/cloud-config/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
