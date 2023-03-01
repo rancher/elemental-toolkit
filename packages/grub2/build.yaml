@@ -14,6 +14,7 @@ prelude:
 
 steps:
 {{if eq .Values.name "grub2-config"}}
+- mkdir -p /etc/cos
 - cp config/grub.cfg config/bootargs.cfg /etc/cos
   {{if .Values.tool_image_distribution}}
     {{if eq .Values.tool_image_distribution "ubuntu"}}
@@ -26,8 +27,7 @@ steps:
 
 {{if eq .Values.name "grub2-efi-image"}}
 - mkdir -p /EFI/BOOT
-- cp config/grub_efi.cfg.tmpl /EFI/BOOT/grub.cfg.tmpl
-- cos-tmpl-render /EFI/BOOT/grub.cfg.tmpl
+- cp config/grub_efi.cfg /EFI/BOOT/grub.cfg
   {{if .Values.tool_image_distribution}}
     {{if eq .Values.tool_image_distribution "opensuse"}}
       {{if .Values.arch }}
