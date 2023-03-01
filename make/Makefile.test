@@ -1,7 +1,7 @@
 .PHONY: prepare-test
 prepare-test:
 ifeq ("$(QCOW2)","")
-	@echo "No qcow2 disk found, run make packer first"
+	@echo "No qcow2 disk found, run 'make packer' first"
 	@exit 1
 endif
 	@scripts/run_vm.sh start $(QCOW2)
@@ -10,7 +10,7 @@ endif
 .PHONY: prepare-installer-test
 prepare-installer-test:
 ifeq ("$(ISO)","")
-	@echo "No ISO image found, run make build-example-iso first"
+	@echo "No ISO image found, run 'make build-example-iso' first"
 	@exit 1
 endif
 	@scripts/run_vm.sh start $(ISO)
