@@ -1,7 +1,0 @@
-packages:
-  - name: "cos-config"
-    category: "system"
-    version: 0.1.0-7
-  - name: "cos-config-tmpl"
-    category: "utils"
-    version: 0.1.0-6

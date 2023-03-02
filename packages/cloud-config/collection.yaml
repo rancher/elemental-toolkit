@@ -1,11 +1,10 @@
 packages:
   - &base
     name: "rootfs"
-    oem_file: "00_rootfs.yaml.tmpl"
+    oem_file: "00_rootfs.yaml"
     oem_dir: "/system/oem"
-    templated: true
     category: cloud-config
-    version: 0.4.2-8
+    version: 0.4.2-9
     requires:
       - name: "cos-setup"
         category: "system"
@@ -13,44 +12,33 @@ packages:
   - !!merge <<: *base
     name: "defaults"
     oem_file: "01_defaults.yaml"
-    templated: false
   - !!merge <<: *base
     name: "upgrades"
     oem_file: "02_upgrades.yaml"
-    templated: false
   - !!merge <<: *base
     name: "branding"
     oem_file: "03_branding.yaml"
-    templated: false
   - !!merge <<: *base
     name: "accounting"
     oem_file: "04_accounting.yaml"
-    templated: false
   - !!merge <<: *base
     name: "network"
     oem_file: "05_network.yaml"
-    templated: false
   - !!merge <<: *base
     name: "recovery"
     oem_file: "06_recovery.yaml"
-    templated: false
   - !!merge <<: *base
     name: "live"
     oem_file: "07_live.yaml"
-    templated: false
   - !!merge <<: *base
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
-    templated: false
   - !!merge <<: *base
     name: "default-services"
     oem_file: "09_services.yaml"
-    templated: false
   - !!merge <<: *base
     name: "selinux"
     oem_file: "10_selinux.yaml"
-    templated: false
   - !!merge <<: *base
     name: "upgrade_grub_hooks"
     oem_file: "01_upgrade_grub_hook.yaml"
-    templated: false

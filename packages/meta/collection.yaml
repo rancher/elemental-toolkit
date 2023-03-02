@@ -3,7 +3,7 @@ packages:
     category: "meta"
     name: "toolchain"
     description: "Meta package for cOS toolchain"
-    version: "0.24.1"
+    version: "0.24.2"
     requires:
       - category: toolchain
         name: elemental-cli
@@ -25,9 +25,6 @@ packages:
     name: "cos-modules"
     description: "Meta package for cOS core modules. It includes cos-setup, dracut and grub configuration"
     requires:
-      - name: "cos-config"
-        category: "system"
-        version: ">=0"
       - category: system
         name: cos-setup
         version: ">0.6.1-1"

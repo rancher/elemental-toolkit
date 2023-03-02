@@ -1,9 +1,6 @@
 requires:
-- name: "cos-config-tmpl" 
-  category: "utils"
-  version: ">=0"
-- name: "cos-config" 
-  category: "system"
+- name: "tool"
+  category: "distro"
   version: ">=0"
 
 steps:
