@@ -17,18 +17,16 @@ limitations under the License.
 package partitioner
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 const efiType = "EF00"
-const biosType = "EF02" // unused
+const biosType = "EF02" //nolint:unused
 const linuxType = "8300"
 
 type GdiskCall struct {
@@ -36,7 +34,6 @@ type GdiskCall struct {
 	wipe      bool
 	parts     []*Partition
 	deletions []int
-	label     string
 	runner    v1.Runner
 	expand    bool
 	pretend   bool
@@ -148,7 +145,7 @@ func (gd GdiskCall) Print() (string, error) {
 
 // Parses the output of a GdiskCall.Print call
 func (gd GdiskCall) GetLastSector(printOut string) (uint, error) {
-	re := regexp.MustCompile("last usable sector is (\\d+)")
+	re := regexp.MustCompile(`last usable sector is (\d+)`)
 	match := re.FindStringSubmatch(printOut)
 	if match != nil {
 		endS, err := strconv.ParseUint(match[1], 10, 0)
@@ -159,7 +156,7 @@ func (gd GdiskCall) GetLastSector(printOut string) (uint, error) {
 
 // Parses the output of a GdiskCall.Print call
 func (gd GdiskCall) GetSectorSize(printOut string) (uint, error) {
-	re := regexp.MustCompile("[Ss]ector size.* (\\d+) bytes")
+	re := regexp.MustCompile(`[Ss]ector size.* (\d+) bytes`)
 	match := re.FindStringSubmatch(printOut)
 	if match != nil {
 		size, err := strconv.ParseUint(match[1], 10, 0)
@@ -175,36 +172,7 @@ func (gd GdiskCall) GetPartitionTableLabel(printOut string) (string, error) {
 
 // Parses the output of a GdiskCall.Print call
 func (gd GdiskCall) GetPartitions(printOut string) []Partition {
-	re := regexp.MustCompile("^(\\d+)\\s+(\\d+)\\s+(\\d+).*(EF02|EF00|8300)\\s*(.*)$")
-	var start uint
-	var end uint
-	var size uint
-	var pLabel string
-	var partNum int
-	var partitions []Partition
-
-	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(printOut)))
-	for scanner.Scan() {
-		match := re.FindStringSubmatch(strings.TrimSpace(scanner.Text()))
-		if match != nil {
-			partNum, _ = strconv.Atoi(match[1])
-			parsed, _ := strconv.ParseUint(match[2], 10, 0)
-			start = uint(parsed)
-			parsed, _ = strconv.ParseUint(match[3], 10, 0)
-			end = uint(parsed)
-			size = end - start + 1
-			pLabel = match[5]
-
-			partitions = append(partitions, Partition{
-				Number:     partNum,
-				StartS:     start,
-				SizeS:      size,
-				PLabel:     pLabel,
-				FileSystem: "",
-			})
-		}
-	}
-	return partitions
+	return getPartitions(regexp.MustCompile(`^(\d+)\s+(\d+)\s+(\d+).*(EF02|EF00|8300)\s*(.*)$`), printOut)
 }
 
 func (gd *GdiskCall) SetPretend(pretend bool) {

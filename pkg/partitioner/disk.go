@@ -239,7 +239,10 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string, flags
 		}
 	}
 
-	pc.SetPartitionTableLabel(dev.label)
+	err := pc.SetPartitionTableLabel(dev.label)
+	if err != nil {
+		return 0, err
+	}
 
 	var partNum int
 	var startS uint
@@ -338,7 +341,10 @@ func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
 		}
 	}
 
-	pc.SetPartitionTableLabel(dev.label)
+	err := pc.SetPartitionTableLabel(dev.label)
+	if err != nil {
+		return "", err
+	}
 
 	if len(dev.parts) == 0 {
 		return "", errors.New("There is no partition to expand")

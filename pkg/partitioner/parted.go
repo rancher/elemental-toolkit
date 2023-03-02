@@ -202,7 +202,10 @@ func (pc PartedCall) GetPartitionTableLabel(printOut string) (string, error) {
 
 // Parses the output of a GdiskCall.Print call
 func (pc PartedCall) GetPartitions(printOut string) []Partition {
-	re := regexp.MustCompile(`^(\d+):(\d+)s:(\d+)s:(\d+)s:(.*):(.*):(.*);$`)
+	return getPartitions(regexp.MustCompile(`^(\d+):(\d+)s:(\d+)s:(\d+)s:(.*):(.*):(.*);$`), printOut)
+}
+
+func getPartitions(re *regexp.Regexp, printOut string) []Partition {
 	var start uint
 	var end uint
 	var size uint

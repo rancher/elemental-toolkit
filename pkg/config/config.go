@@ -484,7 +484,8 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 
-	partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+	// does not return error on v1.EFI use case
+	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
 	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+partSuffix)
 
 	partitions.OEM = &v1.Partition{

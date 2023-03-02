@@ -64,7 +64,7 @@ func (ci *FakeCloudInitRunner) GetStageArgs(stage string) []string {
 }
 
 func (ci *FakeCloudInitRunner) CloudInitFileRender(target string, config *schema.YipConfig) error {
-	if ci.RenderErr == true {
+	if ci.RenderErr {
 		return fmt.Errorf("failed redering yip file")
 	}
 	return nil

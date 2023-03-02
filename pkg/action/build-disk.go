@@ -88,7 +88,7 @@ func (b *BuildDiskAction) preparePartitionsRoot() error {
 	return nil
 }
 
-func (b *BuildDiskAction) BuildDiskRun() (err error) {
+func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	var recInfo, activeInfo interface{}
 	var rawImg string
 
@@ -547,14 +547,14 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 }
 
 // applySelinuxLabels sets SELinux extended attributes to the root-tree being installed. Swallows errors, label on a best effort
-func (i *BuildDiskAction) applySelinuxLabels(e *elemental.Elemental, root string, noMounts bool) error {
+func (b *BuildDiskAction) applySelinuxLabels(e *elemental.Elemental, root string, noMounts bool) error {
 	if noMounts {
 		// Swallow errors, label on a best effort when not chrooting
 		return e.SelinuxRelabel(root, false)
 	}
 	binds := map[string]string{}
 	return utils.ChrootedCallback(
-		&i.cfg.Config, root, binds, func() error { return e.SelinuxRelabel("/", true) },
+		&b.cfg.Config, root, binds, func() error { return e.SelinuxRelabel("/", true) },
 	)
 }
 
