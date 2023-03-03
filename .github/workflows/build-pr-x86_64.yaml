@@ -72,9 +72,10 @@ jobs:
         env:
           cache-name: pr-disk-build
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - name: Cached ISO
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached ISO
         id: cache-iso
         uses: martijnhols/actions-cache@v3
         env:
@@ -82,7 +83,6 @@ jobs:
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-          fail-on-cache-miss: true
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
         id: cache-disk
@@ -121,7 +121,6 @@ jobs:
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-          fail-on-cache-miss: true
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils
@@ -162,7 +161,6 @@ jobs:
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-          fail-on-cache-miss: true
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils
