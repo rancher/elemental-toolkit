@@ -18,7 +18,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with: 
-          go-version-file: go.mod
+          go-version: 'stable'
 
       - name: Install Updatecli in the runner
         uses: updatecli/updatecli-action@v2
