@@ -22,23 +22,32 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Cached ISO
-        id: cache-iso
-        uses: actions/cache@v3
+      - name: Checks cached ISO
+        uses: martijnhols/actions-cache/check@v3
+        id: cache-check
         env:
           cache-name: pr-iso-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached ISO
+        id: cache-iso
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-iso-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build toolkit
         run: |
           make build
-      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build example OS
         run: |
           make build-example-os
-      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build example ISO
         run: |
           make build-example-iso
@@ -57,24 +66,33 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
+      - name: Checks cached Disk
+        uses: martijnhols/actions-cache/check@v3
+        id: cache-check
+        env:
+          cache-name: pr-disk-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache@v3
+        uses: martijnhols/actions-cache@v3
         env:
           cache-name: pr-iso-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
           fail-on-cache-miss: true
-      - name: Cached Disk
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached Disk
         id: cache-disk
-        uses: actions/cache@v3
+        uses: martijnhols/actions-cache@v3
         env:
           cache-name: pr-disk-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Install to disk with Packer
         run: |
           export PKR_VAR_firmware=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit)
@@ -97,7 +115,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache@v3
+        uses: martijnhols/actions-cache@v3
         env:
           cache-name: pr-iso-build
         with:
@@ -138,7 +156,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached Disk
         id: cache-disk
-        uses: actions/cache@v3
+        uses: martijnhols/actions-cache@v3
         env:
           cache-name: pr-disk-build
         with:
