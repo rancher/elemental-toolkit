@@ -17,10 +17,12 @@ limitations under the License.
 package partitioner
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
@@ -112,6 +114,9 @@ func (gd *GdiskCall) WriteChanges() (string, error) {
 
 	// Notify kernel of partition table changes, swallows errors, just a best effort call
 	_, _ = gd.runner.Run("partprobe", gd.dev)
+	gd.wipe = false
+	gd.parts = []*Partition{}
+	gd.deletions = []int{}
 	return string(out), err
 }
 
@@ -131,7 +136,8 @@ func (gd *GdiskCall) DeletePartition(num int) {
 }
 
 func (gd *GdiskCall) SetPartitionFlag(num int, flag string, active bool) {
-	// TODO set flags
+	// Just implemented in case there is a shared interface with parted wrapper someday
+	// sgdisk does not make use of flags concept, doesn't make much sense for GPT.
 }
 
 func (gd *GdiskCall) WipeTable(wipe bool) {
@@ -167,12 +173,42 @@ func (gd GdiskCall) GetSectorSize(printOut string) (uint, error) {
 
 // TODO parse printOut from a non gpt disk and return error here
 func (gd GdiskCall) GetPartitionTableLabel(printOut string) (string, error) {
-	return "gpt", nil
+	return v1.GPT, nil
 }
 
 // Parses the output of a GdiskCall.Print call
-func (gd GdiskCall) GetPartitions(printOut string) []Partition {
-	return getPartitions(regexp.MustCompile(`^(\d+)\s+(\d+)\s+(\d+).*(EF02|EF00|8300)\s*(.*)$`), printOut)
+func (gd GdiskCall) GetPartitions(printOut string) []Partition { //nolint:dupl
+	re := regexp.MustCompile(`^(\d+)\s+(\d+)\s+(\d+).*(EF02|EF00|8300)\s*(.*)$`)
+	var start uint
+	var end uint
+	var size uint
+	var pLabel string
+	var partNum int
+	var partitions []Partition
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(printOut)))
+	for scanner.Scan() {
+		match := re.FindStringSubmatch(strings.TrimSpace(scanner.Text()))
+		if match != nil {
+			partNum, _ = strconv.Atoi(match[1])
+			parsed, _ := strconv.ParseUint(match[2], 10, 0)
+			start = uint(parsed)
+			parsed, _ = strconv.ParseUint(match[3], 10, 0)
+			end = uint(parsed)
+			size = end - start + 1
+			pLabel = match[5]
+
+			partitions = append(partitions, Partition{
+				Number:     partNum,
+				StartS:     start,
+				SizeS:      size,
+				PLabel:     pLabel,
+				FileSystem: "",
+			})
+		}
+	}
+
+	return partitions
 }
 
 func (gd *GdiskCall) SetPretend(pretend bool) {

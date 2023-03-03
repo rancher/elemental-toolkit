@@ -30,15 +30,29 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	mocks "github.com/rancher/elemental-toolkit/pkg/mocks"
 	part "github.com/rancher/elemental-toolkit/pkg/partitioner"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-const printOutput = `BYT;
+const partedPrint = `BYT;
 /dev/loop0:50593792s:loopback:512:512:msdos:Loopback device:;
 1:2048s:98303s:96256s:ext4::type=83;
 2:98304s:29394943s:29296640s:ext4::boot, type=83;
 3:29394944s:45019135s:15624192s:ext4::type=83;
 4:45019136s:50331647s:5312512s:ext4::type=83;`
+
+const sgdiskPrint = `Disk /dev/sda: 500118192 sectors, 238.5 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): CE4AA9A2-59DF-4DCC-B55A-A27A80676B33
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 500118158
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048          526335   256.0 MiB   EF00
+   2          526336        17303551   8.0 GiB     8200  
+   3        17303552       500118158   230.2 GiB   8300  `
 
 func TestElementalSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -49,6 +63,128 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 	var runner *mocks.FakeRunner
 	BeforeEach(func() {
 		runner = mocks.NewFakeRunner()
+	})
+	Describe("Gdisk tests", Label("sgdisk"), func() {
+		var gc *part.GdiskCall
+		BeforeEach(func() {
+			gc = part.NewGdiskCall("/dev/device", runner)
+		})
+		It("Write changes does nothing with empty setup", func() {
+			gc := part.NewGdiskCall("/dev/device", runner)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+		})
+		It("Runs complex command", func() {
+			cmds := [][]string{
+				{"sgdisk", "-P", "--zap-all", "-n=0:2048:+204800", "-c=0:p.efi", "-t=0:EF00",
+					"-n=1:206848:+0", "-c=1:p.root", "-t=1:8300", "/dev/device"},
+				{"sgdisk", "--zap-all", "-n=0:2048:+204800", "-c=0:p.efi", "-t=0:EF00",
+					"-n=1:206848:+0", "-c=1:p.root", "-t=1:8300", "/dev/device"},
+				{"partprobe", "/dev/device"},
+			}
+			part1 := part.Partition{
+				Number: 0, StartS: 2048, SizeS: 204800,
+				PLabel: "p.efi", FileSystem: "vfat",
+			}
+			gc.CreatePartition(&part1)
+			part2 := part.Partition{
+				Number: 1, StartS: 206848, SizeS: 0,
+				PLabel: "p.root", FileSystem: "ext4",
+			}
+			gc.CreatePartition(&part2)
+			gc.WipeTable(true)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("Set a new partition label", func() {
+			cmds := [][]string{
+				{"sgdisk", "-P", "--zap-all", "/dev/device"},
+				{"sgdisk", "--zap-all", "/dev/device"},
+				{"partprobe", "/dev/device"},
+			}
+			Expect(gc.SetPartitionTableLabel(v1.GPT)).To(Succeed())
+			gc.WipeTable(true)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("Fails setting a new partition label", func() {
+			Expect(gc.SetPartitionTableLabel(v1.MSDOS)).NotTo(Succeed())
+		})
+		It("Creates a new partition", func() {
+			cmds := [][]string{
+				{"sgdisk", "-n=0:2048:+204800", "-c=0:p.root", "-t=0:8300", "/dev/device"},
+				{"partprobe", "/dev/device"},
+				{"sgdisk", "-n=0:2048:+0", "-c=0:p.root", "-t=0:8300", "/dev/device"},
+				{"partprobe", "/dev/device"},
+			}
+			partition := part.Partition{
+				Number: 0, StartS: 2048, SizeS: 204800,
+				PLabel: "p.root", FileSystem: "ext4",
+			}
+			gc.CreatePartition(&partition)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+			partition = part.Partition{
+				Number: 0, StartS: 2048, SizeS: 0,
+				PLabel: "p.root", FileSystem: "ext4",
+			}
+			gc.CreatePartition(&partition)
+			_, err = gc.WriteChanges()
+			Expect(err).To(BeNil())
+			Expect(runner.MatchMilestones(cmds)).To(BeNil())
+		})
+		It("Deletes a partition", func() {
+			cmds := [][]string{
+				{"sgdisk", "-P", "-d=1", "-d=2", "/dev/device"},
+				{"sgdisk", "-d=1", "-d=2", "/dev/device"},
+				{"partprobe", "/dev/device"},
+			}
+			gc.DeletePartition(1)
+			gc.DeletePartition(2)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("Wipes partition table creating a new one", func() {
+			cmds := [][]string{
+				{"sgdisk", "-P", "--zap-all", "/dev/device"}, {"sgdisk", "--zap-all", "/dev/device"},
+				{"partprobe", "/dev/device"},
+			}
+			gc.WipeTable(true)
+			_, err := gc.WriteChanges()
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
+		})
+		It("Prints partition table info", func() {
+			cmd := []string{"sgdisk", "-p", "/dev/device"}
+			_, err := gc.Print()
+			Expect(err).To(BeNil())
+			Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
+		})
+		It("Gets last sector of the disk", func() {
+			lastSec, _ := gc.GetLastSector(sgdiskPrint)
+			Expect(lastSec).To(Equal(uint(500118158)))
+			_, err := gc.GetLastSector("invalid parted print output")
+			Expect(err).NotTo(BeNil())
+		})
+		It("Gets sector size of the disk", func() {
+			secSize, _ := gc.GetSectorSize(sgdiskPrint)
+			Expect(secSize).To(Equal(uint(512)))
+			_, err := gc.GetSectorSize("invalid parted print output")
+			Expect(err).NotTo(BeNil())
+		})
+		It("Gets partition table label", func() {
+			label, _ := gc.GetPartitionTableLabel(sgdiskPrint)
+			Expect(label).To(Equal(v1.GPT))
+		})
+		It("Gets partitions info of the disk", func() {
+			parts := gc.GetPartitions(sgdiskPrint)
+			// Ignores swap partition
+			Expect(len(parts)).To(Equal(2))
+			Expect(parts[1].StartS).To(Equal(uint(17303552)))
+		})
 	})
 	Describe("Parted tests", Label("parted"), func() {
 		var pc *part.PartedCall
@@ -158,25 +294,25 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
 		})
 		It("Gets last sector of the disk", func() {
-			lastSec, _ := pc.GetLastSector(printOutput)
+			lastSec, _ := pc.GetLastSector(partedPrint)
 			Expect(lastSec).To(Equal(uint(50593792)))
 			_, err := pc.GetLastSector("invalid parted print output")
 			Expect(err).NotTo(BeNil())
 		})
 		It("Gets sector size of the disk", func() {
-			secSize, _ := pc.GetSectorSize(printOutput)
+			secSize, _ := pc.GetSectorSize(partedPrint)
 			Expect(secSize).To(Equal(uint(512)))
 			_, err := pc.GetSectorSize("invalid parted print output")
 			Expect(err).NotTo(BeNil())
 		})
 		It("Gets partition table label", func() {
-			label, _ := pc.GetPartitionTableLabel(printOutput)
+			label, _ := pc.GetPartitionTableLabel(partedPrint)
 			Expect(label).To(Equal("msdos"))
 			_, err := pc.GetPartitionTableLabel("invalid parted print output")
 			Expect(err).NotTo(BeNil())
 		})
 		It("Gets partitions info of the disk", func() {
-			parts := pc.GetPartitions(printOutput)
+			parts := pc.GetPartitions(partedPrint)
 			Expect(len(parts)).To(Equal(4))
 			Expect(parts[1].StartS).To(Equal(uint(98304)))
 		})
@@ -230,7 +366,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		Describe("Load data without changes", func() {
 			BeforeEach(func() {
-				runner.ReturnValue = []byte(printOutput)
+				runner.ReturnValue = []byte(partedPrint)
 			})
 			It("Loads disk layout data", func() {
 				Expect(dev.Reload()).To(BeNil())
@@ -256,7 +392,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				Expect(dev.GetLabel()).To(Equal("msdos"))
 			})
 			It("It fixes GPT headers if the disk was expanded", func() {
-				runner.ReturnValue = []byte("Warning: Not all of the space available to /dev/loop0...\n" + printOutput)
+				runner.ReturnValue = []byte("Warning: Not all of the space available to /dev/loop0...\n" + partedPrint)
 				Expect(dev.Reload()).To(BeNil())
 				Expect(runner.MatchMilestones([][]string{
 					{"parted", "--script", "--machine", "--", "/dev/device", "unit", "s", "print"},
@@ -274,7 +410,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				})).To(BeNil())
 			})
 			It("Fails to create an unsupported partition table label", func() {
-				runner.ReturnValue = []byte(printOutput)
+				runner.ReturnValue = []byte(partedPrint)
 				_, err := dev.NewPartitionTable("invalidLabel")
 				Expect(err).NotTo(BeNil())
 			})
@@ -283,7 +419,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					"parted", "--script", "--machine", "--", "/dev/device",
 					"unit", "s", "mklabel", "gpt",
 				}, printCmd}
-				runner.ReturnValue = []byte(printOutput)
+				runner.ReturnValue = []byte(partedPrint)
 				_, err := dev.NewPartitionTable("gpt")
 				Expect(err).To(BeNil())
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
@@ -294,7 +430,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					"unit", "s", "mkpart", "primary", "ext4", "50331648", "100%",
 					"set", "5", "boot", "on",
 				}, printCmd}
-				runner.ReturnValue = []byte(printOutput)
+				runner.ReturnValue = []byte(partedPrint)
 				num, err := dev.AddPartition(0, "ext4", "ignored", "boot")
 				Expect(err).To(BeNil())
 				Expect(num).To(Equal(5))
@@ -302,7 +438,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			})
 			It("Fails to a new partition if there is not enough space available", func() {
 				cmds = [][]string{printCmd}
-				runner.ReturnValue = []byte(printOutput)
+				runner.ReturnValue = []byte(partedPrint)
 				_, err := dev.AddPartition(130, "ext4", "ignored")
 				Expect(err).NotTo(BeNil())
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
@@ -352,7 +488,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					runFunc := func(cmd string, args ...string) ([]byte, error) {
 						switch cmd {
 						case "parted":
-							return []byte(printOutput), nil
+							return []byte(partedPrint), nil
 						default:
 							return []byte{}, nil
 						}
