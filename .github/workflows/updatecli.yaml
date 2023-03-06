@@ -20,6 +20,11 @@ jobs:
         with: 
           go-version: 'stable'
 
+      - name: Set the value
+        id: step_one
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+
       - name: Install Updatecli in the runner
         uses: updatecli/updatecli-action@v2
 
@@ -27,6 +32,7 @@ jobs:
         run: "updatecli apply --config .updatecli.d/golang-version.yaml"
         env:
           ELEMENTAL_BOT_GITHUB_TOKEN: "${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}"
+          GOPATH: "${{ env.GOPATH }}"
 
       - name: Run ginkgo/gomega update
         run: "updatecli apply --config .updatecli.d/ginkgo.yaml"

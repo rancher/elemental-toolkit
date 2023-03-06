@@ -67,19 +67,6 @@ targets:
         file: go.mod
     scmid: ci
     sourceid: gomod
-  GitHubActions:
-    name: "Update Github Actions files with new go-version"
-    kind: yaml
-    sourceid: goversion
-    scmid: ci
-    spec:
-      key: env.GO_VERSION
-      files:
-        - .github/workflows/build.yaml
-        - .github/workflows/test.yaml
-        - .github/workflows/docs.yaml
-        - .github/workflows/lint.yaml
-        - .github/workflows/release.yaml
   Dockerfile:
     name: "Update the value of ARG GO_VERSION in the Dockerfile"
     sourceid: goversion
