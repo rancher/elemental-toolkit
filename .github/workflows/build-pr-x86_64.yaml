@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.18'
       - run: |
@@ -130,8 +130,6 @@ jobs:
           make prepare-installer-test
       - name: Run test-installer
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           make test-installer
       - name: Stop test VM
         if: always()
@@ -148,7 +146,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.18'
       - run: |
@@ -170,8 +168,6 @@ jobs:
           make prepare-test
       - name: Run test-smoke
         run: |
-          export GOPATH="/Users/runner/go"
-          PATH=$PATH:$GOPATH/bin
           make test-smoke
       - name: Stop test VM
         if: always()
