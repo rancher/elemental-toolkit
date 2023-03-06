@@ -27,10 +27,10 @@ test-installer: prepare-installer-test
 test-smoke: prepare-test
 	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
 
-# TODO missing an image to upgrade to
-#test-hooks: prepare-test
-#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
+test-hooks: prepare-test
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
 
+# TODO missing an image to upgrade to
 #test-recovery: prepare-test
 #	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
 

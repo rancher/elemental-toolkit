@@ -1,4 +1,4 @@
-module github.com/rancher-sandbox/cOS/tests
+module github.com/rancher/elemental-toolkit/tests
 
 go 1.16
 

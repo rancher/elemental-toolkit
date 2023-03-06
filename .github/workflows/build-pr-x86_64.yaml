@@ -136,13 +136,16 @@ jobs:
         run: |
           make test-clean
 
-  test-smoke:
+  tests-matrix:
     runs-on: macos-12
     needs: install-to-vm
     env:
       FLAVOR: green
       ARCH: x86_64
       ELMNTL_ACCEL: hvf
+    strategy:
+      matrix:
+        test: [ test-smoke, test-hooks ]
     steps:
       - uses: actions/checkout@v3
       - name: Install Go
@@ -168,7 +171,7 @@ jobs:
           make prepare-test
       - name: Run test-smoke
         run: |
-          make test-smoke
+          make ${{ matrix.test }}
       - name: Stop test VM
         if: always()
         run: |
