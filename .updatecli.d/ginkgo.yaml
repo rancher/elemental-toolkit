@@ -29,8 +29,8 @@ sources:
       command: |
         go get -u github.com/onsi/ginkgo/v2
         go get -u github.com/onsi/gomega
-        go mod tidy && \
-        go mod vendor && \
+        go mod tidy
+        go mod vendor
         cat go.mod
       environments:
         - name: PATH
