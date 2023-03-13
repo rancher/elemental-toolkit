@@ -78,10 +78,9 @@ stages:
          permsisions: 0600
          content: |
             set extra_active_cmdline="rd.emergency=reboot rd.shell=0 panic=5 systemd.crash_reboot systemd.crash_shell=0"
-            set boot_assessment="/boot_assessment"
-            search --no-floppy --file --set=boot_assessment_blk "${boot_assessment}"
-            if [ "${boot_assessment_blk}" ]; then
-              load_env -f "(${boot_assessment_blk})${boot_assessment}"
+            set boot_assessment_file="/boot_assessment"
+            if [ -f "${boot_assessment_file}" ]; then
+              load_env -f "${boot_assessment_file}"
             fi
             if [ "${enable_boot_assessment}" = "yes" -o "${enable_boot_assessment_always}" = "yes" ]; then
               if [ -z "${selected_entry}" ]; then
@@ -90,7 +89,7 @@ stages:
                   set extra_passive_cmdline="upgrade_failure"
                 else
                   set boot_assessment_tentative="yes"
-                  save_env -f "(${boot_assessment_blk})${boot_assessment}" boot_assessment_tentative
+                  save_env -f "${boot_assessment_file}" boot_assessment_tentative
                 fi
               fi
             fi
