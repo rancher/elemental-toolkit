@@ -2,20 +2,20 @@
 title: "GRUB"
 linkTitle: "GRUB"
 weight: 4
-date: 2017-01-05
+date: 2023-03-14
 description: >
   GRUB 2 Configuration
 ---
 
-COS is set to deploy a persistent `grub.cfg` into the `COS_RECOVERY` partition during
-the system installation or image creation. COS grub configuration
+Elemental is set to deploy a persistent `grub.cfg` into the `COS_RECOVERY` partition during
+the system installation or image creation. Elemental grub configuration
 includes three menu entries: first for the main OS system, second for the
 fallback OS system and a third for the recovery OS.
 
 For example the main OS system menu entry could be something like:
 
 ```
-menuentry "cOS" --id cos {
+menuentry "Elemental" --id elemental {
   search.fs_label COS_STATE root
   set img=/cOS/active.img
   set label=COS_ACTIVE
@@ -90,12 +90,12 @@ Use `grub2-editenv` command line utility to define the desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /oem/grubenv set next_entry=recovery
+> grub2-editenv /run/initramfs/cos-state/grubenv set next_entry=recovery
 ```
 
 {{% alert title="Note" %}}
-The examples below make of the `COS_OEM` device, however it could use any device
-detected by GRUB2 that includes the file `/grubenv`. First match wins.
+The examples below make of the `COS_STATE` device, only files in the state
+partition will be used when booting.
 {{% /alert %}}
 
 ### Default boot entry
@@ -117,13 +117,13 @@ Use `grub2-editenv` command line utility to define desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /oem/grubenv set next_entry=recovery
+> grub2-editenv /run/initramfs/cos-state/grubenv set next_entry=recovery
 ```
 
 Or to set the default entry to `fallback` system:
 
 ```bash
-> grub2-editenv /oem/grubenv set saved_entry=fallback
+> grub2-editenv /run/initramfs/cos-state/grubenv set saved_entry=fallback
 ```
 
 ## Boot menu
@@ -149,13 +149,13 @@ will automatically set the GRUB menu entries for active, passive and recovery to
 The grub menu boot entry can also be set with `grub2-editenv`:
 
 ```bash
-> grub2-editenv /oem/grubenv set default_menu_entry=fooOS
+> grub2-editenv /run/initramfs/cos-state/grubenv set default_menu_entry=fooOS
 ```
 
 {{% alert title="Additional menu entries" %}}
 
-Since {{<package package="system/grub2-config" >}} >= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a `/grubmenu` config file in one of the available partitions detected by GRUB2 during boot. The file will be loaded from the first partition found by GRUB that have the `grubmenu` file. First match wins. 
-The `grubmenu` file will be sourced at the end of the boot process, and can contain several `menuentry` blocks.
+Since {{<package package="system/grub2-config" >}} >= 0.0.3-16 it is possible to add multiple custom menu entries to GRUB by creating a `/grubcustom` config file in the state partition during boot.
+The `grubcustom` file will be sourced at the end of the boot process, and can contain several `menuentry` blocks.
 
 {{% /alert %}}
 
@@ -176,7 +176,7 @@ By default Elemental boots into active, and if there are failures will boot into
 It is possible to override the default fallback logic by setting `default_fallback` as grub environment, consider for example:
 
 ```bash
-> grub2-editenv /oem/grubenv set default_fallback="2 0 1"
+> grub2-editenv /run/initramfs/cos-state/grubenv set default_fallback="2 0 1"
 ```
 
 Will set the default fallback to "2 0 1" instead of the default "0 1 2".
