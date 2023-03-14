@@ -32,7 +32,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 		Expect(out).To(ContainSubstring("bootfile_loc"))
 
 		out, _ = s.Command("sudo cat /run/initramfs/cos-state/grub_boot_assessment")
-		Expect(out).To(ContainSubstring("boot_assessment_blk"))
+		Expect(out).To(ContainSubstring("boot_assessment_file"))
 
 		cmdline, _ := s.Command("sudo cat /proc/cmdline")
 		Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
