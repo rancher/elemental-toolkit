@@ -4,7 +4,7 @@ packages:
     oem_file: "00_rootfs.yaml"
     oem_dir: "/system/oem"
     category: cloud-config
-    version: 0.4.2-9
+    version: 0.4.2-10
     requires:
       - name: "cos-setup"
         category: "system"
