@@ -7,7 +7,7 @@ description: >
   GRUB 2 Configuration
 ---
 
-Elemental is set to deploy a persistent `grub.cfg` into the `COS_RECOVERY` partition during
+Elemental is set to deploy a persistent `grub.cfg` into the `COS_STATE` partition during
 the system installation or image creation. Elemental grub configuration
 includes three menu entries: first for the main OS system, second for the
 fallback OS system and a third for the recovery OS.
@@ -29,7 +29,7 @@ menuentry "Elemental" --id elemental {
 
 {{% alert title="Kernel parameters" %}}
 The kernel parameters are not part of the persistent `grub.cfg` file stored in
-`COS_RECOVERY` partition. Kernel parameters are sourced from the loop device of
+`COS_STATE` partition. Kernel parameters are sourced from the loop device of
 the OS image to boot. This is mainly to keep kernel parameters consistent
 across different potential OS images or system upgrades. 
 {{% /alert %}}
@@ -96,8 +96,8 @@ For instance use the following command to reboot to recovery system only once:
 ```
 
 {{% alert title="Note" %}}
-The examples below make of the `COS_STATE` device, only files in the state
-partition will be used when booting.
+The examples below make use of the `COS_STATE` device, only files in the state
+and oem partitions will be used when booting.
 {{% /alert %}}
 
 ### Default boot entry
