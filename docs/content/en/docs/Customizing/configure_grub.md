@@ -28,10 +28,10 @@ menuentry "Elemental" --id elemental {
 ```
 
 {{% alert title="Kernel parameters" %}}
-The kernel parameters are not part of the persistent `grub.cfg` file stored in `COS_RECOVERY` partition. 
-Kernel parameters are sourced from the loop device of the OS image to boot. This is mainly to
-keep kernel parameters consistent across different potential OS images or
-system upgrades. 
+The kernel parameters are not part of the persistent `grub.cfg` file stored in
+`COS_RECOVERY` partition. Kernel parameters are sourced from the loop device of
+the OS image to boot. This is mainly to keep kernel parameters consistent
+across different potential OS images or system upgrades. 
 {{% /alert %}}
 
 ## Specifying default custom boot options
@@ -65,7 +65,9 @@ set initramfs=/boot/initrd
 You can tweak that file to suit your needs if you need to specify persistent boot arguments.
 
 {{% alert title="Note" %}}
-`rd.cos.oemlabel=COS_OEM` is required inside the bootargs in order to access to the `/oem` mount within the rootfs stage. `COS_OEM` is the default label for the oem partition.
+`rd.cos.oemlabel=COS_OEM` is required inside the bootargs in order to access to
+the `/oem` mount within the rootfs stage. `COS_OEM` is the default label for
+the oem partition.
 {{% /alert %}}
 
 ## Grub environment variables
@@ -90,7 +92,7 @@ Use `grub2-editenv` command line utility to define the desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /run/initramfs/cos-state/grubenv set next_entry=recovery
+> grub2-editenv /oem/grubenv set next_entry=recovery
 ```
 
 {{% alert title="Note" %}}
@@ -100,7 +102,7 @@ partition will be used when booting.
 
 ### Default boot entry
 
-The default grub configuration loads the `/grubenv` of any available device
+The default grub configuration loads the `/grubenv` of the COS_OEM partition
 and evaluates on `next_entry` variable and `saved_entry` variable. By default
 none is set.
 
@@ -117,13 +119,13 @@ Use `grub2-editenv` command line utility to define desired values.
 For instance use the following command to reboot to recovery system only once:
 
 ```bash
-> grub2-editenv /run/initramfs/cos-state/grubenv set next_entry=recovery
+> grub2-editenv /oem/grubenv set next_entry=recovery
 ```
 
 Or to set the default entry to `fallback` system:
 
 ```bash
-> grub2-editenv /run/initramfs/cos-state/grubenv set saved_entry=fallback
+> grub2-editenv /oem/grubenv set saved_entry=fallback
 ```
 
 ## Boot menu
@@ -149,7 +151,7 @@ will automatically set the GRUB menu entries for active, passive and recovery to
 The grub menu boot entry can also be set with `grub2-editenv`:
 
 ```bash
-> grub2-editenv /run/initramfs/cos-state/grubenv set default_menu_entry=fooOS
+> grub2-editenv /oem/grubenv set default_menu_entry=fooOS
 ```
 
 {{% alert title="Additional menu entries" %}}
@@ -168,6 +170,17 @@ It is possible to define persistent boot flag for each menu entry also via `grub
 - `extra_recovery_cmdline`: extra bootflags to be applied only on recovery
 - `extra_cmdline`: will be applied to each boot entry
 
+## Renaming partition labels
+
+During boot the GRUB2 configuration is set to load the `grub_oem_env` file from the state partition. In this file the following variables are set in order to find system partitions:
+
+- `state_label`: Label of state partition.
+- `active_label`: Filesystem label of active image.
+- `passive_label`: Filesystem label of passive image.
+- `recovery_label`: Label of recovery partition.
+- `system_label`: Filesystem label of recovery image.
+- `oem_label`: Label of OEM partition.
+- `persistent_label`: Label of persistent partition.
 
 ## Customizing fallback logic
 
@@ -176,7 +189,7 @@ By default Elemental boots into active, and if there are failures will boot into
 It is possible to override the default fallback logic by setting `default_fallback` as grub environment, consider for example:
 
 ```bash
-> grub2-editenv /run/initramfs/cos-state/grubenv set default_fallback="2 0 1"
+> grub2-editenv /oem/grubenv set default_fallback="2 0 1"
 ```
 
 Will set the default fallback to "2 0 1" instead of the default "0 1 2".
