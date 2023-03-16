@@ -35,7 +35,7 @@ function hasMountpoint {
     shift
     local mounts=("$@")
     local mount
-    
+
     for mount in "${mounts[@]}"; do
         if [ "${path}" = "${mount#*:}" ]; then
             return 0
@@ -110,7 +110,7 @@ function readCOSLayoutConfig {
     state_bind="${PERSISTENT_STATE_BIND:-false}"
     state_target="${PERSISTENT_STATE_TARGET:-/usr/local/.state}"
 
-    # An empty RW_PATHS is a valid value, default rw_paths are only 
+    # An empty RW_PATHS is a valid value, default rw_paths are only
     # applied when RW_PATHS is unset.
     if [ -n "${RW_PATHS+x}" ]; then
         rw_paths=(${RW_PATHS})
@@ -165,10 +165,10 @@ function mountOverlay {
         workdir="${base}/${mount//\//-}.overlay/work"
         mkdir -p "${merged}" "${upperdir}" "${workdir}"
         if [ $? -ne 0 ]; then
-            >&2 echo "failed creating one of '${merged}', '${upperdir}' or '${workdir}'. Ignoring '${merged}' mount"
-            return
+            >&2 echo "failed creating one of '${merged}', '${upperdir}' or '${workdir}'"
+        else
+            mount -t overlay overlay -o "defaults,lowerdir=${merged},upperdir=${upperdir},workdir=${workdir}" "${merged}"
         fi
-        mount -t overlay overlay -o "defaults,lowerdir=${merged},upperdir=${upperdir},workdir=${workdir}" "${merged}"
         fstab_line="overlay /${mount} overlay defaults,lowerdir=/${mount},upperdir=${upperdir##/sysroot},workdir=${workdir##/sysroot}"
         required_mount=$(findmnt -fno TARGET --target "${base}")
         if [ -n "${required_mount}" ] && [ "${required_mount}" != "/" ]; then
@@ -192,11 +192,11 @@ function mountState {
         if ! mountpoint -q "${base}"; then
             mkdir -p "${base}" "${state_dir}"
             if [ $? -ne 0 ]; then
-                >&2 echo "failed creating '${base}' or '${state_dir}'. Ignoring '${base}' mount"
-                return
+                >&2 echo "failed creating '${base}' or '${state_dir}'"
+            else
+                rsync -aqAX "${base}/" "${state_dir}/"
+                mount -o defaults,bind "${state_dir}" "${base}"
             fi
-            rsync -aqAX "${base}/" "${state_dir}/"
-            mount -o defaults,bind "${state_dir}" "${base}"
             fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
         fi
     else
@@ -216,12 +216,25 @@ function mountPersistent {
     echo "${mount#*:} ${mount%%:*} auto defaults 0 0\n"
 }
 
+function waitForPath {
+    local path=$1
+    local count=0
+
+    while [ ! -e "${path}" ]; do
+        sleep 1
+        udevadm settle
+        (( count++ ))
+        [ "${count}" -ge "${timeout}" ] && return 1
+    done
+}
+
 #======================================
 # Mount the rootfs layout
 #--------------------------------------
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
+declare timeout=60
 declare cos_mounts=${cos_mounts}
 declare cos_overlay=${cos_overlay}
 declare cos_root_perm=${cos_root_perm}
@@ -260,6 +273,8 @@ for mount in "${mountpoints[@]}"; do
             fstab+=$(mountOverlay "${mount%%:*}")
         fi
     else
+        # wait for the device
+        waitForPath "${mount#*:}"
         # ensure filesystem check is not done twice for this device
         part_name=$(basename $(realpath "${mount#*:}"))
         [ -e "/tmp/cos-fsck-${part_name}" ] || systemd-fsck "${mount#*:}"
