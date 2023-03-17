@@ -187,8 +187,8 @@ var _ = Describe("Config", Label("config"), func() {
 				// From config file
 				Expect(disk.Size).To(Equal(uint(32768)))
 				Expect(disk.Partitions.OEM.Size).To(Equal(uint(32)))
-				Expect(disk.NoMounts).To(BeTrue())
-				Expect(disk.RecoveryOnly).To(BeTrue())
+				Expect(disk.Unprivileged).To(BeTrue())
+				Expect(disk.Expandable).To(BeTrue())
 				Expect(disk.Recovery.Label).To(BeEmpty())
 			})
 		})

@@ -137,6 +137,7 @@ func (g Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) (string, 
 
 	var foundModules bool
 	var foundEfi bool
+	// TODO this logic only requires loopback.mod, other not, is it intended?
 	for _, m := range []string{"loopback.mod", "squash4.mod", "xzio.mod"} {
 		err = WalkDirFs(g.config.Fs, rootDir, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {

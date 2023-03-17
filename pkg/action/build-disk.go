@@ -44,7 +44,6 @@ const (
 	deployStage    = "network"
 	postResetHook  = "post-reset"
 	cloudinitFile  = "00_disk_layout_setup.yaml"
-	successCheck   = `[ -f "/oem/` + constants.ActiveImgFile + `" ]`
 	defSectorSize  = 512
 )
 
