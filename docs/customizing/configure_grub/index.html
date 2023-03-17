@@ -23,13 +23,13 @@
 " />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://rancher.github.io/elemental-toolkit/docs/customizing/configure_grub/" /><meta property="article:section" content="docs" />
-<meta property="article:published_time" content="2017-01-05T00:00:00+00:00" />
-<meta property="article:modified_time" content="2023-03-15T08:36:12+01:00" /><meta property="og:site_name" content="Elemental toolkit" />
+<meta property="article:published_time" content="2023-03-14T00:00:00+00:00" />
+<meta property="article:modified_time" content="2023-03-16T14:35:47+01:00" /><meta property="og:site_name" content="Elemental toolkit" />
 <meta itemprop="name" content="GRUB">
 <meta itemprop="description" content="GRUB 2 Configuration
-"><meta itemprop="datePublished" content="2017-01-05T00:00:00+00:00" />
-<meta itemprop="dateModified" content="2023-03-15T08:36:12+01:00" />
-<meta itemprop="wordCount" content="871">
+"><meta itemprop="datePublished" content="2023-03-14T00:00:00+00:00" />
+<meta itemprop="dateModified" content="2023-03-16T14:35:47+01:00" />
+<meta itemprop="wordCount" content="914">
 <meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="GRUB"/>
 <meta name="twitter:description" content="GRUB 2 Configuration
@@ -131,7 +131,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.0667f4459ad62dd13fd83eb361574f5b.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.3fb2aac69883d12484fb9de217355bb8.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -167,7 +167,7 @@ if (!doNotTrack) {
   aria-label="Search this site…"
   autocomplete="off"
   
-  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.0667f4459ad62dd13fd83eb361574f5b.json"
+  data-offline-search-index-json-src="https://rancher.github.io/elemental-toolkit/offline-search-index.3fb2aac69883d12484fb9de217355bb8.json"
   data-offline-search-base-href="https://rancher.github.io/elemental-toolkit/"
   data-offline-search-max-results="10"
 >
@@ -638,9 +638,9 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscustomizingselinux_support-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscustomizingconfigure_grub-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docscustomizingselinux_support"><span class="">SELinux Support</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/configure_grub/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docscustomizingconfigure_grub"><span class="td-sidebar-nav-active-item">GRUB</span></a>
     
     
   </li>
@@ -665,9 +665,9 @@ if (!doNotTrack) {
   
   
   
-  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscustomizingconfigure_grub-li">
+  <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docscustomizingselinux_support-li">
     
-      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/configure_grub/" class="align-left pl-0 active td-sidebar-link td-sidebar-link__page" id="m-docscustomizingconfigure_grub"><span class="td-sidebar-nav-active-item">GRUB</span></a>
+      <a href="https://rancher.github.io/elemental-toolkit/docs/customizing/selinux_support/" class="align-left pl-0 td-sidebar-link td-sidebar-link__page" id="m-docscustomizingselinux_support"><span class="">SELinux Support</span></a>
     
     
   </li>
@@ -2080,6 +2080,7 @@ if (!doNotTrack) {
     </li>
     <li><a href="#boot-menu">Boot menu</a></li>
     <li><a href="#persistent-boot-option-flags">Persistent boot option flags</a></li>
+    <li><a href="#renaming-partition-labels">Renaming partition labels</a></li>
     <li><a href="#customizing-fallback-logic">Customizing fallback logic</a></li>
   </ul>
 </nav></div>
@@ -2164,12 +2165,12 @@ if (!doNotTrack) {
 		
 		
 	</header>    
-	<p>COS is set to deploy a persistent <code>grub.cfg</code> into the <code>COS_RECOVERY</code> partition during
-the system installation or image creation. COS grub configuration
+	<p>Elemental is set to deploy a persistent <code>grub.cfg</code> into the <code>COS_STATE</code> partition during
+the system installation or image creation. Elemental grub configuration
 includes three menu entries: first for the main OS system, second for the
 fallback OS system and a third for the recovery OS.</p>
 <p>For example the main OS system menu entry could be something like:</p>
-<pre tabindex="0"><code>menuentry &#34;cOS&#34; --id cos {
+<pre tabindex="0"><code>menuentry &#34;Elemental&#34; --id elemental {
   search.fs_label COS_STATE root
   set img=/cOS/active.img
   set label=COS_ACTIVE
@@ -2184,10 +2185,10 @@ fallback OS system and a third for the recovery OS.</p>
 <div class="alert alert-primary" role="alert">
 <h4 class="alert-heading">Kernel parameters</h4>
 
-    The kernel parameters are not part of the persistent <code>grub.cfg</code> file stored in <code>COS_RECOVERY</code> partition.
-Kernel parameters are sourced from the loop device of the OS image to boot. This is mainly to
-keep kernel parameters consistent across different potential OS images or
-system upgrades.
+    The kernel parameters are not part of the persistent <code>grub.cfg</code> file stored in
+<code>COS_STATE</code> partition. Kernel parameters are sourced from the loop device of
+the OS image to boot. This is mainly to keep kernel parameters consistent
+across different potential OS images or system upgrades.
 
 </div>
 
@@ -2219,7 +2220,9 @@ set initramfs=/boot/initrd
 <div class="alert alert-primary" role="alert">
 <h4 class="alert-heading">Note</h4>
 
-    <code>rd.cos.oemlabel=COS_OEM</code> is required inside the bootargs in order to access to the <code>/oem</code> mount within the rootfs stage. <code>COS_OEM</code> is the default label for the oem partition.
+    <code>rd.cos.oemlabel=COS_OEM</code> is required inside the bootargs in order to access to
+the <code>/oem</code> mount within the rootfs stage. <code>COS_OEM</code> is the default label for
+the oem partition.
 
 </div>
 
@@ -2276,13 +2279,13 @@ persistent GRUB2 variables across reboots.</p>
 <div class="alert alert-primary" role="alert">
 <h4 class="alert-heading">Note</h4>
 
-    The examples below make of the <code>COS_OEM</code> device, however it could use any device
-detected by GRUB2 that includes the file <code>/grubenv</code>. First match wins.
+    The examples below make use of the <code>COS_STATE</code> device, only files in the state
+and oem partitions will be used when booting.
 
 </div>
 
 <h3 id="default-boot-entry">Default boot entry</h3>
-<p>The default grub configuration loads the <code>/grubenv</code> of any available device
+<p>The default grub configuration loads the <code>/grubenv</code> of the COS_OEM partition
 and evaluates on <code>next_entry</code> variable and <code>saved_entry</code> variable. By default
 none is set.</p>
 <p>The default boot entry is set to the value of <code>saved_entry</code>, in case the variable
@@ -2321,8 +2324,8 @@ role="button">
 <i class='fa fa-box'></i> system/grub2-config
 </a></p>
 <blockquote>
-<p>= 0.0.14 it is possible to add multiple custom menu entries to GRUB by creating a <code>/grubmenu</code> config file in one of the available partitions detected by GRUB2 during boot. The file will be loaded from the first partition found by GRUB that have the <code>grubmenu</code> file. First match wins.
-The <code>grubmenu</code> file will be sourced at the end of the boot process, and can contain several <code>menuentry</code> blocks.</p>
+<p>= 0.0.3-16 it is possible to add multiple custom menu entries to GRUB by creating a <code>/grubcustom</code> config file in the state partition during boot.
+The <code>grubcustom</code> file will be sourced at the end of the boot process, and can contain several <code>menuentry</code> blocks.</p>
 </blockquote>
 
 
@@ -2335,6 +2338,17 @@ The <code>grubmenu</code> file will be sourced at the end of the boot process, a
 <li><code>extra_passive_cmdline</code>: extra bootflags to be applied only on passive boot</li>
 <li><code>extra_recovery_cmdline</code>: extra bootflags to be applied only on recovery</li>
 <li><code>extra_cmdline</code>: will be applied to each boot entry</li>
+</ul>
+<h2 id="renaming-partition-labels">Renaming partition labels</h2>
+<p>During boot the GRUB2 configuration is set to load the <code>grub_oem_env</code> file from the state partition. In this file the following variables are set in order to find system partitions:</p>
+<ul>
+<li><code>state_label</code>: Label of state partition.</li>
+<li><code>active_label</code>: Filesystem label of active image.</li>
+<li><code>passive_label</code>: Filesystem label of passive image.</li>
+<li><code>recovery_label</code>: Label of recovery partition.</li>
+<li><code>system_label</code>: Filesystem label of recovery image.</li>
+<li><code>oem_label</code>: Label of OEM partition.</li>
+<li><code>persistent_label</code>: Label of persistent partition.</li>
 </ul>
 <h2 id="customizing-fallback-logic">Customizing fallback logic</h2>
 <p>By default Elemental boots into active, and if there are failures will boot into the passive, and finally if keeps failing, will boot into recovery.</p>
@@ -2409,8 +2423,8 @@ The <code>grubmenu</code> file will be sourced at the end of the boot process, a
 	<div class="text-muted mt-5 pt-3 border-top">
 
     Last modified
-    March 15, 2023
-    : <a  href="https://github.com/rancher/elemental-toolkit/commit/9e07ba946056e845008863cb1a5924e4fc00bc26">Refactor grub.cfg (#1741) (9e07ba9)</a>
+    March 16, 2023
+    : <a  href="https://github.com/rancher/elemental-toolkit/commit/7d55fc362860de2a3462e854b08e89bb1c0a6eb9">Wait for all persistent volumes (7d55fc3)</a>
 
 </div>
 
