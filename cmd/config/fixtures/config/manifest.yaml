@@ -19,8 +19,8 @@ disk:
     persistent:
       size: 0
       fs: xfs
-  no-mounts: true
-  recovery-only: true
+  unprivileged: true
+  expandable: true
   recovery-system:
     uri: some.registry.org/my/image:mytag
     fs: squashfs

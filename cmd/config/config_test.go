@@ -179,6 +179,19 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(iso.Label).To(Equal("LIVE_LABEL"))
 			})
 		})
+		Describe("RawDisk spec", Label("disk"), func() {
+			It("initiates a RawDisk spec", func() {
+				disk, err := ReadBuildDisk(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				// From config file
+				Expect(disk.Size).To(Equal(uint(32768)))
+				Expect(disk.Partitions.OEM.Size).To(Equal(uint(32)))
+				Expect(disk.NoMounts).To(BeTrue())
+				Expect(disk.RecoveryOnly).To(BeTrue())
+				Expect(disk.Recovery.Label).To(BeEmpty())
+			})
+		})
 	})
 	Describe("Run config", Label("run"), func() {
 		var flags *pflag.FlagSet

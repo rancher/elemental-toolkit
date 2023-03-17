@@ -74,7 +74,7 @@ func (b *BuildDiskAction) preparePartitionsRoot() error {
 
 	rootMap := map[string]string{}
 
-	if b.spec.RecoveryOnly {
+	if b.spec.Expandable {
 		exclude = b.spec.Partitions.Persistent
 	}
 	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, exclude) {
@@ -132,7 +132,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return err
 	}
 
-	if !b.spec.RecoveryOnly {
+	if !b.spec.Expandable {
 		activeInfo = recInfo
 		// Check if active and recovery sources are configured differently
 		if !b.spec.Active.Source.IsEmpty() {
@@ -187,13 +187,13 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	// TODO set grub labels
 
 	// Relabel SELinux
-	err = b.applySelinuxLabels(e, activeRoot, b.spec.NoMounts)
+	err = b.applySelinuxLabels(e, activeRoot, b.spec.Unprivileged)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
 	// After disk hook happens after deploying the OS tree into a temporary folder
-	if !b.spec.NoMounts {
+	if !b.spec.Unprivileged {
 		err = b.buildDiskChrootHook(constants.AfterDiskChrootHook, activeRoot)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.HookAfterDiskChroot)
@@ -205,15 +205,15 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Create OS images
-	if !b.spec.RecoveryOnly {
+	if !b.spec.Expandable {
 		// Create active image
-		err = e.CreateImgFromTree(activeRoot, &b.spec.Active, b.spec.NoMounts, nil)
+		err = e.CreateImgFromTree(activeRoot, &b.spec.Active, b.spec.Unprivileged, nil)
 		if err != nil {
 			return err
 		}
 
 		// Create passive image
-		err = e.CreateImgFromTree(activeRoot, &b.spec.Passive, b.spec.NoMounts, nil)
+		err = e.CreateImgFromTree(activeRoot, &b.spec.Passive, b.spec.Unprivileged, nil)
 		if err != nil {
 			return err
 		}
@@ -221,7 +221,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	// Create recovery image and removes recovery and active roots when done
 	err = e.CreateImgFromTree(
-		recRoot, &b.spec.Recovery, b.spec.NoMounts,
+		recRoot, &b.spec.Recovery, b.spec.Unprivileged,
 		func() error {
 			cErr := b.cfg.Fs.RemoveAll(recRoot)
 			if cErr == nil {
@@ -234,7 +234,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return err
 	}
 
-	if b.spec.RecoveryOnly {
+	if b.spec.Expandable {
 		err = b.SetExpandableCloudInitStage()
 		if err != nil {
 			return err
@@ -315,7 +315,7 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 	var excludes v1.PartitionList
 
 	excludes = append(excludes, b.spec.Partitions.EFI)
-	if b.spec.RecoveryOnly {
+	if b.spec.Expandable {
 		excludes = append(excludes, b.spec.Partitions.Persistent)
 	}
 
@@ -336,7 +336,7 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
 		img = part.ToImage()
 		err = e.CreateImgFromTree(
-			b.roots[part.Name], img, b.spec.NoMounts,
+			b.roots[part.Name], img, b.spec.Unprivileged,
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
 		)
 		if err != nil {
@@ -517,7 +517,7 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 		b.cfg.Logger.Warnf("Could not determine disk sector size, using default value (%d bytes)", defSectorSize)
 	}
 
-	if b.spec.RecoveryOnly {
+	if b.spec.Expandable {
 		excludes = append(excludes, b.spec.Partitions.Persistent)
 	}
 	elParts := b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...)
@@ -547,8 +547,8 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 }
 
 // applySelinuxLabels sets SELinux extended attributes to the root-tree being installed. Swallows errors, label on a best effort
-func (b *BuildDiskAction) applySelinuxLabels(e *elemental.Elemental, root string, noMounts bool) error {
-	if noMounts {
+func (b *BuildDiskAction) applySelinuxLabels(e *elemental.Elemental, root string, unprivileged bool) error {
+	if unprivileged {
 		// Swallow errors, label on a best effort when not chrooting
 		return e.SelinuxRelabel(root, false)
 	}
@@ -570,7 +570,7 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(sysMeta, recMeta interface{},
 	}
 
 	systemImages := map[string]*v1.ImageState{}
-	if !b.spec.RecoveryOnly {
+	if !b.spec.Expandable {
 		systemImages = map[string]*v1.ImageState{
 			constants.ActiveImgName: {
 				Source:         activeSource,

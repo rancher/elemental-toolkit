@@ -610,8 +610,8 @@ func (b *BuildConfig) Sanitize() error {
 type Disk struct {
 	Size         uint                `yaml:"size,omitempty" mapstructure:"size"`
 	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	RecoveryOnly bool                `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
-	NoMounts     bool                `yaml:"no-mounts,omitempty" mapstructure:"no-mounts"`
+	Expandable   bool                `yaml:"expandable,omitempty" mapstructure:"expandable"`
+	Unprivileged bool                `yaml:"unprivileged,omitempty" mapstructure:"unprivileged"`
 	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	Passive      Image
@@ -638,7 +638,7 @@ func (d *Disk) Sanitize() error {
 
 	// The disk size is enough for all partitions
 	minSize := d.MinDiskSize()
-	if d.Size != 0 && !d.RecoveryOnly && d.Size <= minSize {
+	if d.Size != 0 && !d.Expandable && d.Size <= minSize {
 		return fmt.Errorf("Requested disk size (%dMB) is not enough, it should be, at least, of %d", d.Size, minSize)
 	}
 

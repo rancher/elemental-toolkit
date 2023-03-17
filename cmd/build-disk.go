@@ -105,8 +105,8 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().StringP("name", "n", "", "Basename of the generated disk file")
 	c.Flags().StringP("output", "o", "", "Output directory (defaults to current directory)")
 	c.Flags().Bool("date", false, "Adds a date suffix into the generated disk file")
-	c.Flags().Bool("recovery-only", false, "Only sets the recovery image into the disk")
-	c.Flags().Bool("no-mounts", false, "Runs the build without doing any mount, useful to build in non-privileged containers (experimental)")
+	c.Flags().Bool("expandable", false, "Creates an expandable image including only the recovery image")
+	c.Flags().Bool("unprivileged", false, "Makes a build runnable within a non-privileged container, avoids mounting filesystems (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
 	// TODO verify cross-arch builds are possible
 	//addArchFlags(c)
