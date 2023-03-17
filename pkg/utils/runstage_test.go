@@ -34,6 +34,13 @@ import (
 	"github.com/twpayne/go-vfs/vfst"
 )
 
+const testingStages = `
+stages:
+  luke:
+  - commands:
+    - echo "I have a very bad feeling about this"
+`
+
 func writeCmdline(s string, fs v1.FS) error {
 	if err := fs.Mkdir("/proc", os.ModePerm); err != nil {
 		return err
@@ -96,12 +103,12 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 	It("Goes over extra paths", func() {
 		d, err := utils.TempDir(fs, "", "elemental")
 		Expect(err).ToNot(HaveOccurred())
-		err = fs.WriteFile(fmt.Sprintf("%s/extra.yaml", d), []byte{}, os.ModePerm)
+		err = fs.WriteFile(fmt.Sprintf("%s/extra.yaml", d), []byte(testingStages), os.ModePerm)
 		Expect(err).ShouldNot(HaveOccurred())
 		config.Logger.SetLevel(log.DebugLevel)
 
 		Expect(utils.RunStage(config, "luke", strict, d)).To(BeNil())
-		Expect(memLog.String()).To(ContainSubstring(fmt.Sprintf("Executing %s/extra.yaml", d)))
+		Expect(memLog.String()).To(ContainSubstring(fmt.Sprintf("Reading '%s/extra.yaml'", d)))
 		Expect(memLog).To(ContainSubstring("luke"))
 		Expect(memLog).To(ContainSubstring("luke.before"))
 		Expect(memLog).To(ContainSubstring("luke.after"))
@@ -109,12 +116,13 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 
 	It("parses cmdline uri", func() {
 		d, _ := utils.TempDir(fs, "", "elemental")
-		_ = fs.WriteFile(fmt.Sprintf("%s/test.yaml", d), []byte{}, os.ModePerm)
+		_ = fs.WriteFile(fmt.Sprintf("%s/test.yaml", d), []byte(testingStages), os.ModePerm)
 
 		writeCmdline(fmt.Sprintf("cos.setup=%s/test.yaml", d), fs)
+		config.Logger.SetLevel(log.DebugLevel)
 
-		Expect(utils.RunStage(config, "padme", strict)).To(BeNil())
-		Expect(memLog).To(ContainSubstring("padme"))
+		Expect(utils.RunStage(config, "luke", strict)).To(BeNil())
+		Expect(memLog).To(ContainSubstring("luke"))
 		Expect(memLog).To(ContainSubstring(fmt.Sprintf("%s/test.yaml", d)))
 	})
 

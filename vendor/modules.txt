@@ -5,10 +5,10 @@ github.com/Azure/go-ansiterm/winterm
 # github.com/Masterminds/goutils v1.1.1
 ## explicit
 github.com/Masterminds/goutils
-# github.com/Masterminds/semver/v3 v3.1.1
-## explicit; go 1.12
+# github.com/Masterminds/semver/v3 v3.2.0
+## explicit; go 1.18
 github.com/Masterminds/semver/v3
-# github.com/Masterminds/sprig/v3 v3.2.2
+# github.com/Masterminds/sprig/v3 v3.2.3
 ## explicit; go 1.13
 github.com/Masterminds/sprig/v3
 # github.com/Microsoft/go-winio v0.5.2
@@ -148,14 +148,14 @@ github.com/cpuguy83/go-md2man/v2/md2man
 github.com/crillab/gophersat/bf
 github.com/crillab/gophersat/explain
 github.com/crillab/gophersat/solver
-# github.com/davidcassany/linuxkit/pkg/metadata v0.0.0-20220725140037-b49d0fec13b3
+# github.com/davidcassany/linuxkit/pkg/metadata v0.0.0-20230124104020-93ac9dd5b8e1
 ## explicit; go 1.14
 github.com/davidcassany/linuxkit/pkg/metadata/providers
 # github.com/denisbrodbeck/machineid v1.0.1
 ## explicit
 github.com/denisbrodbeck/machineid
-# github.com/diskfs/go-diskfs v1.2.1-0.20211109185859-9509735ba7a4
-## explicit; go 1.12
+# github.com/diskfs/go-diskfs v1.2.1-0.20230123115902-fce1828bbbfa
+## explicit; go 1.16
 github.com/diskfs/go-diskfs
 github.com/diskfs/go-diskfs/disk
 github.com/diskfs/go-diskfs/filesystem
@@ -427,7 +427,7 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/huandu/xstrings v1.3.2
+# github.com/huandu/xstrings v1.3.3
 ## explicit; go 1.12
 github.com/huandu/xstrings
 # github.com/imdario/mergo v0.3.13
@@ -442,11 +442,11 @@ github.com/ipfs/go-log/v2
 # github.com/ishidawataru/sctp v0.0.0-20210707070123-9a39160e9062
 ## explicit; go 1.12
 github.com/ishidawataru/sctp
-# github.com/itchyny/gojq v0.12.8
-## explicit; go 1.16
+# github.com/itchyny/gojq v0.12.12
+## explicit; go 1.18
 github.com/itchyny/gojq
-# github.com/itchyny/timefmt-go v0.1.3
-## explicit; go 1.14
+# github.com/itchyny/timefmt-go v0.1.5
+## explicit; go 1.17
 github.com/itchyny/timefmt-go
 # github.com/jaypipes/ghw v0.9.1-0.20220511134554-dac2f19e1c76
 ## explicit; go 1.15
@@ -483,6 +483,9 @@ github.com/jinzhu/copier
 # github.com/joho/godotenv v1.4.0
 ## explicit; go 1.12
 github.com/joho/godotenv
+# github.com/kendru/darwin/go/depgraph v0.0.0-20221105232959-877d6a81060c
+## explicit; go 1.16
+github.com/kendru/darwin/go/depgraph
 # github.com/kevinburke/ssh_config v1.2.0
 ## explicit
 github.com/kevinburke/ssh_config
@@ -507,10 +510,10 @@ github.com/kyokomi/emoji
 # github.com/magiconair/properties v1.8.5
 ## explicit; go 1.13
 github.com/magiconair/properties
-# github.com/mattn/go-isatty v0.0.14
-## explicit; go 1.12
+# github.com/mattn/go-isatty v0.0.17
+## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.13
+# github.com/mattn/go-runewidth v0.0.14
 ## explicit; go 1.9
 github.com/mattn/go-runewidth
 # github.com/matttproud/golang_protobuf_extensions v1.0.4
@@ -559,7 +562,7 @@ github.com/moby/term/windows
 # github.com/morikuni/aec v1.0.0
 ## explicit
 github.com/morikuni/aec
-# github.com/mudler/entities v0.0.0-20211108084227-d1414478861b
+# github.com/mudler/entities v0.0.0-20220905203055-68348bae0f49
 ## explicit; go 1.12
 github.com/mudler/entities/pkg/entities
 # github.com/mudler/go-pluggable v0.0.0-20211206135551-9263b05c562e
@@ -592,8 +595,8 @@ github.com/mudler/luet/pkg/versioner
 # github.com/mudler/topsort v0.0.0-20201103161459-db5c7901c290
 ## explicit
 github.com/mudler/topsort
-# github.com/mudler/yip v0.0.0-20220905202553-f9b5cdd6a56e
-## explicit; go 1.16
+# github.com/mudler/yip v1.0.2
+## explicit; go 1.18
 github.com/mudler/yip/pkg/executor
 github.com/mudler/yip/pkg/logger
 github.com/mudler/yip/pkg/plugins
@@ -647,7 +650,7 @@ github.com/opencontainers/runc/libcontainer/user
 # github.com/otiai10/copy v1.2.1-0.20200916181228-26f84a0b1578
 ## explicit; go 1.12
 github.com/otiai10/copy
-# github.com/packethost/packngo v0.25.0
+# github.com/packethost/packngo v0.29.0
 ## explicit; go 1.16
 github.com/packethost/packngo/metadata
 # github.com/pelletier/go-toml v1.9.5
@@ -669,7 +672,7 @@ github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pkg/xattr v0.4.7
+# github.com/pkg/xattr v0.4.9
 ## explicit; go 1.14
 github.com/pkg/xattr
 # github.com/prometheus/client_golang v1.12.1
@@ -697,8 +700,8 @@ github.com/pterm/pterm/internal
 # github.com/rancher-sandbox/gofilecache v0.0.0-20210330135715-becdeff5df15
 ## explicit; go 1.16
 github.com/rancher-sandbox/gofilecache
-# github.com/rivo/uniseg v0.2.0
-## explicit; go 1.12
+# github.com/rivo/uniseg v0.4.4
+## explicit; go 1.18
 github.com/rivo/uniseg
 # github.com/rogpeppe/go-internal v1.8.0
 ## explicit; go 1.11
@@ -709,10 +712,13 @@ github.com/rogpeppe/go-internal/lockedfile/internal/filelock
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
+# github.com/samber/lo v1.37.0
+## explicit; go 1.18
+github.com/samber/lo
 # github.com/sanity-io/litter v1.5.5
 ## explicit; go 1.16
 github.com/sanity-io/litter
-# github.com/satori/go.uuid v1.2.0
+# github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 ## explicit
 github.com/satori/go.uuid
 # github.com/sergi/go-diff v1.2.0
@@ -721,9 +727,12 @@ github.com/sergi/go-diff/diffmatchpatch
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
-# github.com/sirupsen/logrus v1.8.1
+# github.com/sirupsen/logrus v1.9.0
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+# github.com/spectrocloud-labs/herd v0.4.2
+## explicit; go 1.19
+github.com/spectrocloud-labs/herd
 # github.com/spf13/afero v1.8.2
 ## explicit; go 1.13
 github.com/spf13/afero
@@ -777,7 +786,7 @@ github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt
 ## explicit; go 1.13
 github.com/twpayne/go-vfs
 github.com/twpayne/go-vfs/vfst
-# github.com/ulikunitz/xz v0.5.10
+# github.com/ulikunitz/xz v0.5.11
 ## explicit; go 1.12
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
@@ -790,8 +799,8 @@ github.com/vbatts/tar-split/archive/tar
 ## explicit; go 1.12
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
-# github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74
-## explicit; go 1.12
+# github.com/vishvananda/netns v0.0.4
+## explicit; go 1.17
 github.com/vishvananda/netns
 # github.com/willdonnelly/passwd v0.0.0-20141013001024-7935dab3074c
 ## explicit
@@ -835,7 +844,7 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.1.0
+# golang.org/x/crypto v0.3.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -852,6 +861,9 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
+# golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
+## explicit; go 1.18
+golang.org/x/exp/constraints
 # golang.org/x/mod v0.9.0
 ## explicit; go 1.17
 golang.org/x/mod/sumdb/dirhash

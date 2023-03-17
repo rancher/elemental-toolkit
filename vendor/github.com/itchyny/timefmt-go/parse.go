@@ -25,7 +25,7 @@ func parse(source, format string, loc, base *time.Location) (t time.Time, err er
 		}
 	}()
 	var j, century, yday, colons int
-	var pm bool
+	var pm, hasZoneName, hasZoneOffset bool
 	var pending string
 	for i, l := 0, len(source); i < len(format); i++ {
 		if b := format[i]; b == '%' {
@@ -158,14 +158,14 @@ func parse(source, format string, loc, base *time.Location) (t time.Time, err er
 				hour, min, sec = t.Clock()
 				month = int(mon)
 			case 'f':
-				var msec, k, d int
-				if msec, k, err = parseNumber(source, j, 6, 'f'); err != nil {
+				var usec, k, d int
+				if usec, k, err = parseNumber(source, j, 6, 'f'); err != nil {
 					return
 				}
-				nsec = msec * 1000
 				for j, d = k, k-j; d < 6; d++ {
-					nsec *= 10
+					usec *= 10
 				}
+				nsec = usec * 1000
 			case 'Z':
 				k := j
 				for ; k < l; k++ {
@@ -178,7 +178,14 @@ func parse(source, format string, loc, base *time.Location) (t time.Time, err er
 					err = fmt.Errorf(`cannot parse %q with "%%Z"`, source[j:k])
 					return
 				}
-				loc = t.Location()
+				if hasZoneOffset {
+					name, _ := t.Zone()
+					_, offset := locationZone(loc)
+					loc = time.FixedZone(name, offset)
+				} else {
+					loc = t.Location()
+				}
+				hasZoneName = true
 				j = k
 			case 'z':
 				if j >= l {
@@ -231,7 +238,12 @@ func parse(source, format string, loc, base *time.Location) (t time.Time, err er
 							j = k
 						}
 					}
-					loc, colons = time.FixedZone("", sign*((hour*60+min)*60+sec)), 0
+					var name string
+					if hasZoneName {
+						name, _ = locationZone(loc)
+					}
+					loc, colons = time.FixedZone(name, sign*((hour*60+min)*60+sec)), 0
+					hasZoneOffset = true
 				case 'Z':
 					loc, colons, j = time.UTC, 0, j+1
 				default:
@@ -326,6 +338,10 @@ func parse(source, format string, loc, base *time.Location) (t time.Time, err er
 		return time.Date(year, time.January, 1, hour, min, sec, nsec, loc).AddDate(0, 0, yday-1), nil
 	}
 	return time.Date(year, time.Month(month), day, hour, min, sec, nsec, loc), nil
+}
+
+func locationZone(loc *time.Location) (name string, offset int) {
+	return time.Date(2000, time.January, 1, 0, 0, 0, 0, loc).Zone()
 }
 
 type parseFormatError byte

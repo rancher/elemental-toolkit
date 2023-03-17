@@ -13,94 +13,93 @@
 //
 // 1. Create a disk image of size 10MB with a FAT32 filesystem spanning the entire disk.
 //
-//     import diskfs "github.com/diskfs/go-diskfs"
-//     size := 10*1024*1024 // 10 MB
+//		import diskfs "github.com/diskfs/go-diskfs"
+//		size := 10*1024*1024 // 10 MB
 //
-//     diskImg := "/tmp/disk.img"
-//     disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
+//		diskImg := "/tmp/disk.img"
+//		disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
 //
-//     fs, err := disk.CreateFilesystem(0, diskfs.TypeFat32)
+//		fs, err := disk.CreateFilesystem(0, diskfs.TypeFat32)
 //
-// 2. Create a disk of size 20MB with an MBR partition table, a single partition beginning at block 2048 (1MB),
-//    of size 10MB filled with a FAT32 filesystem.
+//	 2. Create a disk of size 20MB with an MBR partition table, a single partition beginning at block 2048 (1MB),
+//	    of size 10MB filled with a FAT32 filesystem.
 //
-//     import diskfs "github.com/diskfs/go-diskfs"
+//	    import diskfs "github.com/diskfs/go-diskfs"
 //
-//     diskSize := 10*1024*1024 // 10 MB
+//	    diskSize := 10*1024*1024 // 10 MB
 //
-//     diskImg := "/tmp/disk.img"
-//     disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
+//	    diskImg := "/tmp/disk.img"
+//	    disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
 //
-//     table := &mbr.Table{
-//       LogicalSectorSize:  512,
-//       PhysicalSectorSize: 512,
-//       Partitions: []*mbr.Partition{
-//         {
-//           Bootable:      false,
-//           Type:          Linux,
-//           Start:         2048,
-//           Size:          20480,
-//         },
-//       },
-//     }
+//	    table := &mbr.Table{
+//	    LogicalSectorSize:  512,
+//	    PhysicalSectorSize: 512,
+//	    Partitions: []*mbr.Partition{
+//	    {
+//	    Bootable:      false,
+//	    Type:          Linux,
+//	    Start:         2048,
+//	    Size:          20480,
+//	    },
+//	    },
+//	    }
 //
-//     fs, err := disk.CreateFilesystem(1, diskfs.TypeFat32)
+//	    fs, err := disk.CreateFilesystem(1, diskfs.TypeFat32)
 //
-// 3. Create a disk of size 20MB with a GPT partition table, a single partition beginning at block 2048 (1MB),
-//    of size 10MB, and fill with the contents from the 10MB file "/root/contents.dat"
+//	 3. Create a disk of size 20MB with a GPT partition table, a single partition beginning at block 2048 (1MB),
+//	    of size 10MB, and fill with the contents from the 10MB file "/root/contents.dat"
 //
-//     import diskfs "github.com/diskfs/go-diskfs"
+//	    import diskfs "github.com/diskfs/go-diskfs"
 //
-//     diskSize := 10*1024*1024 // 10 MB
+//	    diskSize := 10*1024*1024 // 10 MB
 //
-//     diskImg := "/tmp/disk.img"
-//     disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
+//	    diskImg := "/tmp/disk.img"
+//	    disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
 //
-//     table := &gpt.Table{
-//       LogicalSectorSize:  512,
-//       PhysicalSectorSize: 512,
-//       Partitions: []*gpt.Partition{
-//         {
-//           LogicalSectorSize:  512,
-//           PhysicalSectorSize: 512,
-//           ProtectiveMBR:      true,
-//         },
-//       },
-//     }
+//	    table := &gpt.Table{
+//	    LogicalSectorSize:  512,
+//	    PhysicalSectorSize: 512,
+//	    Partitions: []*gpt.Partition{
+//	    {
+//	    LogicalSectorSize:  512,
+//	    PhysicalSectorSize: 512,
+//	    ProtectiveMBR:      true,
+//	    },
+//	    },
+//	    }
 //
-//     f, err := os.Open("/root/contents.dat")
-//     written, err := disk.WritePartitionContents(1, f)
+//	    f, err := os.Open("/root/contents.dat")
+//	    written, err := disk.WritePartitionContents(1, f)
 //
-// 4. Create a disk of size 20MB with an MBR partition table, a single partition beginning at block 2048 (1MB),
-//    of size 10MB filled with a FAT32 filesystem, and create some directories and files in that filesystem.
+//	 4. Create a disk of size 20MB with an MBR partition table, a single partition beginning at block 2048 (1MB),
+//	    of size 10MB filled with a FAT32 filesystem, and create some directories and files in that filesystem.
 //
-//     import diskfs "github.com/diskfs/go-diskfs"
+//	    import diskfs "github.com/diskfs/go-diskfs"
 //
-//     diskSize := 10*1024*1024 // 10 MB
+//	    diskSize := 10*1024*1024 // 10 MB
 //
-//     diskImg := "/tmp/disk.img"
-//     disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
+//	    diskImg := "/tmp/disk.img"
+//	    disk := diskfs.Create(diskImg, size, diskfs.Raw, diskfs.SectorSizeDefault)
 //
-//     table := &mbr.Table{
-//       LogicalSectorSize:  512,
-//       PhysicalSectorSize: 512,
-//       Partitions: []*mbr.Partition{
-//         {
-//           Bootable:      false,
-//           Type:          Linux,
-//           Start:         2048,
-//           Size:          20480,
-//         },
-//       },
-//     }
+//	    table := &mbr.Table{
+//	    LogicalSectorSize:  512,
+//	    PhysicalSectorSize: 512,
+//	    Partitions: []*mbr.Partition{
+//	    {
+//	    Bootable:      false,
+//	    Type:          Linux,
+//	    Start:         2048,
+//	    Size:          20480,
+//	    },
+//	    },
+//	    }
 //
-//     fs, err := disk.CreateFilesystem(1, diskfs.TypeFat32)
-//     err := fs.Mkdir("/FOO/BAR")
-//     rw, err := fs.OpenFile("/FOO/BAR/AFILE.EXE", os.O_CREATE|os.O_RDRWR)
-//     b := make([]byte, 1024, 1024)
-//     rand.Read(b)
-//     err := rw.Write(b)
-//
+//	    fs, err := disk.CreateFilesystem(1, diskfs.TypeFat32)
+//	    err := fs.Mkdir("/FOO/BAR")
+//	    rw, err := fs.OpenFile("/FOO/BAR/AFILE.EXE", os.O_CREATE|os.O_RDRWR)
+//	    b := make([]byte, 1024, 1024)
+//	    rand.Read(b)
+//	    err := rw.Write(b)
 package diskfs
 
 import (
@@ -115,11 +114,13 @@ import (
 )
 
 // when we use a disk image with a GPT, we cannot get the logical sector size from the disk via the kernel
-//    so we use the default sector size of 512, per Rod Smith
+//
+//	so we use the default sector size of 512, per Rod Smith
 const (
-	defaultBlocksize, firstblock int = 512, 2048
-	blksszGet                        = 0x1268
-	blkpbszGet                       = 0x127b
+	defaultBlocksize int = 512
+	// firstblock                       = 2048
+	// blksszGet                        = 0x1268
+	// blkpbszGet                       = 0x127b
 )
 
 // Format represents the format of the disk
@@ -216,6 +217,7 @@ func initDisk(f *os.File, openMode OpenModeOption, sectorSize SectorSize) (*disk
 		if err != nil {
 			return nil, fmt.Errorf("error opening block device %s: %s", f.Name(), err)
 		}
+		defer file.Close()
 		size, err = file.Seek(0, io.SeekEnd)
 		if err != nil {
 			return nil, fmt.Errorf("error seeking to end of block device %s: %s", f.Name(), err)
@@ -224,15 +226,15 @@ func initDisk(f *os.File, openMode OpenModeOption, sectorSize SectorSize) (*disk
 		log.Debugf("initDisk(): logical block size %d, physical block size %d", lblksize, pblksize)
 		defaultBlocks = false
 		if err != nil {
-			return nil, fmt.Errorf("Unable to get block sizes for device %s: %v", f.Name(), err)
+			return nil, fmt.Errorf("unable to get block sizes for device %s: %v", f.Name(), err)
 		}
 	default:
 		return nil, fmt.Errorf("device %s is neither a block device nor a regular file", f.Name())
 	}
 
 	// how many good blocks do we have?
-	//var goodBlocks, orphanedBlocks int
-	//goodBlocks = size / lblksize
+	//    var goodBlocks, orphanedBlocks int
+	//    goodBlocks = size / lblksize
 
 	writable := writableMode(openMode)
 
@@ -323,9 +325,9 @@ func Open(device string, opts ...OpenOpt) (*disk.Disk, error) {
 		return nil, errors.New("unsupported file open mode")
 	}
 
-	f, err := os.OpenFile(device, m, 0600)
+	f, err := os.OpenFile(device, m, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("Could not open device %s exclusively for writing", device)
+		return nil, fmt.Errorf("could not open device %s exclusively for writing", device)
 	}
 	// return our disk
 	return initDisk(f, ReadWriteExclusive, opt.sectorSize)
@@ -341,13 +343,13 @@ func Create(device string, size int64, format Format, sectorSize SectorSize) (*d
 	if size <= 0 {
 		return nil, errors.New("must pass valid device size to create")
 	}
-	f, err := os.OpenFile(device, os.O_RDWR|os.O_EXCL|os.O_CREATE, 0666)
+	f, err := os.OpenFile(device, os.O_RDWR|os.O_EXCL|os.O_CREATE, 0o666)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create device %s", device)
+		return nil, fmt.Errorf("could not create device %s: %v", device, errors.Unwrap(err))
 	}
 	err = os.Truncate(device, size)
 	if err != nil {
-		return nil, fmt.Errorf("Could not expand device %s to size %d", device, size)
+		return nil, fmt.Errorf("could not expand device %s to size %d: %v", device, size, errors.Unwrap(err))
 	}
 	// return our disk
 	return initDisk(f, ReadWriteExclusive, sectorSize)

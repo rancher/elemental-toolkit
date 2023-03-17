@@ -333,8 +333,12 @@ func (dev *Disk) AddPartition(l logger.Interface, label string, size uint, fileS
 		return "", err
 	}
 
-	mkfs := MkfsCall{part: part, customOpts: []string{}, dev: pDev}
-	return mkfs.Apply(console)
+	if fileSystem != "-" {
+		mkfs := MkfsCall{part: part, customOpts: []string{}, dev: pDev}
+		return mkfs.Apply(console)
+	}
+
+	return out, nil
 }
 
 func (dev Disk) ReloadPartitionTable(l logger.Interface, console Console) error {

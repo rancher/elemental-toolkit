@@ -128,6 +128,10 @@ type Partition struct {
 	FileSystem string `yaml:"filesystem,omitempty"`
 }
 
+type Dependency struct {
+	Name string `yaml:"name,omitempty"`
+}
+
 type Stage struct {
 	Commands    []string    `yaml:"commands,omitempty"`
 	Files       []File      `yaml:"files,omitempty"`
@@ -148,6 +152,8 @@ type Stage struct {
 	Systemctl       Systemctl           `yaml:"systemctl,omitempty"`
 	Environment     map[string]string   `yaml:"environment,omitempty"`
 	EnvironmentFile string              `yaml:"environment_file,omitempty"`
+
+	After []Dependency `yaml:"after,omitempty"`
 
 	DataSources DataSource `yaml:"datasource,omitempty"`
 	Layout      Layout     `yaml:"layout,omitempty"`

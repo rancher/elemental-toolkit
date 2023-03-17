@@ -31,7 +31,10 @@ func Hostname(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) er
 	rand.Seed(time.Now().UnixNano())
 
 	id, _ := machineid.ID()
-	myuuid := uuid.NewV4()
+	myuuid, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
 	tmpl, err := utils.TemplatedString(hostname,
 		struct {
 			UUID      string

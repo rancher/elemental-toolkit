@@ -15,7 +15,9 @@
 package executor
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -24,6 +26,7 @@ import (
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/mudler/yip/pkg/utils"
+	"github.com/spectrocloud-labs/herd"
 	"github.com/twpayne/go-vfs"
 )
 
@@ -48,9 +51,93 @@ func (e *DefaultExecutor) Modifier(m schema.Modifier) {
 	e.modifier = m
 }
 
-func (e *DefaultExecutor) walkDir(stage, dir string, fs vfs.FS, console plugins.Console) error {
-	var errs error
+type op struct {
+	fn      func(context.Context) error
+	deps    []string
+	after   []string
+	options []herd.OpOption
+	name    string
+}
 
+func (e *DefaultExecutor) applyStage(stage schema.Stage, fs vfs.FS, console plugins.Console) error {
+	var errs error
+	for _, p := range e.conditionals {
+		if err := p(e.logger, stage, fs, console); err != nil {
+			e.logger.Warnf("(conditional) Skip '%s' stage name: %s",
+				err.Error(), stage.Name)
+			return nil
+		}
+	}
+
+	e.logger.Infof(
+		"Processing stage step '%s'. ( commands: %d, files: %d, ... )",
+		stage.Name,
+		len(stage.Commands),
+		len(stage.Files))
+
+	b, _ := json.Marshal(stage)
+	e.logger.Debugf("Stage: %s", string(b))
+
+	for _, p := range e.plugins {
+		if err := p(e.logger, stage, fs, console); err != nil {
+			e.logger.Error(err.Error())
+			errs = multierror.Append(errs, err)
+		}
+	}
+	return errs
+}
+
+func (e *DefaultExecutor) genOpFromSchema(file, stage string, config schema.YipConfig, fs vfs.FS, console plugins.Console) []*op {
+	results := []*op{}
+
+	currentStages := config.Stages[stage]
+
+	prev := ""
+	for i, st := range currentStages {
+		name := st.Name
+		if name == "" {
+			name = fmt.Sprint(i)
+		}
+
+		rootname := file
+		if config.Name != "" {
+			rootname = config.Name
+		}
+
+		// Copy here so it doesn't get overwritten and points to the same state
+		stageLocal := st
+		opName := fmt.Sprintf("%s.%s", rootname, name)
+
+		e.logger.Debugf("Generating op for stage '%s'", opName)
+		o := &op{
+			fn: func(ctx context.Context) error {
+				e.logger.Debugf("Reading '%s'", file)
+				e.logger.Debugf("Executing stage '%s'", opName)
+				return e.applyStage(stageLocal, fs, console)
+			},
+			name:    opName,
+			options: []herd.OpOption{herd.WeakDeps},
+		}
+
+		for _, d := range st.After {
+			o.after = append(o.after, d.Name)
+		}
+
+		if i != 0 && len(st.After) == 0 {
+			o.deps = append(o.deps, prev)
+		}
+
+		results = append(results, o)
+
+		prev = opName
+	}
+
+	return results
+}
+
+func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.Console) ([]*op, error) {
+	results := []*op{}
+	prev := []*op{}
 	err := vfs.Walk(fs, dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -68,49 +155,140 @@ func (e *DefaultExecutor) walkDir(stage, dir string, fs vfs.FS, console plugins.
 				return nil
 			}
 
-			if err = e.run(stage, path, fs, console, schema.FromFile, e.modifier); err != nil {
-				errs = multierror.Append(errs, err)
-				return nil
-			}
+			config, err := schema.Load(path, fs, schema.FromFile, e.modifier)
+			if err != nil {
+				return err
 
+			}
+			ops := e.genOpFromSchema(path, stage, *config, fs, console)
+
+			// mark lexicographic order dependency from previous blocks
+			if len(prev) > 0 && len(ops) > 0 {
+				for _, p := range prev {
+					if len(p.after) == 0 {
+						for _, o := range ops {
+							o.deps = append(o.deps, p.name)
+						}
+					}
+				}
+			}
+			prev = ops
+
+			// append results
+			results = append(results, ops...)
 			return nil
 		})
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-	return errs
+	return results, err
 }
 
-func (e *DefaultExecutor) run(stage, uri string, fs vfs.FS, console plugins.Console, l schema.Loader, m schema.Modifier) error {
-	config, err := schema.Load(uri, fs, l, m)
+func writeDAG(dag [][]herd.GraphEntry) {
+	for i, layer := range dag {
+		fmt.Printf("%d.\n", (i + 1))
+		for _, op := range layer {
+			if op.Error != nil {
+				fmt.Printf(" <%s> (error: %s) (background: %t) (weak: %t)\n", op.Name, op.Error.Error(), op.Background, op.WeakDeps)
+			} else {
+				fmt.Printf(" <%s> (background: %t) (weak: %t)\n", op.Name, op.Background, op.WeakDeps)
+			}
+		}
+	}
+	return
+}
+
+func (e *DefaultExecutor) Graph(stage string, fs vfs.FS, console plugins.Console, source string) ([][]herd.GraphEntry, error) {
+	g, err := e.prepareDAG(stage, source, fs, console)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	return g.Analyze(), err
+}
+
+func (e *DefaultExecutor) Analyze(stage string, fs vfs.FS, console plugins.Console, args ...string) {
+	var errs error
+	for _, source := range args {
+		g, err := e.prepareDAG(stage, source, fs, console)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		for i, layer := range g.Analyze() {
+			e.logger.Infof("%d.", (i + 1))
+			for _, op := range layer {
+				if op.Error != nil {
+					e.logger.Infof(" <%s> (error: %s) (background: %t) (weak: %t)", op.Name, op.Error.Error(), op.Background, op.WeakDeps)
+				} else {
+					e.logger.Infof(" <%s> (background: %t) (weak: %t)", op.Name, op.Background, op.WeakDeps)
+				}
+			}
+		}
+	}
+}
+
+func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (*herd.Graph, error) {
+	f, err := fs.Stat(uri)
+
+	g := herd.DAG(herd.EnableInit)
+	var ops []*op
+	switch {
+	case err == nil && f.IsDir():
+		ops, err = e.dirOps(stage, uri, fs, console)
+		if err != nil {
+			return nil, err
+		}
+	case err == nil:
+		config, err := schema.Load(uri, fs, schema.FromFile, e.modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
+	case utils.IsUrl(uri):
+		config, err := schema.Load(uri, fs, schema.FromUrl, e.modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
+	default:
+		config, err := schema.Load(uri, fs, nil, e.modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		ops = e.genOpFromSchema("<STDIN>", stage, *config, fs, console)
 	}
 
-	e.logger.Infof("Executing %s", uri)
-	if err = e.Apply(stage, *config, fs, console); err != nil {
-		return err
+	for _, o := range ops {
+		g.Add(o.name, append(o.options, herd.WithCallback(o.fn), herd.WithDeps(append(o.after, o.deps...)...))...)
 	}
 
-	return nil
+	return g, nil
 }
 
 func (e *DefaultExecutor) runStage(stage, uri string, fs vfs.FS, console plugins.Console) (err error) {
-	f, err := fs.Stat(uri)
-
-	switch {
-	case err == nil && f.IsDir():
-		err = e.walkDir(stage, uri, fs, console)
-	case err == nil:
-		err = e.run(stage, uri, fs, console, schema.FromFile, e.modifier)
-	case utils.IsUrl(uri):
-		err = e.run(stage, uri, fs, console, schema.FromUrl, e.modifier)
-	default:
-
-		err = e.run(stage, uri, fs, console, nil, e.modifier)
+	g, err := e.prepareDAG(stage, uri, fs, console)
+	if err != nil {
+		return err
 	}
 
-	return
+	if g == nil {
+		return fmt.Errorf("no dag could be created")
+	}
+
+	err = g.Run(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for _, g := range g.Analyze() {
+		for _, gg := range g {
+			if gg.Error != nil {
+				err = multierror.Append(err, gg.Error)
+			}
+		}
+	}
+
+	return err
 }
 
 // Run takes a list of URI to run yipfiles from. URI can be also a dir or a local path, as well as a remote

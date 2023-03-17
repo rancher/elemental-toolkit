@@ -1,4 +1,11 @@
 # Changelog
+## [v0.1.5](https://github.com/itchyny/timefmt-go/compare/v0.1.4..v0.1.5) (2022-12-01)
+* support parsing time zone offset with name using both `%z` and `%Z`
+
+## [v0.1.4](https://github.com/itchyny/timefmt-go/compare/v0.1.3..v0.1.4) (2022-09-01)
+* improve documents
+* drop support for Go 1.16
+
 ## [v0.1.3](https://github.com/itchyny/timefmt-go/compare/v0.1.2..v0.1.3) (2021-04-14)
 * implement `ParseInLocation` for configuring the default location
 

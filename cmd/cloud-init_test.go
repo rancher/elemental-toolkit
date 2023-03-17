@@ -36,7 +36,7 @@ var _ = Describe("cloud-init", Label("cloud-init", "cmd"), func() {
 					"-s",
 					"tests",
 					"-d",
-					`stages.tests[0].commands[0]="echo foobarz"'`,
+					"'stages.tests[0].commands[0]=\"echo foobarz\"'",
 				)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).To(ContainSubstring("foobarz"))
@@ -49,7 +49,7 @@ var _ = Describe("cloud-init", Label("cloud-init", "cmd"), func() {
 					"-s",
 					"tests",
 					"-d",
-					`stages.tests=foo`,
+					"'stages.tests=foo'",
 				)
 				Expect(err).To(HaveOccurred())
 			})

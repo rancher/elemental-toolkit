@@ -1,4 +1,27 @@
 # Changelog
+## [v0.12.12](https://github.com/itchyny/gojq/compare/v0.12.11..v0.12.12) (2023-03-01)
+* fix assignment operator (`=`) with overlapping paths and multiple values (`[[]] | .. = ..`)
+* fix crash on multiplying large numbers to an empty string (`9223372036854775807 * ""`)
+* improve zsh completion file
+
+## [v0.12.11](https://github.com/itchyny/gojq/compare/v0.12.10..v0.12.11) (2022-12-24)
+* fix crash on assignment operator (`=`) with multiple values (`. = (0,0)`)
+* fix `isnormal` and `normals` functions against subnormal numbers
+
+## [v0.12.10](https://github.com/itchyny/gojq/compare/v0.12.9..v0.12.10) (2022-12-01)
+* fix `break` in `try`-`catch` query (`label $x | try break $x catch .`)
+* fix path value validation for `getpath` function (`path(getpath([[0]][0]))`)
+* fix path value validation for custom iterator functions
+* fix `walk` function with argument emitting multiple values (`[1],{x:1} | walk(.,0)`)
+* fix `@csv`, `@tsv`, `@sh` to escape the null character (`["\u0000"] | @csv,@tsv,@sh`)
+* improve performance of assignment operator (`=`), update-assignment operator (`|=`),
+  `map_values`, `del`, `delpaths`, `walk`, `ascii_downcase`, and `ascii_upcase` functions
+
+## [v0.12.9](https://github.com/itchyny/gojq/compare/v0.12.8..v0.12.9) (2022-09-01)
+* fix `fromjson` to emit error on unexpected trailing string
+* fix path analyzer on variable argument evaluation (`def f($x): .y; path(f(.x))`)
+* fix raw input option `--raw-input` (`-R`) to keep carriage returns and support 64KiB+ lines
+
 ## [v0.12.8](https://github.com/itchyny/gojq/compare/v0.12.7..v0.12.8) (2022-06-01)
 * implement `gojq.Compare` for comparing values in custom internal functions
 * implement `gojq.TypeOf` for obtaining type name of values in custom internal functions
@@ -211,7 +234,7 @@
 ## [v0.7.0](https://github.com/itchyny/gojq/compare/v0.6.0..v0.7.0) (2019-12-22)
 * implement YAML input (`--yaml-input`) and output (`--yaml-output`)
 * fix pipe in object value
-* fix precedence of if, try, reduce and foreach expressions
+* fix precedence of `if`, `try`, `reduce` and `foreach` expressions
 * release from GitHub Actions
 
 ## [v0.6.0](https://github.com/itchyny/gojq/compare/v0.5.0..v0.6.0) (2019-08-26)
