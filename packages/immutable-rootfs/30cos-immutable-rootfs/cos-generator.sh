@@ -37,6 +37,8 @@ if [ -n "${oem_label}" ]; then
         echo "[Unit]"
         echo "DefaultDependencies=no"
         echo "Before=cos-setup-rootfs.service"
+        echo "After=dracut-initqueue.service"
+        echo "Wants=dracut-initqueue.service"
         echo "Conflicts=initrd-switch-root.target"
         echo "[Mount]"
         echo "Where=/oem"
