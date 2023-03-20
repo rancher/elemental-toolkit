@@ -166,9 +166,9 @@ function mountOverlay {
         mkdir -p "${merged}" "${upperdir}" "${workdir}"
         if [ $? -ne 0 ]; then
             >&2 echo "failed creating one of '${merged}', '${upperdir}' or '${workdir}'"
-        else
-            mount -t overlay overlay -o "defaults,lowerdir=${merged},upperdir=${upperdir},workdir=${workdir}" "${merged}"
+            exit 1
         fi
+        mount -t overlay overlay -o "defaults,lowerdir=${merged},upperdir=${upperdir},workdir=${workdir}" "${merged}"
         fstab_line="overlay /${mount} overlay defaults,lowerdir=/${mount},upperdir=${upperdir##/sysroot},workdir=${workdir##/sysroot}"
         required_mount=$(findmnt -fno TARGET --target "${base}")
         if [ -n "${required_mount}" ] && [ "${required_mount}" != "/" ]; then
@@ -193,10 +193,10 @@ function mountState {
             mkdir -p "${base}" "${state_dir}"
             if [ $? -ne 0 ]; then
                 >&2 echo "failed creating '${base}' or '${state_dir}'"
-            else
-                rsync -aqAX "${base}/" "${state_dir}/"
-                mount -o defaults,bind "${state_dir}" "${base}"
+                exit 1
             fi
+            rsync -aqAX "${base}/" "${state_dir}/"
+            mount -o defaults,bind "${state_dir}" "${base}"
             fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
         fi
     else
@@ -224,8 +224,12 @@ function waitForPath {
         sleep 1
         udevadm settle
         (( count++ ))
-        [ "${count}" -ge "${timeout}" ] && return 1
+        if [ "${count}" -ge "${timeout}" ]; then
+            echo "Error: ${path} not found" >&2
+            return 1
+        fi
     done
+    return 0
 }
 
 #======================================
@@ -273,8 +277,8 @@ for mount in "${mountpoints[@]}"; do
             fstab+=$(mountOverlay "${mount%%:*}")
         fi
     else
-        # wait for the device
-        waitForPath "${mount#*:}"
+        # wait for the device and exit on failure
+        waitForPath "${mount#*:}" || exit 1
         # ensure filesystem check is not done twice for this device
         part_name=$(basename $(realpath "${mount#*:}"))
         [ -e "/tmp/cos-fsck-${part_name}" ] || systemd-fsck "${mount#*:}"
