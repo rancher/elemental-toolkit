@@ -68,13 +68,13 @@ func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) {
 
 // We need to have this below to fulfill the interface for mount.Interface
 
-func (e ErrorMounter) MountSensitive(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
+func (e ErrorMounter) MountSensitive(_, _, _ string, _, _ []string) error {
 	return nil
 }
-func (e ErrorMounter) MountSensitiveWithoutSystemd(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
+func (e ErrorMounter) MountSensitiveWithoutSystemd(_, _, _ string, _, _ []string) error {
 	return nil
 }
-func (e ErrorMounter) MountSensitiveWithoutSystemdWithMountFlags(source string, target string, fstype string, options []string, sensitiveOptions []string, mountFlags []string) error {
+func (e ErrorMounter) MountSensitiveWithoutSystemdWithMountFlags(_, _, _ string, _, _, _ []string) error {
 	return nil
 }
-func (e ErrorMounter) GetMountRefs(pathname string) ([]string, error) { return []string{}, nil }
+func (e ErrorMounter) GetMountRefs(_ string) ([]string, error) { return []string{}, nil }

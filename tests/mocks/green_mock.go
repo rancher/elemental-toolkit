@@ -25,14 +25,14 @@ type LiveBootLoaderMock struct {
 	ErrorISO bool
 }
 
-func (g *LiveBootLoaderMock) PrepareEFI(rootDir, uefiDir string) error {
+func (g *LiveBootLoaderMock) PrepareEFI(_, _ string) error {
 	if g.ErrorEFI {
 		return fmt.Errorf("failed preparing EFI binaries")
 	}
 	return nil
 }
 
-func (g *LiveBootLoaderMock) PrepareISO(rootDir, imageDir string) error {
+func (g *LiveBootLoaderMock) PrepareISO(_, _ string) error {
 	if g.ErrorISO {
 		return fmt.Errorf("failed preparing ISO bootloader binaries")
 	}

@@ -20,6 +20,7 @@ import (
 	"errors"
 
 	luetTypes "github.com/mudler/luet/pkg/api/core/types"
+
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
@@ -68,7 +69,7 @@ func (l FakeLuet) UnpackChannelCalled() bool {
 	return l.unpackFromChannelCalled
 }
 
-func (l FakeLuet) OverrideConfig(config *luetTypes.LuetConfig) {}
+func (l FakeLuet) OverrideConfig(_ *luetTypes.LuetConfig) {}
 
 func (l *FakeLuet) SetPlugins(plugins ...string) {
 	l.plugins = plugins
@@ -82,4 +83,4 @@ func (l *FakeLuet) SetArch(arch string) {
 	l.arch = arch
 }
 
-func (l *FakeLuet) SetTempDir(s string) {}
+func (l *FakeLuet) SetTempDir(_ string) {}

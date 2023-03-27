@@ -66,7 +66,7 @@ type MockEFIVariables struct {
 	store map[efi.VariableDescriptor]mockEFIVariable
 }
 
-func (m MockEFIVariables) DelVariable(guid efi.GUID, name string) error {
+func (m MockEFIVariables) DelVariable(_ efi.GUID, _ string) error {
 	return nil
 }
 
@@ -122,7 +122,7 @@ func (m MockEFIVariables) JSON() ([]byte, error) {
 	return json.MarshalIndent(payload, "", "  ")
 }
 
-func (m MockEFIVariables) NewFileDevicePath(fpath string, mode efi_linux.FileDevicePathMode) (efi.DevicePath, error) {
+func (m MockEFIVariables) NewFileDevicePath(fpath string, _ efi_linux.FileDevicePathMode) (efi.DevicePath, error) {
 	file, err := vfs.OSFS.Open(fpath)
 	if err != nil {
 		return nil, err

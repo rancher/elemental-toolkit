@@ -54,7 +54,7 @@ func (ci *FakeCloudInitRunner) Run(stage string, args ...string) error {
 	return nil
 }
 
-func (ci *FakeCloudInitRunner) SetModifier(modifier schema.Modifier) {
+func (ci *FakeCloudInitRunner) SetModifier(_ schema.Modifier) {
 }
 
 func (ci *FakeCloudInitRunner) GetStageArgs(stage string) []string {

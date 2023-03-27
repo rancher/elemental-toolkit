@@ -30,7 +30,7 @@ type FakeHTTPClient struct {
 }
 
 // GetURL will return a FakeHttpBody and store the url call into ClientCalls
-func (m *FakeHTTPClient) GetURL(log v1.Logger, url string, destination string) error {
+func (m *FakeHTTPClient) GetURL(_ v1.Logger, url string, _ string) error {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
 	if m.Error {

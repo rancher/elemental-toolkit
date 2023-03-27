@@ -112,8 +112,8 @@ func (w *logrusWrapper) Ask() bool {
 
 func (w *logrusWrapper) Copy() (types.Logger, error) {
 	c := *w
-	copy := &c
-	return copy, nil
+	copied := &c
+	return copied, nil
 }
 
 func (w *logrusWrapper) Success(r ...interface{}) {
@@ -166,4 +166,4 @@ func convert(args []interface{}) string {
 func (w *logrusWrapper) SetContext(string) {}
 func (w *logrusWrapper) Spinner()          {}
 func (w *logrusWrapper) SpinnerStop()      {}
-func (w *logrusWrapper) Screen(t string)   {}
+func (w *logrusWrapper) Screen(_ string)   {}

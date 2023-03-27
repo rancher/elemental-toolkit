@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 // addCosignFlags adds flags related to cosign
@@ -103,7 +104,7 @@ func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	return nil
 }
 
-func validateSourceFlags(log v1.Logger, flags *pflag.FlagSet) error {
+func validateSourceFlags(_ v1.Logger, flags *pflag.FlagSet) error {
 	msg := "flags docker-image, directory and system are mutually exclusive, please only set one of them"
 	system, _ := flags.GetString("system.uri")
 	directory, _ := flags.GetString("directory")
@@ -118,7 +119,7 @@ func validateSourceFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	return nil
 }
 
-func validatePowerFlags(log v1.Logger, flags *pflag.FlagSet) error {
+func validatePowerFlags(_ v1.Logger, flags *pflag.FlagSet) error {
 	reboot, _ := flags.GetBool("reboot")
 	poweroff, _ := flags.GetBool("poweroff")
 	if reboot && poweroff {
@@ -135,10 +136,7 @@ func validateInstallUpgradeFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	if err := validateCosignFlags(log, flags); err != nil {
 		return err
 	}
-	if err := validatePowerFlags(log, flags); err != nil {
-		return err
-	}
-	return nil
+	return validatePowerFlags(log, flags)
 }
 
 // addArchFlags adds the arch flag for build commands

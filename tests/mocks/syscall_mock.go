@@ -35,7 +35,7 @@ func (f *FakeSyscall) Chroot(path string) error {
 	return nil
 }
 
-func (f *FakeSyscall) Chdir(path string) error {
+func (f *FakeSyscall) Chdir(_ string) error {
 	return nil
 }
 
