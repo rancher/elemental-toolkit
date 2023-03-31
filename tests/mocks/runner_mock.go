@@ -131,6 +131,12 @@ func (r FakeRunner) MatchMilestones(cmdList [][]string) error {
 	return nil
 }
 
+// GetCmds returns the list of commands recorded by this FakeRunner instance
+// this is helpful to debug tests
+func (r FakeRunner) GetCmds() [][]string {
+	return r.cmds
+}
+
 func (r FakeRunner) GetLogger() v1.Logger {
 	return r.Logger
 }

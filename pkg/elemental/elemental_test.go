@@ -378,13 +378,13 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 						"mkpart", "oem", "ext4", "133120", "264191",
 					}, {"mkfs.ext4", "-L", "COS_OEM", "/some/device2"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-						"mkpart", "recovery", "ext4", "264192", "17041407",
+						"mkpart", "recovery", "ext4", "264192", "8652799",
 					}, {"mkfs.ext4", "-L", "COS_RECOVERY", "/some/device3"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-						"mkpart", "state", "ext4", "17041408", "48498687",
+						"mkpart", "state", "ext4", "8652800", "25430015",
 					}, {"mkfs.ext4", "-L", "COS_STATE", "/some/device4"}, {
 						"parted", "--script", "--machine", "--", "/some/device", "unit", "s",
-						"mkpart", "persistent", "ext4", "48498688", "100%",
+						"mkpart", "persistent", "ext4", "25430016", "100%",
 					}, {"mkfs.ext4", "-L", "COS_PERSISTENT", "/some/device5"},
 				}
 

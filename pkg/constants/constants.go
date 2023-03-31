@@ -53,8 +53,8 @@ const (
 	BiosFs             = ""
 	EfiSize            = uint(64)
 	OEMSize            = uint(64)
-	StateSize          = uint(15360)
-	RecoverySize       = uint(8192)
+	StateSize          = uint(8192)
+	RecoverySize       = uint(4096)
 	PersistentSize     = uint(0)
 	BiosSize           = uint(1)
 	ImgSize            = uint(0)
