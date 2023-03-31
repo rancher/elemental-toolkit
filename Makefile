@@ -37,8 +37,8 @@ endif
 
 test_deps:
 	go mod download
-	go get github.com/onsi/gomega/...
-	go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+	go install github.com/onsi/gomega/...
+	go install github.com/onsi/ginkgo/v2/ginkgo
 
 test: $(GINKGO)
 	ginkgo run --label-filter '!root' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-cli/... -p -r ${PKG}

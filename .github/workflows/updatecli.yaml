@@ -33,8 +33,3 @@ jobs:
         env:
           ELEMENTAL_BOT_GITHUB_TOKEN: "${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}"
           GOPATH: "${{ env.GOPATH }}"
-
-      - name: Run ginkgo/gomega update
-        run: "updatecli apply --config .updatecli.d/ginkgo.yaml"
-        env:
-          ELEMENTAL_BOT_GITHUB_TOKEN: "${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}"
