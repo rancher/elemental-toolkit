@@ -128,7 +128,7 @@ require (
 	github.com/mudler/topsort v0.0.0-20201103161459-db5c7901c290 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
-	github.com/opencontainers/runc v1.1.2 // indirect
+	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/otiai10/copy v1.2.1-0.20200916181228-26f84a0b1578 // indirect
 	github.com/packethost/packngo v0.29.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
