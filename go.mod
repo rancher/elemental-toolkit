@@ -9,7 +9,7 @@ require (
 	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/distribution/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jaypipes/ghw v0.9.1-0.20220511134554-dac2f19e1c76
