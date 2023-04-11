@@ -1,6 +1,6 @@
 module github.com/rancher/elemental-cli
 
-go 1.19
+go 1.20
 
 // until https://github.com/zloylos/grsync/pull/20 is merged we need to use our fork
 replace github.com/zloylos/grsync v1.6.1 => github.com/rancher-sandbox/grsync v1.6.2-0.20220526080038-4032e9b0e97c

@@ -31,9 +31,10 @@ import (
 	"syscall"
 	"time"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
+
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 // DirSize returns the accumulated size of all files in folder. Result in bytes
@@ -111,8 +112,10 @@ func permError(op, path string) error {
 // We generate random temporary file names so that there's a good
 // chance the file doesn't exist yet - keeps the number of tries in
 // TempFile to a minimum.
-var rand uint32
-var randmu sync.Mutex
+var (
+	randSeed uint32
+	randmu   sync.Mutex
+)
 
 func reseed() uint32 {
 	return uint32(time.Now().UnixNano() + int64(os.Getpid()))
@@ -120,12 +123,12 @@ func reseed() uint32 {
 
 func nextRandom() string {
 	randmu.Lock()
-	r := rand
+	r := randSeed
 	if r == 0 {
 		r = reseed()
 	}
 	r = r*1664525 + 1013904223 // constants from Numerical Recipes
-	rand = r
+	randSeed = r
 	randmu.Unlock()
 	return strconv.Itoa(int(1e9 + r%1e9))[1:]
 }
@@ -152,7 +155,7 @@ func TempDir(fs v1.FS, dir, prefix string) (name string, err error) {
 		if os.IsExist(err) {
 			if nconflict++; nconflict > 10 {
 				randmu.Lock()
-				rand = reseed()
+				randSeed = reseed()
 				randmu.Unlock()
 			}
 			continue
@@ -186,7 +189,7 @@ func TempFile(fs v1.FS, dir, pattern string) (f *os.File, err error) {
 		if os.IsExist(err) {
 			if nconflict++; nconflict > 10 {
 				randmu.Lock()
-				rand = reseed()
+				randSeed = reseed()
 				randmu.Unlock()
 			}
 			continue

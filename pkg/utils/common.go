@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	random "math/rand"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -329,7 +329,7 @@ func IsMounted(config *v1.Config, part *v1.Partition) (bool, error) {
 func GetTempDir(config *v1.Config, suffix string) string {
 	// if we got a TMPDIR var, respect and use that
 	if suffix == "" {
-		random.Seed(time.Now().UnixNano())
+		random := rand.New(rand.NewSource(time.Now().UnixNano()))
 		suffix = strconv.Itoa(int(random.Uint32()))
 	}
 	elementalTmpDir := fmt.Sprintf("elemental-%s", suffix)
