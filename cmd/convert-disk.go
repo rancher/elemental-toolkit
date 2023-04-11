@@ -40,7 +40,7 @@ func NewConvertDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:        "convert-disk RAW_DISK",
 		Short:      fmt.Sprintf("converts between a raw disk and a cloud operator disk image (%s)", strings.Join(outputAllowed, ",")),
 		Args:       cobra.ExactArgs(1),
-		Deprecated: "it and can be changed or removed without a major version bump",
+		Deprecated: "it can be changed or removed without a major version bump",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {
 				return CheckRoot()

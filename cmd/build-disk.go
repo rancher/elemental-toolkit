@@ -37,7 +37,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:        "build-disk",
 		Short:      "Build a raw recovery image",
 		Args:       cobra.NoArgs,
-		Deprecated: "it and can be changed or removed without a major version bump",
+		Deprecated: "it can be changed or removed without a major version bump",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {
 				return CheckRoot()
