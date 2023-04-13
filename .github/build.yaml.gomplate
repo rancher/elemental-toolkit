@@ -725,112 +725,6 @@
       {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
 {{{ end }}}
 
-{{{define "raw_image"}}}
-  {{{ $config := (datasource "config") }}}
-  {{{ $flavor := . }}}
-  raw-images-{{{ $flavor }}}:
-    {{{ tmpl.Exec "runner" }}}
-
-    {{{- if not $config.skip_build }}}
-    needs:
-    - build-{{{ $flavor }}}-{{{ $config.arch }}}
-    {{{- end }}}
-    env:
-      ARCH: {{{ $config.arch }}}
-      LUET_ARCH: {{{ $config.arch }}}
-    steps:
-    {{{ tmpl.Exec "runner_cleanup" $config.local_runner }}}
-      - name: Install OS deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc sudo curl e2fsprogs dosfstools mtools squashfs-tools gdisk make tar gzip xz-utils
-      - uses: actions/checkout@v3
-      - name: Download result for build
-        uses: actions/download-artifact@v3
-        with:
-          name: build-{{{ $flavor }}}-{{{ $config.arch }}}
-          path: build
-      - name: Add build repository
-        run: |
-          export DOCKER_INSTALL=true
-          sudo -E make add_local_repo
-      {{{ tmpl.Exec "make" "deps_ci" }}}
-      {{{ tmpl.Exec "cos_version" }}}
-      {{{ tmpl.Exec "make" "raw_disk" }}}
-      - name: Rename images
-        run: |
-          mv disk.raw cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
-      - name: Compress RAW image
-        run: |
-          tar -cvzf cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw
-      - uses: actions/upload-artifact@v3
-        with:
-          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-          path: |
-            cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz
-          if-no-files-found: error
-      - name: cleanup leftovers
-        if: always()
-        run: sudo rm -rf ./*.part grub_efi.cfg root .luet.yaml oem efi || true
-      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
-{{{ end }}}
-
-{{{define "raw_image_test_deploy"}}}
-  {{{ $config := (datasource "config") }}}
-  {{{ $flavor := . }}}
-  tests-raw-disk-deploy-{{{ $flavor }}}:
-    runs-on: macos-12
-    needs: raw-images-{{{ $flavor }}}
-    steps:
-      {{{ tmpl.Exec "prepare_build" false }}}
-      - uses: actions/checkout@v3
-      - name: Install deps
-        run: brew install yq cdrtools
-      - name: Export cos version
-        run: |
-          export YQ=/usr/local/bin/yq
-          source .github/helpers.sh
-          echo "COS_VERSION=$(cos_version)" >> $GITHUB_ENV
-      - name: Download RAW image
-        uses: actions/download-artifact@v3
-        with:
-          name: cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}
-      - name: Untar RAW image
-        run: |
-          tar -xvf cOS-Vanilla-RAW-{{{ $flavor }}}-${{ env.COS_VERSION }}-{{{ $config.arch }}}.raw.tar.gz
-      - name: Run tests 🔧
-        run: |
-          sudo -E make raw_disk_test_deploy
-      - name: Change logs ownership
-        if: failure()
-        run: |
-          USER_ID=$(id -u)
-          GROUP_ID=$(id -g)
-          sudo chown $USER_ID:$GROUP_ID serial_port1.log
-          sudo chown $USER_ID:$GROUP_ID capture.webm || true
-          sudo chmod 777 serial_port1.log
-          sudo chmod 777 capture.webm || true
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.logs.zip
-          path: tests/**/logs/*
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.serial.zip
-          path: serial_port1.log
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cOS-raw_disk_test_deploy-{{{ $flavor }}}.capture.zip
-          path: capture.webm
-          if-no-files-found: warn
-      {{{- if $config.slack_on_failure }}}{{{tmpl.Exec "post_failed_status_slack"}}}{{{- end }}}
-{{{ end }}}
-
 {{{define "image_link"}}}
   {{{ $config := (datasource "config") }}}
   {{{ $flavor := . }}}
@@ -1039,12 +933,6 @@ jobs:
   {{{- end }}}
   {{{- end }}}
 
-    {{{- if $config.build_raw_image }}}
-  {{{tmpl.Exec "raw_image" $flavor}}}
-        {{{- if $config.run_raw_image_test }}}
-  {{{tmpl.Exec "raw_image_test_deploy" $flavor}}}
-        {{{- end }}}
-    {{{- end }}}
 {{{- end }}}
 
 {{{tmpl.Exec "toolchain_images"}}}

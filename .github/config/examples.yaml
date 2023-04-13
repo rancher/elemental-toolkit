@@ -20,8 +20,6 @@ flavors:
         skip_tests_flavor: ["teal","green","blue","orange"]
         skip_images_flavor: ["teal","green", "blue","orange"]
         build_image_qemu: false
-        build_raw_image: false
-        run_raw_image_test: false
         release_flavor: []
         luet_override: ""
         build_examples_dir: ["cos-official", "scratch", "standard"]
