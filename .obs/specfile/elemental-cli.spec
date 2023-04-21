@@ -23,7 +23,8 @@ Summary:        The command line client for Elemental
 License:        Apache-2.0
 Group:          System/Management
 Url:            https://github.com/rancher-sandbox/%{name}
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{version}.tar
+Source1:        %{name}.obsinfo
 
 Requires:       dosfstools
 Requires:       e2fsprogs
@@ -49,9 +50,16 @@ Elemental functionality
 
 %prep
 %setup -q
+cp %{S:1} .
 
 %build
-GIT_TAG=%{git_tag} GIT_COMMIT=%{git_commit} make build
+export GIT_TAG=`echo "%{version}" | cut -d "+" -f 1`
+GIT_COMMIT=$(cat %{name}.obsinfo | grep commit: | cut -d" " -f 2)
+export GIT_COMMIT=${GIT_COMMIT:0:8}
+MTIME=$(cat %{name}.obsinfo | grep mtime: | cut -d" " -f 2)
+export COMMITDATE=$(date -d @${MTIME} +%Y%m%d)
+make build
+
 
 %install
 mkdir -p %{buildroot}%{_bindir}
