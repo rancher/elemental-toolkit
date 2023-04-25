@@ -143,7 +143,6 @@ include make/Makefile.build
 include make/Makefile.iso
 include make/Makefile.run
 include make/Makefile.test
-include make/Makefile.images
 include make/Makefile.docs
 
 #----------------------- targets -----------------------

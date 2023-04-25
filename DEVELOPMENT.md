@@ -50,31 +50,6 @@ For efi:
 If running this locally, there is an extra target in the `make/Makefile.test` to clean up the existing machine so it doesn't leave anything around. 
 Use `make clean_vm_from_iso` to clean up the vm and its artifacts (Note that this will also remove the serial_port1.log file which contains the serial output) 
 
-
-## Raw image tests
-
-Raw image tests are tests run from the raw image created by `elemental build-disk` which creates a raw image with the recovery partition only.
-This raw image is the base to create the different cloud images currently (AWS, GCE, AZURE)
-
-The test setup is done via the `make/Makefile.test` with `create_vm_from_raw_image` target.
-The test run is done via ginkgo, test suites are under the `test/recovery-raw-disk` directory.
-
-The full test workflow for this is as follows:
-
-- *(Makefile)* Tranform the raw image disk into a VDI disk
-- *(Makefile)* Create user-data iso (using `packer/aws/aws.yaml` as teh source of cloud-data) so the disk is partitioned
-- *(Makefile)* Set efi firmware (no bios test currently)
-- *(Makefile)* Create the vbox VM
-- *(Ginkgo)* Run test suite (currently only cos-deploy)
-
-Currently, the raw disk test have a very big shortcoming and that is that becuase we are booting from the converted raw disk, once a test is run the disk has changed from its original status, so further tests are not possible as we would have a modified disk thus invalidating any results.
-Hopefully in the future we use the snapshopt capabilities of vbox to take a snapshot on test suite start and restoring that snapshot after each test, so all the test can have the same base.
-
-
-If running this locally, there is an extra target in the `make/Makefile.test` to clean up the existing machine, so it doesn't leave anything around.
-Use `make clean_raw_disk_test` to clean up the vm and its artifacts (Note that this will also remove the serial_port1.log file which contains the serial output) 
-
-
 ## Tests from packer boxes
 
 These tests are run from the packer boxes generated as part of the packer target and are the simplest ones, as we can use cos-reset to restore the boxes back to the start.
