@@ -11,7 +11,7 @@ elemental pull-image IMAGE DESTINATION [flags]
 ```
   -h, --help              help for pull-image
       --local             Use an image from local cache
-  -p, --platform string   Platform to build the image for (default "linux/amd64")
+      --platform string   Platform to build the image for (default "linux/amd64")
 ```
 
 ### Options inherited from parent commands

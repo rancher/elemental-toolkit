@@ -29,7 +29,7 @@ elemental build-iso SOURCE [flags]
       --overlay-iso string               Path of the overlayed iso data
       --overlay-rootfs string            Path of the overlayed rootfs data
       --overlay-uefi string              Path of the overlayed uefi data
-  -p, --platform string                  Platform to build the image for (default "linux/amd64")
+      --platform string                  Platform to build the image for (default "linux/amd64")
   -x, --squash-compression stringArray   cmd options for compression to pass to mksquashfs. Full cmd including --comp as the whole values will be passed to mksquashfs. For a full list of options please check mksquashfs manual. (default value: '-comp xz -Xbcj ARCH')
       --squash-no-compression            Disable squashfs compression. Overrides any values on squash-compression
 ```

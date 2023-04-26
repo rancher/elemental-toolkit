@@ -21,6 +21,7 @@ elemental install DEVICE [flags]
       --local                            Use an image from local cache
       --no-format                        Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing
       --part-table string                Partition table type to use (default "gpt")
+      --platform string                  Platform to build the image for (default "linux/amd64")
       --poweroff                         Shutdown the system after install
       --reboot                           Reboot the system after install
       --recovery-system.uri string       Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')
