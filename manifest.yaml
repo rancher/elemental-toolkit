@@ -1,50 +1,5 @@
 iso:
-  rootfs:
-    - channel:system/cos
-  uefi:
-    - channel:live/grub2-efi-image
-  image:
-    - channel:live/grub2
-    - channel:live/grub2-efi-image
+  bootloader-in-rootfs: true
   label: "COS_LIVE"
 
 name: "cOS-0"
-
-# Raw disk creation values start
-raw_disk:
-  x86_64:
-    # which packages to install and the target to install them at
-    packages:
-      - name: channel:system/grub2-efi-image
-        target: efi
-      - name: channel:system/grub2-config
-        target: root
-      - name: channel:system/grub2-artifacts
-        target: root/grub2
-      - name: channel:recovery/cos-img
-        target: root/cOS
-  arm64:
-    packages:
-      - name: channel:system/grub2-efi-image
-        target: efi
-      - name: channel:system/grub2-config
-        target: root
-      - name: channel:system/grub2-artifacts
-        target: root/grub2
-      - name: channel:recovery/cos-img
-        target: root/cOS
-  odroid_c2:
-    packages:
-      - name: channel:system/grub2-efi-image
-        target: efi
-      - name: channel:system/grub2-config
-        target: root
-      - name: channel:system/grub2-artifacts
-        target: root/grub2
-# Raw disk creation values end
-
-repositories:
-  - uri: quay.io/costoolkit/releases-teal
-    arch: "x86_64"
-  - uri: quay.io/costoolkit/releases-teal-arm64
-    arch: "arm64"
