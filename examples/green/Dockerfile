@@ -60,7 +60,9 @@ RUN systemctl enable NetworkManager.service
 # Enable /tmp to be on tmpfs
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
+# TODO do not use mkinitrd and directly call dracut as required
 # Recreate the initrd according to the elemental config and modules
+RUN zypper --non-interactive install -- dracut-mkinitrd-deprecated
 RUN mkinitrd
 
 # Update os-release file with some metadata
