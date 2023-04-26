@@ -27,15 +27,16 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+	"k8s.io/mount-utils"
+
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/elemental"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
-	"k8s.io/mount-utils"
 )
 
 const printOutput = `BYT;
@@ -55,6 +56,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	var syscall v1.SyscallInterface
 	var client *v1mock.FakeHTTPClient
 	var mounter *v1mock.ErrorMounter
+	var extractor *v1mock.FakeImageExtractor
 	var fs *vfst.TestFS
 	var cleanup func()
 	BeforeEach(func() {
@@ -63,6 +65,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
+		extractor = v1mock.NewFakeImageExtractor(logger)
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 		config = conf.NewConfig(
 			conf.WithFs(fs),
@@ -71,6 +74,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			conf.WithMounter(mounter),
 			conf.WithSyscall(syscall),
 			conf.WithClient(client),
+			conf.WithImageExtractor(extractor),
 		)
 	})
 	AfterEach(func() { cleanup() })
@@ -480,11 +484,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("DumpSource", Label("dump"), func() {
 		var e *elemental.Elemental
 		var destDir string
-		var luet *v1mock.FakeLuet
 		BeforeEach(func() {
 			var err error
-			luet = v1mock.NewFakeLuet()
-			config.Luet = luet
 			e = elemental.NewElemental(config)
 			destDir, err = utils.TempDir(fs, "", "elemental")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -502,13 +503,11 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Unpacks a docker image to target", Label("docker"), func() {
 			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.Cosign = true
 			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
@@ -519,10 +518,10 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
-			luet.OnUnpackError = true
+			unpackErr := errors.New("failed to unpack")
+			extractor.SideEffect = func(_, _, _ string, _ bool) error { return unpackErr }
 			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
-			Expect(err).NotTo(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
+			Expect(err).To(Equal(unpackErr))
 		})
 		It("Copies image file to target", func() {
 			sourceImg := "/source.img"
@@ -548,17 +547,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			config.Fs = vfs.NewReadOnlyFS(fs)
 			_, err = e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
 			Expect(err).To(HaveOccurred())
-		})
-		It("Unpacks from channel to target", func() {
-			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
-			Expect(err).To(BeNil())
-			Expect(luet.UnpackChannelCalled()).To(BeTrue())
-		})
-		It("Fails to unpack from channel to target", func() {
-			luet.OnUnpackFromChannelError = true
-			_, err := e.DumpSource(destDir, v1.NewChannelSrc("some/package"))
-			Expect(err).NotTo(BeNil())
-			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 	})
 	Describe("DeployImgTree", Label("deployImgTree"), func() {

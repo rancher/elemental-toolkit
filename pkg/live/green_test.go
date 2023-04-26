@@ -21,15 +21,16 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	"github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/live"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/sirupsen/logrus"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -44,7 +45,6 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
-	var luet *v1mock.FakeLuet
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var iso *v1.LiveISO
@@ -60,7 +60,6 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		cloudInit = &v1mock.FakeCloudInitRunner{}
-		luet = &v1mock.FakeLuet{}
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewBuildConfig(
 			config.WithFs(fs),
@@ -70,7 +69,6 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 			config.WithSyscall(syscall),
 			config.WithClient(client),
 			config.WithCloudInitRunner(cloudInit),
-			config.WithLuet(luet),
 		)
 		iso = config.NewISO()
 
@@ -199,15 +197,17 @@ var _ = Describe("GreenLiveBootloader", Label("green", "live"), func() {
 		Expect(err).Should(HaveOccurred())
 	})
 	It("Fails to copy the EFI image binaries for unsupported arch", func() {
-		cfg.Arch = "unknown"
+		cfg.Platform = &v1.Platform{Arch: "unknown"}
 
 		green := live.NewGreenLiveBootLoader(cfg, iso)
 		err := green.PrepareEFI(rootDir, uefiDir)
 		Expect(err).Should(HaveOccurred())
 	})
 	It("Copies the EFI image binaries for arm64", func() {
-		cfg.Arch = constants.ArchArm64
-		err := utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/arm64-efi"), constants.DirPerm)
+		platform, err := v1.NewPlatformFromArch(constants.ArchArm64)
+		Expect(err).ShouldNot(HaveOccurred())
+		cfg.Platform = platform
+		err = utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/arm64-efi"), constants.DirPerm)
 		Expect(err).ShouldNot(HaveOccurred())
 		err = fs.WriteFile(
 			filepath.Join(rootDir, "/usr/share/grub2/arm64-efi/grub.efi"),

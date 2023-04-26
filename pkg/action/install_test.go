@@ -53,6 +53,7 @@ var _ = Describe("Install action tests", func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
+	var extractor *v1mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
@@ -64,7 +65,8 @@ var _ = Describe("Install action tests", func() {
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
-		//logger.SetLevel(v1.DebugLevel())
+		logger.SetLevel(v1.DebugLevel())
+		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
@@ -78,6 +80,8 @@ var _ = Describe("Install action tests", func() {
 			conf.WithSyscall(syscall),
 			conf.WithClient(client),
 			conf.WithCloudInitRunner(cloudInit),
+			conf.WithImageExtractor(extractor),
+			conf.WithPlatform("linux/amd64"),
 		)
 	})
 
@@ -272,10 +276,7 @@ var _ = Describe("Install action tests", func() {
 		It("Successfully installs a docker image", Label("docker"), func() {
 			spec.Target = device
 			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
-			luet := v1mock.NewFakeLuet()
-			config.Luet = luet
 			Expect(installer.Run()).To(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
 		It("Successfully sets GRUB labels", Label("grub"), func() {
@@ -387,16 +388,6 @@ var _ = Describe("Install action tests", func() {
 			spec.Target = device
 			config.Fs = vfs.NewReadOnlyFS(fs)
 			Expect(installer.Run()).NotTo(BeNil())
-		})
-
-		It("Fails if luet fails to unpack image", Label("image", "luet", "unpack"), func() {
-			spec.Target = device
-			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
-			luet := v1mock.NewFakeLuet()
-			luet.OnUnpackError = true
-			config.Luet = luet
-			Expect(installer.Run()).NotTo(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 
 		It("Fails if requested remote cloud config can't be downloaded", Label("cloud-config"), func() {

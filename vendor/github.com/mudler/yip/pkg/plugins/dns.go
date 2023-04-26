@@ -1,10 +1,11 @@
 package plugins
 
 import (
-	"github.com/moby/libnetwork/resolvconf"
+	"github.com/moby/moby/libnetwork/resolvconf"
+	"github.com/twpayne/go-vfs"
+
 	"github.com/mudler/yip/pkg/logger"
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/twpayne/go-vfs"
 )
 
 func DNS(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) error {

@@ -26,7 +26,6 @@ import (
 
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
-	"github.com/rancher/elemental-cli/pkg/constants"
 	elementalError "github.com/rancher/elemental-cli/pkg/error"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
@@ -96,7 +95,6 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			oRootfs, _ := flags.GetString("overlay-rootfs")
 			oUEFI, _ := flags.GetString("overlay-uefi")
 			oISO, _ := flags.GetString("overlay-iso")
-			repoURIs, _ := flags.GetStringArray("repo")
 
 			if oRootfs != "" {
 				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
@@ -126,10 +124,6 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				}
 			}
 
-			for _, u := range repoURIs {
-				cfg.Repos = append(cfg.Repos, v1.Repository{URI: u, Priority: constants.LuetRepoMaxPrio, Arch: cfg.Arch})
-			}
-
 			buildISO := action.NewBuildISOAction(cfg, spec)
 			return buildISO.ISORun()
 		},
@@ -145,11 +139,10 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-uefi", "", "Path of the overlayed uefi data")
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
 	c.Flags().String("label", "", "Label of the ISO volume")
-	c.Flags().StringArray("repo", []string{}, "A repository URI for luet. Can be repeated to add more than one source.")
 	c.Flags().Bool("bootloader-in-rootfs", false, "Fetch ISO bootloader binaries from the rootfs")
 	c.Flags().Var(firmType, "firmware", "Firmware to install for: 'efi' or 'bios'. (defaults to 'efi')")
 	_ = c.Flags().MarkDeprecated("firmware", "'firmware' is deprecated. 'bios' firmware support is deprecated.")
-	addArchFlags(c)
+	addPlatformFlags(c)
 	addCosignFlags(c)
 	addSquashFsCompressionFlags(c)
 	addLocalImageFlag(c)

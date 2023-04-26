@@ -145,13 +145,6 @@ strict: false
 cloud-init-paths:
 - "/some/path"
 
-# Respositories defined for channel sources
-repositories:
-- name: "some_repo"
-  uri: "registry.org/repo"
-  type: "docker"
-  priority: 10
-  
 # reboot/power off when done
 reboot: false
 poweroff: false

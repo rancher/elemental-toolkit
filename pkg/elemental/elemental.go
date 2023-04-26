@@ -422,7 +422,7 @@ func (e *Elemental) DeployImage(img *v1.Image) (interface{}, error) {
 func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info interface{}, err error) { // nolint:gocyclo
 	e.config.Logger.Infof("Copying %s source...", imgSrc.Value())
 
-	if imgSrc.IsDocker() {
+	if imgSrc.IsImage() {
 		if e.config.Cosign {
 			e.config.Logger.Infof("Running cosing verification for %s", imgSrc.Value())
 			out, err := utils.CosignVerify(
@@ -434,18 +434,14 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info inte
 				return nil, err
 			}
 		}
-		info, err = e.config.Luet.Unpack(target, imgSrc.Value(), e.config.LocalImage)
+
+		err = e.config.ImageExtractor.ExtractImage(imgSrc.Value(), target, e.config.Platform.String(), e.config.LocalImage)
 		if err != nil {
 			return nil, err
 		}
 	} else if imgSrc.IsDir() {
 		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
 		err = utils.SyncData(e.config.Logger, e.config.Fs, imgSrc.Value(), target, excludes...)
-		if err != nil {
-			return nil, err
-		}
-	} else if imgSrc.IsChannel() {
-		info, err = e.config.Luet.UnpackFromChannel(target, imgSrc.Value(), e.config.Repos...)
 		if err != nil {
 			return nil, err
 		}

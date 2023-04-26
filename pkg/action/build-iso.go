@@ -103,7 +103,7 @@ func (b *BuildISOAction) ISORun() error {
 		}
 	}
 
-	b.cfg.Logger.Infof("Preparing squashfs root...")
+	b.cfg.Logger.Infof("Preparing squashfs root (%v source)...", len(b.spec.RootFS))
 	err = b.applySources(rootDir, b.spec.RootFS...)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed installing OS packages: %v", err)
@@ -162,7 +162,7 @@ func (b *BuildISOAction) ISORun() error {
 	b.cfg.Logger.Infof("Creating ISO image...")
 	err = b.burnISO(isoDir, filepath.Join(isoTmpDir, constants.ISOEFIImg))
 	if err != nil {
-		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
+		b.cfg.Logger.Errorf("Failed burning ISO file: %v", err)
 		return err
 	}
 

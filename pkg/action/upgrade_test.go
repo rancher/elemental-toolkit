@@ -47,6 +47,7 @@ var _ = Describe("Runtime Actions", func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
+	var extractor *v1mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
@@ -58,6 +59,7 @@ var _ = Describe("Runtime Actions", func() {
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
+		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
@@ -71,6 +73,7 @@ var _ = Describe("Runtime Actions", func() {
 			conf.WithSyscall(syscall),
 			conf.WithClient(client),
 			conf.WithCloudInitRunner(cloudInit),
+			conf.WithImageExtractor(extractor),
 		)
 		Expect(config.Sanitize()).To(Succeed())
 	})
@@ -81,7 +84,6 @@ var _ = Describe("Runtime Actions", func() {
 		var spec *v1.UpgradeSpec
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
-		var l *v1mock.FakeLuet
 		activeImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.ActiveImgFile)
 		passiveImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.PassiveImgFile)
 
@@ -92,8 +94,6 @@ var _ = Describe("Runtime Actions", func() {
 			logger = v1.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
-			l = &v1mock.FakeLuet{}
-			config.Luet = l
 
 			// Create paths used by tests
 			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), constants.DirPerm)
@@ -144,7 +144,7 @@ var _ = Describe("Runtime Actions", func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec.Active.Source = v1.NewChannelSrc("system/cos-config")
+				spec.Active.Source = v1.NewDockerSrc("alpine")
 				spec.Active.Size = 16
 
 				err = utils.MkdirAll(config.Fs, filepath.Join(constants.WorkingImgDir, "etc"), constants.DirPerm)
@@ -241,9 +241,6 @@ var _ = Describe("Runtime Actions", func() {
 				upgrade = action.NewUpgradeAction(config, spec)
 				err := upgrade.Run()
 				Expect(err).ToNot(HaveOccurred())
-
-				// Check luet was called to unpack a docker image
-				Expect(l.UnpackCalled()).To(BeTrue())
 
 				// Check that the rebrand worked with our os-release value
 				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
@@ -361,9 +358,6 @@ var _ = Describe("Runtime Actions", func() {
 				err := upgrade.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				// Check luet was called to unpack a docker image
-				Expect(l.UnpackCalled()).To(BeTrue())
-
 				// Check that the rebrand worked with our os-release value
 				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
 
@@ -396,9 +390,6 @@ var _ = Describe("Runtime Actions", func() {
 				upgrade = action.NewUpgradeAction(config, spec)
 				err := upgrade.Run()
 				Expect(err).ToNot(HaveOccurred())
-
-				// Check luet was called to unpack a docker image
-				Expect(l.UnpackCalled()).To(BeTrue())
 
 				// Check that the rebrand worked with our os-release value
 				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
@@ -520,7 +511,7 @@ var _ = Describe("Runtime Actions", func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec.Active.Source = v1.NewChannelSrc("system/cos-config")
+				spec.Active.Source = v1.NewDockerSrc("elementalos:latest")
 				spec.Active.Size = 16
 
 				err = utils.MkdirAll(config.Fs, filepath.Join(constants.WorkingImgDir, "etc"), constants.DirPerm)
@@ -617,7 +608,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 
 					spec.RecoveryUpgrade = true
-					spec.Recovery.Source = v1.NewChannelSrc("system/cos-config")
+					spec.Recovery.Source = v1.NewDockerSrc("alpine")
 					spec.Recovery.Size = 16
 
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -652,8 +643,6 @@ var _ = Describe("Runtime Actions", func() {
 					upgrade = action.NewUpgradeAction(config, spec)
 					err = upgrade.Run()
 					Expect(err).ToNot(HaveOccurred())
-
-					Expect(l.UnpackCalled()).To(BeTrue())
 
 					// This should be the new image
 					info, err = fs.Stat(recoveryImg)
@@ -705,8 +694,6 @@ var _ = Describe("Runtime Actions", func() {
 					err = upgrade.Run()
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(l.UnpackChannelCalled()).To(BeTrue())
-
 					// This should be the new image
 					info, err = fs.Stat(recoveryImg)
 					Expect(err).ToNot(HaveOccurred())
@@ -732,7 +719,7 @@ var _ = Describe("Runtime Actions", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 
 					spec.RecoveryUpgrade = true
-					spec.Recovery.Source = v1.NewChannelSrc("system/cos-config")
+					spec.Recovery.Source = v1.NewDockerSrc("alpine")
 					spec.Recovery.Size = 16
 
 					runner.SideEffect = func(command string, args ...string) ([]byte, error) {
@@ -768,8 +755,6 @@ var _ = Describe("Runtime Actions", func() {
 					upgrade = action.NewUpgradeAction(config, spec)
 					err = upgrade.Run()
 					Expect(err).ToNot(HaveOccurred())
-
-					Expect(l.UnpackCalled()).To(BeTrue())
 
 					// Should have created recovery image
 					info, err = fs.Stat(recoveryImg)
@@ -827,8 +812,6 @@ var _ = Describe("Runtime Actions", func() {
 					upgrade = action.NewUpgradeAction(config, spec)
 					err = upgrade.Run()
 					Expect(err).ToNot(HaveOccurred())
-
-					Expect(l.UnpackChannelCalled()).To(BeTrue())
 
 					// Should have created recovery image
 					info, err = fs.Stat(recoveryImg)

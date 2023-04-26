@@ -21,14 +21,15 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	"github.com/rancher/elemental-cli/pkg/config"
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mocks "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {
@@ -61,20 +62,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				SourceMetadata: &v1.DockerImageMeta{
 					Digest: "adadgadg",
 					Size:   23452345,
-				},
-			}
-			channelState = &v1.ImageState{
-				Source: v1.NewChannelSrc("cat/mypkg"),
-				Label:  "active_label",
-				FS:     "ext2",
-				SourceMetadata: &v1.ChannelImageMeta{
-					Category:    "cat",
-					Name:        "mypkg",
-					Version:     "0.2.1",
-					FingerPrint: "mypkg-cat-0.2.1",
-					Repos: []v1.Repository{{
-						Name: "myrepo",
-					}},
 				},
 			}
 			installState = &v1.InstallState{
@@ -348,28 +335,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(p.GetByName("nonexistent")).To(BeNil())
 		})
 	})
-	Describe("RunConfig", func() {
-		It("runs sanitize method", func() {
-			cfg := config.NewRunConfig(config.WithMounter(v1mocks.NewErrorMounter()))
-			cfg.Config.Verify = true
-
-			// Sets the luet mtree pluing
-			err := cfg.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(cfg.Luet.GetPlugins()).To(Equal([]string{constants.LuetMtreePlugin}))
-		})
-	})
-	Describe("BuildConfig", func() {
-		It("runs sanitize method", func() {
-			cfg := config.NewBuildConfig(config.WithMounter(v1mocks.NewErrorMounter()))
-			cfg.Config.Verify = true
-
-			// Sets the luet mtree pluing
-			err := cfg.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(cfg.Luet.GetPlugins()).To(Equal([]string{constants.LuetMtreePlugin}))
-		})
-	})
 	Describe("InstallSpec", func() {
 		var spec *v1.InstallSpec
 
@@ -530,15 +495,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			spec := &v1.LiveISO{
 				RootFS: []*v1.ImageSource{
 					v1.NewDirSrc("/system/os"),
-					v1.NewChannelSrc("system/os"),
-				},
-				UEFI: []*v1.ImageSource{
-					v1.NewChannelSrc("live/grub2-efi-image"),
-				},
-				Image: []*v1.ImageSource{
-					v1.NewChannelSrc("live/grub2"),
 				},
 			}
+			spec.BootloaderInRootFs = true
 			Expect(spec.Sanitize()).ShouldNot(HaveOccurred())
 			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
 
@@ -555,12 +514,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				},
 			}
 			Expect(spec.Sanitize()).Should(HaveOccurred())
-		})
-	})
-	Describe("RawDisk", func() {
-		It("runs sanitize method", func() {
-			disk := &v1.RawDisk{}
-			Expect(disk.Sanitize()).ShouldNot(HaveOccurred())
 		})
 	})
 })

@@ -47,6 +47,7 @@ var _ = Describe("Reset action tests", func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
+	var extractor *v1mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
@@ -58,6 +59,7 @@ var _ = Describe("Reset action tests", func() {
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
+		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
@@ -71,6 +73,7 @@ var _ = Describe("Reset action tests", func() {
 			conf.WithSyscall(syscall),
 			conf.WithClient(client),
 			conf.WithCloudInitRunner(cloudInit),
+			conf.WithImageExtractor(extractor),
 		)
 	})
 
@@ -228,17 +231,10 @@ var _ = Describe("Reset action tests", func() {
 		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
 			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
-			luet := v1mock.NewFakeLuet()
-			config.Luet = luet
 			Expect(reset.Run()).To(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 		It("Successfully resets from a channel package", Label("channel"), func() {
-			spec.Active.Source = v1.NewChannelSrc("system/cos")
-			luet := v1mock.NewFakeLuet()
-			config.Luet = luet
 			Expect(reset.Run()).To(BeNil())
-			Expect(luet.UnpackChannelCalled()).To(BeTrue())
 		})
 		It("Fails installing grub", func() {
 			cmdFail = "grub2-install"
@@ -266,14 +262,6 @@ var _ = Describe("Reset action tests", func() {
 		It("Fails unmounting partitions", func() {
 			mounter.ErrorOnUnmount = true
 			Expect(reset.Run()).NotTo(BeNil())
-		})
-		It("Fails unpacking docker image ", func() {
-			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
-			luet := v1mock.NewFakeLuet()
-			luet.OnUnpackError = true
-			config.Luet = luet
-			Expect(reset.Run()).NotTo(BeNil())
-			Expect(luet.UnpackCalled()).To(BeTrue())
 		})
 	})
 })

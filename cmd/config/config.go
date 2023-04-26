@@ -103,6 +103,7 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
 		config.WithMounter(mounter),
+		config.WithOCIImageExtractor(),
 	)
 
 	configLogger(cfg.Logger, cfg.Fs)
@@ -146,6 +147,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	cfg := config.NewRunConfig(
 		config.WithLogger(v1.NewLogger()),
 		config.WithMounter(mounter),
+		config.WithOCIImageExtractor(),
 	)
 	configLogger(cfg.Logger, cfg.Fs)
 	if configDir == "" {
@@ -297,26 +299,6 @@ func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) 
 	err = iso.Sanitize()
 	b.Logger.Debugf("Loaded LiveISO: %s", litter.Sdump(iso))
 	return iso, err
-}
-
-func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.RawDisk, error) {
-	disk := config.NewRawDisk()
-	vp := viper.Sub("raw_disk")
-	if vp == nil {
-		vp = viper.New()
-	}
-	// Bind build-disk cmd flags
-	bindGivenFlags(vp, flags)
-	// Bind build-disk env vars
-	viperReadEnv(vp, "RAWDISK", constants.GetDiskKeyEnvMap())
-
-	err := vp.Unmarshal(disk, setDecoder, decodeHook)
-	if err != nil {
-		b.Logger.Warnf("error unmarshalling RawDisk: %s", err)
-	}
-	err = disk.Sanitize()
-	b.Logger.Debugf("Loaded RawDisk: %s", litter.Sdump(disk))
-	return disk, err
 }
 
 func configLogger(log v1.Logger, vfs v1.FS) {

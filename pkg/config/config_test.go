@@ -22,13 +22,14 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs/vfst"
+	"k8s.io/mount-utils"
+
 	"github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs/vfst"
-	"k8s.io/mount-utils"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {
@@ -42,7 +43,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var sysc *v1mock.FakeSyscall
 		var logger v1.Logger
 		var ci *v1mock.FakeCloudInitRunner
-		var luet *v1mock.FakeLuet
 		var c *v1.Config
 		BeforeEach(func() {
 			fs, cleanup, err = vfst.NewTestFS(nil)
@@ -53,7 +53,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			sysc = &v1mock.FakeSyscall{}
 			logger = v1.NewNullLogger()
 			ci = &v1mock.FakeCloudInitRunner{}
-			luet = &v1mock.FakeLuet{}
 			c = config.NewConfig(
 				config.WithFs(fs),
 				config.WithMounter(mounter),
@@ -62,7 +61,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				config.WithLogger(logger),
 				config.WithCloudInitRunner(ci),
 				config.WithClient(client),
-				config.WithLuet(luet),
 			)
 		})
 		AfterEach(func() {
@@ -77,7 +75,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(c.Logger).To(Equal(logger))
 				Expect(c.CloudInitRunner).To(Equal(ci))
 				Expect(c.Client).To(Equal(client))
-				Expect(c.Luet).To(Equal(luet))
 			})
 			It("Sets the runner if we dont pass one", func() {
 				fs, cleanup, err := vfst.NewTestFS(nil)
@@ -408,8 +405,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("initiates a new build config", func() {
 				build := config.NewBuildConfig()
 				Expect(build.Name).To(Equal(constants.BuildImgName))
-				Expect(len(build.Repos)).To(Equal(1))
-				Expect(build.Repos[0].URI).To(ContainSubstring(constants.LuetDefaultRepoURI))
 			})
 		})
 		Describe("LiveISO", Label("iso"), func() {
@@ -418,12 +413,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(iso.Label).To(Equal(constants.ISOLabel))
 				Expect(len(iso.UEFI)).To(Equal(0))
 				Expect(len(iso.Image)).To(Equal(0))
-			})
-		})
-		Describe("RawDisk", Label("disk"), func() {
-			It("initiates a new RawDisk", func() {
-				disk := config.NewRawDisk()
-				Expect(len(disk.X86_64.Packages)).To(Equal(len(constants.GetBuildDiskDefaultPackages())))
 			})
 		})
 	})

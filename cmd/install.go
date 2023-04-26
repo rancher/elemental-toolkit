@@ -113,6 +113,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
+	addPlatformFlags(c)
 	return c
 }
 

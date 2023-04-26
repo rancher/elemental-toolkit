@@ -27,7 +27,6 @@ import (
 	"github.com/rancher/elemental-cli/pkg/cloudinit"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	"github.com/rancher/elemental-cli/pkg/http"
-	"github.com/rancher/elemental-cli/pkg/luet"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
@@ -83,25 +82,34 @@ func WithCloudInitRunner(ci v1.CloudInitRunner) func(r *v1.Config) error {
 	}
 }
 
-func WithLuet(luet v1.LuetInterface) func(r *v1.Config) error {
+func WithPlatform(platform string) func(r *v1.Config) error {
 	return func(r *v1.Config) error {
-		r.Luet = luet
+		p, err := v1.ParsePlatform(platform)
+		r.Platform = p
+		return err
+	}
+}
+
+func WithOCIImageExtractor() func(r *v1.Config) error {
+	return func(r *v1.Config) error {
+		r.ImageExtractor = v1.OCIImageExtractor{}
 		return nil
 	}
 }
 
-func WithArch(arch string) func(r *v1.Config) error {
+func WithImageExtractor(extractor v1.ImageExtractor) func(r *v1.Config) error {
 	return func(r *v1.Config) error {
-		r.Arch = arch
+		r.ImageExtractor = extractor
 		return nil
 	}
 }
 
 func NewConfig(opts ...GenericOptions) *v1.Config {
 	log := v1.NewLogger()
-	arch, err := utils.GolangArchToArch(runtime.GOARCH)
+
+	defaultPlatform, err := v1.NewPlatformFromArch(runtime.GOARCH)
 	if err != nil {
-		log.Errorf("invalid arch: %s", err.Error())
+		log.Errorf("error parsing default platform (%s): %s", runtime.GOARCH, err.Error())
 		return nil
 	}
 
@@ -110,8 +118,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 		Logger:                    log,
 		Syscall:                   &v1.RealSyscall{},
 		Client:                    http.NewClient(),
-		Repos:                     []v1.Repository{},
-		Arch:                      arch,
+		Platform:                  defaultPlatform,
 		SquashFsCompressionConfig: constants.GetDefaultSquashfsCompressionOptions(),
 	}
 	for _, o := range opts {
@@ -144,10 +151,6 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 		c.Mounter = mount.New(constants.MountBinary)
 	}
 
-	if c.Luet == nil {
-		tmpDir := utils.GetTempDir(c, "")
-		c.Luet = luet.NewLuet(luet.WithFs(c.Fs), luet.WithLogger(c.Logger), luet.WithLuetTempDir(tmpDir))
-	}
 	return c
 }
 
@@ -157,16 +160,6 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 		Config: *config,
 	}
 	return r
-}
-
-// CoOccurrenceConfig sets further configurations once config files and other
-// runtime configurations are read. This is mostly a method to call once the
-// mapstructure unmarshal already took place.
-func CoOccurrenceConfig(cfg *v1.Config) {
-	// Set Luet plugins, we only use the mtree plugin for now
-	if cfg.Verify {
-		cfg.Luet.SetPlugins(constants.LuetMtreePlugin)
-	}
 }
 
 // NewInstallSpec returns an InstallSpec struct all based on defaults and basic host checks (e.g. EFI vs BIOS)
@@ -472,20 +465,6 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
-func NewRawDisk() *v1.RawDisk {
-	var packages []v1.RawDiskPackage
-	defaultPackages := constants.GetBuildDiskDefaultPackages()
-
-	for pkg, target := range defaultPackages {
-		packages = append(packages, v1.RawDiskPackage{Name: pkg, Target: target})
-	}
-
-	return &v1.RawDisk{
-		X86_64: &v1.RawDiskArchEntry{Packages: packages},
-		Arm64:  &v1.RawDiskArchEntry{Packages: packages},
-	}
-}
-
 func NewISO() *v1.LiveISO {
 	return &v1.LiveISO{
 		Label:     constants.ISOLabel,
@@ -500,19 +479,6 @@ func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	b := &v1.BuildConfig{
 		Config: *NewConfig(opts...),
 		Name:   constants.BuildImgName,
-	}
-	if len(b.Repos) == 0 {
-		repo := constants.LuetDefaultRepoURI
-		if b.Arch != constants.Archx86 {
-			repo = fmt.Sprintf("%s-%s", constants.LuetDefaultRepoURI, b.Arch)
-		}
-		b.Repos = []v1.Repository{{
-			Name:     "cos",
-			Type:     "docker",
-			URI:      repo,
-			Arch:     b.Arch,
-			Priority: constants.LuetDefaultRepoPrio,
-		}}
 	}
 	return b
 }

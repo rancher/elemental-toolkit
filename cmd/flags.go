@@ -19,6 +19,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -139,10 +140,11 @@ func validateInstallUpgradeFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	return validatePowerFlags(log, flags)
 }
 
-// addArchFlags adds the arch flag for build commands
-func addArchFlags(cmd *cobra.Command) {
-	archType := newEnumFlag([]string{"x86_64", "arm64"}, "x86_64")
-	cmd.Flags().VarP(archType, "arch", "a", "Arch to build the image for")
+// addPlatformFlags adds the arch flag for build commands
+func addPlatformFlags(cmd *cobra.Command) {
+	cmd.Flags().String("arch", "", "Arch to build the image for")
+	_ = cmd.Flags().MarkDeprecated("arch", "'arch' is deprecated please use 'platform' instead")
+	cmd.Flags().String("platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "Platform to build the image for")
 }
 
 type enum struct {

@@ -19,14 +19,13 @@ package cmd
 import (
 	"path/filepath"
 
-	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-cli/cmd/config"
 	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	"github.com/rancher/elemental-cli/pkg/luet"
+	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
@@ -54,34 +53,20 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.StatFile)
 			}
 
+			local, err := cmd.Flags().GetBool("local")
+			if err != nil {
+				cfg.Logger.Errorf("Invalid local-flag %s", err.Error())
+				return elementalError.NewFromError(err, elementalError.ReadingBuildConfig)
+			}
+
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			verify, _ := cmd.Flags().GetBool("verify")
-			user, _ := cmd.Flags().GetString("auth-username")
-			local, _ := cmd.Flags().GetBool("local")
-			pass, _ := cmd.Flags().GetString("auth-password")
-			authType, _ := cmd.Flags().GetString("auth-type")
-			server, _ := cmd.Flags().GetString("auth-server-address")
-			identity, _ := cmd.Flags().GetString("auth-identity-token")
-			registryToken, _ := cmd.Flags().GetString("auth-registry-token")
-			plugins, _ := cmd.Flags().GetStringArray("plugin")
+			cfg.Logger.Infof("Pulling image %s platform %s", image, cfg.Platform.String())
 
-			auth := &types.AuthConfig{
-				Username:      user,
-				Password:      pass,
-				ServerAddress: server,
-				Auth:          authType,
-				IdentityToken: identity,
-				RegistryToken: registryToken,
-			}
-
-			l := luet.NewLuet(luet.WithLogger(cfg.Logger), luet.WithAuth(auth), luet.WithPlugins(plugins...))
-			l.VerifyImageUnpack = verify
-			_, err = l.Unpack(destination, image, local)
-
-			if err != nil {
+			e := v1.OCIImageExtractor{}
+			if err = e.ExtractImage(image, destination, cfg.Platform.String(), local); err != nil {
 				cfg.Logger.Error(err.Error())
 				return elementalError.NewFromError(err, elementalError.UnpackImage)
 			}
@@ -90,14 +75,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 	root.AddCommand(c)
-	c.Flags().String("auth-username", "", "Username to authenticate to registry/notary")
-	c.Flags().String("auth-password", "", "Password to authenticate to registry")
-	c.Flags().String("auth-type", "", "Auth type")
-	c.Flags().String("auth-server-address", "", "Authentication server address")
-	c.Flags().String("auth-identity-token", "", "Authentication identity token")
-	c.Flags().String("auth-registry-token", "", "Authentication registry token")
-	c.Flags().Bool("verify", false, "Verify signed images to notary before to pull")
-	c.Flags().StringArray("plugin", []string{}, "A list of runtime plugins to load. Can be repeated to add more than one plugin")
+	addPlatformFlags(c)
 	addLocalImageFlag(c)
 	return c
 }

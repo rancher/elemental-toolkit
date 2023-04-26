@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2021 - 2023 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package config_test
 
 import (
 	"bytes"
+	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/sanity-io/litter"
@@ -72,19 +74,12 @@ var _ = Describe("Config", Label("config"), func() {
 		})
 	})
 
-	Describe("Build config", Label("build"), func() {
+	Describe("Build config with arch", Label("build"), func() {
 		var flags *pflag.FlagSet
 		BeforeEach(func() {
 			flags = pflag.NewFlagSet("testflags", 1)
 			flags.String("arch", "", "testing flag")
 			flags.Set("arch", "arm64")
-		})
-		It("values empty if config path not valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("/none/", flags, mounter)
-			Expect(err).To(BeNil())
-			Expect(viper.GetString("name")).To(Equal(""))
-			Expect(cfg.Name).To(Equal("elemental"))
-			Expect(cfg.Arch).To(Equal("arm64"))
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
 			cfg, err := ReadConfigBuild("../../tests/fixtures/config/", flags, mounter)
@@ -93,6 +88,32 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Name).To(Equal("cOS-0"))
 			hasSuffix := strings.HasSuffix(viper.ConfigFileUsed(), "config/manifest.yaml")
 			Expect(hasSuffix).To(BeTrue())
+			Expect(cfg.Platform.String()).To(Equal("linux/arm64"))
+		})
+	})
+
+	Describe("Build config", Label("build"), func() {
+		var flags *pflag.FlagSet
+		BeforeEach(func() {
+			flags = pflag.NewFlagSet("testflags", 1)
+			flags.String("platform", "", "testing flag")
+			flags.Set("platform", "linux/arm64")
+		})
+		It("values empty if config path not valid", Label("path", "values"), func() {
+			cfg, err := ReadConfigBuild("/none/", flags, mounter)
+			Expect(err).To(BeNil())
+			Expect(viper.GetString("name")).To(Equal(""))
+			Expect(cfg.Name).To(Equal("elemental"))
+			Expect(cfg.Platform.String()).To(Equal("linux/arm64"))
+		})
+		It("values filled if config path valid", Label("path", "values"), func() {
+			cfg, err := ReadConfigBuild("../../tests/fixtures/config/", flags, mounter)
+			Expect(err).To(BeNil())
+			Expect(viper.GetString("name")).To(Equal("cOS-0"))
+			Expect(cfg.Name).To(Equal("cOS-0"))
+			hasSuffix := strings.HasSuffix(viper.ConfigFileUsed(), "config/manifest.yaml")
+			Expect(hasSuffix).To(BeTrue())
+			Expect(cfg.Platform.String()).To(Equal("linux/arm64"))
 		})
 
 		It("overrides values with env values", Label("env", "values"), func() {
@@ -106,6 +127,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(err).Should(HaveOccurred())
 		})
 	})
+
 	Describe("Read build specs", Label("build"), func() {
 		var cfg *v1.BuildConfig
 		var runner *v1mock.FakeRunner
@@ -134,10 +156,7 @@ var _ = Describe("Config", Label("config"), func() {
 			cfg, err = ReadConfigBuild("../../tests/fixtures/config/", nil, mounter)
 			Expect(err).Should(BeNil())
 			// From defaults
-			Expect(cfg.Arch).To(Equal("x86_64"))
-
-			// From config
-			Expect(cfg.Repos[0].URI).To(ContainSubstring("registry.org/my/repo"))
+			Expect(cfg.Platform.String()).To(Equal("linux/amd64"))
 
 			cfg.Fs = fs
 			cfg.Runner = runner
@@ -156,18 +175,8 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				// From config file
-				Expect(iso.Image[0].Value()).To(Equal("recovery/cos-img"))
+				Expect(iso.Image[0].Value()).To(Equal("recovery/cos-img:latest"))
 				Expect(iso.Label).To(Equal("LIVE_LABEL"))
-			})
-		})
-		Describe("RawDisk spec", Label("disk"), func() {
-			It("initiates a RawDisk spec", func() {
-				disk, err := ReadBuildDisk(cfg, nil)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				// From config file
-				Expect(len(disk.X86_64.Packages)).To(Equal(1))
-				Expect(disk.X86_64.Packages[0].Name).To(Equal("system/myos"))
 			})
 		})
 	})
@@ -190,7 +199,7 @@ var _ = Describe("Config", Label("config"), func() {
 		It("uses defaults if no configs are provided", func() {
 			cfg, err := ReadConfigRun("", nil, mounter)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(cfg.Arch == "x86_64").To(BeTrue())
+			Expect(cfg.Platform.String()).To(Equal(fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)))
 			// Uses given mounter
 			Expect(cfg.Mounter == mounter).To(BeTrue())
 			// Sets a RealRunner instance by default
@@ -206,8 +215,6 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.CosignPubKey == "someOtherKey").To(BeTrue())
 			// Config.d overwrites the main config.yaml
 			Expect(cfg.CloudInitPaths).To(Equal(append(constants.GetCloudInitPaths(), "some/other/path")))
-			Expect(len(cfg.Repos)).To(Equal(1))
-			Expect(cfg.Repos[0].Name == "testrepo").To(BeTrue())
 		})
 		It("sets log level debug based on debug flag", func() {
 			// Default value
@@ -362,7 +369,7 @@ var _ = Describe("Config", Label("config"), func() {
 			It("inits a reset spec according to given configs", func() {
 				err := os.Setenv("ELEMENTAL_RESET_TARGET", "/special/disk")
 				Expect(err).ShouldNot(HaveOccurred())
-				err = os.Setenv("ELEMENTAL_RESET_SYSTEM", "channel:system/cos")
+				err = os.Setenv("ELEMENTAL_RESET_SYSTEM", "docker:alpine:latest")
 				Expect(err).ShouldNot(HaveOccurred())
 				spec, err := ReadResetSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())

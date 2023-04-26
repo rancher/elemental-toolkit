@@ -19,6 +19,7 @@ package v1_test
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
@@ -28,25 +29,22 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			o := &v1.ImageSource{}
 			Expect(o.Value()).To(Equal(""))
 			Expect(o.IsDir()).To(BeFalse())
-			Expect(o.IsChannel()).To(BeFalse())
-			Expect(o.IsDocker()).To(BeFalse())
+			Expect(o.IsImage()).To(BeFalse())
 			Expect(o.IsFile()).To(BeFalse())
 			o = v1.NewDirSrc("dir")
 			Expect(o.IsDir()).To(BeTrue())
 			o = v1.NewFileSrc("file")
 			Expect(o.IsFile()).To(BeTrue())
 			o = v1.NewDockerSrc("image")
-			Expect(o.IsDocker()).To(BeTrue())
-			o = v1.NewChannelSrc("channel")
-			Expect(o.IsChannel()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			o = v1.NewEmptySrc()
 			Expect(o.IsEmpty()).To(BeTrue())
 			o, err := v1.NewSrcFromURI("registry.company.org/image")
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.Value()).To(Equal("registry.company.org/image:latest"))
 			o, err = v1.NewSrcFromURI("oci://registry.company.org/image:tag")
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.Value()).To(Equal("registry.company.org/image:tag"))
 		})
@@ -54,10 +52,7 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			o := v1.NewEmptySrc()
 			_, err := o.CustomUnmarshal("docker://some/image")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(o.IsDocker()).To(BeTrue())
-			_, err = o.CustomUnmarshal("channel://some/package")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(o.IsChannel()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			_, err = o.CustomUnmarshal("dir:///some/absolute/path")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.IsDir()).To(BeTrue())
@@ -70,18 +65,18 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			// Opaque URI
 			_, err = o.CustomUnmarshal("docker:some/image")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 
 			// No scheme is parsed as an image reference and
 			// defaults to latest tag if none
 			_, err = o.CustomUnmarshal("registry.company.org/my/image")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(o.Value()).To(Equal("registry.company.org/my/image:latest"))
 
 			_, err = o.CustomUnmarshal("registry.company.org/my/image:tag")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(o.Value()).To(Equal("registry.company.org/my/image:tag"))
 		})
 		It("convertion to string URI works are expected", func() {
@@ -92,16 +87,13 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			Expect(o.IsFile()).To(BeTrue())
 			Expect(o.String()).To(Equal("file://filename"))
 			o = v1.NewDockerSrc("container/image")
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(o.String()).To(Equal("oci://container/image"))
-			o = v1.NewChannelSrc("luetPackage")
-			Expect(o.IsChannel()).To(BeTrue())
-			Expect(o.String()).To(Equal("channel://luetPackage"))
 			o = v1.NewEmptySrc()
 			Expect(o.IsEmpty()).To(BeTrue())
 			Expect(o.String()).To(Equal(""))
 			o, err := v1.NewSrcFromURI("registry.company.org/image")
-			Expect(o.IsDocker()).To(BeTrue())
+			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.String()).To(Equal("oci://registry.company.org/image:latest"))
 		})

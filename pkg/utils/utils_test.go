@@ -33,13 +33,14 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/vfst"
+
 	conf "github.com/rancher/elemental-cli/pkg/config"
 	"github.com/rancher/elemental-cli/pkg/constants"
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/rancher/elemental-cli/pkg/utils"
 	v1mock "github.com/rancher/elemental-cli/tests/mocks"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
 )
 
 func getNamesFromListFiles(list []os.FileInfo) []string {
@@ -57,6 +58,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var mounter *v1mock.ErrorMounter
+	var extractor *v1mock.FakeImageExtractor
 	var fs vfs.FS
 	var cleanup func()
 
@@ -66,6 +68,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
+		extractor = v1mock.NewFakeImageExtractor(logger)
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 		fs.Mkdir("/tmp", constants.DirPerm)
@@ -79,6 +82,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			conf.WithMounter(mounter),
 			conf.WithSyscall(syscall),
 			conf.WithClient(client),
+			conf.WithImageExtractor(extractor),
 		)
 	})
 	AfterEach(func() { cleanup() })
@@ -1037,7 +1041,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("returns error if it cant unmarshall the env file", func() {
-			err := fs.WriteFile("/etc/envfile", []byte("WHATWHAT"), constants.FilePerm)
+			err := fs.WriteFile("/etc/envfile", []byte("WHAT\"WHAT"), constants.FilePerm)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = utils.LoadEnvFile(fs, "/etc/envfile")
 			Expect(err).To(HaveOccurred())

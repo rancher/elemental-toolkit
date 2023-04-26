@@ -27,11 +27,10 @@ import (
 )
 
 const (
-	docker  = "docker"
-	oci     = "oci"
-	file    = "file"
-	dir     = "dir"
-	channel = "channel"
+	docker = "docker"
+	oci    = "oci"
+	file   = "file"
+	dir    = "dir"
 )
 
 // ImageSource represents the source from where an image is created for easy identification
@@ -44,12 +43,8 @@ func (i ImageSource) Value() string {
 	return i.source
 }
 
-func (i ImageSource) IsDocker() bool {
+func (i ImageSource) IsImage() bool {
 	return i.srcType == oci
-}
-
-func (i ImageSource) IsChannel() bool {
-	return i.srcType == channel
 }
 
 func (i ImageSource) IsDir() bool {
@@ -107,9 +102,6 @@ func (i *ImageSource) updateFromURI(uri string) error {
 	switch scheme {
 	case oci, docker:
 		return i.parseImageReference(value)
-	case channel:
-		i.srcType = channel
-		i.source = value
 	case dir:
 		i.srcType = dir
 		i.source = value
@@ -150,10 +142,6 @@ func NewDockerSrc(src string) *ImageSource {
 
 func NewFileSrc(src string) *ImageSource {
 	return &ImageSource{source: src, srcType: file}
-}
-
-func NewChannelSrc(src string) *ImageSource {
-	return &ImageSource{source: src, srcType: channel}
 }
 
 func NewDirSrc(src string) *ImageSource {
