@@ -8,7 +8,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Installer EFI tests", func() {
+var _ = Describe("Elemental Installer EFI tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
