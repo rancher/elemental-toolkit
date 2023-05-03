@@ -2,6 +2,9 @@ build/
 isowork/
 *.iso
 *.iso.sha256
+*.qcow2
+*.log
+*.pid
 iso-meta.json
 iso-meta.yaml
 .idea/
@@ -11,6 +14,7 @@ iso-meta.yaml
 packer/*.box
 packer/*.tar.gz
 packer/packer_cache/
+packer/output*/
 tests/**/logs
 serial_port1.log
 capture.webm
