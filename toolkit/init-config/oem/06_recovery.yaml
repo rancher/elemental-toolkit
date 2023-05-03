@@ -1,6 +1,6 @@
-# Default cOS OEM configuration file
+# Default Elemental OEM configuration file
 #
-# This file is part of cOS and will get reset during upgrades.
+# This file is part of Elemental and will get reset during upgrades.
 #
 # Before you change this file manually,
 # consider copying this file to /usr/local/cloud-config or
@@ -15,6 +15,6 @@ stages:
        - |
             source /etc/os-release
             echo >> /etc/issue
-            echo "You are booting from recovery mode. Run 'cos-reset' to reset the system to $VERSION" >> /etc/issue
-            echo " or elemental upgrade to upgrade the active partition" >> /etc/issue
+            echo "You are booting from recovery mode. Run 'elemental reset' to reset the system to $VERSION" >> /etc/issue
+            echo " or 'elemental upgrade' to upgrade the active partition" >> /etc/issue
             echo >> /etc/issue
