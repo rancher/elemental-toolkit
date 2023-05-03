@@ -156,49 +156,45 @@ cp %{S:2} .
 %install
 # elemental-immutable-rootfs
 %{__install} -d -m 755 %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-%{__install} -m 755 packages/immutable-rootfs/30cos-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-%{__install} -m 644 packages/immutable-rootfs/30cos-immutable-rootfs/cos-immutable-rootfs.service %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-%{__install} -D -m 644 packages/immutable-rootfs/02-cos-immutable-rootfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-cos-immutable-rootfs.conf
+%{__install} -m 755 toolkit/immutable-rootfs/30cos-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
+%{__install} -m 644 toolkit/immutable-rootfs/30cos-immutable-rootfs/cos-immutable-rootfs.service %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
 
 # elemental-init-setup
-%{__install} -D -m 644 packages/cos-setup/cos-setup-rootfs.service %{buildroot}%{_unitdir}/cos-setup-rootfs.service
-%{__install} -D -m 644 packages/cos-setup/cos-setup-initramfs.service %{buildroot}%{_unitdir}/cos-setup-initramfs.service
-%{__install} -D -m 644 packages/cos-setup/cos-setup-reconcile.timer %{buildroot}%{_unitdir}/cos-setup-reconcile.timer
-%{__install} -D -m 644 packages/cos-setup/cos-setup-reconcile.service %{buildroot}%{_unitdir}/cos-setup-reconcile.service
-%{__install} -D -m 644 packages/cos-setup/cos-setup-fs.service %{buildroot}%{_unitdir}/cos-setup-fs.service
-%{__install} -D -m 644 packages/cos-setup/cos-setup-boot.service %{buildroot}%{_unitdir}/cos-setup-boot.service
-%{__install} -D -m 644 packages/cos-setup/cos-setup-network.service %{buildroot}%{_unitdir}/cos-setup-network.service
-%{__install} -D -m 644 packages/cos-setup/02-cos-setup-initramfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-cos-setup-initramfs.conf
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-rootfs.service %{buildroot}%{_unitdir}/cos-setup-rootfs.service
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-initramfs.service %{buildroot}%{_unitdir}/cos-setup-initramfs.service
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-reconcile.timer %{buildroot}%{_unitdir}/cos-setup-reconcile.timer
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-reconcile.service %{buildroot}%{_unitdir}/cos-setup-reconcile.service
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-fs.service %{buildroot}%{_unitdir}/cos-setup-fs.service
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-boot.service %{buildroot}%{_unitdir}/cos-setup-boot.service
+%{__install} -D -m 644 toolkit/init-setup/cos-setup-network.service %{buildroot}%{_unitdir}/cos-setup-network.service
+%{__install} -D -m 644 toolkit/init-setup/02-cos-setup-initramfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-cos-setup-initramfs.conf
 
 # elemental-grub-config
-%{__install} -D -m 644 packages/grub2/config/grub.cfg %{buildroot}%{_sysconfdir}/cos/grub.cfg
+%{__install} -D -m 644 toolkit/grub/config/grub.cfg %{buildroot}%{_sysconfdir}/cos/grub.cfg
 
 # elemental-grub-bootargs
-%{__install} -D -m 644 packages/grub2/config/bootargs.cfg %{buildroot}%{_sysconfdir}/cos/bootargs.cfg
+%{__install} -D -m 644 toolkit/grub/config/bootargs.cfg %{buildroot}%{_sysconfdir}/cos/bootargs.cfg
 
 # elemental-dracut-config
-%{__install} -D -m 644 packages/base-dracut-modules/50-cos-initrd.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-cos-initrd.conf
+%{__install} -D -m 644 toolkit/dracut-config/50-elemental.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-elemental.conf
 
 # elemental-init-rootfs
-%{__install} -D -m 644 packages/cloud-config/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
 
 # elemental-init-network
-%{__install} -D -m 644 packages/cloud-config/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
 
 # elemental-init-recovery
-%{__install} -D -m 644 packages/cloud-config/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
 
 # elemental-init-live
-%{__install} -D -m 644 packages/cloud-config/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
 
 # elemental-init-boot-assessment
-%{__install} -D -m 644 packages/cloud-config/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
 
 # elemental-init-services
-%{__install} -D -m 644 packages/cloud-config/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
-
-# elemental-upgrade-hooks
-%{__install} -D -m 644 packages/cloud-config/oem/01_upgrade_grub_hook.yaml %{buildroot}%{oemdir}/01_upgrade_grub_hook.yaml
+%{__install} -D -m 644 toolkit/init-config/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
 
 
 %pre -n elemental-init-setup
@@ -325,13 +321,6 @@ cp %{S:2} .
 %dir %{systemdir}
 %dir %{oemdir}
 %{oemdir}/09_services.yaml
-
-%files -n elemental-upgrade-hooks
-%defattr(-,root,root,-)
-%license LICENSE
-%dir %{systemdir}
-%dir %{oemdir}
-%{oemdir}/01_upgrade_grub_hook.yaml
 
 %files -n elemental-init-config
 %defattr(-,root,root,-)
