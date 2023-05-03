@@ -246,7 +246,6 @@ cp %{S:2} .
 %dir /usr/lib/dracut/modules.d/*
 /usr/lib/dracut/modules.d/*/*
 %dir %{_sysconfdir}/dracut.conf.d
-%config %{_sysconfdir}/dracut.conf.d/02-cos-immutable-rootfs.conf
 
 %files -n elemental-init-setup
 %defattr(-,root,root,-)
@@ -278,7 +277,7 @@ cp %{S:2} .
 %defattr(-,root,root,-)
 %license LICENSE
 %dir %{_sysconfdir}/dracut.conf.d
-%config %{_sysconfdir}/dracut.conf.d/50-cos-initrd.conf
+%config %{_sysconfdir}/dracut.conf.d/50-elemental.conf
 
 %files -n elemental-init-rootfs
 %defattr(-,root,root,-)
