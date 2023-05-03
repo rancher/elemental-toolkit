@@ -81,7 +81,7 @@ source "googlecompute" "cos" {
   }
 }
 
-source "qemu" "cos" {
+source "qemu" "cos-x86_64" {
   qemu_binary            = "qemu-system-x86_64"
   accelerator            = "${var.accelerator}"
   machine_type           = "${var.machine_type}"
@@ -94,7 +94,7 @@ source "qemu" "cos" {
   disk_size              = "${var.disk_size}"
   format                 = "qcow2"
   headless               = true
-  iso_checksum           = "none"
+  iso_checksum           = "${var.iso_checksum}"
   iso_url                = "${var.iso}"
   output_directory       = "build"
   shutdown_command       = "shutdown -hP now"
@@ -124,7 +124,7 @@ source "qemu" "cos-arm64" {
   disk_size              = "${var.disk_size}"
   format                 = "qcow2"
   headless               = true
-  iso_checksum           = "none"
+  iso_checksum           = "${var.iso_checksum}"
   iso_url                = "${var.iso}"
   qemuargs               = [
     ["-boot", "menu=on,strict=on"], # Override the default packer -boot flag which is not valid on UEFI
@@ -152,7 +152,7 @@ source "virtualbox-iso" "cos" {
   guest_additions_mode   = "disable"
   guest_os_type          = "cOS"
   headless               = true
-  iso_checksum           = "none"
+  iso_checksum           = "${var.iso_checksum}"
   iso_url                = "${var.iso}"
   memory                 = "${var.memory}"
   shutdown_command       = "shutdown -hP now"
@@ -169,10 +169,10 @@ source "virtualbox-iso" "cos" {
 build {
   description = "elemental"
 
-  sources = ["source.amazon-ebs.cos", "source.qemu.cos", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
+  sources = ["source.amazon-ebs.cos", "source.qemu.cos-x86_64", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
 
-  source "source.qemu.cos" {
-    name = "cos-squashfs"
+  source "source.qemu.cos-x86_64" {
+    name = "cos-x86_64-squashfs"
   }
 
   source "source.qemu.cos-arm64" {
@@ -184,7 +184,7 @@ build {
   }
 
   provisioner "file" {
-    only = ["virtualbox-iso.cos-squashfs", "qemu.cos-squashfs", "qemu.cos-arm64-squashfs"]
+    only = ["virtualbox-iso.cos-squashfs", "qemu.cos-x86_64-squashfs", "qemu.cos-arm64-squashfs"]
     destination = "/etc/elemental/config.d/squashed_recovery.yaml"
     source      = "squashed_recovery.yaml"
   }

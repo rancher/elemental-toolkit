@@ -11,42 +11,50 @@ endif
 
 QCOW2=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
-PACKER_TARGET?=qemu.cos
 FLAVOR?=green
 ARCH?=x86_64
-GINKGO_ARGS?=-progress -v --fail-fast -r --timeout=3h
+PACKER_TARGET?=qemu.cos-${ARCH}
+GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
 VERSION?=$(shell git describe --tags)
 ifeq ("$(PACKER)","")
 VERSION="latest"
 endif
 REPO?=local/elemental-$(FLAVOR)
+DOCKER?=docker
 
+ifeq ("$(ARCH)","arm64")
+PACKER_ACCELERATOR?=none
+endif
+PACKER_ACCELERATOR?=
+
+# default target
+.PHONY: all
+all: build
 
 #----------------------- includes -----------------------
 
 include make/Makefile.test
 
-
 #----------------------- targets ------------------------
 
 .PHONY: build
 build:
-	docker build toolkit --build-arg=$(ELEMENTAL_CLI) -t local/elemental-toolkit
+	$(DOCKER) build toolkit --platform $(ARCH) --build-arg=ELEMENTAL_REVISION=$(ELEMENTAL_CLI) -t local/elemental-toolkit
 
 .PHONY: build-example-os
 build-example-os: build
 	mkdir -p $(ROOT_DIR)/build
-	docker build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform $(ARCH) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: build-example-iso
 build-example-iso: build-example-os
-	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
-		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR) \
-		--local --squash-no-compression -o /build $(REPO):$(VERSION)
+	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
+		--local --arch $(ARCH) --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
 clean-iso: build-example-os
-	docker run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
+	$(DOCKER) run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
 .PHONY: packer
 packer:
@@ -59,7 +67,7 @@ ifeq ("$(ISO)","")
 	@echo "No ISO image found"
 	@exit 1
 endif
-	export PKR_VAR_iso=$(ISO) && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && $(PACKER) build -only $(PACKER_TARGET) .
+	export PKR_VAR_accelerator=$(PACKER_ACCELERATOR) export PKR_VAR_iso=$(ISO) && export PKR_VAR_iso_checksum=file:$(ISO).sha256 && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
 	mv $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
 
 .PHONY: packer-clean

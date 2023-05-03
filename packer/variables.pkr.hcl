@@ -249,6 +249,11 @@ variable "iso" {
   default = ""
 }
 
+variable "iso_checksum" {
+  type    = string
+  default = "none"
+}
+
 variable "memory" {
   type    = string
   default = "2048"
