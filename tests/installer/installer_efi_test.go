@@ -79,7 +79,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 
 					// Remove iso so we boot directly from the disk
-					s.EjectCOSCD()
+					s.EjectCD()
 					// Reboot so we boot into the just installed cos
 					s.Reboot()
 					By("Checking we booted from the installed cOS")
@@ -127,7 +127,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 					// Remove iso so we boot directly from the disk
-					s.EjectCOSCD()
+					s.EjectCD()
 					// Reboot so we boot into the just installed cos
 					s.Reboot()
 					By("Checking we booted from the installed cOS")
@@ -176,7 +176,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
-				s.EjectCOSCD()
+				s.EjectCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
@@ -191,7 +191,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Mounting disk partitions"))
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
-				s.EjectCOSCD()
+				s.EjectCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
@@ -211,7 +211,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
-				s.EjectCOSCD()
+				s.EjectCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				By("Checking we booted from the installed cOS")
@@ -226,7 +226,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 				Expect(out).To(ContainSubstring("Partitioning device..."))
 				Expect(out).To(ContainSubstring("Running after-install hook"))
 				// Remove iso so we boot directly from the disk
-				s.EjectCOSCD()
+				s.EjectCD()
 				// Reboot so we boot into the just installed cos
 				s.Reboot()
 				// We are on an efi system, should boot from active

@@ -10,7 +10,7 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS Installer test Suite")
+	RunSpecs(t, "Elemental Installer test Suite")
 }
 
 func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry) {
