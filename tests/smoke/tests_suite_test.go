@@ -9,5 +9,5 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS Smoke test Suite")
+	RunSpecs(t, "Elemental Smoke test Suite")
 }

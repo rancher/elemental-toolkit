@@ -10,7 +10,7 @@ import (
 // an image base on a build for a tagged main commit.
 const upgradeImg = "ghcr.io/davidcassany/elemental-green:v0.10.1-29-g9ab23ba5"
 
-var _ = Describe("cOS Feature tests", func() {
+var _ = Describe("Elemental Feature tests", func() {
 	var s *sut.SUT
 	BeforeEach(func() {
 		s = sut.NewSUT()
@@ -25,7 +25,7 @@ var _ = Describe("cOS Feature tests", func() {
 			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", upgradeImg))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
-			By("rebooting")
+			s.EjectCD()
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))
 
