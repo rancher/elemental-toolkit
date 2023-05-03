@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE=1.18-bullseye
+ARG GOLANG_IMAGE=1.20-bullseye
 
 # Image to compile golang code (elemental-cli)
 FROM golang:$GOLANG_IMAGE as GOLANG
