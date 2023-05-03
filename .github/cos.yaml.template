@@ -1,8 +1,0 @@
-name: "cos"
-description: "cOS official"
-type: "docker"
-cached: true
-priority: 1
-reference:
-arch:
-urls:
