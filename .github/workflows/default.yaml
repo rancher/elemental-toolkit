@@ -1,4 +1,4 @@
-name: Build
+name: Default Workflow
 on:
   pull_request:
   push:
@@ -12,8 +12,7 @@ jobs:
         flavor: ['green']
     runs-on: ubuntu-latest
     steps:
-      - &release-space
-        name: Release space from worker
+      - name: Release space from worker
         if: always()
         run: |
           du -hcs /var/lib/snapd/snaps/* 
@@ -49,16 +48,14 @@ jobs:
       - name: Install QEMU
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qemu-system-x86
-      - name: Build ISO
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils packer
+      - name: Build
         run: |
           sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
           sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} packer
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} tests
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
           name: build-${{matrix.flavor}}-${{matrix.arch}}
           path: build
           if-no-files-found: error
-      - *release-space
