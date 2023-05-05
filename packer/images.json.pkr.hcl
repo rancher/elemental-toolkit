@@ -1,7 +1,7 @@
-source "amazon-ebs" "cos" {
+source "amazon-ebs" "elemental" {
   access_key      = var.aws_access_key
-  ami_name        = "${var.name}-${var.cos_version}-${var.flavor}"
-  ami_description = "${var.name}-${var.cos_version}-${var.flavor}"
+  ami_name        = "${var.name}-${var.flavor}"
+  ami_description = "${var.name}-${var.flavor}"
   ami_groups      = var.aws_ami_groups
   instance_type   = var.aws_instance_type
   region          = var.aws_region
@@ -26,7 +26,6 @@ source "amazon-ebs" "cos" {
   user_data_file = var.aws_user_data_file
   tags = {
     Name          = var.name
-    Version       = var.cos_version
     Flavor        = var.flavor
     Git_SHA       = var.git_sha  # use full sha here
     Base_AMI_ID   = "{{ .SourceAMI }}"  # This info comes from the build process directly
@@ -34,14 +33,14 @@ source "amazon-ebs" "cos" {
   }
 }
 
-source "azure-arm" "cos" {
+source "azure-arm" "elemental" {
   client_id = var.azure_client_id
   tenant_id = var.azure_tenant_id
   client_secret = var.azure_client_secret
   subscription_id = var.azure_subscription_id
   custom_managed_image_resource_group_name = var.azure_custom_managed_image_resource_group_name
   custom_managed_image_name = var.azure_custom_managed_image_name
-  managed_image_name = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}-${var.arch}"
+  managed_image_name = "${var.name}-${formatdate("DDMMYYYY", timestamp())}-${var.flavor}-${var.arch}"
   managed_image_resource_group_name = var.azure_managed_image_resource_group_name
   user_data_file = var.azure_user_data_file
   location = var.azure_location
@@ -51,14 +50,13 @@ source "azure-arm" "cos" {
   communicator = "ssh"
   # root username is not allowed!
   ssh_username = "packer"
-  ssh_password = "cos"
+  ssh_password = "elemental"
   azure_tags = {
     name = var.name
-    version = var.cos_version
   }
 }
 
-source "googlecompute" "cos" {
+source "googlecompute" "elemental" {
   project_id                = var.gcp_project_id
   source_image_family       = var.gcp_source_image_family
   ssh_password              = var.root_password
@@ -66,11 +64,10 @@ source "googlecompute" "cos" {
   zone                      = var.gcp_location
   disk_size                 = var.gcp_disk_size
   enable_secure_boot        = false
-  image_name                = "${lower(var.name)}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
-  image_description         = "${var.name}-${replace(var.cos_version, "+", "-")}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
+  image_name                = "${lower(var.name)}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
+  image_description         = "${var.name}-${formatdate("DDMMYYYY", timestamp())}-${substr(var.git_sha, 0, 7)}-${var.flavor}-${var.arch}"
   image_labels = {
     name          = "${lower(var.name)}"
-    version       = var.cos_version
     flavor        = var.flavor
     git_sha       = var.git_sha  # use full sha here
   }
@@ -81,7 +78,7 @@ source "googlecompute" "cos" {
   }
 }
 
-source "qemu" "cos-x86_64" {
+source "qemu" "elemental-x86_64" {
   qemu_binary            = "qemu-system-x86_64"
   accelerator            = "${var.accelerator}"
   machine_type           = "${var.machine_type}"
@@ -102,16 +99,16 @@ source "qemu" "cos-x86_64" {
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
-  vm_name                = "elemental-${var.flavor}.qcow2"
+  vm_name                = "${var.name}-${var.flavor}.${var.arch}.qcow2"
   qemuargs               = [
     ["-serial", "file:serial.log"],
     ["-drive", "if=pflash,format=raw,readonly=on,file=${var.firmware}"],
-    ["-drive", "if=none,file=build/elemental-${var.flavor}.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
+    ["-drive", "if=none,file=build/elemental-${var.flavor}.${var.arch}.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
     ["-drive", "file=${var.iso},media=cdrom"],
   ]
 }
 
-source "qemu" "cos-arm64" {
+source "qemu" "elemental-arm64" {
   qemu_binary            = "qemu-system-aarch64"
   machine_type           = "virt"
   accelerator            = "${var.accelerator}"
@@ -132,7 +129,7 @@ source "qemu" "cos-arm64" {
     [ "-device", "scsi-cd,drive=cdrom0,bootindex=0" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
     [ "-device", "scsi-hd,drive=drive0,bootindex=1" ], # Set the boot index to the cdrom, otherwise UEFI wont boot from CD
     [ "-drive", "if=none,file=${var.iso},id=cdrom0,media=cdrom" ], # attach the iso image
-    [ "-drive", "if=none,file=output-cos-arm64/${var.name},id=drive0,cache=writeback,discard=ignore,format=qcow2" ], # attach the destination disk
+    [ "-drive", "if=none,file=build/elemental-${var.flavor}.${var.arch}.qcow2,id=drive0,cache=writeback,discard=ignore,format=qcow2"],
     ["-cpu", "cortex-a57"],
     ["-serial", "file:serial.log"],
   ]
@@ -141,16 +138,16 @@ source "qemu" "cos-arm64" {
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
-  vm_name                = "${var.name}"
+  vm_name                = "${var.name}-${var.flavor}.${var.arch}.qcow2"
 }
 
-source "virtualbox-iso" "cos" {
+source "virtualbox-iso" "elemental" {
   boot_wait              = "${var.sleep}"
   cpus                   = "${var.cpus}"
   disk_size              = "${var.disk_size}"
   format                 = "ova"
   guest_additions_mode   = "disable"
-  guest_os_type          = "cOS"
+  guest_os_type          = "Elemental"
   headless               = true
   iso_checksum           = "${var.iso_checksum}"
   iso_url                = "${var.iso}"
@@ -160,7 +157,7 @@ source "virtualbox-iso" "cos" {
   ssh_password           = "${var.root_password}"
   ssh_timeout            = "5m"
   ssh_username           = "${var.root_username}"
-  vm_name                = "cOS"
+  vm_name                = "${var.name}"
   vboxmanage = [
     ["modifyvm", "{{.Name}}", "--recording", "${var.enable_video_capture}", "--recordingscreens", "0","--recordingfile", "../capture.webm"],
   ]
@@ -169,66 +166,66 @@ source "virtualbox-iso" "cos" {
 build {
   description = "elemental"
 
-  sources = ["source.amazon-ebs.cos", "source.qemu.cos-x86_64", "source.qemu.cos-arm64", "source.virtualbox-iso.cos", "source.azure-arm.cos", "source.googlecompute.cos"]
+  sources = ["source.amazon-ebs.elemental", "source.qemu.elemental-x86_64", "source.qemu.elemental-arm64", "source.virtualbox-iso.elemental", "source.azure-arm.elemental", "source.googlecompute.elemental"]
 
-  source "source.qemu.cos-x86_64" {
-    name = "cos-x86_64-squashfs"
+  source "source.qemu.elemental-x86_64" {
+    name = "elemental-x86_64-squashfs"
   }
 
-  source "source.qemu.cos-arm64" {
-    name = "cos-arm64-squashfs"
+  source "source.qemu.elemental-arm64" {
+    name = "elemental-arm64-squashfs"
   }
 
-  source "source.virtualbox-iso.cos" {
-    name = "cos-squashfs"
+  source "source.virtualbox-iso.elemental" {
+    name = "elemental-squashfs"
   }
 
   provisioner "file" {
-    only = ["virtualbox-iso.cos-squashfs", "qemu.cos-x86_64-squashfs", "qemu.cos-arm64-squashfs"]
+    only = ["virtualbox-iso.elemental-squashfs", "qemu.elemental-x86_64-squashfs", "qemu.elemental-arm64-squashfs"]
     destination = "/etc/elemental/config.d/squashed_recovery.yaml"
     source      = "squashed_recovery.yaml"
   }
 
   provisioner "file" {
-    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
+    except = ["amazon-ebs.elemental", "azure-arm.elemental", "googlecompute.elemental"]
     destination = "/90_custom.yaml"
     source      = "config.yaml"
   }
 
   provisioner "file" {
-    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
+    except = ["amazon-ebs.elemental", "azure-arm.elemental", "googlecompute.elemental"]
     destination = "/testusr.yaml"
     source      = "testusr.yaml"
   }
 
   provisioner "shell" {
-    except = ["amazon-ebs.cos", "azure-arm.cos", "googlecompute.cos"]
+    except = ["amazon-ebs.elemental", "azure-arm.elemental", "googlecompute.elemental"]
     inline = ["elemental install --debug --cloud-init /90_custom.yaml,/testusr.yaml /dev/sda"]
     pause_after = "30s"
   }
 
   provisioner "shell" {
-    only = ["amazon-ebs.cos"]
+    only = ["amazon-ebs.elemental"]
     inline = [
-      "${var.aws_cos_deploy_args}",
+      "${var.aws_elemental_deploy_args}",
       "sync"
     ]
     pause_after = "30s"
   }
 
   provisioner "shell" {
-    only = ["googlecompute.cos"]
+    only = ["googlecompute.elemental"]
     inline = [
-      "${var.gcp_cos_deploy_args}",
+      "${var.gcp_elemental_deploy_args}",
       "sync"
     ]
     pause_after = "30s"
   }
 
   provisioner "shell" {
-    only = ["azure-arm.cos"]
+    only = ["azure-arm.elemental"]
     inline = [
-      "${var.azure_cos_deploy_args}",
+      "${var.azure_elemental_deploy_args}",
       "sync"
     ]
     pause_after = "30s"
