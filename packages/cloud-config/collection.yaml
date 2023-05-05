@@ -33,6 +33,7 @@ packages:
   - !!merge <<: *base
     name: "live"
     oem_file: "07_live.yaml"
+    version: 0.4.2-11
   - !!merge <<: *base
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
