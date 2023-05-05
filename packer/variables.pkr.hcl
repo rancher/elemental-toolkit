@@ -224,6 +224,11 @@ variable "cpus" {
   default = "3"
 }
 
+variable "cpu_model" {
+    type = string
+    default = "host"
+}
+
 variable "disk_size" {
   type    = string
   default = "50000"

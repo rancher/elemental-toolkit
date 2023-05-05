@@ -24,9 +24,11 @@ DOCKER?=docker
 
 ifeq ("$(ARCH)","arm64")
 PACKER_ACCELERATOR?=none
+PACKER_CPU?=
 endif
 PACKER_ACCELERATOR?=
 
+PACKER_CPU?=host
 PACKER_FIRMWARE?=/usr/share/qemu/ovmf-x86_64-ms-code.bin
 
 # default target
@@ -69,7 +71,7 @@ ifeq ("$(ISO)","")
 	@echo "No ISO image found"
 	@exit 1
 endif
-	cd $(ROOT_DIR)/packer && PKR_VAR_accelerator=$(PACKER_ACCELERATOR) PKR_VAR_iso=$(ISO) PKR_VAR_iso_checksum=file:$(ISO).sha256 PKR_VAR_flavor=$(FLAVOR) PKR_VAR_firmware=$(PACKER_FIRMWARE) PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
+	cd $(ROOT_DIR)/packer && PKR_VAR_accelerator=$(PACKER_ACCELERATOR) PKR_VAR_cpu_model=$(PACKER_CPU) PKR_VAR_iso=$(ISO) PKR_VAR_iso_checksum=file:$(ISO).sha256 PKR_VAR_flavor=$(FLAVOR) PKR_VAR_firmware=$(PACKER_FIRMWARE) PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
 	mv -f $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
 
 .PHONY: packer-clean
