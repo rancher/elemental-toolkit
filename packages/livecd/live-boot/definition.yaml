@@ -1,4 +1,4 @@
 name: "boot"
 category: "live"
-version: 0.2.2-5
+version: 0.2.2-6
 hidden: true # No need to make it installable for now
