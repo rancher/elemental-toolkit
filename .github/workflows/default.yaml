@@ -12,13 +12,12 @@ jobs:
         flavor: ['green']
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      - run: git fetch --prune --unshallow
       - name: Install Virtualization
         run: |
           sudo apt-get update
           sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
-      - name: Install Packer
-        uses: hashicorp-contrib/setup-packer@v2
-      - uses: actions/checkout@v3
       - name: Setup Docker QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -27,12 +26,13 @@ jobs:
         uses: actions/setup-go@v3
         with:
             go-version-file: tests/go.mod
-      - run: |
-          git fetch --prune --unshallow
       - name: Build
         run: |
-          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
-          sudo -E make image
+          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-os
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} image
+      - name: Run tests
+        run: |
+          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
