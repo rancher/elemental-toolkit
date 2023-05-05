@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: |
           make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
-          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} PACKER_FIRMWARE=/usr/share/ovmf/OVMF.fd PACKER_ACCELERATOR=none PACKER_CPU=max packer
+          sudo -E make image
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
