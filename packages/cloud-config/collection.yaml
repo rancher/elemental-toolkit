@@ -21,6 +21,7 @@ packages:
   - !!merge <<: *base
     name: "accounting"
     oem_file: "04_accounting.yaml"
+    version: 0.4.2-11
   - !!merge <<: *base
     name: "network"
     oem_file: "05_network.yaml"
