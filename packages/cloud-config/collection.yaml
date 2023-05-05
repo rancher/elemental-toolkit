@@ -34,6 +34,7 @@ packages:
   - !!merge <<: *base
     name: "boot-assessment"
     oem_file: "08_boot_assessment.yaml"
+    version: 0.4.2-11
   - !!merge <<: *base
     name: "default-services"
     oem_file: "09_services.yaml"
