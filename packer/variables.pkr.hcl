@@ -1,5 +1,5 @@
 variable "firmware" {
-  default = "/usr/share/qemu/ovmf-x86_64-ms-code.bin"
+  default = ""
 }
 
 variable "accelerator" {

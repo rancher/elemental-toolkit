@@ -27,6 +27,8 @@ PACKER_ACCELERATOR?=none
 endif
 PACKER_ACCELERATOR?=
 
+PACKER_FIRMWARE?=/usr/share/qemu/ovmf-x86_64-ms-code.bin
+
 # default target
 .PHONY: all
 all: build
@@ -67,7 +69,7 @@ ifeq ("$(ISO)","")
 	@echo "No ISO image found"
 	@exit 1
 endif
-	export PKR_VAR_accelerator=$(PACKER_ACCELERATOR) export PKR_VAR_iso=$(ISO) && export PKR_VAR_iso_checksum=file:$(ISO).sha256 && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
+	cd $(ROOT_DIR)/packer && PKR_VAR_accelerator=$(PACKER_ACCELERATOR) PKR_VAR_iso=$(ISO) PKR_VAR_iso_checksum=file:$(ISO).sha256 PKR_VAR_flavor=$(FLAVOR) PKR_VAR_firmware=$(PACKER_FIRMWARE) PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
 	mv -f $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
 
 .PHONY: packer-clean
