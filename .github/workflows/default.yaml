@@ -27,8 +27,8 @@ jobs:
           git fetch --prune --unshallow
       - name: Build
         run: |
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} PACKER_FIRMWARE=/usr/share/ovmf/OVMF.fd PACKER_ACCELERATOR=none packer
+          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
+          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} PACKER_FIRMWARE=/usr/share/ovmf/OVMF.fd PACKER_ACCELERATOR=none packer
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
