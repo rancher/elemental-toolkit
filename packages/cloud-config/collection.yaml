@@ -18,6 +18,7 @@ packages:
   - !!merge <<: *base
     name: "branding"
     oem_file: "03_branding.yaml"
+    version: 0.4.2-11
   - !!merge <<: *base
     name: "accounting"
     oem_file: "04_accounting.yaml"
