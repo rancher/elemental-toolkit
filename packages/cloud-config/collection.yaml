@@ -47,6 +47,7 @@ packages:
   - !!merge <<: *base
     name: "selinux"
     oem_file: "10_selinux.yaml"
+    version: 0.4.2-12
   - !!merge <<: *base
     name: "upgrade_grub_hooks"
     oem_file: "01_upgrade_grub_hook.yaml"
