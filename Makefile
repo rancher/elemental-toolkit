@@ -2,7 +2,7 @@
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 # Elemental client version to use
-ELEMENTAL_CLI?=v0.2.1
+ELEMENTAL_CLI?=HEAD
 
 PACKER?=$(shell which packer 2> /dev/null)
 ifeq ("$(PACKER)","")
@@ -13,7 +13,7 @@ QCOW2=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=x86_64
-PACKER_TARGET?=qemu.cos-${ARCH}
+PACKER_TARGET?=qemu.elemental-${ARCH}
 GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
 VERSION?=$(shell git describe --tags)
 ifeq ("$(PACKER)","")
@@ -68,7 +68,7 @@ ifeq ("$(ISO)","")
 	@exit 1
 endif
 	export PKR_VAR_accelerator=$(PACKER_ACCELERATOR) export PKR_VAR_iso=$(ISO) && export PKR_VAR_iso_checksum=file:$(ISO).sha256 && export PKR_VAR_flavor=$(FLAVOR) && cd $(ROOT_DIR)/packer && PACKER_LOG=1 $(PACKER) build -only $(PACKER_TARGET) .
-	mv $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
+	mv -f $(ROOT_DIR)/packer/build/*.qcow2 $(ROOT_DIR)/build && rm -rf $(ROOT_DIR)/packer/build
 
 .PHONY: packer-clean
 packer-clean:

@@ -14,7 +14,7 @@ variable "machine_type" {
 
 variable "arch" {
   type    = string
-  default = "amd64"
+  default = "x86_64"
 }
 
 variable "aws_access_key" {
@@ -48,7 +48,7 @@ variable "aws_instance_type" {
 
 variable "aws_source_ami_filter_name" {
   type = string
-  default = "*cOS*Vanilla*"
+  default = "*Elemental*Vanilla*"
   description = "Name to search for a base ami to build upon the new AMI. Accepts regex and will default to the latest AMI found with that name"
 }
 
@@ -156,11 +156,11 @@ variable "azure_user_data_file" {
   description = "Path to the user-data file to boot the base Image with"
 }
 
-variable "azure_cos_deploy_args" {
+variable "azure_elemental_deploy_args" {
   default = "sudo /usr/bin/elemental reset"
 }
 
-variable "aws_cos_deploy_args" {
+variable "aws_elemental_deploy_args" {
   type = string
   default = "elemental reset"
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
@@ -168,7 +168,7 @@ variable "aws_cos_deploy_args" {
 
 variable "gcp_source_image_family" {
   type = string
-  default = "cos-vanilla"
+  default = "elemental-vanilla"
   description = "Image family to use as source. The lastest of the given family is used"
 }
 
@@ -202,7 +202,7 @@ variable "gcp_user_data_file" {
   description = "Path to the user-data file to boot the base instance with"
 }
 
-variable "gcp_cos_deploy_args" {
+variable "gcp_elemental_deploy_args" {
   type = string
   default = "elemental reset"
   description = "Arguments to execute while provisioning cloud images with packer. This will use the shell provisioner"
@@ -212,11 +212,6 @@ variable "gcp_project_id" {
   type = string
   description = "Project to look for the image family"
   default = env("GCP_PROJECT_ID")
-}
-
-variable "cos_version" {
-  type    = string
-  default = "latest"
 }
 
 variable "build" {
@@ -276,7 +271,7 @@ variable "sleep" {
 
 variable "name" {
   type = string
-  default = "cOS"
+  default = "elemental"
   description = "Name of the product being built. Only used for naming artifacts."
 }
 
