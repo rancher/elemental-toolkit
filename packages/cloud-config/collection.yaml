@@ -51,3 +51,4 @@ packages:
   - !!merge <<: *base
     name: "upgrade_grub_hooks"
     oem_file: "01_upgrade_grub_hook.yaml"
+    version: 0.4.2-12
