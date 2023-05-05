@@ -16,6 +16,7 @@ packages:
   - !!merge <<: *base
     name: "upgrades"
     oem_file: "02_upgrades.yaml"
+    version: 0.4.2-12
   - !!merge <<: *base
     name: "branding"
     oem_file: "03_branding.yaml"
