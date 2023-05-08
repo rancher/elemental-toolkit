@@ -6,9 +6,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	comm "github.com/rancher/elemental-toolkit/tests/common"
 )
 
-var _ = Describe("cOS Deploy tests", func() {
+var _ = Describe("Elemental reset tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
@@ -35,23 +36,22 @@ var _ = Describe("cOS Deploy tests", func() {
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-				out := s.GetOSRelease("VERSION")
+				out := s.GetOSRelease("TIMESTAMP")
 				Expect(out).ToNot(Equal(""))
 				By(fmt.Sprintf("Starting from version %s", out))
 
 				version := out
-				cmd := s.ElementalCmd("reset", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion))
+				cmd := s.ElementalCmd("reset", "--system.uri", comm.UpgradeImage())
 				By(fmt.Sprintf("Runnning %s", cmd))
 				_, err = s.Command(cmd)
 				Expect(err).NotTo(HaveOccurred())
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 
-				out = s.GetOSRelease("VERSION")
+				out = s.GetOSRelease("TIMESTAMP")
 				Expect(out).ToNot(Equal(""))
 
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(s.TestVersion))
 			})
 		})
 	})
