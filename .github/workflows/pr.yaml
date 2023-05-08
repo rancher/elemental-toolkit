@@ -12,8 +12,12 @@ on:
      - tests/**
 
 jobs:
-  build-green-x86_64:
+  build-matrix:
+    strategy:
+      matrix:
+        arch: ['x86_64', 'arm64']
+        flavor: ['green']
     uses: ./.github/workflows/build_and_test.yaml
     with:
-      arch: x86_64
-      flavor: green
+      arch: ${{ matrix.arch }}
+      flavor: ${{ matrix.flavor }}
