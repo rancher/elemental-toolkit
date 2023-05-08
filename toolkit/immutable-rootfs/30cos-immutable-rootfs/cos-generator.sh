@@ -94,7 +94,7 @@ mkdir -p "/run/systemd/system/${cos_unit}.d"
     echo "Environment=\"cos_mounts=${cos_mounts[@]}\""
     echo "Environment=\"cos_overlay=${cos_overlay}\""
     echo "Environment=\"cos_root_perm=${cos_root_perm}\""
-    echo "EnvironmentFile=${cos_layout}"
+    echo "EnvironmentFile=-${cos_layout}"
 } > "/run/systemd/system/${cos_unit}.d/override.conf"
 
 case "${root}" in
