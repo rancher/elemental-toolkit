@@ -31,7 +31,7 @@ jobs:
       - name: Build
         run: |
           sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-${{matrix.media}}
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test-${{matrix.media}}
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} ELMNTL_FIRMWARE=/usr/share/ovmf/OVMF.fd test-${{matrix.media}}
       - name: Run tests
         run: |
           make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test
