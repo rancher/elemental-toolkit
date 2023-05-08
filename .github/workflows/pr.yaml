@@ -1,0 +1,19 @@
+name: PR
+
+on:
+ pull_request:
+   paths:
+     - conf/**
+     - toolkit/**
+     - tests/**
+     - make/**
+     - .github/**
+     - Makefile
+     - tests/**
+
+jobs:
+  build-green-x86_64:
+    uses: ./.github/workflows/build_and_test.yaml
+    with:
+      arch: x86_64
+      flavor: green

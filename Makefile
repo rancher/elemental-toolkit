@@ -13,9 +13,6 @@ IMAGE_SIZE?=32G
 PACKER_TARGET?=qemu.elemental-${ARCH}
 GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
 VERSION?=$(shell git describe --tags)
-ifeq ("$(PACKER)","")
-VERSION="latest"
-endif
 REPO?=local/elemental-$(FLAVOR)
 DOCKER?=docker
 
