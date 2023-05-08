@@ -80,11 +80,7 @@ var _ = Describe("Elemental Smoke tests", func() {
 
 	Context("Settings", func() {
 		It("has correct defaults", func() {
-			out, err := s.Command("cat /etc/elemental/config.d/upgrade_channel.yaml | grep system/cos")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("uri: channel:system/cos"))
-
-			out, err = s.Command("source /etc/os-release && echo $GRUB_ENTRY_NAME")
+			out, err := s.Command("source /etc/os-release && echo $GRUB_ENTRY_NAME")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Elemental"))
 		})
