@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	comm "github.com/rancher/elemental-toolkit/tests/common"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -41,12 +42,12 @@ var _ = Describe("cOS booting fallback tests", func() {
 	Context("image is corrupted", func() {
 		breakPaths := []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"}
 		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
-			currentVersion := s.GetOSRelease("VERSION")
+			currentVersion := s.GetOSRelease("TIMESTAMP")
 
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)))
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -74,7 +75,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Reboot(700)
 
-			v := s.GetOSRelease("VERSION")
+			v := s.GetOSRelease("TIMESTAMP")
 			Expect(v).To(Equal(currentVersion))
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
@@ -92,7 +93,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 			// also that
 			Expect(s.BootFrom()).To(Equal(sut.Active))
 
-			currentVersion := s.GetOSRelease("VERSION")
+			currentVersion := s.GetOSRelease("TIMESTAMP")
 
 			// Auto assessment was installed
 			bootAssessmentInstalled()
@@ -132,7 +133,7 @@ var _ = Describe("cOS booting fallback tests", func() {
 
 			s.Reboot(700)
 
-			v := s.GetOSRelease("VERSION")
+			v := s.GetOSRelease("TIMESTAMP")
 			Expect(v).To(Equal(currentVersion))
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
