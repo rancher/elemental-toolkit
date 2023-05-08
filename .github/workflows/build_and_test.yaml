@@ -133,7 +133,7 @@ jobs:
       ELMNTL_ACCEL: hvf
     strategy:
       matrix:
-        test: [ test-smoke, test-hooks, test-recovery, test-fallback ]
+        test: [ test-smoke, test-hooks, test-recovery, test-fallback, test-reset, test-upgrades-local ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

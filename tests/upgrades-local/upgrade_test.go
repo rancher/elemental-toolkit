@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	comm "github.com/rancher/elemental-toolkit/tests/common"
 )
 
 var _ = Describe("cOS Upgrade tests - local upgrades", func() {
@@ -26,14 +27,14 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 		When("specifying a directory to upgrade from", func() {
 			It("upgrades from the specified path", func() {
 
-				out, err := s.Command("source /etc/os-release && echo $VERSION")
+				out, err := s.Command("source /etc/os-release && echo $TIMESTAMP")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 
 				version := out
 
 				out, err = s.Command(fmt.Sprintf("mkdir /run/update"))
-				out, err = s.Command(s.ElementalCmd("pull-image", fmt.Sprintf("%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion), "/run/update"))
+				out, err = s.Command(s.ElementalCmd("pull-image", comm.UpgradeImage(), "/run/update"))
 				if err != nil {
 					fmt.Fprintf(GinkgoWriter, "Error from elemental pull-image: %v\n", err)
 				}
@@ -50,19 +51,17 @@ var _ = Describe("cOS Upgrade tests - local upgrades", func() {
 				s.Reboot()
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
-				out, err = s.Command("source /etc/os-release && echo $VERSION")
+				out, err = s.Command("source /etc/os-release && echo $TIMESTAMP")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 
 				By("rollbacking state")
 				s.Reset()
 
-				out, err = s.Command("source /etc/os-release && echo $VERSION")
+				out, err = s.Command("source /etc/os-release && echo $TIMESTAMP")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal(fmt.Sprintf("%s\n", s.TestVersion)))
 				Expect(out).To(Equal(version))
 			})
 		})
