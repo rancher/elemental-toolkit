@@ -25,7 +25,6 @@ var _ = Describe("Elemental Feature tests", func() {
 			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", upgradeImg))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
-			s.EjectCD()
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))
 
