@@ -1,42 +1,171 @@
-name: Default Workflow
+name: PR-x86_64
 on:
-  pull_request:
-  push:
-      branches:
-          - main
+ pull_request:
+   paths:
+     - conf/**
+     - toolkit/**
+     - tests/**
+     - make/**
+     - .github/**
+     - Makefile
+     - tests/**
+concurrency:
+  group: ci-PR-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: ['x86_64', 'arm64']
-        flavor: ['green']
-        media: ['iso', 'image']
+  build-x86_64:
     runs-on: ubuntu-latest
+    env:
+      FLAVOR: green
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v3
-      - run: git fetch --prune --unshallow
-      - name: Install Virtualization
+      - run: |
+          git fetch --prune --unshallow
+      - name: Checks cached ISO
+        uses: martijnhols/actions-cache/check@v3
+        id: cache-check
+        env:
+          cache-name: pr-iso-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached ISO
+        id: cache-iso
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-iso-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Build toolkit
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ovmf qemu-system-arm qemu-efi-aarch64 qemu-system qemu-efi
-      - name: Setup Docker QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Build
+          make build
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Build example OS
         run: |
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-${{matrix.media}}
+          make build-os
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Build ISO
+        run: |
+          make build-iso
+  
+  install-to-vm:
+    runs-on: macos-12
+    needs: build-x86_64
+    env:
+      FLAVOR: green
+      ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          git fetch --prune --unshallow
+      - name: Checks cached Disk
+        uses: martijnhols/actions-cache/check@v3
+        id: cache-check
+        env:
+          cache-name: pr-disk-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached ISO
+        id: cache-iso
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-iso-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached Disk
+        id: cache-disk
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-disk-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Install to disk
+        run: |
+          make build-image
+
+  test-installer:
+    runs-on: macos-12
+    needs: build-x86_64
+    env:
+      FLAVOR: green
+      ARCH: x86_64
+      ELMNTL_ACCEL: hvf
+    steps:
+      - uses: actions/checkout@v3
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-            go-version-file: tests/go.mod
-      - name: Run tests
-        run: |
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} ELMNTL_ACCEL=none ELMNTL_FIRMWARE=/usr/share/ovmf/OVMF.fd test-${{matrix.media}}
-      - name: Upload results
-        uses: actions/upload-artifact@v3
+          go-version-file: tests/go.mod
+      - run: |
+          git fetch --prune --unshallow
+      - name: Cached ISO
+        id: cache-iso
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-iso-build
         with:
-          name: build-${{matrix.flavor}}-${{matrix.arch}}
-          path: build
-          if-no-files-found: error
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - name: Run VM script dependencies
+        run: |
+          brew install bash coreutils
+      - name: Prepare test
+        run: |
+          make ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-installer-test
+      - name: Run test-installer
+        run: |
+          make test-installer
+      - name: Stop test VM
+        if: always()
+        run: |
+          make test-clean
+
+  tests-matrix:
+    runs-on: macos-12
+    needs: install-to-vm
+    env:
+      FLAVOR: green
+      ARCH: x86_64
+      ELMNTL_ACCEL: hvf
+    strategy:
+      matrix:
+        test: [ test-smoke, test-hooks ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: tests/go.mod
+      - run: |
+          git fetch --prune --unshallow
+      - name: Cached Disk
+        id: cache-disk
+        uses: martijnhols/actions-cache@v3
+        env:
+          cache-name: pr-disk-build
+        with:
+          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+      - name: Run VM script dependencies
+        run: |
+          brew install bash coreutils
+      - name: Prepare test
+        run: |
+          make ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-test
+      - name: Run test-smoke
+        run: |
+          make ${{ matrix.test }}
+      - name: Stop test VM
+        if: always()
+        run: |
+          make test-clean
