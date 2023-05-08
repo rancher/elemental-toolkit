@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	comm "github.com/rancher/elemental-toolkit/tests/common"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -42,7 +43,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
-			currentVersion := s.GetOSRelease("VERSION")
+			currentVersion := s.GetOSRelease("TIMESTAMP")
 
 			By("booting into recovery to check the OS version")
 			err = s.ChangeBoot(sut.Recovery)
@@ -50,8 +51,8 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
-			By(fmt.Sprintf("upgrading to %s", s.GetSystemURIDocker()))
-			cmd := s.ElementalCmd("upgrade", "--system.uri", s.GetSystemURIDocker())
+			By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
+			cmd := s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage())
 			By(fmt.Sprintf("running %s", cmd))
 			out, err := s.Command(cmd)
 			_, _ = fmt.Fprintln(GinkgoWriter, out)
@@ -64,7 +65,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 			s.Reboot()
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 
-			upgradedVersion := s.GetOSRelease("VERSION")
+			upgradedVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
 			Expect(upgradedVersion).To(Equal(s.TestVersion))
 		})
@@ -75,9 +76,9 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
 
-				version := s.GetOSRelease("VERSION")
-				By(fmt.Sprintf("upgrading to %s", s.GetRecoveryURIDocker()))
-				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", s.GetRecoveryURIDocker(), "--squash-no-compression")
+				version := s.GetOSRelease("TIMESTAMP")
+				By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
+				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", comm.UpgradeImage(), "--squash-no-compression")
 				By(fmt.Sprintf("running %s", cmd))
 				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
@@ -91,7 +92,7 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 				s.Reboot()
 				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
 
-				out = s.GetOSRelease("VERSION")
+				out = s.GetOSRelease("TIMESTAMP")
 				Expect(out).ToNot(Equal(""))
 				Expect(out).ToNot(Equal(version))
 				Expect(out).To(Equal(s.TestVersion))
