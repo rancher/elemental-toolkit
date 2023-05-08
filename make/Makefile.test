@@ -40,9 +40,8 @@ test-smoke: prepare-test
 test-hooks: prepare-test
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
 
-# TODO missing an image to upgrade to
-#test-recovery: prepare-test
-#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
+test-recovery: prepare-test
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
 
 #test-fallback: prepare-test
 #	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
