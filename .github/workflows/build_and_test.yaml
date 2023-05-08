@@ -81,20 +81,11 @@ jobs:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Setup Docker
-        uses: crazy-max/ghaction-setup-docker@v1
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Setup Docker QEMU
-        uses: docker/setup-qemu-action@v2
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Setup Docker Buildkit
-        uses: docker/setup-buildx-action@v2
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
           make build-os
-          sudo -E make build-image
+          sudo -E make build-disk
 
   test-installer:
     runs-on: macos-12
