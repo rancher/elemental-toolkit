@@ -10,6 +10,7 @@ jobs:
       matrix:
         arch: ['x86_64', 'arm64']
         flavor: ['green']
+        media: ['iso', 'image']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,8 +29,8 @@ jobs:
             go-version-file: tests/go.mod
       - name: Build
         run: |
-          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} image
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-${{matrix.media}}
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test-${{matrix.media}}
       - name: Run tests
         run: |
           make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test

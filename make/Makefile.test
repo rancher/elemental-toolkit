@@ -21,9 +21,11 @@ test-clean:
 	@scripts/run_vm.sh stop
 	@scripts/run_vm.sh clean
 
-# TODO review which tests to run by default
-.PHONY: test
-test: test-installer
+.PHONY: test-iso
+test-iso: test-installer
+
+.PHONY: test-image
+test-image: test-hooks test-smoke
 
 # TODO review and clean installer test code, many tests are disabled
 .PHONY: test-installer
