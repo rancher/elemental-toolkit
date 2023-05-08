@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-iso:
     runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
@@ -54,9 +54,8 @@ jobs:
         run: |
           make build-iso
   
-  install-to-vm:
+  build-disk:
     runs-on: ubuntu-latest
-    needs: build
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -71,15 +70,6 @@ jobs:
           cache-name: pr-disk-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cached ISO
-        id: cache-iso
-        uses: martijnhols/actions-cache@v3
-        env:
-          cache-name: pr-iso-build
-        with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
@@ -103,11 +93,12 @@ jobs:
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
+          make build-os
           sudo -E make build-image
 
   test-installer:
     runs-on: macos-12
-    needs: build
+    needs: build-iso
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -144,7 +135,7 @@ jobs:
 
   tests-matrix:
     runs-on: macos-12
-    needs: install-to-vm
+    needs: build-disk
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
