@@ -24,7 +24,7 @@ function _abort {
 function start {
   local base_disk=$1
   local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
-  local accel_arg="-accel ${ELMNTL_ACCEL}"
+  local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
   local firmware_arg="-bios ${ELMNTL_FIRMWARE} -drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
   local disk_arg="-hda ${ELMNTL_TESTDISK}"
@@ -34,7 +34,7 @@ function start {
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=q35"
   local cdrom_arg
-  local cpu_arg
+  local cpu_arg="-cpu max"
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
@@ -63,6 +63,7 @@ function start {
         ;;
   esac
 
+  [ "none" != "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
   [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 

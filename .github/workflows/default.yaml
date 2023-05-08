@@ -24,17 +24,16 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+      - name: Build
+        run: |
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-${{matrix.media}}
       - name: Install Go
         uses: actions/setup-go@v3
         with:
             go-version-file: tests/go.mod
-      - name: Build
-        run: |
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-${{matrix.media}}
-          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} ELMNTL_FIRMWARE=/usr/share/ovmf/OVMF.fd test-${{matrix.media}}
       - name: Run tests
         run: |
-          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} test
+          sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} ELMNTL_ACCEL=none ELMNTL_FIRMWARE=/usr/share/ovmf/OVMF.fd test-${{matrix.media}}
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
