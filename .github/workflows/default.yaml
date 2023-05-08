@@ -28,7 +28,7 @@ jobs:
             go-version-file: tests/go.mod
       - name: Build
         run: |
-          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-os
+          make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} build-example-iso
           sudo -E make FLAVOR=${{matrix.flavor}} ARCH=${{matrix.arch}} image
       - name: Run tests
         run: |
