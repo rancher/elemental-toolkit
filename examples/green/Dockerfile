@@ -1,5 +1,5 @@
-# run `make elemental-toolkit` to build local/elemental-toolkit image
-FROM local/elemental-toolkit as TOOLKIT
+# run `make build` to build local/elemental-toolkit image
+FROM local/elemental-toolkit:latest as TOOLKIT
 
 # OS base image of our choice
 FROM opensuse/leap:15.4 as OS
@@ -59,6 +59,9 @@ RUN systemctl enable NetworkManager.service
 
 # Enable /tmp to be on tmpfs
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
+
+# Add elemental config dir
+RUN mkdir -p /etc/elemental/config.d
 
 # Generate initrd with required elemental services
 RUN dracut -f --regenerate-all

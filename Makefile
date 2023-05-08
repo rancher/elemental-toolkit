@@ -33,7 +33,7 @@ build:
 .PHONY: build-os
 build-os: build
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) build examples/$(FLAVOR) --platform $(ARCH) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform $(ARCH) --no-cache --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: build-iso
 build-iso: build-os
@@ -46,12 +46,13 @@ build-iso: build-os
 clean-iso: build-example-os
 	$(DOCKER) run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
-.PHONY: build-image
-build-image: build-os
+.PHONY: build-disk
+build-disk: build-os
 	mkdir -p $(ROOT_DIR)/build
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
 	$(DOCKER) run --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
+		--platform $(PLATFORM) \
 		$(REPO):$(VERSION) /bin/bash -c "mount -t devtmpfs none /dev && elemental --debug install \
 		--system.uri $(REPO):$(VERSION) --local --disable-boot-entry --platform $(PLATFORM) $$(cat .loop)"
 	losetup -d $$(cat .loop)
