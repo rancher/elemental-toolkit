@@ -12,7 +12,7 @@ PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=32G
 PACKER_TARGET?=qemu.elemental-${ARCH}
 GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
-VERSION?=$(shell git describe --tags)
+VERSION?=latest
 REPO?=local/elemental-$(FLAVOR)
 DOCKER?=docker
 
@@ -28,12 +28,12 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build toolkit --platform $(ARCH) --build-arg=ELEMENTAL_REVISION=$(ELEMENTAL_CLI) -t local/elemental-toolkit
+	$(DOCKER) build toolkit --build-arg=ELEMENTAL_REVISION=$(ELEMENTAL_CLI) -t local/elemental-toolkit
 
 .PHONY: build-os
 build-os: build
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) build examples/$(FLAVOR) --platform $(ARCH) --no-cache --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: build-iso
 build-iso: build-os
@@ -52,7 +52,6 @@ build-disk: build-os
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
 	$(DOCKER) run --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
-		--platform $(PLATFORM) \
 		$(REPO):$(VERSION) /bin/bash -c "mount -t devtmpfs none /dev && elemental --debug install \
 		--system.uri $(REPO):$(VERSION) --local --disable-boot-entry --platform $(PLATFORM) $$(cat .loop)"
 	losetup -d $$(cat .loop)
