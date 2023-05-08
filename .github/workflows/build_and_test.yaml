@@ -133,7 +133,8 @@ jobs:
       ELMNTL_ACCEL: hvf
     strategy:
       matrix:
-        test: [ test-smoke, test-hooks ]
+        test: [ test-smoke, test-hooks, test-recovery ]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - name: Install Go

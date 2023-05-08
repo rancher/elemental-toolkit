@@ -51,7 +51,7 @@ build-disk: build-os
 	mkdir -p $(ROOT_DIR)/build
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
-	$(DOCKER) run --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
+	$(DOCKER) run --rm --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
 		$(REPO):$(VERSION) /bin/bash -c "mount -t devtmpfs none /dev && elemental --debug install \
 		--system.uri $(REPO):$(VERSION) --local --disable-boot-entry --platform $(PLATFORM) $$(cat .loop)"
 	losetup -d $$(cat .loop)
