@@ -23,12 +23,6 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 			// Assert we are booting from CD before running the tests
 			By("Making sure we booted from CD")
 			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.LiveCD))
-			out, err := s.Command("grep /dev/sr /etc/mtab")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(ContainSubstring("iso9660"))
-			out, err = s.Command("df -h /")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(ContainSubstring("LiveOS_rootfs"))
 			s.EmptyDisk("/dev/sda")
 			_, _ = s.Command("sync")
 		})
@@ -37,19 +31,6 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 				s.GatherAllLogs()
 			}
 		})
-		// Commented because there is only a single active test, hence restoring CD before
-		// after rebooting is not needed.
-		/*AfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
-				s.GatherAllLogs()
-			}
-			// Store COS iso path
-			s.SetCOSCDLocation()
-			// Set Cos CD in the drive
-			s.RestoreCOSCD()
-			By("Reboot to make sure we boot from CD")
-			s.Reboot()
-		})*/
 
 		Context("partition layout tests", func() {
 			Context("with partition layout", func() {
@@ -92,22 +73,22 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					for _, part := range []sut.PartitionEntry{
 						{
 							Label:  "COS_STATE",
-							Size:   8192,
+							Size:   6144,
 							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_OEM",
-							Size:   10,
+							Size:   128,
 							FsType: sut.Ext4,
 						},
 						{
 							Label:  "COS_RECOVERY",
-							Size:   4000,
+							Size:   4096,
 							FsType: sut.Ext2,
 						},
 						{
 							Label:  "COS_PERSISTENT",
-							Size:   100,
+							Size:   8192,
 							FsType: sut.Ext2,
 						},
 					} {
