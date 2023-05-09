@@ -167,7 +167,9 @@ jobs:
       - name: Run ${{ matrix.test }}
         run: |
           make ${{ matrix.test }}
-      - uses: actions/upload-artifact@v3
+      # TODO include other logs SUT collects on failure
+      - name: Upload serial console for ${{ matrix.test }}
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: serial-${{ matrix.test }}.log
@@ -177,9 +179,3 @@ jobs:
         if: always()
         run: |
           make test-clean
-      - name: Upload serial log
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: qcow2
-          path: build/elemental-${{inputs.flavor}}.${{inputs.arch}}.qcow2
