@@ -24,6 +24,7 @@ import (
 	"github.com/rancher/elemental-cli/cmd/config"
 	"github.com/rancher/elemental-cli/pkg/action"
 	elementalError "github.com/rancher/elemental-cli/pkg/error"
+	"github.com/rancher/elemental-cli/pkg/features"
 )
 
 func InitCmd(root *cobra.Command) *cobra.Command {
@@ -50,6 +51,7 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 	root.AddCommand(c)
 	c.Flags().Bool("mkinitrd", true, "Run mkinitrd")
 	c.Flags().BoolP("force", "f", false, "Force run")
+	c.Flags().StringSlice("features", features.All, "Features to install into the container")
 	return c
 }
 

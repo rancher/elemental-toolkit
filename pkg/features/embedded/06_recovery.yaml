@@ -1,0 +1,20 @@
+# Default Elemental OEM configuration file
+#
+# This file is part of Elemental and will get reset during upgrades.
+#
+# Before you change this file manually,
+# consider copying this file to /usr/local/cloud-config or
+# copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
+name: "Recovery partition boot setup"
+stages:
+   boot:
+     - name: "Recovery"
+       if: '[ -f "/run/cos/recovery_mode" ]'
+       hostname: "elemental-recovery"
+       commands:
+       - |
+            source /etc/os-release
+            echo >> /etc/issue
+            echo "You are booting from recovery mode. Run 'elemental reset' to reset the system to $VERSION" >> /etc/issue
+            echo " or 'elemental upgrade' to upgrade the active partition" >> /etc/issue
+            echo >> /etc/issue

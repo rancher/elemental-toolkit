@@ -236,7 +236,7 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InstallSpec, er
 }
 
 func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
-	init := config.NewInitSpec(r.Config)
+	init := config.NewInitSpec()
 	vp := viper.Sub("init")
 	if vp == nil {
 		vp = viper.New()

@@ -1,0 +1,13 @@
+[Unit]
+Description=Elemental system immutable rootfs mounts
+DefaultDependencies=no
+After=initrd-root-fs.target elemental-setup-rootfs.service
+Requires=initrd-root-fs.target
+Before=initrd-fs.target
+Conflicts=initrd-switch-root.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-/usr/bin/systemctl stop oem.mount
+ExecStart=/sbin/elemental-mount-layout

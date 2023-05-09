@@ -61,7 +61,7 @@ var _ = Describe("Init Action", func() {
 		var enabledUnits []string
 		var mkinitrdCalled bool
 		BeforeEach(func() {
-			spec = config.NewInitSpec(cfg.Config)
+			spec = config.NewInitSpec()
 			enabledUnits = []string{}
 			mkinitrdCalled = false
 
@@ -72,7 +72,7 @@ var _ = Describe("Init Action", func() {
 						enabledUnits = append(enabledUnits, args[1])
 					}
 					return []byte{}, nil
-				case "mkinitrd":
+				case "dracut":
 					mkinitrdCalled = true
 					return []byte{}, nil
 				default:

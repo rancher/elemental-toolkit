@@ -17,25 +17,17 @@ limitations under the License.
 package systemd
 
 import (
-	"path/filepath"
-
 	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 )
 
 type Unit struct {
-	Name    string
-	Content []byte
+	Name string
 }
 
-func NewUnit(name string, content []byte) *Unit {
+func NewUnit(name string) *Unit {
 	return &Unit{
-		Name:    name,
-		Content: content,
+		Name: name,
 	}
-}
-
-func Install(fs v1.FS, unit *Unit) error {
-	return fs.WriteFile(filepath.Join("/usr/lib/systemd/system", unit.Name), unit.Content, 0644)
 }
 
 func Enable(runner v1.Runner, unit *Unit) error {
