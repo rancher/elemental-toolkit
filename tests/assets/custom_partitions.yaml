@@ -1,12 +1,12 @@
 install:
   partitions:
     state:
-      size: 8192
+      size: 6144
     recovery:
-      size: 4000
+      size: 4096
       fs: ext2
     persistent:
-      size: 100
+      size: 8192
       fs: ext2
     oem:
-      size: 10
+      size: 128

@@ -13,7 +13,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_LOGFILE:=${TESTS_PATH}/serial.log}"
 : "${ELMNTL_PIDFILE:=${TESTS_PATH}/testvm.pid}"
 : "${ELMNTL_TESTDISK:=${TESTS_PATH}/testdisk.qcow2}"
-: "${ELMNTL_DISKSIZE:=32G}"
+: "${ELMNTL_DISKSIZE:=20G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
 
