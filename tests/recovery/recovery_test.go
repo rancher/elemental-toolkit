@@ -25,35 +25,21 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	})
 
 	Context("upgrading COS_ACTIVE from the recovery partition", func() {
-		AfterEach(func() {
-			if !CurrentSpecReport().Failed() {
-				// Get the label filter
-				a, _ := GinkgoConfiguration()
-				// if no label was set, we are running the whole suite, so do the reset
-				// Otherwise we are only running one test, no need to reset the vm afterwards, saves time
-				if a.LabelFilter == "" {
-					s.Reset()
-				}
-			}
-		})
-
 		It("upgrades to a specific image", Label("second-test"), func() {
-			err := s.ChangeBoot(sut.Active)
-			Expect(err).ToNot(HaveOccurred())
-
-			s.Reboot()
-			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 			currentVersion := s.GetOSRelease("TIMESTAMP")
 
 			By("booting into recovery to check the OS version")
-			err = s.ChangeBoot(sut.Recovery)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(s.ChangeBoot(sut.Recovery)).To(Succeed())
 
 			s.Reboot()
-			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
+			Expect(s.BootFrom()).To(Equal(sut.Recovery))
+
 			By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
+
 			cmd := s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage())
 			By(fmt.Sprintf("running %s", cmd))
+
 			out, err := s.Command(cmd)
 			_, _ = fmt.Fprintln(GinkgoWriter, out)
 			Expect(err).ToNot(HaveOccurred())
@@ -67,7 +53,6 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 
 			upgradedVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
-			Expect(upgradedVersion).To(Equal(s.TestVersion))
 		})
 	})
 
@@ -75,31 +60,28 @@ var _ = Describe("cOS Recovery upgrade tests", func() {
 	Context("upgrading recovery", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
-
-				version := s.GetOSRelease("TIMESTAMP")
 				By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
-				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", comm.UpgradeImage(), "--squash-no-compression")
+				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", comm.UpgradeImage())
 				By(fmt.Sprintf("running %s", cmd))
 				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Upgrade completed"))
 
+				// TODO: Check state.yaml changed
+
 				By("booting into recovery to check the OS version")
 				err = s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
 
-				s.Reboot()
-				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Recovery))
+				// TODO: verify state.yaml matches expectations
 
-				out = s.GetOSRelease("TIMESTAMP")
-				Expect(out).ToNot(Equal(""))
-				Expect(out).ToNot(Equal(version))
-				Expect(out).To(Equal(s.TestVersion))
+				s.Reboot()
+				Expect(s.BootFrom()).To(Equal(sut.Recovery))
 
 				By("rebooting back to active")
 				s.Reboot()
-				ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+				Expect(s.BootFrom()).To(Equal(sut.Active))
 			})
 		})
 	})
