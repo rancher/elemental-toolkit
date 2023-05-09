@@ -9,5 +9,5 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS reset test Suite")
+	RunSpecs(t, "Elemental Grub Fallback test Suite")
 }
