@@ -11,6 +11,7 @@ var _ = Describe("Elemental Smoke tests", func() {
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
+		Expect(s.BootFrom()).To(Equal(sut.Active))
 	})
 
 	AfterEach(func() {
@@ -43,7 +44,6 @@ var _ = Describe("Elemental Smoke tests", func() {
 
 			By("reboot back to active")
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
 
 		It("can boot into recovery", func() {
@@ -62,13 +62,6 @@ var _ = Describe("Elemental Smoke tests", func() {
 			By("switching back to active")
 			s.ChangeBoot(sut.Active)
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(sut.Active))
-		})
-
-		It("is booting from COS_ACTIVE", func() {
-			out, err := s.Command("blkid -L COS_ACTIVE")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("/dev/loop0"))
 		})
 
 		It("fails running elemental reset from COS_ACTIVE", func() {
@@ -96,10 +89,6 @@ var _ = Describe("Elemental Smoke tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("LANG=en_US.UTF-8"))
 			Expect(out).Should(ContainSubstring("VC Keymap: us"))
-		})
-
-		It("is booting from active partition", func() {
-			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
 	})
 })

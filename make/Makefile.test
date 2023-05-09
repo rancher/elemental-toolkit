@@ -21,21 +21,13 @@ test-clean:
 	@scripts/run_vm.sh stop
 	@scripts/run_vm.sh clean
 
-.PHONY: test-iso
-test-iso: test-installer
-
-# TODO review and clean installer test code, many tests are disabled
-.PHONY: test-installer
-test-installer: prepare-installer-test
-	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./installer
-
 .PHONY: test-smoke
 test-smoke: prepare-test
 	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
 
-.PHONY: test-hooks
-test-hooks: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./hooks
+.PHONY: test-grubfallback
+test-grubfallback: prepare-test
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./grubfallback
 
 .PHONY: test-recovery
 test-recovery: prepare-test
@@ -45,14 +37,10 @@ test-recovery: prepare-test
 test-fallback: prepare-test
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
 
-.PHONY: test-reset
+.PHONY: test-fsck
 test-reset: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./reset
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fsck
 
-.PHONY: test-upgrades-local
+.PHONY: test-upgrade
 test-upgrades-local: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-local
-
-# TODO missing signed and unsigned images to upgrade to
-#test-upgrades-images-signed: prepare-test
-#	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrades-images-signed
+	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrade

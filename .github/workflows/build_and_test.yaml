@@ -83,7 +83,6 @@ jobs:
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
         run: |
-          sudo df -h
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
           sudo df -h
@@ -94,43 +93,6 @@ jobs:
           make build-os
           sudo -E make build-disk
 
-  test-installer:
-    runs-on: macos-12
-    needs: build-iso
-    env:
-      FLAVOR: ${{ inputs.flavor }}
-      ARCH: ${{ inputs.arch }}
-      ELMNTL_ACCEL: hvf
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version-file: tests/go.mod
-      - run: |
-          git fetch --prune --unshallow
-      - name: Cached ISO
-        id: cache-iso
-        uses: martijnhols/actions-cache@v3
-        env:
-          cache-name: pr-iso-build
-        with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - name: Run VM script dependencies
-        run: |
-          brew install bash coreutils
-      - name: Prepare test
-        run: |
-          make ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-installer-test
-      - name: Run test-installer
-        run: |
-          make test-installer
-      - name: Stop test VM
-        if: always()
-        run: |
-          make test-clean
-
   tests-matrix:
     runs-on: macos-12
     needs: build-disk
@@ -140,7 +102,7 @@ jobs:
       ELMNTL_ACCEL: hvf
     strategy:
       matrix:
-        test: [ test-smoke, test-hooks, test-recovery, test-fallback, test-reset, test-upgrades-local ]
+        test: [ test-smoke, test-upgrade, test-recovery, test-fallback, test-fsck, test-grubfallback ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

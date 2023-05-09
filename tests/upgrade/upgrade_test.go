@@ -15,19 +15,27 @@ var _ = Describe("Elemental Feature tests", func() {
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects(360)
+		Expect(s.BootFrom()).To(Equal(sut.Active))
 	})
 
 	Context("After install", func() {
-		It("can run chroot hooks during upgrade and reset", func() {
+		It("upgrades to a signed image including upgrade and reset hooks", func() {
 			By("setting /oem/chroot_hooks.yaml")
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
+			originalVersion := s.GetOSRelease("TIMESTAMP")
+
 			By(fmt.Sprintf("and upgrading the to %s", comm.UpgradeImage()))
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage()))
+			out, err := s.Command(s.ElementalCmd("upgrade", "--verify", "--system.uri", comm.UpgradeImage()))
+			Expect(err).To(HaveOccurred())
+			out, err = s.Command(s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
+
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))
+			currentVersion := s.GetOSRelease("TIMESTAMP")
+			Expect(currentVersion).NotTo(Equal(originalVersion))
 
 			_, err = s.Command("cat /after-upgrade-chroot")
 			Expect(err).ToNot(HaveOccurred())
@@ -36,7 +44,8 @@ var _ = Describe("Elemental Feature tests", func() {
 			Expect(err).To(HaveOccurred())
 
 			s.Reset()
-
+			currentVersion = s.GetOSRelease("TIMESTAMP")
+			Expect(currentVersion).To(Equal(originalVersion))
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).ToNot(HaveOccurred())
 		})
