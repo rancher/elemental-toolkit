@@ -164,3 +164,9 @@ jobs:
         if: always()
         run: |
           make test-clean
+      - name: Upload serial log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: serial.log
+          path: tests/serial.log
