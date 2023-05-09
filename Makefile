@@ -9,7 +9,7 @@ ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=x86_64
 PLATFORM?=linux/$(ARCH)
-IMAGE_SIZE?=32G
+IMAGE_SIZE?=20G
 PACKER_TARGET?=qemu.elemental-${ARCH}
 GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
 VERSION?=latest
