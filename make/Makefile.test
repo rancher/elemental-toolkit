@@ -38,9 +38,9 @@ test-fallback: prepare-test
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
 
 .PHONY: test-fsck
-test-reset: prepare-test
+test-fsck: prepare-test
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fsck
 
 .PHONY: test-upgrade
-test-upgrades-local: prepare-test
+test-upgrade: prepare-test
 	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrade
