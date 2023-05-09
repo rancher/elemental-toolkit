@@ -67,9 +67,9 @@ function start {
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
   [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
-  qemu-system-x86_64 ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+  (qemu-system-x86_64 ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
-      ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
+      ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg} | tee -a ./qemu.log) &
 }
 
 function stop {

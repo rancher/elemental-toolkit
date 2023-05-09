@@ -168,5 +168,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: serial.log
-          path: tests/serial.log
+          name: qemu.log
+          path: ./qemu.log
