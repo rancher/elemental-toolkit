@@ -1,4 +1,4 @@
-package cos_test
+package elemental_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
@@ -6,7 +6,7 @@ import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
 )
 
-var _ = Describe("cOS Recovery deploy tests", func() {
+var _ = Describe("Elemental Recovery deploy tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {

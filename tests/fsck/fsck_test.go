@@ -1,4 +1,4 @@
-package cos_test
+package elemental_test
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cOS booting fallback tests", func() {
+var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {

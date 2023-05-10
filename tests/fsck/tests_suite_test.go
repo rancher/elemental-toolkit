@@ -1,4 +1,4 @@
-package cos_test
+package elemental_test
 
 import (
 	"testing"

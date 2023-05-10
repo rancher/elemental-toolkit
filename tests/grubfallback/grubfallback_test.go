@@ -1,4 +1,4 @@
-package cos_test
+package elemental_test
 
 import (
 	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cOS booting fallback tests", func() {
+var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
