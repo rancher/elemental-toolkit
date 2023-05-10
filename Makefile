@@ -32,7 +32,6 @@ build:
 
 .PHONY: build-os
 build-os: build
-	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: build-iso
@@ -59,8 +58,8 @@ build-disk: build-os
 	qemu-img convert -O qcow2 build/elemental-$(FLAVOR).$(ARCH).img build/elemental-$(FLAVOR).$(ARCH).qcow2
 	rm build/elemental-$(FLAVOR).$(ARCH).img
 
-.PHONY: clean-image
-clean-image:
+.PHONY: clean-disk
+clean-disk:
 	losetup -d $$(cat .loop)
 	rm build/*.img
 	rm .loop

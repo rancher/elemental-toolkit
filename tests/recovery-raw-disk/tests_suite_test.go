@@ -1,4 +1,4 @@
-package cos_test
+package elemental_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cOS Recovery test Suite")
+	RunSpecs(t, "Elemental Recovery test Suite")
 }
