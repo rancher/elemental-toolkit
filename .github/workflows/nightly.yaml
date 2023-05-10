@@ -1,14 +1,9 @@
-name: PR
+name: nightly
 
 on:
- pull_request:
-   paths:
-     - conf/**
-     - toolkit/**
-     - tests/**
-     - make/**
-     - .github/**
-     - Makefile
+  schedule:
+    # run at 02:30 UTC every night
+    - cron:  '30 2 * * *'
 
 jobs:
   build-matrix:
