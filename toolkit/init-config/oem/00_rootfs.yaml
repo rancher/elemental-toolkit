@@ -18,11 +18,6 @@ stages:
       environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
-    - if: '[ -f "/run/cos/recovery_mode" ]'
-      name: "Layout configuration for recovery"
-      environment_file: /run/cos/cos-layout.env
-      environment:
-        OVERLAY: "tmpfs:25%"
   initramfs:
     - if: '[ ! -f "/run/cos/recovery_mode" ]'
       name: "Persist /etc/machine-id"
