@@ -8,8 +8,6 @@ description: >
   How to run upgrades in Elemental
 ---
 
-{{<image_right image="https://docs.google.com/drawings/d/e/2PACX-1vTM9N71bvNnf8PqeHyzVdfVACHix8vTS5aMGsdQGz2eVqyWyKlVreep4UJVVnNpSAKPLVOwEhwAmhTP/pub?w=379&h=308">}}
-
 Elemental and every derivative can upgrade, rollback or just switch to different versions in runtime by using the toolkit installed inside the image.
 
 To upgrade an installed system, just run `elemental upgrade` and reboot. 

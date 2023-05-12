@@ -3,7 +3,7 @@
 title: "Cosign"
 linkTitle: "Cosign"
 weight: 2
-date: 2020-11-02
+date: 2023-05-11
 description: >
   How we use cosign in elemental-toolkit
 ---
@@ -21,51 +21,10 @@ Currently cosign provides 2 methods for signing and verifying.
 
 We use keyless signatures based on OIDC Identity tokens provided by github, so nobody has access to any private keys and can use them. (For more info about keyless signing/verification check [here](https://github.com/sigstore/cosign/blob/main/KEYLESS.md))
 
-This signature generation is provided by [luet-cosign](https://github.com/rancher-sandbox/luet-cosign) which is a luet plugin that generates the signatures on image push when building, and verifies them on package unpack when installing/upgrading/deploying.
-
 The process is completely transparent to the end user when upgrading/deploying a running system and using our published artifacts.
-
-When using luet-cosign as part of `luet install` you need to set `COSIGN_EXPERIMENTAL=1` so it can use keyless verification
-
 
 ## Derivatives
 
-If building a derivative, you can also sign and verify you final artifacts with the use of [luet-cosign](https://github.com/rancher-sandbox/luet-cosign).
+If building a derivative, you can also sign and verify you final artifacts with the use of cosign.
 
 As keyless is only possible to do in an CI environment (as it needs an OIDC token) you would need to set up private/public signature and verification.
-
-{{% alert title="Note" %}}
-If you are building and publishing your derivatives with luet on github, you can see an example on how we generate and push the keyless signatures ourselves on [this workflow](https://github.com/rancher/elemental-toolkit/blob/main/.github/workflows/build-main-teal-x86_64.yaml#L445)
-{{% /alert %}}
-
-
-### Verify elemental-toolkit artifacts as part of derivative building
-
-If you consume elemental-toolkit artifacts in your Dockerfile as part of building a derivative you can verify the signatures of the artifacts by setting:
-
-```dockerfile
-ENV COSIGN_EXPERIMENTAL=1
-RUN luet install -y meta/cos-verify # install dependencies for signature checking
-```
-
-{{% alert title="Note" %}}
-The {{<package package="meta/cos-verify" >}} is a meta package that will pull {{<package package="toolchain/cosign" >}} and {{<package package="toolchain/luet-cosign" >}} .
-{{% /alert %}}
-
-
-And then making sure you call luet with `--plugin luet-cosign`. You can see an example of this in our [standard Dockerfile example](https://github.com/rancher/elemental-toolkit/tree/main/examples/standard) 
-
-That would verify the artifacts coming from our repository.
-
-
-For signing resulting containers with a private/public key, please refer to the [cosign](https://github.com/sigstore/cosign) documents.
-
-For verifying with a private/public key, the only thing you need is to set the env var `COSIGN_PUBLIC_KEY_LOCATION` to point to the public key that signed and enable the luet-cosign plugin.
-
-{{% alert title="Note" %}}
-Currently there is an issue in which if there is more than one repo and one of those repos is not signed the whole install will fail due to cosign failing to verify the unsigned repo.
-
-If you are using luet with one or more unsigned repos, it's not possible to use cosign to verify the chain.
-
-Please follow up in https://github.com/rancher-sandbox/luet-cosign/issues/6 for more info.
-{{% /alert %}}

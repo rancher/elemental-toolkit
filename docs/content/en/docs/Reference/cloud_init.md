@@ -47,7 +47,7 @@ stages:
          - foobar
        authorized_keys:
           user:
-          - "github:mudler"
+          - "github:suse"
           - "ssh-rsa ...."
        dns:
          path: /etc/resolv.conf
@@ -88,7 +88,7 @@ The default cloud-config format is split into *stages* (*initramfs*, *boot*, *ne
 Each cloud-config file is loaded and executed only at the apprioriate stage, this allows further components to emit their own stages at the desired time.
 
 {{% pageinfo %}}
-The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases/tag/0.9.6), or just run it with docker:
+The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases), or just run it with docker:
 
 ```bash
 cat <<EOF | docker run -i --rm quay.io/costoolkit/releases-teal:cos-recovery-0.8.10-3 yip -s test -
@@ -233,8 +233,8 @@ stages:
    default:
      - name: "Setup exception trace"
        authorized_keys:
-         mudler:
-         - github:mudler
+         joe:
+         - github:joe
          - ssh-rsa: ...
 ```
 

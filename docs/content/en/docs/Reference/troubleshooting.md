@@ -74,4 +74,4 @@ $> elemental upgrade --docker-image $NEW_IMAGE
 
 To add users key from the GRUB menu prompt, edit the boot cmdline and add the following kernel parameters: 
 
-`stages.boot[0].authorized_keys.root[0]=github:mudler`
+`stages.boot[0].authorized_keys.root[0]=github:suse`

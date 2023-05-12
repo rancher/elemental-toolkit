@@ -5,7 +5,7 @@ linkTitle: "Download"
 weight: 1
 date: 2017-01-05
 description: >
-  How to get Elemental vanilla assets: ISOs, Cloud Images, Vagrant boxes, ....
+  How to get Elemental assets: ISOs, Cloud Images ...
 ---
 
 Elemental-toolkit releases consist on container images that can be used to build derived against and the cos source tree itself.
@@ -14,12 +14,6 @@ Elemental supports different release channels, all the final and cache images us
 
 Those are exactly the same images used during upgrades, and can also be used to build Linux derivatives from Elemental.
 
-For example, if you want to see locally what's in a openSUSE Elemental version, you can:
-
-```bash
-$ docker run -ti --rm quay.io/costoolkit/releases-teal:cos-system-$VERSION /bin/bash
-```
- 
 ## Download Elemental
 
 You can also try out Elemental from the vanilla images and use it to experiment locally or either bootstrap a derivative: those are minimal system with a small package set in order to boot and deploy a container. 
