@@ -19,8 +19,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/rancher/elemental-cli/internal/version"
 	"github.com/spf13/cobra"
+
+	"github.com/rancher/elemental-cli/internal/version"
 )
 
 func NewVersionCmd(root *cobra.Command) *cobra.Command {
@@ -28,19 +29,17 @@ func NewVersionCmd(root *cobra.Command) *cobra.Command {
 		Use:   "version",
 		Args:  cobra.ExactArgs(0),
 		Short: "Print the version",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			v := version.Get()
 			commit := v.GitCommit
 			if len(commit) > 7 {
 				commit = v.GitCommit[:7]
 			}
 			if cmd.Flag("long").Changed {
-				fmt.Printf("%#v", v)
+				fmt.Printf("%#v\n", v)
 			} else {
-				fmt.Printf("%s+g%s", v.Version, commit)
+				fmt.Printf("%s+g%s\n", v.Version, commit)
 			}
-
-			return nil
 		},
 	}
 	root.AddCommand(c)
