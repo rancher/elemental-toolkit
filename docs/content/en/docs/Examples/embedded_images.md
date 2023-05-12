@@ -193,7 +193,7 @@ stages:
      - authorized_keys:
      # Replace here with your ssh keys or github handle
         joe: 
-        - github:mudler
+        - github:joe
 ```
 
 Done! We are now ready to build the Docker container.
@@ -379,7 +379,7 @@ To specify any additional ssh key installed within the user, we do:
 network:
 - authorized_keys:
   joe: 
-  - github:mudler
+  - github:joe
 ```
 
 which you can replace with your github handle, or by specifying directly an ssh key. In case you specify the SSH key directly, you don't need to run the step in the `network` stage.

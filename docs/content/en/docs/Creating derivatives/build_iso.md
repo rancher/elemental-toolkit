@@ -9,7 +9,7 @@ description: >
 
 ![](https://docs.google.com/drawings/d/e/2PACX-1vReZtyNs0imrji-AwnqK0-4ekCKLcKzfnQ_CwiMj93Q7IsycAJHwlNohwCv_hyHnaify7qO-v2Cecg5/pub?w=1223&h=691)
 
-In order to build an iso we rely on [elemental build-iso](https://github.com/rancher/elemental-cli) command. It accepts a YAML file denoting the packages to bundle in an ISO and a list of luet repositories where to download the packages from. In addition it can also overlay custom files or use container images from a registry as packages.
+In order to build an ISO we rely on [elemental build-iso](https://github.com/rancher/elemental-cli) command. It accepts a YAML file denoting the sources to bundle in an ISO. In addition it can also overlay custom files or use container images from a registry as packages.
 
 To build an iso, just run:
 
@@ -18,24 +18,18 @@ docker run --rm -ti -v $(pwd):/build quay.io/costoolkit/elemental-cli:v0.0.14-e4
 ```
 
 Where `$SOURCE` might be the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images). Argument `$SOURCE` might be the reference to the directory, file, container image or channel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
-    * <sourceType> - might be ["dir", "file", "oci", "docker", "channel"], as default is taken "docker"
+    * <sourceType> - might be ["dir", "file", "oci", "docker"], as default is taken "docker"
     * <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then "latest" is used)
 
 Some examples for $SOURCE argument "dir:/cOS/system", "oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10", "channel:system/cos"
 
 `elemental build-iso` command also supports reading a configuration `manifest.yaml` file. It is loaded form the directory specified by `--config-dir` elemental's flag.
 
-An example of a yaml file using the elemental-toolkit opensuse repositories:
+An example of a yaml file using the bootloader from the contained image:
 
 ```yaml
 iso:
-  rootfs:
-  - channel:system/cos
-  uefi:
-  - channel:live/grub2-efi-image
-  image:
-  - dir:/packages/rsync
-  - channel:live/grub2
+  bootloader-in-rootfs: true
   label: "COS_LIVE"
 
 name: "Elemental-0"
@@ -44,7 +38,7 @@ date: true
 
 ## What's next?
 
-- Check out on how to [build a QCOW, Virtualbox or Vagrant image](../packer/build_images) from the ISO we have just created
+- Check out on how to [build an image](build_disk) from the ISO we have just created
 
 ## Syntax
 
@@ -52,24 +46,19 @@ Below you can find a full reference about the yaml file format.
 
 ```yaml
 iso:
-  # Packages to be installed in the rootfs
+  # Sources to be installed in the rootfs
   rootfs:
   - ..
-  # Packages to be installed in the uefi image
+  # Sources to be installed in the uefi image
   uefi:
-  - channel:live/grub2-efi-image
-  # Packages to be installed in the iso image
+  - ..
+  # Sources to be installed in the iso image
   image:
-  - channel:live/grub2-efi-image
-  - channel:live/grub2
+  - ..
   label: "COS_LIVE"
-  
-repositories:
-  - uri: quay.io/costoolkit/releases-teal
-
 ```
 
-Packages or sources can be a Luet package (as in the example), an image reference (then an explicit tag is required) or a local path. Sources are stacked in the given order, so one can easily overwrite or append data by simply adding a local path as the last source.
+Sources can be an image reference (then an explicit tag is required) or a local path. Sources are stacked in the given order, so one can easily overwrite or append data by simply adding a local path as the last source.
 
 ### Command flags
 
@@ -80,45 +69,24 @@ Packages or sources can be a Luet package (as in the example), an image referenc
 - **overlay-uefi**: Sets the path of a tree to overaly on top of the EFI image root-tree
 - **overlay-iso**: Sets the path of a tree to overlay on top of the ISO filesystem root-tree
 - **label**: Sets the volume label of the ISO filesystem
-- **repo**: Sets the URI of a repository to include together with the repositores set in manifest or the default one if no repositories are set in manifest. This option can be set multiple times.
 
 ## Configuration reference
 
 ### `iso.rootfs`
 
-A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in the rootfs. The rootfs will be squashed to a `rootfs.squashfs` file
+A list of sources in uri format (container image or local path) [ "docker", "oci", "dir", "file" ] to install in the rootfs. The rootfs will be squashed to a `rootfs.squashfs` file
 
 ### `iso.uefi`
 
-A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in the efi FAT image or partition.
+A list of sources in uri format (container image or local path) [ "docker", "oci", "dir", "file" ] to install in the efi FAT image or partition.
 
 ### `iso.image`
 
-A list of sources in uri format (luet package, container image or local path) [ "channel", "docker", "oci", "dir", "file" ] to install in ISO filesystem.
+A list of sources in uri format (container image or local path) [ "docker", "oci", "dir", "file" ] to install in ISO filesystem.
 
 ### `iso.label`
 
 The label of the ISO filesystem. Defaults to `COS_LIVE`. Note this value is tied with the bootloader and kernel parameters to identify the root device.
-
-### `repositories`
-
-A list of Luet package repositories
-
-### `repositories.uri`
-
-The URI of the repository, it is the only mandatory value for a repository. Repository type (`docker`, `disk` or `http`) is guessed from this URI if not provided.
-
-### `repositories.type`
-
-The repository type, it can be `docker` (the URI points to a registry), `http` (an HTTP(S) URI) or `disk` (the URI is then a local path).
-
-### `repositories.name`
-
-The repository name, if not provided a md5 sum of the URI is used instead.
-
-### `repositories.priority`
-
-The priority of the given repository, if unsed uses `0`, which is the highest priority.
 
 ### `name`
 
@@ -143,10 +111,10 @@ iso:
   rootfs:
   - ...
   uefi:
-  - channel:live/grub2-efi-image
+  - oci:example-grub2-efi-image:latest
   image:
-  - channel:live/grub2
-  - channel:live/grub2-efi-image
+  - oci:example-grub2:latest
+  - oci:example-grub2-efi-image:latest
 ```
 
 We can customize either the `image` packages (in the referrence image `live/grub2` package
@@ -160,15 +128,15 @@ iso:
   rootfs:
   - ...
   uefi:
-  - channel:live/grub2-efi-image
+  - oci:example-grub2-efi-image:latest
   image:
-  - channel:live/grub2
-  - channel:live/grub2-efi-image
+  - oci:example-grub2:latest
+  - oci:example-grub2-efi-image:latest
   - dir:/my/path/to/overlay/iso
 ```
 
 With the above the ISO will also include the files under `/my/path/to/overlay/iso` path. To customize the boot
-menu parameters consider copy and modify relevant files from `live/grub2` package. In this example the
+menu parameters consider copy and modify relevant files from `example-grub2:latest` image. In this example the
 `overlay` folder files list could be:
 
 ```bash
@@ -217,8 +185,8 @@ iso:
   ..
   image:
   ...
-  - channel:recovery/cos-img
+  - oci:example-recovery:latest
 ```
 
-The installer will detect the squashfs file in the iso, and will use it when installing the system. You can customize the recovery image as well by providing your own: see the `recovery/cos-img` package definition as a reference.
+The installer will detect the squashfs file in the iso, and will use it when installing the system. You can customize the recovery image as well by providing your own.
 

@@ -35,7 +35,7 @@ In this tutorial we will:
 
 ## 3) Prepare a Elemental VM
 
-Download an ISO, or a qcow image from the Github artifacts of Elemental. Or generate an iso of the image (check [here](https://github.com/mudler/os2) for another example). 
+Download an ISO, or a qcow image from the Github artifacts of Elemental.
 
 If deploying on AWS/openstack/Cloud, use the `fleet-cloud-init.yaml` file as userdata. If deploying on baremetal/VMs, place `fleet-cloud-init.yaml` in `/oem` after install (or run the installer with `elemental install --cloud-init https://raw.githubusercontent.com/rancher-sandbox/cos-fleet-upgrades-sample/main/fleet-cloud-init.yaml $DEVICE`).
 

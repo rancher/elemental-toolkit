@@ -69,12 +69,6 @@ weight = 1
     url = "https://github.com/rancher/elemental-toolkit/releases"
     pre = "<i class='fab fa-github'></i>"
     post = "" 
-[[menu.main]]
-    name = "Browse packages"
-    weight = 55
-    url = "https://rancher-sandbox.github.io/cos-toolkit-package-browser/"
-    pre = "<i class='fa fa-toolbox'></i>"
-    post = "" 
 
 [markup]
   [markup.goldmark]
