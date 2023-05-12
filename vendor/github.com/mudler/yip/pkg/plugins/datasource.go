@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	prv "github.com/davidcassany/linuxkit/pkg/metadata/providers"
 	"github.com/mudler/yip/pkg/logger"
 	"github.com/mudler/yip/pkg/schema"
+	prv "github.com/rancher-sandbox/linuxkit/providers"
 	"github.com/twpayne/go-vfs"
 )
 
@@ -45,6 +45,8 @@ func DataSources(l logger.Interface, s schema.Stage, fs vfs.FS, console Console)
 			AvailableProviders = append(AvailableProviders, prv.NewDigitalOcean())
 		case dSProviders == "metaldata":
 			AvailableProviders = append(AvailableProviders, prv.NewMetalData())
+		case dSProviders == "vmware":
+			AvailableProviders = append(AvailableProviders, prv.NewVMware())
 		case dSProviders == "cdrom":
 			AvailableProviders = append(AvailableProviders, prv.ListCDROMs()...)
 		case dSProviders == "file" && s.DataSources.Path != "":

@@ -1,8 +1,26 @@
+/*
+Copyright © 2022 - 2023 SUSE LLC
+
+Copyright © 2015-2017 Docker, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package providers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -33,7 +51,7 @@ func (p *ProviderAWS) String() string {
 func (p *ProviderAWS) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := awsGet(metaDataURL + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the AWS specific and generic userdata
@@ -43,7 +61,7 @@ func (p *ProviderAWS) Extract() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = ioutil.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
+	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: Failed to write hostname: %s", err)
 	}
@@ -85,7 +103,7 @@ func (p *ProviderAWS) Extract() ([]byte, error) {
 func awsMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	if lookupValue, err := awsGet(metaDataURL + lookupName); err == nil {
 		// we got a value from the metadata server, now save to filesystem
-		err = ioutil.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
+		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
 			// we couldn't save the file for some reason
 			log.Printf("AWS: Failed to write %s:%s %s", fileName, lookupValue, err)
@@ -114,7 +132,7 @@ func awsGet(url string) ([]byte, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("AWS: Status not ok: %d", resp.StatusCode)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: Failed to read http response: %s", err)
 	}
@@ -132,7 +150,7 @@ func (p *ProviderAWS) handleSSH() error {
 		return fmt.Errorf("Failed to create %s: %s", SSH, err)
 	}
 
-	err = ioutil.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), sshKeys, 0600)
+	err = os.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), sshKeys, 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to write ssh keys: %s", err)
 	}
