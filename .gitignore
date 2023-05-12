@@ -19,3 +19,7 @@ tests/**/logs
 serial_port1.log
 capture.webm
 
+.vscode/
+bin/
+coverage.txt
+dist/

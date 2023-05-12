@@ -1,0 +1,22 @@
+cosign-key: "someKey"
+cloud-init-paths:
+- "some/path"
+- "some/alternate/path"
+
+install:
+  target: "someDisk"
+
+  no-format: true
+  system:
+    uri: docker:some/image:latest
+  recovery-system:
+    uri: docker:recovery/image:latest
+
+reset:
+  disable-boot-entry: true
+
+upgrade:
+  system:
+    uri: some/image:latest
+  recovery-system:
+    uri: recovery/image:latest

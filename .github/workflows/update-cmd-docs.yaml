@@ -1,0 +1,28 @@
+name: Update cmd docs
+on:
+  push:
+    branches:
+      - main
+jobs:
+  createPullRequest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3.1.0
+      - name: Install Go
+        uses: actions/setup-go@v3.3.1
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: make build_docs
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: "[auto] Update cmd docs"
+          token: ${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}
+          push-to-fork: elemental-ci/elemental-cli
+          signoff: true
+          title: "[auto] Update cmd docs"
+          delete-branch: true
