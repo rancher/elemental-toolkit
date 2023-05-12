@@ -1,3 +1,10 @@
+GINKGO?=$(shell which ginkgo 2> /dev/null)
+ifeq ("$(GINKGO)","")
+GINKGO="$(HOME)/go/bin/ginkgo"
+endif
+
+GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
+
 .PHONY: prepare-test
 prepare-test:
 ifeq ("$(QCOW2)","")
@@ -23,24 +30,45 @@ test-clean:
 
 .PHONY: test-smoke
 test-smoke: prepare-test
-	cd tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./smoke
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/smoke
 
 .PHONY: test-grubfallback
 test-grubfallback: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./grubfallback
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/grubfallback
 
 .PHONY: test-recovery
 test-recovery: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./recovery
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/recovery
 
 .PHONY: test-fallback
 test-fallback: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fallback
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/fallback
 
 .PHONY: test-fsck
 test-fsck: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./fsck
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/fsck
 
 .PHONY: test-upgrade
 test-upgrade: prepare-test
-	cd $(ROOT_DIR)/tests && go run github.com/onsi/ginkgo/v2/ginkgo $(GINKGO_ARGS) ./upgrade
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/upgrade
+
+.PHONY: test-deps
+test-deps:
+	go mod download
+	go install github.com/onsi/gomega/...
+	go install github.com/onsi/ginkgo/v2/ginkgo
+
+.PHONY: test-cli
+test-cli: $(GINKGO)
+	$(GINKGO) run --label-filter '!root' --fail-fast --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-toolkit/... -p -r ${PKG}
+
+.PHONY: test-root
+test-root: $(GINKGO)
+ifneq ($(shell id -u), 0)
+	@echo "This tests require root/sudo to run."
+	@exit 1
+else
+	$(GINKGO) run --label-filter root --fail-fast --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-toolkit/... -procs=1 -r ${PKG}
+endif
+
+

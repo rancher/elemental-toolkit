@@ -24,12 +24,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	part "github.com/rancher/elemental-cli/pkg/partitioner"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	mocks "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
+
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	mocks "github.com/rancher/elemental-toolkit/pkg/mocks"
+	part "github.com/rancher/elemental-toolkit/pkg/partitioner"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 const printOutput = `BYT;

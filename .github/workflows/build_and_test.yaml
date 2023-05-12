@@ -31,7 +31,7 @@ jobs:
           cache-name: pr-iso-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached ISO
         id: cache-iso
@@ -40,7 +40,7 @@ jobs:
           cache-name: pr-iso-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build toolkit
         run: |
@@ -70,7 +70,7 @@ jobs:
           cache-name: pr-disk-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
         id: cache-disk
@@ -79,7 +79,7 @@ jobs:
           cache-name: pr-disk-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
         run: |
@@ -109,7 +109,10 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: tests/go.mod
+          go-version-file: go.mod
+      - name: Install deps
+        run: |
+          make test-deps
       - run: |
           git fetch --prune --unshallow
       - name: Cached Disk
@@ -119,7 +122,7 @@ jobs:
           cache-name: pr-disk-build
         with:
           path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils

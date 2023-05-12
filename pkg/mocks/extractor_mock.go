@@ -16,7 +16,7 @@ limitations under the License.
 
 package mocks
 
-import v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+import v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 
 type FakeImageExtractor struct {
 	Logger     v1.Logger

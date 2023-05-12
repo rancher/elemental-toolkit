@@ -19,7 +19,7 @@ package cmd
 import (
 	"os"
 
-	errors "github.com/rancher/elemental-cli/pkg/error"
+	errors "github.com/rancher/elemental-toolkit/pkg/error"
 )
 
 // CheckRoot is a helper to return on PreRunE, so we can add it to commands that require root

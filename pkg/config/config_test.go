@@ -25,11 +25,11 @@ import (
 	"github.com/twpayne/go-vfs/vfst"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/pkg/config"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	"github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {

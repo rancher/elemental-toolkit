@@ -34,7 +34,7 @@ import (
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // DirSize returns the accumulated size of all files in folder. Result in bytes

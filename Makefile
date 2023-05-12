@@ -15,26 +15,18 @@ VERSION?=latest
 REPO?=local/elemental-$(FLAVOR)
 DOCKER?=docker
 
-GINKGO?=$(shell which ginkgo 2> /dev/null)
-ifeq ("$(GINKGO)","")
-GINKGO="/usr/bin/ginkgo"
-endif
-
-GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
-
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 GIT_COMMIT_SHORT ?= $(shell git rev-parse --short HEAD)
 GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
 
-PKG        := ./...
+PKG        := ./cmd ./pkg
 LDFLAGS    := -w -s
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.version=${GIT_TAG}"
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.gitCommit=${GIT_COMMIT}"
 
-
 # default target
 .PHONY: all
-all: build
+all: build build-cli
 
 #----------------------- includes -----------------------
 
@@ -43,8 +35,12 @@ include make/Makefile.test
 #----------------------- targets ------------------------
 
 .PHONY: build
-build: build-cli
-	$(DOCKER) build toolkit --build-arg=ELEMENTAL_REVISION=$(ELEMENTAL_CLI) -t local/elemental-toolkit
+build:
+	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t local/elemental-toolkit .
+
+.PHONY: build-cli
+build-cli:
+	go build -ldflags '$(LDFLAGS)' -o build/elemental
 
 .PHONY: build-os
 build-os: build
@@ -80,23 +76,11 @@ clean-disk:
 	rm build/*.img
 	rm .loop
 
-# CLI
-
-$(GINKGO):
-	@echo "'ginkgo' not found."
-	@exit 1
-
-.PHONY: build-cli
-build-cli:
-	go build -ldflags '$(LDFLAGS)' -o bin/elemental
-
-.PHONY: docker_build
-docker_build:
-	DOCKER_BUILDKIT=1 docker build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t elemental-cli:${GIT_TAG}-${GIT_COMMIT_SHORT} .
-
+.PHONY: vet
 vet:
 	go vet ${PKG}
 
+.PHONY: fmt
 fmt:
 ifneq ($(shell go fmt ${PKG}),)
 	@echo "Please commit the changes from 'make fmt'"
@@ -106,26 +90,13 @@ else
 	@exit 0
 endif
 
-test_deps:
-	go mod download
-	go install github.com/onsi/gomega/...
-	go install github.com/onsi/ginkgo/v2/ginkgo
-
-test-cli: $(GINKGO)
-	ginkgo run --label-filter '!root' --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-cli/... -p -r ${PKG}
-
-test_root: $(GINKGO)
-ifneq ($(shell id -u), 0)
-	@echo "This tests require root/sudo to run."
-	@exit 1
-else
-	ginkgo run --label-filter root --fail-fast --slow-spec-threshold 30s --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-cli/... -procs=1 -r ${PKG}
-endif
-
+.PHONY: license-check
 license-check:
 	@.github/license_check.sh
 
-build_docs:
+.PHONY: build-docs
+build-docs:
 	cd docs && go run generate_docs.go
 
+.PHONY: lint
 lint: fmt vet

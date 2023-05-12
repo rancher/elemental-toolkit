@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"github.com/cavaliergopher/grab/v3"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 type Client struct {

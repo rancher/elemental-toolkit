@@ -31,12 +31,12 @@ import (
 	"github.com/twpayne/go-vfs/vfst"
 	"k8s.io/mount-utils"
 
-	conf "github.com/rancher/elemental-cli/pkg/config"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	"github.com/rancher/elemental-cli/pkg/elemental"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	conf "github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/elemental"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 const printOutput = `BYT;

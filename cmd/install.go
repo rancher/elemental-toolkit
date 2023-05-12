@@ -23,10 +23,10 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	"github.com/rancher/elemental-cli/pkg/action"
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/cmd/config"
+	"github.com/rancher/elemental-toolkit/pkg/action"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // NewInstallCmd returns a new instance of the install subcommand and appends it to

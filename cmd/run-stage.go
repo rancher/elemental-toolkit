@@ -21,9 +21,9 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/cmd/config"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 func NewRunStage(root *cobra.Command) *cobra.Command {

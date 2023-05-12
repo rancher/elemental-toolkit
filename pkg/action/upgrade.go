@@ -21,11 +21,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rancher/elemental-cli/pkg/constants"
-	"github.com/rancher/elemental-cli/pkg/elemental"
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/elemental"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish

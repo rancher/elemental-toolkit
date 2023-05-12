@@ -19,9 +19,9 @@ package action
 import (
 	"github.com/sirupsen/logrus"
 
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 // Hook is RunStage wrapper that only adds logic to ignore errors

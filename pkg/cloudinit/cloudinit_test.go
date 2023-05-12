@@ -25,12 +25,13 @@ import (
 
 	"github.com/jaypipes/ghw/pkg/block"
 
-	. "github.com/rancher/elemental-cli/pkg/cloudinit"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/twpayne/go-vfs/vfst"
+
+	. "github.com/rancher/elemental-toolkit/pkg/cloudinit"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

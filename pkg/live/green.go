@@ -22,9 +22,9 @@ import (
 
 	"strings"
 
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 type GreenLiveBootLoader struct {

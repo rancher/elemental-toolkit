@@ -21,7 +21,8 @@ import (
 	"os/exec"
 
 	"github.com/hashicorp/go-multierror"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // cloudInitConsole represents a yip's Console implementations using

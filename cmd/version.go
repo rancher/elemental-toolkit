@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/rancher/elemental-cli/internal/version"
+	"github.com/rancher/elemental-toolkit/internal/version"
 )
 
 func NewVersionCmd(root *cobra.Command) *cobra.Command {

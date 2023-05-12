@@ -63,6 +63,8 @@ type RsyncOptions struct {
 	HardLinks bool
 	// Perms preserve permissions
 	Perms bool
+	// NoPerms preserve permissions
+	NoPerms bool
 	// Executability preserve executability
 	Executability bool
 	// CHMOD affect file and/or directory permissions
@@ -73,14 +75,20 @@ type RsyncOptions struct {
 	XAttrs bool
 	// Owner preserve owner (super-user only)
 	Owner bool
+	// NoOwner prevent copying owner information to destination
+	NoOwner bool
 	// Group preserve group
 	Group bool
+	// NoGroup prevent copying group information to destination
+	NoGroup bool
 	// Devices preserve device files (super-user only)
 	Devices bool
 	// Specials preserve special files
 	Specials bool
 	// Times preserve modification times
 	Times bool
+	// NoTimes prevent copying modification times
+	NoTimes bool
 	// omit directories from --times
 	OmitDirTimes bool
 	// Super receiver attempts super-user activities
@@ -335,6 +343,10 @@ func getArguments(options RsyncOptions) []string {
 		arguments = append(arguments, "--perms")
 	}
 
+	if options.NoPerms {
+		arguments = append(arguments, "--no-perms")
+	}
+
 	if options.Executability {
 		arguments = append(arguments, "--executability")
 	}
@@ -351,8 +363,16 @@ func getArguments(options RsyncOptions) []string {
 		arguments = append(arguments, "--owner")
 	}
 
+	if options.NoOwner {
+		arguments = append(arguments, "--no-owner")
+	}
+
 	if options.Group {
 		arguments = append(arguments, "--group")
+	}
+
+	if options.NoGroup {
+		arguments = append(arguments, "--no-group")
 	}
 
 	if options.Devices {
@@ -365,6 +385,10 @@ func getArguments(options RsyncOptions) []string {
 
 	if options.Times {
 		arguments = append(arguments, "--times")
+	}
+
+	if options.NoTimes {
+		arguments = append(arguments, "--no-times")
 	}
 
 	if options.OmitDirTimes {

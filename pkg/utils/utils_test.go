@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	eleefi "github.com/rancher/elemental-cli/pkg/efi"
+	eleefi "github.com/rancher/elemental-toolkit/pkg/efi"
 
 	efi "github.com/canonical/go-efilib"
 	"github.com/jaypipes/ghw/pkg/block"
@@ -36,11 +36,11 @@ import (
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 
-	conf "github.com/rancher/elemental-cli/pkg/config"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	conf "github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 func getNamesFromListFiles(list []os.FileInfo) []string {

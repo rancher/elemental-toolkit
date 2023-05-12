@@ -23,9 +23,9 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/cmd/config"
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/cmd/config"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {

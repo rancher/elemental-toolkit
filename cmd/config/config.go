@@ -32,11 +32,11 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/internal/version"
-	"github.com/rancher/elemental-cli/pkg/config"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/internal/version"
+	"github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 var decodeHook = viper.DecodeHook(

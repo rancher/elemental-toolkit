@@ -25,7 +25,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 )
 
 const (

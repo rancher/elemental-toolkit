@@ -24,11 +24,11 @@ import (
 	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-cli/pkg/cloudinit"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	"github.com/rancher/elemental-cli/pkg/http"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/http"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 type GenericOptions func(a *v1.Config) error

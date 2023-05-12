@@ -18,11 +18,13 @@ package v1_test
 
 import (
 	"bytes"
+	"reflect"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"github.com/sirupsen/logrus"
-	"reflect"
+
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 var _ = Describe("logger", Label("log", "logger", "types"), func() {

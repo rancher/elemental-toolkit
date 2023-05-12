@@ -45,6 +45,7 @@ RUN mkdir -p /oem /system
 
 # Just add the elemental toolkit including
 COPY --from=TOOLKIT /install-root /
+COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
 # Enable cloud-init services
 RUN systemctl enable cos-setup-rootfs.service && \

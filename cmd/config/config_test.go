@@ -25,7 +25,7 @@ import (
 
 	"github.com/sanity-io/litter"
 
-	. "github.com/rancher/elemental-cli/cmd/config"
+	. "github.com/rancher/elemental-toolkit/cmd/config"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
@@ -36,9 +36,9 @@ import (
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 
-	"github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 var _ = Describe("Config", Label("config"), func() {
@@ -54,7 +54,7 @@ var _ = Describe("Config", Label("config"), func() {
 	Context("From fixtures", func() {
 		Describe("read all specs", Label("install"), func() {
 			It("reads values correctly", func() {
-				cfg, err := ReadConfigRun("../../tests/fixtures/simple/", nil, mounter)
+				cfg, err := ReadConfigRun("fixtures/simple/", nil, mounter)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				Expect(cfg.Config.Cosign).To(BeTrue(), litter.Sdump(cfg))
@@ -82,7 +82,7 @@ var _ = Describe("Config", Label("config"), func() {
 			flags.Set("arch", "arm64")
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("../../tests/fixtures/config/", flags, mounter)
+			cfg, err := ReadConfigBuild("fixtures/config/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal("cOS-0"))
 			Expect(cfg.Name).To(Equal("cOS-0"))
@@ -107,7 +107,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Platform.String()).To(Equal("linux/arm64"))
 		})
 		It("values filled if config path valid", Label("path", "values"), func() {
-			cfg, err := ReadConfigBuild("../../tests/fixtures/config/", flags, mounter)
+			cfg, err := ReadConfigBuild("fixtures/config/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(viper.GetString("name")).To(Equal("cOS-0"))
 			Expect(cfg.Name).To(Equal("cOS-0"))
@@ -118,12 +118,12 @@ var _ = Describe("Config", Label("config"), func() {
 
 		It("overrides values with env values", Label("env", "values"), func() {
 			_ = os.Setenv("ELEMENTAL_BUILD_NAME", "randomname")
-			cfg, err := ReadConfigBuild("../../tests/fixtures/config/", flags, mounter)
+			cfg, err := ReadConfigBuild("fixtures/config/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(cfg.Name).To(Equal("randomname"))
 		})
 		It("fails on bad yaml manifest file", func() {
-			_, err := ReadConfigBuild("../../tests/fixtures/badconfig/", nil, mounter)
+			_, err := ReadConfigBuild("fixtures/badconfig/", nil, mounter)
 			Expect(err).Should(HaveOccurred())
 		})
 	})
@@ -153,7 +153,7 @@ var _ = Describe("Config", Label("config"), func() {
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
 
-			cfg, err = ReadConfigBuild("../../tests/fixtures/config/", nil, mounter)
+			cfg, err = ReadConfigBuild("fixtures/config/", nil, mounter)
 			Expect(err).Should(BeNil())
 			// From defaults
 			Expect(cfg.Platform.String()).To(Equal("linux/amd64"))
@@ -190,10 +190,10 @@ var _ = Describe("Config", Label("config"), func() {
 			flags.Set("cosign-key", "someOtherKey")
 		})
 		It("fails on bad yaml config file", func() {
-			_, err := ReadConfigRun("../../tests/fixtures/badconfig/", nil, mounter)
+			_, err := ReadConfigRun("fixtures/badconfig/", nil, mounter)
 			Expect(err).Should(HaveOccurred())
 
-			_, err = ReadConfigRun("../../tests/fixtures/badextraconfig/", nil, mounter)
+			_, err = ReadConfigRun("fixtures/badextraconfig/", nil, mounter)
 			Expect(err).Should(HaveOccurred())
 		})
 		It("uses defaults if no configs are provided", func() {
@@ -208,7 +208,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(ok).To(BeTrue())
 		})
 		It("uses provided configs and flags, flags have priority", func() {
-			cfg, err := ReadConfigRun("../../tests/fixtures/config/", flags, mounter)
+			cfg, err := ReadConfigRun("fixtures/config/", flags, mounter)
 			Expect(err).To(BeNil())
 			Expect(cfg.Cosign).To(BeTrue())
 			// Flags overwrite the cosign-key set in config
@@ -218,7 +218,7 @@ var _ = Describe("Config", Label("config"), func() {
 		})
 		It("sets log level debug based on debug flag", func() {
 			// Default value
-			cfg, err := ReadConfigRun("../../tests/fixtures/config/", nil, mounter)
+			cfg, err := ReadConfigRun("fixtures/config/", nil, mounter)
 			Expect(err).To(BeNil())
 			debug := viper.GetBool("debug")
 			Expect(cfg.Logger.GetLevel()).ToNot(Equal(logrus.DebugLevel))
@@ -226,7 +226,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 			// Set it via viper, like the flag
 			viper.Set("debug", true)
-			cfg, err = ReadConfigRun("../../tests/fixtures/config/", nil, mounter)
+			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
 			Expect(err).To(BeNil())
 			debug = viper.GetBool("debug")
 			Expect(debug).To(BeTrue())
@@ -258,7 +258,7 @@ var _ = Describe("Config", Label("config"), func() {
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
 
-			cfg, err = ReadConfigRun("../../tests/fixtures/config/", nil, mounter)
+			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
 			Expect(err).Should(BeNil())
 
 			cfg.Fs = fs

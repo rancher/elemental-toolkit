@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 var _ = Describe("Platform", Label("types", "platform"), func() {

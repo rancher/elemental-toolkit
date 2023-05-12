@@ -19,7 +19,8 @@ package cmd
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/rancher/elemental-cli/internal/version"
+
+	"github.com/rancher/elemental-toolkit/internal/version"
 )
 
 var _ = Describe("Version", Label("version", "cmd"), func() {

@@ -19,7 +19,7 @@ package mocks
 import (
 	"errors"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // FakeHTTPClient is an implementation of HTTPClient interface used for testing

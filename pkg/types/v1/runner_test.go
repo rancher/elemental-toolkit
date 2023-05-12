@@ -21,9 +21,10 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
 	"github.com/sirupsen/logrus"
+
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 var _ = Describe("Runner", Label("types", "runner"), func() {

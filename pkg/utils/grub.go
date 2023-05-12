@@ -26,9 +26,9 @@ import (
 
 	efilib "github.com/canonical/go-efilib"
 
-	cnst "github.com/rancher/elemental-cli/pkg/constants"
-	eleefi "github.com/rancher/elemental-cli/pkg/efi"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
+	eleefi "github.com/rancher/elemental-toolkit/pkg/efi"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 const (

@@ -22,8 +22,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/mudler/yip/pkg/schema"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
 	"gopkg.in/yaml.v3"
+
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 func onlyYAMLPartialErrors(er error) bool {

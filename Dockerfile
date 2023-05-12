@@ -23,8 +23,8 @@ ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 RUN go build \
     -ldflags "-w -s \
-    -X github.com/rancher/elemental-cli/internal/version.version=$ELEMENTAL_VERSION \
-    -X github.com/rancher/elemental-cli/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
+    -X github.com/rancher/elemental-toolkit/internal/version.version=$ELEMENTAL_VERSION \
+    -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
     -o /usr/bin/elemental
 
 FROM opensuse/leap:$LEAP_VERSION AS elemental
@@ -33,9 +33,26 @@ FROM opensuse/leap:$LEAP_VERSION AS elemental
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 RUN zypper ref && zypper dup -y
-RUN zypper ref && zypper in -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso lvm2
+RUN zypper ref && zypper install -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso lvm2
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
 COPY --from=cosign-bin /usr/bin/cosign /usr/bin/cosign
 # Fix for blkid only using udev on opensuse
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf
 ENTRYPOINT ["/usr/bin/elemental"]
+
+# immutable-rootfs
+COPY toolkit/immutable-rootfs/30cos-immutable-rootfs /install-root/usr/lib/dracut/modules.d/30cos-immutable-rootfs
+
+# init-setup
+COPY toolkit/init-setup/cos-setup* /install-root/usr/lib/systemd/system/
+COPY toolkit/init-setup/02-cos-setup-initramfs.conf /install-root/etc/dracut.conf.d/
+
+# grub-config
+COPY toolkit/grub/config/grub.cfg /install-root/etc/cos/
+COPY toolkit/grub/config/bootargs.cfg /install-root/etc/cos/
+
+# dracut-config
+COPY toolkit/dracut-config/50-elemental.conf /install-root/etc/dracut.conf.d/
+
+# init-config
+COPY toolkit/init-config/oem /install-root/system/oem/

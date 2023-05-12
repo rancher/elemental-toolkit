@@ -19,9 +19,10 @@ package cmd
 import (
 	"os"
 
-	eleError "github.com/rancher/elemental-cli/pkg/error"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	eleError "github.com/rancher/elemental-toolkit/pkg/error"
 )
 
 func NewRootCmd() *cobra.Command {

@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 
-	"github.com/rancher/elemental-cli/cmd"
+	"github.com/rancher/elemental-toolkit/cmd"
 )
 
 func main() {
@@ -66,7 +66,7 @@ func generateExitCodes() error {
 	files := []*ast.File{
 		mustParse(fset, "../pkg/error/exit-codes.go"),
 	}
-	p, err := godoc.NewFromFiles(fset, files, "github.com/rancher/elemental-cli")
+	p, err := godoc.NewFromFiles(fset, files, "github.com/rancher/elemental-toolkit")
 	if err != nil {
 		panic(err)
 	}

@@ -9,12 +9,7 @@ iso-meta.json
 iso-meta.yaml
 .idea/
 .qemu/
-.vagrant/
-^Vagrantfile
-packer/*.box
-packer/*.tar.gz
-packer/packer_cache/
-packer/output*/
+.loop
 tests/**/logs
 serial_port1.log
 capture.webm

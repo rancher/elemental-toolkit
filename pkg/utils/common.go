@@ -36,8 +36,8 @@ import (
 	"github.com/twpayne/go-vfs"
 	"github.com/zloylos/grsync"
 
-	cnst "github.com/rancher/elemental-cli/pkg/constants"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // BootedFrom will check if we are booting from the given label
