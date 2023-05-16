@@ -37,7 +37,7 @@ Requires:       xfsprogs
 
 Recommends:     xorriso
 
-BuildRequires:  golang(API) >= 1.16
+BuildRequires:  golang(API) >= 1.20
 BuildRequires:  golang-packaging
 BuildRequires:  xz
 
@@ -58,7 +58,7 @@ GIT_COMMIT=$(cat %{name}.obsinfo | grep commit: | cut -d" " -f 2)
 export GIT_COMMIT=${GIT_COMMIT:0:8}
 MTIME=$(cat %{name}.obsinfo | grep mtime: | cut -d" " -f 2)
 export COMMITDATE=$(date -d @${MTIME} +%Y%m%d)
-make build
+make build-cli
 
 
 %install
