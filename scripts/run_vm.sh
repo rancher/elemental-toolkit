@@ -34,7 +34,7 @@ function start {
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=q35"
   local cdrom_arg
-  local cpu_arg="-cpu max"
+  local cpu_arg="-cpu max -smp cpus=$(nproc)"
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
