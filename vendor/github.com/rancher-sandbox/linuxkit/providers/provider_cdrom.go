@@ -1,8 +1,26 @@
+/*
+Copyright © 2022 - 2023 SUSE LLC
+
+Copyright © 2015-2017 Docker, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package providers
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -13,7 +31,6 @@ import (
 )
 
 const (
-	metadataFile     = "meta-data"
 	userdataFile     = "user-data"
 	userdataFallback = "config"
 	cdromDevs        = "/dev/sr[0-9]*"
@@ -27,10 +44,10 @@ var (
 // ProviderCDROM is the type implementing the Provider interface for CDROMs
 // It looks for file called 'meta-data', 'user-data' or 'config' in the root
 type ProviderCDROM struct {
-	device             string
-	mountPoint         string
-	err                error
-	userdata, metadata []byte
+	device     string
+	mountPoint string
+	err        error
+	userdata   []byte
 }
 
 // ListCDROMs lists all the cdroms in the system
@@ -106,14 +123,15 @@ func FindCIs() []string {
 
 // NewCDROM returns a new ProviderCDROM
 func NewCDROM(device string) *ProviderCDROM {
-	mountPoint, err := ioutil.TempDir("", "cd")
-	p := ProviderCDROM{device, mountPoint, err, []byte{}, []byte{}}
+	mountPoint, err := os.MkdirTemp("", "cd")
+	p := ProviderCDROM{device, mountPoint, err, []byte{}}
 	if err == nil {
 		if p.err = p.mount(); p.err == nil {
+			defer p.unmount()
 			// read the userdata - we read the spec file and the fallback, but eventually
 			// will remove the fallback
 			for _, f := range userdataFiles {
-				userdata, err := ioutil.ReadFile(path.Join(p.mountPoint, f))
+				userdata, err := os.ReadFile(path.Join(p.mountPoint, f))
 				// did we find a file?
 				if err == nil && userdata != nil {
 					p.userdata = userdata
@@ -121,15 +139,8 @@ func NewCDROM(device string) *ProviderCDROM {
 				}
 			}
 			if p.userdata == nil {
-				p.err = fmt.Errorf("no userdata file found at any of %v", userdataFiles)
+				log.Debugf("no userdata file found at any of %v", userdataFiles)
 			}
-			// read the metadata
-			metadata, err := ioutil.ReadFile(path.Join(p.mountPoint, metadataFile))
-			// did we find a file?
-			if err == nil && metadata != nil {
-				p.metadata = metadata
-			}
-			p.unmount()
 		}
 	}
 	return &p
@@ -141,6 +152,9 @@ func (p *ProviderCDROM) String() string {
 
 // Probe checks if the CD has the right file
 func (p *ProviderCDROM) Probe() bool {
+	if p.err != nil {
+		log.Errorf("there were errors probing %s: %v", p.device, p.err)
+	}
 	return len(p.userdata) != 0
 }
 
@@ -151,8 +165,17 @@ func (p *ProviderCDROM) Extract() ([]byte, error) {
 
 // mount mounts a CDROM/DVD device under mountPoint
 func (p *ProviderCDROM) mount() error {
+	var err error
 	// We may need to poll a little for device ready
-	return syscall.Mount(p.device, p.mountPoint, "iso9660", syscall.MS_RDONLY, "")
+	errISO := syscall.Mount(p.device, p.mountPoint, "iso9660", syscall.MS_RDONLY, "")
+	if errISO != nil {
+		errFat := syscall.Mount(p.device, p.mountPoint, "vfat", syscall.MS_RDONLY, "")
+		if errFat != nil {
+			err = fmt.Errorf("failed mounting %s: %v %v", p.device, errISO, errFat)
+			p.err = err
+		}
+	}
+	return err
 }
 
 // unmount removes the mount

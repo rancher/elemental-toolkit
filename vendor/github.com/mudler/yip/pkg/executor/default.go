@@ -59,6 +59,21 @@ type op struct {
 	name    string
 }
 
+type opList []*op
+
+func (l opList) uniqueNames() {
+	names := map[string]int{}
+
+	for _, op := range l {
+		if names[op.name] > 0 {
+			op.name = fmt.Sprintf("%s.%d", op.name, names[op.name])
+			names[op.name] = names[op.name] + 1
+		} else {
+			names[op.name] = 1
+		}
+	}
+}
+
 func (e *DefaultExecutor) applyStage(stage schema.Stage, fs vfs.FS, console plugins.Console) error {
 	var errs error
 	for _, p := range e.conditionals {
@@ -228,7 +243,7 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 	f, err := fs.Stat(uri)
 
 	g := herd.DAG(herd.EnableInit)
-	var ops []*op
+	var ops opList
 	switch {
 	case err == nil && f.IsDir():
 		ops, err = e.dirOps(stage, uri, fs, console)
@@ -258,6 +273,8 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 		ops = e.genOpFromSchema("<STDIN>", stage, *config, fs, console)
 	}
 
+	// Ensure all names are unique
+	ops.uniqueNames()
 	for _, o := range ops {
 		g.Add(o.name, append(o.options, herd.WithCallback(o.fn), herd.WithDeps(append(o.after, o.deps...)...))...)
 	}
