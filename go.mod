@@ -2,9 +2,6 @@ module github.com/rancher/elemental-toolkit
 
 go 1.20
 
-// until https://github.com/zloylos/grsync/pull/20 is merged we need to use our fork
-replace github.com/zloylos/grsync v1.7.0 => github.com/rancher-sandbox/grsync v1.7.1
-
 require (
 	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
 	github.com/cavaliergopher/grab/v3 v3.0.1
@@ -19,13 +16,13 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.3
 	github.com/onsi/gomega v1.27.6
 	github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230503125222-ae1b8f5a8578
+	github.com/rancher-sandbox/grsync v1.7.0-rancher1
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/twpayne/go-vfs v1.7.2
-	github.com/zloylos/grsync v1.7.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/mount-utils v0.23.0
 )
