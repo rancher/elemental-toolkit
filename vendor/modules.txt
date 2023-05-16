@@ -577,7 +577,7 @@ github.com/xanzy/ssh-agent
 ## explicit; go 1.17
 github.com/zcalusic/sysinfo
 github.com/zcalusic/sysinfo/cpuid
-# github.com/zloylos/grsync v1.6.1 => github.com/rancher-sandbox/grsync v1.6.2-0.20230515070822-eb4483c865b4
+# github.com/zloylos/grsync v1.7.0 => github.com/rancher-sandbox/grsync v1.7.1
 ## explicit; go 1.17
 github.com/zloylos/grsync
 # go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352

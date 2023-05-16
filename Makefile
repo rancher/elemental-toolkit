@@ -19,7 +19,7 @@ GIT_COMMIT ?= $(shell git rev-parse HEAD)
 GIT_COMMIT_SHORT ?= $(shell git rev-parse --short HEAD)
 GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
 
-PKG        := ./cmd ./pkg
+PKG        := ./cmd ./pkg/...
 LDFLAGS    := -w -s
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.version=${GIT_TAG}"
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.gitCommit=${GIT_COMMIT}"

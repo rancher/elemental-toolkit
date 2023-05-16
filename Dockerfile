@@ -13,7 +13,6 @@ ADD go.sum .
 RUN go mod download
 ADD cmd cmd
 ADD internal internal
-ADD tests tests
 ADD pkg pkg
 ADD main.go .
 # Set arg/env after go mod download, otherwise we invalidate the cached layers due to the commit changing easily
