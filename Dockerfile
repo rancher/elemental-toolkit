@@ -10,6 +10,7 @@ WORKDIR /src/
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
 ADD go.mod .
 ADD go.sum .
+ADD vendor vendor
 RUN go mod download
 ADD cmd cmd
 ADD internal internal
