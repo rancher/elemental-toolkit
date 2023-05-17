@@ -15,6 +15,7 @@ type Task struct {
 
 	state *State
 	log   *Log
+	mutex sync.Mutex
 }
 
 // State contains information about rsync process
@@ -31,17 +32,24 @@ type Log struct {
 	Stdout string `json:"stdout"`
 }
 
-// State returns inforation about rsync processing task
-func (t Task) State() State {
-	return *t.state
+// State returns information about rsync processing task
+// lock mutex to avoid accessing it while ProcessStdout is writing to it
+func (t *Task) State() State {
+	t.mutex.Lock()
+	c := *t.state
+	t.mutex.Unlock()
+	return c
 }
 
 // Log return structure which contains raw stderr and stdout outputs
-func (t Task) Log() Log {
-	return Log{
+func (t *Task) Log() Log {
+	t.mutex.Lock()
+	l := Log{
 		Stderr: t.log.Stderr,
 		Stdout: t.log.Stdout,
 	}
+	t.mutex.Unlock()
+	return l
 }
 
 // Run starts rsync process with options
@@ -50,23 +58,29 @@ func (t *Task) Run() error {
 	if err != nil {
 		return err
 	}
-	defer stderr.Close()
 
 	stdout, err := t.rsync.StdoutPipe()
 	if err != nil {
+		stderr.Close()
 		return err
 	}
-	defer stdout.Close()
 
 	var wg sync.WaitGroup
 	go processStdout(&wg, t, stdout)
 	go processStderr(&wg, t, stderr)
 	wg.Add(2)
 
-	err = t.rsync.Run()
+	if err = t.rsync.Start(); err != nil {
+		// Close pipes to unblock goroutines
+		stdout.Close()
+		stderr.Close()
+		wg.Wait()
+		return err
+	}
+
 	wg.Wait()
 
-	return err
+	return t.rsync.Wait()
 }
 
 // NewTask returns new rsync task
@@ -98,6 +112,7 @@ func processStdout(wg *sync.WaitGroup, task *Task, stdout io.Reader) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		logStr := scanner.Text()
+		task.mutex.Lock()
 		if progressMatcher.Match(logStr) {
 			task.state.Remain, task.state.Total = getTaskProgress(progressMatcher.Extract(logStr))
 
@@ -110,6 +125,7 @@ func processStdout(wg *sync.WaitGroup, task *Task, stdout io.Reader) {
 		}
 
 		task.log.Stdout += logStr + "\n"
+		task.mutex.Unlock()
 	}
 }
 
@@ -118,7 +134,9 @@ func processStderr(wg *sync.WaitGroup, task *Task, stderr io.Reader) {
 
 	scanner := bufio.NewScanner(stderr)
 	for scanner.Scan() {
+		task.mutex.Lock()
 		task.log.Stderr += scanner.Text() + "\n"
+		task.mutex.Unlock()
 	}
 }
 

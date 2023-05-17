@@ -215,19 +215,29 @@ func (r Rsync) StderrPipe() (io.ReadCloser, error) {
 	return r.cmd.StderrPipe()
 }
 
-// Run start rsync task
-func (r Rsync) Run() error {
+// Start starts an rsync command
+func (r Rsync) Start() error {
 	if !isExist(r.Destination) {
 		if err := createDir(r.Destination); err != nil {
 			return err
 		}
 	}
 
-	if err := r.cmd.Start(); err != nil {
+	return r.cmd.Start()
+}
+
+// Wait waits for rsync command to finnish
+func (r Rsync) Wait() error {
+	return r.cmd.Wait()
+}
+
+// Run start rsync task. The method is kept here for backward compatibility
+func (r Rsync) Run() error {
+	if err := r.Start(); err != nil {
 		return err
 	}
 
-	return r.cmd.Wait()
+	return r.Wait()
 }
 
 // NewRsync returns task with described options

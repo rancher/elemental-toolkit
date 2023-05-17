@@ -408,6 +408,8 @@ github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084/go.mod h1:TjEm7z
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230503125222-ae1b8f5a8578 h1:t3rKYU1ek1pIDpF2yex1gYQcYRJjHxwFrd4Nk9O1JIU=
 github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230503125222-ae1b8f5a8578/go.mod h1:2Kk5HBelEumSSM3otn4GFd9ElClpW9w8VaMW5T+nkKs=
+github.com/rancher-sandbox/grsync v1.7.0-rancher1 h1:5qYdy9XdDUv4HioGDWbbYql6sWrl91v7rEUi/xU4T18=
+github.com/rancher-sandbox/grsync v1.7.0-rancher1/go.mod h1:ss1FDyzTMAb0SxoulpIFE35bscyDlzaI0VZkJXxLTCQ=
 github.com/rancher-sandbox/linuxkit v1.0.0 h1:ejEKyLWfByMkwzpmcSQLc5/RL3FtiKRpIgY+TUjFpaM=
 github.com/rancher-sandbox/linuxkit v1.0.0/go.mod h1:n6Fkjc5qoMeWrnLSA5oqUF8ZzFKMrM960CtBwfvH1ZM=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
@@ -514,8 +516,6 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/zcalusic/sysinfo v0.9.5 h1:ivoHyj9aIAYkwzo1+8QgJ5s4oeE6Etx9FmZtqa4wJjQ=
 github.com/zcalusic/sysinfo v0.9.5/go.mod h1:Z/gPVufBrFc8X5sef3m6kkw3r3nlNFp+I6bvASfvBZQ=
-github.com/zloylos/grsync v1.7.0 h1:7JjxC4CdzA7Inh771VelfUWdxIiMcXCXF5qV1Vx+W6E=
-github.com/zloylos/grsync v1.7.0/go.mod h1:0Ue43fnWwx3doC5GkfmwmUwCAvQ54h06FRHXXX3ZWls=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.mozilla.org/pkcs7 v0.0.0-20200128120323-432b2356ecb1/go.mod h1:SNgMg+EgDFwmvSmLRTNKC5fegJjB7v23qTQ0XLGUNHk=
 go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 h1:CCriYyAfq1Br1aIYettdHZTy8mBTIPo7We18TuO/bak=
