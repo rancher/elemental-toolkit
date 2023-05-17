@@ -474,9 +474,6 @@ github.com/pkg/xattr
 # github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230503125222-ae1b8f5a8578
 ## explicit; go 1.20
 github.com/rancher-sandbox/ele-testhelpers/vm
-# github.com/rancher-sandbox/grsync v1.7.0-rancher1
-## explicit; go 1.17
-github.com/rancher-sandbox/grsync
 # github.com/rancher-sandbox/linuxkit v1.0.0
 ## explicit; go 1.18
 github.com/rancher-sandbox/linuxkit/providers
@@ -580,6 +577,9 @@ github.com/xanzy/ssh-agent
 ## explicit; go 1.17
 github.com/zcalusic/sysinfo
 github.com/zcalusic/sysinfo/cpuid
+# github.com/zloylos/grsync v1.7.0
+## explicit; go 1.17
+github.com/zloylos/grsync
 # go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
 ## explicit; go 1.11
 # go.opencensus.io v0.24.0
