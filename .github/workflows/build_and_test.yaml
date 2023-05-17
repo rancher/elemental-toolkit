@@ -46,10 +46,6 @@ jobs:
         run: |
           make build
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Build example OS
-        run: |
-          make build-os
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build ISO
         run: |
           make build-iso
@@ -94,7 +90,7 @@ jobs:
           sudo -E make build-disk
       - name: Upload disk image
         uses: actions/upload-artifact@v3
-        if: always()
+        if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         with:
           name: elemental-${{ inputs.flavor }}.${{ inputs.arch }}.qcow2
           path: build/elemental-${{ inputs.flavor }}.${{ inputs.arch }}.qcow2
