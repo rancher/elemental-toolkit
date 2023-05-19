@@ -370,7 +370,7 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, cleaner func()
 				err = mErr
 			}
 		}()
-		err = utils.SyncData(e.config.Logger, e.config.Fs, root, img.MountPoint)
+		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, root, img.MountPoint)
 		if err != nil {
 			return err
 		}
@@ -441,7 +441,7 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info inte
 		}
 	} else if imgSrc.IsDir() {
 		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
-		err = utils.SyncData(e.config.Logger, e.config.Fs, imgSrc.Value(), target, excludes...)
+		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return nil, err
 		}
@@ -457,7 +457,7 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info inte
 		}
 		defer e.UnmountImage(img) // nolint:errcheck
 		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
-		err = utils.SyncData(e.config.Logger, e.config.Fs, cnst.ImgSrcDir, target, excludes...)
+		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, cnst.ImgSrcDir, target, excludes...)
 		if err != nil {
 			return nil, err
 		}

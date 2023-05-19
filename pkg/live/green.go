@@ -51,11 +51,6 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 		return err
 	}
 
-	// _, arch, _, err := v1.ParsePlatform(g.buildCfg.Platform)
-	// if err != nil {
-	// 	return err
-	// }
-
 	switch g.buildCfg.Platform.Arch {
 	case constants.ArchAmd64, constants.Archx86:
 		err = g.copyEfiFiles(

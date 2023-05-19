@@ -132,6 +132,8 @@ const (
 	Fedora = "fedora"
 	Ubuntu = "ubuntu"
 	Suse   = "suse"
+
+	Rsync = "rsync"
 )
 
 func GetCloudInitPaths() []string {

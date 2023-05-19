@@ -54,6 +54,7 @@ func getNamesFromListFiles(list []os.FileInfo) []string {
 var _ = Describe("Utils", Label("utils"), func() {
 	var config *v1.Config
 	var runner *v1mock.FakeRunner
+	var realRunner *v1.RealRunner
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
@@ -68,6 +69,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
+		realRunner = &v1.RealRunner{Logger: logger}
 		extractor = v1mock.NewFakeImageExtractor(logger)
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
@@ -463,7 +465,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(logger, fs, sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir)).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -494,7 +496,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
 
-			Expect(utils.SyncData(logger, fs, sourceDir, destDir, "host", "run")).To(BeNil())
+			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir, "host", "run")).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -532,7 +534,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "tmp", "host"), constants.DirPerm)
 
-			Expect(utils.SyncData(logger, fs, sourceDir, destDir, "/host", "/run")).To(BeNil())
+			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir, "/host", "/run")).To(BeNil())
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
@@ -558,19 +560,19 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			destDir, err := utils.TempDir(fs, "", "elementaltarget")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(utils.SyncData(logger, fs, sourceDir, destDir)).To(BeNil())
+			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir)).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
 			sourceDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(sourceDir)
-			Expect(utils.SyncData(logger, nil, sourceDir, "/welp")).NotTo(BeNil())
+			Expect(utils.SyncData(logger, realRunner, nil, sourceDir, "/welp")).NotTo(BeNil())
 		})
 		It("should fail if source does not exist", func() {
 			destDir, err := os.MkdirTemp("", "elemental")
 			Expect(err).To(BeNil())
 			defer os.RemoveAll(destDir)
-			Expect(utils.SyncData(logger, nil, "/welp", destDir)).NotTo(BeNil())
+			Expect(utils.SyncData(logger, realRunner, nil, "/welp", destDir)).NotTo(BeNil())
 		})
 	})
 	Describe("IsLocalURI", Label("uri"), func() {

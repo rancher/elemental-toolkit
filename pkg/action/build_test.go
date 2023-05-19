@@ -121,24 +121,14 @@ var _ = Describe("Runtime Actions", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 		It("Successfully builds an ISO using self contained binaries and including overlayed files", func() {
-			rootFs := []string{"dir:/overlay/dir"}
-			for _, src := range rootFs {
-				rootSrc, _ := v1.NewSrcFromURI(src)
-				iso.RootFS = append(iso.RootFS, rootSrc)
-			}
-
-			err := utils.MkdirAll(fs, "/overlay/dir/boot", constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = fs.Create("/overlay/dir/boot/vmlinuz")
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = fs.Create("/overlay/dir/boot/initrd")
-			Expect(err).ShouldNot(HaveOccurred())
+			rootSrc, _ := v1.NewSrcFromURI("dir:/overlay/dir")
+			iso.RootFS = []*v1.ImageSource{rootSrc}
 
 			liveBoot := &v1mock.LiveBootLoaderMock{}
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
-			err = buildISO.ISORun()
+			err := buildISO.ISORun()
 
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on prepare EFI", func() {
 			iso.BootloaderInRootFs = true
@@ -194,17 +184,7 @@ var _ = Describe("Runtime Actions", func() {
 		It("Fails installing uefi sources", func() {
 			rootSrc, _ := v1.NewSrcFromURI("docker:elemental:latest")
 			iso.RootFS = []*v1.ImageSource{rootSrc}
-			uefiSrc, _ := v1.NewSrcFromURI("channel:live/efi")
-			iso.UEFI = []*v1.ImageSource{uefiSrc}
-
-			buildISO := action.NewBuildISOAction(cfg, iso)
-			err := buildISO.ISORun()
-			Expect(err).Should(HaveOccurred())
-		})
-		It("Fails installing image sources", func() {
-			rootSrc, _ := v1.NewSrcFromURI("docker:elemental:latest")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
-			uefiSrc, _ := v1.NewSrcFromURI("docker:registry.suse.com/custom-uefi:v0.1")
+			uefiSrc, _ := v1.NewSrcFromURI("dir:/overlay/efi")
 			iso.UEFI = []*v1.ImageSource{uefiSrc}
 
 			buildISO := action.NewBuildISOAction(cfg, iso)

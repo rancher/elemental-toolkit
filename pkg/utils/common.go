@@ -33,9 +33,9 @@ import (
 
 	"github.com/distribution/distribution/reference"
 	"github.com/joho/godotenv"
-	"github.com/rancher-sandbox/grsync"
 	"github.com/twpayne/go-vfs"
 
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
@@ -158,7 +158,7 @@ func CreateDirStructure(fs v1.FS, target string) error {
 
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
-func SyncData(log v1.Logger, fs v1.FS, source string, target string, excludes ...string) error {
+func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, excludes ...string) error {
 	if fs != nil {
 		if s, err := fs.RawPath(source); err == nil {
 			source = s
@@ -176,57 +176,46 @@ func SyncData(log v1.Logger, fs v1.FS, source string, target string, excludes ..
 		target = fmt.Sprintf("%s/", target)
 	}
 
-	task := grsync.NewTask(
-		source,
-		target,
-		grsync.RsyncOptions{
-			Quiet:   false,
-			Archive: true,
-			XAttrs:  true,
-			ACLs:    true,
-			Exclude: excludes,
-		},
-	)
+	log.Infof("Starting rsync...")
 
-	quit := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-quit:
-				return
-			case <-time.After(5 * time.Second):
-				state := task.State()
-				log.Debugf(
-					"progress rsync %s to %s: %.2f / rem. %d / tot. %d / sp. %s",
-					source,
-					target,
-					state.Progress,
-					state.Remain,
-					state.Total,
-					state.Speed,
-				)
-			}
-		}
-	}()
-
-	err := task.Run()
-	quit <- true
-	if err != nil {
-		log := task.Log()
-		return fmt.Errorf("%w: %s", err, strings.Join([]string{log.Stderr, log.Stdout}, "\n"))
+	args := []string{source, target, "--archive", "--xattrs", "--acls"}
+	for _, e := range excludes {
+		args = append(args, fmt.Sprintf("--exclude=%s", e))
 	}
 
+	stop := make(chan bool)
+	defer close(stop)
+	go func(ch chan bool) {
+		for {
+			select {
+			case <-ch:
+				break
+			case <-time.After(5 * time.Second):
+				log.Debugf("Syncing files...")
+			}
+		}
+	}(stop)
+
+	_, err := runner.Run(constants.Rsync, args...)
+	stop <- true
+
+	if err != nil {
+		log.Errorf("rsync finished with errors: %s", err.Error())
+		return err
+	}
+
+	log.Info("Finished syncing")
 	return nil
 }
 
-// Reboot reboots the system afater the given delay (in seconds) time passed.
+// Reboot reboots the system after the given delay (in seconds) time passed.
 func Reboot(runner v1.Runner, delay time.Duration) error {
 	time.Sleep(delay * time.Second)
 	_, err := runner.Run("reboot", "-f")
 	return err
 }
 
-// Shutdown halts the system afater the given delay (in seconds) time passed.
+// Shutdown halts the system after the given delay (in seconds) time passed.
 func Shutdown(runner v1.Runner, delay time.Duration) error {
 	time.Sleep(delay * time.Second)
 	_, err := runner.Run("poweroff", "-f")

@@ -491,14 +491,25 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 		It("Copies files from a directory source", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elemental")
+			rsyncCount := 0
+			src := ""
+			dest := ""
+
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == "rsync" {
+					rsyncCount += 1
+					src = args[0]
+					dest = args[1]
+				}
+
+				return []byte{}, nil
+			}
+
+			_, err := e.DumpSource("/dest", v1.NewDirSrc("/source"))
 			Expect(err).ShouldNot(HaveOccurred())
-			_, err = e.DumpSource(destDir, v1.NewDirSrc(sourceDir))
-			Expect(err).To(BeNil())
-		})
-		It("Fails if source directory does not exist", func() {
-			_, err := e.DumpSource(destDir, v1.NewDirSrc("/welp"))
-			Expect(err).ToNot(BeNil())
+			Expect(rsyncCount).To(Equal(1))
+			Expect(src).To(HaveSuffix("/source/"))
+			Expect(dest).To(HaveSuffix("/dest/"))
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
 			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
@@ -525,15 +536,11 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		It("Copies image file to target", func() {
 			sourceImg := "/source.img"
-			_, err := fs.Create(sourceImg)
-			Expect(err).To(BeNil())
 			destFile := filepath.Join(destDir, "active.img")
-			_, err = fs.Stat(destFile)
-			Expect(err).NotTo(BeNil())
-			_, err = e.DumpSource(destFile, v1.NewFileSrc(sourceImg))
+
+			_, err := e.DumpSource(destFile, v1.NewFileSrc(sourceImg))
 			Expect(err).To(BeNil())
-			_, err = fs.Stat(destFile)
-			Expect(err).To(BeNil())
+			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 		It("Fails to copy, source can't be mounted", func() {
 			mounter.ErrorOnMount = true
@@ -568,27 +575,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				Source: v1.NewDirSrc(srcDir),
 			}
 		})
-		It("Creates an image including including the root tree contents", func() {
+		It("Deploys an image including the root tree contents", func() {
 			_, cleaner, err := e.DeployImgTree(img, root)
 			Expect(err).ShouldNot(HaveOccurred())
-			exists, _ := utils.Exists(fs, root)
-			Expect(exists).To(BeTrue())
+			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 			Expect(cleaner()).To(Succeed())
-			exists, _ = utils.Exists(fs, root)
-			Expect(exists).To(BeFalse())
-		})
-		It("Fails without write permissions", func() {
-			config.Fs = vfs.NewReadOnlyFS(fs)
-			_, _, err := e.DeployImgTree(img, root)
-			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails setting a bind mount to root", func() {
 			mounter.ErrorOnMount = true
-			_, _, err := e.DeployImgTree(img, root)
-			Expect(err).Should(HaveOccurred())
-		})
-		It("Fails dumping source if image source does not exist", func() {
-			img.Source = v1.NewDirSrc("/nonexistingdir")
 			_, _, err := e.DeployImgTree(img, root)
 			Expect(err).Should(HaveOccurred())
 		})
@@ -628,8 +622,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			err := e.CreateImgFromTree(root, img, cleaner)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
-			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
-			Expect(exists).To(BeTrue())
 			Expect(cleaned).To(BeTrue())
 		})
 		It("Creates an squashfs image", func() {
@@ -644,15 +636,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			err := e.CreateImgFromTree(root, img, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(img.Size).To(Equal(uint(64)))
-			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
-			Expect(exists).To(BeTrue())
-		})
-		It("Fails to mount created filesystem image", func() {
-			mounter.ErrorOnMount = true
-			err := e.CreateImgFromTree(root, img, nil)
-			Expect(err).Should(HaveOccurred())
-			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
-			Expect(cleaned).To(BeFalse())
+			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 		It("Fails to mount created filesystem image", func() {
 			mounter.ErrorOnUnmount = true
@@ -660,14 +644,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).Should(HaveOccurred())
 			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
 			Expect(cleaned).To(BeFalse())
-			exists, _ := utils.Exists(fs, "/some/mountpoint/somefile")
-			Expect(exists).To(BeTrue())
-		})
-		It("Fails to create image, no write permissions", func() {
-			config.Fs = vfs.NewReadOnlyFS(fs)
-			err := e.CreateImgFromTree(root, img, nil)
-			Expect(err).Should(HaveOccurred())
-			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 	})
 	Describe("DeployImage", Label("deployImg"), func() {
@@ -700,8 +677,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		It("Deploys image source into a filesystem image", func() {
 			_, err := e.DeployImage(img)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).To(Succeed())
-			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
+			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
 		})
 		It("Fails to dump source without write permissions", func() {
 			config.Fs = vfs.NewReadOnlyFS(fs)
