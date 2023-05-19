@@ -474,7 +474,7 @@ github.com/pkg/xattr
 # github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230503125222-ae1b8f5a8578
 ## explicit; go 1.20
 github.com/rancher-sandbox/ele-testhelpers/vm
-# github.com/rancher-sandbox/grsync v1.7.0-rancher1
+# github.com/rancher-sandbox/grsync v1.7.0-rancher6
 ## explicit; go 1.17
 github.com/rancher-sandbox/grsync
 # github.com/rancher-sandbox/linuxkit v1.0.0

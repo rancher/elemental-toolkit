@@ -88,13 +88,6 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
           make build-os
           sudo -E make build-disk
-      - name: Upload disk image
-        uses: actions/upload-artifact@v3
-        if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        with:
-          name: elemental-${{ inputs.flavor }}.${{ inputs.arch }}.qcow2
-          path: build/elemental-${{ inputs.flavor }}.${{ inputs.arch }}.qcow2
-          if-no-files-found: error
 
   tests-matrix:
     runs-on: macos-12

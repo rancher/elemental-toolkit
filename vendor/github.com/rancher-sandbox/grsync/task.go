@@ -109,9 +109,13 @@ func processStdout(wg *sync.WaitGroup, task *Task, stdout io.Reader) {
 
 	// Extract data from strings:
 	//         999,999 99%  999.99kB/s    0:00:59 (xfr#9, to-chk=999/9999)
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		logStr := scanner.Text()
+	reader := bufio.NewReader(stdout)
+	for {
+		logStr, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+
 		task.mutex.Lock()
 		if progressMatcher.Match(logStr) {
 			task.state.Remain, task.state.Total = getTaskProgress(progressMatcher.Extract(logStr))
@@ -132,10 +136,15 @@ func processStdout(wg *sync.WaitGroup, task *Task, stdout io.Reader) {
 func processStderr(wg *sync.WaitGroup, task *Task, stderr io.Reader) {
 	defer wg.Done()
 
-	scanner := bufio.NewScanner(stderr)
-	for scanner.Scan() {
+	reader := bufio.NewReader(stderr)
+	for {
+		logStr, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+
 		task.mutex.Lock()
-		task.log.Stderr += scanner.Text() + "\n"
+		task.log.Stderr += logStr + "\n"
 		task.mutex.Unlock()
 	}
 }

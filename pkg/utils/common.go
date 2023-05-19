@@ -212,7 +212,8 @@ func SyncData(log v1.Logger, fs v1.FS, source string, target string, excludes ..
 	err := task.Run()
 	quit <- true
 	if err != nil {
-		return fmt.Errorf("%w: %s", err, strings.Join([]string{task.Log().Stderr, task.Log().Stdout}, "\n"))
+		log := task.Log()
+		return fmt.Errorf("%w: %s", err, strings.Join([]string{log.Stderr, log.Stdout}, "\n"))
 	}
 
 	return nil
