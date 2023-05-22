@@ -31,7 +31,7 @@ var _ = Describe("Elemental Feature tests", func() {
 	var s *sut.SUT
 	BeforeEach(func() {
 		s = sut.NewSUT()
-		s.EventuallyConnects(360)
+		s.EventuallyConnects()
 		Expect(s.BootFrom()).To(Equal(sut.Active))
 	})
 
