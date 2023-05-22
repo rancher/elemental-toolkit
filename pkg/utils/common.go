@@ -184,8 +184,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 	}
 
 	stop := make(chan bool)
-	defer close(stop)
-	go func(ch chan bool) {
+	go func(ch <-chan bool) {
 		for {
 			select {
 			case <-ch:
@@ -197,7 +196,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 	}(stop)
 
 	_, err := runner.Run(constants.Rsync, args...)
-	stop <- true
+	close(stop)
 
 	if err != nil {
 		log.Errorf("rsync finished with errors: %s", err.Error())
