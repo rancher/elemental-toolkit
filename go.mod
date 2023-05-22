@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
 	github.com/cavaliergopher/grab/v3 v3.0.1
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/containerd/containerd v1.7.0
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.14.0

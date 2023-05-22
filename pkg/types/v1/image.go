@@ -18,22 +18,17 @@ package v1
 
 import (
 	"context"
-	"errors"
-	"io"
 	"net/http"
-	"strings"
-	"syscall"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/containerd/containerd/archive"
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/logs"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 )
 
 type ImageExtractor interface {
@@ -43,25 +38,6 @@ type ImageExtractor interface {
 type OCIImageExtractor struct{}
 
 var _ ImageExtractor = OCIImageExtractor{}
-
-var defaultRetryBackoff = remote.Backoff{
-	Duration: 1.0 * time.Second,
-	Factor:   3.0,
-	Jitter:   0.1,
-	Steps:    3,
-}
-
-var defaultRetryPredicate = func(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET) || strings.Contains(err.Error(), "connection refused") {
-		logs.Warn.Printf("retrying %v", err)
-		return true
-	}
-	return false
-}
 
 func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) error {
 	platform, err := v1.ParsePlatform(platformRef)
@@ -74,12 +50,17 @@ func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef strin
 		return err
 	}
 
-	image, err := image(ref, *platform, local)
+	var img v1.Image
+
+	err = backoff.Retry(func() error {
+		img, err = image(ref, *platform, local)
+		return err
+	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(3*time.Second), 3))
 	if err != nil {
 		return err
 	}
 
-	reader := mutate.Extract(image)
+	reader := mutate.Extract(img)
 
 	_, err = archive.Apply(context.Background(), destination, reader)
 	return err
@@ -90,13 +71,8 @@ func image(ref name.Reference, platform v1.Platform, local bool) (v1.Image, erro
 		return daemon.Image(ref)
 	}
 
-	tr := transport.NewRetry(http.DefaultTransport,
-		transport.WithRetryBackoff(defaultRetryBackoff),
-		transport.WithRetryPredicate(defaultRetryPredicate),
-	)
-
 	return remote.Image(ref,
-		remote.WithTransport(tr),
+		remote.WithTransport(http.DefaultTransport),
 		remote.WithPlatform(platform),
 		remote.WithAuthFromKeychain(authn.DefaultKeychain),
 	)
