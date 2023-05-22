@@ -56,3 +56,5 @@ COPY toolkit/dracut-config/50-elemental.conf /install-root/etc/dracut.conf.d/
 
 # init-config
 COPY toolkit/init-config/oem /install-root/system/oem/
+# Add to /system/oem folder so any install/upgrade/reset-hooks will run when running this container.
+COPY toolkit/init-config/oem /system/oem/
