@@ -250,7 +250,6 @@ func (e Elemental) UnmountImage(img *v1.Image) error {
 
 // CreateFileSystemImage creates the image file for the given image
 func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
-	e.config.Logger.Infof("Creating file system image %s", img.File)
 	err := utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
 		return err
