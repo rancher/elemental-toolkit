@@ -3,14 +3,13 @@ name: Bug report
 about: Create a report to help us improve
 title: ''
 labels: bug
-assignees: mudler
 
 ---
 
-<!-- Thanks for helping us to improve cos-toolkit! We welcome all bug reports. Please fill out each area of the template so we can better help you. Comments like this will be hidden when you post but you can delete them if you wish. -->
+<!-- Thanks for helping us to improve elemental-toolkit! We welcome all bug reports. Please fill out each area of the template so we can better help you. Comments like this will be hidden when you post but you can delete them if you wish. -->
 
-**cos-toolkit version:**
-<!-- Provide the version of system/cos or git checkout of cos-toolkit -->
+**elemental-toolkit version:**
+<!-- Provide the version of the cli or git checkout of elemental-toolkit -->
 
 **CPU architecture, OS, and Version:**
 <!-- Provide the output from "uname -a"  -->
