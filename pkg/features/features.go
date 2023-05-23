@@ -19,6 +19,7 @@ package features
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"strings"
 
@@ -28,7 +29,7 @@ import (
 	"github.com/rancher/elemental-cli/pkg/utils"
 )
 
-//go:embed embedded
+//go:embed all:embedded
 var files embed.FS
 
 const (
@@ -38,11 +39,7 @@ const (
 	FeatureGrubConfig      = "grub-config"
 	FeatureElementalSetup  = "elemental-setup"
 	FeatureDracutConfig    = "dracut-config"
-	FeatureBootAssessment  = "boot-assessment"
-	FeatureLiveCD          = "livecd"
-	FeatureRecovery        = "recovery"
-	FeatureNetwork         = "network"
-	FeatureDefaultServices = "default-services"
+	FeatureCloudConfig     = "cloud-config"
 )
 
 var (
@@ -51,54 +48,59 @@ var (
 		FeatureGrubConfig,
 		FeatureElementalSetup,
 		FeatureDracutConfig,
-		FeatureBootAssessment,
-		FeatureLiveCD,
-		FeatureRecovery,
-		FeatureNetwork,
-		FeatureDefaultServices,
+		FeatureCloudConfig,
 	}
 )
 
 type Feature struct {
-	Name        string
-	Units       []*systemd.Unit
-	ConfigFiles []*ConfigFile
+	Name  string
+	Units []*systemd.Unit
 }
 
-type ConfigFile struct {
-	Source      string
-	Destination string
-}
-
-func NewConfigFile(source, destination string) *ConfigFile {
-	return &ConfigFile{
-		source,
-		destination,
-	}
-}
-
-func (c *ConfigFile) Install(srcFs embed.FS, destFs v1.FS) error {
-	if err := utils.MkdirAll(destFs, filepath.Dir(c.Destination), constants.DirPerm); err != nil {
-		return err
-	}
-
-	return ExtractFile(srcFs, c.Source, destFs, c.Destination)
-}
-
-func New(name string, units []*systemd.Unit, files []*ConfigFile) *Feature {
+func New(name string, units []*systemd.Unit) *Feature {
 	return &Feature{
 		name,
 		units,
-		files,
 	}
 }
 
-func (f *Feature) Install(log v1.Logger, dstFs v1.FS, runner v1.Runner) error {
-	for _, conf := range f.ConfigFiles {
-		if err := conf.Install(files, dstFs); err != nil {
-			log.Errorf("Error installing config-file '%s': %v", conf.Source, err.Error())
+func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
+	featurePath := filepath.Join(embeddedRoot, f.Name)
+	err := fs.WalkDir(files, featurePath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Errorf("Error accessing embedded file '%s': %s", path, err.Error())
 			return err
 		}
+
+		if d.IsDir() {
+			log.Debugf("Skipping dir %s", path)
+			return nil
+		}
+
+		targetPath, err := filepath.Rel(featurePath, path)
+		if err != nil {
+			log.Errorf("Could not calculate relative path for file '%s': %s", path, err.Error())
+			return err
+		}
+		targetPath = filepath.Join("/", targetPath)
+
+		if err := utils.MkdirAll(destFs, filepath.Dir(targetPath), constants.DirPerm); err != nil {
+			log.Errorf("Error mkdir: %s", err.Error())
+			return err
+		}
+
+		content, err := files.ReadFile(path)
+		if err != nil {
+			log.Errorf("Error reading embedded file '%s': %s", path, err.Error())
+			return err
+		}
+
+		log.Debugf("Writing file '%s' to '%s'", path, targetPath)
+		return destFs.WriteFile(targetPath, content, 0644)
+	})
+	if err != nil {
+		log.Errorf("Error walking files for feature %s: %s", f.Name, err.Error())
+		return err
 	}
 
 	for _, unit := range f.Units {
@@ -112,15 +114,6 @@ func (f *Feature) Install(log v1.Logger, dstFs v1.FS, runner v1.Runner) error {
 	return nil
 }
 
-func ExtractFile(srcFs embed.FS, srcPath string, dstFs v1.FS, dstPath string) error {
-	content, err := srcFs.ReadFile(srcPath)
-	if err != nil {
-		return err
-	}
-
-	return dstFs.WriteFile(dstPath, content, 0644)
-}
-
 func Get(names []string) ([]*Feature, error) {
 	if len(names) == 0 {
 		return []*Feature{}, nil
@@ -131,35 +124,15 @@ func Get(names []string) ([]*Feature, error) {
 
 	for _, name := range names {
 		switch name {
+		case FeatureCloudConfig:
+			features = append(features, New(name, nil))
 		case FeatureImmutableRootfs:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "02-elemental-immutable-rootfs.conf"), "/etc/dracut.conf.d/02-elemental-immutable-rootfs.conf"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "module-setup.sh"), "/usr/lib/dracut/modules.d/30immutable-rootfs/module-setup.sh"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "elemental-fsck.sh"), "/usr/lib/dracut/modules.d/30immutable-rootfs/elemental-fsck.sh"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "elemental-generator.sh"), "/usr/lib/dracut/modules.d/30immutable-rootfs/elemental-generator.sh"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "elemental-mount-layout.sh"), "/usr/lib/dracut/modules.d/30immutable-rootfs/elemental-mount-layout.sh"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "parse-elemental-cmdline.sh"), "/usr/lib/dracut/modules.d/30immutable-rootfs/parse-elemental-cmdline.sh"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "immutable-rootfs", "elemental-immutable-rootfs.service"), "/usr/lib/dracut/modules.d/30immutable-rootfs/elemental-immutable-rootfs.service"))
-			features = append(features, New(name, nil, configs))
+			features = append(features, New(name, nil))
 		case FeatureDracutConfig:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "50-elemental-initrd.conf"), "/etc/dracut.conf.d/50-elemental-initrd.conf"))
-			features = append(features, New(name, nil, configs))
+			features = append(features, New(name, nil))
 		case FeatureGrubConfig:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "grub.cfg"), "/etc/cos/grub.cfg"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "bootargs.cfg"), "/etc/cos/bootargs.cfg"))
-			features = append(features, New(name, nil, configs))
+			features = append(features, New(name, nil))
 		case FeatureElementalSetup:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "02-elemental-setup-initramfs.conf"), "/etc/dracut.conf.d/02-elemental-setup-initramfs.conf"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-reconcile.service"), "/usr/lib/systemd/system/elemental-setup-reconcile.service"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-reconcile.timer"), "/usr/lib/systemd/system/elemental-setup-reconcile.timer"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-boot.service"), "/usr/lib/systemd/system/elemental-setup-boot.service"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-rootfs.service"), "/usr/lib/systemd/system/elemental-setup-rootfs.service"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-network.service"), "/usr/lib/systemd/system/elemental-setup-network.service"))
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "elemental-setup-initramfs.service"), "/usr/lib/systemd/system/elemental-setup-initramfs.service"))
-
 			units := []*systemd.Unit{
 				systemd.NewUnit("elemental-setup-reconcile.service"),
 				systemd.NewUnit("elemental-setup-reconcile.timer"),
@@ -168,27 +141,7 @@ func Get(names []string) ([]*Feature, error) {
 				systemd.NewUnit("elemental-setup-network.service"),
 				systemd.NewUnit("elemental-setup-initramfs.service"),
 			}
-			features = append(features, New(name, units, configs))
-		case FeatureBootAssessment:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "08_boot_assessment.yaml"), "/system/oem/08_boot_assessment.yaml"))
-			features = append(features, New(name, nil, configs))
-		case FeatureLiveCD:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "07_livecd.yaml"), "/system/oem/07_livecd.yaml"))
-			features = append(features, New(name, nil, configs))
-		case FeatureRecovery:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "06_recovery.yaml"), "/system/oem/06_recovery.yaml"))
-			features = append(features, New(name, nil, configs))
-		case FeatureNetwork:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "05_network.yaml"), "/system/oem/05_network.yaml"))
-			features = append(features, New(name, nil, configs))
-		case FeatureDefaultServices:
-			configs := []*ConfigFile{}
-			configs = append(configs, NewConfigFile(filepath.Join(embeddedRoot, "01_defaults.yaml"), "/system/oem/01_defaults.yaml"))
-			features = append(features, New(name, nil, configs))
+			features = append(features, New(name, units))
 		default:
 			notFound = append(notFound, name)
 		}
