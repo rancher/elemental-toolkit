@@ -1,0 +1,150 @@
+# DISCLAIMER: this document show most of all available options. Elemental
+# uses defaults if any of this value is missing. Values shown here
+# only represent an example and they should not be used as defaults.
+
+# installation configuration for 'install' command
+install:
+  # target is the only value that has no default, it must be provided by
+  # config, flags or env variables.
+  target: /dev/sda
+
+  # basic disk configs for partitioning ('efi|bios' and 'gpt|msdos')
+  firmware: efi
+  part-table: gpt
+
+  # partitions setup
+  # setting a partition size key to 0 means that the partition will take over the rest of the free space on the disk
+  # after creating the rest of the partitions
+  # by default the persistent partition has a value of 0
+  # if you want any of the extra partitions to fill the rest of the space you will need to set the persistent partition
+  # size to a different value, for example
+  # partitions:
+  #   persistent:
+  #     size: 300
+
+  # default partitions
+  # only 'oem', 'recovery', 'state' and 'persistent' objects allowed
+  # size in MiB
+  partitions:
+    oem:
+      label: COS_OEM
+      size: 60
+      fs: ext4
+    recovery:
+      label: COS_RECOVERY
+      size: 4096
+      fs: ext4
+
+  # extra partitions to create during install
+  # only size, label and fs are used
+  # if no fs is given the partition will be created but not formatted
+  # This partitions are not automounted only created and formatted
+  extra-partitions:
+    - Name: myPartition
+      size: 100
+      fs: ext4
+      label: EXTRA_PARTITION
+    - Name: myOtherPartition
+      size: 0
+      fs: ext4
+      label: EXTRA_PARTITION
+
+  # no-format: true skips any disk partitioning and formatting
+  # if set to true installation procedure will error out if expected
+  # partitions are not already present within the disk.
+  no-format: false
+
+  # if no-format is used and elemental is running over an existing deployment
+  # force cane be used to force installation.
+  force: false
+
+  # use this iso as installation media (overwrites 'system.uri' and 'recoverys-system.uri'
+  # according to the ISO contents.
+  iso: https://my.domain.org/some/powerful.iso
+
+  # main OS image
+  # size in MiB
+  system:
+    label: COS_ACTIVE
+    size: 1024
+    fs: ext2
+    uri: docker:some.registry.org/cos/image:latest
+
+  # recovery OS image
+  recovery-system:
+    fs: squashfs
+    uri: channel:recovery/cos
+
+  # filesystem label of the passive backup image
+  passive.label: COS_PASSIVE
+
+  # extra cloud-init config file URI to include during the installation
+  cloud-init: "https://some.cloud-init.org/my-config-file"
+
+  # grub menu entry, this is the string that will be displayed
+  grub-entry-name: cOS
+
+  # tty console to add into the kernel parameters
+  tty: ttyS0
+
+# configuration for the 'reset' command
+reset:
+  # if set to true it will format persistent partitions ('oem 'and 'persistent')
+  reset-persistent: false
+  reset-oem: false
+
+  # OS image used to reset disk
+  # size in MiB
+  system:
+    label: COS_ACTIVE
+    size: 1024
+    fs: ext2
+    uri: docker:some.registry.org/cos/image:latest
+
+  # filesystem label of the passive backup image
+  passive.label: COS_PASSIVE
+
+  # grub menu entry, this is the string that will be displayed
+  grub-entry-name: cOS
+
+  # tty console to add into the kernel parameters
+  tty: ttyS0
+
+# configuration used for the 'ugrade' command
+upgrade:
+  # if set to true upgrade command will upgrade recovery system instead
+  # of main active system
+  recovery: false
+
+  # image used to upgrade main OS
+  # size in MiB
+  system:
+    uri: channel:system/cos
+
+  # image used to upgrade recovery OS
+  # recovery images can be set to use squashfs
+  recovery-system:
+    fs: squashfs
+    uri: channel:recovery/cos
+
+  # grub menu entry, this is the string that will be displayed
+  grub-entry-name: cOS
+
+# use cosing to validate images from container registries
+cosign: true
+# cosign key to used for validation
+cosign-key: myKey
+
+# attempt a verify process
+no-verify: false
+
+# fail on cloud-init hooks errors
+strict: false
+
+# Additional paths for look for cloud-init files
+cloud-init-paths:
+- "/some/path"
+
+# reboot/power off when done
+reboot: false
+poweroff: false

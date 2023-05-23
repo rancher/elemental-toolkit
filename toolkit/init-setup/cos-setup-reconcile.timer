@@ -1,5 +1,5 @@
 [Unit]
-Description=cOS setup reconciler
+Description=Elemental setup reconciler
 
 [Timer]
 OnBootSec=5min

@@ -1,0 +1,11 @@
+iso:
+  rootfs:
+    - oci:system/cos
+  uefi:
+    - oci:live/grub2-efi-image
+  image:
+    - oci:recovery/cos-img
+  label: "LIVE_LABEL"
+
+name: "cOS-0"
+date: true

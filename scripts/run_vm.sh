@@ -9,7 +9,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_FIRMWARE:=/usr/share/qemu/ovmf-x86_64.bin}"
 : "${ELMNTL_FWDIP:=127.0.0.1}"
 : "${ELMNTL_FWDPORT:=2222}"
-: "${ELMNTL_MEMORY:=2048}"
+: "${ELMNTL_MEMORY:=4096}"
 : "${ELMNTL_LOGFILE:=${TESTS_PATH}/serial.log}"
 : "${ELMNTL_PIDFILE:=${TESTS_PATH}/testvm.pid}"
 : "${ELMNTL_TESTDISK:=${TESTS_PATH}/testdisk.qcow2}"
@@ -34,7 +34,7 @@ function start {
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=q35"
   local cdrom_arg
-  local cpu_arg="-cpu max"
+  local cpu_arg="-cpu max -smp cpus=$(nproc)"
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
