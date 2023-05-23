@@ -34,6 +34,11 @@ func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
 		return err
 	}
 
+	if err := utils.CreateDirStructure(cfg.Config.Fs, "/"); err != nil {
+		cfg.Config.Logger.Errorf("Error creating directories: %s", err.Error())
+		return err
+	}
+
 	cfg.Config.Logger.Infof("Running init action with %d features.", len(features))
 
 	// Install enabled features
