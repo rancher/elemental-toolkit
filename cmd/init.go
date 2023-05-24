@@ -38,6 +38,7 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
+			cmd.SilenceUsage = true
 			spec, err := config.ReadInitSpec(cfg, cmd.Flags())
 			if err != nil {
 				cfg.Logger.Errorf("Error reading spec: %s\n", err)

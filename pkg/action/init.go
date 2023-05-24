@@ -65,6 +65,10 @@ func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
 	}
 
 	cfg.Config.Logger.Infof("Generate initrd.")
-	_, err = cfg.Runner.Run("dracut", "-f", "--regenerate-all")
+	output, err := cfg.Runner.Run("dracut", "-f", "--regenerate-all")
+	if err != nil {
+		cfg.Config.Logger.Errorf("dracut failed with output: %s", output)
+	}
+
 	return err
 }
