@@ -67,6 +67,10 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
     echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
     echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release && \
     echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4d271dde (Install init files with 0755 by default)
 
 # Good for validation after the build
 CMD /bin/bash

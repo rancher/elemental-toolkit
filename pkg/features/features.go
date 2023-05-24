@@ -96,7 +96,7 @@ func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
 		}
 
 		log.Debugf("Writing file '%s' to '%s'", path, targetPath)
-		return destFs.WriteFile(targetPath, content, 0644)
+		return destFs.WriteFile(targetPath, content, 0755)
 	})
 	if err != nil {
 		log.Errorf("Error walking files for feature %s: %s", f.Name, err.Error())
