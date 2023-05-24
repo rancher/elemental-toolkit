@@ -17,10 +17,10 @@ limitations under the License.
 package action
 
 import (
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	"github.com/rancher/elemental-cli/pkg/features"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	"github.com/rancher/elemental-toolkit/pkg/features"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {

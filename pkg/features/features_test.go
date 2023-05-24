@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/elemental-cli/pkg/features"
+	"github.com/rancher/elemental-toolkit/pkg/features"
 )
 
 var _ = Describe("Init Action", func() {
