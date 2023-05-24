@@ -26,11 +26,12 @@ import (
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 
-	"github.com/rancher/elemental-cli/pkg/action"
-	"github.com/rancher/elemental-cli/pkg/config"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
-	v1mock "github.com/rancher/elemental-cli/tests/mocks"
+	"github.com/rancher/elemental-toolkit/pkg/action"
+	"github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/features"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 var _ = Describe("Init Action", func() {
@@ -92,7 +93,10 @@ var _ = Describe("Init Action", func() {
 			err = action.RunInit(cfg, spec)
 			Expect(err).To(BeNil())
 
-			Expect(len(enabledUnits)).To(Equal(6))
+			feats, err := features.Get([]string{features.FeatureElementalSetup})
+			Expect(err).To(BeNil())
+			Expect(len(feats)).To(Equal(1))
+			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
 
 			for _, unit := range enabledUnits {
 				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))

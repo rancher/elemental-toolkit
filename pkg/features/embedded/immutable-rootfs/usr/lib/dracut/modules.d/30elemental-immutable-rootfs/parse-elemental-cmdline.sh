@@ -1,6 +1,6 @@
 #!/bin/bash
 # immutable root is specified with
-# rd.elemental.mount=LABEL=<vol_label>:<mountpoint>
+# rd.cos.mount=LABEL=<vol_label>:<mountpoint>
 # rd.cos.mount=UUID=<vol_uuid>:<mountpoint>
 # rd.cos.overlay=tmpfs:<size>
 # rd.cos.overlay=LABEL=<vol_label>

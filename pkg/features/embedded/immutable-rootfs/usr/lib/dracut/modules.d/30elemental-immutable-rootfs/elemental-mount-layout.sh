@@ -58,7 +58,7 @@ function parseOverlay {
     echo "${overlay}"
 }
 
-function parseCOSMount {
+function parseMount {
     local mount=$1
 
     case "${mount}" in
@@ -72,7 +72,7 @@ function parseCOSMount {
     echo "${mount}"
 }
 
-function readCOSLayoutConfig {
+function readLayoutConfig {
     local mount
     local mounts=()
     : "${MERGE:=true}"
@@ -83,7 +83,7 @@ function readCOSLayoutConfig {
 
     if [ -n "${VOLUMES}" ]; then
         for volume in ${VOLUMES}; do
-            mounts+=("$(parseCOSMount ${volume})")
+            mounts+=("$(parseMount ${volume})")
         done
     fi
 
@@ -256,7 +256,7 @@ declare state_bind
 declare state_target
 declare mount
 
-readCOSLayoutConfig
+readLayoutConfig
 
 [ -z "${cos_overlay}" ] && exit 0
 

@@ -140,6 +140,7 @@ func Get(names []string) ([]*Feature, error) {
 				systemd.NewUnit("elemental-setup-rootfs.service"),
 				systemd.NewUnit("elemental-setup-network.service"),
 				systemd.NewUnit("elemental-setup-initramfs.service"),
+				systemd.NewUnit("elemental-setup-fs.service"),
 			}
 			features = append(features, New(name, units))
 		default:
