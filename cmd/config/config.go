@@ -109,9 +109,9 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	configLogger(cfg.Logger, cfg.Fs)
 	if configDir == "" {
 		configDir = "."
-		cfg.Logger.Info("reading configuration from current directory")
+		cfg.Logger.Info("Reading configuration from current directory")
 	} else {
-		cfg.Logger.Infof("reading configuration from '%s'", configDir)
+		cfg.Logger.Infof("Reading configuration from '%s'", configDir)
 	}
 
 	// merge yaml config files on top of default runconfig
@@ -153,7 +153,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	if configDir == "" {
 		configDir = constants.ConfigDir
 	}
-	cfg.Logger.Infof("reading configuration form '%s'", configDir)
+	cfg.Logger.Infof("Reading configuration from '%s'", configDir)
 
 	const cfgDefault = "/etc/os-release"
 	if exists, _ := utils.Exists(cfg.Fs, cfgDefault); exists {
