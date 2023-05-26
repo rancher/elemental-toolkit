@@ -22,7 +22,7 @@ Release:        0
 Summary:        The command line client for Elemental
 License:        Apache-2.0
 Group:          System/Management
-Url:            https://github.com/rancher-sandbox/%{name}
+Url:            https://github.com/rancher/elemental-toolkit
 Source:         %{name}-%{version}.tar
 Source1:        %{name}.obsinfo
 
