@@ -8,13 +8,13 @@ ARCH?=x86_64
 PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=20G
 PACKER_TARGET?=qemu.elemental-${ARCH}
-VERSION?=latest
 REPO?=local/elemental-$(FLAVOR)
 DOCKER?=docker
 
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 GIT_COMMIT_SHORT ?= $(shell git rev-parse --short HEAD)
-GIT_TAG ?= $(shell git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
+GIT_TAG ?= $(shell git describe --candidates=50 --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
+VERSION ?= ${GIT_TAG}-g${GIT_COMMIT_SHORT}
 
 PKG        := ./cmd ./pkg/...
 LDFLAGS    := -w -s
@@ -42,6 +42,10 @@ build-cli:
 .PHONY: build-os
 build-os: build
 	$(DOCKER) build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+
+.PHONY: push-os
+push-os:
+	$(DOCKER) push $(REPO):$(VERSION)
 
 .PHONY: build-iso
 build-iso: build-os
@@ -97,3 +101,7 @@ build-docs:
 
 .PHONY: lint
 lint: fmt vet
+
+.PHONY: _debug
+_debug:
+	@echo Debug version: ${VERSION}
