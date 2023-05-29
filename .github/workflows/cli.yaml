@@ -1,38 +1,37 @@
 name: Build CLI
 on:
-    pull_request:
-    push:
-        branches:
-            - main
+  pull_request:
+  push:
+    branches:
+      - main
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3.1.0
-            - name: Install Go
-              uses: actions/setup-go@v3.3.1
-              with:
-                go-version-file: go.mod
-            - name: Analysis
-              uses: golangci/golangci-lint-action@v3
-              with:
-                args: -v
-            - name: Build
-              run: make build-cli
-            - name: Deps
-              run: make test-deps
-            - name: Run tests
-              run: |
-                make test-cli
-                sudo env PATH="$PATH" make test-root
-            - name: Merge coverage
-              run: |
-                echo "mode: atomic" > coverage.out
-                grep -v "mode: atomic" coverage.txt >> coverage.out
-                grep -v "mode: atomic" coverage_root.txt >> coverage.out
-            - name: Codecov
-              uses: codecov/codecov-action@v3.1.1
-              with:
-                file: ./coverage.out
-
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3.1.0
+      - name: Install Go
+        uses: actions/setup-go@v3.3.1
+        with:
+          go-version-file: go.mod
+      - name: Analysis
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: -v
+      - name: Build
+        run: make build-cli
+      - name: Deps
+        run: make test-deps
+      - name: Run tests
+        run: |
+          make test-cli
+          sudo env PATH="$PATH" make test-root
+      - name: Merge coverage
+        run: |
+          echo "mode: atomic" > coverage.out
+          grep -v "mode: atomic" coverage.txt >> coverage.out
+          grep -v "mode: atomic" coverage_root.txt >> coverage.out
+      - name: Codecov
+        uses: codecov/codecov-action@v3.1.1
+        with:
+          file: ./coverage.out
