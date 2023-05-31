@@ -1,20 +1,22 @@
 name: PR
-
 on:
- pull_request:
-   paths:
-     - conf/**
-     - toolkit/**
-     - tests/**
-     - make/**
-     - .github/**
-     - Makefile
-
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - cmd/**
+      - pkg/**
+      - toolkit/**
+      - tests/**
+      - make/**
+      - .github/**
+      - Makefile
 jobs:
   build-matrix:
     strategy:
       matrix:
-        arch: ['x86_64']
+        arch: ['x86_64', 'arm64']
         flavor: ['green']
     uses: ./.github/workflows/build_and_test.yaml
     with:

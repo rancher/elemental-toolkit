@@ -16,6 +16,8 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_DISKSIZE:=20G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
+: "${ELMNTL_TARGETARCH:=x86_64}"
+: "${ELMNTL_MACHINETYPE:=q35}"
 
 function _abort {
     echo "$@" && exit 1
@@ -32,9 +34,10 @@ function start {
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
   local daemon_arg="-daemonize"
-  local machine_arg="-machine type=q35"
+  local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
-  local cpu_arg="-cpu max -smp cpus=$(nproc)"
+  local cpu_arg="-cpu max"
+  local enable_kvm_arg
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
@@ -63,11 +66,11 @@ function start {
         ;;
   esac
 
-  [ "none" != "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
-  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
+  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
+  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && enable_kvm_arg="-enable-kvm"
   [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
-  qemu-system-x86_64 ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+  qemu-system-${ELMNTL_TARGETARCH} ${enable_kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
       ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }

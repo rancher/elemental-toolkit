@@ -15,8 +15,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-iso:
+  # detect step checks what machines the later steps should run on
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      build-runs-on: ${{ steps.detect.outputs.build }}
+      tests-runs-on: ${{ steps.detect.outputs.tests }}
+    steps:
+      - id: detect
+        run: |
+          case "${{inputs.arch}}" in
+          x86_64)
+            echo "build='ubuntu-latest'" >> $GITHUB_OUTPUT
+            echo "tests='macos-latest'" >> $GITHUB_OUTPUT ;;
+          arm64)
+            echo "build=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "tests=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT ;;
+          esac
+
+  build-iso:
+    needs: detect
+    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -28,19 +47,19 @@ jobs:
         uses: martijnhols/actions-cache/check@v3
         id: cache-check
         env:
-          cache-name: pr-iso-build
+          cache-name: pr-iso-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: ${{ github.workspace }}/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached ISO
         id: cache-iso
         uses: martijnhols/actions-cache@v3
         env:
-          cache-name: pr-iso-build
+          cache-name: pr-iso-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: ${{ github.workspace }}/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build toolkit
         run: |
@@ -51,7 +70,8 @@ jobs:
           make build-iso
   
   build-disk:
-    runs-on: ubuntu-latest
+    needs: detect
+    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -63,19 +83,19 @@ jobs:
         uses: martijnhols/actions-cache/check@v3
         id: cache-check
         env:
-          cache-name: pr-disk-build
+          cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: ${{ github.workspace }}/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
         id: cache-disk
         uses: martijnhols/actions-cache@v3
         env:
-          cache-name: pr-disk-build
+          cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: ${{ github.workspace }}/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
         run: |
@@ -90,12 +110,13 @@ jobs:
           sudo -E make build-disk
 
   tests-matrix:
-    runs-on: macos-12
-    needs: build-disk
+    needs: 
+      - build-disk
+      - detect
+    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
-      ELMNTL_ACCEL: hvf
     strategy:
       matrix:
         test: [ test-smoke, test-upgrade, test-recovery, test-fallback, test-fsck, test-grubfallback ]
@@ -115,16 +136,23 @@ jobs:
         id: cache-disk
         uses: martijnhols/actions-cache@v3
         env:
-          cache-name: pr-disk-build
+          cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - name: Run VM script dependencies
+          path: ${{ github.workspace }}/build/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+      - if: contains(inputs.arch, 'x86_64')
+        name: Run VM script dependencies
         run: |
           brew install bash coreutils
-      - name: Prepare test
+      - if: contains(inputs.arch, 'x86_64')
+        name: Prepare test (x86_64)
         run: |
-          make ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-test
+          make ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-test
+      - if: contains(inputs.arch, 'arm64')
+        name: Prepare test (arm64)
+        run: |
+          sudo apt install -y --no-install-recommends qemu-efi-aarch64 qemu-system-aarch64 bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu qemu-kvm
+          make ELMNTL_TARGETARCH=aarch64 ELMNTL_MACHINETYPE=virt ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
       - name: Run ${{ matrix.test }}
         run: |
           make ${{ matrix.test }}
