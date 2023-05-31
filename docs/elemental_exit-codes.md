@@ -16,7 +16,6 @@
 | 20 | Error trying to identify the source|
 | 21 | Error calling mkfs|
 | 22 | There is not packages for the given architecture|
-| 23 | No luet repositories configured|
 | 24 | Error opening a file|
 | 25 | Output file already exists|
 | 26 | Error reading the build config|

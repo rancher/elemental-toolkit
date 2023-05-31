@@ -27,31 +27,14 @@ $> cd derivative
 Let's create now a `Dockerfile` for our image inside that directory, which will be represent running system:
 
 ```Dockerfile
-# Let's copy over luet from official images. 
-# This version will be used to bootstrap luet itself and Elemental internal components
-ARG LUET_VERSION=0.32.0
-FROM quay.io/luet/base:$LUET_VERSION AS luet
+FROM ghcr.io/elemental-toolkit/elemental-cli:v0.11.0 AS elemental
 
 FROM registry.suse.com/suse/sle-micro-rancher/5.2
 ARG K3S_VERSION=v1.20.4+k3s1
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
-ENV LUET_NOLOCK=true
 
-
-# Copy the luet config file pointing to the upgrade repository
-COPY repositories.yaml /etc/luet/luet.yaml
-
-# Copy luet from the official images
-COPY --from=luet /usr/bin/luet /usr/bin/luet
-RUN luet install -y \
-       toolchain/yip \
-       toolchain/luet \
-       utils/installer \
-       system/cos-setup \
-       system/immutable-rootfs \
-       system/grub2-config \
-       system/base-dracut-modules
+COPY --from=elemental /usr/bin/elemental /usr/bin/elemental
 
 # Install k3s server/agent
 ENV INSTALL_K3S_VERSION=${K3S_VERSION}
@@ -72,7 +55,7 @@ RUN mkdir /usr/libexec && touch /usr/libexec/.keep
 COPY cloud-init.yaml /system/oem/
 
 # Generate initrd
-RUN mkinitrd
+RUN elemental init --force
 
 # OS level configuration
 RUN echo "VERSION=999" > /etc/os-release
@@ -196,7 +179,7 @@ stages:
         - github:joe
 ```
 
-Done! We are now ready to build the Docker container.
+Done! We are now ready to build the container image.
 
 The file structure should be like the following:
 
@@ -231,46 +214,25 @@ After the process completed, we are ready to consume our docker image. If you pu
 
 We can at this point also create a ISO from it. 
 
-Create a `iso.yaml` file with the following content inside the `derivative` folder:
+Create a `manifest.yaml` file with the following content inside the `derivative` folder:
 
 ```yaml
-packages:
-  uefi:
-  - live/grub2-efi-image
-  isoimage:
-  - live/grub2
-  - live/grub2-efi-image
+iso:
+  bootloader-in-rootfs: true
+  grub-entry-name: "Derivative Installer"
 
-boot_file: "boot/x86_64/loader/eltorito.img"
-boot_catalog: "boot/x86_64/boot.catalog" 
-isohybrid_mbr: "boot/x86_64/loader/boot_hybrid.img"
-
-initramfs:
-  kernel_file: "vmlinuz"
-  rootfs_file: "initrd"
-
-image_prefix: "derivative-0."
-image_date: true
-label: "COS_LIVE"
-
-luet:
-  repositories:
-  - name: Elemental
-    enable: true
-    urls:
-      - quay.io/costoolkit/releases-teal
-    type: docker
+squash-no-compression: true
 ```
 
 Now, we can build the ISO with:
 
 ```bash
-$~/derivative> docker run -v $PWD:/cOS -v /var/run:/var/run --entrypoint /usr/bin/luet-makeiso -ti --rm quay.io/costoolkit/toolchain ./iso.yaml --image derivative:latest
+$~/derivative> elemental build-iso --config-dir=./ derivative:latest
 ....
 INFO[0114] Copying BIOS kernels                       
 INFO[0114] Create squashfs                            
 Parallel mksquashfs: Using 8 processors
-Creating 4.0 filesystem on /tmp/luet-geniso4082786464/tempISO/rootfs.squashfs, block size 1048576.
+Creating 4.0 filesystem on /tmp/elemental-geniso4082786464/tempISO/rootfs.squashfs, block size 1048576.
 ....
 INFO[0247] 🍹 Generate ISO derivative-0.20210909.iso     
 xorriso 1.4.6 : RockRidge filesystem manipulator, libburnia project.
@@ -279,10 +241,10 @@ Drive current: -outdev 'stdio:derivative-0.20210909.iso'
 Media current: stdio file, overwriteable
 Media status : is blank
 Media summary: 0 sessions, 0 data blocks, 0 data,  448g free
-Added to ISO image: directory '/'='/tmp/luet-geniso4082786464/tempISO'
+Added to ISO image: directory '/'='/tmp/elemental-geniso4082786464/tempISO'
 xorriso : UPDATE : 599 files added in 1 seconds
 xorriso : UPDATE : 599 files added in 1 seconds
-xorriso : NOTE : Copying to System Area: 512 bytes from file '/tmp/luet-geniso4082786464/tempISO/boot/x86_64/loader/boot_hybrid.img'
+xorriso : NOTE : Copying to System Area: 512 bytes from file '/tmp/elemental-geniso4082786464/tempISO/boot/x86_64/loader/boot_hybrid.img'
 xorriso : WARNING : Boot image load size exceeds 65535 blocks of 512 bytes. Will record 0 in El Torito to extend ESP to end-of-medium.
 libisofs: NOTE : Aligned image size to cylinder size by 137 blocks
 xorriso : UPDATE :  12.35% done
@@ -309,35 +271,6 @@ RUN zypper in -y \
     .... # Add more packages here!
 ```
 
-### Repositories configuration
-
-We copy the configuration file of `luet` which just points to Elemental repositories with: 
-
-```
-# Copy the luet config file pointing to the upgrade repository
-COPY repositories.yaml /etc/luet/luet.yaml
-```
-
-The config file should point to the `teal` [flavor](../../getting-started/download#releases) as our derivative will be based on SLE Micro. It should point to `green`, `blue`, or `orange` instead if building against Opensuse, Fedora or Ubuntu.
-
-### Elemental toolkit
-
-We install packages from the Elemental toolkit with `luet`. In this case we pick the basic ones that allows us to install/upgrade immutable Elemental derivatives:
-
-```Dockerfile
-ENV LUET_NOLOCK=true
-RUN luet install -y \
-       toolchain/yip \
-       toolchain/luet \
-       utils/installer \
-       system/cos-setup \
-       system/immutable-rootfs \
-       system/grub2-config \
-       system/base-dracut-modules
-```
-
-You can check all the available packages [here](https://elemental-toolkit.herokuapp.com/elemental-toolkit-teal), and you can learn more about this in our [Creating Derivatives section](../../creating-derivatives).
-
 ### System layout and k3s
 
 We set some default layouts and install k3s:
@@ -359,7 +292,7 @@ RUN mkdir /usr/libexec && touch /usr/libexec/.keep
 # COPY files/ /
 
 # Generate initrd
-RUN mkinitrd
+RUN elemental init --force
 
 # OS level configuration
 RUN echo "VERSION=999" > /etc/os-release

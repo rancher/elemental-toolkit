@@ -15,15 +15,15 @@ Elemental includes basic support for SELinux. From an elemental perspective SELi
 * the installed system includes the targeted files context (`/etc/selinux/targeted/contexts/files/file_contexts` file)
 * the binary for `targeted` policy is also present (`/etc/selinux/targeted/policy/policy.*` file)
 
-In an Elemental workflow SElinux context labels should be applied at install/upgrade time for the readonly areas, but this is not enough as it doesn't cover the ephemeral filesystems (overlayfs on top of tmpfs), which are usually sensitive paths like `/etc/`, `/var`, `/srv`, etc. In order to properly apply file contexts over the ephemeral paths the relabelling has to happen at boot time once those overlayfs are created. The appropriate stage for that is in initrd before switching root. In fact, it can be done as a cloud-init step as part of the `initramfs` stage, as it happens in `cloud-config/selinux` Luet package. The package provides `10_selinux.yaml` with:
+In an Elemental workflow SElinux context labels should be applied at install/upgrade time for the readonly areas, but this is not enough as it doesn't cover the ephemeral filesystems (overlayfs on top of tmpfs), which are usually sensitive paths like `/etc/`, `/var`, `/srv`, etc. In order to properly apply file contexts over the ephemeral paths the relabelling has to happen at boot time once those overlayfs are created. The appropriate stage for that is in initrd before switching root. In fact, it can be done as a cloud-init step as part of the `initramfs` stage, using the packaged `10_selinux.yaml` with:
 
-{{<githubembed repo="rancher/elemental-toolkit" file="packages/cloud-config/oem/10_selinux.yaml" lang="yaml">}}
+{{<githubembed repo="rancher/elemental-toolkit" file="toolkit/init-config/oem/10_selinux.yaml" lang="yaml">}}
 
 Note it is required to load the policy in advance to be capable to apply the `restorecon` command. The `restorecon` command should be applied to all ephemeral paths and, depending on the specific use case, to the persistent paths too. Note that without restoring context on the ephemeral `/etc` it is unlikely the system is capable of properly booting, hence this is a very important step if SELinux is intended to used.
 
 ## Using custom SELinux modules
 
-Making use of `cloud-config/selinux` and including SELinux utilities and targeted policy within the base OS it is enough to get started with SELinux, however there is a great chance that this is too generic and requires some additional policy modules to be fully functional according to each specific use case. In that regard the  `system/elemental-selinux` luet package provides a basic custom module for illustration purposes, **it should NOT be used as is** in production. `system/elemental-selinux` provides the sources of a very simple Type Enforcement (TE) file (`/usr/share/elemental/selinux/elemental.te`) and the compiled Policy Package (`/usr/share/elemental/selinux/elemental.pp`) out of the TE file, ready to be installed and loaded by SELinux.
+Making use of `selinux` and including SELinux utilities and targeted policy within the base OS it is enough to get started with SELinux, however there is a great chance that this is too generic and requires some additional policy modules to be fully functional according to each specific use case. In that regard the  `system/elemental-selinux` luet package provides a basic custom module for illustration purposes, **it should NOT be used as is** in production. `system/elemental-selinux` provides the sources of a very simple Type Enforcement (TE) file (`/usr/share/elemental/selinux/elemental.te`) and the compiled Policy Package (`/usr/share/elemental/selinux/elemental.pp`) out of the TE file, ready to be installed and loaded by SELinux.
 
 The Type Enforcement file was created by booting an Elemental OS on permissive mode using `audit2allow` and other SELinux related utilities to generate the custom module out of the reported denials. Something like:
 
@@ -42,7 +42,7 @@ To make effective the policy package it has to be loaded or installed within the
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN luet install -y system/elemental-selinux cloud-config/selinux
+RUN elemental init --force --features=cloud-config
 
 # Load the policy package
 RUN semodule -i /usr/share/elemental/selinux/elemental.pp
@@ -57,7 +57,7 @@ Notes when using a SELinux version prior to v3.4. If `libsemanage` version is lo
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN luet install -y system/elemental-selinux cloud-config/selinux
+RUN elemental init --force --features=cloud-config
 
 # Artificially modify selinux files to copy them in within the overlyfs and then load the policy package
 RUN mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous &&\

@@ -42,7 +42,7 @@ Preparing the a loop device for the installation is simple and straight forward.
 Execute the elemental installation as described in [installing](../../getting-started/install):
 
 ```bash
-> sudo elemental install --firmware efi --system.uri docker:<image=ref> <device>
+> sudo elemental install --firmware efi --system.uri oci:<image=ref> <device>
 ```
 
 Where `<image-ref>` is the Elemental derivative container image we want to use for the disk creation and `<device>` is the

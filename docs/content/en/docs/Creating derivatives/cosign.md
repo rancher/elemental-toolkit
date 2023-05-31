@@ -12,7 +12,7 @@ description: >
 
 You can check the cosign [github repo](https://github.com/sigstore/cosign) for more information.
 
-In elemental-toolkit we sign every container that we generate as part of our publish process so the signature can be verified during package installation with luet or during deploy/upgrades from a deployed system to verify that the containers have not been altered in any way since their build.
+In elemental-toolkit we sign every container that we generate as part of our publish process so the signature can be verified during package installation or during deploy/upgrades from a deployed system to verify that the containers have not been altered in any way since their build.
 
 Currently cosign provides 2 methods for signing and verifying.
 

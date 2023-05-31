@@ -3,11 +3,10 @@
 title: "Build requirements"
 linkTitle: "Build requirements"
 weight: 6
-date: 2017-01-05
+date: 2023-05-31
 description: >
   Building prerequisites
 ---
-
 
 ### Installing required dependencies for local build
 
@@ -19,7 +18,7 @@ $> make deps
 
 or you need:
 
-- [`elemental-cli`](https://github.com/rancher/elemental-cli)
+- [`elemental-cli`](https://github.com/rancher/elemental-toolkit)
 - [`squashfs-tools`](https://github.com/plougher/squashfs-tools)
   - `zypper in squashfs` on SLES or openSUSE
 - [`xorriso`](https://dev.lovelyhq.com/libburnia/web/wiki/Xorriso)
@@ -31,9 +30,9 @@ or you need:
 
 #### elemental
 
-`elemental` comes [with Elemental-toolkit](https://github.com/rancher/elemental-toolkit/tree/main/packages/toolchain/elemental-cli)
+`elemental` comes [with Elemental-toolkit](https://github.com/rancher/elemental-toolkit)
 
-You can grab the binary from [elemental](https://github.com/rancher/elemental-cli) releases.
+You can grab the binary from [elemental](https://github.com/rancher/elemental-toolkit) releases.
 
 
 #### yq and jq
