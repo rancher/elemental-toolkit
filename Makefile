@@ -102,6 +102,6 @@ build-docs:
 .PHONY: lint
 lint: fmt vet
 
-.PHONY: _debug
-_debug:
-	@echo Debug version: ${VERSION}
+.PHONY: build-docs
+build-docs:
+	@./scripts/docs-build.sh
