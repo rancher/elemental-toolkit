@@ -49,4 +49,4 @@ jobs:
           password: ${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}
       - name: Build example image
         run: |
-          make ARCH=${{ matrix.arch }} FLAVOR=${{ matrix.flavor }} REPO=ghcr.io/${{ github.workspace }}/${{ github.repository }}/elemental-${{ matrix.flavor}} build-os push-os
+          make ARCH=${{ matrix.arch }} FLAVOR=${{ matrix.flavor }} TOOLKIT_REPO=ghcr.io/${{ github.workspace }}/${{ github.repository }}/elemental-cli REPO=ghcr.io/${{ github.workspace }}/${{ github.repository }}/elemental-${{ matrix.flavor}} build-os push-os push-toolkit

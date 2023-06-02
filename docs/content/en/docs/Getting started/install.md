@@ -79,19 +79,19 @@ For instance, it is possible to install Elemental (or any derivative) with the i
 If in the rescue system, or LiveCD you have docker available, it can be used to perform an installation
 
 ```bash
-docker run --privileged -v /dev/:/dev/ -ti quay.io/costoolkit/elemental-cli:latest install --system.uri $IMAGE $DEVICE
+docker run --privileged -v /dev/:/dev/ -ti ghcr.io/rancher/elemental-toolkit/elemental-cli:v0.10.7 install --system.uri $IMAGE $DEVICE
 ```
 
-Where `$IMAGE` is the container image that we want to install (e.g. `docker:quay.io/costoolkit/releases-teal:cos-system-0.8.10-3` ), elemental identifies the type of source by the URI scheme (`docker`, `channel`, `dir` or `file`). `$DEVICE` is the device where to perform the installation to (e.g. `/dev/sda`).
+Where `$IMAGE` is the container image that we want to install (e.g. `oci:ghcr.io/rancher/elemental-toolkit/elemental-green:v0.10.7` ), elemental identifies the type of source by the URI scheme (`docker`, `channel`, `dir` or `file`). `$DEVICE` is the device where to perform the installation to (e.g. `/dev/sda`).
 
 
-Note, we used the `quay.io/costoolkit/elemental-cli:latest` image which contains the latest stable installer and the dependencies.
-You can see all the versions at [quay](https://quay.io/repository/costoolkit/elemental-cli?tab=tags).
+Note, we used the `ghcr.io/rancher/elemental-toolkit/elemental-cli:v0.10.7` image which contains the latest stable installer and the dependencies.
+You can see all the versions at [GitHub Container Registry](https://ghcr.io/rancher/elemental-toolkit/elemental-cli).
 
 
 #### By using manually the Elemental installer
 
-Similarly, the same mechanism can be used without docker. Download elemental from [github releases](https://github.com/rancher/elemental-cli/releases/latest) and run the follow as root:
+Similarly, the same mechanism can be used without docker. Download elemental from [github releases](https://github.com/rancher/elemental-toolkit/releases/latest) and run the follow as root:
 
 ```bash
 elemental install --system.uri $IMAGE $DEVICE

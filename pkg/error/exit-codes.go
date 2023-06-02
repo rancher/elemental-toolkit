@@ -67,9 +67,6 @@ const MKFSCall = 21
 // There is not packages for the given architecture
 const NoPackagesForArch = 22
 
-// No luet repositories configured
-const NoReposConfigured = 23
-
 // Error opening a file
 const OpenFile = 24
 

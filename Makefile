@@ -9,6 +9,7 @@ PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=20G
 PACKER_TARGET?=qemu.elemental-${ARCH}
 REPO?=local/elemental-$(FLAVOR)
+TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
 
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
@@ -33,7 +34,11 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t local/elemental-toolkit .
+	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
+
+.PHONY: push-toolkit
+push-os:
+	$(DOCKER) push $(TOOLKIT_REPO):$(VERSION)
 
 .PHONY: build-cli
 build-cli:
@@ -41,7 +46,7 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: push-os
 push-os:
@@ -64,7 +69,7 @@ build-disk: build-os
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
 	$(DOCKER) run --rm --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
-		--entrypoint=/bin/bash local/elemental-toolkit -c "mount -t devtmpfs none /dev && \
+		--entrypoint=/bin/bash $(TOOLKIT_REPO):$(VERSION) -c "mount -t devtmpfs none /dev && \
 		elemental --debug install --firmware efi --system.uri $(REPO):$(VERSION) --local --disable-boot-entry --platform $(PLATFORM) $$(cat .loop)"
 	losetup -d $$(cat .loop)
 	rm .loop
