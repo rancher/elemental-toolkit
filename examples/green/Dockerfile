@@ -1,5 +1,7 @@
 # run `make build` to build local/elemental-toolkit image
-FROM local/elemental-toolkit:latest as TOOLKIT
+ARG TOOLKIT_REPO
+ARG VERSION
+FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
 FROM opensuse/leap:15.4 as OS
