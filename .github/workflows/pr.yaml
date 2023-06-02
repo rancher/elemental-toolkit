@@ -16,7 +16,7 @@ jobs:
   build-matrix:
     strategy:
       matrix:
-        arch: ['x86_64', 'arm64']
+        arch: ['x86_64', 'aarch64']
         flavor: ['green']
     uses: ./.github/workflows/build_and_test.yaml
     with:
