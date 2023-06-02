@@ -79,13 +79,13 @@ For instance, it is possible to install Elemental (or any derivative) with the i
 If in the rescue system, or LiveCD you have docker available, it can be used to perform an installation
 
 ```bash
-docker run --privileged -v /dev/:/dev/ -ti ghcr.io/rancher/elemental-toolkit/elemental-cli:latest install --system.uri $IMAGE $DEVICE
+docker run --privileged -v /dev/:/dev/ -ti ghcr.io/rancher/elemental-toolkit/elemental-cli:v0.10.7 install --system.uri $IMAGE $DEVICE
 ```
 
 Where `$IMAGE` is the container image that we want to install (e.g. `oci:ghcr.io/rancher/elemental-toolkit/elemental-green:v0.10.7` ), elemental identifies the type of source by the URI scheme (`docker`, `channel`, `dir` or `file`). `$DEVICE` is the device where to perform the installation to (e.g. `/dev/sda`).
 
 
-Note, we used the `ghcr.io/rancher/elemental-toolkit/elemental-cli:latest` image which contains the latest stable installer and the dependencies.
+Note, we used the `ghcr.io/rancher/elemental-toolkit/elemental-cli:v0.10.7` image which contains the latest stable installer and the dependencies.
 You can see all the versions at [GitHub Container Registry](https://ghcr.io/rancher/elemental-toolkit/elemental-cli).
 
 

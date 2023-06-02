@@ -25,6 +25,8 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           args: -v
+          # TODO: remove after https://github.com/golangci/golangci-lint/issues/3862 is closed
+          version: v1.52
       - name: Build
         run: make build-cli
       - name: Deps
