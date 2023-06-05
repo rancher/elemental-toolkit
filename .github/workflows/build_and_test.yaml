@@ -72,6 +72,9 @@ jobs:
   build-disk:
     needs: detect
     runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
+    outputs:
+      disk-path: ${{ steps.set-output.outputs.disk-path }}
+      disk-glob: ${{ steps.set-output.outputs.disk-glob }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -108,6 +111,10 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
           make build-os
           sudo -E make build-disk
+      - id: set-output
+        run: |
+          echo "disk-path=${{ github.workspace }}/build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2" >> "$GITHUB_OUTPUT"
+          echo "disk-glob=${{ github.workspace }}/build/*.qcow2" >> "$GITHUB_OUTPUT"
 
   tests-matrix:
     needs: 
@@ -138,14 +145,14 @@ jobs:
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ${{ github.workspace }}/build/*.qcow2
+          path: ${{ needs.build-disk.outputs.disk-glob }}
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils
       - name: Prepare test
         run: |
-          make ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
+          make QCOW2=${{ needs.build-disk.outputs.disk-path }} ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
       - name: Run ${{ matrix.test }}
         run: |
           make ${{ matrix.test }}

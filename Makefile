@@ -1,7 +1,7 @@
 # Directory of Makefile
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-QCOW2=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
+QCOW2?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=x86_64
