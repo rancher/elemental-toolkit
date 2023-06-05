@@ -1,5 +1,6 @@
 name: Publish Site
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -17,6 +18,7 @@ jobs:
         run: |
           npm install postcss-cli
           npm install autoprefixer
+          apt install -y --no-install-recommends hugo
       - name: Build package docs
         run: |
            make build-docs
