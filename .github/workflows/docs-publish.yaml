@@ -18,7 +18,7 @@ jobs:
         run: |
           npm install postcss-cli
           npm install autoprefixer
-          sudo apt install -y --no-install-recommends hugo
+          sudo apt update -y && sudo apt install -y --no-install-recommends hugo
       - name: Build package docs
         run: |
            make build-docs
