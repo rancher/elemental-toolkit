@@ -49,7 +49,7 @@ jobs:
         env:
           cache-name: pr-iso-build-${{ inputs.arch }}
         with:
-          path: ${{ github.workspace }}/build/*.iso
+          path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached ISO
@@ -68,13 +68,11 @@ jobs:
         name: Build ISO
         run: |
           make build-iso
+          sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
   
   build-disk:
     needs: detect
     runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
-    outputs:
-      disk-path: ${{ steps.set-output.outputs.disk-path }}
-      disk-glob: ${{ steps.set-output.outputs.disk-glob }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -88,7 +86,7 @@ jobs:
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ${{ github.workspace }}/build/*.qcow2
+          path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
@@ -97,7 +95,7 @@ jobs:
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ${{ github.workspace }}/build/*.qcow2
+          path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
@@ -111,10 +109,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
           make build-os
           sudo -E make build-disk
-      - id: set-output
-        run: |
-          echo "disk-path=${{ github.workspace }}/build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2" >> "$GITHUB_OUTPUT"
-          echo "disk-glob=${{ github.workspace }}/build/*.qcow2" >> "$GITHUB_OUTPUT"
+          sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
 
   tests-matrix:
     needs: 
@@ -145,14 +140,14 @@ jobs:
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ${{ needs.build-disk.outputs.disk-glob }}
+          path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils
       - name: Prepare test
         run: |
-          make QCOW2=${{ needs.build-disk.outputs.disk-path }} ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
+          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
       - name: Run ${{ matrix.test }}
         run: |
           make ${{ matrix.test }}
