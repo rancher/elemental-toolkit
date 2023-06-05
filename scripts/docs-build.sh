@@ -15,6 +15,8 @@ rm -rf "${publicpath}" || true
 npm install -D --save autoprefixer
 npm install -D --save postcss-cli
 
+pushd docs && npm install && popd
+
 HUGO_ENV="production" hugo --gc -b "${BASE_URL}" -s "${ROOT_DIR}/docs" -d "${publicpath}"
 
 if [ -e docs/CNAME ]; then
