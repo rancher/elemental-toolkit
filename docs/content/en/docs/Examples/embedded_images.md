@@ -66,11 +66,6 @@ RUN echo "welcome to our derivative" >> /etc/issue.d/01-derivative
 COPY cloud-init.yaml /system/oem/
 ```
 
-Create then `repositories.yaml` in `derivative/repositories.yaml` with the following content:
-
-{{<githubembed repo="rancher/elemental-toolkit" file="examples/standard/conf/luet.yaml" lang="yaml">}}
-
-
 ## 2) Configuration
 
 At the end of the Dockerfile, you can see that we copy over a custom [cloud-init](../../reference/cloud_init) file:

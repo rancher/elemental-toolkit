@@ -18,3 +18,8 @@ capture.webm
 bin/
 coverage.txt
 dist/
+public/
+package-lock.json
+package.json
+node_modules/
+.hugo_build.lock
