@@ -37,7 +37,7 @@ build:
 	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
 
 .PHONY: push-toolkit
-push-os:
+push-toolkit:
 	$(DOCKER) push $(TOOLKIT_REPO):$(VERSION)
 
 .PHONY: build-cli
@@ -100,13 +100,10 @@ endif
 license-check:
 	@.github/license_check.sh
 
-.PHONY: build-docs
-build-docs:
-	cd docs && go run generate_docs.go
-
 .PHONY: lint
 lint: fmt vet
 
 .PHONY: build-docs
 build-docs:
 	@./scripts/docs-build.sh
+	cd docs && go run generate_docs.go
