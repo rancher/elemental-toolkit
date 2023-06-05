@@ -17,7 +17,7 @@ npm install -D --save postcss-cli
 
 pushd docs/themes/docsy && npm install && popd
 
-HUGO_ENV="production" hugo --gc -b "${BASE_URL}" -s "${ROOT_DIR}/docs" -d "${publicpath}"
+HUGO_ENV="production" hugo --gc --minify -b "${BASE_URL}" -s "${ROOT_DIR}/docs" -d "${publicpath}"
 
 if [ -e docs/CNAME ]; then
     cp -rfv docs/CNAME "${publicpath}"
