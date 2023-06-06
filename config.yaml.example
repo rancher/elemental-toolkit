@@ -130,7 +130,7 @@ upgrade:
   # grub menu entry, this is the string that will be displayed
   grub-entry-name: cOS
 
-# use cosing to validate images from container registries
+# use cosign to validate images from container registries
 cosign: true
 # cosign key to used for validation
 cosign-key: myKey
