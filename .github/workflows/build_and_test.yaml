@@ -146,17 +146,22 @@ jobs:
         uses: actions/cache/restore@v3
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
-          enableCrossOsArchive: true
-          fail-on-cache-miss: true
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
       - name: Run VM script dependencies
         run: |
           brew install bash coreutils
-      - name: Prepare test
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Prepare test (x86_64)
         run: |
           make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
+      - if: ${{ env.ARCH == 'aarch64' }} 
+        name: Prepare test (aarch64)
+        run: |
+          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
       - name: Run ${{ matrix.test }}
         run: |
           make ${{ matrix.test }}
