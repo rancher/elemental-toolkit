@@ -37,7 +37,6 @@ function start {
   local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
   local cpu_arg="-cpu max"
-  local enable_kvm_arg
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
@@ -67,10 +66,9 @@ function start {
   esac
 
   [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
-  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && enable_kvm_arg="-enable-kvm"
-  [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
+  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
-  qemu-system-${ELMNTL_TARGETARCH} ${enable_kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+  qemu-system-${ELMNTL_TARGETARCH} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
       ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }
