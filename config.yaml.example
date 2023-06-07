@@ -110,7 +110,7 @@ reset:
   # tty console to add into the kernel parameters
   tty: ttyS0
 
-# configuration used for the 'ugrade' command
+# configuration used for the 'upgrade' command
 upgrade:
   # if set to true upgrade command will upgrade recovery system instead
   # of main active system
@@ -141,7 +141,7 @@ no-verify: false
 # fail on cloud-init hooks errors
 strict: false
 
-# Additional paths for look for cloud-init files
+# Additional paths to look for cloud-init files
 cloud-init-paths:
 - "/some/path"
 
