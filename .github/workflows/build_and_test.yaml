@@ -44,21 +44,23 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached ISO
-        uses: frelon/actions-cache/check@v3
+        uses: actions/cache/restore@v3
         id: cache-check
         env:
           cache-name: pr-iso-build-${{ inputs.arch }}
           enableCrossOsArchive: true
+          lookup-only: true
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached ISO
         id: cache-iso
-        uses: frelon/actions-cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: pr-iso-build-${{ inputs.arch }}
           enableCrossOsArchive: true
+          lookup-only: true
         with:
           path: ${{ github.workspace }}/build/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
@@ -83,7 +85,7 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: frelon/actions-cache/check@v3
+        uses: actions/cache/restore@v3
         id: cache-check
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
@@ -91,10 +93,11 @@ jobs:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
           enableCrossOsArchive: true
+          lookup-only: true
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk
         id: cache-disk
-        uses: frelon/actions-cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
           enableCrossOsArchive: true
@@ -140,10 +143,11 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached Disk
         id: cache-disk
-        uses: frelon/actions-cache@v3
+        uses: actions/cache/restore@v3
         env:
           cache-name: pr-disk-build-${{ inputs.arch }}
           enableCrossOsArchive: true
+          fail-on-cache-miss: true
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
