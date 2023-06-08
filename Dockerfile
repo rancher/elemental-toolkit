@@ -1,12 +1,11 @@
 ARG GO_VERSION=1.20
-ARG COSIGN_VERSION=1.4.1-5
 ARG LEAP_VERSION=15.4
 
-FROM quay.io/costoolkit/releases-green:cosign-toolchain-$COSIGN_VERSION AS cosign-bin
-
 FROM golang:${GO_VERSION}-alpine as elemental-bin
+
 ENV CGO_ENABLED=0
 WORKDIR /src/
+
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
 ADD go.mod .
 ADD go.sum .
@@ -16,6 +15,10 @@ ADD cmd cmd
 ADD internal internal
 ADD pkg pkg
 ADD main.go .
+
+# Install cosign
+RUN go install github.com/sigstore/cosign/v2/cmd/cosign@latest && cp $(go env GOPATH)/bin/cosign /usr/bin/cosign
+
 # Set arg/env after go mod download, otherwise we invalidate the cached layers due to the commit changing easily
 ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
@@ -32,10 +35,25 @@ FROM opensuse/leap:$LEAP_VERSION AS elemental
 # versions, as long as the elemental commit has changed
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
-RUN zypper ref && zypper dup -y
-RUN zypper ref && zypper install -y xfsprogs parted util-linux-systemd e2fsprogs util-linux udev rsync grub2 dosfstools grub2-x86_64-efi squashfs mtools xorriso lvm2
+
+RUN zypper install -y --no-recommends xfsprogs \
+        parted \
+        util-linux-systemd \
+        e2fsprogs \
+        util-linux \
+        udev \
+        rsync \
+        grub2 \
+        dosfstools \
+        grub2-x86_64-efi \
+        squashfs \
+        mtools \
+        xorriso \
+        lvm2
+
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
-COPY --from=cosign-bin /usr/bin/cosign /usr/bin/cosign
+COPY --from=elemental-bin /usr/bin/cosign /usr/bin/cosign
+
 # Fix for blkid only using udev on opensuse
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf
 ENTRYPOINT ["/usr/bin/elemental"]
