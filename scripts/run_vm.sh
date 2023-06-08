@@ -28,7 +28,7 @@ function start {
   local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
-  local firmware_arg="-bios ${ELMNTL_FIRMWARE} -drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
+  local firmware_arg="-drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
   local disk_arg="-hda ${ELMNTL_TESTDISK}"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
