@@ -65,7 +65,7 @@ function start {
         ;;
   esac
 
-  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
+  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}" && firmware_arg="-bios ${ELMNTL_FIRMWARE} ${firmware_arg}"
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
 
   qemu-system-${ELMNTL_TARGETARCH} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
