@@ -170,7 +170,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: serial-${{ matrix.test }}.log
+          name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
           path: tests/serial.log
           if-no-files-found: error
       - name: Stop test VM
