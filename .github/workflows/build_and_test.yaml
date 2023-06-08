@@ -95,16 +95,6 @@ jobs:
           enableCrossOsArchive: true
           lookup-only: true
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cached Disk
-        id: cache-disk
-        uses: actions/cache/restore@v3
-        env:
-          cache-name: pr-disk-build-${{ inputs.arch }}
-          enableCrossOsArchive: true
-        with:
-          path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
@@ -117,6 +107,16 @@ jobs:
           make build-os
           sudo -E make build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Cached Disk
+        id: cache-disk
+        uses: actions/cache/save@v3
+        env:
+          cache-name: pr-disk-build-${{ inputs.arch }}
+        with:
+          path: /tmp/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
 
   tests-matrix:
     needs: 
