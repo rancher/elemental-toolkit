@@ -17,6 +17,8 @@ limitations under the License.
 package cmd
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
@@ -29,8 +31,13 @@ import (
 
 func InitCmd(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "init",
+		Use:   "init FEATURES",
 		Short: "Initialize container image for booting",
+		Long: "Init a container image with elemental configuration\n\n" +
+			"FEATURES - should be provided as a comma-separated list of features to install.\n" +
+			"    Available features: " + strings.Join(features.All, ",") + "\n" +
+			"    Defaults to all",
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
 			if err != nil {
@@ -45,14 +52,19 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
+			if len(args) == 0 || args[0] == "all" {
+				spec.Features = features.All
+			} else {
+				spec.Features = strings.Split(args[0], ",")
+			}
+
 			cfg.Logger.Infof("Initializing system...")
 			return action.RunInit(cfg, spec)
 		},
 	}
 	root.AddCommand(c)
-	c.Flags().Bool("mkinitrd", true, "Run mkinitrd")
+	c.Flags().Bool("mkinitrd", true, "Run dracut to generate initramdisk")
 	c.Flags().BoolP("force", "f", false, "Force run")
-	c.Flags().StringSlice("features", features.All, "Features to install into the container")
 	return c
 }
 

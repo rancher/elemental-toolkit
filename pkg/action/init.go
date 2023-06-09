@@ -17,6 +17,8 @@ limitations under the License.
 package action
 
 import (
+	"strings"
+
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/features"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -39,7 +41,7 @@ func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
 		return err
 	}
 
-	cfg.Config.Logger.Infof("Running init action with %d features.", len(features))
+	cfg.Config.Logger.Infof("Running init action with features: %s", strings.Join(spec.Features, ","))
 
 	// Install enabled features
 	for _, feature := range features {
