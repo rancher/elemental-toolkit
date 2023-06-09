@@ -26,7 +26,7 @@ function _abort {
 
 function start {
   local base_disk=$1
-  local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
+  local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device e1000,netdev=user0"
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
   local firmware_arg="-drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
@@ -39,6 +39,7 @@ function start {
   local cdrom_arg
   local cpu_arg="-cpu ${ELMNTL_CPU}"
   local vmpid
+  local kvm_arg
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
 
@@ -67,9 +68,9 @@ function start {
   esac
 
   [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}" && firmware_arg="-bios ${ELMNTL_FIRMWARE} ${firmware_arg}"
-  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
+  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && kvm_arg="-enable-kvm"
 
-  qemu-system-${ELMNTL_TARGETARCH} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+  qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
       ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }
