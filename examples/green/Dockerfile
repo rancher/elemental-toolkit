@@ -8,6 +8,8 @@ FROM opensuse/leap:15.4 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
+ARG GRUB_ARCH
+ENV GRUB_ARCH=${GRUB_ARCH}
 
 # install kernel, systemd, dracut, grub2 and other required tools
 RUN zypper --non-interactive install --no-recommends -- \
@@ -15,8 +17,7 @@ RUN zypper --non-interactive install --no-recommends -- \
       device-mapper \
       dracut \
       grub2 \
-      grub2-x86_64-efi \
-      grub2-arm64-efi \
+      grub2-${GRUB_ARCH}-efi \
       shim \
       haveged \
       systemd \
@@ -65,7 +66,12 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN dracut -f --regenerate-all
+RUN dracut -f --regenerate-all && \
+    kernel=$(ls /boot/Image-* | head -n1) && \
+    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
+    rm -rf /var/log/update* && \
+    >/var/log/lastlog && \
+    rm -rf /boot/vmlinux*
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
@@ -76,3 +82,5 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
 
 # Good for validation after the build
 CMD /bin/bash
+
+

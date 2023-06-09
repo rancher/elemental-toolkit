@@ -36,6 +36,9 @@ FROM opensuse/leap:$LEAP_VERSION AS elemental
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 
+ARG GRUB_ARCH
+ENV GRUB_ARCH=${GRUB_ARCH}
+
 RUN zypper install -y --no-recommends xfsprogs \
         parted \
         util-linux-systemd \
@@ -45,7 +48,7 @@ RUN zypper install -y --no-recommends xfsprogs \
         rsync \
         grub2 \
         dosfstools \
-        grub2-x86_64-efi \
+        grub2-${GRUB_ARCH}-efi \
         squashfs \
         mtools \
         xorriso \
