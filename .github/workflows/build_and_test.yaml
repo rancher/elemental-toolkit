@@ -104,8 +104,8 @@ jobs:
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
-          make build-os
-          sudo -E make build-disk
+          make ARCH=${{ env.ARCH }} build-os
+          sudo -E make ARCH=${{ env.ARCH }} build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached Disk

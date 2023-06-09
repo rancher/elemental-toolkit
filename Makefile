@@ -34,7 +34,7 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
+	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --platform ${PLATFORM} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
 
 .PHONY: push-toolkit
 push-toolkit:
@@ -46,7 +46,7 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: push-os
 push-os:
@@ -54,6 +54,7 @@ push-os:
 
 .PHONY: build-iso
 build-iso: build-os
+	@echo Building ${ARCH} ISO
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
@@ -65,6 +66,7 @@ clean-iso: build-example-os
 
 .PHONY: build-disk
 build-disk: build-os
+	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
