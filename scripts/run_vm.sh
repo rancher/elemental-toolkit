@@ -18,6 +18,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_ACCEL:=kvm}"
 : "${ELMNTL_TARGETARCH:=$(uname -p)}"
 : "${ELMNTL_MACHINETYPE:=q35}"
+: "${ELMNTL_CPU:=max}"
 
 function _abort {
     echo "$@" && exit 1
@@ -36,7 +37,7 @@ function start {
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
-  local cpu_arg="-cpu max"
+  local cpu_arg="-cpu ${ELMNTL_CPU}"
   local vmpid
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
