@@ -16,7 +16,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_DISKSIZE:=20G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
-: "${ELMNTL_TARGETARCH:=x86_64}"
+: "${ELMNTL_TARGETARCH:=$(uname -p)}"
 : "${ELMNTL_MACHINETYPE:=q35}"
 
 function _abort {
