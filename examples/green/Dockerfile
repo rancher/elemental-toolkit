@@ -16,6 +16,7 @@ RUN zypper --non-interactive install --no-recommends -- \
       dracut \
       grub2 \
       grub2-x86_64-efi \
+      grub2-arm64-efi \
       shim \
       haveged \
       systemd \
