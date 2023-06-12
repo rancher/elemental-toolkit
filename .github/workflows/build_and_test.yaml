@@ -30,7 +30,7 @@ jobs:
             echo "tests='macos-latest'" >> $GITHUB_OUTPUT ;;
           aarch64)
             echo "build=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "tests='macos-latest'" >> $GITHUB_OUTPUT ;;
+            echo "tests=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT ;;
           esac
 
   build-iso:
@@ -151,7 +151,8 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
           enableCrossOsArchive: true
           fail-on-cache-miss: true
-      - name: Run VM script dependencies
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Run VM script dependencies
         run: |
           brew install bash coreutils
       - if: ${{ env.ARCH == 'x86_64' }} 
