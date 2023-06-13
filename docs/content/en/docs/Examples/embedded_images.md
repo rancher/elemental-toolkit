@@ -27,13 +27,14 @@ $> cd derivative
 Let's create now a `Dockerfile` for our image inside that directory, which will be represent running system:
 
 ```Dockerfile
-FROM ghcr.io/elemental-toolkit/elemental-cli:v0.11.0 AS elemental
+FROM ghcr.io/rancher/elemental-toolkit/elemental-cli:v0.10.7 AS elemental
 
 FROM registry.suse.com/suse/sle-micro-rancher/5.2
 ARG K3S_VERSION=v1.20.4+k3s1
 ARG ARCH=amd64
 ENV ARCH=${ARCH}
 
+COPY --from=elemental /install-root /
 COPY --from=elemental /usr/bin/elemental /usr/bin/elemental
 
 # Install k3s server/agent
