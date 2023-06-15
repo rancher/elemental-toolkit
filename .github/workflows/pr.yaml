@@ -18,6 +18,7 @@ jobs:
       matrix:
         arch: ['x86_64', 'aarch64']
         flavor: ['green']
+    if: contains(github.event.pull_request.labels.*.name, 'arm64') || contains(matrix.arch, 'x86_64')
     uses: ./.github/workflows/build_and_test.yaml
     with:
       arch: ${{ matrix.arch }}

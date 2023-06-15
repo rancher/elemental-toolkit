@@ -29,8 +29,8 @@ jobs:
             echo "build='ubuntu-latest'" >> $GITHUB_OUTPUT
             echo "tests='macos-latest'" >> $GITHUB_OUTPUT ;;
           aarch64)
-            echo "build=['self-hosted', 'arm64', 'aws']" >> $GITHUB_OUTPUT
-            echo "tests=['self-hosted', 'arm64', 'aws']" >> $GITHUB_OUTPUT ;;
+            echo "build=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "tests=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT ;;
           esac
 
   build-iso:
