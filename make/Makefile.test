@@ -4,7 +4,6 @@ GINKGO="$(HOME)/go/bin/ginkgo"
 endif
 
 GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
-COS_TIMEOUT?=500
 
 .PHONY: prepare-test
 prepare-test:

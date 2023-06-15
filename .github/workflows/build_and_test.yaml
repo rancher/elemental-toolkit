@@ -126,6 +126,7 @@ jobs:
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
+      COS_TIMEOUT: 800
     strategy:
       matrix:
         test: [ test-smoke, test-upgrade, test-recovery, test-fallback, test-fsck, test-grubfallback ]
