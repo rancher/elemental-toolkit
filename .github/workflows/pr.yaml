@@ -17,8 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       arch: ${{ steps.set-matrix.outputs.arch }}
-    env:
-      has_label_arm64: 
     steps:
     - id: set-matrix
       run: |

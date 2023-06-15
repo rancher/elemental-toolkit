@@ -73,6 +73,16 @@ jobs:
         run: |
           make build-iso
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Save ISO
+        id: save-iso
+        uses: actions/cache/save@v3
+        env:
+          cache-name: pr-iso-build-${{ inputs.arch }}
+        with:
+          path: /tmp/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
   
   build-disk:
     needs: detect
@@ -108,7 +118,7 @@ jobs:
           sudo -E make ARCH=${{ env.ARCH }} build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cached Disk
+        name: Save cached disk
         id: cache-disk
         uses: actions/cache/save@v3
         env:
