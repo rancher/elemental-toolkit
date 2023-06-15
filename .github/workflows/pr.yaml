@@ -13,12 +13,27 @@ on:
       - .github/**
       - Makefile
 jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      arch: ${{ steps.set-matrix.outputs.arch }}
+    env:
+      has_label_arm64: 
+    steps:
+    - id: set-matrix
+      run: |
+        if [ "${{ contains(github.event.pull_request.labels.*.name, 'arm64') }}" == "true" ]; then
+          echo "arch=['x86_64', 'aarch64']" >> $GITHUB_OUTPUT
+        else
+          echo "arch=['x86_64']" >> $GITHUB_OUTPUT
+        fi
+        
   build-matrix:
+    needs: detect
     strategy:
       matrix:
-        arch: ['x86_64', 'aarch64']
+        arch: ${{fromJson(needs.detect.outputs.arch)}}
         flavor: ['green']
-    if: contains(github.event.pull_request.labels.*.name, 'arm64') || contains(matrix.arch, 'x86_64')
     uses: ./.github/workflows/build_and_test.yaml
     with:
       arch: ${{ matrix.arch }}
