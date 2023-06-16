@@ -62,4 +62,5 @@ RUN echo "EVALUATE=scan" >> /etc/blkid.conf
 ENTRYPOINT ["/usr/bin/elemental"]
 
 # Add to /system/oem folder so install/upgrade/reset hooks will run when running this container.
-COPY pkg/features/embedded/cloud-config/system/oem /system/oem/
+# Needed for boot-assessment
+COPY pkg/features/embedded/cloud-config-essentials/system/oem /system/oem/

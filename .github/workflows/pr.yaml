@@ -3,15 +3,15 @@ on:
   push:
     branches:
       - main
- pull_request:
-   paths:
-     - tests/**
-     - make/**
-     - Makefile
-     - .github/**
-     - pkg/**
-     - cmd/**
-     - go.{mod,sum}
+  pull_request:
+    paths:
+      - tests/**
+      - make/**
+      - Makefile
+      - .github/**
+      - pkg/**
+      - cmd/**
+      - go.{mod,sum}
 
 jobs:
   detect:
