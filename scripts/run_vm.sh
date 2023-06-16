@@ -16,6 +16,9 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_DISKSIZE:=20G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
+: "${ELMNTL_TARGETARCH:=$(uname -p)}"
+: "${ELMNTL_MACHINETYPE:=q35}"
+: "${ELMNTL_CPU:=max}"
 
 function _abort {
     echo "$@" && exit 1
@@ -23,19 +26,20 @@ function _abort {
 
 function start {
   local base_disk=$1
-  local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,netdev=user0"
+  local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,romfile=,netdev=user0"
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
-  local firmware_arg="-bios ${ELMNTL_FIRMWARE} -drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
+  local firmware_arg="-drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
   local disk_arg="-hda ${ELMNTL_TESTDISK}"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
   local daemon_arg="-daemonize"
-  local machine_arg="-machine type=q35"
+  local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
-  local cpu_arg="-cpu max -smp cpus=$(nproc)"
+  local cpu_arg="-cpu ${ELMNTL_CPU}"
   local vmpid
+  local kvm_arg
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
 
@@ -63,11 +67,10 @@ function start {
         ;;
   esac
 
-  [ "none" != "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}"
-  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
-  [ "hvf" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host"
+  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}" && firmware_arg="-bios ${ELMNTL_FIRMWARE} ${firmware_arg}"
+  [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && kvm_arg="-enable-kvm"
 
-  qemu-system-x86_64 ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
+  qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
       ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
 }

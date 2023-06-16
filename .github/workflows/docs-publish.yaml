@@ -1,6 +1,8 @@
 name: Publish Site
 on:
   pull_request:
+    paths:
+      - docs/**
   push:
     branches:
       - main

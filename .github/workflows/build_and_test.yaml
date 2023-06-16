@@ -15,8 +15,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-iso:
+  # detect step checks what machines the later steps should run on
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      build-runs-on: ${{ steps.detect.outputs.buildon }}
+      tests-runs-on: ${{ steps.detect.outputs.testson }}
+      tests: ${{ steps.detect.outputs.tests }}
+    steps:
+      - id: detect
+        run: |
+          case "${{inputs.arch}}" in
+          x86_64)
+            echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
+            echo "testson='macos-latest'" >> $GITHUB_OUTPUT
+            echo "tests=['test-smoke', 'test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
+          aarch64)
+            echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "tests=['test-smoke']" >> $GITHUB_OUTPUT ;;
+          esac
+
+  build-iso:
+    needs: detect
+    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -25,22 +47,26 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached ISO
-        uses: martijnhols/actions-cache/check@v3
+        uses: actions/cache/restore@v3
         id: cache-check
         env:
-          cache-name: pr-iso-build
+          cache-name: pr-iso-build-${{ inputs.arch }}
+          enableCrossOsArchive: true
+          lookup-only: true
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: /tmp/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cached ISO
         id: cache-iso
-        uses: martijnhols/actions-cache@v3
+        uses: actions/cache/restore@v3
         env:
-          cache-name: pr-iso-build
+          cache-name: pr-iso-build-${{ inputs.arch }}
+          enableCrossOsArchive: true
+          lookup-only: true
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: ${{ github.workspace }}/build/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Build toolkit
         run: |
@@ -49,9 +75,21 @@ jobs:
         name: Build ISO
         run: |
           make build-iso
+          sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Save ISO
+        id: save-iso
+        uses: actions/cache/save@v3
+        env:
+          cache-name: pr-iso-build-${{ inputs.arch }}
+        with:
+          path: /tmp/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
   
   build-disk:
-    runs-on: ubuntu-latest
+    needs: detect
+    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -60,22 +98,15 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: martijnhols/actions-cache/check@v3
+        uses: actions/cache/restore@v3
         id: cache-check
         env:
-          cache-name: pr-disk-build
+          cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cached Disk
-        id: cache-disk
-        uses: martijnhols/actions-cache@v3
-        env:
-          cache-name: pr-disk-build
-        with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
+          path: /tmp/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
+          lookup-only: true
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Cleanup worker
         run: |
@@ -86,19 +117,32 @@ jobs:
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
-          make build-os
-          sudo -E make build-disk
+          make ARCH=${{ env.ARCH }} build-os
+          sudo -E make ARCH=${{ env.ARCH }} build-disk
+          sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Save cached disk
+        id: cache-disk
+        uses: actions/cache/save@v3
+        env:
+          cache-name: pr-disk-build-${{ inputs.arch }}
+        with:
+          path: /tmp/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
 
   tests-matrix:
-    runs-on: macos-12
-    needs: build-disk
+    needs: 
+      - build-disk
+      - detect
+    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
-      ELMNTL_ACCEL: hvf
+      COS_TIMEOUT: 800
     strategy:
       matrix:
-        test: [ test-smoke, test-upgrade, test-recovery, test-fallback, test-fsck, test-grubfallback ]
+        test: ${{ fromJson(needs.detect.outputs.tests) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -113,27 +157,35 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached Disk
         id: cache-disk
-        uses: martijnhols/actions-cache@v3
+        uses: actions/cache/restore@v3
         env:
-          cache-name: pr-disk-build
+          cache-name: pr-disk-build-${{ inputs.arch }}
         with:
-          path: ~/work/elemental-toolkit/elemental-toolkit/build/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**', '**/Makefile') }}
-      - name: Run VM script dependencies
+          path: /tmp/*.qcow2
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Run VM script dependencies
         run: |
           brew install bash coreutils
-      - name: Prepare test
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Prepare test (x86_64)
         run: |
-          make ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-x86_64-code.fd -print -quit) prepare-test
+          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
+      - if: ${{ env.ARCH == 'aarch64' }} 
+        name: Prepare test (aarch64)
+        run: |
+          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
       - name: Run ${{ matrix.test }}
         run: |
-          make ${{ matrix.test }}
+          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ${{ matrix.test }}
       # TODO include other logs SUT collects on failure
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: serial-${{ matrix.test }}.log
+          name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
           path: tests/serial.log
           if-no-files-found: error
       - name: Stop test VM

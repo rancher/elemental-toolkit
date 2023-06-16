@@ -1,10 +1,11 @@
 # Directory of Makefile
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-QCOW2=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
+QCOW2?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
-ARCH?=x86_64
+ARCH?=$(shell uname -m)
+GRUB_ARCH?=$(ARCH)
 PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=20G
 PACKER_TARGET?=qemu.elemental-${ARCH}
@@ -22,6 +23,10 @@ LDFLAGS    := -w -s
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.version=${GIT_TAG}"
 LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.gitCommit=${GIT_COMMIT}"
 
+ifeq ("$(GRUB_ARCH)", "aarch64")
+GRUB_ARCH=arm64
+endif
+
 # default target
 .PHONY: all
 all: build build-cli
@@ -34,7 +39,7 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
+	$(DOCKER) build --platform ${PLATFORM} --build-arg GRUB_ARCH=$(GRUB_ARCH) --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
 
 .PHONY: push-toolkit
 push-toolkit:
@@ -46,7 +51,7 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} --build-arg GRUB_ARCH=$(GRUB_ARCH) --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: push-os
 push-os:
@@ -54,6 +59,7 @@ push-os:
 
 .PHONY: build-iso
 build-iso: build-os
+	@echo Building ${ARCH} ISO
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
@@ -65,6 +71,7 @@ clean-iso: build-example-os
 
 .PHONY: build-disk
 build-disk: build-os
+	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
 	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
 	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop

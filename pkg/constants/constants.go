@@ -125,9 +125,10 @@ const (
 	// Eject script
 	EjectScript = "#!/bin/sh\n/usr/bin/eject -rmF"
 
-	ArchAmd64 = "amd64"
-	Archx86   = "x86_64"
-	ArchArm64 = "arm64"
+	ArchAmd64   = "amd64"
+	Archx86     = "x86_64"
+	ArchArm64   = "arm64"
+	ArchAarch64 = "aarch64"
 
 	Fedora = "fedora"
 	Ubuntu = "ubuntu"

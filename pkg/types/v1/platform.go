@@ -115,6 +115,8 @@ func archToGolangArch(arch string) (string, error) {
 		return constants.ArchAmd64, nil
 	case constants.ArchArm64:
 		return constants.ArchArm64, nil
+	case constants.ArchAarch64:
+		return constants.ArchArm64, nil
 	default:
 		return "", errInvalidArch
 	}
@@ -127,6 +129,8 @@ func golangArchToArch(arch string) (string, error) {
 	case constants.ArchAmd64:
 		return constants.Archx86, nil
 	case constants.ArchArm64:
+		return constants.ArchArm64, nil
+	case constants.ArchAarch64:
 		return constants.ArchArm64, nil
 	default:
 		return "", errInvalidArch
