@@ -52,15 +52,6 @@ func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
 		}
 	}
 
-	cfg.Config.Logger.Info("Setting GRUB nextboot")
-
-	grub := utils.NewGrub(&cfg.Config)
-	firstboot := map[string]string{"next_entry": "recovery"}
-	if err := grub.SetPersistentVariables("/etc/cos/grubenv_firstboot", firstboot); err != nil {
-		cfg.Config.Logger.Infof("Failed to set GRUB nextboot: %s", err.Error())
-		return err
-	}
-
 	if !spec.Mkinitrd {
 		cfg.Config.Logger.Debugf("Skipping initrd.")
 		return nil
