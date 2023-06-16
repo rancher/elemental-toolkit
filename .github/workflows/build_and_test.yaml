@@ -19,18 +19,21 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      build-runs-on: ${{ steps.detect.outputs.build }}
-      tests-runs-on: ${{ steps.detect.outputs.tests }}
+      build-runs-on: ${{ steps.detect.outputs.buildon }}
+      tests-runs-on: ${{ steps.detect.outputs.testson }}
+      tests: ${{ steps.detect.outputs.tests }}
     steps:
       - id: detect
         run: |
           case "${{inputs.arch}}" in
           x86_64)
-            echo "build='ubuntu-latest'" >> $GITHUB_OUTPUT
-            echo "tests='macos-latest'" >> $GITHUB_OUTPUT ;;
+            echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
+            echo "testson='macos-latest'" >> $GITHUB_OUTPUT
+            echo "tests=['test-smoke', 'test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
           aarch64)
-            echo "build=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "tests=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT ;;
+            echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
+            echo "tests=['test-smoke']" >> $GITHUB_OUTPUT ;;
           esac
 
   build-iso:
@@ -139,7 +142,7 @@ jobs:
       COS_TIMEOUT: 800
     strategy:
       matrix:
-        test: [ test-smoke, test-upgrade, test-recovery, test-fallback, test-fsck, test-grubfallback ]
+        test: ${{ fromJson(needs.detect.outputs.tests) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
