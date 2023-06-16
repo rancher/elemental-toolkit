@@ -68,12 +68,12 @@ install:
     label: COS_ACTIVE
     size: 1024
     fs: ext2
-    uri: docker:some.registry.org/cos/image:latest
+    uri: oci:some.registry.org/elemental/image:latest
 
   # recovery OS image
   recovery-system:
     fs: squashfs
-    uri: channel:recovery/cos
+    uri: oci:recovery/elemental
 
   # filesystem label of the passive backup image
   passive.label: COS_PASSIVE
@@ -82,7 +82,7 @@ install:
   cloud-init: "https://some.cloud-init.org/my-config-file"
 
   # grub menu entry, this is the string that will be displayed
-  grub-entry-name: cOS
+  grub-entry-name: Elemental
 
   # tty console to add into the kernel parameters
   tty: ttyS0
@@ -105,7 +105,7 @@ reset:
   passive.label: COS_PASSIVE
 
   # grub menu entry, this is the string that will be displayed
-  grub-entry-name: cOS
+  grub-entry-name: Elemental
 
   # tty console to add into the kernel parameters
   tty: ttyS0
@@ -119,16 +119,16 @@ upgrade:
   # image used to upgrade main OS
   # size in MiB
   system:
-    uri: channel:system/cos
+    uri: oci:system/elemental
 
   # image used to upgrade recovery OS
   # recovery images can be set to use squashfs
   recovery-system:
     fs: squashfs
-    uri: channel:recovery/cos
+    uri: oci:recovery/elemental
 
   # grub menu entry, this is the string that will be displayed
-  grub-entry-name: cOS
+  grub-entry-name: Elemental
 
 # use cosign to validate images from container registries
 cosign: true
