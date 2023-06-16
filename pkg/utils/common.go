@@ -178,25 +178,18 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 	log.Infof("Starting rsync...")
 
-	args := []string{source, target, "--archive", "--xattrs", "--acls"}
+	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls"}
 	for _, e := range excludes {
 		args = append(args, fmt.Sprintf("--exclude=%s", e))
 	}
 
-	stop := make(chan bool)
-	go func(ch <-chan bool) {
-		for {
-			select {
-			case <-ch:
-				break
-			case <-time.After(5 * time.Second):
-				log.Debugf("Syncing files...")
-			}
-		}
-	}(stop)
+	args = append(args, source, target)
+
+	done := displayProgress(log, 5*time.Second, "Syncing data...")
 
 	_, err := runner.Run(constants.Rsync, args...)
-	close(stop)
+
+	close(done)
 
 	if err != nil {
 		log.Errorf("rsync finished with errors: %s", err.Error())
@@ -205,6 +198,25 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 	log.Info("Finished syncing")
 	return nil
+}
+
+func displayProgress(log v1.Logger, tick time.Duration, message string) chan bool {
+	ticker := time.NewTicker(tick)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				log.Debug(message)
+			}
+		}
+	}()
+
+	return done
 }
 
 // Reboot reboots the system after the given delay (in seconds) time passed.

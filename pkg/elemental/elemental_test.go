@@ -498,8 +498,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == "rsync" {
 					rsyncCount += 1
-					src = args[0]
-					dest = args[1]
+					src = args[len(args)-2]
+					dest = args[len(args)-1]
 				}
 
 				return []byte{}, nil
