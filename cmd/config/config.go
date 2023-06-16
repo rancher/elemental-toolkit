@@ -109,9 +109,9 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	configLogger(cfg.Logger, cfg.Fs)
 	if configDir == "" {
 		configDir = "."
-		cfg.Logger.Info("reading configuration from current directory")
+		cfg.Logger.Info("Reading configuration from current directory")
 	} else {
-		cfg.Logger.Infof("reading configuration from '%s'", configDir)
+		cfg.Logger.Infof("Reading configuration from '%s'", configDir)
 	}
 
 	// merge yaml config files on top of default runconfig
@@ -153,7 +153,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	if configDir == "" {
 		configDir = constants.ConfigDir
 	}
-	cfg.Logger.Infof("reading configuration form '%s'", configDir)
+	cfg.Logger.Infof("Reading configuration from '%s'", configDir)
 
 	const cfgDefault = "/etc/os-release"
 	if exists, _ := utils.Exists(cfg.Fs, cfgDefault); exists {
@@ -233,6 +233,24 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InstallSpec, er
 	err = install.Sanitize()
 	r.Logger.Debugf("Loaded install spec: %s", litter.Sdump(install))
 	return install, err
+}
+
+func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
+	init := config.NewInitSpec()
+	vp := viper.Sub("init")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind install cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind install env vars
+	viperReadEnv(vp, "INIT", constants.GetInitKeyEnvMap())
+
+	err := vp.Unmarshal(init, setDecoder, decodeHook)
+	if err != nil {
+		r.Logger.Warnf("error unmarshalling InitSpec: %s", err)
+	}
+	return init, err
 }
 
 func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error) {

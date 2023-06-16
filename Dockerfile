@@ -61,21 +61,6 @@ COPY --from=elemental-bin /usr/bin/cosign /usr/bin/cosign
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf
 ENTRYPOINT ["/usr/bin/elemental"]
 
-# immutable-rootfs
-COPY toolkit/immutable-rootfs/30cos-immutable-rootfs /install-root/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-
-# init-setup
-COPY toolkit/init-setup/cos-setup* /install-root/usr/lib/systemd/system/
-COPY toolkit/init-setup/02-cos-setup-initramfs.conf /install-root/etc/dracut.conf.d/
-
-# grub-config
-COPY toolkit/grub/config/grub.cfg /install-root/etc/cos/
-COPY toolkit/grub/config/bootargs.cfg /install-root/etc/cos/
-
-# dracut-config
-COPY toolkit/dracut-config/50-elemental.conf /install-root/etc/dracut.conf.d/
-
-# init-config
-COPY toolkit/init-config/oem /install-root/system/oem/
 # Add to /system/oem folder so install/upgrade/reset hooks will run when running this container.
-COPY toolkit/init-config/oem /system/oem/
+# Needed for boot-assessment
+COPY pkg/features/embedded/cloud-config-essentials/system/oem /system/oem/

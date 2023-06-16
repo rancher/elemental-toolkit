@@ -5,13 +5,14 @@ on:
       - main
   pull_request:
     paths:
-      - cmd/**
-      - pkg/**
-      - toolkit/**
       - tests/**
       - make/**
-      - .github/**
       - Makefile
+      - .github/**
+      - pkg/**
+      - cmd/**
+      - go.{mod,sum}
+
 jobs:
   detect:
     runs-on: ubuntu-latest

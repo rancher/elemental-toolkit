@@ -167,6 +167,14 @@ func GetRunKeyEnvMap() map[string]string {
 	}
 }
 
+// GetInitKeyEnvMap returns environment variable bindings to InitSpec data
+func GetInitKeyEnvMap() map[string]string {
+	return map[string]string{
+		"mkinitrd": "MKINITRD",
+		"force":    "FORCE",
+	}
+}
+
 // GetInstallKeyEnvMap returns environment variable bindings to InstallSpec data
 func GetInstallKeyEnvMap() map[string]string {
 	return map[string]string{

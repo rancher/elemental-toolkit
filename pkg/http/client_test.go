@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const source = "https://github.com/rancher/elemental-cli/releases/download/v0.0.13/elemental-v0.0.13-Linux-x86_64.tar.gz"
+const source = "https://raw.githubusercontent.com/rancher/elemental-toolkit/main/README.md"
 
 var _ = Describe("HTTPClient", Label("http"), func() {
 	var client *http.Client
@@ -43,10 +43,10 @@ var _ = Describe("HTTPClient", Label("http"), func() {
 	})
 	It("Downloads a test file to destination folder", func() {
 		// Download a public elemental release
-		_, err := os.Stat(filepath.Join(destDir, "elemental-v0.0.13-Linux-x86_64.tar.gz"))
+		_, err := os.Stat(filepath.Join(destDir, "README.md"))
 		Expect(err).NotTo(BeNil())
 		Expect(client.GetURL(log, source, destDir)).To(BeNil())
-		_, err = os.Stat(filepath.Join(destDir, "elemental-v0.0.13-Linux-x86_64.tar.gz"))
+		_, err = os.Stat(filepath.Join(destDir, "README.md"))
 		Expect(err).To(BeNil())
 	})
 	It("Downloads a test file to some specified destination file", func() {

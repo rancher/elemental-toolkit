@@ -26,6 +26,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/features"
 	"github.com/rancher/elemental-toolkit/pkg/http"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
@@ -209,6 +210,15 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 		Active:     activeImg,
 		Recovery:   recoveryImg,
 		Passive:    passiveImg,
+	}
+}
+
+// NewInitSpec returns an InitSpec struct all based on defaults
+func NewInitSpec() *v1.InitSpec {
+	return &v1.InitSpec{
+		Mkinitrd: true,
+		Force:    false,
+		Features: features.All,
 	}
 }
 

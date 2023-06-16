@@ -155,83 +155,83 @@ cp %{S:2} .
 
 %install
 # elemental-immutable-rootfs
-%{__install} -d -m 755 %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-%{__install} -m 755 toolkit/immutable-rootfs/30cos-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
-%{__install} -m 644 toolkit/immutable-rootfs/30cos-immutable-rootfs/cos-immutable-rootfs.service %{buildroot}/usr/lib/dracut/modules.d/30cos-immutable-rootfs
+%{__install} -d -m 755 %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
+%{__install} -m 755 pkg/features/embedded/immutable-rootfs/usr/lib/dracut/modules.d/30elemental-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
+%{__install} -m 644 pkg/features/embedded/immutable-rootfs/usr/lib/dracut/modules.d/30elemental-immutable-rootfs/elemental-immutable-rootfs.service %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
 
 # elemental-init-setup
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-rootfs.service %{buildroot}%{_unitdir}/cos-setup-rootfs.service
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-initramfs.service %{buildroot}%{_unitdir}/cos-setup-initramfs.service
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-reconcile.timer %{buildroot}%{_unitdir}/cos-setup-reconcile.timer
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-reconcile.service %{buildroot}%{_unitdir}/cos-setup-reconcile.service
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-fs.service %{buildroot}%{_unitdir}/cos-setup-fs.service
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-boot.service %{buildroot}%{_unitdir}/cos-setup-boot.service
-%{__install} -D -m 644 toolkit/init-setup/cos-setup-network.service %{buildroot}%{_unitdir}/cos-setup-network.service
-%{__install} -D -m 644 toolkit/init-setup/02-cos-setup-initramfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-cos-setup-initramfs.conf
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-rootfs.service %{buildroot}%{_unitdir}/elemental-setup-rootfs.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-initramfs.service %{buildroot}%{_unitdir}/elemental-setup-initramfs.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-reconcile.timer %{buildroot}%{_unitdir}/elemental-setup-reconcile.timer
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-reconcile.service %{buildroot}%{_unitdir}/elemental-setup-reconcile.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-fs.service %{buildroot}%{_unitdir}/elemental-setup-fs.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-boot.service %{buildroot}%{_unitdir}/elemental-setup-boot.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/usr/lib/systemd/system/elemental-setup-network.service %{buildroot}%{_unitdir}/elemental-setup-network.service
+%{__install} -D -m 644 pkg/features/embedded/elemental-setup/etc/dracut.conf.d/02-elemental-setup-initramfs.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/02-elemental-setup-initramfs.conf
 
 # elemental-grub-config
-%{__install} -D -m 644 toolkit/grub/config/grub.cfg %{buildroot}%{_sysconfdir}/cos/grub.cfg
+%{__install} -D -m 644 pkg/features/embedded/grub-config/etc/cos/grub.cfg %{buildroot}%{_sysconfdir}/cos/grub.cfg
 
 # elemental-grub-bootargs
-%{__install} -D -m 644 toolkit/grub/config/bootargs.cfg %{buildroot}%{_sysconfdir}/cos/bootargs.cfg
+%{__install} -D -m 644 pkg/features/embedded/grub-config/etc/cos/bootargs.cfg %{buildroot}%{_sysconfdir}/cos/bootargs.cfg
 
 # elemental-dracut-config
-%{__install} -D -m 644 toolkit/dracut-config/50-elemental.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-elemental.conf
+%{__install} -D -m 644 pkg/features/embedded/dracut-config/etc/dracut.conf.d/50-elemental-initrd.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-elemental-initrd.conf
 
 # elemental-init-rootfs
-%{__install} -D -m 644 toolkit/init-config/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
 
 # elemental-init-network
-%{__install} -D -m 644 toolkit/init-config/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
 
 # elemental-init-recovery
-%{__install} -D -m 644 toolkit/init-config/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
 
 # elemental-init-live
-%{__install} -D -m 644 toolkit/init-config/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
 
 # elemental-init-boot-assessment
-%{__install} -D -m 644 toolkit/init-config/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
 
 # elemental-init-services
-%{__install} -D -m 644 toolkit/init-config/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
 
 
 %pre -n elemental-init-setup
-%service_add_pre cos-setup-rootfs.service
-%service_add_pre cos-setup-initramfs.service
-%service_add_pre cos-setup-reconcile.timer
-%service_add_pre cos-setup-reconcile.service
-%service_add_pre cos-setup-fs.service
-%service_add_pre cos-setup-boot.service
-%service_add_pre cos-setup-network.service
+%service_add_pre elemental-setup-rootfs.service
+%service_add_pre elemental-setup-initramfs.service
+%service_add_pre elemental-setup-reconcile.timer
+%service_add_pre elemental-setup-reconcile.service
+%service_add_pre elemental-setup-fs.service
+%service_add_pre elemental-setup-boot.service
+%service_add_pre elemental-setup-network.service
 
 %post -n elemental-init-setup
-%service_add_post cos-setup-rootfs.service
-%service_add_post cos-setup-initramfs.service
-%service_add_post cos-setup-reconcile.timer
-%service_add_post cos-setup-reconcile.service
-%service_add_post cos-setup-fs.service
-%service_add_post cos-setup-boot.service
-%service_add_post cos-setup-network.service
+%service_add_post elemental-setup-rootfs.service
+%service_add_post elemental-setup-initramfs.service
+%service_add_post elemental-setup-reconcile.timer
+%service_add_post elemental-setup-reconcile.service
+%service_add_post elemental-setup-fs.service
+%service_add_post elemental-setup-boot.service
+%service_add_post elemental-setup-network.service
 
 %preun -n elemental-init-setup
-%service_del_preun cos-setup-rootfs.service
-%service_del_preun cos-setup-initramfs.service
-%service_del_preun cos-setup-reconcile.timer
-%service_del_preun cos-setup-reconcile.service
-%service_del_preun cos-setup-fs.service
-%service_del_preun cos-setup-boot.service
-%service_del_preun cos-setup-network.service
+%service_del_preun elemental-setup-rootfs.service
+%service_del_preun elemental-setup-initramfs.service
+%service_del_preun elemental-setup-reconcile.timer
+%service_del_preun elemental-setup-reconcile.service
+%service_del_preun elemental-setup-fs.service
+%service_del_preun elemental-setup-boot.service
+%service_del_preun elemental-setup-network.service
 
 %postun -n elemental-init-setup
-%service_del_postun cos-setup-rootfs.service
-%service_del_postun cos-setup-initramfs.service
-%service_del_postun cos-setup-reconcile.timer
-%service_del_postun cos-setup-reconcile.service
-%service_del_postun cos-setup-fs.service
-%service_del_postun cos-setup-boot.service
-%service_del_postun cos-setup-network.service
+%service_del_postun elemental-setup-rootfs.service
+%service_del_postun elemental-setup-initramfs.service
+%service_del_postun elemental-setup-reconcile.timer
+%service_del_postun elemental-setup-reconcile.service
+%service_del_postun elemental-setup-fs.service
+%service_del_postun elemental-setup-boot.service
+%service_del_postun elemental-setup-network.service
 
 %files
 %defattr(-,root,root,-)
@@ -251,15 +251,15 @@ cp %{S:2} .
 %defattr(-,root,root,-)
 %license LICENSE
 %dir %{_unitdir}
-%{_unitdir}/cos-setup-rootfs.service
-%{_unitdir}/cos-setup-initramfs.service
-%{_unitdir}/cos-setup-reconcile.timer
-%{_unitdir}/cos-setup-reconcile.service
-%{_unitdir}/cos-setup-fs.service
-%{_unitdir}/cos-setup-boot.service
-%{_unitdir}/cos-setup-network.service
+%{_unitdir}/elemental-setup-rootfs.service
+%{_unitdir}/elemental-setup-initramfs.service
+%{_unitdir}/elemental-setup-reconcile.timer
+%{_unitdir}/elemental-setup-reconcile.service
+%{_unitdir}/elemental-setup-fs.service
+%{_unitdir}/elemental-setup-boot.service
+%{_unitdir}/elemental-setup-network.service
 %dir %{_sysconfdir}/dracut.conf.d
-%config %{_sysconfdir}/dracut.conf.d/02-cos-setup-initramfs.conf
+%config %{_sysconfdir}/dracut.conf.d/02-elemental-setup-initramfs.conf
 
 %files -n elemental-grub-config
 %defattr(-,root,root,-)
@@ -277,7 +277,7 @@ cp %{S:2} .
 %defattr(-,root,root,-)
 %license LICENSE
 %dir %{_sysconfdir}/dracut.conf.d
-%config %{_sysconfdir}/dracut.conf.d/50-elemental.conf
+%config %{_sysconfdir}/dracut.conf.d/50-elemental-initrd.conf
 
 %files -n elemental-init-rootfs
 %defattr(-,root,root,-)

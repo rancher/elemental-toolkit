@@ -44,20 +44,8 @@ RUN zypper --non-interactive install --no-recommends -- \
       sudo \
       sed
 
-# Create non FHS paths
-RUN mkdir -p /oem /system /etc/elemental/config.d
-
-# Just add the elemental toolkit including
-COPY --from=TOOLKIT /install-root /
+# Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
-
-# Enable cloud-init services
-RUN systemctl enable cos-setup-rootfs.service && \
-    systemctl enable cos-setup-initramfs.service && \
-    systemctl enable cos-setup-reconcile.timer && \
-    systemctl enable cos-setup-fs.service && \
-    systemctl enable cos-setup-boot.service && \
-    systemctl enable cos-setup-network.service
 
 # Enable essential services
 RUN systemctl enable NetworkManager.service
@@ -66,7 +54,7 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN dracut -f --regenerate-all && \
+RUN elemental init -f && \
     kernel=$(ls /boot/Image-* | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \
