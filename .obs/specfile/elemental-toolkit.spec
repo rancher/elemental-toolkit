@@ -179,22 +179,22 @@ cp %{S:2} .
 %{__install} -D -m 644 pkg/features/embedded/dracut-config/etc/dracut.conf.d/50-elemental-initrd.conf %{buildroot}%{_sysconfdir}/dracut.conf.d/50-elemental-initrd.conf
 
 # elemental-init-rootfs
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/00_rootfs.yaml %{buildroot}%{oemdir}/00_rootfs.yaml
 
 # elemental-init-network
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/05_network.yaml %{buildroot}%{oemdir}/05_network.yaml
 
 # elemental-init-recovery
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/06_recovery.yaml %{buildroot}%{oemdir}/06_recovery.yaml
 
 # elemental-init-live
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/07_live.yaml %{buildroot}%{oemdir}/07_live.yaml
 
 # elemental-init-boot-assessment
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/08_boot_assessment.yaml %{buildroot}%{oemdir}/08_boot_assessment.yaml
 
 # elemental-init-services
-%{__install} -D -m 644 pkg/features/embedded/cloud-config/system/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
+%{__install} -D -m 644 pkg/features/embedded/cloud-config-essentials/system/oem/09_services.yaml %{buildroot}%{oemdir}/09_services.yaml
 
 
 %pre -n elemental-init-setup

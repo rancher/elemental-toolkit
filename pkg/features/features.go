@@ -35,11 +35,12 @@ var files embed.FS
 const (
 	embeddedRoot = "embedded"
 
-	FeatureImmutableRootfs = "immutable-rootfs"
-	FeatureGrubConfig      = "grub-config"
-	FeatureElementalSetup  = "elemental-setup"
-	FeatureDracutConfig    = "dracut-config"
-	FeatureCloudConfig     = "cloud-config"
+	FeatureImmutableRootfs       = "immutable-rootfs"
+	FeatureGrubConfig            = "grub-config"
+	FeatureElementalSetup        = "elemental-setup"
+	FeatureDracutConfig          = "dracut-config"
+	FeatureCloudConfigDefaults   = "cloud-config-defaults"
+	FeatureCloudConfigEssentials = "cloud-config-essentials"
 )
 
 var (
@@ -48,7 +49,8 @@ var (
 		FeatureGrubConfig,
 		FeatureElementalSetup,
 		FeatureDracutConfig,
-		FeatureCloudConfig,
+		FeatureCloudConfigDefaults,
+		FeatureCloudConfigEssentials,
 	}
 )
 
@@ -124,7 +126,9 @@ func Get(names []string) ([]*Feature, error) {
 
 	for _, name := range names {
 		switch name {
-		case FeatureCloudConfig:
+		case FeatureCloudConfigDefaults:
+			features = append(features, New(name, nil))
+		case FeatureCloudConfigEssentials:
 			features = append(features, New(name, nil))
 		case FeatureImmutableRootfs:
 			features = append(features, New(name, nil))
