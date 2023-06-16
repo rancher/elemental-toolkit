@@ -277,7 +277,7 @@ cp %{S:2} .
 %defattr(-,root,root,-)
 %license LICENSE
 %dir %{_sysconfdir}/dracut.conf.d
-%config %{_sysconfdir}/dracut.conf.d/50-elemental.conf
+%config %{_sysconfdir}/dracut.conf.d/50-elemental-initrd.conf
 
 %files -n elemental-init-rootfs
 %defattr(-,root,root,-)
