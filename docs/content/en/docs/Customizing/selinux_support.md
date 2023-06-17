@@ -17,7 +17,7 @@ Elemental includes basic support for SELinux. From an elemental perspective SELi
 
 In an Elemental workflow SElinux context labels should be applied at install/upgrade time for the readonly areas, but this is not enough as it doesn't cover the ephemeral filesystems (overlayfs on top of tmpfs), which are usually sensitive paths like `/etc/`, `/var`, `/srv`, etc. In order to properly apply file contexts over the ephemeral paths the relabelling has to happen at boot time once those overlayfs are created. The appropriate stage for that is in initrd before switching root. In fact, it can be done as a cloud-init step as part of the `initramfs` stage, using the packaged `10_selinux.yaml` with:
 
-{{<githubembed repo="rancher/elemental-toolkit" file="toolkit/init-config/oem/10_selinux.yaml" lang="yaml">}}
+{{<githubembed repo="rancher/elemental-toolkit" file="pkg/features/embedded/cloud-config-defaults/system/oem/10_selinux.yaml" lang="yaml">}}
 
 Note it is required to load the policy in advance to be capable to apply the `restorecon` command. The `restorecon` command should be applied to all ephemeral paths and, depending on the specific use case, to the persistent paths too. Note that without restoring context on the ephemeral `/etc` it is unlikely the system is capable of properly booting, hence this is a very important step if SELinux is intended to used.
 
