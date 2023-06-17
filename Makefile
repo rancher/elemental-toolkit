@@ -20,8 +20,8 @@ VERSION ?= ${GIT_TAG}-g${GIT_COMMIT_SHORT}
 
 PKG        := ./cmd ./pkg/...
 LDFLAGS    := -w -s
-LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.version=${GIT_TAG}"
-LDFLAGS += -X "github.com/rancher/elemental-cli/internal/version.gitCommit=${GIT_COMMIT}"
+LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.version=${GIT_TAG}"
+LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.gitCommit=${GIT_COMMIT}"
 
 ifeq ("$(GRUB_ARCH)", "aarch64")
 GRUB_ARCH=arm64
