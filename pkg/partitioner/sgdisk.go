@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 const efiType = "EF00"
@@ -135,7 +135,7 @@ func (gd *GdiskCall) DeletePartition(num int) {
 	gd.deletions = append(gd.deletions, num)
 }
 
-func (gd *GdiskCall) SetPartitionFlag(num int, flag string, active bool) {
+func (gd *GdiskCall) SetPartitionFlag(_ int, _ string, _ bool) {
 	// Just implemented in case there is a shared interface with parted wrapper someday
 	// sgdisk does not make use of flags concept, doesn't make much sense for GPT.
 }
@@ -172,7 +172,7 @@ func (gd GdiskCall) GetSectorSize(printOut string) (uint, error) {
 }
 
 // TODO parse printOut from a non gpt disk and return error here
-func (gd GdiskCall) GetPartitionTableLabel(printOut string) (string, error) {
+func (gd GdiskCall) GetPartitionTableLabel(_ string) (string, error) {
 	return v1.GPT, nil
 }
 

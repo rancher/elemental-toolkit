@@ -30,7 +30,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	mocks "github.com/rancher/elemental-toolkit/pkg/mocks"
 	part "github.com/rancher/elemental-toolkit/pkg/partitioner"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 

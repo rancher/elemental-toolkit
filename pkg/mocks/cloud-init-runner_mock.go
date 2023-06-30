@@ -63,7 +63,7 @@ func (ci *FakeCloudInitRunner) GetStageArgs(stage string) []string {
 	return ci.stageArgs[stage]
 }
 
-func (ci *FakeCloudInitRunner) CloudInitFileRender(target string, config *schema.YipConfig) error {
+func (ci *FakeCloudInitRunner) CloudInitFileRender(_ string, _ *schema.YipConfig) error {
 	if ci.RenderErr {
 		return fmt.Errorf("failed redering yip file")
 	}

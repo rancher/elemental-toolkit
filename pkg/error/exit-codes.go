@@ -244,5 +244,8 @@ const HookAfterDiskChroot = 81
 // Error occured on after-disk hook
 const HookPostDisk = 82
 
+// Error occured checking configured size is bigger than minimum required size
+const InvalidSize = 83
+
 // Unknown error
 const Unknown int = 255

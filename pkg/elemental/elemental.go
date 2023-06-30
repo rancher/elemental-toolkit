@@ -436,7 +436,7 @@ func (e *Elemental) DeployImage(img *v1.Image) (interface{}, error) {
 		return nil, err
 	}
 
-	err = e.CreateImgFromTree(cnst.WorkingImgDir, img, cleaner)
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, img, false, cleaner)
 	if err != nil {
 		return nil, err
 	}

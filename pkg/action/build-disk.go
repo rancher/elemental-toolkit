@@ -27,13 +27,13 @@ import (
 	"time"
 
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/rancher/elemental-cli/pkg/constants"
-	"github.com/rancher/elemental-cli/pkg/elemental"
-	eleError "github.com/rancher/elemental-cli/pkg/error"
-	elementalError "github.com/rancher/elemental-cli/pkg/error"
-	"github.com/rancher/elemental-cli/pkg/partitioner"
-	v1 "github.com/rancher/elemental-cli/pkg/types/v1"
-	"github.com/rancher/elemental-cli/pkg/utils"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/elemental"
+	eleError "github.com/rancher/elemental-toolkit/pkg/error"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	"github.com/rancher/elemental-toolkit/pkg/partitioner"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 const (
@@ -370,7 +370,15 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Im
 	// Compute extra space required at the end
 	eSize := uint(1)
 	if b.spec.Size > 0 {
-		eSize = b.spec.Size - b.spec.MinDiskSize()
+		minSize := b.spec.MinDiskSize()
+		if b.spec.Size > minSize {
+			eSize = b.spec.Size - b.spec.MinDiskSize()
+		} else {
+			return eleError.New(
+				fmt.Sprintf("Configured size (%dMiB) is not big enough, minimum requested is %dMiB ", b.spec.Size, minSize),
+				eleError.InvalidSize,
+			)
+		}
 	}
 	err = utils.CreateRAWFile(b.cfg.Fs, endDiskFile, eSize)
 	if err != nil {
