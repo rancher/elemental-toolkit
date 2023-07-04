@@ -34,7 +34,6 @@ RUN zypper --non-interactive install --no-recommends -- \
       gptfdisk \
       rsync \
       squashfs \
-      findutils \
       lvm2 \
       tar \
       gzip \
