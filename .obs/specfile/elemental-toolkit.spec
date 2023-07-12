@@ -156,7 +156,7 @@ cp %{S:2} .
 %install
 # elemental-immutable-rootfs
 %{__install} -d -m 755 %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
-%{__install} -D -m 755 pkg/features/embedded/immutable-rootfs/usr/lib/dracut/modules.d/30elemental-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
+#%{__install} -D -m 755 pkg/features/embedded/immutable-rootfs/usr/lib/dracut/modules.d/30elemental-immutable-rootfs/*.sh %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
 %{__install} -m 644 pkg/features/embedded/immutable-rootfs/usr/lib/dracut/modules.d/30elemental-immutable-rootfs/elemental-immutable-rootfs.service %{buildroot}/usr/lib/dracut/modules.d/30elemental-immutable-rootfs
 
 # elemental-init-setup
