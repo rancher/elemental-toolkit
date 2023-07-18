@@ -37,12 +37,20 @@ Requires:       xfsprogs
 
 Recommends:     xorriso
 
+%if 0%{?suse_version}
 BuildRequires:  golang(API) >= 1.20
 BuildRequires:  golang-packaging
+%{go_provides}
+%else
+%global goipath    google.golang.org/api
+%global forgeurl   https://github.com/rancher/elemental-toolkit
+%global commit     d1ae3f9a425de2618f9058f3b37583ef3ce52c7d
+%gometa
+BuildRequires:  go1.20
+%endif
 BuildRequires:  xz
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-%{go_provides}
 
 %description
 This package provides a universal command line client to access
