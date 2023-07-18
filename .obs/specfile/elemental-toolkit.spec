@@ -33,6 +33,9 @@ Requires:       elemental-immutable-rootfs = %{version}-%{release}
 Requires:       elemental-grub-config = %{version}-%{release}
 Requires:       elemental-dracut-config = %{version}-%{release}
 
+%if !0%{?suse_version}
+BuildRequires:  systemd-rpm-macros
+%endif
 BuildArch:      noarch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
@@ -199,6 +202,7 @@ cp %{S:2} .
 
 
 %pre -n elemental-init-setup
+%if 0%{?suse_version}
 %service_add_pre elemental-setup-rootfs.service
 %service_add_pre elemental-setup-initramfs.service
 %service_add_pre elemental-setup-reconcile.timer
@@ -206,8 +210,18 @@ cp %{S:2} .
 %service_add_pre elemental-setup-fs.service
 %service_add_pre elemental-setup-boot.service
 %service_add_pre elemental-setup-network.service
+%else
+%systemd_pre elemental-setup-rootfs.service
+%systemd_pre elemental-setup-initramfs.service
+%systemd_pre elemental-setup-reconcile.timer
+%systemd_pre elemental-setup-reconcile.service
+%systemd_pre elemental-setup-fs.service
+%systemd_pre elemental-setup-boot.service
+%systemd_pre elemental-setup-network.service
+%endif
 
 %post -n elemental-init-setup
+%if 0%{?suse_version}
 %service_add_post elemental-setup-rootfs.service
 %service_add_post elemental-setup-initramfs.service
 %service_add_post elemental-setup-reconcile.timer
@@ -215,8 +229,18 @@ cp %{S:2} .
 %service_add_post elemental-setup-fs.service
 %service_add_post elemental-setup-boot.service
 %service_add_post elemental-setup-network.service
+%else
+%systemd_post elemental-setup-rootfs.service
+%systemd_post elemental-setup-initramfs.service
+%systemd_post elemental-setup-reconcile.timer
+%systemd_post elemental-setup-reconcile.service
+%systemd_post elemental-setup-fs.service
+%systemd_post elemental-setup-boot.service
+%systemd_post elemental-setup-network.service
+%endif
 
 %preun -n elemental-init-setup
+%if 0%{?suse_version}
 %service_del_preun elemental-setup-rootfs.service
 %service_del_preun elemental-setup-initramfs.service
 %service_del_preun elemental-setup-reconcile.timer
@@ -224,8 +248,18 @@ cp %{S:2} .
 %service_del_preun elemental-setup-fs.service
 %service_del_preun elemental-setup-boot.service
 %service_del_preun elemental-setup-network.service
+%else
+%systemd_preun elemental-setup-rootfs.service
+%systemd_preun elemental-setup-initramfs.service
+%systemd_preun elemental-setup-reconcile.timer
+%systemd_preun elemental-setup-reconcile.service
+%systemd_preun elemental-setup-fs.service
+%systemd_preun elemental-setup-boot.service
+%systemd_preun elemental-setup-network.service
+%endif
 
 %postun -n elemental-init-setup
+%if 0%{?suse_version}
 %service_del_postun elemental-setup-rootfs.service
 %service_del_postun elemental-setup-initramfs.service
 %service_del_postun elemental-setup-reconcile.timer
@@ -233,6 +267,15 @@ cp %{S:2} .
 %service_del_postun elemental-setup-fs.service
 %service_del_postun elemental-setup-boot.service
 %service_del_postun elemental-setup-network.service
+%else
+%systemd_postun elemental-setup-rootfs.service
+%systemd_postun elemental-setup-initramfs.service
+%systemd_postun elemental-setup-reconcile.timer
+%systemd_postun elemental-setup-reconcile.service
+%systemd_postun elemental-setup-fs.service
+%systemd_postun elemental-setup-boot.service
+%systemd_postun elemental-setup-network.service
+%endif
 
 %files
 %defattr(-,root,root,-)
