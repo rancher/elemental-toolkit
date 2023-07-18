@@ -46,7 +46,11 @@ BuildRequires:  golang-packaging
 %global forgeurl   https://github.com/rancher/elemental-toolkit
 %global commit     d1ae3f9a425de2618f9058f3b37583ef3ce52c7d
 %gometa
+%if (0%{?centos_version} == 800) || (0%{?rhel_version} == 800)
 BuildRequires:  go1.20
+%else
+BuildRequires:  compiler(go-compiler)
+%endif
 %endif
 BuildRequires:  xz
 
