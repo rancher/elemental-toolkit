@@ -38,7 +38,7 @@ Requires:       xfsprogs
 Recommends:     xorriso
 
 %if 0%{?suse_version}
-BuildRequires:  golang(API) >= 1.20
+BuildRequires:  golang(API) >= 1.18
 BuildRequires:  golang-packaging
 %{go_provides}
 %else
