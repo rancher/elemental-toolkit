@@ -210,14 +210,6 @@ cp %{S:2} .
 %service_add_pre elemental-setup-fs.service
 %service_add_pre elemental-setup-boot.service
 %service_add_pre elemental-setup-network.service
-%else
-%systemd_pre elemental-setup-rootfs.service
-%systemd_pre elemental-setup-initramfs.service
-%systemd_pre elemental-setup-reconcile.timer
-%systemd_pre elemental-setup-reconcile.service
-%systemd_pre elemental-setup-fs.service
-%systemd_pre elemental-setup-boot.service
-%systemd_pre elemental-setup-network.service
 %endif
 
 %post -n elemental-init-setup
