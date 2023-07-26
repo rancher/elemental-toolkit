@@ -169,6 +169,12 @@ func (r ResetAction) Run() (err error) {
 	}
 	cleanup.Push(func() error { return treeCleaner() })
 
+	// Copy cloud-init if any
+	err = e.CopyCloudConfig(r.spec.CloudInit)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.CopyFile)
+	}
+
 	// install grub
 	grub := utils.NewGrub(&r.cfg.Config)
 	err = grub.Install(
