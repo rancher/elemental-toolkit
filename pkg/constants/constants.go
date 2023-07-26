@@ -195,10 +195,12 @@ func GetInstallKeyEnvMap() map[string]string {
 // GetResetKeyEnvMap returns environment variable bindings to ResetSpec data
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
-		"target":          "TARGET",
-		"system.uri":      "SYSTEM",
-		"tty":             "TTY",
-		"grub-entry-name": "GRUB_ENTRY_NAME",
+		"system.uri":       "SYSTEM",
+		"tty":              "TTY",
+		"grub-entry-name":  "GRUB_ENTRY_NAME",
+		"cloud-init":       "CLOUD_INIT",
+		"reset-persistent": "PERSISTENT",
+		"reset-oem":        "OEM",
 	}
 }
 
