@@ -212,8 +212,9 @@ type ResetSpec struct {
 	FormatPersistent bool `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
 	FormatOEM        bool `yaml:"reset-oem,omitempty" mapstructure:"reset-oem"`
 
-	GrubDefEntry     string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Active           Image  `yaml:"system,omitempty" mapstructure:"system"`
+	CloudInit        []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	GrubDefEntry     string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Active           Image    `yaml:"system,omitempty" mapstructure:"system"`
 	Passive          Image
 	Partitions       ElementalPartitions
 	Target           string

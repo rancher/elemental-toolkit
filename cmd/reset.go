@@ -72,6 +72,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 	root.AddCommand(c)
+	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
 	c.Flags().BoolP("tty", "", false, "Add named tty to grub")
 	_ = c.Flags().MarkDeprecated("tty", "'tty' is deprecated and ignored please set console as part of the extra kernel command line arguments as grub2 variables")
 	c.Flags().BoolP("reset-persistent", "", false, "Clear persistent partitions")
