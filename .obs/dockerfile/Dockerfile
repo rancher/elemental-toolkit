@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Define the names/tags of the container
-#!BuildTag: rancher/elemental-builder-image:%VERSION%
-#!BuildTag: rancher/elemental-builder-image:%VERSION%-%RELEASE%
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:latest
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:%VERSION%
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:%VERSION%-%RELEASE%
 #
 
 ARG SLE_VERSION
@@ -10,8 +11,9 @@ FROM suse/sle15:$SLE_VERSION
 
 RUN zypper in -y elemental-cli xfsprogs parted e2fsprogs udev rsync grub2 dosfstools squashfs mtools xorriso lvm2
 
-ARG BUILD_REPO=registry.suse.com
-ARG IMAGE_REPO=$BUILD_REPO/rancher/elemental-builder-image
+ARG SLEMICRO_VERSION
+ARG BUILD_REPO=%%IMG_REPO%%
+ARG IMAGE_REPO=$BUILD_REPO/rancher/elemental-builder-image/$SLEMICRO_VERSION
 
 # Define labels according to https://en.opensuse.org/Building_derived_containers
 # labelprefix=com.rancher.elemental
