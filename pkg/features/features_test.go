@@ -17,11 +17,18 @@
 package features_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/rancher/elemental-toolkit/pkg/features"
 )
+
+func TestTypes(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "features test suite")
+}
 
 var _ = Describe("Init Action", func() {
 	Describe("Features", Label("features"), func() {
@@ -29,11 +36,6 @@ var _ = Describe("Init Action", func() {
 			feats, err := features.Get([]string{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(feats).To(BeEmpty())
-		})
-		It("Returns all features", func() {
-			feats, err := features.Get([]string{})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(feats)).To(Equal(len(features.All)))
 		})
 		It("Returns error for unknown feature", func() {
 			_, err := features.Get([]string{"unknown-abc"})
