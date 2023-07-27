@@ -367,18 +367,25 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err.Error()).To(ContainSubstring("reset can only be called from the recovery system"))
 			})
 			It("inits a reset spec according to given configs", func() {
-				err := os.Setenv("ELEMENTAL_RESET_TARGET", "/special/disk")
+				err = os.Setenv("ELEMENTAL_RESET_CLOUD_INIT", "path/to/file1.yaml,/absolute/path/to/file2.yaml")
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_RESET_SYSTEM", "docker:alpine:latest")
 				Expect(err).ShouldNot(HaveOccurred())
+				err = os.Setenv("ELEMENTAL_RESET_OEM", "true")
+				Expect(err).ShouldNot(HaveOccurred())
+
 				spec, err := ReadResetSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
-				// Overwrites target from environment variables
-				Expect(spec.Target == "/special/disk")
+				// Overwrites cloud-init from environment variables
+				Expect(len(spec.CloudInit)).To(Equal(2))
+				Expect(spec.CloudInit[0]).To(Equal("path/to/file1.yaml"))
+				Expect(spec.CloudInit[1]).To(Equal("/absolute/path/to/file2.yaml"))
 				// Overwrites system image, flags have priority over files and env vars
 				Expect(spec.Active.Source.Value() == "image/from:flag")
 				// From config files
 				Expect(spec.DisableBootEntry).To(BeTrue())
+				// From env vars
+				Expect(spec.FormatOEM).To(BeTrue())
 			})
 		})
 		Describe("Read UpgradeSpec", Label("install"), func() {
