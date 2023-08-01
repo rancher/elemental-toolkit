@@ -1,23 +1,29 @@
 # SPDX-License-Identifier: Apache-2.0
 # Define the names/tags of the container
-#!BuildTag: rancher/elemental-builder-image/5.3:latest
-#!BuildTag: rancher/elemental-builder-image/5.3:%VERSION%
-#!BuildTag: rancher/elemental-builder-image/5.3:%VERSION%-%RELEASE%
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:latest
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:%VERSION%
+#!BuildTag: rancher/elemental-builder-image/%%SLEMICRO_VERSION%%:%VERSION%-%RELEASE%
 #
 
-FROM suse/sle15:15.4
+ARG SLE_VERSION
+
+FROM suse/sle15:$SLE_VERSION
 
 RUN zypper in -y elemental-cli xfsprogs parted e2fsprogs udev rsync grub2 dosfstools squashfs mtools xorriso lvm2
+
+ARG SLEMICRO_VERSION
+ARG BUILD_REPO=%%IMG_REPO%%
+ARG IMAGE_REPO=$BUILD_REPO/rancher/elemental-builder-image/$SLEMICRO_VERSION
 
 # Define labels according to https://en.opensuse.org/Building_derived_containers
 # labelprefix=com.rancher.elemental
 LABEL org.opencontainers.image.title="Rancher Elemental Builder"
 LABEL org.opencontainers.image.description="Provides Elemental Client and required dependencies for installation media building"
 LABEL org.opencontainers.image.version="%VERSION%"
-LABEL org.opencontainers.image.url="https://github.com/rancher/elemental-cli"
+LABEL org.opencontainers.image.url="https://github.com/rancher/elemental-toolkit"
 LABEL org.opencontainers.image.created="%BUILDTIME%"
 LABEL org.opencontainers.image.vendor="SUSE LLC"
-LABEL org.opensuse.reference="%%IMG_REPO%%/rancher/elemental-builder-image/5.3"
+LABEL org.opensuse.reference=$IMAGE_REPO
 LABEL org.openbuildservice.disturl="%DISTURL%"
 LABEL com.suse.supportlevel="techpreview"
 # endlabelprefix
