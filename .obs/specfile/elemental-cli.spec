@@ -34,8 +34,8 @@ Requires:       parted
 Requires:       rsync
 Requires:       udev
 Requires:       xfsprogs
-
-Recommends:     xorriso
+Requires:       xorriso
+Requires:       mtools
 
 %if 0%{?suse_version}
 BuildRequires:  golang(API) >= 1.18
