@@ -165,7 +165,7 @@ func (i InstallAction) Run() (err error) {
 	cleanup.Push(func() error { return treeCleaner() })
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(i.spec.CloudInit)
+	err = e.CopyCloudConfig(cnst.OEMDir, i.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}

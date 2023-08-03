@@ -945,14 +945,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 
-			err = e.CopyCloudConfig(cloudInit)
+			err = e.CopyCloudConfig(constants.OEMDir, cloudInit)
 			Expect(err).To(BeNil())
 			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", constants.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})
 		It("Doesnt do anything if the config file is not set", func() {
-			err := e.CopyCloudConfig([]string{})
+			err := e.CopyCloudConfig(constants.OEMDir, []string{})
 			Expect(err).To(BeNil())
 		})
 	})
