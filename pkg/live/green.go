@@ -112,7 +112,7 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 		}
 
 		// Create loaders folder
-		loaderDir := filepath.Join(imageDir, isoLoaderPath)
+		loaderDir := filepath.Join(imageDir, IsoLoaderPath)
 		err = utils.MkdirAll(g.buildCfg.Fs, loaderDir, constants.DirPerm)
 		if err != nil {
 			return err
@@ -124,7 +124,7 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 			err = utils.CopyFile(
 				g.buildCfg.Fs,
 				filepath.Join(rootDir, f),
-				filepath.Join(imageDir, isoLoaderPath),
+				filepath.Join(imageDir, IsoLoaderPath),
 			)
 			if err != nil {
 				return err

@@ -175,7 +175,7 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
 		return elementalError.NewFromError(err, elementalError.StatFile)
 	}
-	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, "boot"), constants.DirPerm)
+	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, live.IsoLoaderPath), constants.DirPerm)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
