@@ -109,8 +109,8 @@ const (
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
 
 	// Kernel and initrd paths are arbitrary and coupled to grub.cfg
-	ISOKernelPath    = "/boot/kernel"
-	ISOInitrdPath    = "/boot/initrd"
+	ISOKernelPath    = "/boot/x86_64/loader/linux"
+	ISOInitrdPath    = "/boot/x86_64/loader/initrd"
 	ISORootFile      = "rootfs.squashfs"
 	ISOEFIImg        = "uefi.img"
 	ISOLabel         = "COS_LIVE"

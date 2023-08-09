@@ -33,9 +33,9 @@ const (
 
 	// TODO document any custom BIOS bootloader must match this setup as these are not configurable
 	// and coupled with the xorriso call
-	isoLoaderPath = "/boot/x86_64/loader"
-	isoHybridMBR  = isoLoaderPath + "/boot_hybrid.img"
-	isoBootFile   = isoLoaderPath + "/eltorito.img"
+	IsoLoaderPath = "/boot/x86_64/loader"
+	isoHybridMBR  = IsoLoaderPath + "/boot_hybrid.img"
+	isoBootFile   = IsoLoaderPath + "/eltorito.img"
 
 	//TODO use some identifer known to be unique
 	grubEfiCfg = "search --no-floppy --file --set=root " + constants.ISOKernelPath +
@@ -43,8 +43,8 @@ const (
 		"\nconfigfile $prefix/" + grubCfg
 
 	// TODO not convinced having such a config here is the best idea
-	grubCfgTemplate = `search --no-floppy --file --set=root /boot/kernel
-	set default=0
+	grubCfgTemplate = "search --no-floppy --file --set=root " + constants.ISOKernelPath + "\n" +
+		`set default=0
 	set timeout=10
 	set timeout_style=menu
 	set linux=linux
