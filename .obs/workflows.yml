@@ -2,9 +2,6 @@ push_workflow:
   steps:
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-toolkit
-    - trigger_services:
-        project: isv:Rancher:Elemental:Dev
         package: elemental-cli
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
@@ -19,9 +16,6 @@ tag_workflow:
   steps:
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-toolkit
-    - trigger_services:
-        project: isv:Rancher:Elemental:Dev
         package: elemental-cli
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
@@ -31,10 +25,6 @@ tag_workflow:
 
 pr_workflow:
   steps:
-    - branch_package:
-        source_project: isv:Rancher:Elemental:Dev
-        source_package: elemental-toolkit
-        target_project: isv:Rancher:Elemental:PR
     - branch_package:
         source_project: isv:Rancher:Elemental:Dev
         source_package: elemental-cli
