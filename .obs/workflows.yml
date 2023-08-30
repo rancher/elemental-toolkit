@@ -2,7 +2,7 @@ push_workflow:
   steps:
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-cli
+        package: elemental-toolkit
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
         package: builder-image
@@ -16,7 +16,7 @@ tag_workflow:
   steps:
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-cli
+        package: elemental-toolkit
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
         package: builder-image
@@ -27,7 +27,7 @@ pr_workflow:
   steps:
     - branch_package:
         source_project: isv:Rancher:Elemental:Dev
-        source_package: elemental-cli
+        source_package: elemental-toolkit
         target_project: isv:Rancher:Elemental:PR
     - branch_package:
         source_project: isv:Rancher:Elemental:Dev
