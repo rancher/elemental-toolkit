@@ -5,9 +5,6 @@ push_workflow:
         package: elemental-toolkit
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-cli
-    - trigger_services:
-        project: isv:Rancher:Elemental:Dev
         package: builder-image
   filters:
     branches:
@@ -22,9 +19,6 @@ tag_workflow:
         package: elemental-toolkit
     - trigger_services:
         project: isv:Rancher:Elemental:Dev
-        package: elemental-cli
-    - trigger_services:
-        project: isv:Rancher:Elemental:Dev
         package: builder-image
   filters:
     event: tag_push
@@ -34,10 +28,6 @@ pr_workflow:
     - branch_package:
         source_project: isv:Rancher:Elemental:Dev
         source_package: elemental-toolkit
-        target_project: isv:Rancher:Elemental:PR
-    - branch_package:
-        source_project: isv:Rancher:Elemental:Dev
-        source_package: elemental-cli
         target_project: isv:Rancher:Elemental:PR
     - branch_package:
         source_project: isv:Rancher:Elemental:Dev
