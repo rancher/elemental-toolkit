@@ -16,9 +16,6 @@ ADD internal internal
 ADD pkg pkg
 ADD main.go .
 
-# Install cosign
-RUN go install github.com/sigstore/cosign/v2/cmd/cosign@latest && cp $(go env GOPATH)/bin/cosign /usr/bin/cosign
-
 # Set arg/env after go mod download, otherwise we invalidate the cached layers due to the commit changing easily
 ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
@@ -51,10 +48,10 @@ RUN ARCH=$(uname -m); \
         squashfs \
         mtools \
         xorriso \
+	cosign \
         lvm2
 
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
-COPY --from=elemental-bin /usr/bin/cosign /usr/bin/cosign
 
 # Fix for blkid only using udev on opensuse
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf
