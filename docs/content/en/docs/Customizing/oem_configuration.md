@@ -2,7 +2,7 @@
 title: "OEM configuration"
 linkTitle: "OEM configuration"
 weight: 3
-date: 2017-01-05
+date: 2023-08-31
 description: >
   OEM configuration reserved to Elemental and derivatives
 ---
@@ -16,15 +16,11 @@ For runtime persistence configuration, the only supported way is with cloud-conf
 
 A derivative automatically loads and executes cloud-config files during the various system [stages](../stages) also inside `/system/oem` which is read-only and reserved to the system.
 
-{{% alert title="Note" %}}
-The cloud-config mechanism works also as an emitter event pattern - running services or programs can emit new custom `stages` in runtime by running `cos-setup stage_name`.
-{{% /alert %}}
-
 Derivatives that wish to override default configurations can do that by placing extra cloud-init file, or overriding completely `/system/oem` in the target image.
 
-This is to setup for example, the default root password or the prefered upgrade channel. 
+This is to setup for example, the default root password or the preferred upgrade channel. 
 
-The following are the `Elemental` default oem files, which are shipped within the {{<package package="system/cloud-config" >}}, which is an optional package:
+The following are the `Elemental` default oem files, which are shipped within the `cloud-config-defaults` and `cloud-config-essentials` features:
 
 ```
 /system/oem/00_rootfs.yaml - defines the rootfs mountpoint layout setting
@@ -36,4 +32,4 @@ The following are the `Elemental` default oem files, which are shipped within th
 /system/oem/06_recovery.yaml - Executes additional commands when booting in recovery mode
 ```
 
-You can either override the above files, or alternatively not consume the {{<package package="system/cloud-config" >}} package while building a derivative.
+You can either override the above files, or alternatively not consume the above features while building a derivative.

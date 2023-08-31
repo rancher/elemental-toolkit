@@ -3,7 +3,7 @@
 title: "Cloud-init support"
 linkTitle: "Cloud-init support"
 weight: 3
-date: 2021-01-05
+date: 2023-08-31
 description: >
   Features inherited by Elemental derivatives that are also available in the Elemental vanilla images
 ---
@@ -88,16 +88,7 @@ The default cloud-config format is split into *stages* (*initramfs*, *boot*, *ne
 Each cloud-config file is loaded and executed only at the apprioriate stage, this allows further components to emit their own stages at the desired time.
 
 {{% pageinfo %}}
-The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases), or just run it with docker:
-
-```bash
-cat <<EOF | docker run -i --rm quay.io/costoolkit/releases-teal:cos-recovery-0.8.10-3 yip -s test -
-stages:
- test:
- - commands:
-   - echo "test"
-EOF
-```
+The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases).
 {{% /pageinfo %}}
 
 _Note_: Each cloud-init option can be either run in *dot notation* ( e.g. `stages.network[0].authorized_keys.user=github:user` ) in the boot args or either can supply a cloud-init URL at boot with the `cos.setup=$URL` parameter.

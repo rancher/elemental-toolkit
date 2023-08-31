@@ -7,7 +7,6 @@ description: >
   This document describes the requirements to create standard container images that can be used for `Elemental` deployments
 ---
 
-
 You can find the examples below in the [examples](https://github.com/rancher/elemental-toolkit/tree/main/examples) folder.
 
 ## From standard images
@@ -15,7 +14,6 @@ You can find the examples below in the [examples](https://github.com/rancher/ele
 Besides using the `elemental-toolkit` toolchain, it's possible to create standard container images which are consumable by the vanilla `Elemental` images (ISO, Cloud Images, etc.) during the upgrade and deploy phase.
 
 An example of a Dockerfile image can be:
-
 
 {{<githubembed repo="rancher/elemental-toolkit" file="examples/green/Dockerfile" lang="Dockerfile">}}
 
@@ -33,6 +31,8 @@ systemd
 kernel
 dracut
 ```
+
+And then extract the configuration for the system using the `elemental init`-command.
 
 ## Customizations
 

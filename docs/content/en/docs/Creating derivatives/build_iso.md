@@ -2,26 +2,22 @@
 title: "Build ISOs"
 linkTitle: "Build ISOs"
 weight: 4
-date: 2017-01-05
+date: 2023-08-31
 description: >
   Build ISOs from bootable images
 ---
 
-![](https://docs.google.com/drawings/d/e/2PACX-1vReZtyNs0imrji-AwnqK0-4ekCKLcKzfnQ_CwiMj93Q7IsycAJHwlNohwCv_hyHnaify7qO-v2Cecg5/pub?w=1223&h=691)
+In order to build an ISO we rely on `elemental build-iso` command. It accepts a YAML file denoting the sources to bundle in an ISO. In addition it can also overlay custom files or use container images from a registry as packages.
 
-In order to build an ISO we rely on [elemental build-iso](https://github.com/rancher/elemental-cli) command. It accepts a YAML file denoting the sources to bundle in an ISO. In addition it can also overlay custom files or use container images from a registry as packages.
-
-To build an iso, just run:
+To build an ISO, just run:
 
 ```bash
-docker run --rm -ti -v $(pwd):/build quay.io/costoolkit/elemental-cli:v0.0.14-e4e39d4 --debug build-iso -o /build $SOURCE
+docker run --rm -ti -v $(pwd):/build ghcr.io/rancher/elemental-toolkit/elemental-cli:latest --debug build-iso -o /build $SOURCE
 ```
 
 Where `$SOURCE` might be the container image you want to build the ISO for, you might want to check on [how to build bootable images](../creating_bootable_images). Argument `$SOURCE` might be the reference to the directory, file, container image or channel we are building the ISO for, it should be provided as uri in following format <sourceType>:<sourceName>, where:
     * <sourceType> - might be ["dir", "file", "oci", "docker"], as default is taken "docker"
     * <sourceName> - is path to file or directory, channel or image name with tag version (if tag was not provided then "latest" is used)
-
-Some examples for $SOURCE argument "dir:/cOS/system", "oci:quay.io/repository/costoolkit/releases-green:cos-system-0.8.14-10", "channel:system/cos"
 
 `elemental build-iso` command also supports reading a configuration `manifest.yaml` file. It is loaded form the directory specified by `--config-dir` elemental's flag.
 
@@ -30,7 +26,7 @@ An example of a yaml file using the bootloader from the contained image:
 ```yaml
 iso:
   bootloader-in-rootfs: true
-  label: "COS_LIVE"
+  grub-entry-name: "Installer"
 
 name: "Elemental-0"
 date: true
