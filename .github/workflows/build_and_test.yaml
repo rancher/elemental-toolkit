@@ -168,6 +168,7 @@ jobs:
       - if: ${{ env.ARCH == 'x86_64' }} 
         name: Run VM script dependencies
         run: |
+          brew update; brew upgrade qemu
           brew install bash coreutils
       - if: ${{ env.ARCH == 'x86_64' }} 
         name: Prepare test (x86_64)
