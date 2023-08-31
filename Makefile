@@ -5,7 +5,6 @@ QCOW2?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=$(shell uname -m)
-GRUB_ARCH?=$(ARCH)
 PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=20G
 PACKER_TARGET?=qemu.elemental-${ARCH}
@@ -23,10 +22,6 @@ LDFLAGS    := -w -s
 LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.version=${GIT_TAG}"
 LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.gitCommit=${GIT_COMMIT}"
 
-ifeq ("$(GRUB_ARCH)", "aarch64")
-GRUB_ARCH=arm64
-endif
-
 # default target
 .PHONY: all
 all: build build-cli
@@ -39,7 +34,7 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build --platform ${PLATFORM} --build-arg GRUB_ARCH=$(GRUB_ARCH) --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
+	$(DOCKER) build --platform ${PLATFORM} ${DOCKER_ARGS} --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
 
 .PHONY: push-toolkit
 push-toolkit:
@@ -51,7 +46,7 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} --build-arg GRUB_ARCH=$(GRUB_ARCH) --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: push-os
 push-os:
