@@ -8,16 +8,16 @@ FROM opensuse/leap:15.4 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
-ARG GRUB_ARCH
-ENV GRUB_ARCH=${GRUB_ARCH}
 
 # install kernel, systemd, dracut, grub2 and other required tools
-RUN zypper --non-interactive install --no-recommends -- \
+RUN ARCH=$(uname -m); \
+    if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi; \
+    zypper --non-interactive install --no-recommends -- \
       kernel-default \
       device-mapper \
       dracut \
       grub2 \
-      grub2-${GRUB_ARCH}-efi \
+      grub2-${ARCH}-efi \
       shim \
       haveged \
       systemd \

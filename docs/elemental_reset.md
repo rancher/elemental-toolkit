@@ -9,6 +9,7 @@ elemental reset [flags]
 ### Options
 
 ```
+  -c, --cloud-init strings   Cloud-init config files
       --cosign               Enable cosign verification (requires images with signatures)
       --cosign-key string    Sets the URL of the public key to be used by cosign validation
       --disable-boot-entry   Dont create an EFI entry for the system install.

@@ -16,9 +16,6 @@ ADD internal internal
 ADD pkg pkg
 ADD main.go .
 
-# Install cosign
-RUN go install github.com/sigstore/cosign/v2/cmd/cosign@latest && cp $(go env GOPATH)/bin/cosign /usr/bin/cosign
-
 # Set arg/env after go mod download, otherwise we invalidate the cached layers due to the commit changing easily
 ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
@@ -36,10 +33,9 @@ FROM opensuse/leap:$LEAP_VERSION AS elemental
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 
-ARG GRUB_ARCH
-ENV GRUB_ARCH=${GRUB_ARCH}
-
-RUN zypper install -y --no-recommends xfsprogs \
+RUN ARCH=$(uname -m); \
+    if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi; \
+    zypper install -y --no-recommends xfsprogs \
         parted \
         util-linux-systemd \
         e2fsprogs \
@@ -48,14 +44,14 @@ RUN zypper install -y --no-recommends xfsprogs \
         rsync \
         grub2 \
         dosfstools \
-        grub2-${GRUB_ARCH}-efi \
+        grub2-${ARCH}-efi \
         squashfs \
         mtools \
         xorriso \
+	cosign \
         lvm2
 
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
-COPY --from=elemental-bin /usr/bin/cosign /usr/bin/cosign
 
 # Fix for blkid only using udev on opensuse
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf

@@ -2,7 +2,7 @@
 title: "Runtime persistent changes"
 linkTitle: "Runtime persistent changes"
 weight: 3
-date: 2021-09-24
+date: 2023-08-31
 description: >
   Applying changes to Elemental images in runtime or “how to install a package in an immutable OS at runtime?”
 ---
@@ -18,8 +18,6 @@ We will see here a way to install packages, drivers, or apply any modification w
 To apply transient changes, it's possible to boot a Elemental derivative in read/write mode by specifying `rd.cos.debugrw` [see here for more details](../../reference/immutable_rootfs). This allows to do any change and will persist into the active/passive booting system (does NOT apply for recovery). Altough this methodology should be only considered for debugging purposes.
 
 ## Persist changes with Cloud init files
-
-Note: The following applies only to derivatives with {{<package package="utils/installer" >}} at version `0.17` or newer
 
 Elemental allows to apply a set of commands, or cloud-init steps, during upgrade, deploy, install and reset in the context of the target image, in RW capabilities. This allows to carry on changes during upgrades on the target image without the need to re-build or have a custom derivative image.
 

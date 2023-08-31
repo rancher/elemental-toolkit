@@ -23,7 +23,7 @@ Note it is required to load the policy in advance to be capable to apply the `re
 
 ## Using custom SELinux modules
 
-Making use of `selinux` and including SELinux utilities and targeted policy within the base OS it is enough to get started with SELinux, however there is a great chance that this is too generic and requires some additional policy modules to be fully functional according to each specific use case. In that regard the  `system/elemental-selinux` luet package provides a basic custom module for illustration purposes, **it should NOT be used as is** in production. `system/elemental-selinux` provides the sources of a very simple Type Enforcement (TE) file (`/usr/share/elemental/selinux/elemental.te`) and the compiled Policy Package (`/usr/share/elemental/selinux/elemental.pp`) out of the TE file, ready to be installed and loaded by SELinux.
+Making use of `selinux` and including SELinux utilities and targeted policy within the base OS it is enough to get started with SELinux, however there is a great chance that this is too generic and requires some additional policy modules to be fully functional according to each specific use case.
 
 The Type Enforcement file was created by booting an Elemental OS on permissive mode using `audit2allow` and other SELinux related utilities to generate the custom module out of the reported denials. Something like:
 

@@ -2,7 +2,7 @@
 title: "Build disk images with Elemental"
 linkTitle: "Build disk images with Elemental"
 weight: 4
-date: 2022-03-03
+date: 2023-08-31
 description: >
   This section documents the procedure to build disk images using elemental
 ---
@@ -16,13 +16,6 @@ Requirements:
 The suggested approach is based on using the Elemental installer (`elemental install` command) to run the installation
 from a Linux to a loop device. The loop device can be a raw image created with `qemu-img create` that can easily be
 converted to other formats after the installation by using `qemu-img convert`.
-
-## Get Elemental
-
-Elemental binary can be downloaded from the [github releases](https://github.com/rancher/elemental-cli/releases/latest) page.
-
-The golang binary can be used as is, however take into account that some linux utilities are expected to be present in the host. More
-specific elemental expects to find common linux utilities to operate over block devices: rsync, parted, blkid, lsblk, udevadm, resize2fs, tune2fs, mkfs.ext2, etc.
 
 ## Prepare the loop device
 

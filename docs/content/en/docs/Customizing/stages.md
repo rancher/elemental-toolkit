@@ -14,8 +14,6 @@ We have a custom augmented cloud-init syntax that allows to hook into various st
 - Network availability
 - During upgrades, installation, deployments  , and resets
 
-![Stages](https://docs.google.com/drawings/d/e/2PACX-1vRuITNgkCeDfS4LqxDvz2j4WxuRDzU8dJOTa5CY88ya8_hJ1QeaGKipTanggtiXiCxhwkUpYld-Cbxa/pub?w=885&h=761)
-
 Cloud-init files in `/system/oem`, `/oem` and `/usr/local/oem` are applied in 5 different phases: `boot`, `network`, `fs`, `initramfs` and `reconcile`. All the available cloud-init keywords can be used in each stage. Additionally, it's possible also to hook before or after a stage has run, each one has a specific stage which is possible to run steps: `boot.after`, `network.before`, `fs.after` etc.
 
 Multiple stages can be specified in a single cloud-init file.
