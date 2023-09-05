@@ -20,6 +20,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -91,6 +92,12 @@ func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
 			return err
 		}
 
+		filePerm, err := os.Stat(path)
+		if err != nil {
+			log.Errorf("Error getting permissions on embedded file '%s': %s", path, err.Error())
+			return err
+		}
+
 		content, err := files.ReadFile(path)
 		if err != nil {
 			log.Errorf("Error reading embedded file '%s': %s", path, err.Error())
@@ -98,7 +105,7 @@ func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
 		}
 
 		log.Debugf("Writing file '%s' to '%s'", path, targetPath)
-		return destFs.WriteFile(targetPath, content, 0755)
+		return destFs.WriteFile(targetPath, content, filePerm.Mode().Perm())
 	})
 	if err != nil {
 		log.Errorf("Error walking files for feature %s: %s", f.Name, err.Error())
