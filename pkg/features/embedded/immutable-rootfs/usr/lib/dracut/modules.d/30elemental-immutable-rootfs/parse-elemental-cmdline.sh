@@ -43,7 +43,7 @@ esac
 
 info "root device set to root=${root}"
 
-wait_for_dev -n "${root}"
+wait_for_dev -n "${root#block:}"
 
 # Only run filesystem checks on force mode
 fsck_mode=$(getarg fsck.mode=)
