@@ -1,5 +1,5 @@
 ARG GO_VERSION=1.20
-ARG LEAP_VERSION=15.4
+ARG LEAP_VERSION=15.5
 
 FROM golang:${GO_VERSION}-alpine as elemental-bin
 
@@ -48,7 +48,7 @@ RUN ARCH=$(uname -m); \
         squashfs \
         mtools \
         xorriso \
-	cosign \
+        cosign \
         lvm2
 
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental

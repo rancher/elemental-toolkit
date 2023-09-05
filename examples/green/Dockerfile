@@ -41,6 +41,7 @@ RUN ARCH=$(uname -m); \
       which \
       less \
       sudo \
+      curl \
       sed
 
 # Just add the elemental cli
