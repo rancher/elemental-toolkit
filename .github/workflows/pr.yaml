@@ -12,6 +12,7 @@ on:
       - pkg/**
       - cmd/**
       - go.{mod,sum}
+      - examples/**
 
 jobs:
   detect:

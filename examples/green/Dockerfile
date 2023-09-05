@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM opensuse/leap:15.4 as OS
+FROM opensuse/leap:15.5 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -41,6 +41,7 @@ RUN ARCH=$(uname -m); \
       which \
       less \
       sudo \
+      curl \
       sed
 
 # Just add the elemental cli
