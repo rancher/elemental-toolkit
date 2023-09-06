@@ -84,7 +84,6 @@ type SUT struct {
 }
 
 func NewSUT() *SUT {
-
 	user := os.Getenv("COS_USER")
 	if user == "" {
 		user = "root"
@@ -124,7 +123,6 @@ func NewSUT() *SUT {
 }
 
 func (s *SUT) ChangeBoot(b string) error {
-
 	var bootEntry string
 
 	switch b {
@@ -143,7 +141,6 @@ func (s *SUT) ChangeBoot(b string) error {
 }
 
 func (s *SUT) ChangeBootOnce(b string) error {
-
 	var bootEntry string
 
 	switch b {
@@ -328,6 +325,13 @@ func (s SUT) GatherAllLogs() {
 		"cos-setup-reconcile",
 		"cos-setup-rootfs",
 		"cos-immutable-rootfs",
+		"elemental-setup-boot",
+		"elemental-setup-fs",
+		"elemental-setup-initramfs",
+		"elemental-setup-network",
+		"elemental-setup-reconcile",
+		"elemental-setup-rootfs",
+		"elemental-immutable-rootfs",
 	}
 
 	logFiles := []string{
@@ -514,34 +518,6 @@ func (s SUT) ElementalCmd(args ...string) string {
 		eleCommand = strings.Join([]string{eleCommand, arg}, " ")
 	}
 	return eleCommand
-}
-
-func (s *SUT) GetArtifactsRepo() string {
-	// Use it as kind of cache in case we call it several times, so we avoid multiple ssh calls
-	if s.artifactsRepo != "" {
-		return s.artifactsRepo
-	}
-	artifactRepo := os.Getenv("ARTIFACTS_REPO")
-	if artifactRepo == "" {
-		if s.GetArch() == "aarch64" {
-			artifactRepo = "quay.io/costoolkit/releases-teal-arm64"
-		} else {
-			artifactRepo = "quay.io/costoolkit/releases-teal"
-		}
-	}
-	// Set it in case it needs to be reused
-	s.artifactsRepo = artifactRepo
-	return artifactRepo
-}
-
-// GetSystemURIDocker gets the commonly used --system.uri value for testing
-func (s SUT) GetSystemURIDocker() string {
-	return fmt.Sprintf("docker:%s:cos-system-%s", s.GetArtifactsRepo(), s.TestVersion)
-}
-
-// GetRecoveryURIDocker gets the commonly used --recovery-system.uri value for testing
-func (s SUT) GetRecoveryURIDocker() string {
-	return fmt.Sprintf("docker:%s:cos-recovery-%s", s.GetArtifactsRepo(), s.TestVersion)
 }
 
 // AssertBootedFrom asserts that we booted from the proper type and adds a helpful message
