@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 ARG BASE_OS_IMAGE=opensuse/leap
 ARG BASE_OS_VERSION=15.5
 ARG GO_VERSION=1.20
+=======
+ARG GO_VERSION=1.21
+ARG LEAP_VERSION=15.5
+>>>>>>> f1600613 (Add mount command)
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as elemental-bin
 

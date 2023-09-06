@@ -168,10 +168,10 @@ func (u *UpgradeAction) Run() (err error) {
 
 	if u.spec.RecoveryUpgrade {
 		upgradeImg = u.spec.Recovery
-		finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, "cOS", constants.RecoveryImgFile)
+		finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgPath)
 	} else {
 		upgradeImg = u.spec.Active
-		finalImageFile = filepath.Join(u.spec.Partitions.State.MountPoint, "cOS", constants.ActiveImgFile)
+		finalImageFile = filepath.Join(u.spec.Partitions.State.MountPoint, constants.ActiveImgPath)
 	}
 
 	umount, err := e.MountRWPartition(u.spec.Partitions.State)
@@ -285,7 +285,7 @@ func (u *UpgradeAction) Run() (err error) {
 		//TODO this step could be part of elemental package
 		// backup current active.img to passive.img before overwriting the active.img
 		u.Info("Backing up current active image")
-		source := filepath.Join(u.spec.Partitions.State.MountPoint, "cOS", constants.ActiveImgFile)
+		source := filepath.Join(u.spec.Partitions.State.MountPoint, constants.ActiveImgPath)
 		u.Info("Moving %s to %s", source, u.spec.Passive.File)
 		_, err := u.config.Runner.Run("mv", "-f", source, u.spec.Passive.File)
 		if err != nil {

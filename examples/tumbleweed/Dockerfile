@@ -7,7 +7,11 @@ ARG OS_VERSION=latest
 FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
 
 # OS base image of our choice
+<<<<<<< HEAD
 FROM ${OS_IMAGE}:${OS_VERSION} AS OS
+=======
+FROM registry.opensuse.org/opensuse/tumbleweed:latest as OS
+>>>>>>> f1600613 (Add mount command)
 ARG REPO
 ARG VERSION
 ENV REPO=${REPO}
@@ -79,7 +83,12 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental --debug init -f 
+RUN elemental init -f elemental-rootfs,grub-config,grub-default-bootargs,dracut-config,cloud-config-defaults,cloud-config-essentials && \
+    kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
+    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
+    rm -rf /var/log/update* && \
+    >/var/log/lastlog && \
+    rm -rf /boot/vmlinux*
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

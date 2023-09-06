@@ -428,7 +428,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	})
 	Describe("CreateDirStructure", Label("CreateDirStructure"), func() {
 		It("Creates essential directories", func() {
-			dirList := []string{"sys", "proc", "dev", "tmp", "boot", "usr/local", "oem"}
+			dirList := []string{"sys", "proc", "dev", "tmp", "boot", "oem"}
 			for _, dir := range dirList {
 				_, err := fs.Stat(fmt.Sprintf("/my/root/%s", dir))
 				Expect(err).NotTo(BeNil())

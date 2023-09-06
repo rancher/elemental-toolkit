@@ -227,11 +227,94 @@ func (i *InstallSpec) Sanitize() error {
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
 
+// InitSpec struct represents all the init action details
 type InitSpec struct {
 	Mkinitrd bool `yaml:"mkinitrd,omitempty" mapstructure:"mkinitrd"`
 	Force    bool `yaml:"force,omitempty" mapstructure:"force"`
 
 	Features []string `yaml:"features,omitempty" mapstructure:"features"`
+}
+
+// MountSpec struct represents all the mount action details
+type MountSpec struct {
+	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
+	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	RunRootfsService  bool   `yaml:"run-rootfs-service,omitempty" mapstructure:"run-rootfs-service"`
+	RunFsck           bool   `yaml:"run-fsck,omitempty" mapstructure:"run-fsck"`
+	Disable           bool   `yaml:"disable,omitempty" mapstructure:"disable"`
+	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode              string `yaml:"mode,omitempty" mapstructure:"mode"`
+	Image             *Image `yaml:"image,omitempty" mapstructure:"image"`
+	Partitions        ElementalPartitions
+	Overlay           OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
+	Persistent        PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+}
+
+// PersistentMounts struct contains settings for which paths to mount as
+// persistent
+type PersistentMounts struct {
+	Mode  string   `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+// OverlayMounts contains information about the RW overlay mounted over the
+// immutable system.
+type OverlayMounts struct {
+	Type   string   `yaml:"type,omitempty" mapstructure:"type"`
+	Device string   `yaml:"device,omitempty" mapstructure:"device"`
+	Size   string   `yaml:"size,omitempty" mapstructure:"size"`
+	Paths  []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+// if unsolvable inconsistencies are found
+func (spec *MountSpec) Sanitize() error {
+	switch spec.Persistent.Mode {
+	case constants.BindMode, constants.OverlayMode:
+		break
+	default:
+		return fmt.Errorf("unknown persistent mode: '%s'", spec.Persistent.Mode)
+	}
+
+	switch spec.Overlay.Type {
+	case constants.Tmpfs, constants.Block:
+		break
+	default:
+		return fmt.Errorf("unknown overlay type: '%s'", spec.Overlay.Type)
+	}
+
+	// If the Mode is set as an image path we convert it to just say
+	// active|passive|recovery and calculate the path below.
+	switch spec.Mode {
+	case constants.ActiveImgPath:
+		spec.Mode = constants.ActiveImgName
+	case constants.PassiveImgPath:
+		spec.Mode = constants.PassiveImgName
+	case constants.RecoveryImgPath:
+		spec.Mode = constants.RecoveryImgName
+	}
+
+	// Mode should be active|passive|recovery here.
+	switch spec.Mode {
+	case constants.ActiveImgName:
+		spec.Image.Label = constants.ActiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.ActiveImgPath)
+	case constants.PassiveImgName:
+		spec.Image.Label = constants.PassiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.PassiveImgPath)
+	case constants.RecoveryImgName:
+		spec.Image.Label = constants.ActiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
+
+		spec.Partitions.State.MountPoint = ""
+		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
+	default:
+		return fmt.Errorf("unknown mode '%s'", spec.Mode)
+	}
+
+	spec.Image.Source = NewFileSrc(spec.Image.File)
+
+	return nil
 }
 
 // ResetSpec struct represents all the reset action details
