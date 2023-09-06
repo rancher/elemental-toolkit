@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         arch: ['x86_64', 'aarch64']
-        flavor: ['green']
+        flavor: ['green', 'tumbleweed']
     uses: ./.github/workflows/build_and_test.yaml
     with:
       arch: ${{ matrix.arch }}
