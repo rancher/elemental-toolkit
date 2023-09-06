@@ -46,7 +46,7 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} ${DOCKER_ARGS} --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
 
 .PHONY: push-os
 push-os:

@@ -1,5 +1,8 @@
 # Elemental Toolkit
 
+[![PR](https://github.com/rancher/elemental-toolkit/actions/workflows/pr.yaml/badge.svg?branch=main)](https://github.com/rancher/elemental-toolkit/actions/workflows/pr.yaml)
+[![nightly](https://github.com/rancher/elemental-toolkit/actions/workflows/nightly.yaml/badge.svg?branch=main)](https://github.com/rancher/elemental-toolkit/actions/workflows/nightly.yaml)
+
 Elemental-toolkit is a toolkit to build, ship and maintain cloud-init driven Linux derivatives based on container images with a common featureset - allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
 
 It is designed to reduce the maintenance surface, with a flexible approach to provide upgrades from container registries. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
@@ -12,7 +15,7 @@ Documentation is available at [https://rancher.github.io/elemental-toolkit/docs]
 - Immutable-first, but with a flexible layout
 - Cloud-init driven
 - Based on systemd
-- Built and upgraded from containers - It is a [single image OS](https://quay.io/repository/costoolkit/releases-green)!
+- Built and upgraded from containers
 - OTA updates
 - Easy to customize
 - Cryptographically verified
