@@ -228,6 +228,48 @@ func NewInitSpec() *v1.InitSpec {
 	}
 }
 
+func NewMountSpec() *v1.MountSpec {
+	return &v1.MountSpec{
+		Sysroot:       "/sysroot",
+		WriteFstab:    true,
+		WriteSentinel: true,
+		Image: &v1.Image{
+			Label:      constants.ActiveLabel,
+			FS:         constants.LinuxImgFs,
+			File:       filepath.Join(constants.RunningStateDir, "cOS", constants.ActiveImgFile),
+			Source:     v1.NewFileSrc(filepath.Join(constants.RunningStateDir, "cOS", constants.ActiveImgFile)),
+			MountPoint: "/sysroot",
+		},
+		Partitions: v1.ElementalPartitions{
+			State: &v1.Partition{
+				FilesystemLabel: constants.StateLabel,
+				Size:            constants.StateSize,
+				Name:            constants.StatePartName,
+				FS:              constants.LinuxFs,
+				MountPoint:      constants.RunningStateDir,
+				Flags:           []string{},
+			},
+			Persistent: &v1.Partition{
+				FilesystemLabel: constants.PersistentLabel,
+				Size:            constants.PersistentSize,
+				Name:            constants.PersistentPartName,
+				FS:              constants.LinuxFs,
+				MountPoint:      constants.PersistentDir,
+				Flags:           []string{},
+			},
+			OEM: &v1.Partition{
+				FilesystemLabel: constants.OEMLabel,
+				Size:            constants.OEMSize,
+				Name:            constants.OEMPartName,
+				FS:              constants.LinuxFs,
+				MountPoint:      constants.OEMPath,
+				Flags:           []string{},
+			},
+		},
+		RwPaths: []string{"/var", "/etc", "/srv"},
+	}
+}
+
 func NewInstallElementalPartitions() v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 	partitions.OEM = &v1.Partition{

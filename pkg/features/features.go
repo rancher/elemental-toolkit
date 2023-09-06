@@ -36,6 +36,7 @@ const (
 	embeddedRoot = "embedded"
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
+	FeatureElementalRootfs       = "elemental-rootfs"
 	FeatureGrubConfig            = "grub-config"
 	FeatureGrubDefaultBootargs   = "grub-default-bootargs"
 	FeatureElementalSetup        = "elemental-setup"
@@ -133,6 +134,8 @@ func Get(names []string) ([]*Feature, error) {
 		case FeatureCloudConfigEssentials:
 			features = append(features, New(name, nil))
 		case FeatureImmutableRootfs:
+			features = append(features, New(name, nil))
+		case FeatureElementalRootfs:
 			features = append(features, New(name, nil))
 		case FeatureDracutConfig:
 			features = append(features, New(name, nil))

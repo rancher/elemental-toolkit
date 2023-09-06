@@ -124,6 +124,27 @@ upgrade:
   # grub menu entry, this is the string that will be displayed
   grub-entry-name: Elemental
 
+# configuration used for the 'mount' command
+mount:
+  read-kernel-cmdline: true # read and parse /proc/cmdline for arguments
+  sysroot: /sysroot
+  write-fstab: true
+  write-sentinel: true
+  rw-paths:
+    - /var
+    - /etc
+    - /srv
+  persistent:
+    mode: overlay # overlay|bind
+    paths:
+      - /etc/systemd
+      - /etc/ssh
+      - /home
+      - /opt
+      - /root
+      - /usr/libexec
+      - /var/log
+
 # use cosign to validate images from container registries
 cosign: true
 # cosign key to used for validation

@@ -229,11 +229,31 @@ func (i *InstallSpec) Sanitize() error {
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
 
+// InitSpec struct represents all the init action details
 type InitSpec struct {
 	Mkinitrd bool `yaml:"mkinitrd,omitempty" mapstructure:"mkinitrd"`
 	Force    bool `yaml:"force,omitempty" mapstructure:"force"`
 
 	Features []string `yaml:"features,omitempty" mapstructure:"features"`
+}
+
+// MountSpec struct represents all the mount action details
+type MountSpec struct {
+	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
+	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	WriteSentinel     bool   `yaml:"write-sentinel,omitempty" mapstructure:"write-sentinel"`
+	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Image             *Image `yaml:"image,omitempty" mapstructure:"image"`
+	Partitions        ElementalPartitions
+	RwPaths           []string         `yaml:"rw-paths,omitempty" mapstructure:"rw-paths"`
+	Persistent        PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+}
+
+// PersistentMounts struct contains settings for which paths to mount as
+// persistent
+type PersistentMounts struct {
+	Mode  string   `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 
 // ResetSpec struct represents all the reset action details

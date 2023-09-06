@@ -253,6 +253,24 @@ func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
 	return init, err
 }
 
+func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error) {
+	mount := config.NewMountSpec()
+	vp := viper.Sub("mount")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind install cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind install env vars
+	viperReadEnv(vp, "MOUNT", constants.GetInitKeyEnvMap())
+
+	err := vp.Unmarshal(mount, setDecoder, decodeHook)
+	if err != nil {
+		r.Logger.Warnf("error unmarshalling MountSpec: %s", err)
+	}
+	return mount, err
+}
+
 func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error) {
 	reset, err := config.NewResetSpec(r.Config)
 	if err != nil {

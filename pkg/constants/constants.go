@@ -61,7 +61,6 @@ const (
 	ImgSize            = uint(0)
 	ImgOverhead        = uint(256)
 	HTTPTimeout        = 60
-	CosSetup           = "/usr/bin/cos-setup"
 	GPT                = "gpt"
 	BuildImgName       = "elemental"
 	UsrLocalPath       = "/usr/local"
@@ -69,15 +68,16 @@ const (
 	ConfigDir          = "/etc/elemental"
 
 	// Mountpoints of images and partitions
-	RecoveryDir     = "/run/cos/recovery"
-	StateDir        = "/run/cos/state"
-	OEMDir          = "/run/cos/oem"
-	PersistentDir   = "/run/cos/persistent"
-	ActiveDir       = "/run/cos/active"
-	TransitionDir   = "/run/cos/transition"
-	EfiDir          = "/run/cos/efi"
-	ImgSrcDir       = "/run/cos/imgsrc"
-	WorkingImgDir   = "/run/cos/workingtree"
+	RecoveryDir     = "/run/elemental/recovery"
+	StateDir        = "/run/elemental/state"
+	OEMDir          = "/run/elemental/oem"
+	PersistentDir   = "/run/elemental/persistent"
+	ActiveDir       = "/run/elemental/active"
+	TransitionDir   = "/run/elemental/transition"
+	EfiDir          = "/run/elemental/efi"
+	ImgSrcDir       = "/run/elemental/imgsrc"
+	WorkingImgDir   = "/run/elemental/workingtree"
+	OverlayDir      = "/run/elemental/overlay"
 	RunningStateDir = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
 
 	// Live image mountpoints
