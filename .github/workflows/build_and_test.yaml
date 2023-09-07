@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache/restore@v3
         id: cache-check
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}
+          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
           enableCrossOsArchive: true
           lookup-only: true
         with:
@@ -61,7 +61,7 @@ jobs:
         id: cache-iso
         uses: actions/cache/restore@v3
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}
+          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
           enableCrossOsArchive: true
           lookup-only: true
         with:
@@ -81,7 +81,7 @@ jobs:
         id: save-iso
         uses: actions/cache/save@v3
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}
+          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
@@ -101,7 +101,7 @@ jobs:
         uses: actions/cache/restore@v3
         id: cache-check
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}
+          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
@@ -125,7 +125,7 @@ jobs:
         id: cache-disk
         uses: actions/cache/save@v3
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}
+          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
@@ -159,7 +159,7 @@ jobs:
         id: cache-disk
         uses: actions/cache/restore@v3
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}
+          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
