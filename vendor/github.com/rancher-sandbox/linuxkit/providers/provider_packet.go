@@ -25,6 +25,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/packethost/packngo/metadata"
 	"github.com/vishvananda/netlink"
@@ -48,7 +49,21 @@ func (p *ProviderPacket) String() string {
 // Probe checks if we are running on Packet
 func (p *ProviderPacket) Probe() bool {
 	// Unfortunately the host is resolveable globally, so no easy test
-	p.metadata, p.err = metadata.GetMetadata()
+	// No default timeout, so introduce one
+	c1 := make(chan ProviderPacket)
+	go func() {
+		res := ProviderPacket{}
+		res.metadata, res.err = metadata.GetMetadata()
+		c1 <- res
+	}()
+
+	select {
+	case res := <-c1:
+		p.metadata = res.metadata
+		p.err = res.err
+	case <-time.After(2 * time.Second):
+		p.err = fmt.Errorf("packet: timeout while connecting")
+	}
 	return p.err == nil
 }
 

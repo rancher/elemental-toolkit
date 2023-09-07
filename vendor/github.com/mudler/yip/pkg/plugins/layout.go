@@ -54,6 +54,7 @@ const (
 
 func Layout(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) error {
 	if s.Layout.Device == nil {
+		l.Debug("did not find any device in layout")
 		return nil
 	}
 
@@ -65,15 +66,17 @@ func Layout(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) erro
 		}
 	}
 	if len(strings.TrimSpace(s.Layout.Device.Label)) > 0 {
+		l.Debugf("Using label %s for layout expansion", s.Layout.Device.Label)
 		dev, err = FindDiskFromPartitionLabel(l, s.Layout.Device.Label, console)
 		if err != nil {
-			l.Warnf("Exiting, disk not found:\n %s", err.Error())
+			l.Warnf("Exiting, disk with label %s not found: %s", s.Layout.Device.Label, err.Error())
 			return nil
 		}
 	} else if len(strings.TrimSpace(s.Layout.Device.Path)) > 0 {
+		l.Debugf("Using path %s for layout expansion", s.Layout.Device.Path)
 		dev, err = FindDiskFromPath(s.Layout.Device.Path, console)
 		if err != nil {
-			l.Warnf("Exiting, disk not found:\n %s", err.Error())
+			l.Warnf("Exiting, disk with path %s not found: %s", s.Layout.Device.Path, err.Error())
 			return nil
 		}
 	} else {
@@ -86,16 +89,6 @@ func Layout(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) erro
 	if !dev.CheckDiskFreeSpaceMiB(l, 32, console) {
 		l.Warnf("Not enough unpartitioned space in disk to operate")
 		return nil
-	}
-
-	if s.Layout.Expand != nil {
-		l.Infof("Extending last partition up to %d MiB", s.Layout.Expand.Size)
-		out, err := dev.ExpandLastPartition(l, s.Layout.Expand.Size, console)
-		if err != nil {
-			l.Error(out)
-			return err
-		}
-		changed = true
 	}
 
 	for _, part := range s.Layout.Parts {
@@ -120,6 +113,20 @@ func Layout(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) erro
 		changed = true
 	}
 
+	if s.Layout.Expand != nil {
+		if s.Layout.Expand.Size == 0 {
+			l.Info("Extending last partition to max space")
+		} else {
+			l.Infof("Extending last partition up to %d MiB", s.Layout.Expand.Size)
+		}
+		out, err := dev.ExpandLastPartition(l, s.Layout.Expand.Size, console)
+		if err != nil {
+			l.Error(out)
+			return err
+		}
+		changed = true
+	}
+
 	if changed {
 		dev.ReloadPartitionTable(l, console)
 	}
@@ -133,18 +140,22 @@ func MatchPartitionFSLabel(l logger.Interface, label string, console Console) st
 		out, err := console.Run(fmt.Sprintf("blkid -l --match-token LABEL=%s -o device", label))
 		if err == nil {
 			return out
+		} else {
+			l.Debugf("failed to get device for label %s: %s", label, err.Error())
 		}
+
 	}
 	return ""
 }
 
 func MatchPartitionPLabel(l logger.Interface, label string, console Console) string {
 	if label != "" {
-		out, _ := console.Run("udevadm settle")
-		l.Debugf("Output of udevadm settle: %s", out)
+		_, _ = console.Run("udevadm settle")
 		out, err := console.Run(fmt.Sprintf("blkid -l --match-token PARTLABEL=%s -o device", label))
 		if err == nil {
-			return out
+			return strings.TrimSpace(out)
+		} else {
+			l.Debugf("failed to get device for partition label %s: %s", label, err.Error())
 		}
 	}
 	return ""
@@ -153,14 +164,15 @@ func MatchPartitionPLabel(l logger.Interface, label string, console Console) str
 func FindDiskFromPath(path string, console Console) (Disk, error) {
 	out, err := console.Run(fmt.Sprintf("lsblk -npo type %s", path))
 	if err != nil {
-		return Disk{}, errors.New(fmt.Sprintf("Error: %s", out))
+		return Disk{}, errors.New(fmt.Sprintf("Output: %s Error: %s", out, err.Error()))
 	}
-	if strings.HasPrefix(out, "disk") {
+	if strings.HasPrefix(strings.TrimSpace(out), "disk") {
 		return Disk{Device: path}, nil
-	} else if strings.HasPrefix(out, "loop") {
+	} else if strings.HasPrefix(strings.TrimSpace(out), "loop") {
 		return Disk{Device: path}, nil
-	} else if strings.HasPrefix(out, "part") {
+	} else if strings.HasPrefix(strings.TrimSpace(out), "part") {
 		device, err := console.Run(fmt.Sprintf("lsblk -npo pkname %s", path))
+		device = strings.TrimSpace(device)
 		if err == nil {
 			return Disk{Device: device}, nil
 		}
@@ -173,10 +185,15 @@ func FindDiskFromPartitionLabel(l logger.Interface, label string, console Consol
 	if partnode := MatchPartitionFSLabel(l, label, console); partnode != "" {
 		device, err := console.Run(fmt.Sprintf("lsblk -npo pkname %s", partnode))
 		if err == nil {
+			device = strings.TrimSpace(device)
+			l.Debugf("Got device %s for label %s", device, label)
 			return Disk{Device: device}, nil
+		} else {
+			l.Debugf("Error getting partition fs label: %s", err.Error())
 		}
 	} else if partnode := MatchPartitionPLabel(l, label, console); partnode != "" {
 		device, err := console.Run(fmt.Sprintf("lsblk -npo pkname %s", partnode))
+		device = strings.TrimSpace(device)
 		if err == nil {
 			return Disk{Device: device}, nil
 		}
@@ -214,7 +231,7 @@ func (dev *Disk) Reload(console Console) error {
 func (dev *Disk) CheckDiskFreeSpaceMiB(l logger.Interface, minSpace uint, console Console) bool {
 	freeS, err := dev.GetFreeSpace(l, console)
 	if err != nil {
-		l.Warnf("Could not calculate disk free space")
+		l.Warnf("Could not calculate disk free space: %s", err.Error())
 		return false
 	}
 	minSec := MiBToSectors(minSpace, dev.SectorS)
@@ -271,7 +288,7 @@ func (dev Disk) computeFreeSpaceWithoutLast() uint {
 	}
 }
 
-//Size is expressed in MiB here
+// Size is expressed in MiB here
 func (dev *Disk) AddPartition(l logger.Interface, label string, size uint, fileSystem string, pLabel string, console Console) (string, error) {
 	gd := NewGdiskCall(dev.String())
 	pType := "8300"
@@ -344,8 +361,7 @@ func (dev *Disk) AddPartition(l logger.Interface, label string, size uint, fileS
 func (dev Disk) ReloadPartitionTable(l logger.Interface, console Console) error {
 	for tries := 0; tries <= partitionTries; tries++ {
 		l.Debugf("Trying to reread the partition table of %s (try number %d)", dev, tries+1)
-		out, _ := console.Run("udevadm settle")
-		l.Debugf("Output of udevadm settle: %s", out)
+		_, _ = console.Run("udevadm settle")
 
 		out, err1 := console.Run(fmt.Sprintf("partprobe %s", dev))
 		l.Debugf("output of partprobe: %s", out)
@@ -379,7 +395,7 @@ func (dev Disk) FindPartitionDevice(l logger.Interface, partNum int, console Con
 			return "", err
 		}
 		l.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
-		out, err := console.Run("udevadm settle")
+		out, _ := console.Run("udevadm settle")
 		l.Debugf("Output of udevadm settle: %s", out)
 		if err != nil && tries == (partitionTries-1) {
 			l.Debugf("Error of udevadm settle: %s", err)
@@ -409,12 +425,11 @@ func (dev Disk) FindPartitionDevice(l logger.Interface, partNum int, console Con
 	return match, nil
 }
 
-//Size is expressed in MiB here
+// ExpandLastPartition will call growpart + resize tool in a given partition to grow it up to max space available
 func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Console) (string, error) {
 	if len(dev.Parts) == 0 {
 		return "", errors.New("There is no partition to expand")
 	}
-	gd := NewGdiskCall(dev.String())
 
 	//Check we have loaded partition table data
 	if dev.SectorS == 0 {
@@ -425,7 +440,6 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 		}
 	}
 
-	part := dev.Parts[len(dev.Parts)-1]
 	if size > 0 {
 		size = MiBToSectors(size, dev.SectorS)
 		part := dev.Parts[len(dev.Parts)-1]
@@ -437,15 +451,16 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 			return "", errors.New(fmt.Sprintf("Not enough free space for to expand last partition up to %d sectors", size))
 		}
 	}
-	part.SizeS = size
 
-	gd.DeletePartition(part.Number)
-	gd.CreatePartition(&part)
-	out, err := gd.WriteChanges(console)
+	part := dev.Parts[len(dev.Parts)-1]
+
+	// Grow partition
+	out, err := console.Run(fmt.Sprintf("growpart %s %d", dev.Device, part.Number))
 	if err != nil {
-		return "", err
+		return out, err
 	}
 
+	// Expand FS
 	fullDevice := fmt.Sprintf("%s%d", dev.Device, part.Number)
 	out, err = dev.expandFilesystem(fullDevice, console)
 	if err != nil {
@@ -456,6 +471,7 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 	if err != nil {
 		return "", err
 	}
+
 	return out, nil
 }
 
@@ -583,13 +599,27 @@ func (gd GdiskCall) GetLastSector(printOut string) (uint, error) {
 }
 
 // Parses the output of a GdiskCall.Print call
+// There was a change in the output of sgdisk in version 1.0.2
+// https://www.rodsbooks.com/gdisk/revisions.html
+// We are trying to match both possible outputs
 func (gd GdiskCall) GetSectorSize(printOut string) (uint, error) {
+
+	// Matching: "Logical sector size: 512 bytes"
 	re := regexp.MustCompile("sector size: (\\d+)")
 	match := re.FindStringSubmatch(printOut)
 	if match != nil {
 		size, err := strconv.ParseUint(match[1], 10, 0)
 		return uint(size), err
 	}
+
+	// Matching: "Sector size (logical/physical): 512/512 bytes"
+	re = regexp.MustCompile(`Sector size \(logical\/physical\): (\d+)\/\d+ bytes`)
+	match = re.FindStringSubmatch(printOut)
+	if match != nil {
+		size, err := strconv.ParseUint(match[1], 10, 0)
+		return uint(size), err
+	}
+
 	return 0, errors.New("Could not determine sector size")
 }
 

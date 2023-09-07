@@ -38,7 +38,7 @@ func NewOpenstack() *ProviderOpenstack {
 }
 
 func (p *ProviderOpenstack) String() string {
-	return "openstack"
+	return "Openstack"
 }
 
 // Probe checks if we are running on OpenStack

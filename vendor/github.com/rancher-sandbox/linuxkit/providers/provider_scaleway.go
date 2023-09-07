@@ -60,12 +60,7 @@ func (p *ProviderScaleway) String() string {
 func (p *ProviderScaleway) Probe() bool {
 	// Getting the conf should always work...
 	_, err := scalewayGet(scalewayMetadataURL + "conf")
-	if err != nil {
-		log.Printf(err.Error())
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // Extract gets both the Scaleway specific and generic userdata

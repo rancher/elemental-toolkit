@@ -318,13 +318,6 @@ func (s *SUT) connectToHost() (*ssh.Client, error) {
 // GatherAllLogs will try to gather as much info from the system as possible, including services, dmesg and os related info
 func (s SUT) GatherAllLogs() {
 	services := []string{
-		"cos-setup-boot",
-		"cos-setup-fs",
-		"cos-setup-initramfs",
-		"cos-setup-network",
-		"cos-setup-reconcile",
-		"cos-setup-rootfs",
-		"cos-immutable-rootfs",
 		"elemental-setup-boot",
 		"elemental-setup-fs",
 		"elemental-setup-initramfs",
