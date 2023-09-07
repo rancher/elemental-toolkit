@@ -1,4 +1,4 @@
-//go:build linux && 386 && amd64
+//go:build (linux && 386) || (linux && amd64)
 
 /*
 Copyright © 2022 - 2023 SUSE LLC
@@ -56,7 +56,7 @@ func (p *ProviderVMware) String() string {
 
 // Probe checks if we are running on VMware and either userdata or metadata is set
 func (p *ProviderVMware) Probe() bool {
-	isVM, err := vmcheck.IsVirtualWorld()
+	isVM, err := vmcheck.IsVirtualWorld(true)
 	if err != nil || !isVM {
 		return false
 	}
