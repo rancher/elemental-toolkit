@@ -50,6 +50,9 @@ COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 # Enable essential services
 RUN systemctl enable NetworkManager.service
 
+# This is for automatic testing purposes, do not do this in production.
+RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
+
 # Generate initrd with required elemental services
 RUN elemental init -f && \
     kernel=$(ls /boot/Image-* | head -n1) && \
