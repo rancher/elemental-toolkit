@@ -25,7 +25,8 @@ package error
 // comment that explains the error
 // const NamedConstant = ERRORCODE
 //
-// This way you can later run `make build_docs` to generate the elemental_exit-codes.md in the docs dir automatically
+// This way you can later run `cd docs && go run generate_docs.go` to generate
+// the elemental_exit-codes.md in the docs dir automatically
 // And they will be generated into a Markdown list of EXITCODE -> COMMENT
 
 // Error closing a file

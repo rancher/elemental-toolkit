@@ -101,8 +101,3 @@ license-check:
 
 .PHONY: lint
 lint: fmt vet
-
-.PHONY: build-docs
-build-docs:
-	@./scripts/docs-build.sh
-	cd docs && go run generate_docs.go

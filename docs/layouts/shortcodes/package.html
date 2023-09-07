@@ -1,6 +1,0 @@
-{{ $package := (.Get "package") }}
-{{ $website := ( or (.Get "website") "https://rancher-sandbox.github.io/cos-toolkit-package-browser/find" ) }}
-<a href="{{ print $website "/" $package }}" class="btn btn-sm position-relative rounded-pill bg-light text-dark"
-    role="button">
-    <i class='fa fa-box'></i> {{$package}}
-</a>
