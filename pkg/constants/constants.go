@@ -24,8 +24,7 @@ import (
 const (
 	GrubConf           = "/etc/cos/grub.cfg"
 	GrubOEMEnv         = "grub_oem_env"
-	GrubDefEntry       = "cOS"
-	DefaultTty         = "tty1"
+	GrubDefEntry       = "Elemental"
 	BiosPartName       = "bios"
 	EfiLabel           = "COS_GRUB"
 	EfiPartName        = "efi"
@@ -186,7 +185,6 @@ func GetInstallKeyEnvMap() map[string]string {
 		"firmware":            "FIRMWARE",
 		"part-table":          "PART_TABLE",
 		"no-format":           "NO_FORMAT",
-		"tty":                 "TTY",
 		"grub-entry-name":     "GRUB_ENTRY_NAME",
 		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
 	}
@@ -196,7 +194,6 @@ func GetInstallKeyEnvMap() map[string]string {
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
 		"system.uri":       "SYSTEM",
-		"tty":              "TTY",
 		"grub-entry-name":  "GRUB_ENTRY_NAME",
 		"cloud-init":       "CLOUD_INIT",
 		"reset-persistent": "PERSISTENT",

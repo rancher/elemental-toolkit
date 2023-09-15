@@ -210,7 +210,7 @@ var _ = Describe("Reset action tests", func() {
 				"system_label":       "COS_SYSTEM",
 				"oem_label":          "COS_OEM",
 				"persistent_label":   "COS_PERSISTENT",
-				"default_menu_entry": "cOS",
+				"default_menu_entry": "Elemental",
 			}
 
 			lines := strings.Split(string(actualBytes), "\n")

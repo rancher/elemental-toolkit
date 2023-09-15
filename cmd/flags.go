@@ -80,17 +80,6 @@ func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {
 	}
 }
 
-func adaptEFIAndGPTFlags(flags *pflag.FlagSet) {
-	efi, _ := flags.GetBool("force-efi")
-	if efi {
-		_ = flags.Set("firmware", v1.EFI)
-	}
-	gpt, _ := flags.GetBool("force-gpt")
-	if gpt {
-		_ = flags.Set("part-table", v1.GPT)
-	}
-}
-
 func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	cosignKey, _ := flags.GetString("cosign-key")
 	cosign, _ := flags.GetBool("cosign")
