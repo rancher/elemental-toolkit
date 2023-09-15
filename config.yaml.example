@@ -84,9 +84,6 @@ install:
   # grub menu entry, this is the string that will be displayed
   grub-entry-name: Elemental
 
-  # tty console to add into the kernel parameters
-  tty: ttyS0
-
 # configuration for the 'reset' command
 reset:
   # if set to true it will format persistent partitions ('oem 'and 'persistent')
@@ -106,9 +103,6 @@ reset:
 
   # grub menu entry, this is the string that will be displayed
   grub-entry-name: Elemental
-
-  # tty console to add into the kernel parameters
-  tty: ttyS0
 
 # configuration used for the 'upgrade' command
 upgrade:
