@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         arch: ['x86_64']
-        flavor: ['green']
+        flavor: ['green', 'tumbleweed']
     steps:
       - uses: actions/checkout@v3
       - name: Login to GitHub Container Registry
