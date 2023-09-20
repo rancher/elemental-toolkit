@@ -37,6 +37,7 @@ const (
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
 	FeatureGrubConfig            = "grub-config"
+	FeatureGrubDefaultBootargs   = "grub-default-bootargs"
 	FeatureElementalSetup        = "elemental-setup"
 	FeatureDracutConfig          = "dracut-config"
 	FeatureCloudConfigDefaults   = "cloud-config-defaults"
@@ -47,6 +48,7 @@ var (
 	All = []string{
 		FeatureImmutableRootfs,
 		FeatureGrubConfig,
+		FeatureGrubDefaultBootargs,
 		FeatureElementalSetup,
 		FeatureDracutConfig,
 		FeatureCloudConfigDefaults,
@@ -135,6 +137,8 @@ func Get(names []string) ([]*Feature, error) {
 		case FeatureDracutConfig:
 			features = append(features, New(name, nil))
 		case FeatureGrubConfig:
+			features = append(features, New(name, nil))
+		case FeatureGrubDefaultBootargs:
 			features = append(features, New(name, nil))
 		case FeatureElementalSetup:
 			units := []*systemd.Unit{
