@@ -54,12 +54,14 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
+RUN elemental init -f immutable-rootfs,grub-config,elemental-setup,dracut-config,cloud-config-defaults,cloud-config-essentials && \
     kernel=$(ls /boot/Image-* | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \
     >/var/log/lastlog && \
     rm -rf /boot/vmlinux*
+
+COPY bootargs.cfg /etc/cos/bootargs.cfg
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
