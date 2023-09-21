@@ -82,7 +82,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var el *elemental.Elemental
 		var parts v1.ElementalPartitions
 		BeforeEach(func() {
-			parts = conf.NewInstallElementalParitions()
+			parts = conf.NewInstallElementalPartitions()
 
 			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
@@ -146,7 +146,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var el *elemental.Elemental
 		var parts v1.ElementalPartitions
 		BeforeEach(func() {
-			parts = conf.NewInstallElementalParitions()
+			parts = conf.NewInstallElementalPartitions()
 
 			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
@@ -194,7 +194,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var el *elemental.Elemental
 		var parts v1.ElementalPartitions
 		BeforeEach(func() {
-			parts = conf.NewInstallElementalParitions()
+			parts = conf.NewInstallElementalPartitions()
 
 			err := utils.MkdirAll(fs, "/some", constants.DirPerm)
 			Expect(err).ToNot(HaveOccurred())
@@ -937,7 +937,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var e *elemental.Elemental
 		var parts v1.ElementalPartitions
 		BeforeEach(func() {
-			parts = conf.NewInstallElementalParitions()
+			parts = conf.NewInstallElementalPartitions()
 			e = elemental.NewElemental(config)
 		})
 		It("Copies the cloud config file", func() {
