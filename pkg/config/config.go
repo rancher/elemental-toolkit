@@ -205,7 +205,7 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	return &v1.InstallSpec{
 		Firmware:   firmware,
 		PartTable:  v1.GPT,
-		Partitions: NewInstallElementalParitions(),
+		Partitions: NewInstallElementalPartitions(),
 		GrubConf:   constants.GrubConf,
 		Active:     activeImg,
 		Recovery:   recoveryImg,
@@ -222,7 +222,7 @@ func NewInitSpec() *v1.InitSpec {
 	}
 }
 
-func NewInstallElementalParitions() v1.ElementalPartitions {
+func NewInstallElementalPartitions() v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 	partitions.OEM = &v1.Partition{
 		FilesystemLabel: constants.OEMLabel,
