@@ -106,7 +106,7 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 		installState.Partitions[constants.RecoveryPartName].FSLabel = constants.RecoveryLabel
 		recovery := installState.Partitions[constants.RecoveryPartName]
 		if recovery.Images[constants.RecoveryImgName] != nil && recovery.Images[constants.RecoveryImgName].Label == "" {
-			recovery.Images[constants.RecoveryImgName].Label = constants.RecoveryLabel
+			recovery.Images[constants.RecoveryImgName].Label = constants.SystemLabel
 		}
 	}
 	if installState.Partitions[constants.StatePartName] != nil && installState.Partitions[constants.StatePartName].FSLabel == "" {
