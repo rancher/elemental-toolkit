@@ -94,6 +94,35 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Set default filesystem labels if missing, see racnher/elemental-toolkit#1827
+	if installState.Partitions[constants.EfiPartName] != nil && installState.Partitions[constants.EfiPartName].FSLabel == "" {
+		installState.Partitions[constants.EfiPartName].FSLabel = constants.EfiLabel
+	}
+	if installState.Partitions[constants.OEMPartName] != nil && installState.Partitions[constants.OEMPartName].FSLabel == "" {
+		installState.Partitions[constants.OEMPartName].FSLabel = constants.OEMLabel
+	}
+	if installState.Partitions[constants.RecoveryPartName] != nil && installState.Partitions[constants.RecoveryPartName].FSLabel == "" {
+		installState.Partitions[constants.RecoveryPartName].FSLabel = constants.RecoveryLabel
+		recovery := installState.Partitions[constants.RecoveryPartName]
+		if recovery.Images[constants.RecoveryImgName] != nil && recovery.Images[constants.RecoveryImgName].Label == "" {
+			recovery.Images[constants.RecoveryImgName].Label = constants.RecoveryLabel
+		}
+	}
+	if installState.Partitions[constants.StatePartName] != nil && installState.Partitions[constants.StatePartName].FSLabel == "" {
+		installState.Partitions[constants.StatePartName].FSLabel = constants.StateLabel
+		state := installState.Partitions[constants.StatePartName]
+		if state.Images[constants.ActiveImgName] != nil && state.Images[constants.ActiveImgName].Label == "" {
+			state.Images[constants.ActiveImgName].Label = constants.ActiveLabel
+		}
+		if state.Images[constants.PassiveImgName] != nil && state.Images[constants.PassiveImgName].Label == "" {
+			state.Images[constants.PassiveImgName].Label = constants.PassiveLabel
+		}
+	}
+	if installState.Partitions[constants.PersistentPartName] != nil && installState.Partitions[constants.PersistentPartName].FSLabel == "" {
+		installState.Partitions[constants.PersistentPartName].FSLabel = constants.PersistentLabel
+	}
+
 	return installState, nil
 }
 
