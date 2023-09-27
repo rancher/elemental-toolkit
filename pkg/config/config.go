@@ -270,6 +270,10 @@ func NewMountSpec() *v1.MountSpec {
 			Size:  "25%",
 			Paths: []string{"/var", "/etc", "/srv"},
 		},
+		Persistent: v1.PersistentMounts{
+			Mode:  constants.OverlayMode,
+			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/usr/libexec", "/var/log"},
+		},
 	}
 }
 

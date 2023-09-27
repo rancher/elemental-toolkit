@@ -66,19 +66,22 @@ const (
 	UsrLocalPath       = "/usr/local"
 	OEMPath            = "/oem"
 	ConfigDir          = "/etc/elemental"
+	OverlayMode        = "overlay"
+	BindMode           = "bind"
 
 	// Mountpoints of images and partitions
-	RecoveryDir     = "/run/elemental/recovery"
-	StateDir        = "/run/elemental/state"
-	OEMDir          = "/run/elemental/oem"
-	PersistentDir   = "/run/elemental/persistent"
-	ActiveDir       = "/run/elemental/active"
-	TransitionDir   = "/run/elemental/transition"
-	EfiDir          = "/run/elemental/efi"
-	ImgSrcDir       = "/run/elemental/imgsrc"
-	WorkingImgDir   = "/run/elemental/workingtree"
-	OverlayDir      = "/run/elemental/overlay"
-	RunningStateDir = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
+	RecoveryDir        = "/run/elemental/recovery"
+	StateDir           = "/run/elemental/state"
+	OEMDir             = "/run/elemental/oem"
+	PersistentDir      = "/run/elemental/persistent"
+	PersistentStateDir = "/run/elemental/persistent/.state"
+	ActiveDir          = "/run/elemental/active"
+	TransitionDir      = "/run/elemental/transition"
+	EfiDir             = "/run/elemental/efi"
+	ImgSrcDir          = "/run/elemental/imgsrc"
+	WorkingImgDir      = "/run/elemental/workingtree"
+	OverlayDir         = "/run/elemental/overlay"
+	RunningStateDir    = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
 
 	// Live image mountpoints
 	ISOBaseTree = "/run/rootfsbase"

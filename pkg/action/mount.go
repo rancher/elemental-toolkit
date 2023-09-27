@@ -32,29 +32,31 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	e := elemental.NewElemental(&cfg.Config)
 
+	cfg.Logger.Debugf("Mounting partitions")
 	err := e.MountPartitions(spec.Partitions.PartitionsByMountPoint(false))
 	if err != nil {
 		return err
 	}
 
+	cfg.Logger.Debugf("Mounting image %s", spec.Image.File)
 	if err := e.MountImage(spec.Image); err != nil {
 		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
 		return err
 	}
 
-	if err := MountOverlayBase(cfg, constants.OverlayDir, spec.Overlay.Size); err != nil {
+	cfg.Logger.Debugf("Mounting overlay")
+	if err := MountOverlay(cfg, spec.Sysroot, spec.Overlay); err != nil {
 		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
 		return err
 	}
 
-	for _, path := range spec.Overlay.Paths {
-		cfg.Logger.Debugf("Mounting path %s into %s", path, spec.Sysroot)
-		if err := MountOverlayPath(cfg, spec.Sysroot, path); err != nil {
-			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
-			return err
-		}
+	cfg.Logger.Debugf("Mounting persistent")
+	if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
+		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
+		return err
 	}
 
+	cfg.Logger.Debugf("Writing fstab")
 	if err := WriteFstab(cfg, spec); err != nil {
 		cfg.Logger.Errorf("Error writing new fstab: %s", err.Error())
 		return err
@@ -64,21 +66,41 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	return nil
 }
 
-func MountOverlayBase(cfg *v1.RunConfig, path, size string) error {
-	if err := utils.MkdirAll(cfg.Config.Fs, path, constants.DirPerm); err != nil {
+func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) error {
+	if err := utils.MkdirAll(cfg.Config.Fs, constants.OverlayDir, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating directory %s: %s", constants.OverlayDir, err.Error())
 		return err
 	}
 
-	if err := cfg.Mounter.Mount("tmpfs", path, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", size)}); err != nil {
+	if err := cfg.Mounter.Mount("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", overlay.Size)}); err != nil {
 		cfg.Logger.Errorf("Error mounting overlay: %s", err.Error())
 		return err
+	}
+
+	for _, path := range overlay.Paths {
+		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
+		if err := MountOverlayPath(cfg, sysroot, constants.OverlayDir, path); err != nil {
+			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
+			return err
+		}
 	}
 
 	return nil
 }
 
-func MountOverlayPath(cfg *v1.RunConfig, sysroot, path string) error {
+func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
+	for _, path := range persistent.Paths {
+		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
+		if err := MountOverlayPath(cfg, sysroot, constants.PersistentStateDir, path); err != nil {
+			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
 	cfg.Logger.Debugf("Mounting overlay path %s", path)
 
 	lower := filepath.Join(sysroot, path)
@@ -88,14 +110,14 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, path string) error {
 	}
 
 	trimmed := strings.TrimPrefix(path, "/")
-	pathName := strings.ReplaceAll(trimmed, "/", "-")
-	upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
+	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+	upper := fmt.Sprintf("%s/%s/upper", overlayDir, pathName)
 	if err := utils.MkdirAll(cfg.Config.Fs, upper, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating upperdir %s: %s", upper, err.Error())
 		return err
 	}
 
-	work := fmt.Sprintf("%s/%s/work", constants.OverlayDir, pathName)
+	work := fmt.Sprintf("%s/%s/work", overlayDir, pathName)
 	if err := utils.MkdirAll(cfg.Config.Fs, work, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating workdir %s: %s", work, err.Error())
 		return err
@@ -130,7 +152,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	for _, rw := range spec.Overlay.Paths {
 		trimmed := strings.TrimPrefix(rw, "/")
-		pathName := strings.ReplaceAll(trimmed, "/", "-")
+		pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
 		upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
 		work := fmt.Sprintf("%s/%s/work", constants.OverlayDir, pathName)
 
@@ -139,6 +161,20 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		options = append(options, fmt.Sprintf("upperdir=%s", upper))
 		options = append(options, fmt.Sprintf("workdir=%s", work))
 		options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.OverlayDir))
+		data = data + fstab("overlay", rw, "overlay", options)
+	}
+
+	for _, rw := range spec.Persistent.Paths {
+		trimmed := strings.TrimPrefix(rw, "/")
+		pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+		upper := fmt.Sprintf("%s/%s/upper", constants.PersistentStateDir, pathName)
+		work := fmt.Sprintf("%s/%s/work", constants.PersistentStateDir, pathName)
+
+		options := []string{"defaults"}
+		options = append(options, fmt.Sprintf("lowerdir=%s", rw))
+		options = append(options, fmt.Sprintf("upperdir=%s", upper))
+		options = append(options, fmt.Sprintf("workdir=%s", work))
+		options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.PersistentDir))
 		data = data + fstab("overlay", rw, "overlay", options)
 	}
 
