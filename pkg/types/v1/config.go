@@ -245,7 +245,7 @@ type MountSpec struct {
 	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
 	Image             *Image `yaml:"image,omitempty" mapstructure:"image"`
 	Partitions        ElementalPartitions
-	RwPaths           []string         `yaml:"rw-paths,omitempty" mapstructure:"rw-paths"`
+	Overlay           OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
 	Persistent        PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
@@ -253,6 +253,11 @@ type MountSpec struct {
 // persistent
 type PersistentMounts struct {
 	Mode  string   `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+type OverlayMounts struct {
+	Size  string   `yaml:"mode,omitempty" mapstructure:"mode"`
 	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 

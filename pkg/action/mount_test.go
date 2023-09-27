@@ -48,6 +48,9 @@ var _ = Describe("Mount Action", func() {
 				Image: &v1.Image{
 					LoopDevice: "/dev/loop0",
 				},
+				Overlay: v1.OverlayMounts{
+					Size: "30%",
+				},
 			}
 			utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)
 			err := action.WriteFstab(cfg, spec)
@@ -55,7 +58,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\t0 0\n"))
+			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\n"))
 		})
 	})
 	// Describe("Mount image", Label("mount", "image"), func() {

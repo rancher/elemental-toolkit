@@ -266,7 +266,10 @@ func NewMountSpec() *v1.MountSpec {
 				Flags:           []string{},
 			},
 		},
-		RwPaths: []string{"/var", "/etc", "/srv"},
+		Overlay: v1.OverlayMounts{
+			Size:  "25%",
+			Paths: []string{"/var", "/etc", "/srv"},
+		},
 	}
 }
 

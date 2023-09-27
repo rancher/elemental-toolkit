@@ -42,9 +42,14 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
-	for _, path := range spec.RwPaths {
+	if err := MountOverlayBase(cfg, constants.OverlayDir, spec.Overlay.Size); err != nil {
+		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
+		return err
+	}
+
+	for _, path := range spec.Overlay.Paths {
 		cfg.Logger.Debugf("Mounting path %s into %s", path, spec.Sysroot)
-		if err := MountRwPath(cfg, spec.Sysroot, path); err != nil {
+		if err := MountOverlayPath(cfg, spec.Sysroot, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
 		}
@@ -59,8 +64,22 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	return nil
 }
 
-func MountRwPath(cfg *v1.RunConfig, sysroot, path string) error {
-	cfg.Logger.Debugf("Mounting Path")
+func MountOverlayBase(cfg *v1.RunConfig, path, size string) error {
+	if err := utils.MkdirAll(cfg.Config.Fs, path, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Error creating directory %s: %s", constants.OverlayDir, err.Error())
+		return err
+	}
+
+	if err := cfg.Mounter.Mount("tmpfs", path, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", size)}); err != nil {
+		cfg.Logger.Errorf("Error mounting overlay: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func MountOverlayPath(cfg *v1.RunConfig, sysroot, path string) error {
+	cfg.Logger.Debugf("Mounting overlay path %s", path)
 
 	lower := filepath.Join(sysroot, path)
 	if err := utils.MkdirAll(cfg.Config.Fs, lower, constants.DirPerm); err != nil {
@@ -102,13 +121,14 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return nil
 	}
 
-	data := fmt.Sprintf("%s\t/\tauto\tro\t0 0\n", spec.Image.LoopDevice)
+	data := fstab(spec.Image.LoopDevice, "/", "auto", []string{"ro"})
+	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
 
 	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
-		data = data + fmt.Sprintf("%s\t%s\t%s\t%s\n", part.Path, part.MountPoint, part.FS, "")
+		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
 	}
 
-	for _, rw := range spec.RwPaths {
+	for _, rw := range spec.Overlay.Paths {
 		trimmed := strings.TrimPrefix(rw, "/")
 		pathName := strings.ReplaceAll(trimmed, "/", "-")
 		upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
@@ -119,8 +139,12 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		options = append(options, fmt.Sprintf("upperdir=%s", upper))
 		options = append(options, fmt.Sprintf("workdir=%s", work))
 		options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.OverlayDir))
-		data = data + fmt.Sprintf("%s\t%s\t%s\t%s\n", "overlay", rw, "overlay", strings.Join(options, ","))
+		data = data + fstab("overlay", rw, "overlay", options)
 	}
 
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
+}
+
+func fstab(device, path, fstype string, flags []string) string {
+	return fmt.Sprintf("%s\t%s\t%s\t%s\n", device, path, fstype, strings.Join(flags, ","))
 }

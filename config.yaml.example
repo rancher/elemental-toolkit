@@ -130,10 +130,12 @@ mount:
   sysroot: /sysroot
   write-fstab: true
   write-sentinel: true
-  rw-paths:
-    - /var
-    - /etc
-    - /srv
+  overlay:
+    size: 25%
+    paths:
+      - /var
+      - /etc
+      - /srv
   persistent:
     mode: overlay # overlay|bind
     paths:
