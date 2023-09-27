@@ -54,7 +54,7 @@ RUN systemctl enable NetworkManager.service
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
+RUN elemental init -f elemental-rootfs,grub-config,elemental-setup,dracut-config,cloud-config-defaults,cloud-config-essentials && \
     kernel=$(ls /boot/Image-* | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \
