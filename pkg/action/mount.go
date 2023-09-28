@@ -90,9 +90,29 @@ func applyLayoutConfig(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 			continue
 		}
 
+		if overlay, exists := env["OVERLAY"]; exists {
+			cfg.Logger.Debug("Found OVERLAY env var")
+
+			split := strings.SplitN(overlay, ":", 2)
+
+			if split[0] == "tmpfs" && len(split) == 2 {
+				spec.Overlay.Size = split[1]
+			}
+		}
+
 		if rwPaths, exists := env["RW_PATHS"]; exists {
 			cfg.Logger.Debug("Found RW_PATHS env var")
 			spec.Overlay.Paths = strings.Fields(rwPaths)
+		}
+
+		if paths, exists := env["PERSISTENT_STATE_PATHS"]; exists {
+			cfg.Logger.Debug("Found PERSISTENT_STATE_PATHS env var")
+			spec.Persistent.Paths = strings.Fields(paths)
+		}
+
+		if _, exists := env["PERSISTENT_STATE_BIND"]; exists {
+			cfg.Logger.Debug("Found PERSISTENT_STATE_BIND env var")
+			spec.Persistent.Mode = constants.BindMode
 		}
 	}
 
@@ -122,12 +142,53 @@ func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) e
 }
 
 func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
+	mountFunc := MountOverlayPath
+	if persistent.Mode == "bind" {
+		mountFunc = MountBindPath
+	}
+
 	for _, path := range persistent.Paths {
 		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
-		if err := MountOverlayPath(cfg, sysroot, constants.PersistentStateDir, path); err != nil {
+
+		if err := mountFunc(cfg, sysroot, constants.PersistentStateDir, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
 		}
+	}
+
+	return nil
+}
+
+type MountFunc func(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
+
+// rsync -aqAX "${base}/" "${state_dir}/"
+// mount -o defaults,bind "${state_dir}" "${base}"
+// fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
+func MountBindPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
+	cfg.Logger.Debugf("Mounting bind path %s", path)
+
+	base := filepath.Join(sysroot, path)
+	if err := utils.MkdirAll(cfg.Config.Fs, base, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Error creating directory %s: %s", path, err.Error())
+		return err
+	}
+
+	trimmed := strings.TrimPrefix(path, "/")
+	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
+	stateDir := fmt.Sprintf("%s/%s", overlayDir, pathName)
+	if err := utils.MkdirAll(cfg.Config.Fs, stateDir, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
+		return err
+	}
+
+	if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
+		cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
+		return err
+	}
+
+	if err := cfg.Mounter.Mount(stateDir, base, "none", []string{"defaults", "bind"}); err != nil {
+		cfg.Logger.Errorf("Error mounting overlay: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -197,18 +258,34 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		data = data + fstab("overlay", rw, "overlay", options)
 	}
 
-	for _, rw := range spec.Persistent.Paths {
-		trimmed := strings.TrimPrefix(rw, "/")
-		pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
-		upper := fmt.Sprintf("%s/%s/upper", constants.PersistentStateDir, pathName)
-		work := fmt.Sprintf("%s/%s/work", constants.PersistentStateDir, pathName)
+	// /usr/local/.state/var-lib-NetworkManager.bind /var/lib/NetworkManager none defaults,bind 0 0
+	for _, path := range spec.Persistent.Paths {
+		if spec.Persistent.Mode == constants.OverlayMode {
+			trimmed := strings.TrimPrefix(path, "/")
+			pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+			upper := fmt.Sprintf("%s/%s/upper", constants.PersistentStateDir, pathName)
+			work := fmt.Sprintf("%s/%s/work", constants.PersistentStateDir, pathName)
 
-		options := []string{"defaults"}
-		options = append(options, fmt.Sprintf("lowerdir=%s", rw))
-		options = append(options, fmt.Sprintf("upperdir=%s", upper))
-		options = append(options, fmt.Sprintf("workdir=%s", work))
-		options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.PersistentDir))
-		data = data + fstab("overlay", rw, "overlay", options)
+			options := []string{"defaults"}
+			options = append(options, fmt.Sprintf("lowerdir=%s", path))
+			options = append(options, fmt.Sprintf("upperdir=%s", upper))
+			options = append(options, fmt.Sprintf("workdir=%s", work))
+			options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.PersistentDir))
+			data = data + fstab("overlay", path, "overlay", options)
+
+			continue
+		}
+
+		if spec.Persistent.Mode == constants.BindMode {
+			trimmed := strings.TrimPrefix(path, "/")
+			pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
+			stateDir := fmt.Sprintf("%s/%s", constants.PersistentStateDir, pathName)
+
+			data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
+			continue
+		}
+
+		return fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode)
 	}
 
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
