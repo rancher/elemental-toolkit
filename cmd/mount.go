@@ -27,11 +27,10 @@ import (
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 )
 
-func MountCmd(root *cobra.Command) *cobra.Command {
+func NewMountCmd(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "mount DEVICE SYSROOT",
-		Short: "Mount an elemental system from a device into the specified sysroot",
-		Args:  cobra.MaximumNArgs(2),
+		Use:   "mount",
+		Short: "Mount an elemental system into the specified sysroot",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mounter := mount.New(constants.MountBinary)
 
@@ -48,7 +47,12 @@ func MountCmd(root *cobra.Command) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
-			cfg.Logger.Infof("Mounting system...")
+			if spec.Disable {
+				cfg.Logger.Info("Mounting disabled, exiting")
+				return nil
+			}
+
+			cfg.Logger.Info("Mounting system...")
 			return action.RunMount(cfg, spec)
 		},
 	}
@@ -56,4 +60,4 @@ func MountCmd(root *cobra.Command) *cobra.Command {
 	return c
 }
 
-var _ = MountCmd(rootCmd)
+var _ = NewMountCmd(rootCmd)

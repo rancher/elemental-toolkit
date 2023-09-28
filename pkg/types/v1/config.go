@@ -242,7 +242,9 @@ type MountSpec struct {
 	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
 	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
 	WriteSentinel     bool   `yaml:"write-sentinel,omitempty" mapstructure:"write-sentinel"`
+	Disable           bool   `yaml:"disable,omitempty" mapstructure:"disable"`
 	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode              string `yaml:"mode,omitempty" mapstructure:"mode"`
 	Image             *Image `yaml:"image,omitempty" mapstructure:"image"`
 	Partitions        ElementalPartitions
 	Overlay           OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
@@ -259,6 +261,40 @@ type PersistentMounts struct {
 type OverlayMounts struct {
 	Size  string   `yaml:"mode,omitempty" mapstructure:"mode"`
 	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+// if unsolvable inconsistencies are found
+func (spec *MountSpec) Sanitize() error {
+	// If the Mode is set as an image path we convert it to just say
+	// active|passive|recovery and calculate the path below.
+	switch spec.Mode {
+	case constants.ActiveImgPath:
+		spec.Mode = constants.ActiveImgName
+	case constants.PassiveImgPath:
+		spec.Mode = constants.PassiveImgName
+	case constants.RecoveryImgPath:
+		spec.Mode = constants.RecoveryImgName
+	}
+
+	// Mode should be active|passive|recovery here.
+	switch spec.Mode {
+	case constants.ActiveImgName:
+		spec.Image.Label = constants.ActiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.ActiveImgPath)
+	case constants.PassiveImgName:
+		spec.Image.Label = constants.PassiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.PassiveImgPath)
+	case constants.RecoveryImgName:
+		spec.Image.Label = constants.ActiveLabel
+		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
+	default:
+		return fmt.Errorf("Unknown mode '%s'", spec.Mode)
+	}
+
+	spec.Image.Source = NewFileSrc(spec.Image.File)
+
+	return nil
 }
 
 // ResetSpec struct represents all the reset action details

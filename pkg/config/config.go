@@ -187,7 +187,7 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 
 	activeImg.Label = constants.ActiveLabel
 	activeImg.Size = constants.ImgSize
-	activeImg.File = filepath.Join(constants.StateDir, "cOS", constants.ActiveImgFile)
+	activeImg.File = filepath.Join(constants.StateDir, constants.ActiveImgPath)
 	activeImg.FS = constants.LinuxImgFs
 	activeImg.MountPoint = constants.ActiveDir
 	if isoRootExists {
@@ -199,10 +199,10 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	recoveryImg.Source = v1.NewFileSrc(activeImg.File)
 	recoveryImg.FS = constants.LinuxImgFs
 	recoveryImg.Label = constants.SystemLabel
-	recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoveryImgFile)
+	recoveryImg.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgPath)
 
 	passiveImg = v1.Image{
-		File:   filepath.Join(constants.StateDir, "cOS", constants.PassiveImgFile),
+		File:   filepath.Join(constants.StateDir, constants.PassiveImgPath),
 		Label:  constants.PassiveLabel,
 		Source: v1.NewFileSrc(activeImg.File),
 		FS:     constants.LinuxImgFs,
@@ -230,14 +230,13 @@ func NewInitSpec() *v1.InitSpec {
 
 func NewMountSpec() *v1.MountSpec {
 	return &v1.MountSpec{
-		Sysroot:       "/sysroot",
-		WriteFstab:    true,
-		WriteSentinel: true,
+		ReadKernelCmdline: true,
+		Sysroot:           "/sysroot",
+		WriteFstab:        true,
+		WriteSentinel:     true,
 		Image: &v1.Image{
-			Label:      constants.ActiveLabel,
+
 			FS:         constants.LinuxImgFs,
-			File:       filepath.Join(constants.RunningStateDir, "cOS", constants.ActiveImgFile),
-			Source:     v1.NewFileSrc(filepath.Join(constants.RunningStateDir, "cOS", constants.ActiveImgFile)),
 			MountPoint: "/sysroot",
 		},
 		Partitions: v1.ElementalPartitions{
@@ -497,7 +496,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		cfg.Logger.Warnf("no Persistent partition found")
 	}
 
-	recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+	recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
 
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
 		imgSource = v1.NewFileSrc(recoveryImg)
@@ -505,7 +504,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		imgSource = v1.NewEmptySrc()
 	}
 
-	activeFile := filepath.Join(ep.State.MountPoint, "cOS", constants.ActiveImgFile)
+	activeFile := filepath.Join(ep.State.MountPoint, constants.ActiveImgPath)
 	return &v1.ResetSpec{
 		Target:       target,
 		Partitions:   ep,
@@ -521,7 +520,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 			MountPoint: constants.ActiveDir,
 		},
 		Passive: v1.Image{
-			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
+			File:   filepath.Join(ep.State.MountPoint, constants.PassiveImgPath),
 			Label:  pState.Label,
 			Source: v1.NewFileSrc(activeFile),
 			FS:     aState.FS,

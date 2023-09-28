@@ -287,7 +287,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			img = &v1.Image{
 				Label:      constants.ActiveLabel,
 				Size:       32,
-				File:       filepath.Join(constants.StateDir, "cOS", constants.ActiveImgFile),
+				File:       filepath.Join(constants.StateDir, constants.ActiveImgPath),
 				FS:         constants.LinuxImgFs,
 				MountPoint: constants.ActiveDir,
 				Source:     v1.NewDirSrc(constants.ISOBaseTree),

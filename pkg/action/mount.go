@@ -44,13 +44,13 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
-	cfg.Logger.Debugf("Mounting overlay")
+	cfg.Logger.Debugf("Mounting overlays")
 	if err := MountOverlay(cfg, spec.Sysroot, spec.Overlay); err != nil {
 		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
 		return err
 	}
 
-	cfg.Logger.Debugf("Mounting persistent")
+	cfg.Logger.Debugf("Mounting persistent directories")
 	if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
 		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
 		return err

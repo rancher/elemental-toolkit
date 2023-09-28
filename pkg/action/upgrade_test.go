@@ -84,10 +84,10 @@ var _ = Describe("Runtime Actions", func() {
 		var spec *v1.UpgradeSpec
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
-		activeImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.ActiveImgFile)
-		passiveImg := fmt.Sprintf("%s/cOS/%s", constants.RunningStateDir, constants.PassiveImgFile)
+		activeImg := fmt.Sprintf("%s%s", constants.RunningStateDir, constants.ActiveImgPath)
+		passiveImg := fmt.Sprintf("%s%s", constants.RunningStateDir, constants.PassiveImgPath)
 
-		recoveryImg := fmt.Sprintf("%s/cOS/%s", constants.LiveDir, constants.RecoveryImgFile)
+		recoveryImg := fmt.Sprintf("%s%s", constants.LiveDir, constants.RecoveryImgPath)
 
 		BeforeEach(func() {
 			memLog = &bytes.Buffer{}
