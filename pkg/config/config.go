@@ -264,6 +264,13 @@ func NewMountSpec() *v1.MountSpec {
 				MountPoint:      constants.OEMPath,
 				Flags:           []string{},
 			},
+			Recovery: &v1.Partition{
+				FilesystemLabel: constants.RecoveryLabel,
+				Size:            constants.RecoverySize,
+				Name:            constants.RecoveryPartName,
+				FS:              constants.LinuxFs,
+				Flags:           []string{},
+			},
 		},
 		Overlay: v1.OverlayMounts{
 			Size:  "25%",
@@ -431,7 +438,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	var imgSource *v1.ImageSource
 	var aState, pState *v1.ImageState
 
-	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgFile) {
+	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgName) {
 		return nil, fmt.Errorf("reset can only be called from the recovery system")
 	}
 

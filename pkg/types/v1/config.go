@@ -288,6 +288,9 @@ func (spec *MountSpec) Sanitize() error {
 	case constants.RecoveryImgName:
 		spec.Image.Label = constants.ActiveLabel
 		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
+
+		spec.Partitions.State.MountPoint = ""
+		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
 	default:
 		return fmt.Errorf("Unknown mode '%s'", spec.Mode)
 	}
