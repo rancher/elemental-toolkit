@@ -32,6 +32,7 @@ install() {
     # probably a devoted dracut module makes sense
     inst_multiple -o \
         "$systemdutildir"/systemd-fsck partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount sgdisk elemental
+    inst_hook cmdline 30 "${moddir}/elemental-cmdline.sh"
     inst_script "${moddir}/elemental-generator.sh" \
         "${systemdutildir}/system-generators/dracut-elemental-generator"
     inst_simple "${moddir}/elemental-rootfs.service" \
