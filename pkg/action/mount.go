@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/joho/godotenv"
+
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -44,6 +46,16 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
+	if err = utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...); err != nil {
+		cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
+		return err
+	}
+
+	if err := applyLayoutConfig(cfg, spec); err != nil {
+		cfg.Logger.Errorf("Error reading env vars: %s", err.Error())
+		return err
+	}
+
 	cfg.Logger.Debugf("Mounting overlays")
 	if err := MountOverlay(cfg, spec.Sysroot, spec.Overlay); err != nil {
 		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
@@ -63,6 +75,27 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	cfg.Logger.Info("Mount command finished successfully")
+	return nil
+}
+
+func applyLayoutConfig(cfg *v1.RunConfig, spec *v1.MountSpec) error {
+	// Read the OVERLAY, RW_PATHS, PERSISTENT_STATE_PATHS and PERSISTENT_STATE_BIND and overwrite the MountSpec
+	files := []string{"/run/cos/cos-layout.env", "/run/elemental/layout.env"}
+
+	for _, file := range files {
+		cfg.Logger.Debugf("Parsing env vars from file '%s'", file)
+		env, err := godotenv.Read(file)
+		if err != nil {
+			cfg.Logger.Warnf("Failed reading file %s: %s", file, err.Error())
+			continue
+		}
+
+		if rwPaths, exists := env["RW_PATHS"]; exists {
+			cfg.Logger.Debug("Found RW_PATHS env var")
+			spec.Overlay.Paths = strings.Fields(rwPaths)
+		}
+	}
+
 	return nil
 }
 
