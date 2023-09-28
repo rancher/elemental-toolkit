@@ -276,6 +276,11 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 		return mount, err
 	}
 
+	if err := applyMountEnvVars(mount); err != nil {
+		r.Logger.Errorf("Error reading env vars: %s", err.Error())
+		return mount, err
+	}
+
 	err = mount.Sanitize()
 	r.Logger.Debugf("Loaded mount spec: %s", litter.Sdump(mount))
 	return mount, err
@@ -321,6 +326,38 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 		case "elemental.oemlabel", "rd.cos.oemlabel":
 			mount.Partitions.OEM.FilesystemLabel = val
 		}
+	}
+
+	return nil
+}
+
+func applyMountEnvVars(mount *v1.MountSpec) error {
+	// Read the OVERLAY, RW_PATHS, PERSISTENT_STATE_PATHS and PERSISTENT_STATE_BIND and overwrite the MountSpec
+
+	overlay, exists := os.LookupEnv("OVERLAY")
+	if exists {
+		split := strings.SplitN(overlay, ":", 2)
+
+		if split[0] == "tmpfs" && len(split) == 2 {
+			mount.Overlay.Size = split[1]
+		} else {
+			return fmt.Errorf("unknown OVERLAY value: '%s'", overlay)
+		}
+	}
+
+	rwPaths, exists := os.LookupEnv("RW_PATHS")
+	if exists {
+		mount.Overlay.Paths = strings.Fields(rwPaths)
+	}
+
+	persistentPaths, exists := os.LookupEnv("PERSISTENT_STATE_PATHS")
+	if exists {
+		mount.Persistent.Paths = strings.Fields(persistentPaths)
+	}
+
+	persistentBind, exists := os.LookupEnv("PERSISTENT_STATE_BIND")
+	if exists && persistentBind == "true" {
+		mount.Persistent.Mode = constants.BindMode
 	}
 
 	return nil

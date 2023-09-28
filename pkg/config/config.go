@@ -235,7 +235,6 @@ func NewMountSpec() *v1.MountSpec {
 		WriteFstab:        true,
 		WriteSentinel:     true,
 		Image: &v1.Image{
-
 			FS:         constants.LinuxImgFs,
 			MountPoint: "/sysroot",
 		},

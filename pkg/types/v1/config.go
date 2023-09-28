@@ -259,7 +259,7 @@ type PersistentMounts struct {
 }
 
 type OverlayMounts struct {
-	Size  string   `yaml:"mode,omitempty" mapstructure:"mode"`
+	Size  string   `yaml:"size,omitempty" mapstructure:"size"`
 	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 
