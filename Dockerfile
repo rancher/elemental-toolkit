@@ -27,7 +27,7 @@ RUN go build \
     -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
     -o /usr/bin/elemental
 
-FROM opensuse/leap:$LEAP_VERSION AS elemental
+FROM registry.opensuse.org/opensuse/leap:$LEAP_VERSION AS elemental
 # This helps invalidate the cache on each build so the following steps are really run again getting the latest packages
 # versions, as long as the elemental commit has changed
 ARG ELEMENTAL_COMMIT=""

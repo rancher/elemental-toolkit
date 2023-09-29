@@ -191,6 +191,7 @@ func (e Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 		}
 		part.Path = device
 	}
+
 	err = e.config.Mounter.Mount(part.Path, part.MountPoint, "auto", opts)
 	if err != nil {
 		e.config.Logger.Errorf("Failed mounting device %s with label %s", part.Path, part.FilesystemLabel)
@@ -207,6 +208,27 @@ func (e Elemental) UnmountPartition(part *v1.Partition) error {
 	}
 	e.config.Logger.Debugf("Unmounting partition %s", part.FilesystemLabel)
 	return e.config.Mounter.Unmount(part.MountPoint)
+}
+
+func (e Elemental) FsckPartitions(partitions v1.PartitionList) error {
+	for _, part := range partitions {
+		if part.Path == "" {
+			device, err := utils.GetDeviceByLabel(e.config.Runner, part.FilesystemLabel, 10)
+			if err != nil {
+				e.config.Logger.Errorf("Could not find a device with label %s", part.FilesystemLabel)
+				return err
+			}
+			part.Path = device
+		}
+
+		e.config.Logger.Debugf("Fscking device '%s'", part.Path)
+		if _, err := e.config.Runner.Run("systemd-fsck", part.Path); err != nil {
+			e.config.Logger.Errorf("Fsck error for device '%s': %s", part.Path, err.Error())
+			return err
+		}
+	}
+
+	return nil
 }
 
 // MountImage mounts an image with the given mount options

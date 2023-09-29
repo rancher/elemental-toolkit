@@ -34,9 +34,17 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	e := elemental.NewElemental(&cfg.Config)
 
-	cfg.Logger.Debugf("Mounting partitions")
-	err := e.MountPartitions(spec.Partitions.PartitionsByMountPoint(false))
-	if err != nil {
+	partitions := spec.Partitions.PartitionsByMountPoint(false)
+
+	cfg.Logger.Debug("Fscking partitions")
+	if err := e.FsckPartitions(partitions); err != nil {
+		cfg.Logger.Errorf("Error fscking partitions: %s", err.Error())
+		return err
+	}
+
+	cfg.Logger.Debug("Mounting partitions")
+	if err := e.MountPartitions(partitions); err != nil {
+		cfg.Logger.Errorf("Error mounting partitions: %s", err.Error())
 		return err
 	}
 
@@ -48,7 +56,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	if spec.RunCloudInit {
 		cfg.Logger.Debug("Running rootfs cloud-init stage")
-		err = utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...)
+		err := utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...)
 		if err != nil {
 			cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
 			return err
