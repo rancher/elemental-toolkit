@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM opensuse/tumbleweed:latest as OS
+FROM registry.opensuse.org/opensuse/tumbleweed:latest as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
