@@ -241,7 +241,7 @@ type InitSpec struct {
 type MountSpec struct {
 	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
 	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
-	WriteSentinel     bool   `yaml:"write-sentinel,omitempty" mapstructure:"write-sentinel"`
+	RunCloudInit      bool   `yaml:"run-cloud-init,omitempty" mapstructure:"run-cloud-init"`
 	Disable           bool   `yaml:"disable,omitempty" mapstructure:"disable"`
 	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
 	Mode              string `yaml:"mode,omitempty" mapstructure:"mode"`
@@ -259,13 +259,29 @@ type PersistentMounts struct {
 }
 
 type OverlayMounts struct {
-	Size  string   `yaml:"size,omitempty" mapstructure:"size"`
-	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+	Type   string   `yaml:"type,omitempty" mapstructure:"type"`
+	Device string   `yaml:"device,omitempty" mapstructure:"device"`
+	Size   string   `yaml:"size,omitempty" mapstructure:"size"`
+	Paths  []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (spec *MountSpec) Sanitize() error {
+	switch spec.Persistent.Mode {
+	case constants.BindMode, constants.OverlayMode:
+		break
+	default:
+		return fmt.Errorf("unknown persistent mode: '%s'", spec.Persistent.Mode)
+	}
+
+	switch spec.Overlay.Type {
+	case constants.Tmpfs, constants.Block:
+		break
+	default:
+		return fmt.Errorf("unknown overlay type: '%s'", spec.Overlay.Type)
+	}
+
 	// If the Mode is set as an image path we convert it to just say
 	// active|passive|recovery and calculate the path below.
 	switch spec.Mode {
@@ -292,7 +308,7 @@ func (spec *MountSpec) Sanitize() error {
 		spec.Partitions.State.MountPoint = ""
 		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
 	default:
-		return fmt.Errorf("Unknown mode '%s'", spec.Mode)
+		return fmt.Errorf("unknown mode '%s'", spec.Mode)
 	}
 
 	spec.Image.Source = NewFileSrc(spec.Image.File)

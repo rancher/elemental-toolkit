@@ -65,6 +65,9 @@ const (
 	ConfigDir          = "/etc/elemental"
 	OverlayMode        = "overlay"
 	BindMode           = "bind"
+	Tmpfs              = "tmpfs"
+	Autofs             = "auto"
+	Block              = "block"
 
 	// Mountpoints of images and partitions
 	RecoveryDir        = "/run/elemental/recovery"

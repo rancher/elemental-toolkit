@@ -46,9 +46,15 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
-	if err = utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...); err != nil {
-		cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
-		return err
+	if spec.RunCloudInit {
+		cfg.Logger.Debug("Running rootfs cloud-init stage")
+		err = utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...)
+		if err != nil {
+			cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
+			return err
+		}
+	} else {
+		cfg.Logger.Debug("Skipping cloud-init rootfs stage")
 	}
 
 	if err := applyLayoutConfig(cfg, spec); err != nil {
@@ -125,7 +131,26 @@ func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) e
 		return err
 	}
 
-	if err := cfg.Mounter.Mount("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", overlay.Size)}); err != nil {
+	var (
+		overlaySource string
+		overlayFS     string
+		overlayOpts   []string
+	)
+
+	switch overlay.Type {
+	case constants.Tmpfs:
+		overlaySource = constants.Tmpfs
+		overlayFS = constants.Tmpfs
+		overlayOpts = []string{"defaults", fmt.Sprintf("size=%s", overlay.Size)}
+	case constants.Block:
+		overlaySource = overlay.Device
+		overlayFS = constants.Autofs
+		overlayOpts = []string{"defaults"}
+	default:
+		return fmt.Errorf("unknown overlay type '%s'", overlay.Type)
+	}
+
+	if err := cfg.Mounter.Mount(overlaySource, constants.OverlayDir, overlayFS, overlayOpts); err != nil {
 		cfg.Logger.Errorf("Error mounting overlay: %s", err.Error())
 		return err
 	}
@@ -161,9 +186,6 @@ func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.Persistent
 
 type MountFunc func(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 
-// rsync -aqAX "${base}/" "${state_dir}/"
-// mount -o defaults,bind "${state_dir}" "${base}"
-// fstab_line="${state_dir##/sysroot} /${mount} none defaults,bind 0 0\n"
 func MountBindPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
 	cfg.Logger.Debugf("Mounting bind path %s", path)
 

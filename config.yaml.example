@@ -129,9 +129,11 @@ mount:
   read-kernel-cmdline: true # read and parse /proc/cmdline for arguments
   sysroot: /sysroot
   write-fstab: true
-  write-sentinel: true
+  run-cloud-init: true
   overlay:
-    size: 25%
+    type: tmpfs # tmpfs|block
+    device: /dev/sda6 # used when type is set to block
+    size: 25% # used when type is set to tmpfs
     paths:
       - /var
       - /etc

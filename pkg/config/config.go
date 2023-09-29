@@ -233,7 +233,7 @@ func NewMountSpec() *v1.MountSpec {
 		ReadKernelCmdline: true,
 		Sysroot:           "/sysroot",
 		WriteFstab:        true,
-		WriteSentinel:     true,
+		RunCloudInit:      true,
 		Image: &v1.Image{
 			FS:         constants.LinuxImgFs,
 			MountPoint: "/sysroot",
@@ -272,6 +272,7 @@ func NewMountSpec() *v1.MountSpec {
 			},
 		},
 		Overlay: v1.OverlayMounts{
+			Type:  constants.Tmpfs,
 			Size:  "25%",
 			Paths: []string{"/var", "/etc", "/srv"},
 		},
