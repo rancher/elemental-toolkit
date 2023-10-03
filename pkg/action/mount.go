@@ -34,14 +34,8 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	e := elemental.NewElemental(&cfg.Config)
 
-	allParts, err := utils.GetAllPartitions()
-	if err != nil {
-		cfg.Logger.Errorf("Error getting all partitions: %s", err.Error())
-		return err
-	}
-
 	cfg.Logger.Debug("Fscking partitions")
-	if err := e.FsckPartitions(allParts); err != nil {
+	if err := RunFsck(cfg, spec, e); err != nil {
 		cfg.Logger.Errorf("Error fscking partitions: %s", err.Error())
 		return err
 	}
@@ -135,6 +129,21 @@ func applyLayoutConfig(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	return nil
+}
+
+func RunFsck(cfg *v1.RunConfig, spec *v1.MountSpec, e *elemental.Elemental) error {
+	if !spec.RunFsck {
+		cfg.Logger.Debug("Skipping fsck")
+		return nil
+	}
+
+	allParts, err := utils.GetAllPartitions()
+	if err != nil {
+		cfg.Logger.Errorf("Error getting all partitions: %s", err.Error())
+		return err
+	}
+
+	return e.FsckPartitions(allParts)
 }
 
 func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) error {

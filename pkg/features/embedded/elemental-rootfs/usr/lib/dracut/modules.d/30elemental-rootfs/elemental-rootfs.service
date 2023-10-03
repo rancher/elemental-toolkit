@@ -9,6 +9,4 @@ Conflicts=initrd-switch-root.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=-/run/cos/cos-layout.env
-EnvironmentFile=-/run/elemental/layout.env
 ExecStart=/usr/bin/elemental mount --debug

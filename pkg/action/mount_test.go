@@ -30,6 +30,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	"github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
+	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
@@ -37,6 +38,7 @@ import (
 var _ = Describe("Mount Action", func() {
 	var cfg *v1.RunConfig
 	var mounter *mount.FakeMounter
+	var runner *v1mock.FakeRunner
 	var fs vfs.FS
 	var logger v1.Logger
 	var cleanup func()
@@ -46,12 +48,14 @@ var _ = Describe("Mount Action", func() {
 		mounter = &mount.FakeMounter{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
+		runner = v1mock.NewFakeRunner()
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewRunConfig(
 			config.WithFs(fs),
 			config.WithMounter(mounter),
 			config.WithLogger(logger),
+			config.WithRunner(runner),
 		)
 	})
 	AfterEach(func() {
@@ -77,14 +81,53 @@ var _ = Describe("Mount Action", func() {
 			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\t0\t0\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
 		})
 	})
-	// Describe("Mount image", Label("mount", "image"), func() {
-	// 	It("Mounts an image", func() {
-	// 		spec := &v1.MountSpec{
-	// 			Image: &v1.Image{},
-	// 		}
+	Describe("Mounts image", Label("mount", "image"), func() {
+		var mountedImage string
+		var fsckedDevices []string
 
-	// 		err := action.RunMount(cfg, spec)
-	// 		Expect(err).To(BeNil())
-	// 	})
-	// })
+		BeforeEach(func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				switch cmd {
+				case "systemd-fsck":
+					fsckedDevices = append(fsckedDevices, args[0])
+					return []byte{}, nil
+				case "losetup":
+					mountedImage = args[2]
+					return []byte{}, nil
+				default:
+					return []byte{}, nil
+				}
+			}
+		})
+		It("Mounts the specified image to it's mountpoint", func() {
+			spec := &v1.MountSpec{
+				Image: &v1.Image{
+					MountPoint: "/recovery",
+					File:       constants.RecoveryImgPath,
+				},
+				Overlay: v1.OverlayMounts{Type: constants.Tmpfs},
+			}
+
+			err := action.RunMount(cfg, spec)
+			Expect(err).To(BeNil())
+			Expect(mountedImage).To(Equal(constants.RecoveryImgPath))
+
+			Expect(len(fsckedDevices)).To(Equal(0))
+		})
+		It("Runs fsck on partitions", func() {
+			spec := &v1.MountSpec{
+				RunFsck: true,
+				Image: &v1.Image{
+					MountPoint: "/sysroot",
+					File:       constants.ActiveImgPath,
+				},
+				Overlay: v1.OverlayMounts{Type: constants.Tmpfs},
+			}
+
+			err := action.RunMount(cfg, spec)
+			Expect(err).To(BeNil())
+			Expect(mountedImage).To(Equal(constants.ActiveImgPath))
+			Expect(len(fsckedDevices)).ToNot(Equal(0))
+		})
+	})
 })

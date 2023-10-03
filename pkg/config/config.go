@@ -234,6 +234,7 @@ func NewMountSpec() *v1.MountSpec {
 		Sysroot:           "/sysroot",
 		WriteFstab:        true,
 		RunCloudInit:      true,
+		RunFsck:           true,
 		Image: &v1.Image{
 			FS:         constants.LinuxImgFs,
 			MountPoint: "/sysroot",
