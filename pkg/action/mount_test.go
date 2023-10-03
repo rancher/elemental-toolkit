@@ -74,7 +74,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\n"))
+			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\t0\t0\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
 		})
 	})
 	// Describe("Mount image", Label("mount", "image"), func() {

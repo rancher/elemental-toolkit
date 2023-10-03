@@ -222,7 +222,9 @@ func (e Elemental) FsckPartitions(partitions v1.PartitionList) error {
 		}
 
 		e.config.Logger.Debugf("Fscking device '%s'", part.Path)
-		if _, err := e.config.Runner.Run("systemd-fsck", part.Path); err != nil {
+		stdout, err := e.config.Runner.Run("systemd-fsck", part.Path)
+		e.config.Logger.Debugf("Fsck output: %s", stdout)
+		if err != nil {
 			e.config.Logger.Errorf("Fsck error for device '%s': %s", part.Path, err.Error())
 			return err
 		}

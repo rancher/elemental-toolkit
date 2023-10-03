@@ -258,6 +258,8 @@ type PersistentMounts struct {
 	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 
+// OverlayMounts contains information about the RW overlay mounted over the
+// immutable system.
 type OverlayMounts struct {
 	Type   string   `yaml:"type,omitempty" mapstructure:"type"`
 	Device string   `yaml:"device,omitempty" mapstructure:"device"`

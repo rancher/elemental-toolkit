@@ -34,16 +34,20 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	e := elemental.NewElemental(&cfg.Config)
 
-	partitions := spec.Partitions.PartitionsByMountPoint(false)
+	allParts, err := utils.GetAllPartitions()
+	if err != nil {
+		cfg.Logger.Errorf("Error getting all partitions: %s", err.Error())
+		return err
+	}
 
 	cfg.Logger.Debug("Fscking partitions")
-	if err := e.FsckPartitions(partitions); err != nil {
+	if err := e.FsckPartitions(allParts); err != nil {
 		cfg.Logger.Errorf("Error fscking partitions: %s", err.Error())
 		return err
 	}
 
 	cfg.Logger.Debug("Mounting partitions")
-	if err := e.MountPartitions(partitions); err != nil {
+	if err := e.MountPartitions(spec.Partitions.PartitionsByMountPoint(false)); err != nil {
 		cfg.Logger.Errorf("Error mounting partitions: %s", err.Error())
 		return err
 	}
@@ -322,5 +326,5 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 }
 
 func fstab(device, path, fstype string, flags []string) string {
-	return fmt.Sprintf("%s\t%s\t%s\t%s\n", device, path, fstype, strings.Join(flags, ","))
+	return fmt.Sprintf("%s\t%s\t%s\t%s\t0\t0\n", device, path, fstype, strings.Join(flags, ","))
 }
