@@ -317,6 +317,7 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 	for tries := 0; tries <= partitionTries; tries++ {
 		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
 		_, _ = dev.runner.Run("udevadm", "settle")
+		_, _ = dev.runner.Run("partprobe")
 		if exists, _ := utils.Exists(dev.fs, device); exists {
 			return device, nil
 		}
