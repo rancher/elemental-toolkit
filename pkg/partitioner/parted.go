@@ -128,6 +128,10 @@ func (pc *PartedCall) WriteChanges() (string, error) {
 	pc.wipe = false
 	pc.parts = []*Partition{}
 	pc.deletions = []int{}
+
+	// Notify kernel of partition table changes, swallows errors, just a best effort call
+	_, _ = pc.runner.Run("partprobe", pc.dev)
+
 	return string(out), err
 }
 
