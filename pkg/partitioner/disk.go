@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -318,14 +317,6 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 	for tries := 0; tries <= partitionTries; tries++ {
 		dev.logger.Debugf("Trying to find the partition device %d of device %s (try number %d)", partNum, dev, tries+1)
 		_, _ = dev.runner.Run("udevadm", "settle")
-
-		if id := dev.getMajorID(); string(id) != "" {
-			out, err := dev.runner.Run("mknod", device, "b", string(id), fmt.Sprint(partNum))
-			if err != nil {
-				dev.logger.Debugf("mknod failed: %s: %s", err.Error(), string(out))
-			}
-		}
-
 		if exists, _ := utils.Exists(dev.fs, device); exists {
 			return device, nil
 		}
@@ -436,17 +427,4 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 	}
 
 	return "", nil
-}
-
-func (d *Disk) getMajorID() []byte {
-	re := regexp.MustCompile(`\d+$`)
-
-	match := re.Find([]byte(d.device))
-
-	_, err := strconv.Atoi(string(match))
-	if err != nil {
-		return []byte{}
-	}
-
-	return match
 }
