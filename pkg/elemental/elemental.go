@@ -494,13 +494,13 @@ func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info inte
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
-func (e *Elemental) CopyCloudConfig(partition *v1.Partition, cloudInit []string) (err error) {
-	if partition == nil || partition.MountPoint == "" {
-		e.config.Logger.Warnf("%s partition has no mount point. Will not copy cloud config files.", cnst.OEMLabel)
+func (e *Elemental) CopyCloudConfig(path string, cloudInit []string) (err error) {
+	if path == "" {
+		e.config.Logger.Warnf("empty path. Will not copy cloud config files.")
 		return nil
 	}
 	for i, ci := range cloudInit {
-		customConfig := filepath.Join(partition.MountPoint, fmt.Sprintf("9%d_custom.yaml", i))
+		customConfig := filepath.Join(path, fmt.Sprintf("9%d_custom.yaml", i))
 		err = utils.GetSource(e.config, ci, customConfig)
 		if err != nil {
 			return err

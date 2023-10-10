@@ -170,7 +170,7 @@ func (r ResetAction) Run() (err error) {
 	cleanup.Push(func() error { return treeCleaner() })
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(r.spec.Partitions.OEM, r.spec.CloudInit)
+	err = e.CopyCloudConfig(r.spec.Partitions.OEM.MountPoint, r.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
