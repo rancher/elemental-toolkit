@@ -108,7 +108,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("expandable", false, "Creates an expandable image including only the recovery image")
 	c.Flags().Bool("unprivileged", false, "Makes a build runnable within a non-privileged container, avoids mounting filesystems (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
-	// TODO verify cross-arch builds are possible
+	// TODO verify if cross-arch builds make any sense
 	//addArchFlags(c)
 	addLocalImageFlag(c)
 	addSquashFsCompressionFlags(c)

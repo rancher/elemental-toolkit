@@ -183,7 +183,6 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
-	// TODO set grub labels
 
 	// Relabel SELinux
 	err = b.applySelinuxLabels(e, activeRoot, b.spec.Unprivileged)
