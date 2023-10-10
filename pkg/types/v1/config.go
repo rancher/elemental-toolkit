@@ -384,6 +384,14 @@ type ElementalPartitions struct {
 	Persistent *Partition `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
+// GetConfigStorage returns the path, usually a mountpoint, of the configuration partition
+func (ep ElementalPartitions) GetConfigStorage() string {
+	if ep.OEM != nil {
+		return ep.OEM.MountPoint
+	}
+	return ""
+}
+
 // SetFirmwarePartitions sets firmware partitions for a given firmware and partition table type
 func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable string) error {
 	if firmware == EFI && partTable == GPT {

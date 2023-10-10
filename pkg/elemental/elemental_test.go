@@ -947,19 +947,19 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 
-			err = e.CopyCloudConfig(parts.OEM.MountPoint, cloudInit)
+			err = e.CopyCloudConfig(parts.GetConfigStorage(), cloudInit)
 			Expect(err).To(BeNil())
 			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", constants.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})
 		It("Doesnt do anything if the config file is not set", func() {
-			err := e.CopyCloudConfig(parts.OEM.MountPoint, []string{})
+			err := e.CopyCloudConfig(parts.GetConfigStorage(), []string{})
 			Expect(err).To(BeNil())
 		})
 		It("Doesnt do anything if the OEM partition has no mount point", func() {
 			parts.OEM.MountPoint = ""
-			err := e.CopyCloudConfig(parts.OEM.MountPoint, []string{})
+			err := e.CopyCloudConfig(parts.GetConfigStorage(), []string{})
 			Expect(err).To(BeNil())
 		})
 	})
