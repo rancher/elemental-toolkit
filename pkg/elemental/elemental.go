@@ -447,6 +447,12 @@ func (e *Elemental) DeployImage(img *v1.Image) (interface{}, error) {
 func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info interface{}, err error) { // nolint:gocyclo
 	e.config.Logger.Infof("Copying %s source...", imgSrc.Value())
 
+	err = utils.MkdirAll(e.config.Fs, target, cnst.DirPerm)
+	if err != nil {
+		e.config.Logger.Errorf("failed to create target directory %s", target)
+		return nil, err
+	}
+
 	if imgSrc.IsImage() {
 		if e.config.Cosign {
 			e.config.Logger.Infof("Running cosing verification for %s", imgSrc.Value())
