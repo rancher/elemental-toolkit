@@ -156,7 +156,17 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	if err != nil {
 		return err
 	}
-	// TODO set next_entry to default to recovery in case of expandable images
+
+	err = grub.SetPersistentVariables(
+		filepath.Join(b.roots[constants.OEMPartName], constants.GrubEnv),
+		map[string]string{
+			"next_entry": constants.RecoveryImgName,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	err = grub.SetPersistentVariables(
 		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
 		map[string]string{
@@ -170,6 +180,10 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 			"system_label":     b.spec.Recovery.Label,
 		},
 	)
+	if err != nil {
+		return err
+	}
+
 	_, err = grub.InstallEFI(
 		activeRoot, b.roots[constants.StatePartName],
 		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,

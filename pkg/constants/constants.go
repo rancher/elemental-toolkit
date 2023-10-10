@@ -24,6 +24,7 @@ import (
 const (
 	GrubConf           = "/etc/cos/grub.cfg"
 	GrubOEMEnv         = "grub_oem_env"
+	GrubEnv            = "grubenv"
 	GrubDefEntry       = "Elemental"
 	BiosPartName       = "bios"
 	EfiLabel           = "COS_GRUB"
