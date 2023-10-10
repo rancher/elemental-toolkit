@@ -65,12 +65,12 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		runner = mocks.NewFakeRunner()
 	})
 	Describe("Gdisk tests", Label("sgdisk"), func() {
-		var gc *part.GdiskCall
+		var gc part.Partitioner
 		BeforeEach(func() {
-			gc = part.NewGdiskCall("/dev/device", runner)
+			gc, _ = part.NewPartitioner("/dev/device", runner, part.Gdisk)
 		})
 		It("Write changes does nothing with empty setup", func() {
-			gc := part.NewGdiskCall("/dev/device", runner)
+			gc, _ := part.NewPartitioner("/dev/device", runner, part.Gdisk)
 			_, err := gc.WriteChanges()
 			Expect(err).To(BeNil())
 		})
@@ -187,12 +187,12 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 	})
 	Describe("Parted tests", Label("parted"), func() {
-		var pc *part.PartedCall
+		var pc part.Partitioner
 		BeforeEach(func() {
-			pc = part.NewPartedCall("/dev/device", runner)
+			pc, _ = part.NewPartitioner("/dev/device", runner, part.Parted)
 		})
 		It("Write changes does nothing with empty setup", func() {
-			pc := part.NewPartedCall("/dev/device", runner)
+			pc, _ := part.NewPartitioner("/dev/device", runner, part.Parted)
 			_, err := pc.WriteChanges()
 			Expect(err).To(BeNil())
 		})

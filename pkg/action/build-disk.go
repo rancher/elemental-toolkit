@@ -513,7 +513,7 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	var secSize, startS, sizeS uint
 	var excludes v1.PartitionList
 
-	gd := partitioner.NewGdiskCall(disk, b.cfg.Runner)
+	gd, _ := partitioner.NewPartitioner(disk, b.cfg.Runner, partitioner.Gdisk)
 	dData, err := gd.Print()
 	if err != nil {
 		return err
