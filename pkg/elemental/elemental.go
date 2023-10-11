@@ -361,7 +361,7 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, noMount bool, 
 		e.config.Logger.Infof("Creating squashed image: %s", img.File)
 		err = utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
 		if err != nil {
-			e.config.Logger.Errorf("Filed creating destination folder: %s", err.Error())
+			e.config.Logger.Errorf("failed creating destination folder: %s", err.Error())
 			return err
 		}
 		squashOptions := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)

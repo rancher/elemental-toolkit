@@ -19,12 +19,14 @@ package cloudinit_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
 	"github.com/jaypipes/ghw/pkg/block"
+	"github.com/mudler/yip/pkg/schema"
 
+	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
 
 	. "github.com/rancher/elemental-toolkit/pkg/cloudinit"
@@ -89,12 +91,73 @@ stages:
 			file, err := os.Open(temp + "/tmp/test/bar")
 			Expect(err).ShouldNot(HaveOccurred())
 
-			b, err := ioutil.ReadAll(file)
+			b, err := io.ReadAll(file)
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			Expect(string(b)).Should(Equal("baz"))
+		})
+	})
+	Describe("writing yaml files", func() {
+		var fs *vfst.TestFS
+		var logger v1.Logger
+		var cleanup func()
+		var err error
+		var yipRunner *YipCloudInitRunner
+		var tempDir string
+
+		BeforeEach(func() {
+			logger = v1.NewNullLogger()
+			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
+			Expect(err).Should(BeNil())
+			yipRunner = NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			tempDir = fs.TempDir()
+		})
+
+		AfterEach(func() {
+			cleanup()
+		})
+
+		It("produces yaml files and is capable to executed them", func() {
+			conf := &schema.YipConfig{
+				Name: "Example cloud-config file",
+				Stages: map[string][]schema.Stage{
+					"hello-test": {
+						schema.Stage{
+							Name: "Some step",
+							Commands: []string{
+								"echo 'Hello world' > " + tempDir + "/output/hello",
+							},
+						},
+					},
+				},
+			}
+			Expect(utils.MkdirAll(fs, "/output", constants.DirPerm)).To(Succeed())
+			Expect(yipRunner.CloudInitFileRender("/conf/exmaple.yaml", conf)).To(Succeed())
+			Expect(yipRunner.Run("hello-test", "/conf")).To(Succeed())
+			data, err := fs.ReadFile("/output/hello")
+			Expect(err).To(BeNil())
+			Expect(string(data)).To(Equal("Hello world\n"))
+		})
+		It("fails writing a file on read only filesystem", func() {
+			conf := &schema.YipConfig{
+				Name: "Example cloud-config file",
+				Stages: map[string][]schema.Stage{
+					"hello-test": {
+						schema.Stage{
+							Name: "Some step",
+							Commands: []string{
+								"echo 'Hello world' > " + tempDir + "/output/hello",
+							},
+						},
+					},
+				},
+			}
+			Expect(utils.MkdirAll(fs, "/output", constants.DirPerm)).To(Succeed())
+			roFS := vfs.NewReadOnlyFS(fs)
+			yipRunner = NewYipCloudInitRunner(logger, &v1.RealRunner{}, roFS)
+			Expect(yipRunner.CloudInitFileRender("/conf/exmaple.yaml", conf)).NotTo(Succeed())
 		})
 	})
 	Describe("layout plugin execution", func() {

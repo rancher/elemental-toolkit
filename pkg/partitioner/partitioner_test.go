@@ -67,10 +67,10 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 	Describe("Gdisk tests", Label("sgdisk"), func() {
 		var gc part.Partitioner
 		BeforeEach(func() {
-			gc, _ = part.NewPartitioner("/dev/device", runner, part.Gdisk)
+			gc = part.NewPartitioner("/dev/device", runner, part.Gdisk)
 		})
 		It("Write changes does nothing with empty setup", func() {
-			gc, _ := part.NewPartitioner("/dev/device", runner, part.Gdisk)
+			gc := part.NewPartitioner("/dev/device", runner, part.Gdisk)
 			_, err := gc.WriteChanges()
 			Expect(err).To(BeNil())
 		})
@@ -189,10 +189,10 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 	Describe("Parted tests", Label("parted"), func() {
 		var pc part.Partitioner
 		BeforeEach(func() {
-			pc, _ = part.NewPartitioner("/dev/device", runner, part.Parted)
+			pc = part.NewPartitioner("/dev/device", runner, part.Parted)
 		})
 		It("Write changes does nothing with empty setup", func() {
-			pc, _ := part.NewPartitioner("/dev/device", runner, part.Parted)
+			pc := part.NewPartitioner("/dev/device", runner, part.Parted)
 			_, err := pc.WriteChanges()
 			Expect(err).To(BeNil())
 		})

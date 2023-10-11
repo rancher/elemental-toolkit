@@ -295,6 +295,61 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
+				{"mkfs.ext4", "-L", "COS_OEM"},
+				{"mkfs.ext4", "-L", "COS_RECOVERY"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
+				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"partprobe", "/tmp/test/elemental.raw"},
+			})).To(Succeed())
+		})
+		It("Successfully builds a full raw disk with an unprivileged setup and a different active image", func() {
+			disk.Unprivileged = true
+			disk.Active.Source = v1.NewDockerSrc("some/other/image/ref:tag")
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			// Unprivileged setup, it should not run any mount
+			mounter.ErrorOnMount = true
+
+			// grub artifacts are expected to be found in active root
+			activeRoot := filepath.Join(cfg.OutDir, "build", filepath.Base(disk.Active.File)+".root")
+
+			// Create grub.cfg
+			grubConf := filepath.Join(activeRoot, "/etc/cos/grub.cfg")
+			Expect(utils.MkdirAll(fs, filepath.Dir(grubConf), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(grubConf, []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create grub modules
+			grubModulesDir := filepath.Join(activeRoot, "/usr/share/grub2/x86_64-efi")
+			Expect(utils.MkdirAll(fs, grubModulesDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "loopback.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "squash4.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "xzio.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create os-release
+			Expect(fs.WriteFile(filepath.Join(activeRoot, "/etc/os-release"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create efi files
+			grubEfiDir := filepath.Join(activeRoot, "/usr/share/efi/x86_64")
+			Expect(utils.MkdirAll(fs, grubEfiDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "grub.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "shim.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "MokManager.efi"), []byte{}, constants.FilePerm))
+
+			Expect(buildDisk.BuildDiskRun()).To(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/active.img"},
+				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/passive.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
@@ -318,12 +373,57 @@ var _ = Describe("Build Actions", func() {
 			Expect(runner.MatchMilestones([][]string{
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
 				{"partprobe", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
+		})
+		It("Fails to build an expandable disk with privileged setup when mounts are not possible", func() {
+			disk.Unprivileged = false
+			disk.Expandable = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+
+			// build will fail if mounts are not possible
+			mounter.ErrorOnMount = true
+
+			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"grub2-editenv", "/tmp/test/build/oem/grubenv", "set", "next_entry=recovery"},
+			})).To(Succeed())
+
+			// fails at chroot hook step, before any preparing images
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+			})).NotTo(Succeed())
+		})
+		It("Fails to build an expandable disk if expandable cloud config cannot be written", func() {
+			disk.Unprivileged = true
+			disk.Expandable = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+
+			// fails to render the expandable cloud-config data
+			cloudInit.RenderErr = true
+
+			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+			})).To(Succeed())
+
+			// failed before preparing partitions images
+			Expect(runner.MatchMilestones([][]string{
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+			})).NotTo(Succeed())
 		})
 		It("Transforms raw image into GCE image", Label("gce"), func() {
 			tmpDir, err := utils.TempDir(fs, "", "")

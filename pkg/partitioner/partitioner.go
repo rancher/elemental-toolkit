@@ -17,8 +17,6 @@ limitations under the License.
 package partitioner
 
 import (
-	"fmt"
-
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
@@ -49,13 +47,13 @@ type Partition struct {
 	FileSystem string
 }
 
-func NewPartitioner(dev string, runner v1.Runner, backend string) (Partitioner, error) {
+func NewPartitioner(dev string, runner v1.Runner, backend string) Partitioner {
 	switch backend {
 	case Parted:
-		return newPartedCall(dev, runner), nil
+		return newPartedCall(dev, runner)
 	case Gdisk:
-		return newGdiskCall(dev, runner), nil
+		return newGdiskCall(dev, runner)
 	default:
-		return nil, fmt.Errorf("unsupported partitioning utility")
+		return nil
 	}
 }

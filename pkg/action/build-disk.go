@@ -140,7 +140,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		if !b.spec.Active.Source.IsEmpty() {
 			// Create active root
 			activeRoot = filepath.Join(workdir, filepath.Base(b.spec.Active.File)+rootSuffix)
-			activeInfo, err = e.DumpSource(recRoot, b.spec.Active.Source)
+			activeInfo, err = e.DumpSource(activeRoot, b.spec.Active.Source)
 			if err != nil {
 				b.cfg.Logger.Errorf("failed loading active image source tree: %s", err.Error())
 				return err
@@ -566,7 +566,7 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	var secSize, startS, sizeS uint
 	var excludes v1.PartitionList
 
-	gd, _ := partitioner.NewPartitioner(disk, b.cfg.Runner, partitioner.Gdisk)
+	gd := partitioner.NewPartitioner(disk, b.cfg.Runner, partitioner.Gdisk)
 	dData, err := gd.Print()
 	if err != nil {
 		return err
