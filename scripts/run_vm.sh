@@ -6,19 +6,20 @@ SCRIPT=$(realpath -s "${0}")
 SCRIPTS_PATH=$(dirname "${SCRIPT}")
 TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 
+: "${ELMNTL_PREFIX:=}" 
 : "${ELMNTL_FIRMWARE:=/usr/share/qemu/ovmf-x86_64.bin}"
 : "${ELMNTL_FWDIP:=127.0.0.1}"
 : "${ELMNTL_FWDPORT:=2222}"
 : "${ELMNTL_MEMORY:=4096}"
-: "${ELMNTL_LOGFILE:=${TESTS_PATH}/serial.log}"
-: "${ELMNTL_PIDFILE:=${TESTS_PATH}/testvm.pid}"
-: "${ELMNTL_TESTDISK:=${TESTS_PATH}/testdisk.qcow2}"
-: "${ELMNTL_DISKSIZE:=20G}"
+: "${ELMNTL_LOGFILE:=${TESTS_PATH}/${ELMNTL_PREFIX}serial.log}"
+: "${ELMNTL_PIDFILE:=${TESTS_PATH}/${ELMNTL_PREFIX}testvm.pid}"
+: "${ELMNTL_TESTDISK:=${TESTS_PATH}/${ELMNTL_PREFIX}testdisk.qcow2}"
+: "${ELMNTL_VMSTDOUT:=${TESTS_PATH}/${ELMNTL_PREFIX}vmstdout}"
+: "${ELMNTL_DISKSIZE:=16G}"
 : "${ELMNTL_DISPLAY:=none}"
 : "${ELMNTL_ACCEL:=kvm}"
 : "${ELMNTL_TARGETARCH:=$(uname -p)}"
 : "${ELMNTL_MACHINETYPE:=q35}"
-: "${ELMNTL_CPU:=max}"
 
 function _abort {
     echo "$@" && exit 1
@@ -37,7 +38,7 @@ function start {
   local daemon_arg="-daemonize"
   local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
-  local cpu_arg="-cpu ${ELMNTL_CPU}"
+  local cpu_arg
   local vmpid
   local kvm_arg
 
@@ -67,12 +68,12 @@ function start {
         ;;
   esac
 
-  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}" && firmware_arg="-bios ${ELMNTL_FIRMWARE} ${firmware_arg}"
+  [ "hvf" == "${ELMNTL_ACCEL}" ] && accel_arg="-accel ${ELMNTL_ACCEL}" && firmware_arg="-bios ${ELMNTL_FIRMWARE} ${firmware_arg}" && cpu_arg="-cpu max,-pdpe1gb"
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && kvm_arg="-enable-kvm"
 
   qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
       ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
-      ${daemon_arg} ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
+      ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg} > ${ELMNTL_VMSTDOUT} 2>&1 &
 }
 
 function stop {
@@ -96,6 +97,13 @@ function stop {
 function clean {
   ([ -f "${ELMNTL_LOGFILE}" ] && rm -f "${ELMNTL_LOGFILE}") || true
   ([ -f "${ELMNTL_TESTDISK}" ] && rm -f "${ELMNTL_TESTDISK}") || true
+  ([ -f "${ELMNTL_VMSTDOUT}" ] && rm -f "${ELMNTL_VMSTDOUT}") || true
+}
+
+function vmpid {
+    if [ -f "${ELMNTL_PIDFILE}" ]; then
+        cat "${ELMNTL_PIDFILE}"
+    fi
 }
 
 cmd=$1
@@ -110,6 +118,9 @@ case $cmd in
     ;;
   clean)
     clean
+    ;;
+  vmpid)
+    vmpid
     ;;
   *)
     _abort "Unknown command: ${cmd}"
