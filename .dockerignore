@@ -1,0 +1,11 @@
+# Ignore everything
+*
+
+# Allow files and directories
+!go.mod
+!go.sum
+!main.go
+!vendor
+!cmd
+!internal
+!pkg
