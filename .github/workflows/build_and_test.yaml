@@ -46,18 +46,7 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           git fetch --prune --unshallow
-      - name: Checks cached ISO
-        uses: actions/cache/restore@v3
-        id: cache-check
-        env:
-          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
-          enableCrossOsArchive: true
-          lookup-only: true
-        with:
-          path: /tmp/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cached ISO
+      - name: Cached ISO
         id: cache-iso
         uses: actions/cache/restore@v3
         env:
@@ -66,17 +55,17 @@ jobs:
           lookup-only: true
         with:
           path: ${{ github.workspace }}/build/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build toolkit
         run: |
           make build
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build ISO
         run: |
           make build-iso
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Save ISO
         id: save-iso
         uses: actions/cache/save@v3
@@ -84,7 +73,7 @@ jobs:
           cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
   
   build-disk:
@@ -104,7 +93,7 @@ jobs:
           cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
           lookup-only: true
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
@@ -128,7 +117,7 @@ jobs:
           cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
 
   tests-matrix:
@@ -162,7 +151,7 @@ jobs:
           cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/toolkit/**', '**/examples/**') }}
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
           fail-on-cache-miss: true
       - if: ${{ env.ARCH == 'x86_64' }} 
