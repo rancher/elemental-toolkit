@@ -119,6 +119,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	// Prepare partition root folders
 	err = b.preparePartitionsRoot()
 	if err != nil {
+		b.cfg.Logger.Errorf("failed preparing working directories: %s", err.Error())
 		return err
 	}
 
@@ -129,6 +130,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	// Create recovery root
 	recInfo, err = e.DumpSource(recRoot, b.spec.Recovery.Source)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed loading recovery image source tree: %s", err.Error())
 		return err
 	}
 
@@ -140,6 +142,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 			activeRoot = filepath.Join(workdir, filepath.Base(b.spec.Active.File)+rootSuffix)
 			activeInfo, err = e.DumpSource(recRoot, b.spec.Active.Source)
 			if err != nil {
+				b.cfg.Logger.Errorf("failed loading active image source tree: %s", err.Error())
 				return err
 			}
 		}
@@ -155,6 +158,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	grub := utils.NewGrub(&b.cfg.Config)
 	err = grub.InstallConfig(activeRoot, b.roots[constants.StatePartName], b.spec.GrubConf)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
 	}
 
@@ -165,6 +169,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		},
 	)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed setting firstboot menu entry: %s", err.Error())
 		return err
 	}
 
@@ -182,6 +187,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		},
 	)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed setting grub environment variables: %s", err.Error())
 		return err
 	}
 
@@ -190,6 +196,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed installing grub efi binaries: %s", err.Error())
 		return err
 	}
 
@@ -222,12 +229,14 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		// Create active image
 		err = e.CreateImgFromTree(activeRoot, &b.spec.Active, b.spec.Unprivileged, nil)
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating active image from root-tree: %s", err.Error())
 			return err
 		}
 
 		// Create passive image
 		err = e.CreateImgFromTree(activeRoot, &b.spec.Passive, b.spec.Unprivileged, nil)
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating passive image from root-tree: %s", err.Error())
 			return err
 		}
 	}
@@ -244,12 +253,14 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		},
 	)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating recovery image from root-tree: %s", err.Error())
 		return err
 	}
 
 	if b.spec.Expandable {
 		err = b.SetExpandableCloudInitStage()
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating expandable cloud-config: %s", err.Error())
 			return err
 		}
 		// Omit persistent partition and minimize state partition size
@@ -268,6 +279,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	// Creates RAW disk image
 	err = b.CreateRAWDisk(e, rawImg)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating RAW disk: %s", err.Error())
 		return err
 	}
 
@@ -284,12 +296,14 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	case constants.AzureType:
 		err = Raw2Azure(rawImg, b.cfg.Fs, b.cfg.Logger, false)
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating Azure image: %s", err.Error())
 			return err
 		}
 		b.cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.vhd", rawImg))
 	case constants.GCEType:
 		err = Raw2Gce(rawImg, b.cfg.Fs, b.cfg.Logger, false)
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating GCE image: %s", err.Error())
 			return err
 		}
 		b.cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.tar.gz", rawImg))
@@ -303,18 +317,21 @@ func (b *BuildDiskAction) CreateRAWDisk(e *elemental.Elemental, rawImg string) e
 	// Creates all partition image files
 	images, err := b.CreatePartitionImages(e)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating partition images: %s", err.Error())
 		return err
 	}
 
 	// Ensamble disk with all partitions
 	err = b.CreateDiskImage(rawImg, images...)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating disk image: %s", err.Error())
 		return err
 	}
 
 	// Write partition headers to disk
 	err = b.CreateDiskPartitionTable(rawImg)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating partition table: %s", err.Error())
 		return err
 	}
 	return nil
@@ -336,12 +353,12 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 	img = b.spec.Partitions.EFI.ToImage()
 	err = e.CreateFileSystemImage(img)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating EFI image: %s", err.Error())
 		return nil, err
 	}
 
-	utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, d fs.DirEntry, err error) error {
+	err = utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			b.cfg.Logger.Errorf("failed copying files to EFI partition: %s", err.Error())
 			return err
 		}
 		if d.IsDir() && path != b.roots[constants.EfiPartName] {
@@ -356,6 +373,10 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 		}
 		return nil
 	})
+	if err != nil {
+		b.cfg.Logger.Errorf("failed copying files to EFI img: %s", err.Error())
+		return nil, err
+	}
 
 	images = append(images, img)
 
@@ -368,6 +389,7 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
 		)
 		if err != nil {
+			b.cfg.Logger.Errorf("failed creating %s partition image: %s", part.Name, err.Error())
 			return nil, err
 		}
 		images = append(images, img)
@@ -393,6 +415,7 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Im
 	// end of the disk for GPT headers.
 	err = utils.CreateRAWFile(b.cfg.Fs, initDiskFile, 1)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating RAW file: %s", err.Error())
 		return err
 	}
 
@@ -411,6 +434,7 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Im
 	}
 	err = utils.CreateRAWFile(b.cfg.Fs, endDiskFile, eSize)
 	if err != nil {
+		b.cfg.Logger.Errorf("failed creating RAW file: %s", err.Error())
 		return err
 	}
 
