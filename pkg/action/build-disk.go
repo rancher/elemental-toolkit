@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -337,10 +338,25 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 	if err != nil {
 		return nil, err
 	}
-	_, err = b.cfg.Runner.Run("mcopy", "-s", "-i", img.File, filepath.Join(b.roots[constants.EfiPartName], "EFI"), "::EFI")
-	if err != nil {
-		return nil, eleError.NewFromError(err, eleError.CommandRun)
-	}
+
+	utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			b.cfg.Logger.Errorf("failed copying files to EFI partition: %s", err.Error())
+			return err
+		}
+		if d.IsDir() && path != b.roots[constants.EfiPartName] {
+			rel, err := filepath.Rel(b.roots[constants.EfiPartName], path)
+			if err != nil {
+				return err
+			}
+			_, err = b.cfg.Runner.Run("mcopy", "-i", img.File, path, fmt.Sprintf("::%s", rel))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	images = append(images, img)
 
 	// Create all partitions after EFI
