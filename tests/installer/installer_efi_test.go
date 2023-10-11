@@ -70,7 +70,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 						},
 						{
 							Label:  "COS_PERSISTENT",
-							Size:   8192,
+							Size:   1024,
 							FsType: sut.Ext2,
 						},
 					} {
