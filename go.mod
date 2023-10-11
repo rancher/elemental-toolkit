@@ -1,6 +1,6 @@
 module github.com/rancher/elemental-toolkit
 
-go 1.20
+go 1.21
 
 require (
 	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45

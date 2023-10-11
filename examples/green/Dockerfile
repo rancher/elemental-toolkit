@@ -54,7 +54,7 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN elemental init -f elemental-rootfs,grub-config,grub-default-bootargs,elemental-setup,dracut-config,cloud-config-defaults,cloud-config-essentials && \
+RUN elemental init -f elemental-rootfs,grub-config,grub-default-bootargs,dracut-config,cloud-config-defaults,cloud-config-essentials && \
     kernel=$(ls /boot/Image-* | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \

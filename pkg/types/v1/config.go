@@ -241,7 +241,7 @@ type InitSpec struct {
 type MountSpec struct {
 	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
 	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
-	RunCloudInit      bool   `yaml:"run-cloud-init,omitempty" mapstructure:"run-cloud-init"`
+	RunRootfsService  bool   `yaml:"run-rootfs-service,omitempty" mapstructure:"run-rootfs-service"`
 	RunFsck           bool   `yaml:"run-fsck,omitempty" mapstructure:"run-fsck"`
 	Disable           bool   `yaml:"disable,omitempty" mapstructure:"disable"`
 	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`

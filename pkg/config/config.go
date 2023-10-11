@@ -233,7 +233,7 @@ func NewMountSpec() *v1.MountSpec {
 		ReadKernelCmdline: true,
 		Sysroot:           "/sysroot",
 		WriteFstab:        true,
-		RunCloudInit:      true,
+		RunRootfsService:  true,
 		RunFsck:           true,
 		Image: &v1.Image{
 			FS:         constants.LinuxImgFs,

@@ -25,6 +25,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
+	"github.com/rancher/elemental-toolkit/pkg/systemd"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
@@ -52,15 +53,15 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
-	if spec.RunCloudInit {
-		cfg.Logger.Debug("Running rootfs cloud-init stage")
-		err := utils.RunStage(&cfg.Config, "rootfs", cfg.Strict, cfg.CloudInitPaths...)
+	if spec.RunRootfsService {
+		cfg.Logger.Debug("Running elemental-setup-rootfs service")
+		err := systemd.Start(cfg.Config.Runner, systemd.NewUnit("elemental-setup-rootfs"))
 		if err != nil {
 			cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
 			return err
 		}
 	} else {
-		cfg.Logger.Debug("Skipping cloud-init rootfs stage")
+		cfg.Logger.Debug("Skipping elemental-setup-rootfs")
 	}
 
 	if err := applyLayoutConfig(cfg, spec); err != nil {

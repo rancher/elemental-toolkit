@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.20
+ARG GO_VERSION=1.21
 ARG LEAP_VERSION=15.5
 
 FROM golang:${GO_VERSION}-alpine as elemental-bin

@@ -34,3 +34,8 @@ func Enable(runner v1.Runner, unit *Unit) error {
 	_, err := runner.Run("systemctl", "enable", unit.Name)
 	return err
 }
+
+func Start(runner v1.Runner, unit *Unit) error {
+	_, err := runner.Run("systemctl", "start", unit.Name)
+	return err
+}

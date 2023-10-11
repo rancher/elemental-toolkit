@@ -129,7 +129,7 @@ mount:
   read-kernel-cmdline: true # read and parse /proc/cmdline for arguments
   sysroot: /sysroot # Path to mount system to
   write-fstab: true # Write fstab into sysroot/etc/fstab
-  run-cloud-init: true # Run rootfs stage
+  run-rootfs-service: true # Run rootfs stage
   run-fsck: true # Run fsck on all partitions before mounting
   overlay:
     type: tmpfs # tmpfs|block
