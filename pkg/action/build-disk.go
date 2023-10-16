@@ -30,7 +30,6 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	eleError "github.com/rancher/elemental-toolkit/pkg/error"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/partitioner"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -309,7 +308,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		b.cfg.Logger.Infof("Done! Image created at %s", fmt.Sprintf("%s.tar.gz", rawImg))
 	}
 
-	return eleError.NewFromError(err, eleError.Unknown)
+	return elementalError.NewFromError(err, elementalError.Unknown)
 }
 
 // CreateRAWDisk creates the RAW disk image file including all required partitions
@@ -426,9 +425,9 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Im
 		if b.spec.Size > minSize {
 			eSize = b.spec.Size - b.spec.MinDiskSize()
 		} else {
-			return eleError.New(
+			return elementalError.New(
 				fmt.Sprintf("Configured size (%dMiB) is not big enough, minimum requested is %dMiB ", b.spec.Size, minSize),
-				eleError.InvalidSize,
+				elementalError.InvalidSize,
 			)
 		}
 	}
@@ -446,7 +445,7 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v1.Im
 	partFiles = append(partFiles, endDiskFile)
 	err = utils.ConcatFiles(b.cfg.Fs, partFiles, rawDiskFile)
 	if err != nil {
-		return eleError.NewFromError(err, eleError.CopyData)
+		return elementalError.NewFromError(err, elementalError.CopyData)
 	}
 
 	return nil
@@ -461,11 +460,11 @@ func Raw2Gce(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) error
 	logger.Info("Transforming raw image into gce format")
 	actImg, err := fs.Open(source)
 	if err != nil {
-		return eleError.NewFromError(err, eleError.OpenFile)
+		return elementalError.NewFromError(err, elementalError.OpenFile)
 	}
 	info, err := actImg.Stat()
 	if err != nil {
-		return eleError.NewFromError(err, eleError.StatFile)
+		return elementalError.NewFromError(err, elementalError.StatFile)
 	}
 	actualSize := info.Size()
 	finalSizeGB := actualSize/GB + 1
@@ -482,13 +481,13 @@ func Raw2Gce(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) error
 	file, err := fs.Create(fmt.Sprintf("%s.tar.gz", source))
 	logger.Debugf(fmt.Sprintf("destination: %s.tar.gz", source))
 	if err != nil {
-		return eleError.NewFromError(err, eleError.CreateFile)
+		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 	defer file.Close()
 	// Create gzip writer
 	gzipWriter, err := gzip.NewWriterLevel(file, gzip.BestSpeed)
 	if err != nil {
-		return eleError.NewFromError(err, eleError.GzipWriter)
+		return elementalError.NewFromError(err, elementalError.GzipWriter)
 	}
 	defer gzipWriter.Close()
 	// Create tarwriter pointing to our gzip writer
@@ -510,12 +509,12 @@ func Raw2Gce(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) error
 	// Write header with all the info
 	err = tarWriter.WriteHeader(header)
 	if err != nil {
-		return eleError.NewFromError(err, eleError.TarHeader)
+		return elementalError.NewFromError(err, elementalError.TarHeader)
 	}
 	// copy the actual data
 	_, err = io.Copy(tarWriter, sourceFile)
 	if err != nil {
-		return eleError.NewFromError(err, eleError.CopyData)
+		return elementalError.NewFromError(err, elementalError.CopyData)
 	}
 	// Remove full raw image, we already got the compressed one
 	if !keepOldImage {
@@ -533,7 +532,7 @@ func Raw2Azure(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) err
 	// Copy raw to new image with VHD appended
 	err := utils.CopyFile(fs, source, fmt.Sprintf("%s.vhd", source))
 	if err != nil {
-		return eleError.NewFromError(err, eleError.CopyFile)
+		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 	// Open it
 	vhdFile, _ := fs.OpenFile(fmt.Sprintf("%s.vhd", source), os.O_APPEND|os.O_WRONLY, 0600)
