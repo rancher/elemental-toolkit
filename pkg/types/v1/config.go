@@ -323,6 +323,19 @@ type Partition struct {
 
 type PartitionList []*Partition
 
+// ToImage returns an image object that matches the partition. This is helpful if the partition
+// is managed as an image.
+func (p Partition) ToImage() *Image {
+	return &Image{
+		File:       p.Path,
+		Label:      p.FilesystemLabel,
+		Size:       p.Size,
+		FS:         p.FS,
+		Source:     NewEmptySrc(),
+		MountPoint: p.MountPoint,
+	}
+}
+
 // GetByName gets a partitions by its name from the PartitionList
 func (pl PartitionList) GetByName(name string) *Partition {
 	var part *Partition
@@ -369,6 +382,14 @@ type ElementalPartitions struct {
 	Recovery   *Partition `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	State      *Partition `yaml:"state,omitempty" mapstructure:"state"`
 	Persistent *Partition `yaml:"persistent,omitempty" mapstructure:"persistent"`
+}
+
+// GetConfigStorage returns the path, usually a mountpoint, of the configuration partition
+func (ep ElementalPartitions) GetConfigStorage() string {
+	if ep.OEM != nil {
+		return ep.OEM.MountPoint
+	}
+	return ""
 }
 
 // SetFirmwarePartitions sets firmware partitions for a given firmware and partition table type
@@ -592,6 +613,61 @@ type BuildConfig struct {
 // if unsolvable inconsistencies are found
 func (b *BuildConfig) Sanitize() error {
 	return b.Config.Sanitize()
+}
+
+type Disk struct {
+	Size         uint                `yaml:"size,omitempty" mapstructure:"size"`
+	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	Expandable   bool                `yaml:"expandable,omitempty" mapstructure:"expandable"`
+	Unprivileged bool                `yaml:"unprivileged,omitempty" mapstructure:"unprivileged"`
+	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
+	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	Passive      Image
+	GrubConf     string
+	CloudInit    []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	GrubDefEntry string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Type         string   `yaml:"type,omitempty" mapstructure:"type"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+// if unsolvable inconsistencies are found
+func (d *Disk) Sanitize() error {
+	// Set passive filesystem as active
+	d.Passive.FS = d.Active.FS
+
+	// Unset default label for squashed images
+	if d.Active.FS == constants.SquashFs {
+		d.Active.Label = ""
+		d.Passive.Label = ""
+	}
+	if d.Recovery.FS == constants.SquashFs {
+		d.Recovery.Label = ""
+	}
+
+	// The disk size is enough for all partitions
+	minSize := d.MinDiskSize()
+	if d.Size != 0 && !d.Expandable && d.Size <= minSize {
+		return fmt.Errorf("Requested disk size (%dMB) is not enough, it should be, at least, of %d", d.Size, minSize)
+	}
+
+	return nil
+}
+
+// minDiskSize counts the minimum size (MB) required for the disk given the partitions setup
+func (d *Disk) MinDiskSize() uint {
+	var minDiskSize uint
+
+	// First partition is aligned at the first 1MB and the last one ends at -1MB
+	minDiskSize = 2
+	for _, part := range d.Partitions.PartitionsByInstallOrder(PartitionList{}) {
+		if part.Size == 0 {
+			minDiskSize += constants.MinPartSize
+		} else {
+			minDiskSize += part.Size
+		}
+	}
+
+	return minDiskSize
 }
 
 // InstallState tracks the installation data of the whole system

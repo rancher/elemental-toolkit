@@ -170,7 +170,7 @@ func (r ResetAction) Run() (err error) {
 	cleanup.Push(func() error { return treeCleaner() })
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(r.spec.Partitions.OEM, r.spec.CloudInit)
+	err = e.CopyCloudConfig(r.spec.Partitions.GetConfigStorage(), r.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
@@ -238,7 +238,7 @@ func (r ResetAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
-	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, treeCleaner)
+	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, false, treeCleaner)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}

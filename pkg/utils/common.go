@@ -36,7 +36,7 @@ import (
 	"github.com/twpayne/go-vfs"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
+	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
@@ -133,23 +133,23 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 // within a container image (/dev, /run, etc.)
 func CreateDirStructure(fs v1.FS, target string) error {
 	for _, dir := range []string{"/run", "/dev", "/boot", "/usr/local", "/oem", "/system", "/etc/elemental/config.d"} {
-		err := MkdirAll(fs, filepath.Join(target, dir), cnst.DirPerm)
+		err := MkdirAll(fs, filepath.Join(target, dir), constants.DirPerm)
 		if err != nil {
 			return err
 		}
 	}
 	for _, dir := range []string{"/proc", "/sys"} {
-		err := MkdirAll(fs, filepath.Join(target, dir), cnst.NoWriteDirPerm)
+		err := MkdirAll(fs, filepath.Join(target, dir), constants.NoWriteDirPerm)
 		if err != nil {
 			return err
 		}
 	}
-	err := MkdirAll(fs, filepath.Join(target, "/tmp"), cnst.DirPerm)
+	err := MkdirAll(fs, filepath.Join(target, "/tmp"), constants.DirPerm)
 	if err != nil {
 		return err
 	}
 	// Set /tmp permissions regardless the umask setup
-	err = fs.Chmod(filepath.Join(target, "/tmp"), cnst.TempDirPerm)
+	err = fs.Chmod(filepath.Join(target, "/tmp"), constants.TempDirPerm)
 	if err != nil {
 		return err
 	}
@@ -401,7 +401,7 @@ func GetSource(config *v1.Config, source string, destination string) error {
 		return err
 	}
 
-	err = vfs.MkdirAll(config.Fs, filepath.Dir(destination), cnst.DirPerm)
+	err = vfs.MkdirAll(config.Fs, filepath.Dir(destination), constants.DirPerm)
 	if err != nil {
 		return err
 	}
@@ -505,12 +505,12 @@ func IdentifySourceSystem(vfs v1.FS, path string) (string, error) {
 				return err
 			}
 			switch osRelease["ID"] {
-			case cnst.Fedora:
-				system = cnst.Fedora
-			case cnst.Ubuntu:
-				system = cnst.Ubuntu
+			case constants.Fedora:
+				system = constants.Fedora
+			case constants.Ubuntu:
+				system = constants.Ubuntu
 			default:
-				system = cnst.Suse
+				system = constants.Suse
 			}
 			found = true
 		}
@@ -555,4 +555,24 @@ func parseOsRelease(fs v1.FS, filename string) (osrelease map[string]string, err
 		osrelease[key] = value
 	}
 	return
+}
+
+// CreateRAWFile creates raw file of the given size in MB
+func CreateRAWFile(fs v1.FS, filename string, size uint) error {
+	f, err := fs.Create(filename)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.CreateFile)
+	}
+	err = f.Truncate(int64(size * 1024 * 1024))
+	if err != nil {
+		f.Close()
+		_ = fs.RemoveAll(filename)
+		return elementalError.NewFromError(err, elementalError.TruncateFile)
+	}
+	err = f.Close()
+	if err != nil {
+		_ = fs.RemoveAll(filename)
+		return elementalError.NewFromError(err, elementalError.CloseFile)
+	}
+	return nil
 }

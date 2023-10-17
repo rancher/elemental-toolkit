@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/twpayne/go-vfs"
 	"k8s.io/mount-utils"
@@ -30,6 +31,11 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/http"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
+)
+
+const (
+	partSuffix  = ".part"
+	mountSuffix = ".mount"
 )
 
 type GenericOptions func(a *v1.Config) error
@@ -473,6 +479,101 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		},
 		State: installState,
 	}, nil
+}
+
+func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
+	partitions := v1.ElementalPartitions{}
+
+	// does not return error on v1.EFI use case
+	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+partSuffix)
+
+	partitions.OEM = &v1.Partition{
+		FilesystemLabel: constants.OEMLabel,
+		Size:            constants.OEMSize,
+		Name:            constants.OEMPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      filepath.Join(workdir, constants.OEMPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.OEMPartName+partSuffix),
+		Flags:           []string{},
+	}
+
+	partitions.Recovery = &v1.Partition{
+		FilesystemLabel: constants.RecoveryLabel,
+		Size:            constants.RecoverySize,
+		Name:            constants.RecoveryPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      filepath.Join(workdir, constants.RecoveryPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.RecoveryPartName+partSuffix),
+		Flags:           []string{},
+	}
+
+	partitions.State = &v1.Partition{
+		FilesystemLabel: constants.StateLabel,
+		Size:            constants.StateSize,
+		Name:            constants.StatePartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      filepath.Join(workdir, constants.StatePartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.StatePartName+partSuffix),
+		Flags:           []string{},
+	}
+
+	partitions.Persistent = &v1.Partition{
+		FilesystemLabel: constants.PersistentLabel,
+		Size:            constants.PersistentSize,
+		Name:            constants.PersistentPartName,
+		FS:              constants.LinuxFs,
+		MountPoint:      filepath.Join(workdir, constants.PersistentPartName+mountSuffix),
+		Path:            filepath.Join(workdir, constants.PersistentPartName+partSuffix),
+		Flags:           []string{},
+	}
+	return partitions
+}
+
+func NewDisk(cfg *v1.BuildConfig) *v1.Disk {
+	var workdir string
+	var recoveryImg, activeImg, passiveImg v1.Image
+
+	workdir = filepath.Join(cfg.OutDir, constants.DiskWorkDir)
+
+	recoveryImg.Size = constants.ImgSize
+	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, "cOS", constants.RecoveryImgFile)
+	recoveryImg.FS = constants.SquashFs
+	recoveryImg.Source = v1.NewEmptySrc()
+	recoveryImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.RecoveryImgFile, filepath.Ext(constants.RecoveryImgFile),
+		)+mountSuffix,
+	)
+
+	activeImg.Size = constants.ImgSize
+	activeImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.ActiveImgFile)
+	activeImg.FS = constants.SquashFs
+	activeImg.Source = v1.NewEmptySrc()
+	activeImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.ActiveImgFile, filepath.Ext(constants.ActiveImgFile),
+		)+mountSuffix,
+	)
+
+	passiveImg.Size = constants.ImgSize
+	passiveImg.File = filepath.Join(workdir, constants.StatePartName, "cOS", constants.PassiveImgFile)
+	passiveImg.FS = constants.SquashFs
+	passiveImg.Source = v1.NewEmptySrc()
+	activeImg.MountPoint = filepath.Join(
+		workdir, strings.TrimSuffix(
+			constants.PassiveImgFile, filepath.Ext(constants.PassiveImgFile),
+		)+mountSuffix,
+	)
+
+	return &v1.Disk{
+		Partitions: NewDiskElementalParitions(workdir),
+		GrubConf:   constants.GrubConf,
+		Active:     activeImg,
+		Recovery:   recoveryImg,
+		Passive:    passiveImg,
+		Type:       constants.RawType,
+	}
 }
 
 func NewISO() *v1.LiveISO {

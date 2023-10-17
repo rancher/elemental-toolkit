@@ -39,14 +39,15 @@ const (
 var unallocatedRegexp = regexp.MustCompile(partedWarn)
 
 type Disk struct {
-	device  string
-	sectorS uint
-	lastS   uint
-	parts   []Partition
-	label   string
-	runner  v1.Runner
-	fs      v1.FS
-	logger  v1.Logger
+	device      string
+	sectorS     uint
+	lastS       uint
+	parts       []Partition
+	label       string
+	runner      v1.Runner
+	fs          v1.FS
+	logger      v1.Logger
+	partBackend string
 }
 
 func MiBToSectors(size uint, sectorSize uint) uint {
@@ -54,7 +55,7 @@ func MiBToSectors(size uint, sectorSize uint) uint {
 }
 
 func NewDisk(device string, opts ...DiskOptions) *Disk {
-	dev := &Disk{device: device}
+	dev := &Disk{device: device, partBackend: Parted}
 
 	for _, opt := range opts {
 		if err := opt(dev); err != nil {
@@ -117,7 +118,8 @@ func (dev *Disk) Exists() bool {
 }
 
 func (dev *Disk) Reload() error {
-	pc := NewPartedCall(dev.String(), dev.runner)
+	pc := NewPartitioner(dev.String(), dev.runner, dev.partBackend)
+
 	prnt, err := pc.Print()
 	if err != nil {
 		return err
@@ -207,12 +209,12 @@ func (dev Disk) computeFreeSpaceWithoutLast() uint {
 }
 
 func (dev *Disk) NewPartitionTable(label string) (string, error) {
-	match, _ := regexp.MatchString("msdos|gpt", label)
-	if !match {
-		return "", errors.New("Invalid partition table type, only msdos and gpt are supported")
+	pc := NewPartitioner(dev.String(), dev.runner, dev.partBackend)
+
+	err := pc.SetPartitionTableLabel(label)
+	if err != nil {
+		return "", err
 	}
-	pc := NewPartedCall(dev.String(), dev.runner)
-	pc.SetPartitionTableLabel(label)
 	pc.WipeTable(true)
 	out, err := pc.WriteChanges()
 	if err != nil {
@@ -229,7 +231,7 @@ func (dev *Disk) NewPartitionTable(label string) (string, error) {
 // AddPartition adds a partition. Size is expressed in MiB here
 // Size is expressed in MiB here
 func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string, flags ...string) (int, error) {
-	pc := NewPartedCall(dev.String(), dev.runner)
+	pc := NewPartitioner(dev.String(), dev.runner, dev.partBackend)
 
 	//Check we have loaded partition table data
 	if dev.sectorS == 0 {
@@ -240,7 +242,10 @@ func (dev *Disk) AddPartition(size uint, fileSystem string, pLabel string, flags
 		}
 	}
 
-	pc.SetPartitionTableLabel(dev.label)
+	err := pc.SetPartitionTableLabel(dev.label)
+	if err != nil {
+		return 0, err
+	}
 
 	var partNum int
 	var startS uint
@@ -328,7 +333,7 @@ func (dev Disk) FindPartitionDevice(partNum int) (string, error) {
 // ExpandLastPartition expands the latest partition in the disk. Size is expressed in MiB here
 // Size is expressed in MiB here
 func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
-	pc := NewPartedCall(dev.String(), dev.runner)
+	pc := NewPartitioner(dev.String(), dev.runner, dev.partBackend)
 
 	//Check we have loaded partition table data
 	if dev.sectorS == 0 {
@@ -339,7 +344,10 @@ func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
 		}
 	}
 
-	pc.SetPartitionTableLabel(dev.label)
+	err := pc.SetPartitionTableLabel(dev.label)
+	if err != nil {
+		return "", err
+	}
 
 	if len(dev.parts) == 0 {
 		return "", errors.New("There is no partition to expand")

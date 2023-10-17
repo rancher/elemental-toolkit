@@ -23,4 +23,5 @@ import (
 type CloudInitRunner interface {
 	Run(string, ...string) error
 	SetModifier(schema.Modifier)
+	CloudInitFileRender(target string, config *schema.YipConfig) error
 }

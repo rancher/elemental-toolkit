@@ -319,6 +319,26 @@ func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) 
 	return iso, err
 }
 
+func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.Disk, error) {
+	disk := config.NewDisk(b)
+	vp := viper.Sub("disk")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind build-disk cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind build-disk env vars
+	viperReadEnv(vp, "DISK", constants.GetDiskKeyEnvMap())
+
+	err := vp.Unmarshal(disk, setDecoder, decodeHook)
+	if err != nil {
+		b.Logger.Warnf("error unmarshalling Disk: %s", err)
+	}
+	err = disk.Sanitize()
+	b.Logger.Debugf("Loaded Disk: %s", litter.Sdump(disk))
+	return disk, err
+}
+
 func configLogger(log v1.Logger, vfs v1.FS) {
 	// Set debug level
 	if viper.GetBool("debug") {

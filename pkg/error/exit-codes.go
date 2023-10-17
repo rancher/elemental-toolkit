@@ -232,5 +232,20 @@ const CopyFileImg = 77
 // Error setting persistent GRUB variables
 const SetGrubVariables = 78
 
+// Error occured on before-disk hook
+const HookBeforeDisk = 79
+
+// Error occured on after-disk hook
+const HookAfterDisk = 80
+
+// Error occured on after-disk-chroot hook
+const HookAfterDiskChroot = 81
+
+// Error occured on after-disk hook
+const HookPostDisk = 82
+
+// Error occured checking configured size is bigger than minimum required size
+const InvalidSize = 83
+
 // Unknown error
 const Unknown int = 255

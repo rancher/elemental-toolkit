@@ -18,8 +18,11 @@ package action_test
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"path/filepath"
+	"strconv"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,7 +38,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-var _ = Describe("Runtime Actions", func() {
+var _ = Describe("Build Actions", func() {
 	var cfg *v1.BuildConfig
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS
@@ -213,6 +216,305 @@ var _ = Describe("Runtime Actions", func() {
 			err = buildISO.ISORun()
 
 			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("Build disk", Label("disk", "build"), func() {
+		var disk *v1.Disk
+
+		BeforeEach(func() {
+			tmpDir, err := utils.TempDir(fs, "", "test")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			cfg.Date = false
+			cfg.OutDir = tmpDir
+			disk = config.NewDisk(cfg)
+			disk.Recovery.Source = v1.NewDockerSrc("some/image/ref:tag")
+			disk.Partitions.Recovery.Size = constants.MinPartSize
+			disk.Partitions.State.Size = constants.MinPartSize
+
+			recoveryRoot := filepath.Join(tmpDir, "build", filepath.Base(disk.Recovery.File)+".root")
+
+			// Create grub.cfg
+			grubConf := filepath.Join(recoveryRoot, "/etc/cos/grub.cfg")
+			Expect(utils.MkdirAll(fs, filepath.Dir(grubConf), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(grubConf, []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create grub modules
+			grubModulesDir := filepath.Join(recoveryRoot, "/usr/share/grub2/x86_64-efi")
+			Expect(utils.MkdirAll(fs, grubModulesDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "loopback.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "squash4.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "xzio.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create os-release
+			Expect(fs.WriteFile(filepath.Join(recoveryRoot, "/etc/os-release"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create efi files
+			grubEfiDir := filepath.Join(recoveryRoot, "/usr/share/efi/x86_64")
+			Expect(utils.MkdirAll(fs, grubEfiDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "grub.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "shim.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "MokManager.efi"), []byte{}, constants.FilePerm))
+		})
+		It("Successfully builds a full raw disk", func() {
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			Expect(buildDisk.BuildDiskRun()).To(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/active.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
+				{"mkfs.ext4", "-L", "COS_OEM"},
+				{"losetup", "--show", "-f", "/tmp/test/build/oem.part"},
+				{"mkfs.ext4", "-L", "COS_RECOVERY"},
+				{"losetup", "--show", "-f", "/tmp/test/build/recovery.part"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"losetup", "--show", "-f", "/tmp/test/build/state.part"},
+				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
+				{"losetup", "--show", "-f", "/tmp/test/build/persistent.part"},
+				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"partprobe", "/tmp/test/elemental.raw"},
+			})).To(Succeed())
+		})
+		It("Successfully builds a full raw disk with an unprivileged setup", func() {
+			disk.Unprivileged = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			// Unprivileged setup, it should not run any mount
+			mounter.ErrorOnMount = true
+
+			Expect(buildDisk.BuildDiskRun()).To(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/active.img"},
+				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
+				{"mkfs.ext4", "-L", "COS_OEM"},
+				{"mkfs.ext4", "-L", "COS_RECOVERY"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
+				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"partprobe", "/tmp/test/elemental.raw"},
+			})).To(Succeed())
+		})
+		It("Successfully builds a full raw disk with an unprivileged setup and a different active image", func() {
+			disk.Unprivileged = true
+			disk.Active.Source = v1.NewDockerSrc("some/other/image/ref:tag")
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			// Unprivileged setup, it should not run any mount
+			mounter.ErrorOnMount = true
+
+			// grub artifacts are expected to be found in active root
+			activeRoot := filepath.Join(cfg.OutDir, "build", filepath.Base(disk.Active.File)+".root")
+
+			// Create grub.cfg
+			grubConf := filepath.Join(activeRoot, "/etc/cos/grub.cfg")
+			Expect(utils.MkdirAll(fs, filepath.Dir(grubConf), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(grubConf, []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create grub modules
+			grubModulesDir := filepath.Join(activeRoot, "/usr/share/grub2/x86_64-efi")
+			Expect(utils.MkdirAll(fs, grubModulesDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "loopback.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "squash4.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "xzio.mod"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create os-release
+			Expect(fs.WriteFile(filepath.Join(activeRoot, "/etc/os-release"), []byte{}, constants.FilePerm)).To(Succeed())
+
+			// Create efi files
+			grubEfiDir := filepath.Join(activeRoot, "/usr/share/efi/x86_64")
+			Expect(utils.MkdirAll(fs, grubEfiDir, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "grub.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "shim.efi"), []byte{}, constants.FilePerm))
+			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "MokManager.efi"), []byte{}, constants.FilePerm))
+
+			Expect(buildDisk.BuildDiskRun()).To(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/active.img"},
+				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/passive.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
+				{"mkfs.ext4", "-L", "COS_OEM"},
+				{"mkfs.ext4", "-L", "COS_RECOVERY"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
+				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"partprobe", "/tmp/test/elemental.raw"},
+			})).To(Succeed())
+		})
+		It("Successfully builds an expandable disk with an unprivileged setup", func() {
+			disk.Unprivileged = true
+			disk.Expandable = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			// Unprivileged setup, it should not run any mount
+			// test won't pass if any mount is called
+			mounter.ErrorOnMount = true
+
+			Expect(buildDisk.BuildDiskRun()).To(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
+				{"mcopy", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
+				{"mkfs.ext4", "-L", "COS_OEM"},
+				{"mkfs.ext4", "-L", "COS_RECOVERY"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"partprobe", "/tmp/test/elemental.raw"},
+			})).To(Succeed())
+		})
+		It("Fails to build an expandable disk with privileged setup when mounts are not possible", func() {
+			disk.Unprivileged = false
+			disk.Expandable = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+
+			// build will fail if mounts are not possible
+			mounter.ErrorOnMount = true
+
+			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"grub2-editenv", "/tmp/test/build/oem/grubenv", "set", "next_entry=recovery"},
+			})).To(Succeed())
+
+			// fails at chroot hook step, before any preparing images
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+			})).NotTo(Succeed())
+		})
+		It("Fails to build an expandable disk if expandable cloud config cannot be written", func() {
+			disk.Unprivileged = true
+			disk.Expandable = true
+			disk.Active.FS = constants.LinuxImgFs
+			disk.Passive.FS = constants.LinuxImgFs
+			buildDisk := action.NewBuildDiskAction(cfg, disk)
+
+			// fails to render the expandable cloud-config data
+			cloudInit.RenderErr = true
+
+			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
+
+			Expect(runner.MatchMilestones([][]string{
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+			})).To(Succeed())
+
+			// failed before preparing partitions images
+			Expect(runner.MatchMilestones([][]string{
+				{"mkfs.vfat", "-n", "COS_GRUB"},
+			})).NotTo(Succeed())
+		})
+		It("Transforms raw image into GCE image", Label("gce"), func() {
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Set a non rounded size
+			f.Truncate(34 * 1024 * 1024)
+			f.Close()
+			err = action.Raw2Gce(filepath.Join(tmpDir, "disk.raw"), fs, logger, false)
+			Expect(err).ToNot(HaveOccurred())
+			// Log should have the rounded size (1Gb)
+			Expect(memLog.String()).To(ContainSubstring(strconv.Itoa(1 * 1024 * 1024 * 1024)))
+			// Should be a tar file
+			//realPath, _ := fs.RawPath(tmpDir)
+			//Expect(dockerArchive.IsArchivePath(filepath.Join(realPath, "disk.raw.tar.gz"))).To(BeTrue())
+		})
+		It("Transforms raw image into Azure image", func() {
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// write something
+			_ = f.Truncate(23 * 1024 * 1024)
+			_ = f.Close()
+			err = action.Raw2Azure(filepath.Join(tmpDir, "disk.raw"), fs, logger, true)
+			Expect(err).ToNot(HaveOccurred())
+			info, err := fs.Stat(filepath.Join(tmpDir, "disk.raw.vhd"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should have be rounded up to the next MB
+			Expect(info.Size()).To(BeNumerically("==", 23*1024*1024))
+
+			// Read the header
+			f, _ = fs.Open(filepath.Join(tmpDir, "disk.raw.vhd"))
+			info, _ = f.Stat()
+			// Dump the header from the file into our VHDHeader
+			buff := make([]byte, 512)
+			_, _ = f.ReadAt(buff, info.Size()-512)
+			_ = f.Close()
+
+			header := utils.VHDHeader{}
+			err = binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+			Expect(err).ToNot(HaveOccurred())
+			// Just check the fields that we know the value of, that should indicate that the header is valid
+			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
+		})
+		It("Transforms raw image into Azure image (tiny image)", func() {
+			// This tests that the resize works for tiny images
+			// Not sure if we ever will encounter them (less than 1 Mb images?) but just in case
+			tmpDir, err := utils.TempDir(fs, "", "")
+			defer fs.RemoveAll(tmpDir)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
+			f, err := fs.Create(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// write something
+			_, _ = f.WriteString("Hi")
+			_ = f.Close()
+			err = action.Raw2Azure(filepath.Join(tmpDir, "disk.raw"), fs, logger, true)
+			Expect(err).ToNot(HaveOccurred())
+			info, err := fs.Stat(filepath.Join(tmpDir, "disk.raw"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should be smaller than 1Mb
+			Expect(info.Size()).To(BeNumerically("<", 1*1024*1024))
+
+			info, err = fs.Stat(filepath.Join(tmpDir, "disk.raw.vhd"))
+			Expect(err).ToNot(HaveOccurred())
+			// Should have be rounded up to the next MB
+			Expect(info.Size()).To(BeNumerically("==", 1*1024*1024))
+
+			// Read the header
+			f, _ = fs.Open(filepath.Join(tmpDir, "disk.raw.vhd"))
+			info, _ = f.Stat()
+			// Dump the header from the file into our VHDHeader
+			buff := make([]byte, 512)
+			_, _ = f.ReadAt(buff, info.Size()-512)
+			_ = f.Close()
+
+			header := utils.VHDHeader{}
+			err = binary.Read(bytes.NewBuffer(buff[:]), binary.BigEndian, &header)
+			Expect(err).ToNot(HaveOccurred())
+			// Just check the fields that we know the value of, that should indicate that the header is valid
+			Expect(hex.EncodeToString(header.DiskType[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.Features[:])).To(Equal("00000002"))
+			Expect(hex.EncodeToString(header.DataOffset[:])).To(Equal("ffffffffffffffff"))
 		})
 	})
 })

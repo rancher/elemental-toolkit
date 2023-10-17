@@ -28,7 +28,7 @@ import (
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
-type PartedCall struct {
+type partedCall struct {
 	dev       string
 	wipe      bool
 	parts     []*Partition
@@ -44,21 +44,13 @@ type partFlag struct {
 	number int
 }
 
-// We only manage sizes in sectors unit for the Partition structre in parted wrapper
-// FileSystem here is only used by parted to determine the partition ID or type
-type Partition struct {
-	Number     int
-	StartS     uint
-	SizeS      uint
-	PLabel     string
-	FileSystem string
+var _ Partitioner = (*partedCall)(nil)
+
+func newPartedCall(dev string, runner v1.Runner) *partedCall {
+	return &partedCall{dev: dev, wipe: false, parts: []*Partition{}, deletions: []int{}, label: "", runner: runner, flags: []partFlag{}}
 }
 
-func NewPartedCall(dev string, runner v1.Runner) *PartedCall {
-	return &PartedCall{dev: dev, wipe: false, parts: []*Partition{}, deletions: []int{}, label: "", runner: runner, flags: []partFlag{}}
-}
-
-func (pc PartedCall) optionsBuilder() []string {
+func (pc partedCall) optionsBuilder() []string {
 	opts := []string{}
 	label := pc.label
 	match, _ := regexp.MatchString(fmt.Sprintf("msdos|%s", constants.GPT), label)
@@ -118,7 +110,7 @@ func (pc PartedCall) optionsBuilder() []string {
 	return append([]string{"--script", "--machine", "--", pc.dev, "unit", "s"}, opts...)
 }
 
-func (pc *PartedCall) WriteChanges() (string, error) {
+func (pc *partedCall) WriteChanges() (string, error) {
 	opts := pc.optionsBuilder()
 	if len(opts) == 0 {
 		return "", nil
@@ -131,33 +123,38 @@ func (pc *PartedCall) WriteChanges() (string, error) {
 	return string(out), err
 }
 
-func (pc *PartedCall) SetPartitionTableLabel(label string) {
+func (pc *partedCall) SetPartitionTableLabel(label string) error {
+	match, _ := regexp.MatchString("msdos|gpt", label)
+	if !match {
+		return fmt.Errorf("Invalid partition table type, only msdos and gpt are supported")
+	}
 	pc.label = label
+	return nil
 }
 
-func (pc *PartedCall) CreatePartition(p *Partition) {
+func (pc *partedCall) CreatePartition(p *Partition) {
 	pc.parts = append(pc.parts, p)
 }
 
-func (pc *PartedCall) DeletePartition(num int) {
+func (pc *partedCall) DeletePartition(num int) {
 	pc.deletions = append(pc.deletions, num)
 }
 
-func (pc *PartedCall) SetPartitionFlag(num int, flag string, active bool) {
+func (pc *partedCall) SetPartitionFlag(num int, flag string, active bool) {
 	pc.flags = append(pc.flags, partFlag{flag: flag, active: active, number: num})
 }
 
-func (pc *PartedCall) WipeTable(wipe bool) {
+func (pc *partedCall) WipeTable(wipe bool) {
 	pc.wipe = wipe
 }
 
-func (pc PartedCall) Print() (string, error) {
+func (pc partedCall) Print() (string, error) {
 	out, err := pc.runner.Run("parted", "--script", "--machine", "--", pc.dev, "unit", "s", "print")
 	return string(out), err
 }
 
-// Parses the output of a PartedCall.Print call
-func (pc PartedCall) parseHeaderFields(printOut string, field int) (string, error) {
+// Parses the output of a partedCall.Print call
+func (pc partedCall) parseHeaderFields(printOut string, field int) (string, error) {
 	re := regexp.MustCompile(`^(.*):(\d+)s:(.*):(\d+):(\d+):(.*):(.*):(.*);$`)
 
 	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(printOut)))
@@ -170,8 +167,8 @@ func (pc PartedCall) parseHeaderFields(printOut string, field int) (string, erro
 	return "", errors.New("failed parsing parted header data")
 }
 
-// Parses the output of a PartedCall.Print call
-func (pc PartedCall) GetLastSector(printOut string) (uint, error) {
+// Parses the output of a partedCall.Print call
+func (pc partedCall) GetLastSector(printOut string) (uint, error) {
 	field, err := pc.parseHeaderFields(printOut, 2)
 	if err != nil {
 		return 0, errors.New("Failed parsing last sector")
@@ -180,8 +177,8 @@ func (pc PartedCall) GetLastSector(printOut string) (uint, error) {
 	return uint(lastSec), err
 }
 
-// Parses the output of a PartedCall.Print call
-func (pc PartedCall) GetSectorSize(printOut string) (uint, error) {
+// Parses the output of a partedCall.Print call
+func (pc partedCall) GetSectorSize(printOut string) (uint, error) {
 	field, err := pc.parseHeaderFields(printOut, 4)
 	if err != nil {
 		return 0, errors.New("Failed parsing sector size")
@@ -190,13 +187,13 @@ func (pc PartedCall) GetSectorSize(printOut string) (uint, error) {
 	return uint(secSize), err
 }
 
-// Parses the output of a PartedCall.Print call
-func (pc PartedCall) GetPartitionTableLabel(printOut string) (string, error) {
+// Parses the output of a partedCall.Print call
+func (pc partedCall) GetPartitionTableLabel(printOut string) (string, error) {
 	return pc.parseHeaderFields(printOut, 6)
 }
 
 // Parses the output of a GdiskCall.Print call
-func (pc PartedCall) GetPartitions(printOut string) []Partition {
+func (pc partedCall) GetPartitions(printOut string) []Partition { //nolint:dupl
 	re := regexp.MustCompile(`^(\d+):(\d+)s:(\d+)s:(\d+)s:(.*):(.*):(.*);$`)
 	var start uint
 	var end uint

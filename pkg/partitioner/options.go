@@ -42,3 +42,10 @@ func WithLogger(logger v1.Logger) func(d *Disk) error {
 		return nil
 	}
 }
+
+func WithGdisk() func(d *Disk) error {
+	return func(d *Disk) error {
+		d.partBackend = Gdisk
+		return nil
+	}
+}
