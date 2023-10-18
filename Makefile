@@ -61,22 +61,18 @@ build-iso: build-os
 		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
-clean-iso: build-example-os
+clean-iso: build-os
 	$(DOCKER) run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
 
 .PHONY: build-disk
 build-disk: build-os
 	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
-	qemu-img create -f raw build/elemental-$(FLAVOR).$(ARCH).img $(IMAGE_SIZE)
-	- losetup -f --show build/elemental-$(FLAVOR).$(ARCH).img > .loop
-	$(DOCKER) run --rm --privileged --device=$$(cat .loop):$$(cat .loop) -v /var/run/docker.sock:/var/run/docker.sock \
-		--entrypoint=/bin/bash $(TOOLKIT_REPO):$(VERSION) -c "mount -t devtmpfs none /dev && \
-		elemental --debug install --firmware efi --system.uri $(REPO):$(VERSION) --local --disable-boot-entry --platform $(PLATFORM) $$(cat .loop)"
-	losetup -d $$(cat .loop)
-	rm .loop
-	qemu-img convert -O qcow2 build/elemental-$(FLAVOR).$(ARCH).img build/elemental-$(FLAVOR).$(ARCH).qcow2
-	rm build/elemental-$(FLAVOR).$(ARCH).img
+	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+   		--entrypoint /usr/bin/elemental \
+   		${TOOLKIT_REPO}:${VERSION} --debug build-disk --unprivileged -n elemental-$(FLAVOR).$(ARCH) --local \
+   		--squash-no-compression -o /build ${REPO}:${VERSION}
+	qemu-img convert -O qcow2 build/elemental-$(FLAVOR).$(ARCH).raw build/elemental-$(FLAVOR).$(ARCH).qcow2
 
 .PHONY: clean-disk
 clean-disk:

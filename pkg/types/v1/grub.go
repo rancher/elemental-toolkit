@@ -78,3 +78,16 @@ func (r ResetSpec) GetGrubLabels() map[string]string {
 
 	return grubVars
 }
+
+func (d DiskSpec) GetGrubLabels() map[string]string {
+	return map[string]string{
+		"efi_label":        d.Partitions.EFI.FilesystemLabel,
+		"oem_label":        d.Partitions.OEM.FilesystemLabel,
+		"recovery_label":   d.Partitions.Recovery.FilesystemLabel,
+		"state_label":      d.Partitions.State.FilesystemLabel,
+		"persistent_label": d.Partitions.Persistent.FilesystemLabel,
+		"active_label":     d.Active.Label,
+		"passive_label":    d.Passive.Label,
+		"system_label":     d.Recovery.Label,
+	}
+}

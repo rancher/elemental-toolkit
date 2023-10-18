@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/mudler/yip/pkg/schema"
+
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -49,12 +50,12 @@ const (
 
 type BuildDiskAction struct {
 	cfg  *v1.BuildConfig
-	spec *v1.Disk
+	spec *v1.DiskSpec
 	// holds the root path within the working directory of all partitions
 	roots map[string]string
 }
 
-func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.Disk) *BuildDiskAction {
+func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec) *BuildDiskAction {
 	return &BuildDiskAction{cfg: cfg, spec: spec}
 }
 
@@ -161,29 +162,23 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return err
 	}
 
-	err = grub.SetPersistentVariables(
-		filepath.Join(b.roots[constants.OEMPartName], constants.GrubEnv),
-		map[string]string{
-			"next_entry": constants.RecoveryImgName,
-		},
-	)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed setting firstboot menu entry: %s", err.Error())
-		return err
+	if b.spec.Expandable {
+		err = grub.SetPersistentVariables(
+			filepath.Join(b.roots[constants.OEMPartName], constants.GrubEnv),
+			map[string]string{
+				"next_entry": constants.RecoveryImgName,
+			},
+		)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed setting firstboot menu entry: %s", err.Error())
+			return err
+		}
 	}
 
+	grubVars := b.spec.GetGrubLabels()
 	err = grub.SetPersistentVariables(
 		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
-		map[string]string{
-			"efi_label":        b.spec.Partitions.EFI.FilesystemLabel,
-			"oem_label":        b.spec.Partitions.OEM.FilesystemLabel,
-			"recovery_label":   b.spec.Partitions.Recovery.FilesystemLabel,
-			"state_label":      b.spec.Partitions.State.FilesystemLabel,
-			"persistent_label": b.spec.Partitions.Persistent.FilesystemLabel,
-			"active_label":     b.spec.Active.Label,
-			"passive_label":    b.spec.Passive.Label,
-			"system_label":     b.spec.Recovery.Label,
-		},
+		grubVars,
 	)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed setting grub environment variables: %s", err.Error())

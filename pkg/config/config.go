@@ -530,7 +530,7 @@ func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
 	return partitions
 }
 
-func NewDisk(cfg *v1.BuildConfig) *v1.Disk {
+func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 	var workdir string
 	var recoveryImg, activeImg, passiveImg v1.Image
 
@@ -566,7 +566,7 @@ func NewDisk(cfg *v1.BuildConfig) *v1.Disk {
 		)+mountSuffix,
 	)
 
-	return &v1.Disk{
+	return &v1.DiskSpec{
 		Partitions: NewDiskElementalParitions(workdir),
 		GrubConf:   constants.GrubConf,
 		Active:     activeImg,

@@ -49,6 +49,7 @@ RUN ARCH=$(uname -m); \
         mtools \
         xorriso \
         cosign \
+        gptfdisk \
         lvm2
 
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental

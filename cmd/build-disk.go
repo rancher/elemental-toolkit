@@ -48,7 +48,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var cfg *v1.BuildConfig
-			var spec *v1.Disk
+			var spec *v1.DiskSpec
 			var imgSource *v1.ImageSource
 
 			defer func() {

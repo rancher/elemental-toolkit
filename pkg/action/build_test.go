@@ -219,7 +219,7 @@ var _ = Describe("Build Actions", func() {
 		})
 	})
 	Describe("Build disk", Label("disk", "build"), func() {
-		var disk *v1.Disk
+		var disk *v1.DiskSpec
 
 		BeforeEach(func() {
 			tmpDir, err := utils.TempDir(fs, "", "test")
