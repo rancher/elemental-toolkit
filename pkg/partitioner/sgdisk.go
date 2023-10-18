@@ -115,7 +115,7 @@ func (gd *gdiskCall) WriteChanges() (string, error) {
 	out, err = gd.runner.Run("sgdisk", opts...)
 
 	// Notify kernel of partition table changes, swallows errors, just a best effort call
-	_, _ = gd.runner.Run("partprobe", gd.dev)
+	_, _ = gd.runner.Run("partx", "-u", gd.dev)
 	gd.wipe = false
 	gd.parts = []*Partition{}
 	gd.deletions = []int{}

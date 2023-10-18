@@ -80,7 +80,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					"-n=1:206848:+0", "-c=1:p.root", "-t=1:8300", "/dev/device"},
 				{"sgdisk", "--zap-all", "-n=0:2048:+204800", "-c=0:p.efi", "-t=0:EF00",
 					"-n=1:206848:+0", "-c=1:p.root", "-t=1:8300", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 			}
 			part1 := part.Partition{
 				Number: 0, StartS: 2048, SizeS: 204800,
@@ -101,7 +101,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			cmds := [][]string{
 				{"sgdisk", "-P", "--zap-all", "/dev/device"},
 				{"sgdisk", "--zap-all", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 			}
 			Expect(gc.SetPartitionTableLabel(v1.GPT)).To(Succeed())
 			gc.WipeTable(true)
@@ -115,9 +115,9 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		It("Creates a new partition", func() {
 			cmds := [][]string{
 				{"sgdisk", "-n=0:2048:+204800", "-c=0:p.root", "-t=0:8300", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 				{"sgdisk", "-n=0:2048:+0", "-c=0:p.root", "-t=0:8300", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 			}
 			partition := part.Partition{
 				Number: 0, StartS: 2048, SizeS: 204800,
@@ -139,7 +139,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			cmds := [][]string{
 				{"sgdisk", "-P", "-d=1", "-d=2", "/dev/device"},
 				{"sgdisk", "-d=1", "-d=2", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 			}
 			gc.DeletePartition(1)
 			gc.DeletePartition(2)
@@ -150,7 +150,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		It("Wipes partition table creating a new one", func() {
 			cmds := [][]string{
 				{"sgdisk", "-P", "--zap-all", "/dev/device"}, {"sgdisk", "--zap-all", "/dev/device"},
-				{"partprobe", "/dev/device"},
+				{"partx", "-u", "/dev/device"},
 			}
 			gc.WipeTable(true)
 			_, err := gc.WriteChanges()
@@ -201,6 +201,8 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "gpt", "mkpart", "p.efi", "fat32",
 				"2048", "206847", "mkpart", "p.root", "ext4", "206848", "100%",
+			}, {
+				"partx", "-u", "/dev/device",
 			}}
 			part1 := part.Partition{
 				Number: 0, StartS: 2048, SizeS: 204800,
@@ -221,6 +223,8 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			cmds := [][]string{{
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "msdos",
+			}, {
+				"partx", "-u", "/dev/device",
 			}}
 			pc.SetPartitionTableLabel("msdos")
 			pc.WipeTable(true)
@@ -233,8 +237,12 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mkpart", "p.root", "ext4", "2048", "206847",
 			}, {
+				"partx", "-u", "/dev/device",
+			}, {
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mkpart", "p.root", "ext4", "2048", "100%",
+			}, {
+				"partx", "-u", "/dev/device",
 			}}
 			partition := part.Partition{
 				Number: 0, StartS: 2048, SizeS: 204800,
@@ -253,20 +261,24 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Deletes a partition", func() {
-			cmd := []string{
+			cmds := [][]string{{
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "rm", "1", "rm", "2",
-			}
+			}, {
+				"partx", "-u", "/dev/device",
+			}}
 			pc.DeletePartition(1)
 			pc.DeletePartition(2)
 			_, err := pc.WriteChanges()
 			Expect(err).To(BeNil())
-			Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Set a partition flag", func() {
 			cmds := [][]string{{
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "set", "1", "flag", "on", "set", "2", "flag", "off",
+			}, {
+				"partx", "-u", "/dev/device",
 			}}
 			pc.SetPartitionFlag(1, "flag", true)
 			pc.SetPartitionFlag(2, "flag", false)
@@ -275,14 +287,16 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Wipes partition table creating a new one", func() {
-			cmd := []string{
+			cmds := [][]string{{
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "mklabel", "gpt",
-			}
+			}, {
+				"partx", "-u", "/dev/device",
+			}}
 			pc.WipeTable(true)
 			_, err := pc.WriteChanges()
 			Expect(err).To(BeNil())
-			Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
+			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Prints partitin table info", func() {
 			cmd := []string{
@@ -418,6 +432,8 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				cmds = [][]string{{
 					"parted", "--script", "--machine", "--", "/dev/device",
 					"unit", "s", "mklabel", "gpt",
+				}, {
+					"partx", "-u", "/dev/device",
 				}, printCmd}
 				runner.ReturnValue = []byte(partedPrint)
 				_, err := dev.NewPartitionTable("gpt")
@@ -429,6 +445,8 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 					"parted", "--script", "--machine", "--", "/dev/device",
 					"unit", "s", "mkpart", "primary", "ext4", "50331648", "100%",
 					"set", "5", "boot", "on",
+				}, {
+					"partx", "-u", "/dev/device",
 				}, printCmd}
 				runner.ReturnValue = []byte(partedPrint)
 				num, err := dev.AddPartition(0, "ext4", "ignored", "boot")
@@ -483,6 +501,8 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 						printCmd, {
 							"parted", "--script", "--machine", "--", "/dev/device",
 							"unit", "s", "rm", "4", "mkpart", "primary", "", "45019136", "100%",
+						}, {
+							"partx", "-u", "/dev/device",
 						}, printCmd, {"udevadm", "settle"},
 					}
 					runFunc := func(cmd string, args ...string) ([]byte, error) {
