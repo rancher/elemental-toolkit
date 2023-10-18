@@ -277,7 +277,7 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
 				{"losetup", "--show", "-f", "/tmp/test/build/persistent.part"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partprobe", "/tmp/test/elemental.raw"},
+				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
 		It("Successfully builds a full raw disk with an unprivileged setup", func() {
@@ -303,7 +303,7 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partprobe", "/tmp/test/elemental.raw"},
+				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
 		It("Successfully builds a full raw disk with an unprivileged setup and a different active image", func() {
@@ -355,7 +355,7 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partprobe", "/tmp/test/elemental.raw"},
+				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
 		It("Successfully builds an expandable disk with an unprivileged setup", func() {
@@ -380,7 +380,7 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partprobe", "/tmp/test/elemental.raw"},
+				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
 		It("Fails to build an expandable disk with privileged setup when mounts are not possible", func() {

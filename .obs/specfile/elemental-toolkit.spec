@@ -36,6 +36,8 @@ Requires:       udev
 Requires:       xfsprogs
 Requires:       xorriso
 Requires:       mtools
+Requires:       util-linux
+Requires:       gptfdisk
 
 %if 0%{?suse_version}
 BuildRequires:  golang(API) >= 1.18
