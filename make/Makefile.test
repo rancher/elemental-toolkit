@@ -7,12 +7,12 @@ GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
 
 .PHONY: prepare-test
 prepare-test:
-ifeq ("$(QCOW2)","")
-	@echo "No qcow2 disk found, run 'make build-disk' first"
+ifeq ("$(DISK)","")
+	@echo "No disk image found, run 'make build-disk' first"
 	@exit 1
 endif
-	@scripts/run_vm.sh start $(QCOW2)
-	@echo "VM started from $(QCOW2)"
+	@scripts/run_vm.sh start $(DISK)
+	@echo "VM started from $(DISK)"
 
 .PHONY: prepare-installer-test
 prepare-installer-test:

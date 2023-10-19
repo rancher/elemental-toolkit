@@ -162,14 +162,14 @@ jobs:
       - if: ${{ env.ARCH == 'x86_64' }} 
         name: Prepare test (x86_64)
         run: |
-          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
       - if: ${{ env.ARCH == 'aarch64' }} 
         name: Prepare test (aarch64)
         run: |
-          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
       - name: Run ${{ matrix.test }}
         run: |
-          make QCOW2=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ${{ matrix.test }}
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ${{ matrix.test }}
       # TODO include other logs SUT collects on failure
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v3

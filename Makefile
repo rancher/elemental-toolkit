@@ -1,7 +1,8 @@
 # Directory of Makefile
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-QCOW2?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
+DISK?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
+DISKSIZE?=20G
 ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=$(shell uname -m)
@@ -69,16 +70,16 @@ build-disk: build-os
 	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
-   		--entrypoint /usr/bin/elemental \
-   		${TOOLKIT_REPO}:${VERSION} --debug build-disk --unprivileged -n elemental-$(FLAVOR).$(ARCH) --local \
-   		--squash-no-compression -o /build ${REPO}:${VERSION}
-	qemu-img convert -O qcow2 build/elemental-$(FLAVOR).$(ARCH).raw build/elemental-$(FLAVOR).$(ARCH).qcow2
+		--entrypoint /usr/bin/elemental \
+		${TOOLKIT_REPO}:${VERSION} --debug build-disk --unprivileged --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
+		--squash-no-compression -o /build ${REPO}:${VERSION}
+	dd if=$(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw of=$(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).img conv=notrunc
+	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).img $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
+	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
 .PHONY: clean-disk
 clean-disk:
-	losetup -d $$(cat .loop)
-	rm build/*.img
-	rm .loop
+	rm $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).{raw,img,qcow2}
 
 .PHONY: vet
 vet:
