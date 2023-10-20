@@ -13,6 +13,7 @@ ifeq ("$(DISK)","")
 endif
 	@scripts/run_vm.sh start $(DISK)
 	@echo "VM started from $(DISK)"
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/wait-active
 
 .PHONY: prepare-installer-test
 prepare-installer-test:
