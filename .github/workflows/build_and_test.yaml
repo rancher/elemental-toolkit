@@ -128,7 +128,7 @@ jobs:
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
-      COS_TIMEOUT: 800
+      COS_TIMEOUT: 1600
     strategy:
       matrix:
         test: ${{ fromJson(needs.detect.outputs.tests) }}

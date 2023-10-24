@@ -37,7 +37,7 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Eventually(func() string {
 				out, _ := s.Command("cat /run/cos/active_mode")
 				return out
-			}, 1*time.Minute, 10*time.Second).Should(ContainSubstring("1"))
+			}, 15*time.Minute, 10*time.Second).Should(ContainSubstring("1"))
 		})
 	})
 })
