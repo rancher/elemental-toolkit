@@ -3,6 +3,8 @@ isowork/
 *.iso
 *.iso.sha256
 *.qcow2
+*.raw
+*.img
 *.log
 *.pid
 iso-meta.json

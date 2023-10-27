@@ -615,7 +615,7 @@ func (b *BuildConfig) Sanitize() error {
 	return b.Config.Sanitize()
 }
 
-type Disk struct {
+type DiskSpec struct {
 	Size         uint                `yaml:"size,omitempty" mapstructure:"size"`
 	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
 	Expandable   bool                `yaml:"expandable,omitempty" mapstructure:"expandable"`
@@ -631,7 +631,7 @@ type Disk struct {
 
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
-func (d *Disk) Sanitize() error {
+func (d *DiskSpec) Sanitize() error {
 	// Set passive filesystem as active
 	d.Passive.FS = d.Active.FS
 
@@ -654,7 +654,7 @@ func (d *Disk) Sanitize() error {
 }
 
 // minDiskSize counts the minimum size (MB) required for the disk given the partitions setup
-func (d *Disk) MinDiskSize() uint {
+func (d *DiskSpec) MinDiskSize() uint {
 	var minDiskSize uint
 
 	// First partition is aligned at the first 1MB and the last one ends at -1MB

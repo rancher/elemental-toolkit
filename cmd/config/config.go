@@ -319,7 +319,7 @@ func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) 
 	return iso, err
 }
 
-func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.Disk, error) {
+func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.DiskSpec, error) {
 	disk := config.NewDisk(b)
 	vp := viper.Sub("disk")
 	if vp == nil {

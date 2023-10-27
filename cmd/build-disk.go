@@ -48,7 +48,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var cfg *v1.BuildConfig
-			var spec *v1.Disk
+			var spec *v1.DiskSpec
 			var imgSource *v1.ImageSource
 
 			defer func() {
@@ -108,8 +108,8 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("expandable", false, "Creates an expandable image including only the recovery image")
 	c.Flags().Bool("unprivileged", false, "Makes a build runnable within a non-privileged container, avoids mounting filesystems (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
-	// TODO verify if cross-arch builds make any sense
-	//addArchFlags(c)
+	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
+	addPlatformFlags(c)
 	addLocalImageFlag(c)
 	addSquashFsCompressionFlags(c)
 	addCosignFlags(c)
