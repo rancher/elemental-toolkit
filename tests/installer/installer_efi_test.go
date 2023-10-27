@@ -36,7 +36,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					err := s.SendFile("../assets/custom_partitions.yaml", "/etc/elemental/config.d/custom_partitions.yaml", "0770")
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
-					out, err := s.Command(s.ElementalCmd("install", "/dev/sda"))
+					out, err := s.Command(s.ElementalCmd("install", "/dev/vda"))
 					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
@@ -50,7 +50,7 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					// check partition values
 					// Values have to match the yaml under ../assets/layout.yaml
 					// That is the file that the installer uses so partitions should match those values
-					disk := s.GetDiskLayout("/dev/sda")
+					disk := s.GetDiskLayout("/dev/vda")
 
 					for _, part := range []sut.PartitionEntry{
 						{
