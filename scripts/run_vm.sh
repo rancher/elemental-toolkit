@@ -30,7 +30,7 @@ function start {
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
   local firmware_arg="-drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
-  local disk_arg="-hda ${ELMNTL_TESTDISK}"
+  local disk_arg="-drive file=${ELMNTL_TESTDISK},if=none,id=disk -device ide-hd,drive=disk,bootindex=1"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
@@ -40,8 +40,6 @@ function start {
   local cpu_arg="-cpu ${ELMNTL_CPU}"
   local vmpid
   local kvm_arg
-
-  [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
 
   if [ -f "${ELMNTL_PIDFILE}" ]; then
     vmpid=$(cat "${ELMNTL_PIDFILE}")
@@ -54,13 +52,15 @@ function start {
     fi
   fi
 
+  [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
+
   case "${base_disk}" in
       *.qcow2)
         qemu-img create -f qcow2 -b "${base_disk}" -F qcow2 "${ELMNTL_TESTDISK}" > /dev/null
         ;;
       *.iso)
         qemu-img create -f qcow2 "${ELMNTL_TESTDISK}" "${ELMNTL_DISKSIZE}" > /dev/null
-        cdrom_arg="-cdrom ${base_disk}"
+        cdrom_arg="-drive file=${base_disk},readonly=on,if=none,id=cdrom -device ahci,id=achi0 -device ide-cd,bus=achi0.0,drive=cdrom,id=cd1,bootindex=2"
         ;;
       *)
         _abort "Expected a *.qcow2 or *.iso file"
