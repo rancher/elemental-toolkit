@@ -30,7 +30,7 @@ function start {
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
   local firmware_arg="-drive if=pflash,format=raw,readonly=on,file=${ELMNTL_FIRMWARE}"
-  local disk_arg="-drive file=${ELMNTL_TESTDISK},if=none,id=disk -device ide-hd,drive=disk,bootindex=1"
+  local disk_arg="-drive file=${ELMNTL_TESTDISK},if=none,id=disk,format=qcow2,media=disk -device virtio-blk-pci,drive=disk,bootindex=1"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
@@ -60,7 +60,7 @@ function start {
         ;;
       *.iso)
         qemu-img create -f qcow2 "${ELMNTL_TESTDISK}" "${ELMNTL_DISKSIZE}" > /dev/null
-        cdrom_arg="-drive file=${base_disk},readonly=on,if=none,id=cdrom -device ahci,id=achi0 -device ide-cd,bus=achi0.0,drive=cdrom,id=cd1,bootindex=2"
+        cdrom_arg="-drive file=${base_disk},readonly=on,if=none,id=cdrom,media=cdrom -device virtio-scsi-pci,id=scsi0 -device scsi-cd,bus=scsi0.0,drive=cdrom,bootindex=2"
         ;;
       *)
         _abort "Expected a *.qcow2 or *.iso file"
