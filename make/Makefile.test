@@ -29,6 +29,11 @@ test-clean:
 	@scripts/run_vm.sh stop
 	@scripts/run_vm.sh clean
 
+.PHONY: test-installer
+test-installer: prepare-installer-test
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/installer
+	$(GINKGO) run $(GINKGO_ARGS) ./tests/smoke
+
 .PHONY: test-smoke
 test-smoke: prepare-test
 	$(GINKGO) run $(GINKGO_ARGS) ./tests/smoke
