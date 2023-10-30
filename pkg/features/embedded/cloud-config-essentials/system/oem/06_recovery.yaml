@@ -10,7 +10,6 @@ stages:
    boot:
      - name: "Recovery"
        if: '[ -f "/run/cos/recovery_mode" ]'
-       hostname: "recovery"
        commands:
        - |
             source /etc/os-release
