@@ -688,7 +688,7 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(sysMeta, recMeta interface{},
 func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
 	var deployCmd []string
 
-	deployCmd = []string{"elemental", "--debug", "reset", "--reboot"}
+	deployCmd = b.spec.DeployCmd
 	if !b.spec.Active.Source.IsEmpty() {
 		deployCmd = append(deployCmd, "--system.uri", b.spec.Active.Source.String())
 	}

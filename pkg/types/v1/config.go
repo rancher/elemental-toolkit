@@ -627,6 +627,7 @@ type DiskSpec struct {
 	CloudInit    []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	GrubDefEntry string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Type         string   `yaml:"type,omitempty" mapstructure:"type"`
+	DeployCmd    []string `yaml:"deploy-command,omitempty" mapstructure:"deploy-command"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
