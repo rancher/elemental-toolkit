@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bramvdbogaerde/go-scp"
@@ -81,6 +82,7 @@ type SUT struct {
 	TestVersion   string
 	CDLocation    string
 	MachineID     string
+	VMPid         int
 }
 
 func NewSUT() *SUT {
@@ -98,6 +100,14 @@ func NewSUT() *SUT {
 		host = "127.0.0.1:2222"
 	}
 
+	var vmPid int
+	vmPidStr := os.Getenv("VM_PID")
+	value, err := strconv.Atoi(vmPidStr)
+	if err == nil {
+		By(fmt.Sprintf("Underlaying VM pid is set to: %d", value))
+		vmPid = value
+	}
+
 	testVersion := os.Getenv("TEST_VERSION")
 	if testVersion == "" {
 		testVersion = "0.8.14-1"
@@ -105,7 +115,7 @@ func NewSUT() *SUT {
 
 	var timeout = 180
 	valueStr := os.Getenv("COS_TIMEOUT")
-	value, err := strconv.Atoi(valueStr)
+	value, err = strconv.Atoi(valueStr)
 	if err == nil {
 		timeout = value
 	}
@@ -119,6 +129,7 @@ func NewSUT() *SUT {
 		artifactsRepo: "",
 		TestVersion:   testVersion,
 		CDLocation:    "",
+		VMPid:         vmPid,
 	}
 }
 
@@ -228,6 +239,9 @@ func (s *SUT) EventuallyConnects(t ...int) {
 		dur = t[0]
 	}
 	Eventually(func() error {
+		if !s.IsVMRunning() {
+			return StopTrying("Underlaying VM is no longer running!")
+		}
 		out, err := s.command("echo ping")
 		if out == "ping\n" {
 			return nil
@@ -236,8 +250,26 @@ func (s *SUT) EventuallyConnects(t ...int) {
 	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(5*time.Second)).ShouldNot(HaveOccurred())
 }
 
+func (s *SUT) IsVMRunning() bool {
+	if s.VMPid <= 0 {
+		// Can't check without a pid, assume it is always running
+		return true
+	}
+	proc, err := os.FindProcess(s.VMPid)
+	if err != nil || proc == nil {
+		return false
+	}
+
+	// On Unix FindProcess does not error out if the process does not
+	// exist, so we send a test signal
+	return proc.Signal(syscall.Signal(0)) == nil
+}
+
 // Command sends a command to the SUIT and waits for reply
 func (s *SUT) Command(cmd string) (string, error) {
+	if !s.IsVMRunning() {
+		return "", fmt.Errorf("VM is not running, doesn't make sense running any command")
+	}
 	return s.command(cmd)
 }
 

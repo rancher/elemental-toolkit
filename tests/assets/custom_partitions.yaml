@@ -6,7 +6,7 @@ install:
       size: 4096
       fs: ext2
     persistent:
-      size: 8192
+      size: 1024
       fs: ext2
     oem:
       size: 128
