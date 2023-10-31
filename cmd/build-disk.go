@@ -109,6 +109,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("unprivileged", false, "Makes a build runnable within a non-privileged container, avoids mounting filesystems (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
 	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
+	c.Flags().StringSlice("deploy-command", []string{"elemental", "--debug", "reset", "--reboot"}, "Deployment command for expandable images")
 	addPlatformFlags(c)
 	addLocalImageFlag(c)
 	addSquashFsCompressionFlags(c)

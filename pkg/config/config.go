@@ -573,6 +573,7 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 		Recovery:   recoveryImg,
 		Passive:    passiveImg,
 		Type:       constants.RawType,
+		DeployCmd:  []string{"elemental", "--debug", "reset", "--reboot"},
 	}
 }
 
