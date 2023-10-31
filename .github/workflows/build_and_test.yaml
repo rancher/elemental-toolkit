@@ -29,7 +29,7 @@ jobs:
           x86_64)
             echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
             echo "testson='macos-latest'" >> $GITHUB_OUTPUT
-            echo "tests=['test-smoke', 'test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
+            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
           aarch64)
             echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
             echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
@@ -54,7 +54,7 @@ jobs:
           enableCrossOsArchive: true
           lookup-only: true
         with:
-          path: ${{ github.workspace }}/build/*.iso
+          path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build toolkit
@@ -157,7 +157,6 @@ jobs:
       - if: ${{ env.ARCH == 'x86_64' }} 
         name: Run VM script dependencies
         run: |
-          brew update; brew upgrade qemu
           brew install bash coreutils
       - if: ${{ env.ARCH == 'x86_64' }} 
         name: Prepare test (x86_64)
@@ -177,6 +176,78 @@ jobs:
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
           path: tests/serial.log
+          if-no-files-found: error
+      - name: Upload qemu stdout for ${{ matrix.test }}
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
+          path: tests/vmstdout
+          if-no-files-found: error
+      - name: Stop test VM
+        if: always()
+        run: |
+          make test-clean
+
+  test-installer:
+    needs: 
+      - build-iso
+      - detect
+    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
+    env:
+      FLAVOR: ${{ inputs.flavor }}
+      ARCH: ${{ inputs.arch }}
+      COS_TIMEOUT: 1600
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - name: Install deps
+        run: |
+          make test-deps
+      - run: |
+          git fetch --prune --unshallow
+      - name: Cached ISO
+        id: cache-iso
+        uses: actions/cache/restore@v3
+        env:
+          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
+        with:
+          path: /tmp/*.iso
+          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Run VM script dependencies
+        run: |
+          brew install bash coreutils
+      - if: ${{ env.ARCH == 'x86_64' }} 
+        name: Prepare test (x86_64)
+        run: |
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-installer-test
+      - if: ${{ env.ARCH == 'aarch64' }} 
+        name: Prepare test (aarch64)
+        run: |
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-installer-test
+      - name: Run installer test
+        run: |
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso test-installer
+      # TODO include other logs SUT collects on failure
+      - name: Upload serial console for installer tests
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
+          path: tests/serial.log
+          if-no-files-found: error
+      - name: Upload qemu stdout for installer tests
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
+          path: tests/vmstdout
           if-no-files-found: error
       - name: Stop test VM
         if: always()
