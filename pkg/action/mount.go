@@ -30,6 +30,8 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
+const overlaySuffix = ".overlay"
+
 func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	cfg.Logger.Info("Running mount command")
 
@@ -248,7 +250,7 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	}
 
 	trimmed := strings.TrimPrefix(path, "/")
-	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+	pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 	upper := fmt.Sprintf("%s/%s/upper", overlayDir, pathName)
 	if err := utils.MkdirAll(cfg.Config.Fs, upper, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating upperdir %s: %s", upper, err.Error())
@@ -290,7 +292,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	for _, rw := range spec.Overlay.Paths {
 		trimmed := strings.TrimPrefix(rw, "/")
-		pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+		pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 		upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
 		work := fmt.Sprintf("%s/%s/work", constants.OverlayDir, pathName)
 
@@ -306,7 +308,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	for _, path := range spec.Persistent.Paths {
 		if spec.Persistent.Mode == constants.OverlayMode {
 			trimmed := strings.TrimPrefix(path, "/")
-			pathName := strings.ReplaceAll(trimmed, "/", "-") + ".overlay"
+			pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 			upper := fmt.Sprintf("%s/%s/upper", constants.PersistentStateDir, pathName)
 			work := fmt.Sprintf("%s/%s/work", constants.PersistentStateDir, pathName)
 
