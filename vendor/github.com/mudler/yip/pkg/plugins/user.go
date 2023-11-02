@@ -50,10 +50,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		return errors.Wrap(err, "getting rawpath for /etc/default/useradd")
 	}
 
-	// Set default home and shell
 	usrDefaults := map[string]string{}
-	usrDefaults["SHELL"] = "/bin/sh"
-	usrDefaults["HOME"] = fmt.Sprintf("/home")
 
 	// Load default home and shell from `/etc/default/useradd`
 	if _, err = os.Stat(useradd); err == nil {
@@ -61,6 +58,14 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		if err != nil {
 			return errors.Wrapf(err, "could not parse '%s'", useradd)
 		}
+	}
+
+	// Set default home and shell if they are empty
+	if usrDefaults["SHELL"] == "" {
+		usrDefaults["SHELL"] = "/bin/sh"
+	}
+	if usrDefaults["HOME"] == "" {
+		usrDefaults["HOME"] = "/home"
 	}
 
 	primaryGroup := u.Name

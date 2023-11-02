@@ -71,6 +71,8 @@ func DataSources(l logger.Interface, s schema.Stage, fs vfs.FS, console Console)
 			AvailableProviders = append(AvailableProviders, prv.NewVMware())
 		case dSProviders == "cdrom":
 			CdromProviders = append(CdromProviders, prv.ListCDROMs()...)
+		case dSProviders == "config-drive":
+			CdromProviders = append(CdromProviders, prv.ListConfigDrives()...)
 		case dSProviders == "file" && s.DataSources.Path != "":
 			AvailableProviders = append(AvailableProviders, prv.FileProvider(s.DataSources.Path))
 		}
