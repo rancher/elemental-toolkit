@@ -50,12 +50,15 @@ var _ = Describe("Build Actions", func() {
 	var extractor *v1mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
+	var bootloader *v1mock.FakeBootloader
+
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
+		bootloader = &v1mock.FakeBootloader{}
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		extractor = v1mock.NewFakeImageExtractor(logger)
@@ -109,7 +112,11 @@ var _ = Describe("Build Actions", func() {
 				if err != nil {
 					return err
 				}
-				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz"))
+				err = utils.MkdirAll(fs, filepath.Join(destination, "lib/modules/6.4"), constants.DirPerm)
+				if err != nil {
+					return err
+				}
+				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz-6.4"))
 				if err != nil {
 					return err
 				}
@@ -118,20 +125,10 @@ var _ = Describe("Build Actions", func() {
 				return err
 			}
 
-			buildISO := action.NewBuildISOAction(cfg, iso)
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
 			err := buildISO.ISORun()
 
 			Expect(err).ShouldNot(HaveOccurred())
-		})
-		It("Successfully builds an ISO using self contained binaries and including overlayed files", func() {
-			rootSrc, _ := v1.NewSrcFromURI("dir:/overlay/dir")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
-
-			liveBoot := &v1mock.LiveBootLoaderMock{}
-			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
-			err := buildISO.ISORun()
-
-			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on prepare EFI", func() {
 			iso.BootloaderInRootFs = true
@@ -139,10 +136,8 @@ var _ = Describe("Build Actions", func() {
 			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
-			liveBoot := &v1mock.LiveBootLoaderMock{ErrorEFI: true}
-			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
 			err := buildISO.ISORun()
-
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on prepare ISO", func() {
@@ -151,8 +146,7 @@ var _ = Describe("Build Actions", func() {
 			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
-			liveBoot := &v1mock.LiveBootLoaderMock{ErrorISO: true}
-			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBoot(liveBoot))
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
 			err := buildISO.ISORun()
 
 			Expect(err).Should(HaveOccurred())
@@ -165,23 +159,15 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			By("fails without kernel")
-			buildISO := action.NewBuildISOAction(cfg, iso)
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
 			err = buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 
 			By("fails without initrd")
 			_, err = fs.Create("/local/dir/boot/vmlinuz")
 			Expect(err).ShouldNot(HaveOccurred())
-			buildISO = action.NewBuildISOAction(cfg, iso)
+			buildISO = action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
 			err = buildISO.ISORun()
-			Expect(err).Should(HaveOccurred())
-		})
-		It("Fails installing rootfs sources", func() {
-			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
-
-			buildISO := action.NewBuildISOAction(cfg, iso)
-			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing uefi sources", func() {
@@ -195,15 +181,8 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on ISO filesystem creation", func() {
-			rootSrc, _ := v1.NewSrcFromURI("dir:/local/dir")
+			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = []*v1.ImageSource{rootSrc}
-
-			err := utils.MkdirAll(fs, "/local/dir/boot", constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = fs.Create("/local/dir/boot/vmlinuz")
-			Expect(err).ShouldNot(HaveOccurred())
-			_, err = fs.Create("/local/dir/boot/initrd")
-			Expect(err).ShouldNot(HaveOccurred())
 
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "xorriso" {
@@ -212,8 +191,8 @@ var _ = Describe("Build Actions", func() {
 				return []byte{}, nil
 			}
 
-			buildISO := action.NewBuildISOAction(cfg, iso)
-			err = buildISO.ISORun()
+			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
+			err := buildISO.ISORun()
 
 			Expect(err).Should(HaveOccurred())
 		})
@@ -231,33 +210,9 @@ var _ = Describe("Build Actions", func() {
 			disk.Recovery.Source = v1.NewDockerSrc("some/image/ref:tag")
 			disk.Partitions.Recovery.Size = constants.MinPartSize
 			disk.Partitions.State.Size = constants.MinPartSize
-
-			recoveryRoot := filepath.Join(tmpDir, "build", filepath.Base(disk.Recovery.File)+".root")
-
-			// Create grub.cfg
-			grubConf := filepath.Join(recoveryRoot, "/etc/cos/grub.cfg")
-			Expect(utils.MkdirAll(fs, filepath.Dir(grubConf), constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(grubConf, []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create grub modules
-			grubModulesDir := filepath.Join(recoveryRoot, "/usr/share/grub2/x86_64-efi")
-			Expect(utils.MkdirAll(fs, grubModulesDir, constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "loopback.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "squash4.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "xzio.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create os-release
-			Expect(fs.WriteFile(filepath.Join(recoveryRoot, "/etc/os-release"), []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create efi files
-			grubEfiDir := filepath.Join(recoveryRoot, "/usr/share/efi/x86_64")
-			Expect(utils.MkdirAll(fs, grubEfiDir, constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "grub.efi"), []byte{}, constants.FilePerm))
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "shim.efi"), []byte{}, constants.FilePerm))
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "MokManager.efi"), []byte{}, constants.FilePerm))
 		})
 		It("Successfully builds a full raw disk", func() {
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
@@ -265,9 +220,6 @@ var _ = Describe("Build Actions", func() {
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"losetup", "--show", "-f", "/tmp/test/build/oem.part"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
@@ -284,7 +236,7 @@ var _ = Describe("Build Actions", func() {
 			disk.Unprivileged = true
 			disk.Active.FS = constants.LinuxImgFs
 			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 			// Unprivileged setup, it should not run any mount
 			mounter.ErrorOnMount = true
 
@@ -295,9 +247,6 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
@@ -311,34 +260,9 @@ var _ = Describe("Build Actions", func() {
 			disk.Active.Source = v1.NewDockerSrc("some/other/image/ref:tag")
 			disk.Active.FS = constants.LinuxImgFs
 			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 			// Unprivileged setup, it should not run any mount
 			mounter.ErrorOnMount = true
-
-			// grub artifacts are expected to be found in active root
-			activeRoot := filepath.Join(cfg.OutDir, "build", filepath.Base(disk.Active.File)+".root")
-
-			// Create grub.cfg
-			grubConf := filepath.Join(activeRoot, "/etc/cos/grub.cfg")
-			Expect(utils.MkdirAll(fs, filepath.Dir(grubConf), constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(grubConf, []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create grub modules
-			grubModulesDir := filepath.Join(activeRoot, "/usr/share/grub2/x86_64-efi")
-			Expect(utils.MkdirAll(fs, grubModulesDir, constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "loopback.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "squash4.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubModulesDir, "xzio.mod"), []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create os-release
-			Expect(fs.WriteFile(filepath.Join(activeRoot, "/etc/os-release"), []byte{}, constants.FilePerm)).To(Succeed())
-
-			// Create efi files
-			grubEfiDir := filepath.Join(activeRoot, "/usr/share/efi/x86_64")
-			Expect(utils.MkdirAll(fs, grubEfiDir, constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "grub.efi"), []byte{}, constants.FilePerm))
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "shim.efi"), []byte{}, constants.FilePerm))
-			Expect(fs.WriteFile(filepath.Join(grubEfiDir, "MokManager.efi"), []byte{}, constants.FilePerm))
 
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
@@ -347,9 +271,6 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/passive.img"},
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
@@ -363,7 +284,7 @@ var _ = Describe("Build Actions", func() {
 			disk.Expandable = true
 			disk.Active.FS = constants.LinuxImgFs
 			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 			// Unprivileged setup, it should not run any mount
 			// test won't pass if any mount is called
 			mounter.ErrorOnMount = true
@@ -373,9 +294,6 @@ var _ = Describe("Build Actions", func() {
 			Expect(runner.MatchMilestones([][]string{
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI", "::EFI"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/boot", "::EFI/boot"},
-				{"mcopy", "-n", "-o", "-i", "/tmp/test/build/efi.part", "/tmp/test/build/efi/EFI/elemental", "::EFI/elemental"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
@@ -388,16 +306,12 @@ var _ = Describe("Build Actions", func() {
 			disk.Expandable = true
 			disk.Active.FS = constants.LinuxImgFs
 			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 
 			// build will fail if mounts are not possible
 			mounter.ErrorOnMount = true
 
 			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
-
-			Expect(runner.MatchMilestones([][]string{
-				{"grub2-editenv", "/tmp/test/build/oem/grubenv", "set", "next_entry=recovery"},
-			})).To(Succeed())
 
 			// fails at chroot hook step, before any preparing images
 			Expect(runner.MatchMilestones([][]string{
@@ -409,7 +323,7 @@ var _ = Describe("Build Actions", func() {
 			disk.Expandable = true
 			disk.Active.FS = constants.LinuxImgFs
 			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk)
+			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
 
 			// fails to render the expandable cloud-config data
 			cloudInit.RenderErr = true

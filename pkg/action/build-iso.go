@@ -21,44 +21,63 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rancher/elemental-toolkit/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	"github.com/rancher/elemental-toolkit/pkg/live"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-type LiveBootloader interface {
-	PrepareEFI(rootDir, uefiDir string) error
-	PrepareISO(rootDir, isoDir string) error
+const (
+	grubPrefixDir  = "/boot/grub2"
+	isoBootCatalog = "/boot/boot.catalog"
+)
+
+func grubCfgTemplate(arch string) string {
+	return `search --no-floppy --file --set=root ` + constants.ISOKernelPath(arch) + `
+	set default=0
+	set timeout=5
+	set timeout_style=menu
+
+	menuentry "%s" --class os --unrestricted {
+		echo Loading kernel...
+		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
+		echo Loading initrd...
+		initrd ($root)` + constants.ISOInitrdPath(arch) + `
+	}
+	`
 }
 
 type BuildISOAction struct {
-	liveBoot LiveBootloader
-	cfg      *v1.BuildConfig
-	spec     *v1.LiveISO
-	e        *elemental.Elemental
+	cfg        *v1.BuildConfig
+	spec       *v1.LiveISO
+	bootloader v1.Bootloader
+	e          *elemental.Elemental
 }
 
 type BuildISOActionOption func(a *BuildISOAction)
 
-func WithLiveBoot(l LiveBootloader) BuildISOActionOption {
+func WithLiveBootloader(b v1.Bootloader) BuildISOActionOption {
 	return func(a *BuildISOAction) {
-		a.liveBoot = l
+		a.bootloader = b
 	}
 }
 
 func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOActionOption) *BuildISOAction {
 	b := &BuildISOAction{
-		cfg:      cfg,
-		e:        elemental.NewElemental(&cfg.Config),
-		spec:     spec,
-		liveBoot: live.NewGreenLiveBootLoader(cfg, spec),
+		cfg:  cfg,
+		e:    elemental.NewElemental(&cfg.Config),
+		spec: spec,
 	}
 	for _, opt := range opts {
 		opt(b)
 	}
+
+	if b.bootloader == nil {
+		b.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubPrefix(grubPrefixDir))
+	}
+
 	return b
 }
 
@@ -118,7 +137,7 @@ func (b *BuildISOAction) ISORun() error {
 	if b.spec.Firmware == v1.EFI {
 		b.cfg.Logger.Infof("Preparing EFI image...")
 		if b.spec.BootloaderInRootFs {
-			err = b.liveBoot.PrepareEFI(rootDir, uefiDir)
+			err = b.PrepareEFI(rootDir, uefiDir)
 			if err != nil {
 				b.cfg.Logger.Errorf("Failed fetching EFI data: %v", err)
 				return elementalError.NewFromError(err, elementalError.CopyData)
@@ -133,7 +152,7 @@ func (b *BuildISOAction) ISORun() error {
 
 	b.cfg.Logger.Infof("Preparing ISO image root tree...")
 	if b.spec.BootloaderInRootFs {
-		err = b.liveBoot.PrepareISO(rootDir, isoDir)
+		err = b.PrepareISO(rootDir, isoDir)
 		if err != nil {
 			b.cfg.Logger.Errorf("Failed fetching bootloader binaries: %v", err)
 			return elementalError.NewFromError(err, elementalError.CreateFile)
@@ -169,25 +188,49 @@ func (b *BuildISOAction) ISORun() error {
 	return err
 }
 
+func (b *BuildISOAction) PrepareEFI(rootDir, uefiDir string) error {
+	return b.bootloader.InstallEFIFallbackBinaries(rootDir, uefiDir, b.spec.Label)
+}
+
+func (b *BuildISOAction) PrepareISO(rootDir, imageDir string) error {
+	err := utils.MkdirAll(b.cfg.Fs, filepath.Join(imageDir, grubPrefixDir), constants.DirPerm)
+	if err != nil {
+		return err
+	}
+
+	// Write grub.cfg file
+	err = b.cfg.Fs.WriteFile(
+		filepath.Join(imageDir, grubPrefixDir, constants.GrubCfg),
+		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch), b.spec.GrubEntry, b.spec.Label)),
+		constants.FilePerm,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Include EFI contents in iso root too
+	return b.PrepareEFI(rootDir, imageDir)
+}
+
 func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
-	kernel, initrd, err := b.e.FindKernelInitrd(rootDir)
+	kernel, initrd, err := utils.FindKernelInitrd(b.cfg.Fs, rootDir)
 	if err != nil {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
 		return elementalError.NewFromError(err, elementalError.StatFile)
 	}
-	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, constants.ISOLoaderPath()), constants.DirPerm)
+	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, constants.ISOLoaderPath(b.cfg.Platform.Arch)), constants.DirPerm)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 	//TODO document boot/kernel and boot/initrd expectation in bootloader config
 	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
-	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath()))
+	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath(b.cfg.Platform.Arch)))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 
 	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
-	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath()))
+	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath(b.cfg.Platform.Arch)))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
@@ -259,10 +302,10 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 	}
 
 	args := []string{
-		"-volid", b.spec.Label /*"-joliet", "on"*/, "-padding", "0",
+		"-volid", b.spec.Label, "-padding", "0",
 		"-outdev", outputFile, "-map", root, "/", "-chmod", "0755", "--",
 	}
-	args = append(args, live.XorrisoBooloaderArgs(root, efiImg, b.spec.Firmware)...)
+	args = append(args, xorrisoBooloaderArgs(efiImg)...)
 
 	out, err := b.cfg.Runner.Run(cmd, args...)
 	b.cfg.Logger.Debugf("Xorriso: %s", string(out))
@@ -292,4 +335,17 @@ func (b BuildISOAction) applySources(target string, sources ...*v1.ImageSource) 
 		}
 	}
 	return nil
+}
+
+func xorrisoBooloaderArgs(efiImg string) []string {
+	args := []string{
+		"-append_partition", "2", "0xef", efiImg,
+		"-boot_image", "any", fmt.Sprintf("cat_path=%s", isoBootCatalog),
+		"-boot_image", "any", "cat_hidden=on",
+		"-boot_image", "any", "efi_path=--interval:appended_partition_2:all::",
+		"-boot_image", "any", "platform_id=0xef",
+		"-boot_image", "any", "appended_part_as=gpt",
+		"-boot_image", "any", "partition_offset=16",
+	}
+	return args
 }

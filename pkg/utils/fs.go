@@ -99,6 +99,16 @@ func MkdirAll(fs v1.FS, name string, mode os.FileMode) (err error) {
 	return os.MkdirAll(name, mode)
 }
 
+// readlink calls fs.Readlink but trims temporary prefix on Readlink result
+func readlink(fs v1.FS, name string) (string, error) {
+	res, err := fs.Readlink(name)
+	if err != nil {
+		return res, err
+	}
+	raw, err := fs.RawPath(name)
+	return strings.TrimPrefix(res, strings.TrimSuffix(raw, name)), err
+}
+
 // permError returns an *os.PathError with Err syscall.EPERM.
 func permError(op, path string) error {
 	return &os.PathError{
@@ -208,6 +218,11 @@ func (d *statDirEntry) Name() string               { return d.info.Name() }
 func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
 func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
+
+// Return a DirEntry from a FileInfo
+func DirEntryFromFileInfo(info fs.FileInfo) fs.DirEntry {
+	return &statDirEntry{info: info}
+}
 
 // WalkDirFs is the same as filepath.WalkDir but accepts a v1.Fs so it can be run on any v1.Fs type
 func WalkDirFs(fs v1.FS, root string, fn fs.WalkDirFunc) error {

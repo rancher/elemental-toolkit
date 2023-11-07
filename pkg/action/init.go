@@ -17,8 +17,10 @@ limitations under the License.
 package action
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/features"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -57,10 +59,42 @@ func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
 		return nil
 	}
 
+	cfg.Config.Logger.Infof("Find Kernel")
+	kernel, version, err := utils.FindKernel(cfg.Fs, "/")
+	if err != nil {
+		cfg.Config.Logger.Errorf("could not find kernel or kernel version")
+		return err
+	}
+
+	if kernel != constants.KernelPath {
+		cfg.Config.Logger.Debugf("Creating kernel symlink from %s to %s", kernel, constants.KernelPath)
+		_ = cfg.Fs.Remove(constants.KernelPath)
+		err = cfg.Fs.Symlink(kernel, constants.KernelPath)
+		if err != nil {
+			cfg.Config.Logger.Errorf("failed creating kernel symlink")
+			return err
+		}
+	}
+
 	cfg.Config.Logger.Infof("Generate initrd.")
-	output, err := cfg.Runner.Run("dracut", "-f", "--regenerate-all")
+	output, err := cfg.Runner.Run("dracut", "-f", fmt.Sprintf("%s-%s", constants.ElementalInitrd, version), version)
 	if err != nil {
 		cfg.Config.Logger.Errorf("dracut failed with output: %s", output)
+	}
+
+	cfg.Config.Logger.Debugf("darcut output: %s", output)
+
+	initrd, err := utils.FindInitrd(cfg.Fs, "/")
+	if err != nil || !strings.HasPrefix(initrd, constants.ElementalInitrd) {
+		cfg.Config.Logger.Errorf("could not find generated initrd")
+		return err
+	}
+
+	cfg.Config.Logger.Debugf("Creating initrd symlink from %s to %s", initrd, constants.InitrdPath)
+	_ = cfg.Fs.Remove(constants.InitrdPath)
+	err = cfg.Fs.Symlink(initrd, constants.InitrdPath)
+	if err != nil {
+		cfg.Config.Logger.Errorf("failed creating initrd symlink")
 	}
 
 	return err

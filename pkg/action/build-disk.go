@@ -29,6 +29,7 @@ import (
 
 	"github.com/mudler/yip/pkg/schema"
 
+	"github.com/rancher/elemental-toolkit/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -49,14 +50,38 @@ const (
 )
 
 type BuildDiskAction struct {
-	cfg  *v1.BuildConfig
-	spec *v1.DiskSpec
+	cfg        *v1.BuildConfig
+	spec       *v1.DiskSpec
+	bootloader v1.Bootloader
 	// holds the root path within the working directory of all partitions
 	roots map[string]string
 }
 
-func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec) *BuildDiskAction {
-	return &BuildDiskAction{cfg: cfg, spec: spec}
+type BuildDiskActionOption func(b *BuildDiskAction) error
+
+func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDiskActionOption) *BuildDiskAction {
+	b := &BuildDiskAction{cfg: cfg, spec: spec}
+
+	for _, o := range opts {
+		err := o(b)
+		if err != nil {
+			cfg.Logger.Errorf("error applying config option: %s", err.Error())
+			return nil
+		}
+	}
+
+	if b.bootloader == nil {
+		b.bootloader = bootloader.NewGrub(&cfg.Config)
+	}
+
+	return b
+}
+
+func WithDiskBootloader(bootloader v1.Bootloader) BuildDiskActionOption {
+	return func(b *BuildDiskAction) error {
+		b.bootloader = bootloader
+		return nil
+	}
 }
 
 func (b *BuildDiskAction) buildDiskHook(hook string) error {
@@ -155,15 +180,14 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	grub := utils.NewGrub(&b.cfg.Config)
-	err = grub.InstallConfig(activeRoot, b.roots[constants.StatePartName], b.spec.GrubConf)
+	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.StatePartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
 	}
 
 	if b.spec.Expandable {
-		err = grub.SetPersistentVariables(
+		err = b.bootloader.SetPersistentVariables(
 			filepath.Join(b.roots[constants.OEMPartName], constants.GrubEnv),
 			map[string]string{
 				"next_entry": constants.RecoveryImgName,
@@ -176,7 +200,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	grubVars := b.spec.GetGrubLabels()
-	err = grub.SetPersistentVariables(
+	err = b.bootloader.SetPersistentVariables(
 		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
 		grubVars,
 	)
@@ -185,7 +209,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return err
 	}
 
-	_, err = grub.InstallEFI(
+	err = b.bootloader.InstallEFI(
 		activeRoot, b.roots[constants.StatePartName],
 		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
 	)
@@ -195,7 +219,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Rebrand
-	err = e.SetDefaultGrubEntry(b.roots[constants.StatePartName], activeRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(b.roots[constants.StatePartName], activeRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}

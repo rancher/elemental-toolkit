@@ -22,10 +22,9 @@ import (
 	"runtime"
 	"sort"
 
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"gopkg.in/yaml.v3"
 	"k8s.io/mount-utils"
-
-	"github.com/rancher/elemental-toolkit/pkg/constants"
 )
 
 const (
@@ -175,9 +174,9 @@ func (r *RunConfig) Sanitize() error {
 
 // InstallSpec struct represents all the installation action details
 type InstallSpec struct {
-	Target           string              `yaml:"target,omitempty" mapstructure:"target"`
-	Firmware         string              `yaml:"firmware,omitempty" mapstructure:"firmware"`
-	PartTable        string              `yaml:"part-table,omitempty" mapstructure:"part-table"`
+	Target           string `yaml:"target,omitempty" mapstructure:"target"`
+	Firmware         string
+	PartTable        string
 	Partitions       ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
 	ExtraPartitions  PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
 	NoFormat         bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
@@ -188,7 +187,6 @@ type InstallSpec struct {
 	Active           Image               `yaml:"system,omitempty" mapstructure:"system"`
 	Recovery         Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	Passive          Image
-	GrubConf         string
 	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
 }
 
@@ -248,7 +246,6 @@ type ResetSpec struct {
 	Partitions       ElementalPartitions
 	Target           string
 	Efi              bool
-	GrubConf         string
 	State            *InstallState
 	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
 }

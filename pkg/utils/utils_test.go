@@ -27,9 +27,6 @@ import (
 	"strings"
 	"time"
 
-	eleefi "github.com/rancher/elemental-toolkit/pkg/efi"
-
-	efi "github.com/canonical/go-efilib"
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -705,59 +702,188 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).Should(HaveOccurred())
 		})
 	})
-	Describe("FindFileWithPrefix", Label("find"), func() {
+	Describe("ResolveLink", func() {
+		var rootDir, file, relSymlink, absSymlink, nestSymlink, brokenSymlink string
+
 		BeforeEach(func() {
-			err := utils.MkdirAll(fs, "/path/inner", constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
+			// The root directory
+			rootDir = "/some/root"
+			Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
 
-			_, err = fs.Create("/path/onefile")
-			Expect(err).ShouldNot(HaveOccurred())
+			// The target file of all symlinks
+			file = "/path/with/needle/findme.extension"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(file)), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file), []byte("some data"), constants.FilePerm)).To(Succeed())
 
-			_, err = fs.Create("/path/somefile")
-			Expect(err).ShouldNot(HaveOccurred())
+			// A symlink pointing to a relative path
+			relSymlink = "/path/to/symlink/pointing-to-file"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(relSymlink)), constants.DirPerm)).To(Succeed())
+			Expect(fs.Symlink("../../with/needle/findme.extension", filepath.Join(rootDir, relSymlink))).To(Succeed())
 
-			err = fs.Symlink("onefile", "/path/linkedfile")
-			Expect(err).ShouldNot(HaveOccurred())
+			// A symlink pointing to an absolute path
+			absSymlink = "/path/to/symlink/absolute-pointer"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(absSymlink)), constants.DirPerm)).To(Succeed())
+			Expect(fs.Symlink(file, filepath.Join(rootDir, absSymlink))).To(Succeed())
 
-			err = fs.Symlink("/path/onefile", "/path/abslinkedfile")
+			// A bunch of nested symlinks
+			nestSymlink = "/path/to/symlink/nested-pointer"
+			nestFst := "/path/to/symlink/nestFst"
+			nest2nd := "/path/to/nest2nd"
+			nest3rd := "/path/with/nest3rd"
+			Expect(fs.Symlink("nestFst", filepath.Join(rootDir, nestSymlink))).To(Succeed())
+			Expect(fs.Symlink(nest2nd, filepath.Join(rootDir, nestFst))).To(Succeed())
+			Expect(fs.Symlink("../with/nest3rd", filepath.Join(rootDir, nest2nd))).To(Succeed())
+			Expect(fs.Symlink("./needle/findme.extension", filepath.Join(rootDir, nest3rd))).To(Succeed())
+
+			// A broken symlink
+			brokenSymlink = "/path/to/symlink/broken"
+			Expect(fs.Symlink("/path/to/nowhere", filepath.Join(rootDir, brokenSymlink))).To(Succeed())
+		})
+
+		It("resolves a simple relative symlink", func() {
+			systemPath := filepath.Join(rootDir, relSymlink)
+			f, err := fs.Lstat(systemPath)
+			Expect(err).To(BeNil())
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+		})
+
+		It("resolves a simple absolute symlink", func() {
+			systemPath := filepath.Join(rootDir, absSymlink)
+			f, err := fs.Lstat(systemPath)
+			Expect(err).To(BeNil())
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+		})
+
+		It("resolves some nested symlinks", func() {
+			systemPath := filepath.Join(rootDir, nestSymlink)
+			f, err := fs.Lstat(systemPath)
+			Expect(err).To(BeNil())
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+		})
+
+		It("does not resolve broken links", func() {
+			systemPath := filepath.Join(rootDir, brokenSymlink)
+			f, err := fs.Lstat(systemPath)
+			Expect(err).To(BeNil())
+			// Return the symlink path without resolving it
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(systemPath))
+		})
+
+		It("does not resolve too many levels of netsed links", func() {
+			systemPath := filepath.Join(rootDir, nestSymlink)
+			f, err := fs.Lstat(systemPath)
+			Expect(err).To(BeNil())
+			// Returns the symlink resolution up to the second level
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 2)).To(Equal(filepath.Join(rootDir, "/path/to/nest2nd")))
+		})
+	})
+	Describe("FindFile", func() {
+		var rootDir, file1, file2, relSymlink string
+
+		BeforeEach(func() {
+			// The root directory
+			rootDir = "/some/root"
+			Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
+
+			// Files to find
+			file1 = "/path/with/needle/findme.extension"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(file1)), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file1), []byte("some data"), constants.FilePerm)).To(Succeed())
+			file2 = "/path/with/needle.aarch64/findme.ext"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(file2)), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file2), []byte("some data"), constants.FilePerm)).To(Succeed())
+
+			// A symlink pointing to a relative path
+			relSymlink = "/path/to/symlink/pointing-to-file"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(relSymlink)), constants.DirPerm)).To(Succeed())
+			Expect(fs.Symlink("../../with/needle/findme.extension", filepath.Join(rootDir, relSymlink))).To(Succeed())
+		})
+		It("finds a matching file, first match wins file1", func() {
+			f, err := utils.FindFile(fs, rootDir, "/path/with/*dle*/*me.*", "/path/with/*aarch64/find*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rootDir, file1)))
+		})
+		It("finds a matching file, first match wins file2", func() {
+			f, err := utils.FindFile(fs, rootDir, "/path/with/*aarch64/find*", "/path/with/*dle*/*me.*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rootDir, file2)))
+		})
+		It("finds a matching file, first match wins file2", func() {
+			f, err := utils.FindFile(fs, rootDir, "/path/with/*aarch64/find*", "/path/with/*dle*/*me.*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rootDir, file2)))
+		})
+		It("finds a matching file and resolves the link", func() {
+			f, err := utils.FindFile(fs, rootDir, "/path/*/symlink/pointing-to-*", "/path/with/*aarch64/find*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(f).To(Equal(filepath.Join(rootDir, file1)))
+		})
+		It("fails if there is no match", func() {
+			_, err := utils.FindFile(fs, rootDir, "/path/*/symlink/*no-match-*")
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring("failed to find"))
+		})
+		It("fails on invalid parttern", func() {
+			_, err := utils.FindFile(fs, rootDir, "/path/*/symlink/badformat[]")
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).Should(ContainSubstring("syntax error"))
+		})
+	})
+	Describe("FindKernel", Label("find"), func() {
+		BeforeEach(func() {
+			Expect(utils.MkdirAll(fs, "/path/boot", constants.DirPerm)).To(Succeed())
+			Expect(utils.MkdirAll(fs, "/path/lib/modules/5.3-31-def", constants.DirPerm)).To(Succeed())
+			_, err := fs.Create("/path/boot/vmlinuz-5.3-31-def")
 			Expect(err).ShouldNot(HaveOccurred())
 		})
-		It("finds a matching file", func() {
-			f, err := utils.FindFileWithPrefix(fs, "/path", "prefix", "some")
+		It("finds kernel file and version", func() {
+			k, v, err := utils.FindKernel(fs, "/path")
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(f).To(Equal("/path/somefile"))
+			Expect(k).To(Equal("/path/boot/vmlinuz-5.3-31-def"))
+			Expect(v).To(Equal("5.3-31-def"))
 		})
-		It("finds a matching file, but returns the target of a relative symlink", func() {
-			// apparently fs.Readlink returns the raw path so we need to
-			// use raw paths here. This is an arguable behavior
-			rawPath, err := fs.RawPath("/path")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			f, err := utils.FindFileWithPrefix(vfs.OSFS, rawPath, "linked")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(f).To(Equal(filepath.Join(rawPath, "onefile")))
-		})
-		It("finds a matching file, but returns the target of an absolute symlink", func() {
-			// apparently fs.Readlink returns the raw path so we need to
-			// use raw paths here. This is an arguable behavior
-			rawPath, err := fs.RawPath("/path")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			f, err := utils.FindFileWithPrefix(vfs.OSFS, rawPath, "abslinked")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(f).To(Equal(filepath.Join(rawPath, "onefile")))
-		})
-		It("fails to read given path", func() {
-			_, err := utils.FindFileWithPrefix(fs, "nonexisting", "some")
+		It("fails if no kernel is found", func() {
+			Expect(fs.RemoveAll("/path/boot/vmlinuz-5.3-31-def")).To(Succeed())
+			_, _, err := utils.FindKernelInitrd(fs, "/path")
 			Expect(err).Should(HaveOccurred())
 		})
-		It("doesn't find any matching file in path", func() {
-			utils.MkdirAll(fs, "/path", constants.DirPerm)
-			_, err := utils.FindFileWithPrefix(fs, "/path", "prefix", "anotherprefix")
+		It("fails if there is no /lib/modules", func() {
+			Expect(fs.RemoveAll("/path/lib/modules")).To(Succeed())
+			_, _, err := utils.FindKernelInitrd(fs, "/path")
+			Expect(err).Should(HaveOccurred())
+		})
+		It("fails if there is no kernel version in /lib/modules", func() {
+			Expect(fs.Remove("/path/boot/vmlinuz-5.3-31-def")).To(Succeed())
+			_, err := fs.Create("/path/boot/vmlinuz-6.3-31-higher")
+			Expect(err).ShouldNot(HaveOccurred())
+			_, _, err = utils.FindKernelInitrd(fs, "/path")
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+	Describe("FindKernelInitrd", Label("find"), func() {
+		BeforeEach(func() {
+			Expect(utils.MkdirAll(fs, "/path/boot", constants.DirPerm)).To(Succeed())
+			Expect(utils.MkdirAll(fs, "/path/lib/modules/5.3-31-def", constants.DirPerm)).To(Succeed())
+			_, err := fs.Create("/path/boot/vmlinuz-5.3-31-def")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(fs.Symlink("vmlinuz-5.3-31-def", "/path/boot/vmlinuz")).To(Succeed())
+			_, err = fs.Create("/path/boot/initrd")
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+		It("finds kernel and initrd files", func() {
+			k, i, err := utils.FindKernelInitrd(fs, "/path")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(k).To(Equal("/path/boot/vmlinuz-5.3-31-def"))
+			Expect(i).To(Equal("/path/boot/initrd"))
+		})
+		It("fails if no initrd is found", func() {
+			Expect(fs.Remove("/path/boot/initrd"))
+			_, _, err := utils.FindKernelInitrd(fs, "/path")
+			Expect(err).Should(HaveOccurred())
+		})
+		It("fails if no kernel is found", func() {
+			Expect(fs.Remove("/path/boot/vmlinuz-5.3-31-def"))
+			_, _, err := utils.FindKernelInitrd(fs, "/path")
 			Expect(err).Should(HaveOccurred())
 		})
 	})
@@ -774,223 +900,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			checksum, err := utils.CalcFileChecksum(fs, "/iso/test.iso")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(checksum).To(Equal(testDataSHA256))
-		})
-	})
-	Describe("Grub", Label("grub"), func() {
-		Describe("Install", func() {
-			var target, rootDir, bootDir string
-			var buf *bytes.Buffer
-			BeforeEach(func() {
-				target = "/dev/test"
-				rootDir = constants.ActiveDir
-				bootDir = constants.StateDir
-				buf = &bytes.Buffer{}
-				logger = v1.NewBufferLogger(buf)
-				logger.SetLevel(v1.DebugLevel())
-				config.Logger = logger
-
-				err := utils.MkdirAll(fs, filepath.Join(bootDir, "grub2"), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = utils.MkdirAll(fs, filepath.Dir(filepath.Join(rootDir, constants.GrubConf)), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				err = fs.WriteFile(filepath.Join(rootDir, constants.GrubConf), []byte("console=tty1"), 0644)
-				Expect(err).ShouldNot(HaveOccurred())
-			})
-			It("installs with default values", func() {
-				grub := utils.NewGrub(config)
-				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, false, "", true, false)
-				Expect(err).To(BeNil())
-
-				Expect(buf).To(ContainSubstring("Installing GRUB.."))
-				Expect(buf).To(ContainSubstring("Grub install to device /dev/test complete"))
-				Expect(buf).ToNot(ContainSubstring("efi"))
-				Expect(buf.String()).ToNot(ContainSubstring("Adding extra tty (serial) to grub.cfg"))
-				targetGrub, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
-				Expect(err).To(BeNil())
-				// Should not be modified at all
-				Expect(targetGrub).To(ContainSubstring("console=tty1"))
-
-			})
-			It("installs with efi firmware", Label("efi"), func() {
-				Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/efi/x86_64/"), constants.DirPerm)).To(Succeed())
-				Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "/x86_64/"), constants.DirPerm)).To(Succeed())
-				Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "/etc/"), constants.DirPerm)).To(Succeed())
-
-				Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/efi/x86_64/shim.efi"), []byte(""), constants.FilePerm)).To(Succeed())
-				Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/efi/x86_64/MokManager.efi"), []byte(""), constants.FilePerm)).To(Succeed())
-				Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/efi/x86_64/grub.efi"), []byte(""), constants.FilePerm)).To(Succeed())
-				Expect(fs.WriteFile(filepath.Join(rootDir, "/x86_64/loopback.mod"), []byte(""), constants.FilePerm)).To(Succeed())
-				Expect(fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"suse\""), constants.FilePerm)).To(Succeed())
-
-				grub := utils.NewGrub(config)
-				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)).To(Succeed())
-
-				// Check everything was copied
-				_, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI"))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/boot"))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/boot/shim.efi"))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/boot/MokManager.efi"))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/boot/grub.efi"))
-				Expect(err).To(BeNil())
-				_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/boot/bootx64.efi"))
-				Expect(err).To(BeNil())
-
-			})
-			It("fails with efi if no modules files exist", Label("efi"), func() {
-				grub := utils.NewGrub(config)
-				err := grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("grub"))
-				Expect(err.Error()).To(ContainSubstring("modules"))
-			})
-			It("fails with efi if no os-release file exist", Label("efi"), func() {
-				err := utils.MkdirAll(fs, filepath.Join(rootDir, "/x86_64/"), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				err = fs.WriteFile(filepath.Join(rootDir, "/x86_64/loopback.mod"), []byte(""), constants.FilePerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("os-release"))
-			})
-			It("fails with efi if no grub files exist", Label("efi"), func() {
-				err := utils.MkdirAll(fs, filepath.Join(rootDir, "/x86_64/"), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				err = fs.WriteFile(filepath.Join(rootDir, "/x86_64/loopback.mod"), []byte(""), constants.FilePerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				err = fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"suse\""), constants.FilePerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				grub := utils.NewGrub(config)
-				err = grub.Install(target, rootDir, bootDir, constants.GrubConf, true, "", true, false)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("efi"))
-				Expect(err.Error()).To(ContainSubstring("artifacts"))
-			})
-			It("Fails if it can't read grub config file", func() {
-				err := fs.RemoveAll(filepath.Join(rootDir, constants.GrubConf))
-				Expect(err).ShouldNot(HaveOccurred())
-				grub := utils.NewGrub(config)
-				Expect(grub.Install(target, rootDir, bootDir, constants.GrubConf, false, "", true, false)).NotTo(BeNil())
-
-				Expect(buf).To(ContainSubstring("Failed copying grub config file"))
-			})
-		})
-		Describe("SetPersistentVariables", func() {
-			It("Sets the grub environment file", func() {
-				grub := utils.NewGrub(config)
-				Expect(grub.SetPersistentVariables(
-					"somefile", map[string]string{"key1": "value1", "key2": "value2"},
-				)).To(BeNil())
-				Expect(runner.IncludesCmds([][]string{
-					{"grub2-editenv", "somefile", "set", "key1=value1"},
-					{"grub2-editenv", "somefile", "set", "key2=value2"},
-				})).To(BeNil())
-			})
-			It("Fails running grub2-editenv", func() {
-				runner.ReturnError = errors.New("grub error")
-				grub := utils.NewGrub(config)
-				Expect(grub.SetPersistentVariables(
-					"somefile", map[string]string{"key1": "value1"},
-				)).NotTo(BeNil())
-				Expect(runner.CmdsMatch([][]string{
-					{"grub2-editenv", "somefile", "set", "key1=value1"},
-				})).To(BeNil())
-			})
-		})
-		Describe("CreateBootEntry", Label("bootentry"), func() {
-			var efivars eleefi.Variables
-			var relativeTo string
-
-			BeforeEach(func() {
-				efivars = &eleefi.MockEFIVariables{}
-				err := fs.Mkdir("/EFI", constants.DirPerm)
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.WriteFile("/EFI/test.efi", []byte(""), constants.FilePerm)
-				Expect(err).ToNot(HaveOccurred())
-				relativeTo, _ = fs.RawPath("/EFI")
-
-			})
-			It("Sets the proper entry", func() {
-				// We need to pass the relative path because bootmanager works on real paths
-				grub := utils.NewGrub(config)
-				err := grub.CreateBootEntry("test.efi", relativeTo, efivars)
-				Expect(err).ToNot(HaveOccurred())
-				vars, _ := efivars.ListVariables()
-				// Only one entry should have been created
-				// Second one is the BootOrder!
-				Expect(len(vars)).To(Equal(2))
-				// Load the options and check that its correct
-				variable, _, err := efivars.GetVariable(vars[0].GUID, "Boot0000")
-				option, err := efi.ReadLoadOption(bytes.NewReader(variable))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(option.Description).To(Equal("elemental-shim"))
-				Expect(option.FilePath).To(ContainSubstring("test.efi"))
-				Expect(option.FilePath.String()).To(ContainSubstring(`\EFI\test.efi`))
-			})
-			It("Does not duplicate if an entry exists", func() {
-				// We need to pass the relative path because bootmanager works on real paths
-				grub := utils.NewGrub(config)
-				err := grub.CreateBootEntry("test.efi", relativeTo, efivars)
-				Expect(err).ToNot(HaveOccurred())
-				vars, _ := efivars.ListVariables()
-				// Only one entry should have been created
-				// Second one is the BootOrder!
-				Expect(len(vars)).To(Equal(2))
-				// Load the options and check that its correct
-				variable, _, err := efivars.GetVariable(vars[0].GUID, "Boot0000")
-				option, err := efi.ReadLoadOption(bytes.NewReader(variable))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(option.Description).To(Equal("elemental-shim"))
-				Expect(option.FilePath).To(ContainSubstring("test.efi"))
-				Expect(option.FilePath.String()).To(ContainSubstring(`\EFI\test.efi`))
-				// And here we go again
-				err = grub.CreateBootEntry("test.efi", relativeTo, efivars)
-				// Reload vars!
-				vars, _ = efivars.ListVariables()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(vars)).To(Equal(2))
-			})
-			It("Creates a new one if the path changes", func() {
-				err := fs.WriteFile("/EFI/test1.efi", []byte(""), constants.FilePerm)
-				Expect(err).ToNot(HaveOccurred())
-				// We need to pass the relative path because bootmanager works on real paths
-				grub := utils.NewGrub(config)
-				err = grub.CreateBootEntry("test.efi", relativeTo, efivars)
-				Expect(err).ToNot(HaveOccurred())
-				vars, _ := efivars.ListVariables()
-				// Only one entry should have been created
-				// Second one is the BootOrder!
-				Expect(len(vars)).To(Equal(2))
-				// Load the options and check that its correct
-				variable, _, err := efivars.GetVariable(vars[0].GUID, "Boot0000")
-				option, err := efi.ReadLoadOption(bytes.NewReader(variable))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(option.Description).To(Equal("elemental-shim"))
-				Expect(option.FilePath).To(ContainSubstring("test.efi"))
-				Expect(option.FilePath.String()).To(ContainSubstring(`\EFI\test.efi`))
-
-				// And here we go again
-				err = grub.CreateBootEntry("test1.efi", relativeTo, efivars)
-				Expect(err).ToNot(HaveOccurred())
-				// Reload vars!
-				vars, _ = efivars.ListVariables()
-				Expect(len(vars)).To(Equal(3))
-				// As this is the second entry generated its name is Boot0001
-				variable, _, err = efivars.GetVariable(vars[0].GUID, "Boot0001")
-				option, err = efi.ReadLoadOption(bytes.NewReader(variable))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(option.Description).To(Equal("elemental-shim"))
-				Expect(option.FilePath).To(ContainSubstring("test1.efi"))
-				Expect(option.FilePath.String()).To(ContainSubstring(`\EFI\test1.efi`))
-			})
 		})
 	})
 	Describe("CreateSquashFS", Label("CreateSquashFS"), func() {
@@ -1294,74 +1203,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 				Expect(header.DiskGeometry[2]).To(Equal(uint8(16))) // heads
 				Expect(header.DiskGeometry[3]).To(Equal(uint8(31))) // sectors per track
 			})
-		})
-
-	})
-	Describe("IdentifySourceSystem", Label("fs", "IdentifySourceSystem"), func() {
-		var rootDir string
-		var buf *bytes.Buffer
-		BeforeEach(func() {
-			rootDir = constants.ActiveDir
-			buf = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(buf)
-			logger.SetLevel(v1.DebugLevel())
-			config.Logger = logger
-			err := utils.MkdirAll(fs, filepath.Join(rootDir, "/etc/"), constants.DirPerm)
-			Expect(err).ShouldNot(HaveOccurred())
-		})
-		It("fails if os-release doesnt exist", func() {
-			_, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("os-release"))
-		})
-		It("identifies fedora system", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"fedora\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Fedora))
-		})
-		It("identifies ubuntu system", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"ubuntu\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Ubuntu))
-		})
-		It("identifies suse system", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"suse\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Suse))
-		})
-		It("fallback into suse if its an unknown system", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("ID=\"sle-micro-for-rancher\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Suse))
-		})
-		It("fallback into suse if os-release is empty", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte(""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Suse))
-		})
-		It("identifies suse system with spaces in the file", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("\n\n\nID=\"suse\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Suse))
-		})
-		It("identifies suse system with comments in the file", func() {
-			err := fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), []byte("# this is a comment\nID=\"suse\""), constants.FilePerm)
-			Expect(err).ShouldNot(HaveOccurred())
-			system, err := utils.IdentifySourceSystem(fs, rootDir)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(system).To(Equal(constants.Suse))
 		})
 
 	})

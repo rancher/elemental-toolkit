@@ -108,7 +108,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(cfg.Runner).NotTo(BeNil())
 		})
 		Describe("InstallSpec", func() {
-			It("sets installation defaults from install efi media with recovery", Label("install", "efi"), func() {
+			It("sets installation defaults from install media with recovery", Label("install"), func() {
 				// Set EFI firmware detection
 				err = utils.MkdirAll(fs, filepath.Dir(constants.EfiDevice), constants.DirPerm)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -135,30 +135,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 			})
-			It("sets installation defaults from install bios media without recovery", Label("install", "bios"), func() {
-				// Set ISO base tree detection
-				err = utils.MkdirAll(fs, filepath.Dir(constants.ISOBaseTree), constants.DirPerm)
-				Expect(err).ShouldNot(HaveOccurred())
-				_, err = fs.Create(constants.ISOBaseTree)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v1.BIOS))
-				Expect(spec.Active.Source.Value()).To(Equal(constants.ISOBaseTree))
-				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
-				Expect(spec.PartTable).To(Equal(v1.GPT))
-
-				// No firmware partitions added yet
-				Expect(spec.Partitions.BIOS).To(BeNil())
-
-				// Adding firmware partitions
-				err = spec.Partitions.SetFirmwarePartitions(spec.Firmware, spec.PartTable)
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(spec.Partitions.BIOS).NotTo(BeNil())
-			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {
 				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v1.BIOS))
+				Expect(spec.Firmware).To(Equal(v1.EFI))
 				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
 				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
 				Expect(spec.PartTable).To(Equal(v1.GPT))

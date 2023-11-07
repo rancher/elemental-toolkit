@@ -17,7 +17,6 @@ limitations under the License.
 package utils
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -39,6 +38,9 @@ import (
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
+
+// Maxium number of nested symlinks to resolve
+const maxLinkDepth = 4
 
 // BootedFrom will check if we are booting from the given label
 func BootedFrom(runner v1.Runner, label string) bool {
@@ -442,37 +444,140 @@ func ValidTaggedContainerReference(ref string) bool {
 	return true
 }
 
-// FindFileWithPrefix looks for a file in the given path matching one of the given
-// prefixes. Returns the found file path including the given path. It does not
-// check subfolders recusively
-func FindFileWithPrefix(fs v1.FS, path string, prefixes ...string) (string, error) {
-	files, err := fs.ReadDir(path)
+// FindFile attempts to find a file from a list of patterns on top of a given root path.
+// Returns first match if any and returns error otherwise.
+func FindFile(vfs v1.FS, rootDir string, patterns ...string) (string, error) {
+	var err error
+	var found string
+
+	for _, pattern := range patterns {
+		found, err = findFile(vfs, rootDir, pattern)
+		if err != nil {
+			return "", err
+		} else if found != "" {
+			break
+		}
+	}
+	if found == "" {
+		return "", fmt.Errorf("failed to find binary matching %v", patterns)
+	}
+	return found, nil
+}
+
+// findFile attempts to find a file from a given pattern on top of a root path.
+// Returns empty path if no file is found.
+func findFile(vfs v1.FS, rootDir, pattern string) (string, error) {
+	var foundFile string
+	base := filepath.Join(rootDir, getBaseDir(pattern))
+	if ok, _ := Exists(vfs, base); ok {
+		err := WalkDirFs(vfs, base, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			match, err := filepath.Match(filepath.Join(rootDir, pattern), path)
+			if err != nil {
+				return err
+			}
+			if match {
+				foundFile = ResolveLink(vfs, path, rootDir, d, maxLinkDepth)
+				return io.EOF
+			}
+			return nil
+		})
+		if err != nil && err != io.EOF {
+			return "", err
+		}
+	}
+	return foundFile, nil
+}
+
+// FindKernel finds for kernel files inside a given root tree path.
+// Returns kernel file and version. It assumes kernel files match certain patterns
+func FindKernel(fs v1.FS, rootDir string) (string, string, error) {
+	var kernel, version string
+	var err error
+
+	kernel, err = FindFile(fs, rootDir, constants.GetKernelPatterns()...)
 	if err != nil {
-		return "", err
+		return "", "", fmt.Errorf("No Kernel file found: %v", err)
+	}
+	files, err := fs.ReadDir(filepath.Join(rootDir, constants.KernelModulesDir))
+	if err != nil {
+		return "", "", fmt.Errorf("failed reading modules directory: %v", err)
 	}
 	for _, f := range files {
-		if f.IsDir() {
-			continue
+		if strings.Contains(kernel, f.Name()) {
+			version = f.Name()
+			break
 		}
-		for _, p := range prefixes {
-			if strings.HasPrefix(f.Name(), p) {
-				if f.Mode()&os.ModeSymlink == os.ModeSymlink {
-					found, err := fs.Readlink(filepath.Join(path, f.Name()))
-					if err == nil {
-						if !filepath.IsAbs(found) {
-							found = filepath.Join(path, found)
-						}
-						if exists, _ := Exists(fs, found); exists {
-							return found, nil
-						}
-					}
-				} else {
-					return filepath.Join(path, f.Name()), nil
-				}
+	}
+	if version == "" {
+		return "", "", fmt.Errorf("could not determine the version of kernel %s", kernel)
+	}
+	return kernel, version, nil
+}
+
+// FindInitrd finds for initrd files inside a given root tree path.
+// It assumes initrd files match certain patterns
+func FindInitrd(fs v1.FS, rootDir string) (string, error) {
+	initrd, err := FindFile(fs, rootDir, constants.GetInitrdPatterns()...)
+	if err != nil {
+		return "", fmt.Errorf("No initrd file found: %v", err)
+	}
+	return initrd, nil
+}
+
+// FindKernelInitrd finds for kernel and intird files inside a given root tree path.
+// It assumes kernel and initrd files match certain patterns.
+// This is a comodity method of a combination of FindKernel and FindInitrd.
+func FindKernelInitrd(fs v1.FS, rootDir string) (kernel string, initrd string, err error) {
+	kernel, _, err = FindKernel(fs, rootDir)
+	if err != nil {
+		return "", "", err
+	}
+	initrd, err = FindInitrd(fs, rootDir)
+	if err != nil {
+		return "", "", err
+	}
+	return kernel, initrd, nil
+}
+
+// getBaseDir returns the base directory of a shell path pattern
+func getBaseDir(path string) string {
+	magicChars := `*?[`
+	i := strings.IndexAny(path, magicChars)
+	if i > 0 {
+		return filepath.Dir(path[:i])
+	}
+	return path
+}
+
+// resolveLink attempts to resolve a symlink, if any. Returns the original given path
+// if not a symlink or if it can't be resolved.
+func ResolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth int) string {
+	var err error
+	var resolved string
+	var f fs.FileInfo
+
+	f, err = d.Info()
+	if err != nil {
+		return path
+	}
+
+	if f.Mode()&os.ModeSymlink == os.ModeSymlink && depth > 0 {
+		resolved, err = readlink(vfs, path)
+		if err == nil {
+			if !filepath.IsAbs(resolved) {
+				resolved = filepath.Join(filepath.Dir(path), resolved)
+			} else {
+				resolved = filepath.Join(rootDir, resolved)
+			}
+			if f, err = vfs.Lstat(resolved); err == nil {
+				return ResolveLink(vfs, resolved, rootDir, &statDirEntry{f}, depth-1)
 			}
 		}
 	}
-	return "", fmt.Errorf("No file found with prefixes: %v", prefixes)
+	return path
 }
 
 // CalcFileChecksum opens the given file and returns the sha256 checksum of it.
@@ -489,72 +594,6 @@ func CalcFileChecksum(fs v1.FS, fileName string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
-}
-
-// IdentifySourceSystem tries to find the os-release file in a given dir and identify the system based on the data in there
-func IdentifySourceSystem(vfs v1.FS, path string) (string, error) {
-	var system string
-	var found bool
-	err := WalkDirFs(vfs, path, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.Name() == "os-release" {
-			osRelease, err := parseOsRelease(vfs, path)
-			if err != nil {
-				return err
-			}
-			switch osRelease["ID"] {
-			case constants.Fedora:
-				system = constants.Fedora
-			case constants.Ubuntu:
-				system = constants.Ubuntu
-			default:
-				system = constants.Suse
-			}
-			found = true
-		}
-		return err
-	})
-	if !found {
-		err = fmt.Errorf("could not find os-release file under %s", path)
-	}
-	return system, err
-}
-
-func parseOsRelease(fs v1.FS, filename string) (osrelease map[string]string, err error) {
-	var lines []string
-	osrelease = map[string]string{}
-	file, err := fs.Open(filename)
-	if err != nil {
-		return
-	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	for _, line := range lines {
-		//key, value, err := parseOsReleaseLine(v)
-		if len(line) == 0 {
-			continue
-		}
-		if line[0] == '#' {
-			continue
-		}
-		splitted := strings.SplitN(line, "=", 2)
-		if len(splitted) != 2 {
-			continue
-		}
-
-		key := strings.Trim(strings.TrimSpace(splitted[0]), "\"")
-		value := strings.Trim(strings.TrimSpace(splitted[1]), "\"")
-		osrelease[key] = value
-	}
-	return
 }
 
 // CreateRAWFile creates raw file of the given size in MB
