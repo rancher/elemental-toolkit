@@ -1,0 +1,91 @@
+From bddffedae038ceca263a904e40513a6e92f1b558 Mon Sep 17 00:00:00 2001
+From: David Cassany <dcassany@suse.com>
+Date: Fri, 22 Sep 2023 16:28:48 +0200
+Subject: [PATCH] fix(overlayfs): split overlayfs mount in two steps
+
+This commit splits the creation of required overlayfs underlaying
+directories and the actual overlayfs mount. This way it is still
+possible to mount the overlayfs with the generated sysroot.mount that
+dmsquash-live creates.
+
+The overlayfs tree is created in a pre-mount hook so it is executed
+before sysroot.mount is started. Otherwise sysroot.mount starts and
+fails before mount hooks are executed.
+
+Signed-off-by: David Cassany <dcassany@suse.com>
+---
+ modules.d/90overlayfs/module-setup.sh      |  1 +
+ modules.d/90overlayfs/mount-overlayfs.sh   | 13 -------------
+ modules.d/90overlayfs/prepare-overlayfs.sh | 21 +++++++++++++++++++++
+ 3 files changed, 22 insertions(+), 13 deletions(-)
+ create mode 100755 modules.d/90overlayfs/prepare-overlayfs.sh
+
+diff --git a/modules.d/90overlayfs/module-setup.sh b/modules.d/90overlayfs/module-setup.sh
+index 27aa7cfa..893e2dc3 100755
+--- a/modules.d/90overlayfs/module-setup.sh
++++ b/modules.d/90overlayfs/module-setup.sh
+@@ -15,4 +15,5 @@ installkernel() {
+ 
+ install() {
+     inst_hook mount 01 "$moddir/mount-overlayfs.sh"
++    inst_hook pre-mount 01 "$moddir/prepare-overlayfs.sh"
+ }
+diff --git a/modules.d/90overlayfs/mount-overlayfs.sh b/modules.d/90overlayfs/mount-overlayfs.sh
+index 7e2da1a8..e1d23fb4 100755
+--- a/modules.d/90overlayfs/mount-overlayfs.sh
++++ b/modules.d/90overlayfs/mount-overlayfs.sh
+@@ -3,24 +3,11 @@
+ type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+ getargbool 0 rd.live.overlay.overlayfs && overlayfs="yes"
+-getargbool 0 rd.live.overlay.reset -d -y reset_overlay && reset_overlay="yes"
+ getargbool 0 rd.live.overlay.readonly -d -y readonly_overlay && readonly_overlay="--readonly" || readonly_overlay=""
+ 
+ ROOTFLAGS="$(getarg rootflags)"
+ 
+ if [ -n "$overlayfs" ]; then
+-    if ! [ -e /run/rootfsbase ]; then
+-        mkdir -m 0755 -p /run/rootfsbase
+-        mount --bind "$NEWROOT" /run/rootfsbase
+-    fi
+-
+-    mkdir -m 0755 -p /run/overlayfs
+-    mkdir -m 0755 -p /run/ovlwork
+-    if [ -n "$reset_overlay" ] && [ -h /run/overlayfs ]; then
+-        ovlfsdir=$(readlink /run/overlayfs)
+-        info "Resetting the OverlayFS overlay directory."
+-        rm -r -- "${ovlfsdir:?}"/* "${ovlfsdir:?}"/.* > /dev/null 2>&1
+-    fi
+     if [ -n "$readonly_overlay" ] && [ -h /run/overlayfs-r ]; then
+         ovlfs=lowerdir=/run/overlayfs-r:/run/rootfsbase
+     else
+diff --git a/modules.d/90overlayfs/prepare-overlayfs.sh b/modules.d/90overlayfs/prepare-overlayfs.sh
+new file mode 100755
+index 00000000..87bcc196
+--- /dev/null
++++ b/modules.d/90overlayfs/prepare-overlayfs.sh
+@@ -0,0 +1,21 @@
++#!/bin/sh
++
++type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
++
++getargbool 0 rd.live.overlay.overlayfs && overlayfs="yes"
++getargbool 0 rd.live.overlay.reset -d -y reset_overlay && reset_overlay="yes"
++
++if [ -n "$overlayfs" ]; then
++    if ! [ -e /run/rootfsbase ]; then
++        mkdir -m 0755 -p /run/rootfsbase
++        mount --bind "$NEWROOT" /run/rootfsbase
++    fi
++
++    mkdir -m 0755 -p /run/overlayfs
++    mkdir -m 0755 -p /run/ovlwork
++    if [ -n "$reset_overlay" ] && [ -h /run/overlayfs ]; then
++        ovlfsdir=$(readlink /run/overlayfs)
++        info "Resetting the OverlayFS overlay directory."
++        rm -r -- "${ovlfsdir:?}"/* "${ovlfsdir:?}"/.* > /dev/null 2>&1
++    fi
++fi
+-- 
+2.35.3
+
