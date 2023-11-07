@@ -20,9 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 
@@ -57,6 +55,7 @@ var _ = Describe("Install action tests", func() {
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
+	var bootloader *v1mock.FakeBootloader
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -64,6 +63,7 @@ var _ = Describe("Install action tests", func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
+		bootloader = &v1mock.FakeBootloader{}
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(v1.DebugLevel())
 		extractor = v1mock.NewFakeImageExtractor(logger)
@@ -141,16 +141,6 @@ var _ = Describe("Install action tests", func() {
 						return cmdline()
 					}
 					return []byte{}, nil
-				case "grub2-editenv":
-					if args[1] == "set" {
-						f, err := fs.OpenFile(args[0], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-						Expect(err).To(BeNil())
-
-						_, err = f.Write([]byte(fmt.Sprintf("%s\n", args[2])))
-						Expect(err).To(BeNil())
-					}
-					return []byte{}, nil
 				default:
 					return []byte{}, nil
 				}
@@ -162,7 +152,7 @@ var _ = Describe("Install action tests", func() {
 			spec = conf.NewInstallSpec(config.Config)
 			spec.Active.Size = 16
 
-			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubConf)
+			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(grubCfg)
@@ -216,7 +206,7 @@ var _ = Describe("Install action tests", func() {
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 
-			installer = action.NewInstallAction(config, spec)
+			installer = action.NewInstallAction(config, spec, action.WithInstallBootloader(bootloader))
 		})
 		AfterEach(func() {
 			ghwTest.Clean()
@@ -277,41 +267,6 @@ var _ = Describe("Install action tests", func() {
 			spec.Target = device
 			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
 			Expect(installer.Run()).To(BeNil())
-		})
-
-		It("Successfully sets GRUB labels", Label("grub"), func() {
-			spec.Target = device
-			Expect(installer.Run()).To(BeNil())
-
-			grubOemEnvPath := filepath.Join(constants.StateDir, "grub_oem_env")
-			Expect(utils.Exists(fs, grubOemEnvPath)).To(BeTrue())
-
-			actualBytes, err := fs.ReadFile(filepath.Join(constants.StateDir, "grub_oem_env"))
-			Expect(err).To(BeNil())
-
-			expected := map[string]string{
-				"state_label":      "COS_STATE",
-				"active_label":     "COS_ACTIVE",
-				"passive_label":    "COS_PASSIVE",
-				"recovery_label":   "COS_RECOVERY",
-				"system_label":     "COS_SYSTEM",
-				"oem_label":        "COS_OEM",
-				"persistent_label": "COS_PERSISTENT",
-			}
-
-			lines := strings.Split(string(actualBytes), "\n")
-
-			Expect(len(lines) - 1).To(Equal(len(expected)))
-
-			for _, line := range lines {
-				if line == "" {
-					continue
-				}
-
-				split := strings.SplitN(line, "=", 2)
-
-				Expect(split[1]).To(Equal(expected[split[0]]))
-			}
 		})
 
 		It("Successfully installs and adds remote cloud-config", Label("cloud-config"), func() {
@@ -398,11 +353,10 @@ var _ = Describe("Install action tests", func() {
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
 		})
 
-		It("Fails on grub2-install errors", Label("grub"), func() {
+		It("Fails on grub install errors", Label("grub"), func() {
 			spec.Target = device
-			cmdFail = "grub2-install"
+			bootloader.ErrorInstall = true
 			Expect(installer.Run()).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{{"grub2-install"}}))
 		})
 
 		It("Fails copying Passive image", Label("copy", "active"), func() {
@@ -415,7 +369,7 @@ var _ = Describe("Install action tests", func() {
 		It("Fails setting the grub default entry", Label("grub"), func() {
 			spec.Target = device
 			spec.GrubDefEntry = "cOS"
-			cmdFail = "grub2-editenv"
+			bootloader.ErrorSetDefaultEntry = true
 			Expect(installer.Run()).NotTo(BeNil())
 			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.StateDir, constants.GrubOEMEnv)}}))
 		})

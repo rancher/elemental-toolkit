@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rancher/elemental-toolkit/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -30,12 +31,36 @@ import (
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
 type UpgradeAction struct {
-	config *v1.RunConfig
-	spec   *v1.UpgradeSpec
+	config     *v1.RunConfig
+	spec       *v1.UpgradeSpec
+	bootloader v1.Bootloader
 }
 
-func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec) *UpgradeAction {
-	return &UpgradeAction{config: config, spec: spec}
+type UpgradeActionOption func(r *UpgradeAction) error
+
+func WithUpgradeBootloader(bootloader v1.Bootloader) func(u *UpgradeAction) error {
+	return func(u *UpgradeAction) error {
+		u.bootloader = bootloader
+		return nil
+	}
+}
+
+func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...UpgradeActionOption) *UpgradeAction {
+	u := &UpgradeAction{config: config, spec: spec}
+
+	for _, o := range opts {
+		err := o(u)
+		if err != nil {
+			config.Logger.Errorf("error applying config option: %s", err.Error())
+			return nil
+		}
+	}
+
+	if u.bootloader == nil {
+		u.bootloader = bootloader.NewGrub(&config.Config)
+	}
+
+	return u
 }
 
 func (u UpgradeAction) Info(s string, args ...interface{}) {
@@ -229,7 +254,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	grubVars := u.spec.GetGrubLabels()
-	err = utils.NewGrub(&u.config.Config).SetPersistentVariables(
+	err = u.bootloader.SetPersistentVariables(
 		filepath.Join(u.spec.Partitions.State.MountPoint, constants.GrubOEMEnv),
 		grubVars,
 	)
@@ -242,7 +267,7 @@ func (u *UpgradeAction) Run() (err error) {
 	if !u.spec.RecoveryUpgrade {
 		u.Info("rebranding")
 
-		err = e.SetDefaultGrubEntry(u.spec.Partitions.State.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
+		err = u.bootloader.SetDefaultEntry(u.spec.Partitions.State.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
 		if err != nil {
 			u.Error("failed setting default entry")
 			return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)

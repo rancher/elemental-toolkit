@@ -19,10 +19,7 @@ package action_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
@@ -51,6 +48,7 @@ var _ = Describe("Reset action tests", func() {
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
+	var bootloader *v1mock.FakeBootloader
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -58,6 +56,7 @@ var _ = Describe("Reset action tests", func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
+		bootloader = &v1mock.FakeBootloader{}
 		logger = v1.NewBufferLogger(memLog)
 		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
@@ -148,26 +147,13 @@ var _ = Describe("Reset action tests", func() {
 
 			spec.Active.Size = 16
 
-			grubCfg := filepath.Join(constants.WorkingImgDir, spec.GrubConf)
+			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(grubCfg)
 			Expect(err).To(BeNil())
 
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmdFail == cmd {
-					return []byte{}, errors.New("Command failed")
-				}
-				if cmd == "grub2-editenv" && args[1] == "set" {
-					f, err := fs.OpenFile(args[0], os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-					Expect(err).To(BeNil())
-
-					_, err = f.Write([]byte(fmt.Sprintf("%s\n", args[2])))
-					Expect(err).To(BeNil())
-				}
-				return []byte{}, nil
-			}
-			reset = action.NewResetAction(config, spec)
+			reset = action.NewResetAction(config, spec, action.WithResetBootloader(bootloader))
 		})
 
 		AfterEach(func() {
@@ -196,39 +182,6 @@ var _ = Describe("Reset action tests", func() {
 			cloudInit.Error = true
 			Expect(reset.Run()).To(BeNil())
 		})
-		It("Successfully writes GRUB labels to oem_env file", func() {
-			Expect(reset.Run()).To(BeNil())
-
-			actualBytes, err := fs.ReadFile(filepath.Join(constants.StateDir, "grub_oem_env"))
-			Expect(err).To(BeNil())
-
-			expected := map[string]string{
-				"state_label":        "COS_STATE",
-				"active_label":       "COS_ACTIVE",
-				"passive_label":      "COS_PASSIVE",
-				"recovery_label":     "COS_RECOVERY",
-				"system_label":       "COS_SYSTEM",
-				"oem_label":          "COS_OEM",
-				"persistent_label":   "COS_PERSISTENT",
-				"default_menu_entry": "Elemental",
-			}
-
-			lines := strings.Split(string(actualBytes), "\n")
-
-			By(string(actualBytes))
-
-			Expect(len(lines)).To(Equal(len(expected)))
-
-			for _, line := range lines {
-				if line == "" {
-					continue
-				}
-
-				split := strings.SplitN(line, "=", 2)
-
-				Expect(split[1]).To(Equal(expected[split[0]]))
-			}
-		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
 			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
 			Expect(reset.Run()).To(BeNil())
@@ -237,9 +190,8 @@ var _ = Describe("Reset action tests", func() {
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Fails installing grub", func() {
-			cmdFail = "grub2-install"
+			bootloader.ErrorInstall = true
 			Expect(reset.Run()).NotTo(BeNil())
-			Expect(runner.IncludesCmds([][]string{{"grub2-install"}}))
 		})
 		It("Fails formatting state partition", func() {
 			cmdFail = "mkfs.ext4"

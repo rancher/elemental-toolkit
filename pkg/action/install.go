@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rancher/elemental-toolkit/pkg/bootloader"
 	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -29,12 +30,36 @@ import (
 )
 
 type InstallAction struct {
-	cfg  *v1.RunConfig
-	spec *v1.InstallSpec
+	cfg        *v1.RunConfig
+	spec       *v1.InstallSpec
+	bootloader v1.Bootloader
 }
 
-func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec) *InstallAction {
-	return &InstallAction{cfg: cfg, spec: spec}
+type InstallActionOption func(i *InstallAction) error
+
+func WithInstallBootloader(bootloader v1.Bootloader) func(i *InstallAction) error {
+	return func(i *InstallAction) error {
+		i.bootloader = bootloader
+		return nil
+	}
+}
+
+func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec, opts ...InstallActionOption) *InstallAction {
+	i := &InstallAction{cfg: cfg, spec: spec}
+
+	for _, o := range opts {
+		err := o(i)
+		if err != nil {
+			cfg.Logger.Errorf("error applying config option: %s", err.Error())
+			return nil
+		}
+	}
+
+	if i.bootloader == nil {
+		i.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubDisableBootEntry(i.spec.DisableBootEntry))
+	}
+
+	return i
 }
 
 func (i *InstallAction) installHook(hook string) error {
@@ -170,16 +195,10 @@ func (i InstallAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 	// Install grub
-	grub := utils.NewGrub(&i.cfg.Config)
-	err = grub.Install(
-		i.spec.Target,
+	err = i.bootloader.Install(
 		cnst.WorkingImgDir,
 		i.spec.Partitions.State.MountPoint,
-		i.spec.GrubConf,
-		i.spec.Firmware == v1.EFI,
 		i.spec.Partitions.State.FilesystemLabel,
-		i.spec.DisableBootEntry,
-		true,
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.InstallGrub)
@@ -201,7 +220,7 @@ func (i InstallAction) Run() (err error) {
 	}
 
 	grubVars := i.spec.GetGrubLabels()
-	err = grub.SetPersistentVariables(
+	err = i.bootloader.SetPersistentVariables(
 		filepath.Join(i.spec.Partitions.State.MountPoint, cnst.GrubOEMEnv),
 		grubVars,
 	)
@@ -211,7 +230,7 @@ func (i InstallAction) Run() (err error) {
 	}
 
 	// Installation rebrand (only grub for now)
-	err = e.SetDefaultGrubEntry(
+	err = i.bootloader.SetDefaultEntry(
 		i.spec.Partitions.State.MountPoint,
 		cnst.WorkingImgDir,
 		i.spec.GrubDefEntry,

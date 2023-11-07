@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package live_test
+package bootloader_test
 
 import (
 	"testing"
@@ -25,5 +25,5 @@ import (
 
 func TestTypes(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "live test suite")
+	RunSpecs(t, "booloader type test suite")
 }

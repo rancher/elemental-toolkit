@@ -26,7 +26,6 @@ import (
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 // NewInstallCmd returns a new instance of the install subcommand and appends it to
@@ -85,17 +84,10 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return install.Run()
 		},
 	}
-	firmType := newEnumFlag([]string{v1.EFI, v1.BIOS}, v1.EFI)
-	pTableType := newEnumFlag([]string{v1.GPT, v1.MSDOS}, v1.GPT)
-
 	root.AddCommand(c)
 	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
 	c.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
 	c.Flags().Bool("no-format", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
-
-	c.Flags().Var(firmType, "firmware", "Firmware to install for: 'efi' or 'bios'. (defaults to 'efi')")
-
-	c.Flags().Var(pTableType, "part-table", "Partition table type to use")
 
 	c.Flags().Bool("force", false, "Force install")
 	c.Flags().Bool("eject-cd", false, "Try to eject the cd on reboot, only valid if booting from iso")
