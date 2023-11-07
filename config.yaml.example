@@ -8,10 +8,6 @@ install:
   # config, flags or env variables.
   target: /dev/sda
 
-  # basic disk configs for partitioning ('efi|bios' and 'gpt|msdos')
-  firmware: efi
-  part-table: gpt
-
   # partitions setup
   # setting a partition size key to 0 means that the partition will take over the rest of the free space on the disk
   # after creating the rest of the partitions

@@ -171,19 +171,10 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 
 // NewInstallSpec returns an InstallSpec struct all based on defaults and basic host checks (e.g. EFI vs BIOS)
 func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
-	var firmware string
 	var recoveryImg, activeImg, passiveImg v1.Image
 
-	// Check if current host has EFI firmware
-	efiExists, _ := utils.Exists(cfg.Fs, constants.EfiDevice)
 	// Check the default ISO installation media is available
 	isoRootExists, _ := utils.Exists(cfg.Fs, constants.ISOBaseTree)
-
-	if efiExists {
-		firmware = v1.EFI
-	} else {
-		firmware = v1.BIOS
-	}
 
 	activeImg.Label = constants.ActiveLabel
 	activeImg.Size = constants.ImgSize
@@ -209,10 +200,9 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	}
 
 	return &v1.InstallSpec{
-		Firmware:   firmware,
+		Firmware:   v1.EFI,
 		PartTable:  v1.GPT,
 		Partitions: NewInstallElementalPartitions(),
-		GrubConf:   constants.GrubConf,
 		Active:     activeImg,
 		Recovery:   recoveryImg,
 		Passive:    passiveImg,
@@ -462,7 +452,6 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		Partitions:   ep,
 		Efi:          efiExists,
 		GrubDefEntry: constants.GrubDefEntry,
-		GrubConf:     constants.GrubConf,
 		Active: v1.Image{
 			Label:      aState.Label,
 			Size:       constants.ImgSize,
@@ -568,7 +557,7 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 
 	return &v1.DiskSpec{
 		Partitions: NewDiskElementalParitions(workdir),
-		GrubConf:   constants.GrubConf,
+		GrubConf:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		Active:     activeImg,
 		Recovery:   recoveryImg,
 		Passive:    passiveImg,

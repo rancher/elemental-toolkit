@@ -18,15 +18,11 @@ package constants
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 const (
-	GrubConf           = "/etc/cos/grub.cfg"
-	GrubOEMEnv         = "grub_oem_env"
-	GrubEnv            = "grubenv"
-	GrubDefEntry       = "Elemental"
 	BiosPartName       = "bios"
 	EfiLabel           = "COS_GRUB"
 	EfiPartName        = "efi"
@@ -68,6 +64,26 @@ const (
 	UsrLocalPath       = "/usr/local"
 	OEMPath            = "/oem"
 	ConfigDir          = "/etc/elemental"
+
+	// Kernel and initrd paths
+	KernelModulesDir = "/lib/modules"
+	KernelPath       = "/boot/vmlinuz"
+	InitrdPath       = "/boot/initrd"
+	ElementalInitrd  = "/boot/elemental.initrd"
+
+	// Bootloader constants
+	EntryEFIPath           = "/EFI/ELEMENTAL"
+	FallbackEFIPath        = "/EFI/BOOT"
+	BootEntryName          = "elemental-shim"
+	EfiImgX86              = "bootx64.efi"
+	EfiImgArm64            = "bootaa64.efi"
+	EfiImgRiscv64          = "bootriscv64.efi"
+	GrubCfg                = "grub.cfg"
+	GrubCfgPath            = "/etc/cos"
+	GrubOEMEnv             = "grub_oem_env"
+	GrubEnv                = "grubenv"
+	GrubDefEntry           = "Elemental"
+	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints of images and partitions
 	RecoveryDir     = "/run/cos/recovery"
@@ -140,12 +156,62 @@ const (
 	ArchAarch64 = "aarch64"
 	ArchRiscV64 = "riscv64"
 
-	Fedora = "fedora"
-	Ubuntu = "ubuntu"
-	Suse   = "suse"
-
 	Rsync = "rsync"
 )
+
+func GetKernelPatterns() []string {
+	return []string{
+		"/boot/uImage*",
+		"/boot/Image*",
+		"/boot/zImage*",
+		"/boot/vmlinuz*",
+		"/boot/image*",
+	}
+}
+
+func GetInitrdPatterns() []string {
+	return []string{
+		"/boot/elemental.initrd*",
+		"/boot/initrd*",
+		"/boot/initramfs*",
+	}
+}
+
+func GetShimFilePatterns() []string {
+	return []string{
+		filepath.Join(ElementalBootloaderBin, "shim*"),
+		"/usr/share/efi/*/shim.efi",
+		"/boot/efi/EFI/*/shim*.efi",
+	}
+}
+
+func GetGrubEFIFilePatterns() []string {
+	return []string{
+		filepath.Join(ElementalBootloaderBin, "grub*"),
+		"/usr/share/grub2/*-efi/grub.efi",
+		"/boot/efi/EFI/*/grub*.efi",
+	}
+}
+
+func GetMokMngrFilePatterns() []string {
+	return []string{
+		filepath.Join(ElementalBootloaderBin, "mm*"),
+		"/boot/efi/EFI/*/mm*.efi",
+		"/usr/share/efi/*/MokManager.efi",
+	}
+}
+
+func GetDefaultGrubModules() []string {
+	return []string{"loopback.mod", "squash4.mod", "xzio.mod"}
+}
+
+func GetDefaultGrubModulesPatterns() []string {
+	return []string{
+		"/boot/grub2/*-efi",
+		"/usr/share/grub*/*-efi",
+		"/usr/lib/grub*/*-efi",
+	}
+}
 
 func GetCloudInitPaths() []string {
 	return []string{"/system/oem", "/oem/", "/usr/local/cloud-config/"}
@@ -241,27 +307,16 @@ func GetDiskKeyEnvMap() map[string]string {
 }
 
 // GetBootPath returns path use to store the boot files
-func ISOLoaderPath() string {
-	var arch string
-
-	switch strings.ToLower(runtime.GOARCH) {
-	case ArchAmd64:
-		arch = Archx86
-	case ArchArm64:
-		arch = ArchAarch64
-	case ArchRiscV64:
-		arch = ArchRiscV64
-	}
-
-	return "/boot/" + arch + "/loader/"
+func ISOLoaderPath(arch string) string {
+	return filepath.Join("/boot", arch, "loader")
 }
 
 // ISOKernelPath returns path use to store the kernel
-func ISOKernelPath() string {
-	return ISOLoaderPath() + "linux"
+func ISOKernelPath(arch string) string {
+	return ISOLoaderPath(arch) + "linux"
 }
 
 // ISOInitrdPath returns path use to store the initramfs
-func ISOInitrdPath() string {
-	return ISOLoaderPath() + "initrd"
+func ISOInitrdPath(arch string) string {
+	return ISOLoaderPath(arch) + "initrd"
 }

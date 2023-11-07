@@ -521,7 +521,7 @@ func (e *Elemental) CopyCloudConfig(path string, cloudInit []string) (err error)
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
 func (e *Elemental) SelinuxRelabel(rootDir string, raiseError bool) error {
-	policyFile, err := utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, cnst.SELinuxTargetedPolicyPath), "policy.")
+	policyFile, err := utils.FindFile(e.config.Fs, rootDir, filepath.Join(cnst.SELinuxTargetedPolicyPath, "policy.*"))
 	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(e.config.Fs, contextFile)
 
@@ -604,54 +604,6 @@ func (e Elemental) UpdateSourceFormISO(iso string, activeImg *v1.Image) (func() 
 	activeImg.Source = v1.NewFileSrc(squashfsImg)
 
 	return cleanAll, nil
-}
-
-// SetDefaultGrubEntry Sets the default_meny_entry value in RunConfig.GrubOEMEnv file at in
-// State partition mountpoint. If there is not a custom value in the os-release file, we do nothing
-// As the grub config already has a sane default
-func (e Elemental) SetDefaultGrubEntry(partMountPoint string, imgMountPoint string, defaultEntry string) error {
-	var configEntry string
-	osRelease, err := utils.LoadEnvFile(e.config.Fs, filepath.Join(imgMountPoint, "etc", "os-release"))
-	e.config.Logger.Debugf("Looking for GRUB_ENTRY_NAME name in %s", filepath.Join(imgMountPoint, "etc", "os-release"))
-	if err != nil {
-		e.config.Logger.Warnf("Could not load os-release file: %v", err)
-	} else {
-		configEntry = osRelease["GRUB_ENTRY_NAME"]
-		// If its not empty override the defaultEntry and set the one set on the os-release file
-		if configEntry != "" {
-			defaultEntry = configEntry
-		}
-	}
-
-	if defaultEntry == "" {
-		e.config.Logger.Warn("No default entry name for grub, not setting a name")
-		return nil
-	}
-
-	e.config.Logger.Infof("Setting default grub entry to %s", defaultEntry)
-	grub := utils.NewGrub(e.config)
-	return grub.SetPersistentVariables(
-		filepath.Join(partMountPoint, cnst.GrubOEMEnv),
-		map[string]string{"default_menu_entry": defaultEntry},
-	)
-}
-
-// FindKernelInitrd finds for kernel and intird files inside the /boot directory of a given
-// root tree path. It assumes kernel and initrd files match certain file name prefixes.
-func (e Elemental) FindKernelInitrd(rootDir string) (kernel string, initrd string, err error) {
-	kernelNames := []string{"uImage", "Image", "zImage", "vmlinuz", "image"}
-	initrdNames := []string{"initrd", "initramfs"}
-	kernel, err = utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, "boot"), kernelNames...)
-	if err != nil {
-		e.config.Logger.Errorf("No Kernel file found")
-		return "", "", err
-	}
-	initrd, err = utils.FindFileWithPrefix(e.config.Fs, filepath.Join(rootDir, "boot"), initrdNames...)
-	if err != nil {
-		e.config.Logger.Errorf("No initrd file found")
-		return "", "", err
-	}
-	return kernel, initrd, nil
 }
 
 // DeactivateDevice deactivates unmounted the block devices present within the system.

@@ -28,6 +28,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	"github.com/rancher/elemental-toolkit/pkg/config"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/features"
 	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -60,13 +61,20 @@ var _ = Describe("Init Action", func() {
 	Describe("Init System", Label("init"), func() {
 		var spec *v1.InitSpec
 		var enabledUnits []string
-		var mkinitrdCalled bool
+		var errCmd, initrdFile string
+
 		BeforeEach(func() {
 			spec = config.NewInitSpec()
 			enabledUnits = []string{}
-			mkinitrdCalled = false
+			initrdFile = "/boot/elemental.initrd-6.4"
+
+			// Emulate running in a dockerenv
+			Expect(fs.WriteFile("/.dockerenv", []byte{}, 0644)).To(Succeed())
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == errCmd {
+					return []byte{}, fmt.Errorf("failed calling %s", cmd)
+				}
 				switch cmd {
 				case "systemctl":
 					if args[0] == "enable" {
@@ -74,24 +82,27 @@ var _ = Describe("Init Action", func() {
 					}
 					return []byte{}, nil
 				case "dracut":
-					mkinitrdCalled = true
+					_, err := fs.Create(initrdFile)
+					Expect(err).To(Succeed())
 					return []byte{}, nil
 				default:
 					return []byte{}, nil
 				}
 			}
+
+			// Create a kernel file and modules folder
+			Expect(utils.MkdirAll(fs, "/lib/modules/6.4", constants.DirPerm)).To(Succeed())
+			Expect(utils.MkdirAll(fs, "/boot", constants.DirPerm)).To(Succeed())
+			_, err := fs.Create("/boot/vmlinuz-6.4")
+			Expect(err).To(Succeed())
 		})
 		It("Shows an error if /.dockerenv does not exist", func() {
-			err := action.RunInit(cfg, spec)
-			Expect(err).ToNot(BeNil())
+			Expect(fs.Remove("/.dockerenv")).To(Succeed())
+			Expect(action.RunInit(cfg, spec)).ToNot(Succeed())
 			Expect(len(enabledUnits)).To(Equal(0))
 		})
 		It("Successfully runs init and install files", func() {
-			err := fs.WriteFile("/.dockerenv", []byte{}, 0644)
-			Expect(err).To(BeNil())
-
-			err = action.RunInit(cfg, spec)
-			Expect(err).To(BeNil())
+			Expect(action.RunInit(cfg, spec)).To(Succeed())
 
 			feats, err := features.Get([]string{features.FeatureElementalSetup})
 			Expect(err).To(BeNil())
@@ -104,7 +115,67 @@ var _ = Describe("Init Action", func() {
 				Expect(exists).To(BeTrue())
 			}
 
-			Expect(mkinitrdCalled).To(BeTrue())
+			exists, _ := utils.Exists(fs, "/boot/elemental.initrd-6.4")
+			Expect(exists).To(BeTrue())
+
+			// Check expected initrd and kernel files are created
+			exists, _ = utils.Exists(fs, "/boot/vmlinuz")
+			Expect(exists).To(BeTrue())
+			exists, _ = utils.Exists(fs, "/boot/initrd")
+			Expect(exists).To(BeTrue())
+		})
+		It("fails if requested feature does not exist", func() {
+			spec.Features = append(spec.Features, "nonexisting")
+			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
+			Expect(len(enabledUnits)).To(Equal(0))
+		})
+		It("fails if the kernel file is not there", func() {
+			Expect(fs.Remove("/boot/vmlinuz-6.4")).To(Succeed())
+			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
+
+			// Features where already enabled at that error stage
+			feats, err := features.Get([]string{features.FeatureElementalSetup})
+			Expect(err).To(BeNil())
+			Expect(len(feats)).To(Equal(1))
+			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+
+			for _, unit := range enabledUnits {
+				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				Expect(err).To(BeNil())
+				Expect(exists).To(BeTrue())
+			}
+		})
+		It("fails on dracut call", func() {
+			errCmd = "dracut"
+			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
+
+			// Features where already enabled at that error stage
+			feats, err := features.Get([]string{features.FeatureElementalSetup})
+			Expect(err).To(BeNil())
+			Expect(len(feats)).To(Equal(1))
+			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+
+			for _, unit := range enabledUnits {
+				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				Expect(err).To(BeNil())
+				Expect(exists).To(BeTrue())
+			}
+		})
+		It("fails if initrd is not found", func() {
+			initrdFile = "/boot/wrongInird"
+			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
+
+			// Features where already enabled at that error stage
+			feats, err := features.Get([]string{features.FeatureElementalSetup})
+			Expect(err).To(BeNil())
+			Expect(len(feats)).To(Equal(1))
+			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+
+			for _, unit := range enabledUnits {
+				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				Expect(err).To(BeNil())
+				Expect(exists).To(BeTrue())
+			}
 		})
 	})
 })
