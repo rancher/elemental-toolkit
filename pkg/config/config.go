@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/twpayne/go-vfs"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -61,7 +60,7 @@ func WithSyscall(syscall v1.SyscallInterface) func(r *v1.Config) error {
 	}
 }
 
-func WithMounter(mounter mount.Interface) func(r *v1.Config) error {
+func WithMounter(mounter v1.Mounter) func(r *v1.Config) error {
 	return func(r *v1.Config) error {
 		r.Mounter = mounter
 		return nil
@@ -155,7 +154,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 	}
 
 	if c.Mounter == nil {
-		c.Mounter = mount.New(constants.MountBinary)
+		c.Mounter = v1.NewMounter(constants.MountBinary)
 	}
 
 	return c

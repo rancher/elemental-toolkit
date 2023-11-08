@@ -55,7 +55,7 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
-	var mounter *v1mock.ErrorMounter
+	var mounter *v1mock.FakeMounter
 	var fs vfs.FS
 	var memLog *bytes.Buffer
 

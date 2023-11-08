@@ -55,7 +55,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	var logger v1.Logger
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
-	var mounter *v1mock.ErrorMounter
+	var mounter *v1mock.FakeMounter
 	var extractor *v1mock.FakeImageExtractor
 	var fs vfs.FS
 	var cleanup func()
@@ -63,7 +63,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewErrorMounter()
+		mounter = v1mock.NewFakeMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
 		realRunner = &v1.RealRunner{Logger: logger}

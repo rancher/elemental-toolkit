@@ -31,7 +31,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/internal/version"
 	"github.com/rancher/elemental-toolkit/pkg/config"
@@ -98,7 +97,7 @@ func bindGivenFlags(vp *viper.Viper, flagSet *pflag.FlagSet) {
 	}
 }
 
-func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Interface) (*v1.BuildConfig, error) {
+func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter v1.Mounter) (*v1.BuildConfig, error) {
 	logger := v1.NewLogger()
 
 	cfg := config.NewBuildConfig(
@@ -144,7 +143,7 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter mount.Inter
 	return cfg, err
 }
 
-func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interface) (*v1.RunConfig, error) {
+func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter v1.Mounter) (*v1.RunConfig, error) {
 	cfg := config.NewRunConfig(
 		config.WithLogger(v1.NewLogger()),
 		config.WithMounter(mounter),

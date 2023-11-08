@@ -40,7 +40,7 @@ var _ = Describe("Reset action tests", func() {
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS
 	var logger v1.Logger
-	var mounter *v1mock.ErrorMounter
+	var mounter *v1mock.FakeMounter
 	var syscall *v1mock.FakeSyscall
 	var client *v1mock.FakeHTTPClient
 	var cloudInit *v1mock.FakeCloudInitRunner
@@ -53,7 +53,7 @@ var _ = Describe("Reset action tests", func() {
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewErrorMounter()
+		mounter = v1mock.NewFakeMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)

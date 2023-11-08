@@ -21,7 +21,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -40,7 +39,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v1.NewDummyMounter())
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
