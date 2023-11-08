@@ -38,7 +38,7 @@ func NewMkfsCall(dev string, fileSystem string, label string, runner v1.Runner, 
 func (mkfs MkfsCall) buildOptions() ([]string, error) {
 	opts := []string{}
 
-	linuxFS, _ := regexp.MatchString("ext[2-4]|xfs", mkfs.fileSystem)
+	linuxFS, _ := regexp.MatchString("ext[2-4]|xfs|btrfs", mkfs.fileSystem)
 	fatFS, _ := regexp.MatchString("fat|vfat", mkfs.fileSystem)
 
 	switch {

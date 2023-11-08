@@ -49,3 +49,10 @@ func WithGdisk() func(d *Disk) error {
 		return nil
 	}
 }
+
+func WithMounter(mounter v1.Mounter) func(d *Disk) error {
+	return func(d *Disk) error {
+		d.mounter = mounter
+		return nil
+	}
+}

@@ -61,8 +61,10 @@ func TestElementalSuite(t *testing.T) {
 
 var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func() {
 	var runner *mocks.FakeRunner
+	var mounter *mocks.FakeMounter
 	BeforeEach(func() {
 		runner = mocks.NewFakeRunner()
+		mounter = mocks.NewFakeMounter()
 	})
 	Describe("Gdisk tests", Label("sgdisk"), func() {
 		var gc part.Partitioner
@@ -347,7 +349,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Fails for unsupported filesystem", func() {
-			mkfs := part.NewMkfsCall("/dev/device", "btrfs", "OEM", runner)
+			mkfs := part.NewMkfsCall("/dev/device", "zfs", "OEM", runner)
 			_, err := mkfs.Apply()
 			Expect(err).NotTo(BeNil())
 		})
@@ -367,7 +369,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			_, err = fs.Create("/dev/device")
 			Expect(err).To(BeNil())
 
-			dev = part.NewDisk("/dev/device", part.WithRunner(runner), part.WithFS(fs))
+			dev = part.NewDisk("/dev/device", part.WithRunner(runner), part.WithFS(fs), part.WithMounter(mounter))
 			printCmd = []string{
 				"parted", "--script", "--machine", "--", "/dev/device",
 				"unit", "s", "print",
@@ -538,14 +540,30 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				It("Expands xfs partition", func() {
 					_, err := fs.Create("/dev/device4")
 					Expect(err).To(BeNil())
-					xfsCmds := [][]string{
-						{"mount", "-t", "xfs"}, {"xfs_growfs"}, {"umount"},
-					}
+					xfsCmds := [][]string{{"xfs_growfs"}}
 					ghwTest := mocks.GhwMock{}
 					disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 						{
 							Name: "device4",
 							Type: "xfs",
+						},
+					}}
+					ghwTest.AddDisk(disk)
+					ghwTest.CreateDevices()
+					defer ghwTest.Clean()
+					_, err = dev.ExpandLastPartition(0)
+					Expect(err).To(BeNil())
+					Expect(runner.CmdsMatch(append(cmds, xfsCmds...))).To(BeNil())
+				})
+				It("Expands btrfs partition", func() {
+					_, err := fs.Create("/dev/device4")
+					Expect(err).To(BeNil())
+					xfsCmds := [][]string{{"btrfs", "filesystem", "resize"}}
+					ghwTest := mocks.GhwMock{}
+					disk := block.Disk{Name: "device", Partitions: []*block.Partition{
+						{
+							Name: "device4",
+							Type: "btrfs",
 						},
 					}}
 					ghwTest.AddDisk(disk)
