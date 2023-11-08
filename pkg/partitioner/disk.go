@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ type Disk struct {
 	runner      v1.Runner
 	fs          v1.FS
 	logger      v1.Logger
+	mounter     v1.Mounter
 	partBackend string
 }
 
@@ -73,6 +75,11 @@ func NewDisk(device string, opts ...DiskOptions) *Disk {
 
 	if dev.logger == nil {
 		dev.logger = v1.NewLogger()
+	}
+
+	if dev.mounter == nil {
+		path, _ := exec.LookPath("mount")
+		dev.mounter = v1.NewMounter(path)
 	}
 
 	return dev
@@ -383,11 +390,11 @@ func (dev *Disk) ExpandLastPartition(size uint) (string, error) {
 	return dev.expandFilesystem(pDev)
 }
 
-func (dev Disk) expandFilesystem(device string) (string, error) {
+func (dev Disk) expandFilesystem(device string) (outStr string, err error) {
 	var out []byte
-	var err error
+	var tmpDir, fs string
 
-	fs, err := utils.GetPartitionFS(device)
+	fs, err = utils.GetPartitionFS(device)
 	if err != nil {
 		return fs, err
 	}
@@ -403,9 +410,9 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 		if err != nil {
 			return string(out), err
 		}
-	case "xfs":
-		// to grow an xfs fs it needs to be mounted :/
-		tmpDir, err := utils.TempDir(dev.fs, "", "partitioner")
+	case "xfs", "btrfs":
+		// to grow an xfs or btrfs fs it needs to be mounted :/
+		tmpDir, err = utils.TempDir(dev.fs, "", "partitioner")
 		defer func(fs v1.FS, path string) {
 			_ = fs.RemoveAll(path)
 		}(dev.fs, tmpDir)
@@ -413,22 +420,26 @@ func (dev Disk) expandFilesystem(device string) (string, error) {
 		if err != nil {
 			return string(out), err
 		}
-		out, err = dev.runner.Run("mount", "-t", "xfs", device, tmpDir)
+		err = dev.mounter.Mount(device, tmpDir, "auto", []string{})
 		if err != nil {
-			return string(out), err
+			return "", err
 		}
-		_, err = dev.runner.Run("xfs_growfs", tmpDir)
-		if err != nil {
-			// If we error out, try to umount the dir to not leave it hanging
-			out, err2 := dev.runner.Run("umount", tmpDir)
-			if err2 != nil {
-				return string(out), err2
+		defer func() {
+			err2 := dev.mounter.Unmount(tmpDir)
+			if err2 != nil && err == nil {
+				err = err2
 			}
-			return string(out), err
-		}
-		out, err = dev.runner.Run("umount", tmpDir)
-		if err != nil {
-			return string(out), err
+		}()
+		if strings.TrimSpace(fs) == "xfs" {
+			out, err = dev.runner.Run("xfs_growfs", tmpDir)
+			if err != nil {
+				return string(out), err
+			}
+		} else {
+			out, err = dev.runner.Run("btrfs", "filesystem", "resize", "max", tmpDir)
+			if err != nil {
+				return string(out), err
+			}
 		}
 	default:
 		return "", fmt.Errorf("could not find filesystem for %s, not resizing the filesystem", device)
