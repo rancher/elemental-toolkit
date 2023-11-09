@@ -1,17 +1,17 @@
 # run `make build` to build local/elemental-toolkit image
 ARG TOOLKIT_REPO
 ARG VERSION
-FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
+FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
 
 # OS base image of our choice
-FROM opensuse/leap:15.5 as OS
+FROM opensuse/leap:15.5 AS OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
 
 # install kernel, systemd, dracut, grub2 and other required tools
 RUN ARCH=$(uname -m); \
-    if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi; \
+    [[ "${ARCH}" == "aarch64" ]] && ARCH="arm64"; \
     zypper --non-interactive install --no-recommends -- \
       kernel-default \
       device-mapper \
@@ -42,6 +42,7 @@ RUN ARCH=$(uname -m); \
       less \
       sudo \
       curl \
+      iproute2 \
       sed
 
 # Just add the elemental cli
@@ -55,7 +56,7 @@ RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
 RUN elemental init -f && \
-    kernel=$(ls /boot/Image-* | head -n1) && \
+    kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \
     >/var/log/lastlog && \
@@ -70,5 +71,3 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
 
 # Good for validation after the build
 CMD /bin/bash
-
-

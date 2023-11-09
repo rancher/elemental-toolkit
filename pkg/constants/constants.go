@@ -19,6 +19,7 @@ package constants
 import (
 	"os"
 	"runtime"
+	"strings"
 )
 
 const (
@@ -113,9 +114,6 @@ const (
 	SELinuxTargetedContextFile = SELinuxTargetedPath + "/contexts/files/file_contexts"
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
 
-	// Kernel and initrd paths are arbitrary and coupled to grub.cfg
-	ISOKernelPath    = "/boot/x86_64/loader/linux"
-	ISOInitrdPath    = "/boot/x86_64/loader/initrd"
 	ISORootFile      = "rootfs.squashfs"
 	ISOEFIImg        = "uefi.img"
 	ISOLabel         = "COS_LIVE"
@@ -140,6 +138,7 @@ const (
 	Archx86     = "x86_64"
 	ArchArm64   = "arm64"
 	ArchAarch64 = "aarch64"
+	ArchRiscV64 = "riscv64"
 
 	Fedora = "fedora"
 	Ubuntu = "ubuntu"
@@ -239,4 +238,30 @@ func GetISOKeyEnvMap() map[string]string {
 func GetDiskKeyEnvMap() map[string]string {
 	// None for the time being
 	return map[string]string{}
+}
+
+// GetBootPath returns path use to store the boot files
+func ISOLoaderPath() string {
+	var arch string
+
+	switch strings.ToLower(runtime.GOARCH) {
+	case ArchAmd64:
+		arch = Archx86
+	case ArchArm64:
+		arch = ArchAarch64
+	case ArchRiscV64:
+		arch = ArchRiscV64
+	}
+
+	return "/boot/" + arch + "/loader/"
+}
+
+// ISOKernelPath returns path use to store the kernel
+func ISOKernelPath() string {
+	return ISOLoaderPath() + "linux"
+}
+
+// ISOInitrdPath returns path use to store the initramfs
+func ISOInitrdPath() string {
+	return ISOLoaderPath() + "initrd"
 }
