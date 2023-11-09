@@ -12,16 +12,24 @@ PACKER_TARGET?=qemu.elemental-${ARCH}
 REPO?=local/elemental-$(FLAVOR)
 TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
+BASE_OS_IMAGE?=opensuse/leap
+BASE_OS_VERSION?=15.5
 
-GIT_COMMIT ?= $(shell git rev-parse HEAD)
-GIT_COMMIT_SHORT ?= $(shell git rev-parse --short HEAD)
-GIT_TAG ?= $(shell git describe --candidates=50 --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
-VERSION ?= ${GIT_TAG}-g${GIT_COMMIT_SHORT}
+GIT_COMMIT?=$(shell git rev-parse HEAD)
+GIT_COMMIT_SHORT?=$(shell git rev-parse --short HEAD)
+GIT_TAG?=$(shell git describe --candidates=50 --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
+VERSION?=${GIT_TAG}-g${GIT_COMMIT_SHORT}
 
-PKG        := ./cmd ./pkg/...
-LDFLAGS    := -w -s
-LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.version=${GIT_TAG}"
-LDFLAGS += -X "github.com/rancher/elemental-toolkit/internal/version.gitCommit=${GIT_COMMIT}"
+PKG:=./cmd ./pkg/...
+LDFLAGS:=-w -s
+LDFLAGS+=-X "github.com/rancher/elemental-toolkit/internal/version.version=${GIT_TAG}"
+LDFLAGS+=-X "github.com/rancher/elemental-toolkit/internal/version.gitCommit=${GIT_COMMIT}"
+
+# For RISC-V 64bit support
+ifeq ($(PLATFORM),linux/riscv64)
+BASE_OS_IMAGE=registry.opensuse.org/opensuse/factory/riscv/images/opensuse/tumbleweed
+BASE_OS_VERSION=latest
+endif
 
 # default target
 .PHONY: all
@@ -35,7 +43,12 @@ include make/Makefile.test
 
 .PHONY: build
 build:
-	$(DOCKER) build --platform ${PLATFORM} ${DOCKER_ARGS} --build-arg ELEMENTAL_VERSION=${GIT_TAG} --build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} --target elemental -t ${TOOLKIT_REPO}:${VERSION} .
+	$(DOCKER) build --platform $(PLATFORM) ${DOCKER_ARGS} \
+			--build-arg ELEMENTAL_VERSION=${GIT_TAG} \
+			--build-arg ELEMENTAL_COMMIT=${GIT_COMMIT} \
+			--build-arg BASE_OS_IMAGE=$(BASE_OS_IMAGE) \
+			--build-arg BASE_OS_VERSION=$(BASE_OS_VERSION) \
+			--target elemental-toolkit -t $(TOOLKIT_REPO):$(VERSION) .
 
 .PHONY: push-toolkit
 push-toolkit:
@@ -47,7 +60,11 @@ build-cli:
 
 .PHONY: build-os
 build-os: build
-	$(DOCKER) build examples/$(FLAVOR) --platform ${PLATFORM} ${DOCKER_ARGS} --build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) --build-arg VERSION=$(VERSION) --build-arg REPO=$(REPO) -t $(REPO):$(VERSION)
+	$(DOCKER) build --platform ${PLATFORM} ${DOCKER_ARGS} \
+			--build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) \
+			--build-arg VERSION=$(VERSION) \
+			--build-arg REPO=$(REPO) -t $(REPO):$(VERSION) \
+			examples/$(FLAVOR)
 
 .PHONY: push-os
 push-os:
@@ -61,10 +78,6 @@ build-iso: build-os
 		--entrypoint /usr/bin/elemental ${TOOLKIT_REPO}:${VERSION} --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
 		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
 
-.PHONY: clean-iso
-clean-iso: build-os
-	$(DOCKER) run --rm -v $(ROOT_DIR)/build:/build --entrypoint /bin/bash $(REPO):$(VERSION) -c "rm -v /build/*.iso /build/*.iso.sha256 || true"
-
 .PHONY: build-disk
 build-disk: build-os
 	@echo Building ${ARCH} disk
@@ -77,9 +90,9 @@ build-disk: build-os
 	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).img $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
-.PHONY: clean-disk
-clean-disk:
-	rm $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).{raw,img,qcow2}
+.PHONY: clean
+clean:
+	rm -fv $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).{raw,img,qcow2,iso,iso.sha256}
 
 .PHONY: vet
 vet:

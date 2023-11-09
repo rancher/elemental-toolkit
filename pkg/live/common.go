@@ -27,45 +27,43 @@ const (
 	efiBootPath    = "/EFI/BOOT"
 	efiImgX86      = "bootx64.efi"
 	efiImgArm64    = "bootaa64.efi"
+	efiImgRiscV64  = "bootriscv64.efi"
 	grubCfg        = "grub.cfg"
 	grubPrefixDir  = "/boot/grub2"
 	isoBootCatalog = "/boot/boot.catalog"
+)
 
+var (
 	// TODO document any custom BIOS bootloader must match this setup as these are not configurable
 	// and coupled with the xorriso call
-	IsoLoaderPath = "/boot/x86_64/loader"
-	isoHybridMBR  = IsoLoaderPath + "/boot_hybrid.img"
-	isoBootFile   = IsoLoaderPath + "/eltorito.img"
+	isoHybridMBR = constants.ISOLoaderPath() + "/boot_hybrid.img"
+	isoBootFile  = constants.ISOLoaderPath() + "/eltorito.img"
 
 	//TODO use some identifer known to be unique
-	grubEfiCfg = "search --no-floppy --file --set=root " + constants.ISOKernelPath +
+	grubEfiCfg = "search --no-floppy --file --set=root " + constants.ISOKernelPath() +
 		"\nset prefix=($root)" + grubPrefixDir +
 		"\nconfigfile $prefix/" + grubCfg
 
 	// TODO not convinced having such a config here is the best idea
-	grubCfgTemplate = "search --no-floppy --file --set=root " + constants.ISOKernelPath + "\n" +
+	grubCfgTemplate = "search --no-floppy --file --set=root " + constants.ISOKernelPath() + "\n" +
 		`set default=0
 	set timeout=10
 	set timeout_style=menu
 	set linux=linux
 	set initrd=initrd
-	if [ "${grub_cpu}" = "x86_64" -o "${grub_cpu}" = "i386" -o "${grub_cpu}" = "arm64" ];then
-		if [ "${grub_platform}" = "efi" ]; then
-			if [ "${grub_cpu}" != "arm64" ]; then
-				set linux=linuxefi
-				set initrd=initrdefi
-			fi
-		fi
-	fi
 	if [ "${grub_platform}" = "efi" ]; then
+		if [ "${grub_cpu}" != "arm64" -a "${grub_cpu}" != "riscv64" ]; then
+			set linux=linuxefi
+			set initrd=initrdefi
+		fi
 		echo "Please press 't' to show the boot menu on this console"
 	fi
 
 	menuentry "%s" --class os --unrestricted {
 		echo Loading kernel...
-		$linux ($root)` + constants.ISOKernelPath + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
+		$linux ($root)` + constants.ISOKernelPath() + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
 		echo Loading initrd...
-		$initrd ($root)` + constants.ISOInitrdPath + `
+		$initrd ($root)` + constants.ISOInitrdPath() + `
 	}                                                                               
 																					
 	if [ "${grub_platform}" = "efi" ]; then                                         

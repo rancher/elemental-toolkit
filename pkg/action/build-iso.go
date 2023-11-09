@@ -175,19 +175,19 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
 		return elementalError.NewFromError(err, elementalError.StatFile)
 	}
-	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, live.IsoLoaderPath), constants.DirPerm)
+	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, constants.ISOLoaderPath()), constants.DirPerm)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 	//TODO document boot/kernel and boot/initrd expectation in bootloader config
 	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
-	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath))
+	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath()))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
 
 	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
-	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath))
+	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath()))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}

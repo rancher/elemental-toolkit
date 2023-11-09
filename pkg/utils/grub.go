@@ -201,8 +201,15 @@ func (g Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) (string, 
 			shimName = "shimx64.efi.signed"
 		}
 	case cnst.Suse:
-		shimFiles = []string{"shim.efi", "MokManager.efi", "grub.efi"}
-		shimName = "shim.efi"
+		switch g.config.Platform.Arch {
+		case cnst.ArchRiscV64:
+			// No shim/MOK in RISC-V
+			shimFiles = []string{"grub.efi"}
+			shimName = "grub.efi"
+		default:
+			shimFiles = []string{"shim.efi", "MokManager.efi", "grub.efi"}
+			shimName = "shim.efi"
+		}
 	}
 
 	for _, f := range shimFiles {
@@ -240,10 +247,14 @@ func (g Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) (string, 
 
 	// Rename the shimName to the fallback name so the system boots from fallback. This means that we do not create
 	// any bootloader entries, so our recent installation has the lower priority if something else is on the bootloader
-	writeShim := "bootx64.efi"
-
-	if g.config.Platform.Arch == cnst.ArchArm64 {
+	var writeShim string
+	switch g.config.Platform.Arch {
+	case cnst.ArchArm64:
 		writeShim = "bootaa64.efi"
+	case cnst.ArchRiscV64:
+		writeShim = "bootriscv64.efi"
+	default:
+		writeShim = "bootx64.efi"
 	}
 
 	err = CopyFile(g.config.Fs, filepath.Join(efiDir, fallbackEFIPath, shimName), filepath.Join(efiDir, fallbackEFIPath, writeShim))

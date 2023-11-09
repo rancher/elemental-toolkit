@@ -38,12 +38,14 @@ func NewGreenLiveBootLoader(cfg *v1.BuildConfig, spec *v1.LiveISO) *GreenLiveBoo
 
 func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 	const (
-		grubEfiImageX86   = "/usr/share/grub2/x86_64-efi/grub.efi"
-		grubEfiImageArm64 = "/usr/share/grub2/arm64-efi/grub.efi"
-		shimBasePathX86   = "/usr/share/efi/x86_64"
-		shimBasePathArm64 = "/usr/share/efi/aarch64"
-		shimImg           = "shim.efi"
-		mokManager        = "MokManager.efi"
+		grubEfiImageX86     = "/usr/share/grub2/x86_64-efi/grub.efi"
+		grubEfiImageArm64   = "/usr/share/grub2/arm64-efi/grub.efi"
+		grubEfiImageRiscV64 = "/usr/share/grub2/riscv64-efi/grub.efi"
+		shimBasePathX86     = "/usr/share/efi/x86_64"
+		shimBasePathArm64   = "/usr/share/efi/aarch64"
+		shimBasePathRiscV64 = "/usr/share/efi/riscv64"
+		shimImg             = "shim.efi"
+		mokManager          = "MokManager.efi"
 	)
 
 	err := utils.MkdirAll(g.buildCfg.Fs, filepath.Join(uefiDir, efiBootPath), constants.DirPerm)
@@ -68,6 +70,15 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 			filepath.Join(rootDir, grubEfiImageArm64),
 			efiImgArm64,
 		)
+	case constants.ArchRiscV64:
+		// No shim/MOK in RISC-V
+		err = g.copyEfiFiles(
+			uefiDir,
+			filepath.Join(rootDir, grubEfiImageRiscV64),
+			"",
+			filepath.Join(rootDir, grubEfiImageRiscV64),
+			efiImgRiscV64,
+		)
 	default:
 		err = fmt.Errorf("Not supported architecture: %v", g.buildCfg.Platform.Arch)
 	}
@@ -79,15 +90,25 @@ func (g *GreenLiveBootLoader) PrepareEFI(rootDir, uefiDir string) error {
 }
 
 func (g *GreenLiveBootLoader) copyEfiFiles(uefiDir, shimImg, mokManager, grubImg, efiImg string) error {
-	err := utils.CopyFile(g.buildCfg.Fs, shimImg, filepath.Join(uefiDir, efiBootPath, efiImg))
-	if err != nil {
-		return err
+	var err error
+
+	// No shim in some architecture
+	if shimImg != "" {
+		err = utils.CopyFile(g.buildCfg.Fs, shimImg, filepath.Join(uefiDir, efiBootPath, efiImg))
+		if err != nil {
+			return err
+		}
 	}
-	err = utils.CopyFile(g.buildCfg.Fs, grubImg, filepath.Join(uefiDir, efiBootPath))
-	if err != nil {
-		return err
+
+	// No MOK in some architecture
+	if mokManager != "" {
+		err = utils.CopyFile(g.buildCfg.Fs, mokManager, filepath.Join(uefiDir, efiBootPath))
+		if err != nil {
+			return err
+		}
 	}
-	return utils.CopyFile(g.buildCfg.Fs, mokManager, filepath.Join(uefiDir, efiBootPath))
+
+	return utils.CopyFile(g.buildCfg.Fs, grubImg, filepath.Join(uefiDir, efiBootPath))
 }
 
 func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
@@ -112,7 +133,7 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 		}
 
 		// Create loaders folder
-		loaderDir := filepath.Join(imageDir, IsoLoaderPath)
+		loaderDir := filepath.Join(imageDir, constants.ISOLoaderPath())
 		err = utils.MkdirAll(g.buildCfg.Fs, loaderDir, constants.DirPerm)
 		if err != nil {
 			return err
@@ -124,7 +145,7 @@ func (g *GreenLiveBootLoader) PrepareISO(rootDir, imageDir string) error {
 			err = utils.CopyFile(
 				g.buildCfg.Fs,
 				filepath.Join(rootDir, f),
-				filepath.Join(imageDir, IsoLoaderPath),
+				filepath.Join(imageDir, constants.ISOLoaderPath()),
 			)
 			if err != nil {
 				return err

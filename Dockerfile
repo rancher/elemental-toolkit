@@ -1,7 +1,8 @@
+ARG BASE_OS_IMAGE=opensuse/leap
+ARG BASE_OS_VERSION=15.5
 ARG GO_VERSION=1.20
-ARG LEAP_VERSION=15.5
 
-FROM golang:${GO_VERSION}-alpine as elemental-bin
+FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine AS elemental-bin
 
 ENV CGO_ENABLED=0
 WORKDIR /src/
@@ -21,25 +22,25 @@ ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
-RUN go build \
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -ldflags "-w -s \
-    -X github.com/rancher/elemental-toolkit/internal/version.version=$ELEMENTAL_VERSION \
-    -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=$ELEMENTAL_COMMIT" \
+    -X github.com/rancher/elemental-toolkit/internal/version.version=${ELEMENTAL_VERSION} \
+    -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=${ELEMENTAL_COMMIT}" \
     -o /usr/bin/elemental
 
-FROM opensuse/leap:$LEAP_VERSION AS elemental
+FROM ${BASE_OS_IMAGE}:${BASE_OS_VERSION} AS elemental-toolkit
 # This helps invalidate the cache on each build so the following steps are really run again getting the latest packages
 # versions, as long as the elemental commit has changed
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
 
 RUN ARCH=$(uname -m); \
-    if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi; \
+    [[ "${ARCH}" == "aarch64" ]] && ARCH="arm64"; \
+    zypper --non-interactive removerepo repo-update || true; \
     zypper install -y --no-recommends xfsprogs \
         parted \
         util-linux-systemd \
         e2fsprogs \
-        util-linux \
         udev \
         rsync \
         grub2 \
@@ -52,10 +53,12 @@ RUN ARCH=$(uname -m); \
         gptfdisk \
         lvm2
 
+# Copy the built CLI
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
 
 # Fix for blkid only using udev on opensuse
 RUN echo "EVALUATE=scan" >> /etc/blkid.conf
+
 ENTRYPOINT ["/usr/bin/elemental"]
 
 # Add to /system/oem folder so install/upgrade/reset hooks will run when running this container.

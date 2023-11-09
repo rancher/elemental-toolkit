@@ -4,14 +4,15 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/rancher/elemental-cli/internal/version.version={{.Tag}}
-      - -X github.com/rancher/elemental-cli/internal/version.gitCommit={{.Commit}}
+      - -X github.com/rancher/elemental-toolkit/internal/version.version={{.Tag}}
+      - -X github.com/rancher/elemental-toolkit/internal/version.gitCommit={{.Commit}}
     goos:
       - linux
     goarch:
       - amd64
       - arm
       - arm64
+      - riscv64
     goarm:
       - 6
       - 7
