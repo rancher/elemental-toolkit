@@ -220,15 +220,8 @@ func NewInitSpec() *v1.InitSpec {
 
 func NewMountSpec() *v1.MountSpec {
 	return &v1.MountSpec{
-		ReadKernelCmdline: true,
-		Sysroot:           "/sysroot",
-		WriteFstab:        true,
-		RunRootfsService:  true,
-		RunFsck:           true,
-		Image: &v1.Image{
-			FS:         constants.LinuxImgFs,
-			MountPoint: "/sysroot",
-		},
+		Sysroot:    "/sysroot",
+		WriteFstab: true,
 		Partitions: v1.ElementalPartitions{
 			State: &v1.Partition{
 				FilesystemLabel: constants.StateLabel,

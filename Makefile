@@ -12,7 +12,7 @@ PACKER_TARGET?=qemu.elemental-${ARCH}
 REPO?=local/elemental-$(FLAVOR)
 TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
-BASE_OS_IMAGE?=opensuse/leap
+BASE_OS_IMAGE?=registry.opensuse.org/opensuse/leap
 BASE_OS_VERSION?=15.5
 DOCKER_SOCK?=/var/run/docker.sock
 

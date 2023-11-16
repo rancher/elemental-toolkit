@@ -38,6 +38,7 @@ const (
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
 	FeatureElementalRootfs       = "elemental-rootfs"
+	FeatureElementalSysroot      = "elemental-sysroot"
 	FeatureGrubConfig            = "grub-config"
 	FeatureGrubDefaultBootargs   = "grub-default-bootargs"
 	FeatureElementalSetup        = "elemental-setup"
@@ -141,16 +142,13 @@ func Get(names []string) ([]*Feature, error) {
 
 			features = append(features, New(name, nil))
 		case FeatureElementalRootfs:
-			units := []*systemd.Unit{
-				systemd.NewUnit("elemental-setup-reconcile.service"),
-				systemd.NewUnit("elemental-setup-reconcile.timer"),
-				systemd.NewUnit("elemental-setup-boot.service"),
-				systemd.NewUnit("elemental-setup-rootfs.service"),
-				systemd.NewUnit("elemental-setup-network.service"),
-				systemd.NewUnit("elemental-setup-initramfs.service"),
-				systemd.NewUnit("elemental-setup-fs.service"),
+			if slices.Contains(names, FeatureImmutableRootfs) {
+				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureElementalRootfs, FeatureImmutableRootfs)
 			}
-			features = append(features, New(name, units))
+
+			features = append(features, New(name, nil))
+		case FeatureElementalSysroot:
+			features = append(features, New(name, nil))
 		case FeatureDracutConfig:
 			features = append(features, New(name, nil))
 		case FeatureGrubConfig:
@@ -158,10 +156,6 @@ func Get(names []string) ([]*Feature, error) {
 		case FeatureGrubDefaultBootargs:
 			features = append(features, New(name, nil))
 		case FeatureElementalSetup:
-			if slices.Contains(names, FeatureElementalRootfs) {
-				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureElementalSetup, FeatureElementalRootfs)
-			}
-
 			units := []*systemd.Unit{
 				systemd.NewUnit("elemental-setup-reconcile.service"),
 				systemd.NewUnit("elemental-setup-reconcile.timer"),

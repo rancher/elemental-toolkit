@@ -1,17 +1,13 @@
 # run `make build` to build local/elemental-toolkit image
 ARG TOOLKIT_REPO
 ARG VERSION
-ARG OS_IMAGE=opensuse/tumbleweed
+ARG OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
 ARG OS_VERSION=latest
 
 FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
 
 # OS base image of our choice
-<<<<<<< HEAD
 FROM ${OS_IMAGE}:${OS_VERSION} AS OS
-=======
-FROM registry.opensuse.org/opensuse/tumbleweed:latest as OS
->>>>>>> f1600613 (Add mount command)
 ARG REPO
 ARG VERSION
 ENV REPO=${REPO}
@@ -83,7 +79,7 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental init -f elemental-rootfs,grub-config,grub-default-bootargs,dracut-config,cloud-config-defaults,cloud-config-essentials && \
+RUN elemental init -f elemental-rootfs,elemental-sysroot,elemental-setup,grub-config,grub-default-bootargs,dracut-config,cloud-config-defaults,cloud-config-essentials && \
     kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \

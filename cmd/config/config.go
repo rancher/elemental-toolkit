@@ -282,11 +282,6 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 }
 
 func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
-	if !mount.ReadKernelCmdline {
-		r.Logger.Debug("Skipping reading kernel cmdline")
-		return nil
-	}
-
 	cmdline, err := r.Config.Fs.ReadFile("/proc/cmdline")
 	if err != nil {
 		r.Logger.Errorf("Error reading /proc/cmdline: %s", err.Error())

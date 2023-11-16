@@ -1,7 +1,7 @@
 [Unit]
 Description=Elemental system rootfs mounts
 DefaultDependencies=no
-After=initrd-root-fs.target elemental-setup-rootfs.service
+After=initrd-root-fs.target
 Requires=initrd-root-fs.target
 Before=initrd-fs.target
 Conflicts=initrd-switch-root.target

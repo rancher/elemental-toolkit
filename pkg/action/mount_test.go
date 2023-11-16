@@ -65,9 +65,6 @@ var _ = Describe("Mount Action", func() {
 		It("Writes a simple fstab", func() {
 			spec := &v1.MountSpec{
 				WriteFstab: true,
-				Image: &v1.Image{
-					LoopDevice: "/dev/loop0",
-				},
 				Overlay: v1.OverlayMounts{
 					Size: "30%",
 				},
@@ -78,56 +75,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			Expect(string(fstab)).To(Equal("/dev/loop0\t/\tauto\tro\t0\t0\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
-		})
-	})
-	Describe("Mounts image", Label("mount", "image"), func() {
-		var mountedImage string
-		var fsckedDevices []string
-
-		BeforeEach(func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				switch cmd {
-				case "systemd-fsck":
-					fsckedDevices = append(fsckedDevices, args[0])
-					return []byte{}, nil
-				case "losetup":
-					mountedImage = args[2]
-					return []byte{}, nil
-				default:
-					return []byte{}, nil
-				}
-			}
-		})
-		It("Mounts the specified image to it's mountpoint", func() {
-			spec := &v1.MountSpec{
-				Image: &v1.Image{
-					MountPoint: "/recovery",
-					File:       constants.RecoveryImgPath,
-				},
-				Overlay: v1.OverlayMounts{Type: constants.Tmpfs},
-			}
-
-			err := action.RunMount(cfg, spec)
-			Expect(err).To(BeNil())
-			Expect(mountedImage).To(Equal(constants.RecoveryImgPath))
-
-			Expect(len(fsckedDevices)).To(Equal(0))
-		})
-		It("Runs fsck on partitions", func() {
-			spec := &v1.MountSpec{
-				RunFsck: true,
-				Image: &v1.Image{
-					MountPoint: "/sysroot",
-					File:       constants.ActiveImgPath,
-				},
-				Overlay: v1.OverlayMounts{Type: constants.Tmpfs},
-			}
-
-			err := action.RunMount(cfg, spec)
-			Expect(err).To(BeNil())
-			Expect(mountedImage).To(Equal(constants.ActiveImgPath))
-			Expect(len(fsckedDevices)).ToNot(Equal(0))
+			Expect(string(fstab)).To(Equal("tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
 		})
 	})
 })

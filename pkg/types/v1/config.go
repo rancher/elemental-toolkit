@@ -18,9 +18,11 @@ package v1
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"gopkg.in/yaml.v3"
@@ -237,17 +239,13 @@ type InitSpec struct {
 
 // MountSpec struct represents all the mount action details
 type MountSpec struct {
-	ReadKernelCmdline bool   `yaml:"read-kernel-cmdline,omitempty" mapstructure:"read-kernel-cmdline"`
-	WriteFstab        bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
-	RunRootfsService  bool   `yaml:"run-rootfs-service,omitempty" mapstructure:"run-rootfs-service"`
-	RunFsck           bool   `yaml:"run-fsck,omitempty" mapstructure:"run-fsck"`
-	Disable           bool   `yaml:"disable,omitempty" mapstructure:"disable"`
-	Sysroot           string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
-	Mode              string `yaml:"mode,omitempty" mapstructure:"mode"`
-	Image             *Image `yaml:"image,omitempty" mapstructure:"image"`
-	Partitions        ElementalPartitions
-	Overlay           OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
-	Persistent        PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+	WriteFstab bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	Disable    bool   `yaml:"disable,omitempty" mapstructure:"disable"`
+	Sysroot    string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode       string `yaml:"mode,omitempty" mapstructure:"mode"`
+	Partitions ElementalPartitions
+	Overlay    OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
+	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
 // PersistentMounts struct contains settings for which paths to mount as
@@ -276,6 +274,14 @@ func (spec *MountSpec) Sanitize() error {
 		return fmt.Errorf("unknown persistent mode: '%s'", spec.Persistent.Mode)
 	}
 
+	const separator = string(os.PathSeparator)
+
+	if spec.Persistent.Paths != nil {
+		sort.Slice(spec.Persistent.Paths, func(i, j int) bool {
+			return strings.Count(spec.Persistent.Paths[i], separator) < strings.Count(spec.Persistent.Paths[j], separator)
+		})
+	}
+
 	switch spec.Overlay.Type {
 	case constants.Tmpfs, constants.Block:
 		break
@@ -283,36 +289,11 @@ func (spec *MountSpec) Sanitize() error {
 		return fmt.Errorf("unknown overlay type: '%s'", spec.Overlay.Type)
 	}
 
-	// If the Mode is set as an image path we convert it to just say
-	// active|passive|recovery and calculate the path below.
-	switch spec.Mode {
-	case constants.ActiveImgPath:
-		spec.Mode = constants.ActiveImgName
-	case constants.PassiveImgPath:
-		spec.Mode = constants.PassiveImgName
-	case constants.RecoveryImgPath:
-		spec.Mode = constants.RecoveryImgName
+	if spec.Overlay.Paths != nil {
+		sort.Slice(spec.Overlay.Paths, func(i, j int) bool {
+			return strings.Count(spec.Overlay.Paths[i], separator) < strings.Count(spec.Overlay.Paths[j], separator)
+		})
 	}
-
-	// Mode should be active|passive|recovery here.
-	switch spec.Mode {
-	case constants.ActiveImgName:
-		spec.Image.Label = constants.ActiveLabel
-		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.ActiveImgPath)
-	case constants.PassiveImgName:
-		spec.Image.Label = constants.PassiveLabel
-		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.PassiveImgPath)
-	case constants.RecoveryImgName:
-		spec.Image.Label = constants.ActiveLabel
-		spec.Image.File = filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
-
-		spec.Partitions.State.MountPoint = ""
-		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
-	default:
-		return fmt.Errorf("unknown mode '%s'", spec.Mode)
-	}
-
-	spec.Image.Source = NewFileSrc(spec.Image.File)
 
 	return nil
 }

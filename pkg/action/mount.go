@@ -21,11 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/joho/godotenv"
-
 	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	"github.com/rancher/elemental-toolkit/pkg/systemd"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
@@ -35,51 +31,15 @@ const overlaySuffix = ".overlay"
 func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	cfg.Logger.Info("Running mount command")
 
-	e := elemental.NewElemental(&cfg.Config)
-
-	cfg.Logger.Debug("Fscking partitions")
-	if err := RunFsck(cfg, spec, e); err != nil {
-		cfg.Logger.Errorf("Error fscking partitions: %s", err.Error())
-		return err
-	}
-
-	cfg.Logger.Debug("Mounting partitions")
-	if err := e.MountPartitions(spec.Partitions.PartitionsByMountPoint(false)); err != nil {
-		cfg.Logger.Errorf("Error mounting partitions: %s", err.Error())
-		return err
-	}
-
-	cfg.Logger.Debugf("Mounting image %s", spec.Image.File)
-	if err := e.MountImage(spec.Image); err != nil {
-		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
-		return err
-	}
-
-	if spec.RunRootfsService {
-		cfg.Logger.Debug("Running elemental-setup-rootfs service")
-		err := systemd.Start(cfg.Config.Runner, systemd.NewUnit("elemental-setup-rootfs"))
-		if err != nil {
-			cfg.Logger.Errorf("Error running rootfs stage: %s", err.Error())
-			return err
-		}
-	} else {
-		cfg.Logger.Debug("Skipping elemental-setup-rootfs")
-	}
-
-	if err := applyLayoutConfig(cfg, spec); err != nil {
-		cfg.Logger.Errorf("Error reading env vars: %s", err.Error())
-		return err
-	}
-
 	cfg.Logger.Debugf("Mounting overlays")
 	if err := MountOverlay(cfg, spec.Sysroot, spec.Overlay); err != nil {
-		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
+		cfg.Logger.Errorf("Error mounting overlays: %s", err.Error())
 		return err
 	}
 
 	cfg.Logger.Debugf("Mounting persistent directories")
 	if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
-		cfg.Logger.Errorf("Error mounting image %s: %s", spec.Image.File, err.Error())
+		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
 		return err
 	}
 
@@ -91,62 +51,6 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	cfg.Logger.Info("Mount command finished successfully")
 	return nil
-}
-
-func applyLayoutConfig(cfg *v1.RunConfig, spec *v1.MountSpec) error {
-	// Read the OVERLAY, RW_PATHS, PERSISTENT_STATE_PATHS and PERSISTENT_STATE_BIND and overwrite the MountSpec
-	files := []string{"/run/cos/cos-layout.env", "/run/elemental/layout.env"}
-
-	for _, file := range files {
-		cfg.Logger.Debugf("Parsing env vars from file '%s'", file)
-		env, err := godotenv.Read(file)
-		if err != nil {
-			cfg.Logger.Warnf("Failed reading file %s: %s", file, err.Error())
-			continue
-		}
-
-		if overlay, exists := env["OVERLAY"]; exists {
-			cfg.Logger.Debug("Found OVERLAY env var")
-
-			split := strings.SplitN(overlay, ":", 2)
-
-			if split[0] == "tmpfs" && len(split) == 2 {
-				spec.Overlay.Size = split[1]
-			}
-		}
-
-		if rwPaths, exists := env["RW_PATHS"]; exists {
-			cfg.Logger.Debug("Found RW_PATHS env var")
-			spec.Overlay.Paths = strings.Fields(rwPaths)
-		}
-
-		if paths, exists := env["PERSISTENT_STATE_PATHS"]; exists {
-			cfg.Logger.Debug("Found PERSISTENT_STATE_PATHS env var")
-			spec.Persistent.Paths = strings.Fields(paths)
-		}
-
-		if _, exists := env["PERSISTENT_STATE_BIND"]; exists {
-			cfg.Logger.Debug("Found PERSISTENT_STATE_BIND env var")
-			spec.Persistent.Mode = constants.BindMode
-		}
-	}
-
-	return nil
-}
-
-func RunFsck(cfg *v1.RunConfig, spec *v1.MountSpec, e *elemental.Elemental) error {
-	if !spec.RunFsck {
-		cfg.Logger.Debug("Skipping fsck")
-		return nil
-	}
-
-	allParts, err := utils.GetAllPartitions()
-	if err != nil {
-		cfg.Logger.Errorf("Error getting all partitions: %s", err.Error())
-		return err
-	}
-
-	return e.FsckPartitions(allParts)
 }
 
 func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) error {
@@ -283,8 +187,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return nil
 	}
 
-	data := fstab(spec.Image.LoopDevice, "/", "auto", []string{"ro"})
-	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
+	data := fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
 
 	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
 		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
