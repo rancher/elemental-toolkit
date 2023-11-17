@@ -65,7 +65,8 @@ RUN ARCH=$(uname -m); \
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
 # Enable essential services
-RUN systemctl enable NetworkManager.service
+RUN systemctl enable NetworkManager.service && \
+    systemctl enable sshd.service
 
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
