@@ -87,8 +87,7 @@ build-disk: build-os
 		--entrypoint /usr/bin/elemental \
 		${TOOLKIT_REPO}:${VERSION} --debug build-disk --platform $(PLATFORM) --unprivileged --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
 		--squash-no-compression -o /build ${REPO}:${VERSION}
-	dd if=$(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw of=$(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).img conv=notrunc
-	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).img $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
+	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
 .PHONY: build-rpi-disk
