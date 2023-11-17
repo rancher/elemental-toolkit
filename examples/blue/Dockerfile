@@ -35,6 +35,7 @@ RUN dnf install -y \
     openssh-clients \
     glibc-langpack-en \
     parted \
+    gdisk \
     rsync \
     shim-x64 \
     squashfs-tools \
