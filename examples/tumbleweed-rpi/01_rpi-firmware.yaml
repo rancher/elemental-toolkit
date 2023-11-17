@@ -1,0 +1,7 @@
+name: "Raspberry Pi post disk hook"
+stages:
+    after-disk:
+    - &copyfirmware
+      name: "Copy firmware to EFI partition"
+      commands:
+      - cp -r /build/build/recovery.img.root/boot/vc/* /build/build/efi/

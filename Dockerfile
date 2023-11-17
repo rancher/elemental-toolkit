@@ -2,7 +2,7 @@ ARG BASE_OS_IMAGE=opensuse/leap
 ARG BASE_OS_VERSION=15.5
 ARG GO_VERSION=1.20
 
-FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine AS elemental-bin
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as elemental-bin
 
 ENV CGO_ENABLED=0
 WORKDIR /src/
@@ -22,7 +22,9 @@ ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
+ARG TARGETOS 
+ARG TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -ldflags "-w -s \
     -X github.com/rancher/elemental-toolkit/internal/version.version=${ELEMENTAL_VERSION} \
     -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=${ELEMENTAL_COMMIT}" \
@@ -33,6 +35,8 @@ FROM ${BASE_OS_IMAGE}:${BASE_OS_VERSION} AS elemental-toolkit
 # versions, as long as the elemental commit has changed
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_COMMIT=${ELEMENTAL_COMMIT}
+
+ARG TARGETARCH
 
 RUN ARCH=$(uname -m); \
     [[ "${ARCH}" == "aarch64" ]] && ARCH="arm64"; \
