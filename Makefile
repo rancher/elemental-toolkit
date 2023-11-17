@@ -58,7 +58,7 @@ build-iso: build-os
 	@echo Building ${ARCH} ISO
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
-		--entrypoint /usr/bin/elemental $(REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
+		--entrypoint /usr/bin/elemental ${TOOLKIT_REPO}:${VERSION} --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
 		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: clean-iso
