@@ -56,7 +56,6 @@ var _ = Describe("Reset action tests", func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		bootloader = &v1mock.FakeBootloader{}
 		logger = v1.NewBufferLogger(memLog)
 		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
@@ -84,14 +83,14 @@ var _ = Describe("Reset action tests", func() {
 		var cmdFail, bootedFrom string
 		var err error
 		BeforeEach(func() {
-
-			Expect(err).ShouldNot(HaveOccurred())
 			cmdFail = ""
 			recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
 			err = utils.MkdirAll(fs, filepath.Dir(recoveryImg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(recoveryImg)
 			Expect(err).To(BeNil())
+
+			bootloader = &v1mock.FakeBootloader{}
 
 			mainDisk := block.Disk{
 				Name: "device",
@@ -188,6 +187,18 @@ var _ = Describe("Reset action tests", func() {
 		})
 		It("Successfully resets from a channel package", Label("channel"), func() {
 			Expect(reset.Run()).To(BeNil())
+		})
+		It("Fails setting the persistent grub variables", func() {
+			bootloader.ErrorSetPersistentVariables = true
+			err = reset.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("setting persistent variables"))
+		})
+		It("Fails setting the default grub entry", func() {
+			bootloader.ErrorSetDefaultEntry = true
+			err = reset.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("setting default entry"))
 		})
 		It("Fails installing grub", func() {
 			bootloader.ErrorInstall = true

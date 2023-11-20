@@ -98,6 +98,13 @@ func NewGrub(cfg *v1.Config, opts ...GrubOptions) *Grub {
 	return g
 }
 
+func WithSecureBoot(secureboot bool) func(g *Grub) error {
+	return func(g *Grub) error {
+		g.secureBoot = secureboot
+		return nil
+	}
+}
+
 func WithGrubPrefix(prefix string) func(g *Grub) error {
 	return func(g *Grub) error {
 		g.grubPrefix = prefix

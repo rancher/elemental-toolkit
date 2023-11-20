@@ -137,6 +137,38 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("installs just fine without sercure boot", func() {
+		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true), bootloader.WithSecureBoot(false))
+		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
+
+		// Check everything is copied in boot directory
+		data, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
+		Expect(err).To(BeNil())
+		Expect(data).To(Equal(grubCfg))
+		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/loopback.mod", bootDir))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/xzio.mod", bootDir))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/squash4.mod", bootDir))
+		Expect(err).To(BeNil())
+
+		// Check secureboot files are NOT there
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/MokManager.efi"))
+		Expect(err).NotTo(BeNil())
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/grub.efi"))
+		Expect(err).NotTo(BeNil())
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/shim.efi"))
+		Expect(err).NotTo(BeNil())
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/MokManager.efi"))
+		Expect(err).NotTo(BeNil())
+
+		// Check grub image in EFI directory
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/bootx64.efi"))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/grub.efi"))
+		Expect(err).To(BeNil())
+	})
+
 	It("fails to install if squash4.mod is missing", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/squash4.mod"))).To(Succeed())

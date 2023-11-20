@@ -63,7 +63,6 @@ var _ = Describe("Install action tests", func() {
 		mounter = v1mock.NewErrorMounter()
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		bootloader = &v1mock.FakeBootloader{}
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(v1.DebugLevel())
 		extractor = v1mock.NewFakeImageExtractor(logger)
@@ -102,6 +101,8 @@ var _ = Describe("Install action tests", func() {
 			Expect(err).To(BeNil())
 			_, err = fs.Create(device)
 			Expect(err).ShouldNot(HaveOccurred())
+
+			bootloader = &v1mock.FakeBootloader{}
 
 			partNum := 0
 			partedOut := printOutput
@@ -277,6 +278,22 @@ var _ = Describe("Install action tests", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(installer.Run()).To(BeNil())
 			Expect(client.WasGetCalledWith("http://my.config.org")).To(BeTrue())
+		})
+
+		It("Fails setting the persistent grub variables", func() {
+			spec.Target = device
+			bootloader.ErrorSetPersistentVariables = true
+			err = installer.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("setting persistent variables"))
+		})
+
+		It("Fails setting the default grub entry", func() {
+			spec.Target = device
+			bootloader.ErrorSetDefaultEntry = true
+			err = installer.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("setting default entry"))
 		})
 
 		It("Fails if disk doesn't exist", Label("disk"), func() {
