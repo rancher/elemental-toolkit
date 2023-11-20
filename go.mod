@@ -16,7 +16,7 @@ require (
 	github.com/mudler/yip v1.4.0
 	github.com/onsi/ginkgo/v2 v2.9.3
 	github.com/onsi/gomega v1.27.6
-	github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231031082920-8b1cf3f8c16f
+	github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231121104300-eb56c5436c4e
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0

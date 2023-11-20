@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM ubuntu:23.04 as OS
+FROM ubuntu:22.04 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -23,7 +23,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   shim-signed \
   haveged \
   systemd \
-  systemd-resolved \
+  systemd-sysv \
+  systemd-timesyncd \
   openssh-server \
   openssh-client \
   tzdata \
@@ -45,6 +46,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   iproute2 \
   dbus-daemon \
   patch \
+  netplan.io \
   xz-utils
 
 # Create non FHS paths
@@ -60,14 +62,6 @@ RUN systemctl enable systemd-networkd.service && \
 # Enable /tmp to be on tmpfs
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
-# This is patches are fix upstream dracut, see https://github.com/dracutdevs/dracut/pull/2525
-ADD patches /
-
-RUN cd /usr/lib/dracut && \
-    patch -p 1 -f -i /0001-fix-dmsquash-live-restore-compatibility-with-earlier.patch && \
-    patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
-    rm /*.patch
-
 # Generate initrd with required elemental services
 RUN elemental --debug init -f
 
@@ -77,6 +71,9 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
     echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
     echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release
 RUN echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+
+# Adding specific network configuration based on netplan
+ADD 05_network.yaml /system/oem/05_network.yaml
 
 # Arrange bootloader binaries into /usr/lib/elemental/bootloader
 # this way elemental installer can easily fetch them

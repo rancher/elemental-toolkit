@@ -35,9 +35,6 @@ import (
 )
 
 const (
-	grubSwapOnce = "grub2-editenv /oem/grubenv set next_entry=%s"
-	grubSwap     = "grub2-editenv /oem/grubenv set saved_entry=%s"
-
 	Passive     = "passive"
 	Active      = "active"
 	Recovery    = "recovery"
@@ -145,7 +142,13 @@ func (s *SUT) ChangeBoot(b string) error {
 		bootEntry = "recovery"
 	}
 
-	_, err := s.command(fmt.Sprintf(grubSwap, bootEntry))
+	cmd := "grub2-editenv"
+	_, err := s.command(fmt.Sprintf("which %s", cmd))
+	if err != nil {
+		cmd = "grub-editenv"
+	}
+
+	_, err = s.command(fmt.Sprintf("%s /oem/grubenv set saved_entry=%s", cmd, bootEntry))
 	Expect(err).ToNot(HaveOccurred())
 
 	return nil
@@ -163,7 +166,13 @@ func (s *SUT) ChangeBootOnce(b string) error {
 		bootEntry = "recovery"
 	}
 
-	_, err := s.command(fmt.Sprintf(grubSwapOnce, bootEntry))
+	cmd := "grub2-editenv"
+	_, err := s.command(fmt.Sprintf("which %s", cmd))
+	if err != nil {
+		cmd = "grub-editenv"
+	}
+
+	_, err = s.command(fmt.Sprintf("%s /oem/grubenv set next_entry=%s", cmd, bootEntry))
 	Expect(err).ToNot(HaveOccurred())
 
 	return nil
@@ -207,14 +216,6 @@ func (s *SUT) BootFrom() string {
 	default:
 		return UnknownBoot
 	}
-}
-
-// SquashFSRecovery returns true if we are in recovery mode and booting from squashfs
-func (s *SUT) SquashFSRecovery() bool {
-	out, err := s.command("cat /proc/cmdline")
-	ExpectWithOffset(1, err).ToNot(HaveOccurred())
-
-	return strings.Contains(out, "rd.live.squashimg")
 }
 
 func (s *SUT) GetOSRelease(ss string) string {
@@ -286,6 +287,9 @@ func (s *SUT) command(cmd string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		_ = session.Close()
+	}()
 
 	out, err := session.CombinedOutput(cmd)
 	if err != nil {

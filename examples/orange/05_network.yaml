@@ -1,0 +1,32 @@
+# Example network configuration for Ubuntu based systems
+name: "Default network configuration"
+stages:
+   initramfs:
+     - name: "Setup network"
+       files:
+       - path: /etc/netplan/elemental_setup.yaml
+         content: |
+           network:
+             version: 2
+             renderer: networkd
+             ethernets:
+               lan0:
+                 dhcp4: true
+         permissions: 0600
+         owner: 0
+         group: 0
+       - path: /etc/ssh/sshd_config.d/root_login.conf
+         content: |
+           PermitRootLogin yes
+         permissions: 0600
+         owner: 0
+         group: 0
+       - path: /etc/udev/rules.d/70-persistent-net.rules
+         content: |
+           SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="?*", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="?*", NAME="lan0"
+         permissions: 0600
+         owner: 0
+         group: 0
+       commands:
+         - ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+         - netplan apply
