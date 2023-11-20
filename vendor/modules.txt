@@ -476,7 +476,7 @@ github.com/pkg/errors
 # github.com/pkg/xattr v0.4.9
 ## explicit; go 1.14
 github.com/pkg/xattr
-# github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231031082920-8b1cf3f8c16f
+# github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231121104300-eb56c5436c4e
 ## explicit; go 1.20
 github.com/rancher-sandbox/ele-testhelpers/vm
 # github.com/rancher-sandbox/linuxkit v1.0.1

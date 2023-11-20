@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         arch: ${{fromJson(needs.detect.outputs.arch)}}
-        flavor: ['green', 'tumbleweed', 'blue']
+        flavor: ['green', 'tumbleweed', 'blue', 'orange']
     uses: ./.github/workflows/build_and_test.yaml
     with:
       arch: ${{ matrix.arch }}
