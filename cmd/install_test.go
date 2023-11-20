@@ -38,6 +38,18 @@ var _ = Describe("Install", Label("install", "cmd"), func() {
 	AfterEach(func() {
 		viper.Reset()
 	})
+	It("Errors out setting firmware to anything else than efi", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--firmware", "bios", "/dev/whatever")
+		Expect(err).ToNot(BeNil())
+		Expect(err.Error()).To(ContainSubstring("invalid argument"))
+		Expect(err.Error()).To(ContainSubstring("'bios' is not included in: efi"))
+	})
+	It("Errors out setting part-table to anything else than GPT", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--part-table", "msdos", "/dev/whatever")
+		Expect(err).ToNot(BeNil())
+		Expect(err.Error()).To(ContainSubstring("invalid argument"))
+		Expect(err.Error()).To(ContainSubstring("'msdos' is not included in: gpt"))
+	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "install", "--cosign-key", "pubKey.url", "/dev/whatever")
 		Expect(err).ToNot(BeNil())

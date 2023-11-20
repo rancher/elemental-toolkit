@@ -65,6 +65,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			flags := cmd.Flags()
 			err = validateCosignFlags(cfg.Logger, flags)
 			if err != nil {
+				cfg.Logger.Errorf("flags validation failed: %v", err)
 				return elementalError.NewFromError(err, elementalError.CosignWrongFlags)
 			}
 
@@ -129,6 +130,8 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 
+	firmType := newEnumFlag([]string{v1.EFI}, v1.EFI)
+
 	root.AddCommand(c)
 	c.Flags().StringP("name", "n", "", "Basename of the generated ISO file")
 	c.Flags().StringP("output", "o", "", "Output directory (defaults to current directory)")
@@ -138,6 +141,8 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
 	c.Flags().String("label", "", "Label of the ISO volume")
 	c.Flags().Bool("bootloader-in-rootfs", false, "Fetch ISO bootloader binaries from the rootfs")
+	c.Flags().Var(firmType, "firmware", "Firmware to install, only 'efi' is currently supported")
+	_ = c.Flags().MarkDeprecated("firmware", "'firmware' is deprecated. only efi firmware is supported.")
 	addPlatformFlags(c)
 	addCosignFlags(c)
 	addSquashFsCompressionFlags(c)
