@@ -315,6 +315,15 @@ func (b *BuildDiskAction) CreateRAWDisk(e *elemental.Elemental, rawImg string) e
 		return err
 	}
 
+	// Check if disk already exists
+	if exists, _ := utils.Exists(b.cfg.Fs, rawImg); exists {
+		b.cfg.Logger.Warnf("Overwriting already existing %s", rawImg)
+		err := b.cfg.Fs.Remove(rawImg)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.RemoveFile)
+		}
+	}
+
 	// Ensamble disk with all partitions
 	err = b.CreateDiskImage(rawImg, images...)
 	if err != nil {

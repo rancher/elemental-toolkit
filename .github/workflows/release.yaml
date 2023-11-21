@@ -44,6 +44,7 @@ jobs:
           username: ${{ secrets.ELEMENTAL_BOT_GITHUB_USERNAME }}
           password: ${{ secrets.ELEMENTAL_BOT_GITHUB_TOKEN }}
       - name: Build toolkit image
+        run: |
           make TOOLKIT_REPO=ghcr.io/${{ github.workspace }}/${{ github.repository }}/elemental-cli VERSION=$(git describe --abbrev=0 --tags) build push-toolkit
           make PLATFORM=linux/arm64,linux/amd64 TOOLKIT_REPO=ghcr.io/${{ github.workspace }}/${{ github.repository }}/elemental-cli VERSION=latest build push-toolkit
       - name: Build green example

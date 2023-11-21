@@ -93,10 +93,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				spec.Recovery.Source = imgSource
 			}
 
-			// TODO add logic for an already existing output file
-
 			builder := action.NewBuildDiskAction(cfg, spec)
-
 			return builder.BuildDiskRun()
 		},
 	}
