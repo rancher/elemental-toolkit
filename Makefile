@@ -14,6 +14,7 @@ TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
 BASE_OS_IMAGE?=opensuse/leap
 BASE_OS_VERSION?=15.5
+DOCKER_SOCK?=/var/run/docker.sock
 
 GIT_COMMIT?=$(shell git rev-parse HEAD)
 GIT_COMMIT_SHORT?=$(shell git rev-parse --short HEAD)
@@ -74,7 +75,7 @@ push-os:
 build-iso: build-os
 	@echo Building ${ARCH} ISO
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+	$(DOCKER) run --rm -v ${DOCKER_SOCK}:${DOCKER_SOCK} -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental ${TOOLKIT_REPO}:${VERSION} --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
 		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
 
@@ -82,7 +83,7 @@ build-iso: build-os
 build-disk: build-os
 	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/build:/build \
+	$(DOCKER) run --rm -v ${DOCKER_SOCK}:${DOCKER_SOCK} -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
 		${TOOLKIT_REPO}:${VERSION} --debug build-disk --platform $(PLATFORM) --unprivileged --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
 		--squash-no-compression -o /build ${REPO}:${VERSION}
@@ -98,7 +99,7 @@ ifneq ("$(PLATFORM)","linux/arm64")
 endif
 	@echo Building ${ARCH} disk
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
+	$(DOCKER) run --rm -v ${DOCKER_SOCK}:${DOCKER_SOCK} -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
 		${TOOLKIT_REPO}:${VERSION} --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/tumbleweed-rpi --unprivileged --expandable -n elemental-$(FLAVOR).aarch64 --local \
 		--squash-no-compression --deploy-command elemental,--debug,reset,--reboot,--disable-boot-entry -o /build ${REPO}:${VERSION}
