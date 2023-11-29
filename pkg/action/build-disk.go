@@ -364,16 +364,20 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && path != b.roots[constants.EfiPartName] {
+
+		if path != b.roots[constants.EfiPartName] {
 			rel, err := filepath.Rel(b.roots[constants.EfiPartName], path)
 			if err != nil {
 				return err
 			}
-			_, err = b.cfg.Runner.Run("mcopy", "-i", img.File, path, fmt.Sprintf("::%s", rel))
+
+			b.cfg.Logger.Debugf("copying file %s to %s", path, rel)
+			_, err = b.cfg.Runner.Run("mcopy", "-n", "-o", "-i", img.File, path, fmt.Sprintf("::%s", rel))
 			if err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -594,10 +598,11 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 		}
 		sizeS = partitioner.MiBToSectors(part.Size, secSize)
 		var gdPart = partitioner.Partition{
-			Number: i + 1,
-			StartS: startS,
-			SizeS:  sizeS,
-			PLabel: part.Name,
+			Number:     i + 1,
+			StartS:     startS,
+			SizeS:      sizeS,
+			PLabel:     part.Name,
+			FileSystem: part.FS,
 		}
 		gd.CreatePartition(&gdPart)
 	}
