@@ -98,7 +98,7 @@ const (
 	ImgSrcDir          = "/run/elemental/imgsrc"
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
-	RunningStateDir    = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
+	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
 
 	// Live image mountpoints
 	ISOBaseTree = "/run/rootfsbase"

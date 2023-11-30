@@ -181,15 +181,36 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	return nil
 }
 
+func findmnt(runner v1.Runner, mountpoint string) (string, error) {
+	output, err := runner.Run("findmnt", "-fno", "SOURCE", mountpoint)
+	return strings.TrimSuffix(string(output), "\n"), err
+}
+
 func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	if !spec.WriteFstab {
 		cfg.Logger.Debug("Skipping writing fstab")
 		return nil
 	}
 
-	data := fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
+	loop, err := findmnt(cfg.Runner, spec.Sysroot)
+	if err != nil {
+		return err
+	}
+
+	data := fstab(loop, "/", "ext2", []string{"ro", "relatime"})
+	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
 
 	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
+		if part.Path == "" {
+			// Lets error out only after 10 attempts to find the device
+			device, err := utils.GetDeviceByLabel(cfg.Runner, part.FilesystemLabel, 10)
+			if err != nil {
+				cfg.Logger.Errorf("Could not find a device with label %s", part.FilesystemLabel)
+				return err
+			}
+			part.Path = device
+		}
+
 		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
 	}
 
@@ -207,7 +228,6 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		data = data + fstab("overlay", rw, "overlay", options)
 	}
 
-	// /usr/local/.state/var-lib-NetworkManager.bind /var/lib/NetworkManager none defaults,bind 0 0
 	for _, path := range spec.Persistent.Paths {
 		if spec.Persistent.Mode == constants.OverlayMode {
 			trimmed := strings.TrimPrefix(path, "/")

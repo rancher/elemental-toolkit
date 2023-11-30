@@ -763,7 +763,7 @@ func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
 				},
 			}, deployStage: {
 				schema.Stage{
-					If:   `[ -f "/run/cos/recovery_mode" ]`,
+					If:   `[ -f "/run/elemental/recovery_mode" ]`,
 					Name: "Deploy active system",
 					Commands: []string{
 						strings.Join(deployCmd, " "),

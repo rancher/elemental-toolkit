@@ -304,11 +304,11 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 		case "cos-img/filename":
 			switch val {
 			case constants.ActiveImgPath:
-				mount.Mode = "active"
+				mount.Mode = constants.ActiveImgName
 			case constants.PassiveImgPath:
-				mount.Mode = "passive"
+				mount.Mode = constants.PassiveImgName
 			case constants.RecoveryImgPath:
-				mount.Mode = "recovery"
+				mount.Mode = constants.RecoveryImgName
 			default:
 				r.Logger.Errorf("Error parsing cmdline %s", cmd)
 				return errors.New("Unknown image path")

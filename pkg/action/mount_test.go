@@ -57,6 +57,16 @@ var _ = Describe("Mount Action", func() {
 			config.WithLogger(logger),
 			config.WithRunner(runner),
 		)
+
+		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+			switch cmd {
+			case "findmnt":
+				return []byte("/dev/loop0"), nil
+			default:
+				return []byte{}, nil
+			}
+		}
+
 	})
 	AfterEach(func() {
 		cleanup()
@@ -75,7 +85,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			Expect(string(fstab)).To(Equal("tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
+			Expect(string(fstab)).To(Equal("/dev/loop0\t/\text2\tro,relatime\t0\t0\ntmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"))
 		})
 	})
 })

@@ -1,5 +1,5 @@
 [Unit]
-Description=Elemental system rootfs mounts
+Description=Elemental system rootfs overlay mounts
 DefaultDependencies=no
 After=initrd-root-fs.target
 Requires=initrd-root-fs.target
@@ -10,3 +10,6 @@ Conflicts=initrd-switch-root.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/elemental mount --debug
+
+[Install]
+RequiredBy=initrd-fs.target

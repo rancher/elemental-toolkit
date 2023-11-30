@@ -73,9 +73,10 @@ function start {
   [ "kvm" == "${ELMNTL_ACCEL}" ] && cpu_arg="-cpu host" && kvm_arg="-enable-kvm"
 
   if [ "${ELMNTL_DEBUG}" == "yes" ]; then
+      local pass_arg="-smbios type=11,value=io.systemd.credential:passwd.hashed-password.root=$(mkpasswd cos) "
       qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
           ${kvm_arg} ${memory_arg} ${graphics_arg} -serial stdio ${pidfile_arg} \
-          ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
+          ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg} ${pass_arg}
   else 
       qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${firmware_arg} ${usrnet_arg} \
           ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \

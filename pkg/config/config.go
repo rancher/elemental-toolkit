@@ -219,42 +219,43 @@ func NewInitSpec() *v1.InitSpec {
 }
 
 func NewMountSpec() *v1.MountSpec {
+	partitions := v1.ElementalPartitions{
+		State: &v1.Partition{
+			FilesystemLabel: constants.StateLabel,
+			Size:            constants.StateSize,
+			Name:            constants.StatePartName,
+			FS:              constants.LinuxFs,
+			Flags:           []string{},
+		},
+		Persistent: &v1.Partition{
+			FilesystemLabel: constants.PersistentLabel,
+			Size:            constants.PersistentSize,
+			Name:            constants.PersistentPartName,
+			FS:              constants.LinuxFs,
+			MountPoint:      constants.PersistentDir,
+			Flags:           []string{},
+		},
+		OEM: &v1.Partition{
+			FilesystemLabel: constants.OEMLabel,
+			Size:            constants.OEMSize,
+			Name:            constants.OEMPartName,
+			FS:              constants.LinuxFs,
+			MountPoint:      constants.OEMPath,
+			Flags:           []string{},
+		},
+		Recovery: &v1.Partition{
+			FilesystemLabel: constants.RecoveryLabel,
+			Size:            constants.RecoverySize,
+			Name:            constants.RecoveryPartName,
+			FS:              constants.LinuxFs,
+			Flags:           []string{},
+		},
+	}
+
 	return &v1.MountSpec{
 		Sysroot:    "/sysroot",
 		WriteFstab: true,
-		Partitions: v1.ElementalPartitions{
-			State: &v1.Partition{
-				FilesystemLabel: constants.StateLabel,
-				Size:            constants.StateSize,
-				Name:            constants.StatePartName,
-				FS:              constants.LinuxFs,
-				MountPoint:      constants.RunningStateDir,
-				Flags:           []string{},
-			},
-			Persistent: &v1.Partition{
-				FilesystemLabel: constants.PersistentLabel,
-				Size:            constants.PersistentSize,
-				Name:            constants.PersistentPartName,
-				FS:              constants.LinuxFs,
-				MountPoint:      constants.PersistentDir,
-				Flags:           []string{},
-			},
-			OEM: &v1.Partition{
-				FilesystemLabel: constants.OEMLabel,
-				Size:            constants.OEMSize,
-				Name:            constants.OEMPartName,
-				FS:              constants.LinuxFs,
-				MountPoint:      constants.OEMPath,
-				Flags:           []string{},
-			},
-			Recovery: &v1.Partition{
-				FilesystemLabel: constants.RecoveryLabel,
-				Size:            constants.RecoverySize,
-				Name:            constants.RecoveryPartName,
-				FS:              constants.LinuxFs,
-				Flags:           []string{},
-			},
-		},
+		Partitions: partitions,
 		Overlay: v1.OverlayMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",

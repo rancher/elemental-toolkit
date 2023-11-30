@@ -2,7 +2,7 @@
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
-root_part_mnt="/run/elemental/state"
+root_part_mnt="/run/initramfs/elemental-state"
 
 # Omit any immutable roofs module logic if disabled
 if getargbool 0 elemental.disable; then
@@ -41,6 +41,8 @@ root_part_unit="${root_part_mnt#/}"
 root_part_unit="${root_part_unit//-/\\x2d}"
 root_part_unit="${root_part_unit//\//-}.mount"
 
+state_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
+
 {
     echo "[Unit]"
     echo "Before=initrd-root-fs.target"
@@ -51,13 +53,7 @@ root_part_unit="${root_part_unit//\//-}.mount"
     echo "Where=${root_part_mnt}"
     echo "What=${root}"
     echo "Options=${root_perm},suid,dev,exec,auto,nouser,async"
-} > "$GENERATOR_DIR/${root_part_unit}"
-
-if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/${root_part_unit}" ]; then
-    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
-    ln -s "$GENERATOR_DIR/${root_part_unit}" \
-        "$GENERATOR_DIR/initrd-root-fs.target.requires/${root_part_unit}"
-fi
+} > "$GENERATOR_DIR/${state_unit}"
 
 dev=$(dev_unit_name "${root}")
 
@@ -84,5 +80,3 @@ if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/sysroot.mount" ]; then
     ln -s "$GENERATOR_DIR"/sysroot.mount \
         "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
 fi
-
-

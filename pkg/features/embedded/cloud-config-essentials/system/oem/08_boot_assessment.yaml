@@ -18,13 +18,13 @@ stages:
     # the boot stage.
     - name: "Remove GRUB sentinels"
       if: |
-          cat /proc/cmdline | grep -q "active.img"
+          cat /proc/cmdline | grep -q "active"
       commands:
       - |
-          mount -o rw,remount /run/initramfs/cos-state
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set enable_boot_assessment=
-          grub2-editenv /run/initramfs/cos-state/boot_assessment set boot_assessment_tentative=
-          mount -o ro,remount /run/initramfs/cos-state
+          mount -o rw,remount /run/initramfs/elemental-state
+          grub2-editenv /run/initramfs/elemental-state/boot_assessment set enable_boot_assessment=
+          grub2-editenv /run/initramfs/elemental-state/boot_assessment set boot_assessment_tentative=
+          mount -o ro,remount /run/initramfs/elemental-state
     - name: "Create upgrade failure sentinel if necessary"
       if: |
           cat /proc/cmdline | grep -q "upgrade_failure"

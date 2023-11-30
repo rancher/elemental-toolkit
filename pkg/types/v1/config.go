@@ -24,9 +24,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"gopkg.in/yaml.v3"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 )
 
 const (
@@ -293,6 +294,13 @@ func (spec *MountSpec) Sanitize() error {
 		sort.Slice(spec.Overlay.Paths, func(i, j int) bool {
 			return strings.Count(spec.Overlay.Paths[i], separator) < strings.Count(spec.Overlay.Paths[j], separator)
 		})
+	}
+
+	if spec.Mode == constants.RecoveryImgName {
+		spec.Partitions.Persistent = nil
+		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
+	} else {
+		spec.Partitions.State.MountPoint = constants.RunningStateDir
 	}
 
 	return nil
