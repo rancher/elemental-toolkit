@@ -313,10 +313,10 @@ func ISOLoaderPath(arch string) string {
 
 // ISOKernelPath returns path use to store the kernel
 func ISOKernelPath(arch string) string {
-	return ISOLoaderPath(arch) + "linux"
+	return filepath.Join(ISOLoaderPath(arch), "linux")
 }
 
 // ISOInitrdPath returns path use to store the initramfs
 func ISOInitrdPath(arch string) string {
-	return ISOLoaderPath(arch) + "initrd"
+	return filepath.Join(ISOLoaderPath(arch), "initrd")
 }
