@@ -53,7 +53,8 @@ func (r RealRunner) Run(command string, args ...string) ([]byte, error) {
 	cmd := r.InitCmd(command, args...)
 	out, err := r.RunCmd(cmd)
 	if err != nil {
-		r.error(fmt.Sprintf("Error running command: %s", err.Error()))
+		r.debug(fmt.Sprintf("'%s' command reported an error: %s", command, err.Error()))
+		r.debug(fmt.Sprintf("'%s' command output: %s", command, out))
 	}
 	return out, err
 }
