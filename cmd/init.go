@@ -29,7 +29,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/features"
 )
 
-func InitCmd(root *cobra.Command) *cobra.Command {
+func NewInitCmd(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "init FEATURES",
 		Short: "Initialize container image for booting",
@@ -68,4 +68,4 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 	return c
 }
 
-var _ = InitCmd(rootCmd)
+var _ = NewInitCmd(rootCmd)

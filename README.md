@@ -7,8 +7,6 @@ Elemental-toolkit is a toolkit to build, ship and maintain cloud-init driven Lin
 
 It is designed to reduce the maintenance surface, with a flexible approach to provide upgrades from container registries. It is cloud-init driven and also designed to be adaptive-first, allowing easily to build changes on top.
 
-Documentation is available at [https://rancher.github.io/elemental-toolkit/docs](https://rancher.github.io/elemental-toolkit/docs)
-
 ## Design goals
 
 - A Manifest for container-based OS. It contains just the common bits to make a container image bootable and to be upgraded from, with little customization on top
@@ -22,7 +20,7 @@ Documentation is available at [https://rancher.github.io/elemental-toolkit/docs]
 
 ### Quick start
 
-Check out our [getting-started](https://rancher.github.io/elemental-toolkit/docs/getting-started/) section in the documentation.
+Check out our [getting-started](https://elemental.docs.rancher.com/toolkit/) section in the documentation.
 
 ## License
 

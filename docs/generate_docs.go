@@ -39,6 +39,7 @@ func main() {
 		rootCmd,
 		cmd.NewBuildISO(rootCmd, false),
 		cmd.NewCloudInitCmd(rootCmd),
+		cmd.NewInitCmd(rootCmd),
 		cmd.NewInstallCmd(rootCmd, false),
 		cmd.NewPullImageCmd(rootCmd, false),
 		cmd.NewResetCmd(rootCmd, false),
