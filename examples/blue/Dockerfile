@@ -49,6 +49,10 @@ RUN dnf install -y \
 # Create non FHS paths
 RUN mkdir -p /oem /system
 
+# Remove systemd-firstboot config valuyes. Yip plugin does not use --force flag
+# hence systemd-firsboot does not modify any existing file.
+RUN rm -f /etc/locale.conf /etc/vconsole.conf
+
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
