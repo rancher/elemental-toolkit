@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM ubuntu:22.04 as OS
+FROM ubuntu:23.04 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -25,6 +25,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   systemd \
   systemd-sysv \
   systemd-timesyncd \
+  systemd-resolved \
   openssh-server \
   openssh-client \
   tzdata \
@@ -47,6 +48,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   dbus-daemon \
   patch \
   netplan.io \
+  locales \
   xz-utils
 
 # Create non FHS paths
@@ -55,12 +57,23 @@ RUN mkdir -p /oem /system
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
+# This is patches are fix upstream dracut, see https://github.com/dracutdevs/dracut/pull/2525
+ADD patches /
+
+RUN cd /usr/lib/dracut && \
+    patch -p 1 -f -i /0001-fix-dmsquash-live-restore-compatibility-with-earlier.patch && \
+    patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
+    rm /*.patch
+
 # Enable essential services
-RUN systemctl enable systemd-networkd.service && \
-    systemctl enable systemd-resolved.service
+RUN systemctl enable systemd-networkd.service
 
 # Enable /tmp to be on tmpfs
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
+
+# Generate en_US.UTF-8 locale, this the locale set at boot by
+# the default cloud-init
+RUN rm -rf /etc/default/locale && locale-gen --lang en_US.UTF-8
 
 # Generate initrd with required elemental services
 RUN elemental --debug init -f
