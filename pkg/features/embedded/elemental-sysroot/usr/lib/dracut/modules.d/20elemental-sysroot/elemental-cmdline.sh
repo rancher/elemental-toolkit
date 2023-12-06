@@ -44,4 +44,15 @@ case "${elemental_img}" in
         echo -n 1 > /run/elemental/passive_mode ;;
 esac
 
+# support some backwards compatibility
+mkdir -p /run/cos
+case "${elemental_img}" in
+    *recovery*)
+        echo -n 1 > /run/cos/recovery_mode ;;
+    *active*)
+        echo -n 1 > /run/cos/active_mode ;;
+    *passive*)
+        echo -n 1 > /run/cos/passive_mode ;;
+esac
+
 return 0
