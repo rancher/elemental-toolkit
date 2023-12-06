@@ -69,7 +69,7 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
-			out, _ = s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
+			out, _ = s.Command("sudo cat /run/initramfs/elemental-state/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
 
 			// Break the upgrade
@@ -97,10 +97,10 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(v).To(Equal(currentVersion))
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(And(ContainSubstring("passive.img"), ContainSubstring("upgrade_failure")), cmdline)
+			Expect(cmdline).To(And(ContainSubstring("image=passive"), ContainSubstring("upgrade_failure")), cmdline)
 
 			Eventually(func() string {
-				out, _ := s.Command("sudo ls -liah /run/cos")
+				out, _ := s.Command("sudo ls -liah /run/elemental")
 				return out
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
 		})

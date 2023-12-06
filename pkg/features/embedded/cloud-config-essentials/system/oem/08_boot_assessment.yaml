@@ -29,7 +29,7 @@ stages:
       if: |
           cat /proc/cmdline | grep -q "upgrade_failure"
       files:
-      - path: /run/cos/upgrade_failure
+      - path: /run/elemental/upgrade_failure
         content: "1"
         permissions: 0600
         owner: 0
