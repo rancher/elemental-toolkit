@@ -12,6 +12,12 @@ stages:
       datasource:
         providers: ["aws", "gcp", "openstack", "cdrom"]
         path: "/oem"
+  rootfs:
+    - if: '[ ! -f "/run/cos/recovery_mode" ]'
+      name: "Layout configuration"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        OVERLAY: "tmpfs:25%"
   initramfs:
     - if: '[ ! -f "/run/elemental/recovery_mode" ]'
       name: "Persist /etc/machine-id"

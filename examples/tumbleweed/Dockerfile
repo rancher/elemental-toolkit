@@ -79,7 +79,7 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental init -f elemental-rootfs,elemental-sysroot,elemental-setup,grub-config,grub-default-bootargs,dracut-config,cloud-config-defaults,cloud-config-essentials && \
+RUN elemental init -f && \
     kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
     if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
     rm -rf /var/log/update* && \
