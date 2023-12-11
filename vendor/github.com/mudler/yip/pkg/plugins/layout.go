@@ -448,21 +448,34 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 		}
 		freeS := dev.computeFreeSpaceWithoutLast()
 		if size > freeS {
-			return "", errors.New(fmt.Sprintf("Not enough free space for to expand last partition up to %d sectors", size))
+			return "", fmt.Errorf("Not enough free space for to expand last partition up to %d sectors", size)
 		}
 	}
 
 	part := dev.Parts[len(dev.Parts)-1]
+	l.Debugf("Expanding partition %d up to %d sectors", part.Number, size)
 
 	// Grow partition
 	out, err := console.Run(fmt.Sprintf("growpart %s %d", dev.Device, part.Number))
 	if err != nil {
+		l.Errorf("Failed growing partition: %s\n%s", out, err)
 		return out, err
 	}
+	l.Debugf("Output of growpart: %s", out)
 
 	// Expand FS
-	fullDevice := fmt.Sprintf("%s%d", dev.Device, part.Number)
-	out, err = dev.expandFilesystem(fullDevice, console)
+	fullDevice, err := dev.findFullPartName(console, part.Number)
+	if err != nil {
+		return fullDevice, err
+	}
+
+	// Reload partition table info so the os is aware of size changes
+	err = dev.ReloadPartitionTable(l, console)
+	if err != nil {
+		return "", err
+	}
+
+	out, err = dev.expandFilesystem(fullDevice, console, l)
 	if err != nil {
 		return out, err
 	}
@@ -475,23 +488,53 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 	return out, nil
 }
 
-func (dev Disk) expandFilesystem(device string, console Console) (string, error) {
+func (dev Disk) findFullPartName(console Console, partNum int) (string, error) {
+	allParts, err := console.Run(fmt.Sprintf("lsblk -ltnpo name %s", dev.Device))
+	if err != nil {
+		return allParts, fmt.Errorf("listing partitions %w", err)
+	}
+
+	for _, part := range strings.Split(allParts, "\n") {
+		matches, err := regexp.MatchString(fmt.Sprintf("%s.*%d", dev.Device, partNum), part)
+		if err != nil {
+			return "", err
+		}
+		if matches {
+			return part, nil
+		}
+	}
+	return "", errors.New("no partition found")
+}
+
+func (dev Disk) expandFilesystem(device string, console Console, l logger.Interface) (string, error) {
 	var out string
 	var err error
 
-	fs, _ := console.Run(fmt.Sprintf("blkid %s -s TYPE -o value", device))
+	l.Debugf("Trying to resize filesystem for device %s", device)
+
+	fs, err := console.Run(fmt.Sprintf("blkid %s -s TYPE -o value", device))
+	if err != nil {
+		l.Errorf("error getting filesystem type: %s", err.Error())
+		return out, err
+	}
+
+	l.Debugf("Found filesystem %s for device %s", fs, device)
 
 	switch strings.TrimSpace(fs) {
 	case "ext2", "ext3", "ext4":
 		out, err = console.Run(fmt.Sprintf("e2fsck -fy %s", device))
 		if err != nil {
+			l.Errorf("error running e2fsck: %s", err.Error())
 			return out, err
 		}
+		l.Debugf("Output from running e2fsck %s", out)
 		out, err = console.Run(fmt.Sprintf("resize2fs %s", device))
 
 		if err != nil {
+			l.Errorf("error running resize2fs: %s", err.Error())
 			return out, err
 		}
+		l.Debugf("Output from running resize2fs %s", out)
 	case "xfs":
 		// to grow an xfs fs it needs to be mounted :/
 		tmpDir, err := os.MkdirTemp("", "yip")

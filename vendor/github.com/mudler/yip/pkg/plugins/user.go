@@ -50,10 +50,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		return errors.Wrap(err, "getting rawpath for /etc/default/useradd")
 	}
 
-	// Set default home and shell
 	usrDefaults := map[string]string{}
-	usrDefaults["SHELL"] = "/bin/sh"
-	usrDefaults["HOME"] = fmt.Sprintf("/home")
 
 	// Load default home and shell from `/etc/default/useradd`
 	if _, err = os.Stat(useradd); err == nil {
@@ -61,6 +58,14 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		if err != nil {
 			return errors.Wrapf(err, "could not parse '%s'", useradd)
 		}
+	}
+
+	// Set default home and shell if they are empty
+	if usrDefaults["SHELL"] == "" {
+		usrDefaults["SHELL"] = "/bin/sh"
+	}
+	if usrDefaults["HOME"] == "" {
+		usrDefaults["HOME"] = "/home"
 	}
 
 	primaryGroup := u.Name
@@ -191,20 +196,28 @@ func setUserPass(fs vfs.FS, username, password string) error {
 func User(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) error {
 	var errs error
 
-	for u, p := range s.Users {
-		r := &p
-		r.Name = u
-		if !p.Exists() {
-			if err := createUser(fs, *r, console); err != nil {
+	// Order users so they get the same UID on each run
+	users := make([]string, 0, len(s.Users))
+
+	for k := range s.Users {
+		users = append(users, k)
+	}
+	sort.Strings(users)
+
+	for _, k := range users {
+		r := s.Users[k]
+		r.Name = k
+		if !s.Users[k].Exists() {
+			if err := createUser(fs, r, console); err != nil {
 				errs = multierror.Append(errs, err)
 			}
-		} else if p.PasswordHash != "" {
+		} else if s.Users[k].PasswordHash != "" {
 			if err := setUserPass(fs, r.Name, r.PasswordHash); err != nil {
 				return err
 			}
 		}
 
-		if len(p.SSHAuthorizedKeys) > 0 {
+		if len(s.Users[k].SSHAuthorizedKeys) > 0 {
 			SSH(l, schema.Stage{SSHKeys: map[string][]string{r.Name: r.SSHAuthorizedKeys}}, fs, console)
 		}
 

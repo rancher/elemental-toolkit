@@ -176,7 +176,6 @@ func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.C
 
 			}
 			ops := e.genOpFromSchema(path, stage, *config, fs, console)
-
 			// mark lexicographic order dependency from previous blocks
 			if len(prev) > 0 && len(ops) > 0 {
 				for _, p := range prev {
