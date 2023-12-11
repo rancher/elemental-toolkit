@@ -36,6 +36,12 @@ var _ = Describe("BuidISO", Label("iso", "cmd"), func() {
 	AfterEach(func() {
 		viper.Reset()
 	})
+	It("Errors out setting firmware to anything else than efi", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "build-iso", "--firmware", "bios")
+		Expect(err).ToNot(BeNil())
+		Expect(err.Error()).To(ContainSubstring("invalid argument"))
+		Expect(err.Error()).To(ContainSubstring("'bios' is not included in: efi"))
+	})
 	It("Errors out setting consign-key without setting cosign", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "build-iso", "--cosign-key", "pubKey.url")
 		Expect(err).ToNot(BeNil())

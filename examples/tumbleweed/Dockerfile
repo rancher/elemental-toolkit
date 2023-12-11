@@ -65,7 +65,8 @@ RUN ARCH=$(uname -m); \
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
 # Enable essential services
-RUN systemctl enable NetworkManager.service
+RUN systemctl enable NetworkManager.service && \
+    systemctl enable sshd.service
 
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
@@ -78,12 +79,7 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
-    kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
-    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
-    rm -rf /var/log/update* && \
-    >/var/log/lastlog && \
-    rm -rf /boot/vmlinux*
+RUN elemental --debug init -f 
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

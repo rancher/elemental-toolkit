@@ -410,8 +410,8 @@ github.com/prometheus/common v0.4.0/go.mod h1:TNfzLD0ON7rHzMJeJkieUDPYmFC7Snx/y8
 github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsTZCD3I8kEA=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231031082920-8b1cf3f8c16f h1:GUKwalxjMDhbxMmhhBFZ91jubBOxwYvu1q8sA+jk2Jg=
-github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231031082920-8b1cf3f8c16f/go.mod h1:Ex+a/ng4u2BvcGQdQjTHI48h88bQ6k2a7q8rnvU0XbQ=
+github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231121104300-eb56c5436c4e h1:1pWxPAbjDxLWadV1goUOVZBzUqDKkD8pqwE2Nbzpd30=
+github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231121104300-eb56c5436c4e/go.mod h1:Ex+a/ng4u2BvcGQdQjTHI48h88bQ6k2a7q8rnvU0XbQ=
 github.com/rancher-sandbox/linuxkit v1.0.1 h1:LYKmv1XozmQGRV6Ilm88Fx/t54okVa8rx00wLJPZkBw=
 github.com/rancher-sandbox/linuxkit v1.0.1/go.mod h1:n6Fkjc5qoMeWrnLSA5oqUF8ZzFKMrM960CtBwfvH1ZM=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=

@@ -55,12 +55,7 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
-    kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
-    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
-    rm -rf /var/log/update* && \
-    >/var/log/lastlog && \
-    rm -rf /boot/vmlinux*
+RUN elemental --debug init -f 
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

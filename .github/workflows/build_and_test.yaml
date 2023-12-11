@@ -24,12 +24,19 @@ jobs:
       tests: ${{ steps.detect.outputs.tests }}
     steps:
       - id: detect
+        env:
+          FLAVOR: ${{ inputs.flavor }}
         run: |
           case "${{inputs.arch}}" in
           x86_64)
             echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
             echo "testson='macos-latest'" >> $GITHUB_OUTPUT
-            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
+            if [ "${FLAVOR}" == green ]; then
+              echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+            else
+              echo "tests=['test-active']" >> $GITHUB_OUTPUT
+            fi
+            ;;
           aarch64)
             echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
             echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
