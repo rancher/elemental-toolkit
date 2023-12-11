@@ -402,7 +402,7 @@ github.com/moby/sys/sequential
 # github.com/mudler/entities v0.0.0-20220905203055-68348bae0f49
 ## explicit; go 1.12
 github.com/mudler/entities/pkg/entities
-# github.com/mudler/yip v1.4.0
+# github.com/mudler/yip v1.4.6
 ## explicit; go 1.18
 github.com/mudler/yip/pkg/executor
 github.com/mudler/yip/pkg/logger
@@ -412,7 +412,7 @@ github.com/mudler/yip/pkg/schema/cloudinit
 github.com/mudler/yip/pkg/utils
 # github.com/nxadm/tail v1.4.8
 ## explicit; go 1.13
-# github.com/onsi/ginkgo/v2 v2.9.3
+# github.com/onsi/ginkgo/v2 v2.12.1
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -434,7 +434,7 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.27.6
+# github.com/onsi/gomega v1.27.10
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -479,7 +479,7 @@ github.com/pkg/xattr
 # github.com/rancher-sandbox/ele-testhelpers v0.0.0-20231121104300-eb56c5436c4e
 ## explicit; go 1.20
 github.com/rancher-sandbox/ele-testhelpers/vm
-# github.com/rancher-sandbox/linuxkit v1.0.1
+# github.com/rancher-sandbox/linuxkit v1.0.2
 ## explicit; go 1.18
 github.com/rancher-sandbox/linuxkit/providers
 # github.com/rogpeppe/go-internal v1.10.0
@@ -502,7 +502,7 @@ github.com/sergi/go-diff/diffmatchpatch
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
-# github.com/sirupsen/logrus v1.9.0
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/spectrocloud-labs/herd v0.4.2
@@ -611,7 +611,7 @@ golang.org/x/crypto/ssh/knownhosts
 # golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
 ## explicit; go 1.18
 golang.org/x/exp/constraints
-# golang.org/x/mod v0.10.0
+# golang.org/x/mod v0.12.0
 ## explicit; go 1.17
 golang.org/x/mod/semver
 # golang.org/x/net v0.17.0
@@ -622,8 +622,8 @@ golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sync v0.1.0
-## explicit
+# golang.org/x/sync v0.3.0
+## explicit; go 1.17
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.13.0
 ## explicit; go 1.17
@@ -652,7 +652,7 @@ golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.8.0
+# golang.org/x/tools v0.12.0
 ## explicit; go 1.18
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/go/ast/inspector
@@ -664,6 +664,7 @@ golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
 golang.org/x/tools/internal/event/keys
 golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/event/tag
 golang.org/x/tools/internal/gcimporter
 golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/packagesinternal
