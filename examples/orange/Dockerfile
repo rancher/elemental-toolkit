@@ -73,7 +73,7 @@ RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate en_US.UTF-8 locale, this the locale set at boot by
 # the default cloud-init
-RUN rm -rf /etc/default/locale && locale-gen --lang en_US.UTF-8
+RUN locale-gen --lang en_US.UTF-8
 
 # Generate initrd with required elemental services
 RUN elemental --debug init -f

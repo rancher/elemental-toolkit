@@ -13,3 +13,4 @@ stages:
         keymap: us
         locale: en_US.UTF-8
         timezone: UTC
+        force: "true"
