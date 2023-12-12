@@ -78,6 +78,9 @@ RUN cd /usr/lib/dracut && \
     patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
     rm /*.patch
 
+# Add default network configuration
+ADD 05_network.yaml /system/oem/05_network.yaml
+
 # Generate initrd with required elemental services
 RUN elemental --debug init --force && \
 
