@@ -4,12 +4,10 @@ DefaultDependencies=no
 After=initrd-fs.target
 Requires=initrd-fs.target
 Before=initrd.target
-Wants=oem.mount
-After=oem.mount
 
 [Service]
 RootDirectory=/sysroot
-BindPaths=/proc /sys /dev /run /tmp /oem
+BindPaths=/proc /sys /dev /run /tmp
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/elemental run-stage initramfs
