@@ -79,12 +79,7 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
-    kernel=$(ls /boot/Image-* 2>/dev/null | head -n1) && \
-    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
-    rm -rf /var/log/update* && \
-    >/var/log/lastlog && \
-    rm -rf /boot/vmlinux*
+RUN elemental --debug init --force && \
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
