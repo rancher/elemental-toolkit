@@ -54,6 +54,9 @@ RUN systemctl enable NetworkManager.service
 # Enable /tmp to be on tmpfs
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
+# Add default network configuration
+ADD 05_network.yaml /system/oem/05_network.yaml
+
 # Generate initrd with required elemental services
 RUN elemental init --debug --force
 
