@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 )
@@ -45,7 +44,7 @@ const (
 type Config struct {
 	Logger                    Logger
 	Fs                        FS
-	Mounter                   mount.Interface
+	Mounter                   Mounter
 	Runner                    Runner
 	Syscall                   SyscallInterface
 	CloudInitRunner           CloudInitRunner

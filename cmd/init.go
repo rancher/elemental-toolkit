@@ -21,12 +21,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/features"
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
 func InitCmd(root *cobra.Command) *cobra.Command {
@@ -39,7 +39,7 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 			"    Defaults to all",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), &mount.FakeMounter{})
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v1.NewDummyMounter())
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)

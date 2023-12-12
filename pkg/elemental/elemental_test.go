@@ -29,7 +29,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/vfst"
-	"k8s.io/mount-utils"
 
 	conf "github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -55,14 +54,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	var logger v1.Logger
 	var syscall v1.SyscallInterface
 	var client *v1mock.FakeHTTPClient
-	var mounter *v1mock.ErrorMounter
+	var mounter *v1mock.FakeMounter
 	var extractor *v1mock.FakeImageExtractor
 	var fs *vfst.TestFS
 	var cleanup func()
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
 		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewErrorMounter()
+		mounter = v1mock.NewFakeMounter()
 		client = &v1mock.FakeHTTPClient{}
 		logger = v1.NewNullLogger()
 		extractor = v1mock.NewFakeImageExtractor(logger)
@@ -977,7 +976,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 })
 
 // PathInMountPoints will check if the given path is in the mountPoints list
-func pathInMountPoints(mounter mount.Interface, path string) bool {
+func pathInMountPoints(mounter *v1mock.FakeMounter, path string) bool {
 	mountPoints, _ := mounter.List()
 	for _, m := range mountPoints {
 		if path == m.Path {

@@ -23,7 +23,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/twpayne/go-vfs/vfst"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -37,7 +36,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var err error
 		var cleanup func()
 		var fs *vfst.TestFS
-		var mounter *v1mock.ErrorMounter
+		var mounter *v1mock.FakeMounter
 		var runner *v1mock.FakeRunner
 		var client *v1mock.FakeHTTPClient
 		var sysc *v1mock.FakeSyscall
@@ -47,7 +46,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		BeforeEach(func() {
 			fs, cleanup, err = vfst.NewTestFS(nil)
 			Expect(err).ToNot(HaveOccurred())
-			mounter = v1mock.NewErrorMounter()
+			mounter = v1mock.NewFakeMounter()
 			runner = v1mock.NewFakeRunner()
 			client = &v1mock.FakeHTTPClient{}
 			sysc = &v1mock.FakeSyscall{}
@@ -99,7 +98,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					config.WithSyscall(sysc),
 					config.WithLogger(logger),
 				)
-				Expect(c.Mounter).To(Equal(mount.New(constants.MountBinary)))
+				Expect(c.Mounter).To(Equal(v1.NewMounter(constants.MountBinary)))
 			})
 		})
 		Describe("RunConfig", func() {

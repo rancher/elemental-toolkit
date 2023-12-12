@@ -37,7 +37,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var config *v1.RunConfig
 		var runner *v1mocks.FakeRunner
 		var fs vfs.FS
-		var mounter *v1mocks.ErrorMounter
+		var mounter *v1mocks.FakeMounter
 		var cleanup func()
 		var err error
 		var dockerState, channelState *v1.ImageState
@@ -46,7 +46,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 		BeforeEach(func() {
 			runner = v1mocks.NewFakeRunner()
-			mounter = v1mocks.NewErrorMounter()
+			mounter = v1mocks.NewFakeMounter()
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
 
@@ -375,7 +375,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var spec *v1.InstallSpec
 
 		BeforeEach(func() {
-			cfg := config.NewConfig(config.WithMounter(v1mocks.NewErrorMounter()))
+			cfg := config.NewConfig(config.WithMounter(v1mocks.NewFakeMounter()))
 			spec = config.NewInstallSpec(*cfg)
 		})
 		Describe("sanitize", func() {

@@ -19,25 +19,28 @@ package mocks
 import (
 	"errors"
 
+	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"k8s.io/mount-utils"
 )
 
-// ErrorMounter is a fake mounter for tests that can error out.
-type ErrorMounter struct {
+var _ v1.Mounter = (*FakeMounter)(nil)
+
+// FakeMounter is a fake mounter for tests that can error out.
+type FakeMounter struct {
 	ErrorOnMount   bool
 	ErrorOnUnmount bool
 	FakeMounter    mount.Interface
 }
 
-// NewErrorMounter returns an ErrorMounter with an instance of FakeMounter inside so we can use its functions
-func NewErrorMounter() *ErrorMounter {
-	return &ErrorMounter{
+// NewFakeMounter returns an FakeMounter with an instance of FakeMounter inside so we can use its functions
+func NewFakeMounter() *FakeMounter {
+	return &FakeMounter{
 		FakeMounter: &mount.FakeMounter{},
 	}
 }
 
 // Mount will return an error if ErrorOnMount is true
-func (e ErrorMounter) Mount(source string, target string, fstype string, options []string) error {
+func (e FakeMounter) Mount(source string, target string, fstype string, options []string) error {
 	if e.ErrorOnMount {
 		return errors.New("mount error")
 	}
@@ -45,18 +48,14 @@ func (e ErrorMounter) Mount(source string, target string, fstype string, options
 }
 
 // Unmount will return an error if ErrorOnUnmount is true
-func (e ErrorMounter) Unmount(target string) error {
+func (e FakeMounter) Unmount(target string) error {
 	if e.ErrorOnUnmount {
 		return errors.New("unmount error")
 	}
 	return e.FakeMounter.Unmount(target)
 }
 
-func (e ErrorMounter) List() ([]mount.MountPoint, error) {
-	return e.FakeMounter.List()
-}
-
-func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) {
+func (e FakeMounter) IsLikelyNotMountPoint(file string) (bool, error) {
 	mnts, _ := e.List()
 	for _, mnt := range mnts {
 		if file == mnt.Path {
@@ -66,15 +65,7 @@ func (e ErrorMounter) IsLikelyNotMountPoint(file string) (bool, error) {
 	return true, nil
 }
 
-// We need to have this below to fulfill the interface for mount.Interface
-
-func (e ErrorMounter) MountSensitive(_, _, _ string, _, _ []string) error {
-	return nil
+// This is not part of the interface, just a helper method for tests
+func (e FakeMounter) List() ([]mount.MountPoint, error) {
+	return e.FakeMounter.List()
 }
-func (e ErrorMounter) MountSensitiveWithoutSystemd(_, _, _ string, _, _ []string) error {
-	return nil
-}
-func (e ErrorMounter) MountSensitiveWithoutSystemdWithMountFlags(_, _, _ string, _, _, _ []string) error {
-	return nil
-}
-func (e ErrorMounter) GetMountRefs(_ string) ([]string, error) { return []string{}, nil }

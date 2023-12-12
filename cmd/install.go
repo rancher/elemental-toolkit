@@ -21,7 +21,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	"github.com/rancher/elemental-toolkit/pkg/action"
@@ -48,7 +47,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mounter := mount.New(path)
+			mounter := v1.NewMounter(path)
 
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
