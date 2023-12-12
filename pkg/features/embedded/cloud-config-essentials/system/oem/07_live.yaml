@@ -9,15 +9,15 @@ name: "LiveCD Detection"
 stages:
    rootfs.before:
      - if: |
-            cat /proc/cmdline | grep -q "CDLABEL" || cat /proc/cmdline | grep -q "rd.cos.disable"
+            cat /proc/cmdline | grep -q "CDLABEL" || cat /proc/cmdline | grep -q "elemental.disable"
        name: "Identify live mode"
        files:
-       - path: /run/cos/live_mode
+       - path: /run/elemental/live_mode
          content: "1"
          permissions: 0600
          owner: 0
          group: 0
-     - if: '[ -f "/run/cos/live_mode" ]'
+     - if: '[ -f "/run/elemental/live_mode" ]'
        name: "Include cloud init files from the ISO root"
        files:
        - path: /etc/elemental/config.d/iso-cloud-init-paths.yaml

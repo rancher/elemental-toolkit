@@ -32,10 +32,10 @@ var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 	bootAssessmentInstalled := func() {
 		// Auto assessment was installed
-		out, _ := s.Command("sudo cat /run/initramfs/cos-state/grubcustom")
+		out, _ := s.Command("sudo cat /run/initramfs/elemental-state/grubcustom")
 		Expect(out).To(ContainSubstring("bootfile_loc"))
 
-		out, _ = s.Command("sudo cat /run/initramfs/cos-state/grub_boot_assessment")
+		out, _ = s.Command("sudo cat /run/initramfs/elemental-state/grub_boot_assessment")
 		Expect(out).To(ContainSubstring("boot_assessment_file"))
 
 		cmdline, _ := s.Command("sudo cat /proc/cmdline")
@@ -69,17 +69,17 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
-			out, _ = s.Command("sudo cat /run/initramfs/cos-state/boot_assessment")
+			out, _ = s.Command("sudo cat /run/initramfs/elemental-state/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
 
 			// Break the upgrade
-			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/cos-state")
+			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/elemental-state")
 			fmt.Println(out)
 
 			out, _ = s.Command("sudo mkdir -p /tmp/mnt/STATE")
 			fmt.Println(out)
 
-			s.Command("sudo mount /run/initramfs/cos-state/cOS/active.img /tmp/mnt/STATE")
+			s.Command("sudo mount /run/initramfs/elemental-state/cOS/active.img /tmp/mnt/STATE")
 
 			for _, d := range breakPaths {
 				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
@@ -97,10 +97,10 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(v).To(Equal(currentVersion))
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(And(ContainSubstring("passive.img"), ContainSubstring("upgrade_failure")), cmdline)
+			Expect(cmdline).To(And(ContainSubstring("image=passive"), ContainSubstring("upgrade_failure")), cmdline)
 
 			Eventually(func() string {
-				out, _ := s.Command("sudo ls -liah /run/cos")
+				out, _ := s.Command("sudo ls -liah /run/elemental")
 				return out
 			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
 		})

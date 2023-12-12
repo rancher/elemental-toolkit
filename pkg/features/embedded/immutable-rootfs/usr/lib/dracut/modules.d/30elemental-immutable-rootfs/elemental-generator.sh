@@ -4,16 +4,22 @@ type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
 cos_unit="elemental-immutable-rootfs.service"
 cos_layout="/run/cos/cos-layout.env"
-root_part_mnt="/run/initramfs/cos-state" # TODO change to something under /run/cos
+root_part_mnt="/run/initramfs/elemental-state" # TODO change to something under /run/cos
 
 # Omit any immutable roofs module logic if disabled
 if getargbool 0 rd.cos.disable; then
     exit 0
 fi
 
+if getargbool 0 elemental.disable; then
+    exit 0
+fi
+
 # Omit any immutable rootfs module logic if no image path provided
 cos_img=$(getarg cos-img/filename=)
-[ -z "${cos_img}" ] && exit 0
+elemental_img=$(getarg elemental.image=)
+[ -z "${cos_img}" && -z "${elemental_img}" ] && exit 0
+[ -z "${cos_img}" ] && cos_img="/cOS/${elemental_img}.img"
 
 [ -z "${root}" ] && root=$(getarg root=)
 
@@ -23,7 +29,10 @@ if getargbool 0 rd.cos.debugrw; then
 fi
 
 oem_timeout=$(getargnum 120 1 1800 rd.cos.oemtimeout=)
+
 oem_label=$(getarg rd.cos.oemlabel=)
+[ -z "${oem_label}" ] && oem_label=$(getarg elemental.oemlabel=)
+
 cos_overlay=$(getarg rd.cos.overlay=)
 [ -z "${cos_overlay}" ] && cos_overlay="tmpfs:20%"
 

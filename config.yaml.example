@@ -120,6 +120,29 @@ upgrade:
   # grub menu entry, this is the string that will be displayed
   grub-entry-name: Elemental
 
+# configuration used for the 'mount' command
+mount:
+  sysroot: /sysroot # Path to mount system to
+  write-fstab: true # Write fstab into sysroot/etc/fstab
+  overlay:
+    type: tmpfs # tmpfs|block
+    device: /dev/sda6 # Block device used to store overlay. Used when type is set to block
+    size: 25% # Size of tmpfs as percentag of system memory. Used when type is set to tmpfs
+    paths:
+      - /var
+      - /etc
+      - /srv
+  persistent:
+    mode: overlay # overlay|bind
+    paths:
+      - /etc/systemd
+      - /etc/ssh
+      - /home
+      - /opt
+      - /root
+      - /usr/libexec
+      - /var/log
+
 # use cosign to validate images from container registries
 cosign: true
 # cosign key to used for validation

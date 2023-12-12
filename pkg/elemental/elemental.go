@@ -191,6 +191,7 @@ func (e Elemental) MountPartition(part *v1.Partition, opts ...string) error {
 		}
 		part.Path = device
 	}
+
 	err = e.config.Mounter.Mount(part.Path, part.MountPoint, "auto", opts)
 	if err != nil {
 		e.config.Logger.Errorf("Failed mounting device %s with label %s", part.Path, part.FilesystemLabel)

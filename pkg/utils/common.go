@@ -134,7 +134,7 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 // CreateDirStructure creates essentials directories under the root tree that might not be present
 // within a container image (/dev, /run, etc.)
 func CreateDirStructure(fs v1.FS, target string) error {
-	for _, dir := range []string{"/run", "/dev", "/boot", "/usr/local", "/oem", "/system", "/etc/elemental/config.d"} {
+	for _, dir := range []string{"/run", "/dev", "/boot", "/oem", "/system", "/etc/elemental/config.d"} {
 		err := MkdirAll(fs, filepath.Join(target, dir), constants.DirPerm)
 		if err != nil {
 			return err

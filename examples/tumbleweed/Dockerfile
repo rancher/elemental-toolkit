@@ -1,7 +1,7 @@
 # run `make build` to build local/elemental-toolkit image
 ARG TOOLKIT_REPO
 ARG VERSION
-ARG OS_IMAGE=opensuse/tumbleweed
+ARG OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
 ARG OS_VERSION=latest
 
 FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
@@ -79,7 +79,7 @@ RUN cd /usr/lib/dracut && \
     rm /*.patch
 
 # Generate initrd with required elemental services
-RUN elemental --debug init -f 
+RUN elemental --debug init --force && \
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

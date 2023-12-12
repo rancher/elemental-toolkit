@@ -13,6 +13,7 @@ iso-meta.yaml
 .qemu/
 .loop
 tests/**/logs
+tests/vmstdout
 serial_port1.log
 capture.webm
 

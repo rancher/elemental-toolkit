@@ -17,6 +17,7 @@ limitations under the License.
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -241,9 +242,9 @@ func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
 	if vp == nil {
 		vp = viper.New()
 	}
-	// Bind install cmd flags
+	// Bind init cmd flags
 	bindGivenFlags(vp, flags)
-	// Bind install env vars
+	// Bind init env vars
 	viperReadEnv(vp, "INIT", constants.GetInitKeyEnvMap())
 
 	err := vp.Unmarshal(init, setDecoder, decodeHook)
@@ -251,6 +252,73 @@ func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
 		r.Logger.Warnf("error unmarshalling InitSpec: %s", err)
 	}
 	return init, err
+}
+
+func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error) {
+	mount := config.NewMountSpec()
+	vp := viper.Sub("mount")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind mount cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind mount env vars
+	viperReadEnv(vp, "MOUNT", constants.GetMountKeyEnvMap())
+
+	err := vp.Unmarshal(mount, setDecoder, decodeHook)
+	if err != nil {
+		r.Logger.Warnf("error unmarshalling MountSpec: %s", err)
+		return mount, err
+	}
+
+	if err := applyKernelCmdline(r, mount); err != nil {
+		r.Logger.Errorf("Error reading kernel cmdline: %s", err.Error())
+		return mount, err
+	}
+
+	err = mount.Sanitize()
+	r.Logger.Debugf("Loaded mount spec: %s", litter.Sdump(mount))
+	return mount, err
+}
+
+func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
+	cmdline, err := r.Config.Fs.ReadFile("/proc/cmdline")
+	if err != nil {
+		r.Logger.Errorf("Error reading /proc/cmdline: %s", err.Error())
+		return err
+	}
+
+	for _, cmd := range strings.Fields(string(cmdline)) {
+		split := strings.SplitN(cmd, "=", 2)
+
+		val := ""
+		if len(split) == 2 {
+			val = split[1]
+		}
+
+		switch split[0] {
+		case "elemental.image":
+			mount.Mode = val
+		case "elemental.disable", "rd.cos.disable":
+			mount.Disable = true
+		case "cos-img/filename":
+			switch val {
+			case constants.ActiveImgPath:
+				mount.Mode = constants.ActiveImgName
+			case constants.PassiveImgPath:
+				mount.Mode = constants.PassiveImgName
+			case constants.RecoveryImgPath:
+				mount.Mode = constants.RecoveryImgName
+			default:
+				r.Logger.Errorf("Error parsing cmdline %s", cmd)
+				return errors.New("Unknown image path")
+			}
+		case "elemental.oemlabel", "rd.cos.oemlabel":
+			mount.Partitions.OEM.FilesystemLabel = val
+		}
+	}
+
+	return nil
 }
 
 func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error) {

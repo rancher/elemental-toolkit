@@ -9,7 +9,7 @@ name: "Recovery partition boot setup"
 stages:
    boot:
      - name: "Recovery"
-       if: '[ -f "/run/cos/recovery_mode" ]'
+       if: '[ -f "/run/elemental/recovery_mode" ]'
        commands:
        - |
             source /etc/os-release

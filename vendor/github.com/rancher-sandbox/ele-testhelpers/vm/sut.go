@@ -205,11 +205,11 @@ func (s *SUT) BootFrom() string {
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
 	switch {
-	case strings.Contains(out, "active.img"):
+	case strings.Contains(out, "active.img"), strings.Contains(out, "image=active"):
 		return Active
-	case strings.Contains(out, "passive.img"):
+	case strings.Contains(out, "passive.img"), strings.Contains(out, "image=passive"):
 		return Passive
-	case strings.Contains(out, "recovery.img"), strings.Contains(out, "recovery.squashfs"):
+	case strings.Contains(out, "recovery.img"), strings.Contains(out, "recovery.squashfs"), strings.Contains(out, "image=recovery"):
 		return Recovery
 	case strings.Contains(out, "live:CDLABEL"):
 		return LiveCD

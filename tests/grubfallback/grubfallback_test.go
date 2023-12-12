@@ -44,9 +44,9 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			It("fallbacks by booting into passive", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
-				_, err := s.Command("mount -o rw,remount /run/initramfs/cos-state")
+				_, err := s.Command("mount -o rw,remount /run/initramfs/elemental-state")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/cos-state/cOS/active.img")
+				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/active.img")
 				Expect(err).ToNot(HaveOccurred())
 
 				s.Reboot()
@@ -62,11 +62,11 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			It("fallbacks by booting into recovery", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
-				_, err := s.Command("mount -o rw,remount /run/initramfs/cos-state")
+				_, err := s.Command("mount -o rw,remount /run/initramfs/elemental-state")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/cos-state/cOS/active.img")
+				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/active.img")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/cos-state/cOS/passive.img")
+				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/passive.img")
 				Expect(err).ToNot(HaveOccurred())
 				s.Reboot()
 

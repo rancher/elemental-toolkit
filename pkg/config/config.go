@@ -178,7 +178,7 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 
 	activeImg.Label = constants.ActiveLabel
 	activeImg.Size = constants.ImgSize
-	activeImg.File = filepath.Join(constants.StateDir, "cOS", constants.ActiveImgFile)
+	activeImg.File = filepath.Join(constants.StateDir, constants.ActiveImgPath)
 	activeImg.FS = constants.LinuxImgFs
 	activeImg.MountPoint = constants.ActiveDir
 	if isoRootExists {
@@ -190,10 +190,10 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	recoveryImg.Source = v1.NewFileSrc(activeImg.File)
 	recoveryImg.FS = constants.LinuxImgFs
 	recoveryImg.Label = constants.SystemLabel
-	recoveryImg.File = filepath.Join(constants.RecoveryDir, "cOS", constants.RecoveryImgFile)
+	recoveryImg.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgPath)
 
 	passiveImg = v1.Image{
-		File:   filepath.Join(constants.StateDir, "cOS", constants.PassiveImgFile),
+		File:   filepath.Join(constants.StateDir, constants.PassiveImgPath),
 		Label:  constants.PassiveLabel,
 		Source: v1.NewFileSrc(activeImg.File),
 		FS:     constants.LinuxImgFs,
@@ -215,6 +215,56 @@ func NewInitSpec() *v1.InitSpec {
 		Mkinitrd: true,
 		Force:    false,
 		Features: features.All,
+	}
+}
+
+func NewMountSpec() *v1.MountSpec {
+	partitions := v1.ElementalPartitions{
+		State: &v1.Partition{
+			FilesystemLabel: constants.StateLabel,
+			Size:            constants.StateSize,
+			Name:            constants.StatePartName,
+			FS:              constants.LinuxFs,
+			Flags:           []string{},
+		},
+		Persistent: &v1.Partition{
+			FilesystemLabel: constants.PersistentLabel,
+			Size:            constants.PersistentSize,
+			Name:            constants.PersistentPartName,
+			FS:              constants.LinuxFs,
+			MountPoint:      constants.PersistentDir,
+			Flags:           []string{},
+		},
+		OEM: &v1.Partition{
+			FilesystemLabel: constants.OEMLabel,
+			Size:            constants.OEMSize,
+			Name:            constants.OEMPartName,
+			FS:              constants.LinuxFs,
+			MountPoint:      constants.OEMPath,
+			Flags:           []string{},
+		},
+		Recovery: &v1.Partition{
+			FilesystemLabel: constants.RecoveryLabel,
+			Size:            constants.RecoverySize,
+			Name:            constants.RecoveryPartName,
+			FS:              constants.LinuxFs,
+			Flags:           []string{},
+		},
+	}
+
+	return &v1.MountSpec{
+		Sysroot:    "/sysroot",
+		WriteFstab: true,
+		Partitions: partitions,
+		Overlay: v1.OverlayMounts{
+			Type:  constants.Tmpfs,
+			Size:  "25%",
+			Paths: []string{"/var", "/etc", "/srv"},
+		},
+		Persistent: v1.PersistentMounts{
+			Mode:  constants.OverlayMode,
+			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/var/log"},
+		},
 	}
 }
 
@@ -373,7 +423,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	var imgSource *v1.ImageSource
 	var aState, pState *v1.ImageState
 
-	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgFile) {
+	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgName) {
 		return nil, fmt.Errorf("reset can only be called from the recovery system")
 	}
 
@@ -438,7 +488,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		cfg.Logger.Warnf("no Persistent partition found")
 	}
 
-	recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+	recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgPath)
 
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
 		imgSource = v1.NewFileSrc(recoveryImg)
@@ -446,7 +496,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 		imgSource = v1.NewEmptySrc()
 	}
 
-	activeFile := filepath.Join(ep.State.MountPoint, "cOS", constants.ActiveImgFile)
+	activeFile := filepath.Join(ep.State.MountPoint, constants.ActiveImgPath)
 	return &v1.ResetSpec{
 		Target:       target,
 		Partitions:   ep,
@@ -461,7 +511,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 			MountPoint: constants.ActiveDir,
 		},
 		Passive: v1.Image{
-			File:   filepath.Join(ep.State.MountPoint, "cOS", constants.PassiveImgFile),
+			File:   filepath.Join(ep.State.MountPoint, constants.PassiveImgPath),
 			Label:  pState.Label,
 			Source: v1.NewFileSrc(activeFile),
 			FS:     aState.FS,

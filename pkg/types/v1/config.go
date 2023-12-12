@@ -18,13 +18,16 @@ package v1
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"gopkg.in/yaml.v3"
 	"k8s.io/mount-utils"
+
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 )
 
 const (
@@ -227,11 +230,80 @@ func (i *InstallSpec) Sanitize() error {
 	return i.Partitions.SetFirmwarePartitions(i.Firmware, i.PartTable)
 }
 
+// InitSpec struct represents all the init action details
 type InitSpec struct {
 	Mkinitrd bool `yaml:"mkinitrd,omitempty" mapstructure:"mkinitrd"`
 	Force    bool `yaml:"force,omitempty" mapstructure:"force"`
 
 	Features []string `yaml:"features,omitempty" mapstructure:"features"`
+}
+
+// MountSpec struct represents all the mount action details
+type MountSpec struct {
+	WriteFstab bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	Disable    bool   `yaml:"disable,omitempty" mapstructure:"disable"`
+	Sysroot    string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode       string `yaml:"mode,omitempty" mapstructure:"mode"`
+	Partitions ElementalPartitions
+	Overlay    OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
+	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+}
+
+// PersistentMounts struct contains settings for which paths to mount as
+// persistent
+type PersistentMounts struct {
+	Mode  string   `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+// OverlayMounts contains information about the RW overlay mounted over the
+// immutable system.
+type OverlayMounts struct {
+	Type   string   `yaml:"type,omitempty" mapstructure:"type"`
+	Device string   `yaml:"device,omitempty" mapstructure:"device"`
+	Size   string   `yaml:"size,omitempty" mapstructure:"size"`
+	Paths  []string `yaml:"paths,omitempty" mapstructure:"paths"`
+}
+
+// Sanitize checks the consistency of the struct, returns error
+// if unsolvable inconsistencies are found
+func (spec *MountSpec) Sanitize() error {
+	switch spec.Persistent.Mode {
+	case constants.BindMode, constants.OverlayMode:
+		break
+	default:
+		return fmt.Errorf("unknown persistent mode: '%s'", spec.Persistent.Mode)
+	}
+
+	const separator = string(os.PathSeparator)
+
+	if spec.Persistent.Paths != nil {
+		sort.Slice(spec.Persistent.Paths, func(i, j int) bool {
+			return strings.Count(spec.Persistent.Paths[i], separator) < strings.Count(spec.Persistent.Paths[j], separator)
+		})
+	}
+
+	switch spec.Overlay.Type {
+	case constants.Tmpfs, constants.Block:
+		break
+	default:
+		return fmt.Errorf("unknown overlay type: '%s'", spec.Overlay.Type)
+	}
+
+	if spec.Overlay.Paths != nil {
+		sort.Slice(spec.Overlay.Paths, func(i, j int) bool {
+			return strings.Count(spec.Overlay.Paths[i], separator) < strings.Count(spec.Overlay.Paths[j], separator)
+		})
+	}
+
+	if spec.Mode == constants.RecoveryImgName {
+		spec.Partitions.Persistent = nil
+		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
+	} else {
+		spec.Partitions.State.MountPoint = constants.RunningStateDir
+	}
+
+	return nil
 }
 
 // ResetSpec struct represents all the reset action details

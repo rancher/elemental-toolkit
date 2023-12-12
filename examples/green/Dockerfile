@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
 
 # OS base image of our choice
-FROM opensuse/leap:15.5 AS OS
+FROM registry.opensuse.org/opensuse/leap:15.5 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -55,7 +55,7 @@ RUN systemctl enable NetworkManager.service
 RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
-RUN elemental --debug init -f 
+RUN elemental init --debug --force
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

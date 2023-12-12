@@ -9,6 +9,7 @@ name: "Branding"
 stages:
    initramfs:
      - name: "Branding"
+       if: '[ ! -f "/run/elemental/recovery_mode" ]'
        hostname: "elemental"
        files:
         - path: /etc/issue
@@ -26,8 +27,28 @@ stages:
           permissions: 0644
           owner: 0
           group: 0
+     - name: "Branding recovery"
+       if: '[ -f "/run/elemental/recovery_mode" ]'
+       hostname: "elemental"
+       files:
+        - path: /etc/issue
+          content: |
+            .-----.
+            | .-. |
+            | |.| |
+            | `-' |
+            `-----'
+
+            Welcome to \S recovery!
+            IP address \4
+            Login with user: root, password: cos
+            Reset the active system with "elemental reset".
+          permissions: 0644
+          permissions: 0644
+          owner: 0
+          group: 0
    boot:
     - name: "Recovery"
-      if: '[ -f "/run/cos/recovery_mode" ]'
+      if: '[ -f "/run/elemental/recovery_mode" ]'
       hostname: "recovery"
 

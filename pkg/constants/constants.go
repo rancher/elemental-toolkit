@@ -38,9 +38,6 @@ const (
 	PersistentPartName = "persistent"
 	OEMLabel           = "COS_OEM"
 	OEMPartName        = "oem"
-	ActiveImgName      = "active"
-	PassiveImgName     = "passive"
-	RecoveryImgName    = "recovery"
 	MountBinary        = "/usr/bin/mount"
 	EfiDevice          = "/sys/firmware/efi"
 	LinuxFs            = "ext4"
@@ -58,12 +55,16 @@ const (
 	ImgSize            = uint(0)
 	ImgOverhead        = uint(256)
 	HTTPTimeout        = 60
-	CosSetup           = "/usr/bin/cos-setup"
 	GPT                = "gpt"
 	BuildImgName       = "elemental"
 	UsrLocalPath       = "/usr/local"
 	OEMPath            = "/oem"
 	ConfigDir          = "/etc/elemental"
+	OverlayMode        = "overlay"
+	BindMode           = "bind"
+	Tmpfs              = "tmpfs"
+	Autofs             = "auto"
+	Block              = "block"
 
 	// Kernel and initrd paths
 	KernelModulesDir = "/lib/modules"
@@ -86,26 +87,34 @@ const (
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints of images and partitions
-	RecoveryDir     = "/run/cos/recovery"
-	StateDir        = "/run/cos/state"
-	OEMDir          = "/run/cos/oem"
-	PersistentDir   = "/run/cos/persistent"
-	ActiveDir       = "/run/cos/active"
-	TransitionDir   = "/run/cos/transition"
-	EfiDir          = "/run/cos/efi"
-	ImgSrcDir       = "/run/cos/imgsrc"
-	WorkingImgDir   = "/run/cos/workingtree"
-	RunningStateDir = "/run/initramfs/cos-state" // TODO: converge this constant with StateDir/RecoveryDir in dracut module from cos-toolkit
+	RecoveryDir        = "/run/elemental/recovery"
+	StateDir           = "/run/elemental/state"
+	OEMDir             = "/run/elemental/oem"
+	PersistentDir      = "/run/elemental/persistent"
+	PersistentStateDir = "/run/elemental/persistent/.state"
+	ActiveDir          = "/run/elemental/active"
+	TransitionDir      = "/run/elemental/transition"
+	EfiDir             = "/run/elemental/efi"
+	ImgSrcDir          = "/run/elemental/imgsrc"
+	WorkingImgDir      = "/run/elemental/workingtree"
+	OverlayDir         = "/run/elemental/overlay"
+	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
 
 	// Live image mountpoints
 	ISOBaseTree = "/run/rootfsbase"
 	LiveDir     = "/run/initramfs/live"
 
-	// Image file names
+	// Image constants
+	ActiveImgName     = "active"
+	PassiveImgName    = "passive"
+	RecoveryImgName   = "recovery"
 	ActiveImgFile     = "active.img"
 	PassiveImgFile    = "passive.img"
 	RecoveryImgFile   = "recovery.img"
 	TransitionImgFile = "transition.img"
+	ActiveImgPath     = "/cOS/active.img"
+	PassiveImgPath    = "/cOS/passive.img"
+	RecoveryImgPath   = "/cOS/recovery.img"
 
 	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"
@@ -248,6 +257,16 @@ func GetInitKeyEnvMap() map[string]string {
 	return map[string]string{
 		"mkinitrd": "MKINITRD",
 		"force":    "FORCE",
+	}
+}
+
+// GetMountKeyEnvMap returns environment variable bindings to MountSpec data
+func GetMountKeyEnvMap() map[string]string {
+	return map[string]string{
+		"write-fstab":         "WRITE_FSTAB",
+		"write-sentinel":      "WRITE_SENTINEL",
+		"sysroot":             "SYSROOT",
+		"read-kernel-cmdline": "READ_KERNEL_CMDLINE",
 	}
 }
 

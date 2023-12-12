@@ -7,9 +7,12 @@
 # rd.cos.overlay=UUID=<vol_uuid>
 # rd.cos.oemtimeout=<seconds>
 # rd.cos.oemlabel=<vol_label>
+# elemental.oemlabel=<vol_label>
 # rd.cos.debugrw
 # rd.cos.disable
+# elemental.disable
 # cos-img/filename=/cOS/active.img
+# elemental.image=active
 
 type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
 
@@ -17,9 +20,16 @@ if getargbool 0 rd.cos.disable; then
     return 0
 fi
 
+if getargbool 0 elemental.disable; then
+    return 0
+fi
+
 cos_img=$(getarg cos-img/filename=)
-[ -z "${cos_img}" ] && return 0
+elemental_img=$(getarg elemental.image=)
+[ -z "${cos_img}" && -z "${elemental_img}" ] && return 0
 [ -z "${root}" ] && root=$(getarg root=)
+
+[ -n "${elemental_img}" ] && cos_img="/cOS/${elemental_img}.img"
 
 cos_root_perm="ro"
 if getargbool 0 rd.cos.debugrw; then
@@ -42,6 +52,7 @@ esac
 [ "${rootok}" != "1" ] && return 0
 
 info "root device set to root=${root}"
+info "image set to=${cos_img}"
 
 wait_for_dev -n "${root#block:}"
 
@@ -60,6 +71,16 @@ case "${cos_img}" in
         echo -n 1 > /run/cos/active_mode ;;
     *passive*)
         echo -n 1 > /run/cos/passive_mode ;;
+esac
+
+mkdir -p /run/elemental
+case "${cos_img}" in
+    *recovery*)
+        echo -n 1 > /run/elemental/recovery_mode ;;
+    *active*)
+        echo -n 1 > /run/elemental/active_mode ;;
+    *passive*)
+        echo -n 1 > /run/elemental/passive_mode ;;
 esac
 
 return 0

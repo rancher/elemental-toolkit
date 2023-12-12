@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -36,6 +37,8 @@ const (
 	embeddedRoot = "embedded"
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
+	FeatureElementalRootfs       = "elemental-rootfs"
+	FeatureElementalSysroot      = "elemental-sysroot"
 	FeatureGrubConfig            = "grub-config"
 	FeatureGrubDefaultBootargs   = "grub-default-bootargs"
 	FeatureElementalSetup        = "elemental-setup"
@@ -133,6 +136,22 @@ func Get(names []string) ([]*Feature, error) {
 		case FeatureCloudConfigEssentials:
 			features = append(features, New(name, nil))
 		case FeatureImmutableRootfs:
+			if slices.Contains(names, FeatureElementalRootfs) {
+				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureImmutableRootfs, FeatureElementalRootfs)
+			}
+
+			features = append(features, New(name, nil))
+		case FeatureElementalRootfs:
+			if slices.Contains(names, FeatureImmutableRootfs) {
+				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureElementalRootfs, FeatureImmutableRootfs)
+			}
+
+			units := []*systemd.Unit{
+				systemd.NewUnit("elemental-rootfs.service"),
+			}
+
+			features = append(features, New(name, units))
+		case FeatureElementalSysroot:
 			features = append(features, New(name, nil))
 		case FeatureDracutConfig:
 			features = append(features, New(name, nil))
@@ -145,10 +164,10 @@ func Get(names []string) ([]*Feature, error) {
 				systemd.NewUnit("elemental-setup-reconcile.service"),
 				systemd.NewUnit("elemental-setup-reconcile.timer"),
 				systemd.NewUnit("elemental-setup-boot.service"),
-				systemd.NewUnit("elemental-setup-rootfs.service"),
 				systemd.NewUnit("elemental-setup-network.service"),
-				systemd.NewUnit("elemental-setup-initramfs.service"),
 				systemd.NewUnit("elemental-setup-fs.service"),
+				systemd.NewUnit("elemental-setup-initramfs.service"),
+				systemd.NewUnit("elemental-setup-rootfs.service"),
 			}
 			features = append(features, New(name, units))
 		default:
