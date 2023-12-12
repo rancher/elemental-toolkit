@@ -82,7 +82,7 @@ RUN cd /usr/lib/dracut && \
 ADD 05_network.yaml /system/oem/05_network.yaml
 
 # Generate initrd with required elemental services
-RUN elemental --debug init --force && \
+RUN elemental --debug init --force
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
