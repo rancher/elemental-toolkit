@@ -17,6 +17,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v3.3.1
+        with:
+          go-version-file: go.mod
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
