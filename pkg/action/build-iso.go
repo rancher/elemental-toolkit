@@ -251,12 +251,12 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 	align := int64(4 * 1024 * 1024)
 	efiSizeMB := (efiSize/align*align + align) / (1024 * 1024)
 
-	err = b.e.CreateFileSystemImage(&v1.Image{
+	err = elemental.CreateFileSystemImage(b.cfg.Config, &v1.Image{
 		File:  img,
 		Size:  uint(efiSizeMB),
 		FS:    constants.EfiFs,
 		Label: constants.EfiLabel,
-	})
+	}, "", false)
 	if err != nil {
 		return err
 	}
@@ -329,7 +329,7 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 
 func (b BuildISOAction) applySources(target string, sources ...*v1.ImageSource) error {
 	for _, src := range sources {
-		_, err := b.e.DumpSource(target, src)
+		_, err := elemental.DumpSource(b.cfg.Config, target, src)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.DumpSource)
 		}

@@ -396,7 +396,7 @@ func IsHTTPURI(uri string) (bool, error) {
 
 // GetSource copies given source to destination, if source is a local path it simply
 // copies files, if source is a remote URL it tries to download URL to destination.
-func GetSource(config *v1.Config, source string, destination string) error {
+func GetSource(config v1.Config, source string, destination string) error {
 	local, err := IsLocalURI(source)
 	if err != nil {
 		config.Logger.Errorf("Not a valid url: %s", source)

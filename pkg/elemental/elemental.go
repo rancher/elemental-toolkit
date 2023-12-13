@@ -210,84 +210,90 @@ func (e Elemental) UnmountPartition(part *v1.Partition) error {
 	return e.config.Mounter.Unmount(part.MountPoint)
 }
 
-// MountImage mounts an image with the given mount options
-func (e Elemental) MountImage(img *v1.Image, opts ...string) error {
-	e.config.Logger.Debugf("Mounting image %s to %s", img.Label, img.MountPoint)
-	err := utils.MkdirAll(e.config.Fs, img.MountPoint, cnst.DirPerm)
+// MountFileSystemImage mounts an image with the given mount options
+func MountFileSystemImage(c v1.Config, img *v1.Image, opts ...string) error {
+	c.Logger.Debugf("Mounting image %s to %s", img.Label, img.MountPoint)
+	err := utils.MkdirAll(c.Fs, img.MountPoint, cnst.DirPerm)
 	if err != nil {
-		e.config.Logger.Errorf("Failed creating mountpoint %s", img.MountPoint)
+		c.Logger.Errorf("Failed creating mountpoint %s", img.MountPoint)
 		return err
 	}
-	out, err := e.config.Runner.Run("losetup", "--show", "-f", img.File)
+	out, err := c.Runner.Run("losetup", "--show", "-f", img.File)
 	if err != nil {
-		e.config.Logger.Errorf("Failed setting a loop device for %s", img.File)
+		c.Logger.Errorf("Failed setting a loop device for %s", img.File)
 		return err
 	}
 	loop := strings.TrimSpace(string(out))
-	err = e.config.Mounter.Mount(loop, img.MountPoint, "auto", opts)
+	err = c.Mounter.Mount(loop, img.MountPoint, "auto", opts)
 	if err != nil {
-		e.config.Logger.Errorf("Failed to mount %s", loop)
-		_, _ = e.config.Runner.Run("losetup", "-d", loop)
+		c.Logger.Errorf("Failed to mount %s", loop)
+		_, _ = c.Runner.Run("losetup", "-d", loop)
 		return err
 	}
 	img.LoopDevice = loop
 	return nil
 }
 
-// UnmountImage unmounts the given image or does nothing if not mounted
-func (e Elemental) UnmountImage(img *v1.Image) error {
+// UnmountFilesystemImage unmounts the given image or does nothing if not mounted
+func UnmountFileSystemImage(c v1.Config, img *v1.Image) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
-	if notMnt, _ := e.config.Mounter.IsLikelyNotMountPoint(img.MountPoint); notMnt {
-		e.config.Logger.Debugf("Not unmounting image, %s doesn't look like mountpoint", img.MountPoint)
+	if notMnt, _ := c.Mounter.IsLikelyNotMountPoint(img.MountPoint); notMnt {
+		c.Logger.Debugf("Not unmounting image, %s doesn't look like mountpoint", img.MountPoint)
 		return nil
 	}
 
-	e.config.Logger.Debugf("Unmounting image %s from %s", img.Label, img.MountPoint)
-	err := e.config.Mounter.Unmount(img.MountPoint)
+	c.Logger.Debugf("Unmounting image %s from %s", img.Label, img.MountPoint)
+	err := c.Mounter.Unmount(img.MountPoint)
 	if err != nil {
 		return err
 	}
-	_, err = e.config.Runner.Run("losetup", "-d", img.LoopDevice)
+	_, err = c.Runner.Run("losetup", "-d", img.LoopDevice)
 	img.LoopDevice = ""
 	return err
 }
 
-// CreateFileSystemImage creates the image file for the given image
-func (e Elemental) CreateFileSystemImage(img *v1.Image) error {
-	return e.CreatePreLoadedFileSystemImage(img, "")
-}
-
-// CreatePreLoadedFileSystemImage creates the image file for the given image including the contents of the rootDir.
-// If rootDir is empty it simply creates an empty filesystem image
-func (e Elemental) CreatePreLoadedFileSystemImage(img *v1.Image, rootDir string) error {
-	e.config.Logger.Infof("Creating filesystem image %s with size: %d", img.File, img.Size)
-	err := utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
+// CreateFileSystemImage creates the image file for the given image. An root tree path
+// can be used to determine the image size and the preload flag can be used to create an image
+// including the root tree data.
+func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool) error {
+	c.Logger.Infof("Creating image %s", img.File)
+	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
+		c.Logger.Errorf("failed creating directory for %s", img.File)
 		return err
 	}
 
-	err = utils.CreateRAWFile(e.config.Fs, img.File, img.Size)
+	if img.Size == 0 && rootDir != "" {
+		size, err := utils.DirSizeMB(c.Fs, rootDir)
+		if err != nil {
+			return err
+		}
+		img.Size = size + cnst.ImgOverhead
+		c.Logger.Debugf("Image size %dM", img.Size)
+	}
+
+	err = utils.CreateRAWFile(c.Fs, img.File, img.Size)
 	if err != nil {
+		c.Logger.Errorf("failed creating raw file %s", img.File)
 		return err
 	}
 
-	var extraOpts []string
-
-	// Only add the rootDir if it's not empty
-	match, _ := regexp.MatchString("ext[2-4]", img.FS)
-	exists, _ := utils.Exists(e.config.Fs, rootDir)
-	if !match && exists {
-		e.config.Logger.Infof("Pre-loaded image creation is only available for ext[2-4] filesystems, ignoring options for %s", img.FS)
-	}
-	if exists && match {
+	extraOpts := []string{}
+	r := regexp.MustCompile("ext[2-4]")
+	match := r.MatchString(img.FS)
+	if preload && match {
 		extraOpts = []string{"-d", rootDir}
 	}
-
-	mkfs := partitioner.NewMkfsCall(img.File, img.FS, img.Label, e.config.Runner, extraOpts...)
+	if preload && !match {
+		c.Logger.Errorf("Preloaded filesystem images are only supported for ext2-4 filesystems")
+		return fmt.Errorf("unexpected filesystem: %s", img.FS)
+	}
+	mkfs := partitioner.NewMkfsCall(img.File, img.FS, img.Label, c.Runner, extraOpts...)
 	_, err = mkfs.Apply()
 	if err != nil {
-		_ = e.config.Fs.RemoveAll(img.File)
+		c.Logger.Errorf("failed formatting file %s with %s", img.File, img.FS)
+		_ = c.Fs.RemoveAll(img.File)
 		return err
 	}
 	return nil
@@ -327,7 +333,7 @@ func (e *Elemental) DeployImgTree(img *v1.Image, root string) (info interface{},
 		return e.config.Fs.RemoveAll(tmp)
 	}
 
-	info, err = e.DumpSource(root, img.Source)
+	info, err = DumpSource(*e.config, root, img.Source)
 	if err != nil {
 		_ = cleaner()
 		return nil, nil, err
@@ -339,6 +345,54 @@ func (e *Elemental) DeployImgTree(img *v1.Image, root string) (info interface{},
 	}
 
 	return info, cleaner, err
+}
+
+// CreateImageFromTree creates the given image including the given root tree. If preload flag is true
+// it attempts to preload the root tree at filesystem format time. This allows creating images with the
+// given root tree without the need of mounting them.
+func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload bool) (err error) {
+	if img.FS == cnst.SquashFs {
+		c.Logger.Infof("Creating squashfs image for file %s", img.File)
+
+		err = utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
+		if err != nil {
+			c.Logger.Errorf("failed creating directories for %s: %v", img.File, err)
+			return err
+		}
+
+		squashOptions := append(cnst.GetDefaultSquashfsOptions(), c.SquashFsCompressionConfig...)
+		err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, img.File, squashOptions)
+		if err != nil {
+			c.Logger.Errorf("failed creating squashfs image for %s: %v", img.File, err)
+			return err
+		}
+	} else {
+		err = CreateFileSystemImage(c, img, rootDir, preload)
+		if err != nil {
+			c.Logger.Errorf("failed creating filesystem image: %v", err)
+			return err
+		}
+		if !preload {
+			err = MountFileSystemImage(c, img, "rw")
+			if err != nil {
+				c.Logger.Errorf("failed mounting filesystem image: %v", err)
+				return err
+			}
+			defer func() {
+				mErr := UnmountFileSystemImage(c, img)
+				if err == nil && mErr != nil {
+					err = mErr
+				}
+			}()
+
+			c.Logger.Infof("Sync %s to %s", rootDir, img.MountPoint)
+			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
 }
 
 // CreateImgFromTree creates the given image from with the contents of the tree for the given root.
@@ -353,54 +407,7 @@ func (e *Elemental) CreateImgFromTree(root string, img *v1.Image, noMount bool, 
 		}()
 	}
 
-	var preLoadRoot string
-	if noMount {
-		preLoadRoot = root
-	}
-
-	if img.FS == cnst.SquashFs {
-		e.config.Logger.Infof("Creating squashed image: %s", img.File)
-		err = utils.MkdirAll(e.config.Fs, filepath.Dir(img.File), cnst.DirPerm)
-		if err != nil {
-			e.config.Logger.Errorf("failed creating destination folder: %s", err.Error())
-			return err
-		}
-		squashOptions := append(cnst.GetDefaultSquashfsOptions(), e.config.SquashFsCompressionConfig...)
-		err = utils.CreateSquashFS(e.config.Runner, e.config.Logger, root, img.File, squashOptions)
-		if err != nil {
-			return err
-		}
-	} else {
-		if img.Size == 0 {
-			size, err := utils.DirSizeMB(e.config.Fs, root)
-			if err != nil {
-				return err
-			}
-			img.Size = size + cnst.ImgOverhead
-		}
-		err = e.CreatePreLoadedFileSystemImage(img, preLoadRoot)
-		if err != nil {
-			return err
-		}
-
-		if !noMount {
-			err = e.MountImage(img, "rw")
-			if err != nil {
-				return err
-			}
-			defer func() {
-				mErr := e.UnmountImage(img)
-				if err == nil && mErr != nil {
-					err = mErr
-				}
-			}()
-			e.config.Logger.Infof("Sync %s to %s", root, img.MountPoint)
-			err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, root, img.MountPoint)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	err = CreateImageFromTree(*e.config, img, root, noMount)
 	return err
 }
 
@@ -445,77 +452,77 @@ func (e *Elemental) DeployImage(img *v1.Image) (interface{}, error) {
 }
 
 // DumpSource sets the image data according to the image source type
-func (e *Elemental) DumpSource(target string, imgSrc *v1.ImageSource) (info interface{}, err error) { // nolint:gocyclo
-	e.config.Logger.Infof("Copying %s source...", imgSrc.Value())
+func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) (info interface{}, err error) { // nolint:gocyclo
+	c.Logger.Infof("Copying %s source...", imgSrc.Value())
 
-	err = utils.MkdirAll(e.config.Fs, target, cnst.DirPerm)
+	err = utils.MkdirAll(c.Fs, target, cnst.DirPerm)
 	if err != nil {
-		e.config.Logger.Errorf("failed to create target directory %s", target)
+		c.Logger.Errorf("failed to create target directory %s", target)
 		return nil, err
 	}
 
 	if imgSrc.IsImage() {
-		if e.config.Cosign {
-			e.config.Logger.Infof("Running cosing verification for %s", imgSrc.Value())
+		if c.Cosign {
+			c.Logger.Infof("Running cosing verification for %s", imgSrc.Value())
 			out, err := utils.CosignVerify(
-				e.config.Fs, e.config.Runner, imgSrc.Value(),
-				e.config.CosignPubKey, v1.IsDebugLevel(e.config.Logger),
+				c.Fs, c.Runner, imgSrc.Value(),
+				c.CosignPubKey, v1.IsDebugLevel(c.Logger),
 			)
 			if err != nil {
-				e.config.Logger.Errorf("Cosign verification failed: %s", out)
+				c.Logger.Errorf("Cosign verification failed: %s", out)
 				return nil, err
 			}
 		}
 
-		err = e.config.ImageExtractor.ExtractImage(imgSrc.Value(), target, e.config.Platform.String(), e.config.LocalImage)
+		err = c.ImageExtractor.ExtractImage(imgSrc.Value(), target, c.Platform.String(), c.LocalImage)
 		if err != nil {
 			return nil, err
 		}
 	} else if imgSrc.IsDir() {
 		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
-		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, imgSrc.Value(), target, excludes...)
+		err = utils.SyncData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return nil, err
 		}
 	} else if imgSrc.IsFile() {
-		err = utils.MkdirAll(e.config.Fs, cnst.ImgSrcDir, cnst.DirPerm)
+		err = utils.MkdirAll(c.Fs, cnst.ImgSrcDir, cnst.DirPerm)
 		if err != nil {
 			return nil, err
 		}
 		img := &v1.Image{File: imgSrc.Value(), MountPoint: cnst.ImgSrcDir}
-		err = e.MountImage(img, "auto", "ro")
+		err = MountFileSystemImage(c, img, "auto", "ro")
 		if err != nil {
 			return nil, err
 		}
-		defer e.UnmountImage(img) // nolint:errcheck
+		defer UnmountFileSystemImage(c, img) // nolint:errcheck
 		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
-		err = utils.SyncData(e.config.Logger, e.config.Runner, e.config.Fs, cnst.ImgSrcDir, target, excludes...)
+		err = utils.SyncData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target, excludes...)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, fmt.Errorf("unknown image source type")
 	}
-	e.config.Logger.Infof("Finished copying %s into %s", imgSrc.Value(), target)
+	c.Logger.Infof("Finished copying %s into %s", imgSrc.Value(), target)
 	return info, nil
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
-func (e *Elemental) CopyCloudConfig(path string, cloudInit []string) (err error) {
+func CopyCloudConfig(c v1.Config, path string, cloudInit []string) (err error) {
 	if path == "" {
-		e.config.Logger.Warnf("empty path. Will not copy cloud config files.")
+		c.Logger.Warnf("empty path. Will not copy cloud config files.")
 		return nil
 	}
 	for i, ci := range cloudInit {
 		customConfig := filepath.Join(path, fmt.Sprintf("9%d_custom.yaml", i))
-		err = utils.GetSource(e.config, ci, customConfig)
+		err = utils.GetSource(c, ci, customConfig)
 		if err != nil {
 			return err
 		}
-		if err = e.config.Fs.Chmod(customConfig, cnst.FilePerm); err != nil {
+		if err = c.Fs.Chmod(customConfig, cnst.FilePerm); err != nil {
 			return err
 		}
-		e.config.Logger.Infof("Finished copying cloud config file %s to %s", cloudInit, customConfig)
+		c.Logger.Infof("Finished copying cloud config file %s to %s", cloudInit, customConfig)
 	}
 	return nil
 }
@@ -559,38 +566,38 @@ func (e *Elemental) CheckActiveDeployment(labels []string) bool {
 	return false
 }
 
-// UpdateSourceISO downloads an ISO in a temporary folder, mounts it and updates active image to use the ISO squashfs image as
-// source. Returns a cleaner method to unmount and remove the temporary folder afterwards.
-func (e Elemental) UpdateSourceFormISO(iso string, activeImg *v1.Image) (func() error, error) {
+// SourceISO downloads an ISO in a temporary folder, mounts it and returns the image source to be used
+// Returns a source and cleaner method to unmount and remove the temporary folder afterwards.
+func SourceFormISO(c v1.Config, iso string) (*v1.ImageSource, func() error, error) {
 	nilErr := func() error { return nil }
 
-	tmpDir, err := utils.TempDir(e.config.Fs, "", "elemental")
+	tmpDir, err := utils.TempDir(c.Fs, "", "elemental")
 	if err != nil {
-		return nilErr, err
+		return nil, nilErr, err
 	}
 
-	cleanTmpDir := func() error { return e.config.Fs.RemoveAll(tmpDir) }
+	cleanTmpDir := func() error { return c.Fs.RemoveAll(tmpDir) }
 
 	tmpFile := filepath.Join(tmpDir, "elemental.iso")
-	err = utils.GetSource(e.config, iso, tmpFile)
+	err = utils.GetSource(c, iso, tmpFile)
 	if err != nil {
-		return cleanTmpDir, err
+		return nil, cleanTmpDir, err
 	}
 
 	isoMnt := filepath.Join(tmpDir, "iso")
-	err = utils.MkdirAll(e.config.Fs, isoMnt, cnst.DirPerm)
+	err = utils.MkdirAll(c.Fs, isoMnt, cnst.DirPerm)
 	if err != nil {
-		return cleanTmpDir, err
+		return nil, cleanTmpDir, err
 	}
 
-	e.config.Logger.Infof("Mounting iso %s into %s", tmpFile, isoMnt)
-	err = e.config.Mounter.Mount(tmpFile, isoMnt, "auto", []string{"loop"})
+	c.Logger.Infof("Mounting iso %s into %s", tmpFile, isoMnt)
+	err = c.Mounter.Mount(tmpFile, isoMnt, "auto", []string{"loop"})
 	if err != nil {
-		return cleanTmpDir, err
+		return nil, cleanTmpDir, err
 	}
 
 	cleanAll := func() error {
-		cErr := e.config.Mounter.Unmount(isoMnt)
+		cErr := c.Mounter.Unmount(isoMnt)
 		if cErr != nil {
 			return cErr
 		}
@@ -598,13 +605,12 @@ func (e Elemental) UpdateSourceFormISO(iso string, activeImg *v1.Image) (func() 
 	}
 
 	squashfsImg := filepath.Join(isoMnt, cnst.ISORootFile)
-	ok, _ := utils.Exists(e.config.Fs, squashfsImg)
+	ok, _ := utils.Exists(c.Fs, squashfsImg)
 	if !ok {
-		return cleanAll, fmt.Errorf("squashfs image not found in ISO: %s", squashfsImg)
+		return nil, cleanAll, fmt.Errorf("squashfs image not found in ISO: %s", squashfsImg)
 	}
-	activeImg.Source = v1.NewFileSrc(squashfsImg)
 
-	return cleanAll, nil
+	return v1.NewFileSrc(squashfsImg), cleanAll, nil
 }
 
 // DeactivateDevice deactivates unmounted the block devices present within the system.
