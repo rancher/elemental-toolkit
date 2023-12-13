@@ -22,11 +22,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -306,58 +304,6 @@ func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 	}
 
 	return envMap, err
-}
-
-func IsMounted(config *v1.Config, part *v1.Partition) (bool, error) {
-	if part == nil {
-		return false, fmt.Errorf("nil partition")
-	}
-
-	if part.MountPoint == "" {
-		return false, nil
-	}
-	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
-	// for bind mounts here
-	notMnt, err := config.Mounter.IsLikelyNotMountPoint(part.MountPoint)
-	if err != nil {
-		return false, err
-	}
-	return !notMnt, nil
-}
-
-// GetTempDir returns the dir for storing related temporal files
-// It will respect TMPDIR and use that if exists, fallback to try the persistent partition if its mounted
-// and finally the default /tmp/ dir
-// suffix is what is appended to the dir name elemental-suffix. If empty it will randomly generate a number
-func GetTempDir(config *v1.Config, suffix string) string {
-	// if we got a TMPDIR var, respect and use that
-	if suffix == "" {
-		random := rand.New(rand.NewSource(time.Now().UnixNano()))
-		suffix = strconv.Itoa(int(random.Uint32()))
-	}
-	elementalTmpDir := fmt.Sprintf("elemental-%s", suffix)
-	dir := os.Getenv("TMPDIR")
-	if dir != "" {
-		config.Logger.Debugf("Got tmpdir from TMPDIR var: %s", dir)
-		return filepath.Join(dir, elementalTmpDir)
-	}
-	parts, err := GetAllPartitions()
-	if err != nil {
-		config.Logger.Debug("Could not get partitions, defaulting to /tmp")
-		return filepath.Join("/", "tmp", elementalTmpDir)
-	}
-	// Check persistent and if its mounted
-	state, _ := config.LoadInstallState()
-	ep := v1.NewElementalPartitionsFromList(parts, state)
-	persistent := ep.Persistent
-	if persistent != nil {
-		if mnt, _ := IsMounted(config, persistent); mnt {
-			config.Logger.Debugf("Using tmpdir on persistent volume: %s", persistent.MountPoint)
-			return filepath.Join(persistent.MountPoint, "tmp", elementalTmpDir)
-		}
-	}
-	config.Logger.Debug("Could not get any valid tmpdir, defaulting to /tmp")
-	return filepath.Join("/", "tmp", elementalTmpDir)
 }
 
 // IsLocalURI returns true if the uri has "file" scheme or no scheme and URI is

@@ -82,7 +82,7 @@ func NewResetAction(cfg *v1.RunConfig, spec *v1.ResetSpec, opts ...ResetActionOp
 	return r
 }
 
-func (r *ResetAction) updateInstallState(e *elemental.Elemental, cleanup *utils.CleanStack, meta interface{}) error {
+func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack, meta interface{}) error {
 	if r.spec.Partitions.Recovery == nil || r.spec.Partitions.State == nil {
 		return fmt.Errorf("undefined state or recovery partition")
 	}
@@ -123,7 +123,7 @@ func (r *ResetAction) updateInstallState(e *elemental.Elemental, cleanup *utils.
 		installState.Partitions[cnst.RecoveryPartName] = r.spec.State.Partitions[cnst.RecoveryPartName]
 	}
 
-	umount, err := e.MountRWPartition(r.spec.Partitions.Recovery)
+	umount, err := elemental.MountRWPartition(r.cfg.Config, r.spec.Partitions.Recovery)
 	if err != nil {
 		return err
 	}
@@ -138,18 +138,17 @@ func (r *ResetAction) updateInstallState(e *elemental.Elemental, cleanup *utils.
 
 // ResetRun will reset the cos system to by following several steps
 func (r ResetAction) Run() (err error) {
-	e := elemental.NewElemental(&r.cfg.Config)
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
 
 	// Unmount partitions if any is already mounted before formatting
-	err = e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
+	err = elemental.UnmountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.UnmountPartitions)
 	}
 
 	// Reformat state partition
-	err = e.FormatPartition(r.spec.Partitions.State)
+	err = elemental.FormatPartition(r.cfg.Config, r.spec.Partitions.State)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.FormatPartitions)
 	}
@@ -158,7 +157,7 @@ func (r ResetAction) Run() (err error) {
 	if r.spec.FormatPersistent {
 		persistent := r.spec.Partitions.Persistent
 		if persistent != nil {
-			err = e.FormatPartition(persistent)
+			err = elemental.FormatPartition(r.cfg.Config, persistent)
 			if err != nil {
 				return elementalError.NewFromError(err, elementalError.FormatPartitions)
 			}
@@ -169,19 +168,19 @@ func (r ResetAction) Run() (err error) {
 	if r.spec.FormatOEM {
 		oem := r.spec.Partitions.OEM
 		if oem != nil {
-			err = e.FormatPartition(oem)
+			err = elemental.FormatPartition(r.cfg.Config, oem)
 			if err != nil {
 				return elementalError.NewFromError(err, elementalError.FormatPartitions)
 			}
 		}
 	}
 	// Mount configured partitions
-	err = e.MountPartitions(r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery))
+	err = elemental.MountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountPartitions)
 	}
 	cleanup.Push(func() error {
-		return e.UnmountPartitions(r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
+		return elemental.UnmountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	})
 
 	// Before reset hook happens once partitions are aready and before deploying the OS image
@@ -191,7 +190,7 @@ func (r ResetAction) Run() (err error) {
 	}
 
 	// Deploy active image
-	meta, treeCleaner, err := e.DeployImgTree(&r.spec.Active, cnst.WorkingImgDir)
+	meta, treeCleaner, err := elemental.DeployImgTree(r.cfg.Config, &r.spec.Active, cnst.WorkingImgDir)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.DeployImgTree)
 	}
@@ -218,15 +217,15 @@ func (r ResetAction) Run() (err error) {
 	// TODO probably relabelling persistent volumes should be an opt in feature, it could
 	// have undesired effects in case of failures
 	binds := map[string]string{}
-	if mnt, _ := utils.IsMounted(&r.cfg.Config, r.spec.Partitions.Persistent); mnt {
+	if mnt, _ := elemental.IsMounted(r.cfg.Config, r.spec.Partitions.Persistent); mnt {
 		binds[r.spec.Partitions.Persistent.MountPoint] = cnst.UsrLocalPath
 	}
-	if mnt, _ := utils.IsMounted(&r.cfg.Config, r.spec.Partitions.OEM); mnt {
+	if mnt, _ := elemental.IsMounted(r.cfg.Config, r.spec.Partitions.OEM); mnt {
 		binds[r.spec.Partitions.OEM.MountPoint] = cnst.OEMPath
 	}
 	err = utils.ChrootedCallback(
 		&r.cfg.Config, cnst.WorkingImgDir, binds,
-		func() error { return e.SelinuxRelabel("/", true) },
+		func() error { return elemental.SelinuxRelabel(r.cfg.Config, "/", true) },
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
@@ -261,13 +260,13 @@ func (r ResetAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
-	err = e.CreateImgFromTree(cnst.WorkingImgDir, &r.spec.Active, false, treeCleaner)
+	err = elemental.CreateImageFromTree(r.cfg.Config, &r.spec.Active, cnst.WorkingImgDir, false, treeCleaner)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
 	}
 
 	// Install Passive
-	err = e.CopyFileImg(&r.spec.Passive)
+	err = elemental.CopyFileImg(r.cfg.Config, &r.spec.Passive)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
@@ -277,7 +276,7 @@ func (r ResetAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.HookPostReset)
 	}
 
-	err = r.updateInstallState(e, cleanup, meta)
+	err = r.updateInstallState(cleanup, meta)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}

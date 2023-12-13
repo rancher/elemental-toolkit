@@ -951,37 +951,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("IsMounted", Label("ismounted"), func() {
-		It("checks a mounted partition", func() {
-			part := &v1.Partition{
-				MountPoint: "/some/mountpoint",
-			}
-			err := mounter.Mount("/some/device", "/some/mountpoint", "auto", []string{})
-			Expect(err).ShouldNot(HaveOccurred())
-			mnt, err := utils.IsMounted(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(mnt).To(BeTrue())
-		})
-		It("checks a not mounted partition", func() {
-			part := &v1.Partition{
-				MountPoint: "/some/mountpoint",
-			}
-			mnt, err := utils.IsMounted(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(mnt).To(BeFalse())
-		})
-		It("checks a partition without mountpoint", func() {
-			part := &v1.Partition{}
-			mnt, err := utils.IsMounted(config, part)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(mnt).To(BeFalse())
-		})
-		It("checks a nil partitiont", func() {
-			mnt, err := utils.IsMounted(config, nil)
-			Expect(err).Should(HaveOccurred())
-			Expect(mnt).To(BeFalse())
-		})
-	})
 	Describe("CleanStack", Label("CleanStack"), func() {
 		var cleaner *utils.CleanStack
 		BeforeEach(func() {

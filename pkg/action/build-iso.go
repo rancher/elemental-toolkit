@@ -53,7 +53,6 @@ type BuildISOAction struct {
 	cfg        *v1.BuildConfig
 	spec       *v1.LiveISO
 	bootloader v1.Bootloader
-	e          *elemental.Elemental
 }
 
 type BuildISOActionOption func(a *BuildISOAction)
@@ -67,7 +66,6 @@ func WithLiveBootloader(b v1.Bootloader) BuildISOActionOption {
 func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOActionOption) *BuildISOAction {
 	b := &BuildISOAction{
 		cfg:  cfg,
-		e:    elemental.NewElemental(&cfg.Config),
 		spec: spec,
 	}
 	for _, opt := range opts {
