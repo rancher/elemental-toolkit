@@ -75,7 +75,7 @@ var _ = Describe("Mount Action", func() {
 		It("Writes a simple fstab", func() {
 			spec := &v1.MountSpec{
 				WriteFstab: true,
-				Overlay: v1.OverlayMounts{
+				Ephemeral: v1.EphemeralMounts{
 					Size: "30%",
 				},
 			}

@@ -244,7 +244,7 @@ type MountSpec struct {
 	Sysroot    string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
 	Mode       string `yaml:"mode,omitempty" mapstructure:"mode"`
 	Partitions ElementalPartitions
-	Overlay    OverlayMounts    `yaml:"overlay,omitempty" mapstructure:"overlay"`
+	Ephemeral  EphemeralMounts  `yaml:"ephemeral,omitempty" mapstructure:"ephemeral"`
 	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
@@ -255,9 +255,9 @@ type PersistentMounts struct {
 	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
 }
 
-// OverlayMounts contains information about the RW overlay mounted over the
+// EphemeralMounts contains information about the RW overlay mounted over the
 // immutable system.
-type OverlayMounts struct {
+type EphemeralMounts struct {
 	Type   string   `yaml:"type,omitempty" mapstructure:"type"`
 	Device string   `yaml:"device,omitempty" mapstructure:"device"`
 	Size   string   `yaml:"size,omitempty" mapstructure:"size"`
@@ -282,16 +282,16 @@ func (spec *MountSpec) Sanitize() error {
 		})
 	}
 
-	switch spec.Overlay.Type {
+	switch spec.Ephemeral.Type {
 	case constants.Tmpfs, constants.Block:
 		break
 	default:
-		return fmt.Errorf("unknown overlay type: '%s'", spec.Overlay.Type)
+		return fmt.Errorf("unknown overlay type: '%s'", spec.Ephemeral.Type)
 	}
 
-	if spec.Overlay.Paths != nil {
-		sort.Slice(spec.Overlay.Paths, func(i, j int) bool {
-			return strings.Count(spec.Overlay.Paths[i], separator) < strings.Count(spec.Overlay.Paths[j], separator)
+	if spec.Ephemeral.Paths != nil {
+		sort.Slice(spec.Ephemeral.Paths, func(i, j int) bool {
+			return strings.Count(spec.Ephemeral.Paths[i], separator) < strings.Count(spec.Ephemeral.Paths[j], separator)
 		})
 	}
 
