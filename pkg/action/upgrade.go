@@ -164,8 +164,6 @@ func (u *UpgradeAction) Run() (err error) {
 		err = cleanup.Cleanup(err)
 	}()
 
-	e := elemental.NewElemental(&u.config.Config)
-
 	if u.spec.RecoveryUpgrade {
 		upgradeImg = u.spec.Recovery
 		finalImageFile = filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgPath)
@@ -174,12 +172,12 @@ func (u *UpgradeAction) Run() (err error) {
 		finalImageFile = filepath.Join(u.spec.Partitions.State.MountPoint, constants.ActiveImgPath)
 	}
 
-	umount, err := e.MountRWPartition(u.spec.Partitions.State)
+	umount, err := elemental.MountRWPartition(u.config.Config, u.spec.Partitions.State)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountStatePartition)
 	}
 	cleanup.Push(umount)
-	umount, err = e.MountRWPartition(u.spec.Partitions.Recovery)
+	umount, err = elemental.MountRWPartition(u.config.Config, u.spec.Partitions.Recovery)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
 	}
@@ -193,9 +191,9 @@ func (u *UpgradeAction) Run() (err error) {
 	if persistentPart != nil {
 		// Create the dir otherwise the check for mounted dir fails
 		_ = utils.MkdirAll(u.config.Fs, persistentPart.MountPoint, constants.DirPerm)
-		if mnt, err := utils.IsMounted(&u.config.Config, persistentPart); !mnt && err == nil {
+		if mnt, err := elemental.IsMounted(u.config.Config, persistentPart); !mnt && err == nil {
 			u.Debug("mounting persistent partition")
-			umount, err = e.MountRWPartition(persistentPart)
+			umount, err = elemental.MountRWPartition(u.config.Config, persistentPart)
 			if err != nil {
 				u.config.Logger.Warn("could not mount persistent partition: %s", err.Error())
 			} else {
@@ -213,7 +211,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	u.Info("deploying image %s to %s", upgradeImg.Source.Value(), upgradeImg.File)
 	// Deploy active image
-	upgradeMeta, treeCleaner, err := e.DeployImgTree(&upgradeImg, constants.WorkingImgDir)
+	upgradeMeta, treeCleaner, err := elemental.DeployImgTree(u.config.Config, &upgradeImg, constants.WorkingImgDir)
 	if err != nil {
 		u.Error("Failed deploying image to file '%s': %s", upgradeImg.File, err)
 		return elementalError.NewFromError(err, elementalError.DeployImgTree)
@@ -227,15 +225,15 @@ func (u *UpgradeAction) Run() (err error) {
 		// TODO probably relabelling persistent volumes should be an opt in feature, it could
 		// have undesired effects in case of failures
 		binds := map[string]string{}
-		if mnt, _ := utils.IsMounted(&u.config.Config, u.spec.Partitions.Persistent); mnt {
+		if mnt, _ := elemental.IsMounted(u.config.Config, u.spec.Partitions.Persistent); mnt {
 			binds[u.spec.Partitions.Persistent.MountPoint] = constants.UsrLocalPath
 		}
-		if mnt, _ := utils.IsMounted(&u.config.Config, u.spec.Partitions.OEM); mnt {
+		if mnt, _ := elemental.IsMounted(u.config.Config, u.spec.Partitions.OEM); mnt {
 			binds[u.spec.Partitions.OEM.MountPoint] = constants.OEMPath
 		}
 		err = utils.ChrootedCallback(
 			&u.config.Config, constants.WorkingImgDir, binds,
-			func() error { return e.SelinuxRelabel("/", true) },
+			func() error { return elemental.SelinuxRelabel(u.config.Config, "/", true) },
 		)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
@@ -274,7 +272,7 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 	}
 
-	err = e.CreateImgFromTree(constants.WorkingImgDir, &upgradeImg, false, treeCleaner)
+	err = elemental.CreateImageFromTree(u.config.Config, &upgradeImg, constants.WorkingImgDir, false, treeCleaner)
 	if err != nil {
 		u.Error("failed creating transition image")
 		return elementalError.NewFromError(err, elementalError.CreateImgFromTree)
