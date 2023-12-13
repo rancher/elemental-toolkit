@@ -155,11 +155,12 @@ func (i InstallAction) Run() (err error) {
 
 	// Set installation sources from a downloaded ISO
 	if i.spec.Iso != "" {
-		isoCleaner, err := e.UpdateSourceFormISO(i.spec.Iso, &i.spec.Active)
+		isoSrc, isoCleaner, err := elemental.SourceFormISO(i.cfg.Config, i.spec.Iso)
 		cleanup.Push(isoCleaner)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.Unknown)
 		}
+		i.spec.Active.Source = isoSrc
 	}
 
 	// Partition and format device if needed
@@ -190,7 +191,7 @@ func (i InstallAction) Run() (err error) {
 	cleanup.Push(func() error { return treeCleaner() })
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(i.spec.Partitions.GetConfigStorage(), i.spec.CloudInit)
+	err = elemental.CopyCloudConfig(i.cfg.Config, i.spec.Partitions.GetConfigStorage(), i.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}

@@ -198,7 +198,7 @@ func (r ResetAction) Run() (err error) {
 	cleanup.Push(func() error { return treeCleaner() })
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(r.spec.Partitions.GetConfigStorage(), r.spec.CloudInit)
+	err = elemental.CopyCloudConfig(r.cfg.Config, r.spec.Partitions.GetConfigStorage(), r.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}

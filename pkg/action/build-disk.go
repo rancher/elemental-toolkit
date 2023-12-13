@@ -153,7 +153,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	activeRoot := recRoot
 
 	// Create recovery root
-	recInfo, err = e.DumpSource(recRoot, b.spec.Recovery.Source)
+	recInfo, err = elemental.DumpSource(b.cfg.Config, recRoot, b.spec.Recovery.Source)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed loading recovery image source tree: %s", err.Error())
 		return err
@@ -165,7 +165,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		if !b.spec.Active.Source.IsEmpty() {
 			// Create active root
 			activeRoot = filepath.Join(workdir, filepath.Base(b.spec.Active.File)+rootSuffix)
-			activeInfo, err = e.DumpSource(activeRoot, b.spec.Active.Source)
+			activeInfo, err = elemental.DumpSource(b.cfg.Config, activeRoot, b.spec.Active.Source)
 			if err != nil {
 				b.cfg.Logger.Errorf("failed loading active image source tree: %s", err.Error())
 				return err
@@ -174,7 +174,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Copy cloud-init if any
-	err = e.CopyCloudConfig(b.roots[constants.OEMPartName], b.spec.CloudInit)
+	err = elemental.CopyCloudConfig(b.cfg.Config, b.roots[constants.OEMPartName], b.spec.CloudInit)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CopyFile)
 	}
@@ -378,7 +378,7 @@ func (b *BuildDiskAction) CreatePartitionImages(e *elemental.Elemental) ([]*v1.I
 
 	b.cfg.Logger.Infof("Creating EFI partition image")
 	img = b.spec.Partitions.EFI.ToImage()
-	err = e.CreateFileSystemImage(img)
+	err = elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating EFI image: %s", err.Error())
 		return nil, err

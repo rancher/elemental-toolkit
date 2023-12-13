@@ -225,62 +225,57 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 
 	Describe("MountImage", Label("MountImage", "mount", "image"), func() {
-		var el *elemental.Elemental
 		var img *v1.Image
 		BeforeEach(func() {
-			el = elemental.NewElemental(config)
 			img = &v1.Image{MountPoint: "/some/mountpoint"}
 		})
 
 		It("Mounts file system image", func() {
 			runner.ReturnValue = []byte("/dev/loop")
-			Expect(el.MountImage(img)).To(BeNil())
+			Expect(elemental.MountFileSystemImage(*config, img)).To(BeNil())
 			Expect(img.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Fails to set a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to set a loop device")
-			Expect(el.MountImage(img)).NotTo(BeNil())
+			Expect(elemental.MountFileSystemImage(*config, img)).NotTo(BeNil())
 			Expect(img.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to mount a loop device", Label("loop"), func() {
 			runner.ReturnValue = []byte("/dev/loop")
 			mounter.ErrorOnMount = true
-			Expect(el.MountImage(img)).NotTo(BeNil())
+			Expect(elemental.MountFileSystemImage(*config, img)).NotTo(BeNil())
 			Expect(img.LoopDevice).To(Equal(""))
 		})
 	})
 
 	Describe("UnmountImage", Label("UnmountImage", "mount", "image"), func() {
-		var el *elemental.Elemental
 		var img *v1.Image
 		BeforeEach(func() {
 			runner.ReturnValue = []byte("/dev/loop")
-			el = elemental.NewElemental(config)
 			img = &v1.Image{MountPoint: "/some/mountpoint"}
-			Expect(el.MountImage(img)).To(BeNil())
+			Expect(elemental.MountFileSystemImage(*config, img)).To(BeNil())
 			Expect(img.LoopDevice).To(Equal("/dev/loop"))
 		})
 
 		It("Unmounts file system image", func() {
-			Expect(el.UnmountImage(img)).To(BeNil())
+			Expect(elemental.UnmountFileSystemImage(*config, img)).To(BeNil())
 			Expect(img.LoopDevice).To(Equal(""))
 		})
 
 		It("Fails to unmount a mountpoint", func() {
 			mounter.ErrorOnUnmount = true
-			Expect(el.UnmountImage(img)).NotTo(BeNil())
+			Expect(elemental.UnmountFileSystemImage(*config, img)).NotTo(BeNil())
 		})
 
 		It("Fails to unset a loop device", Label("loop"), func() {
 			runner.ReturnError = errors.New("failed to unset a loop device")
-			Expect(el.UnmountImage(img)).NotTo(BeNil())
+			Expect(elemental.UnmountFileSystemImage(*config, img)).NotTo(BeNil())
 		})
 	})
 
 	Describe("CreateFileSystemImage", Label("CreateFileSystemImage", "image"), func() {
-		var el *elemental.Elemental
 		var img *v1.Image
 		BeforeEach(func() {
 			img = &v1.Image{
@@ -292,13 +287,12 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				Source:     v1.NewDirSrc(constants.ISOBaseTree),
 			}
 			_ = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
-			el = elemental.NewElemental(config)
 		})
 
 		It("Creates a new file system image", func() {
 			_, err := fs.Stat(img.File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(img)
+			err = elemental.CreateFileSystemImage(*config, img, "", false)
 			Expect(err).To(BeNil())
 			stat, err := fs.Stat(img.File)
 			Expect(err).To(BeNil())
@@ -309,7 +303,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			runner.ReturnError = errors.New("run error")
 			_, err := fs.Stat(img.File)
 			Expect(err).NotTo(BeNil())
-			err = el.CreateFileSystemImage(img)
+			err = elemental.CreateFileSystemImage(*config, img, "", false)
 			Expect(err).NotTo(BeNil())
 			_, err = fs.Stat(img.File)
 			Expect(err).NotTo(BeNil())
@@ -481,11 +475,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 	Describe("DumpSource", Label("dump"), func() {
-		var e *elemental.Elemental
 		var destDir string
 		BeforeEach(func() {
 			var err error
-			e = elemental.NewElemental(config)
 			destDir, err = utils.TempDir(fs, "", "elemental")
 			Expect(err).ShouldNot(HaveOccurred())
 		})
@@ -504,46 +496,46 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				return []byte{}, nil
 			}
 
-			_, err := e.DumpSource("/dest", v1.NewDirSrc("/source"))
+			_, err := elemental.DumpSource(*config, "/dest", v1.NewDirSrc("/source"))
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(rsyncCount).To(Equal(1))
 			Expect(src).To(HaveSuffix("/source/"))
 			Expect(dest).To(HaveSuffix("/dest/"))
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
-			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(BeNil())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.Cosign = true
-			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
 			runner.ReturnError = errors.New("cosign error")
 			config.Cosign = true
-			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			unpackErr := errors.New("failed to unpack")
 			extractor.SideEffect = func(_, _, _ string, _ bool) error { return unpackErr }
-			_, err := e.DumpSource(destDir, v1.NewDockerSrc("docker/image:latest"))
+			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(Equal(unpackErr))
 		})
 		It("Copies image file to target", func() {
 			sourceImg := "/source.img"
 			destFile := filepath.Join(destDir, "active.img")
 
-			_, err := e.DumpSource(destFile, v1.NewFileSrc(sourceImg))
+			_, err := elemental.DumpSource(*config, destFile, v1.NewFileSrc(sourceImg))
 			Expect(err).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 		It("Fails to copy, source can't be mounted", func() {
 			mounter.ErrorOnMount = true
-			_, err := e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
+			_, err := elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
 			Expect(err).To(HaveOccurred())
 		})
 		It("Fails to copy, no write permissions", func() {
@@ -551,7 +543,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err := fs.Create(sourceImg)
 			Expect(err).To(BeNil())
 			config.Fs = vfs.NewReadOnlyFS(fs)
-			_, err = e.DumpSource("whatever", v1.NewFileSrc("/source.img"))
+			_, err = elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -877,12 +869,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 	Describe("GetIso", Label("GetIso", "iso"), func() {
-		var e *elemental.Elemental
-		var activeImg *v1.Image
-		BeforeEach(func() {
-			activeImg = &v1.Image{}
-			e = elemental.NewElemental(config)
-		})
 		It("Gets the iso, mounts it and updates image source", func() {
 			tmpDir, err := utils.TempDir(fs, "", "elemental-test")
 			Expect(err).To(BeNil())
@@ -895,15 +881,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(utils.MkdirAll(fs, filepath.Dir(rootfsImg), constants.DirPerm)).To(Succeed())
 			Expect(fs.WriteFile(rootfsImg, []byte{}, constants.FilePerm)).To(Succeed())
 
-			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
+			source, isoClean, err := elemental.SourceFormISO(*config, iso)
 			Expect(err).To(BeNil())
-			Expect(activeImg.Source.IsFile()).To(BeTrue())
+			Expect(source.IsFile()).To(BeTrue())
 			Expect(isoClean()).To(Succeed())
 		})
 		It("Fails if it cant find the iso", func() {
 			iso := "whatever"
-			e := elemental.NewElemental(config)
-			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
+			_, isoClean, err := elemental.SourceFormISO(*config, iso)
 			Expect(err).ToNot(BeNil())
 			Expect(isoClean()).To(Succeed())
 		})
@@ -915,7 +900,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			iso := fmt.Sprintf("%s/fake.iso", tmpDir)
 			config.Fs = vfs.NewReadOnlyFS(fs)
 
-			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
+			_, isoClean, err := elemental.SourceFormISO(*config, iso)
 			Expect(err).ToNot(BeNil())
 			Expect(isoClean()).To(Succeed())
 		})
@@ -926,18 +911,16 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			err = fs.WriteFile(fmt.Sprintf("%s/fake.iso", tmpDir), []byte("Hi"), constants.FilePerm)
 			Expect(err).To(BeNil())
 			iso := fmt.Sprintf("%s/fake.iso", tmpDir)
-			isoClean, err := e.UpdateSourceFormISO(iso, activeImg)
+			_, isoClean, err := elemental.SourceFormISO(*config, iso)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("mount error"))
 			Expect(isoClean()).To(Succeed())
 		})
 	})
 	Describe("CloudConfig", Label("CloudConfig", "cloud-config"), func() {
-		var e *elemental.Elemental
 		var parts v1.ElementalPartitions
 		BeforeEach(func() {
 			parts = conf.NewInstallElementalPartitions()
-			e = elemental.NewElemental(config)
 		})
 		It("Copies the cloud config file", func() {
 			testString := "In a galaxy far far away..."
@@ -946,19 +929,19 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(BeNil())
 			Expect(err).To(BeNil())
 
-			err = e.CopyCloudConfig(parts.GetConfigStorage(), cloudInit)
+			err = elemental.CopyCloudConfig(*config, parts.GetConfigStorage(), cloudInit)
 			Expect(err).To(BeNil())
 			copiedFile, err := fs.ReadFile(fmt.Sprintf("%s/90_custom.yaml", constants.OEMDir))
 			Expect(err).To(BeNil())
 			Expect(copiedFile).To(ContainSubstring(testString))
 		})
 		It("Doesnt do anything if the config file is not set", func() {
-			err := e.CopyCloudConfig(parts.GetConfigStorage(), []string{})
+			err := elemental.CopyCloudConfig(*config, parts.GetConfigStorage(), []string{})
 			Expect(err).To(BeNil())
 		})
 		It("Doesnt do anything if the OEM partition has no mount point", func() {
 			parts.OEM.MountPoint = ""
-			err := e.CopyCloudConfig(parts.GetConfigStorage(), []string{})
+			err := elemental.CopyCloudConfig(*config, parts.GetConfigStorage(), []string{})
 			Expect(err).To(BeNil())
 		})
 	})
