@@ -255,7 +255,7 @@ func NewMountSpec() *v1.MountSpec {
 		Sysroot:    "/sysroot",
 		WriteFstab: true,
 		Partitions: partitions,
-		Overlay: v1.OverlayMounts{
+		Ephemeral: v1.EphemeralMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",
 			Paths: []string{"/var", "/etc", "/srv"},

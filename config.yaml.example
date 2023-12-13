@@ -124,7 +124,7 @@ upgrade:
 mount:
   sysroot: /sysroot # Path to mount system to
   write-fstab: true # Write fstab into sysroot/etc/fstab
-  overlay:
+  ephemeral:
     type: tmpfs # tmpfs|block
     device: /dev/sda6 # Block device used to store overlay. Used when type is set to block
     size: 25% # Size of tmpfs as percentag of system memory. Used when type is set to tmpfs

@@ -31,8 +31,8 @@ const overlaySuffix = ".overlay"
 func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	cfg.Logger.Info("Running mount command")
 
-	cfg.Logger.Debugf("Mounting overlays")
-	if err := MountOverlay(cfg, spec.Sysroot, spec.Overlay); err != nil {
+	cfg.Logger.Debugf("Mounting ephemeral directories")
+	if err := MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral); err != nil {
 		cfg.Logger.Errorf("Error mounting overlays: %s", err.Error())
 		return err
 	}
@@ -53,7 +53,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	return nil
 }
 
-func MountOverlay(cfg *v1.RunConfig, sysroot string, overlay v1.OverlayMounts) error {
+func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMounts) error {
 	if err := utils.MkdirAll(cfg.Config.Fs, constants.OverlayDir, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating directory %s: %s", constants.OverlayDir, err.Error())
 		return err
@@ -198,7 +198,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	data := fstab(loop, "/", "ext2", []string{"ro", "relatime"})
-	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Overlay.Size)})
+	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Ephemeral.Size)})
 
 	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
 		if part.Path == "" {
@@ -214,7 +214,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
 	}
 
-	for _, rw := range spec.Overlay.Paths {
+	for _, rw := range spec.Ephemeral.Paths {
 		trimmed := strings.TrimPrefix(rw, "/")
 		pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 		upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
