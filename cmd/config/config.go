@@ -275,6 +275,11 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 		return mount, err
 	}
 
+	if err := applyMountEnvVars(r, mount); err != nil {
+		r.Logger.Errorf("Error reading mount env-vars: %s", err.Error())
+		return mount, err
+	}
+
 	err = mount.Sanitize()
 	r.Logger.Debugf("Loaded mount spec: %s", litter.Sdump(mount))
 	return mount, err
@@ -315,6 +320,50 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 		case "elemental.oemlabel", "rd.cos.oemlabel":
 			mount.Partitions.OEM.FilesystemLabel = val
 		}
+	}
+
+	return nil
+}
+
+func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
+	r.Logger.Debugf("Applying mount env-vars")
+
+	overlay := os.Getenv("OVERLAY")
+	if overlay != "" {
+		r.Logger.Debugf("Setting ephemeral settings based on OVERLAY")
+
+		split := strings.Split(overlay, ":")
+		if len(split) != 2 {
+			return fmt.Errorf("Unknown format of OVERLAY env-var: %s", overlay)
+		}
+
+		mount.Ephemeral.Type = split[0]
+
+		if split[0] == constants.Tmpfs {
+			mount.Ephemeral.Size = split[1]
+		}
+
+		if split[0] == constants.Block {
+			mount.Ephemeral.Device = split[1]
+		}
+	}
+
+	rwPaths := os.Getenv("RW_PATHS")
+	if rwPaths != "" {
+		r.Logger.Debugf("Setting ephemeral paths based on RW_PATHS")
+		mount.Ephemeral.Paths = strings.Split(rwPaths, " ")
+	}
+
+	persistentPaths := os.Getenv("PERSISTENT_STATE_PATHS")
+	if persistentPaths != "" {
+		r.Logger.Debugf("Setting persistent paths based on PERSISTENT_STATE_PATHS")
+		mount.Persistent.Paths = strings.Split(persistentPaths, " ")
+	}
+
+	persistentBind := os.Getenv("PERSISTENT_STATE_BIND")
+	if persistentBind != "" {
+		r.Logger.Debugf("Setting persistent bind based on PERSISTENT_STATE_BIND")
+		mount.Persistent.Mode = constants.BindMode
 	}
 
 	return nil
