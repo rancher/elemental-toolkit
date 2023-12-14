@@ -33,7 +33,7 @@ install() {
     inst_multiple -o \
         "$systemdutildir"/systemd-fsck systemd-analyze partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount sgdisk elemental
 
-    inst_simple "${moddir}/elemental-rootfs.service" \
+    inst_simple "/usr/lib/systemd/system/elemental-rootfs.service" \
         "${systemdsystemunitdir}/elemental-rootfs.service"
     mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.requires"
     ln_r "../elemental-rootfs.service" \
