@@ -270,13 +270,13 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 		return mount, err
 	}
 
-	if err := applyKernelCmdline(r, mount); err != nil {
-		r.Logger.Errorf("Error reading kernel cmdline: %s", err.Error())
+	if err := applyMountEnvVars(r, mount); err != nil {
+		r.Logger.Errorf("Error reading mount env-vars: %s", err.Error())
 		return mount, err
 	}
 
-	if err := applyMountEnvVars(r, mount); err != nil {
-		r.Logger.Errorf("Error reading mount env-vars: %s", err.Error())
+	if err := applyKernelCmdline(r, mount); err != nil {
+		r.Logger.Errorf("Error reading kernel cmdline: %s", err.Error())
 		return mount, err
 	}
 

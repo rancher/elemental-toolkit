@@ -271,6 +271,11 @@ var _ = Describe("Config", Label("config"), func() {
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
 
+			err = fs.Mkdir("/proc", constants.DirPerm)
+			Expect(err).Should(BeNil())
+			err = fs.WriteFile("/proc/cmdline", []byte("root=LABEL=COS_STATE elemental.image=active"), 0444)
+			Expect(err).Should(BeNil())
+
 			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
 			Expect(err).Should(BeNil())
 
@@ -449,6 +454,21 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(spec.RecoveryUpgrade).To(BeTrue())
 			})
 		})
-
+		Describe("Read MountSpec", Label("mount"), func() {
+			It("inits a mount spec according to given configs", func() {
+				err := os.Setenv("ELEMENTAL_MOUNT_SYSROOT", "/newroot")
+				spec, err := ReadMountSpec(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Mode).To(Equal("active"))
+				Expect(spec.Sysroot).To(Equal("/newroot"))
+			})
+			It("picks kernel cmdline first then env-vars", func() {
+				err := os.Setenv("ELEMENTAL_MOUNT_IMAGE", "passive")
+				spec, err := ReadMountSpec(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+				// Set by kernel cmdline
+				Expect(spec.Mode).To(Equal("active"))
+			})
+		})
 	})
 })
