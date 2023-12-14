@@ -270,6 +270,11 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 		return mount, err
 	}
 
+	if err := applyMountEnvVars(r, mount); err != nil {
+		r.Logger.Errorf("Error reading mount env-vars: %s", err.Error())
+		return mount, err
+	}
+
 	if err := applyKernelCmdline(r, mount); err != nil {
 		r.Logger.Errorf("Error reading kernel cmdline: %s", err.Error())
 		return mount, err
@@ -312,9 +317,78 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 				r.Logger.Errorf("Error parsing cmdline %s", cmd)
 				return errors.New("Unknown image path")
 			}
+		case "elemental.overlay", "rd.cos.overlay":
+			err := applyMountOverlay(mount, val)
+			if err != nil {
+				return err
+			}
 		case "elemental.oemlabel", "rd.cos.oemlabel":
 			mount.Partitions.OEM.FilesystemLabel = val
 		}
+	}
+
+	return nil
+}
+
+func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
+	r.Logger.Debugf("Applying mount env-vars")
+
+	overlay := os.Getenv("OVERLAY")
+	if overlay != "" {
+		r.Logger.Debugf("Setting ephemeral settings based on OVERLAY")
+
+		err := applyMountOverlay(mount, overlay)
+		if err != nil {
+			return err
+		}
+	}
+
+	rwPaths := os.Getenv("RW_PATHS")
+	if rwPaths != "" {
+		r.Logger.Debugf("Setting ephemeral paths based on RW_PATHS")
+		mount.Ephemeral.Paths = strings.Split(rwPaths, " ")
+	}
+
+	persistentPaths := os.Getenv("PERSISTENT_STATE_PATHS")
+	if persistentPaths != "" {
+		r.Logger.Debugf("Setting persistent paths based on PERSISTENT_STATE_PATHS")
+		mount.Persistent.Paths = strings.Split(persistentPaths, " ")
+	}
+
+	persistentBind := os.Getenv("PERSISTENT_STATE_BIND")
+	if persistentBind != "" {
+		r.Logger.Debugf("Setting persistent bind based on PERSISTENT_STATE_BIND")
+		mount.Persistent.Mode = constants.BindMode
+	}
+
+	return nil
+}
+
+func applyMountOverlay(mount *v1.MountSpec, overlay string) error {
+	split := strings.Split(overlay, ":")
+
+	if len(split) == 2 && split[0] == constants.Tmpfs {
+		mount.Ephemeral.Device = ""
+		mount.Ephemeral.Type = split[0]
+		mount.Ephemeral.Size = split[1]
+		return nil
+	}
+
+	mount.Ephemeral.Type = constants.Block
+	mount.Ephemeral.Size = ""
+
+	blockSplit := strings.Split(overlay, "=")
+	if len(blockSplit) != 2 {
+		return fmt.Errorf("Unknown block overlay '%s'", overlay)
+	}
+
+	switch blockSplit[0] {
+	case "LABEL":
+		mount.Ephemeral.Device = fmt.Sprintf("/dev/disk/by-label/%s", blockSplit[1])
+	case "UUID":
+		mount.Ephemeral.Device = fmt.Sprintf("/dev/disk/by-uuid/%s", blockSplit[1])
+	default:
+		return fmt.Errorf("Unknown block overlay '%s'", overlay)
 	}
 
 	return nil

@@ -5,7 +5,7 @@ After=sysroot.mount
 Requires=sysroot.mount
 After=oem.mount
 Wants=oem.mount
-Before=initrd-fs.target
+Before=initrd-root-fs.target
 Conflicts=initrd-switch-root.target
 
 [Service]
