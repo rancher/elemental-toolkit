@@ -263,10 +263,8 @@ func GetInitKeyEnvMap() map[string]string {
 // GetMountKeyEnvMap returns environment variable bindings to MountSpec data
 func GetMountKeyEnvMap() map[string]string {
 	return map[string]string{
-		"write-fstab":         "WRITE_FSTAB",
-		"write-sentinel":      "WRITE_SENTINEL",
-		"sysroot":             "SYSROOT",
-		"read-kernel-cmdline": "READ_KERNEL_CMDLINE",
+		"write-fstab": "WRITE_FSTAB",
+		"sysroot":     "SYSROOT",
 	}
 }
 

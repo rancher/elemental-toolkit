@@ -15,7 +15,7 @@ stages:
   rootfs:
     - if: '[ ! -f "/run/elemental/recovery_mode" ]'
       name: "Layout configuration"
-      environment_file: /run/elemental/mount-layout.env
+      environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
   initramfs:

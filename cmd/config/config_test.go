@@ -273,7 +273,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 			err = fs.Mkdir("/proc", constants.DirPerm)
 			Expect(err).Should(BeNil())
-			err = fs.WriteFile("/proc/cmdline", []byte("root=LABEL=COS_STATE elemental.image=active"), 0444)
+			err = fs.WriteFile("/proc/cmdline", []byte("root=LABEL=COS_STATE elemental.image=active elemental.overlay=tmpfs:30%"), 0444)
 			Expect(err).Should(BeNil())
 
 			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
@@ -468,6 +468,13 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				// Set by kernel cmdline
 				Expect(spec.Mode).To(Equal("active"))
+			})
+			It("picks kernel cmdline first then env-vars", func() {
+				err := os.Setenv("OVERLAY", "UUID=1234")
+				spec, err := ReadMountSpec(cfg, nil)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Ephemeral.Type).To(Equal("tmpfs"))
+				Expect(spec.Ephemeral.Size).To(Equal("30%"))
 			})
 		})
 	})

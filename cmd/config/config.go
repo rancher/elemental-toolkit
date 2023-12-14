@@ -317,6 +317,11 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 				r.Logger.Errorf("Error parsing cmdline %s", cmd)
 				return errors.New("Unknown image path")
 			}
+		case "elemental.overlay", "rd.cos.overlay":
+			err := applyMountOverlay(mount, val)
+			if err != nil {
+				return err
+			}
 		case "elemental.oemlabel", "rd.cos.oemlabel":
 			mount.Partitions.OEM.FilesystemLabel = val
 		}
@@ -332,19 +337,9 @@ func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
 	if overlay != "" {
 		r.Logger.Debugf("Setting ephemeral settings based on OVERLAY")
 
-		split := strings.Split(overlay, ":")
-		if len(split) != 2 {
-			return fmt.Errorf("Unknown format of OVERLAY env-var: %s", overlay)
-		}
-
-		mount.Ephemeral.Type = split[0]
-
-		if split[0] == constants.Tmpfs {
-			mount.Ephemeral.Size = split[1]
-		}
-
-		if split[0] == constants.Block {
-			mount.Ephemeral.Device = split[1]
+		err := applyMountOverlay(mount, overlay)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -364,6 +359,36 @@ func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
 	if persistentBind != "" {
 		r.Logger.Debugf("Setting persistent bind based on PERSISTENT_STATE_BIND")
 		mount.Persistent.Mode = constants.BindMode
+	}
+
+	return nil
+}
+
+func applyMountOverlay(mount *v1.MountSpec, overlay string) error {
+	split := strings.Split(overlay, ":")
+
+	if len(split) == 2 && split[0] == constants.Tmpfs {
+		mount.Ephemeral.Device = ""
+		mount.Ephemeral.Type = split[0]
+		mount.Ephemeral.Size = split[1]
+		return nil
+	}
+
+	mount.Ephemeral.Type = constants.Block
+	mount.Ephemeral.Size = ""
+
+	blockSplit := strings.Split(overlay, "=")
+	if len(blockSplit) != 2 {
+		return fmt.Errorf("Unknown block overlay '%s'", overlay)
+	}
+
+	switch blockSplit[0] {
+	case "LABEL":
+		mount.Ephemeral.Device = fmt.Sprintf("/dev/disk/by-label/%s", blockSplit[1])
+	case "UUID":
+		mount.Ephemeral.Device = fmt.Sprintf("/dev/disk/by-uuid/%s", blockSplit[1])
+	default:
+		return fmt.Errorf("Unknown block overlay '%s'", overlay)
 	}
 
 	return nil
