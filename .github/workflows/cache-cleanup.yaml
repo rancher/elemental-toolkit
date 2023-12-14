@@ -3,7 +3,7 @@
 
 name: Cleanup caches by a branch
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
 
