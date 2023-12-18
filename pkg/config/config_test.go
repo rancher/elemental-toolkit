@@ -105,6 +105,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			cfg := config.NewRunConfig(config.WithMounter(mounter))
 			Expect(cfg.Mounter).To(Equal(mounter))
 			Expect(cfg.Runner).NotTo(BeNil())
+			It("sets the default snapshot as expected", func() {
+				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.MaxSnaps))
+				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
+				snapshotterCfg, ok := cfg.Snapshotter.Config.(v1.LoopDeviceConfig)
+				Expect(ok).To(BeTrue())
+				Expect(snapshotterCfg.FS).To(Equal(constants.LinuxFs))
+				Expect(snapshotterCfg.Size).To(Equal(constants.ImgSize))
+			})
 		})
 		Describe("InstallSpec", func() {
 			It("sets installation defaults from install media with recovery", Label("install"), func() {

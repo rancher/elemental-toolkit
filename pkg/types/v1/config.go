@@ -157,9 +157,10 @@ func (c *Config) Sanitize() error {
 }
 
 type RunConfig struct {
-	Reboot   bool `yaml:"reboot,omitempty" mapstructure:"reboot"`
-	PowerOff bool `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
-	EjectCD  bool `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
+	Reboot      bool              `yaml:"reboot,omitempty" mapstructure:"reboot"`
+	PowerOff    bool              `yaml:"poweroff,omitempty" mapstructure:"poweroff"`
+	EjectCD     bool              `yaml:"eject-cd,omitempty" mapstructure:"eject-cd"`
+	Snapshotter SnapshotterConfig `yaml:"snapshotter,omitempty" mapstructure:"snapshotter"`
 
 	// 'inline' and 'squash' labels ensure config fields
 	// are embedded from a yaml and map PoV

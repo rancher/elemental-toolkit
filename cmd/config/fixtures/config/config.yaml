@@ -20,3 +20,10 @@ upgrade:
     uri: some/image:latest
   recovery-system:
     uri: recovery/image:latest
+
+snapshotter:
+  type: loopdevice
+  max-snaps: 7
+  config:
+    fs: xfs
+    size: 1024

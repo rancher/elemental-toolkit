@@ -164,6 +164,11 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 	config := NewConfig(opts...)
 	r := &v1.RunConfig{
 		Config: *config,
+		Snapshotter: v1.SnapshotterConfig{
+			Type:     constants.LoopDeviceSnapshotterType,
+			MaxSnaps: constants.MaxSnaps,
+			Config:   v1.NewLoopDeviceConfig(),
+		},
 	}
 	return r
 }

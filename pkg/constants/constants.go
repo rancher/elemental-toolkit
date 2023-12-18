@@ -166,6 +166,10 @@ const (
 	ArchRiscV64 = "riscv64"
 
 	Rsync = "rsync"
+
+	// Snapshotters
+	MaxSnaps                  = 4
+	LoopDeviceSnapshotterType = "loopdevice"
 )
 
 func GetKernelPatterns() []string {
