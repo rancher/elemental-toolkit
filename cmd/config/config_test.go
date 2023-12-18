@@ -219,6 +219,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Runner != nil).To(BeTrue())
 			_, ok := cfg.Runner.(*v1.RealRunner)
 			Expect(ok).To(BeTrue())
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.MaxSnaps))
 		})
 		It("uses provided configs and flags, flags have priority", func() {
 			cfg, err := ReadConfigRun("fixtures/config/", flags, mounter)
@@ -244,6 +245,17 @@ var _ = Describe("Config", Label("config"), func() {
 			debug = viper.GetBool("debug")
 			Expect(debug).To(BeTrue())
 			Expect(cfg.Logger.GetLevel()).To(Equal(logrus.DebugLevel))
+		})
+		It("reads the snaphotter configuration", func() {
+			// Default value
+			cfg, err := ReadConfigRun("fixtures/config/", nil, mounter)
+			Expect(err).To(BeNil())
+			Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(7))
+			snapshooterCfg, ok := cfg.Snapshotter.Config.(v1.LoopDeviceConfig)
+			Expect(ok).To(BeTrue())
+			Expect(snapshooterCfg.FS).To(Equal("xfs"))
+			Expect(snapshooterCfg.Size).To(Equal(uint(1024)))
 		})
 	})
 	Describe("Read runtime specs", Label("spec"), func() {
