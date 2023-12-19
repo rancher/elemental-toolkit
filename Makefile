@@ -102,7 +102,7 @@ ifneq ("$(PLATFORM)","linux/arm64")
 endif
 	@echo Building $(ARCH) disk
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v $(DOCKER_SOCK}:$(DOCKER_SOCK) -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
+	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
 		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/$(FLAVOR) --unprivileged --expandable -n elemental-$(FLAVOR).aarch64 --local \
 		--squash-no-compression --deploy-command elemental,--debug,reset,--reboot,--disable-boot-entry -o /build $(REPO):$(VERSION)
