@@ -66,6 +66,9 @@ const (
 	Autofs             = "auto"
 	Block              = "block"
 
+	// Maxium number of nested symlinks to resolve
+	MaxLinkDepth = 4
+
 	// Kernel and initrd paths
 	KernelModulesDir = "/lib/modules"
 	KernelPath       = "/boot/vmlinuz"
@@ -84,6 +87,8 @@ const (
 	GrubOEMEnv             = "grub_oem_env"
 	GrubEnv                = "grubenv"
 	GrubDefEntry           = "Elemental"
+	GrubFallback           = "default_fallback"
+	GrubPassiveSnapshots   = "passive_snaps"
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints of images and partitions
@@ -170,6 +175,8 @@ const (
 	// Snapshotters
 	MaxSnaps                  = 4
 	LoopDeviceSnapshotterType = "loopdevice"
+	ActiveSnapshot            = "active"
+	PassiveSnapshot           = "passive_%d"
 )
 
 func GetKernelPatterns() []string {

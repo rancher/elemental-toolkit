@@ -29,6 +29,7 @@ type Snapshotter interface {
 	CloseTransaction(snap *Snapshot) error
 	CloseTransactionOnError(snap *Snapshot) error
 	DeleteSnapshot(id int) error
+	GetSnapshots() ([]int, error)
 }
 
 type SnapshotterConfig struct {
