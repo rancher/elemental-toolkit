@@ -1,17 +1,14 @@
-name: Build & test
+name: Build & test x86_64
 
 on:
   workflow_call:
     inputs:
-      arch:
-        required: true
-        type: string
       flavor:
         required: true
         type: string
 
 concurrency:
-  group: ci-${{ inputs.flavor }}-${{ inputs.arch }}-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ci-${{ inputs.flavor }}-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
@@ -19,36 +16,25 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      build-runs-on: ${{ steps.detect.outputs.buildon }}
-      tests-runs-on: ${{ steps.detect.outputs.testson }}
       tests: ${{ steps.detect.outputs.tests }}
     steps:
       - id: detect
         env:
           FLAVOR: ${{ inputs.flavor }}
         run: |
-          case "${{inputs.arch}}" in
-          x86_64)
-            echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
-            echo "testson='macos-latest'" >> $GITHUB_OUTPUT
-            if [ "${FLAVOR}" == green ]; then
-              echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
-            else
-              echo "tests=['test-active']" >> $GITHUB_OUTPUT
-            fi
-            ;;
-          aarch64)
-            echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "tests=['test-smoke']" >> $GITHUB_OUTPUT ;;
-          esac
+          if [ "${FLAVOR}" == green ]; then
+            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+          else
+            echo "tests=['test-active']" >> $GITHUB_OUTPUT
+          fi
+
 
   build-iso:
     needs: detect
-    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
+    runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
-      ARCH: ${{ inputs.arch }}
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -57,7 +43,7 @@ jobs:
         id: cache-iso
         uses: actions/cache/restore@v3
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
           enableCrossOsArchive: true
           lookup-only: true
         with:
@@ -77,18 +63,18 @@ jobs:
         id: save-iso
         uses: actions/cache/save@v3
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
-  
+
   build-disk:
     needs: detect
-    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
+    runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
-      ARCH: ${{ inputs.arch }}
+      ARCH: x86_64
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -97,7 +83,7 @@ jobs:
         uses: actions/cache/restore@v3
         id: cache-check
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
@@ -121,20 +107,20 @@ jobs:
         id: cache-disk
         uses: actions/cache/save@v3
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
 
   tests-matrix:
-    needs: 
+    needs:
       - build-disk
       - detect
-    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
+    runs-on: macos-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
-      ARCH: ${{ inputs.arch }}
+      ARCH: x86_64
       COS_TIMEOUT: 1600
     strategy:
       matrix:
@@ -155,28 +141,18 @@ jobs:
         id: cache-disk
         uses: actions/cache/restore@v3
         env:
-          cache-name: pr-disk-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
           fail-on-cache-miss: true
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Run VM script dependencies
+      - name: Run VM script dependencies
         run: |
           brew install bash coreutils
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Prepare test (x86_64)
-        run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
-      - if: ${{ env.ARCH == 'aarch64' }} 
-        name: Prepare test (aarch64)
-        run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
       - name: Run ${{ matrix.test }}
         run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ${{ matrix.test }}
-      # TODO include other logs SUT collects on failure
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v3
         if: always()
@@ -197,13 +173,13 @@ jobs:
           make test-clean
 
   test-installer:
-    needs: 
+    needs:
       - build-iso
       - detect
-    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
+    runs-on: macos-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
-      ARCH: ${{ inputs.arch }}
+      ARCH: x86_64
       COS_TIMEOUT: 1600
     steps:
       - uses: actions/checkout@v3
@@ -220,28 +196,18 @@ jobs:
         id: cache-iso
         uses: actions/cache/restore@v3
         env:
-          cache-name: pr-iso-build-${{ inputs.arch }}-${{ inputs.flavor }}
+          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
           fail-on-cache-miss: true
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Run VM script dependencies
+      - name: Run VM script dependencies
         run: |
           brew install bash coreutils
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Prepare test (x86_64)
-        run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-installer-test
-      - if: ${{ env.ARCH == 'aarch64' }} 
-        name: Prepare test (aarch64)
-        run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-installer-test
       - name: Run installer test
         run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso test-installer
-      # TODO include other logs SUT collects on failure
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) test-installer
       - name: Upload serial console for installer tests
         uses: actions/upload-artifact@v3
         if: always()
