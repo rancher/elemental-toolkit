@@ -16,16 +16,10 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
-      arch: ${{ steps.set-matrix.outputs.arch }}
       flavor: ${{ steps.set-matrix.outputs.flavor }}
     steps:
     - id: set-matrix
       run: |
-        if [ "${{ contains(github.event.pull_request.labels.*.name, 'arm64') }}" == "true" ]; then
-          echo "arch=['x86_64', 'aarch64']" >> $GITHUB_OUTPUT
-        else
-          echo "arch=['x86_64']" >> $GITHUB_OUTPUT
-        fi
         if [ "${{ contains(github.event.pull_request.labels.*.name, 'all-distros') }}" == "true" ]; then
           echo "flavor=['green', 'tumbleweed', 'blue', 'orange']" >> $GITHUB_OUTPUT
         else
@@ -36,15 +30,8 @@ jobs:
     needs: detect
     strategy:
       matrix:
-        arch: ${{fromJson(needs.detect.outputs.arch)}}
         flavor: ${{fromJson(needs.detect.outputs.flavor)}}
-        exclude:
-          - arch: aarch64
-            flavor: blue
-          - arch: aarch64
-            flavor: orange
       fail-fast: false
-    uses: ./.github/workflows/build_and_test.yaml
+    uses: ./.github/workflows/build_and_test_x86.yaml
     with:
-      arch: ${{ matrix.arch }}
       flavor: ${{ matrix.flavor }}

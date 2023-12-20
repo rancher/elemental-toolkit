@@ -2,15 +2,15 @@ name: nightly
 
 on:
   workflow_dispatch:
-  schedule:
+  #schedule:
     # run at 02:30 UTC every night
-    - cron:  '30 2 * * *'
+    #- cron:  '30 2 * * *'
 
 jobs:
   build-matrix:
     strategy:
       matrix:
         flavor: ['green', 'tumbleweed']
-    uses: ./.github/workflows/build_and_test_x86.yaml
+    uses: ./.github/workflows/build_and_test_arm.yaml
     with:
       flavor: ${{ matrix.flavor }}
