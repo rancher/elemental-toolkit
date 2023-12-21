@@ -67,9 +67,15 @@ func DirSizeMB(fs v1.FS, path string) (uint, error) {
 	return 0, fmt.Errorf("Negative size calculation: %d", sizeMB)
 }
 
-// Check if a file or directory exists.
-func Exists(fs v1.FS, path string) (bool, error) {
-	_, err := fs.Stat(path)
+// Check if a file or directory exists. noFollow flag determines to
+// not follow symlinks to check files existance.
+func Exists(fs v1.FS, path string, noFollow ...bool) (bool, error) {
+	var err error
+	if len(noFollow) > 0 && noFollow[0] {
+		_, err = fs.Lstat(path)
+	} else {
+		_, err = fs.Stat(path)
+	}
 	if err == nil {
 		return true, nil
 	}
@@ -218,11 +224,6 @@ func (d *statDirEntry) Name() string               { return d.info.Name() }
 func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
 func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
-
-// Return a DirEntry from a FileInfo
-func DirEntryFromFileInfo(info fs.FileInfo) fs.DirEntry {
-	return &statDirEntry{info: info}
-}
 
 // WalkDirFs is the same as filepath.WalkDir but accepts a v1.Fs so it can be run on any v1.Fs type
 func WalkDirFs(fs v1.FS, root string, fn fs.WalkDirFunc) error {

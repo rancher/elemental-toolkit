@@ -37,9 +37,6 @@ import (
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
-// Maxium number of nested symlinks to resolve
-const maxLinkDepth = 4
-
 // BootedFrom will check if we are booting from the given label
 func BootedFrom(runner v1.Runner, label string) bool {
 	out, _ := runner.Run("cat", "/proc/cmdline")
@@ -425,7 +422,10 @@ func findFile(vfs v1.FS, rootDir, pattern string) (string, error) {
 				return err
 			}
 			if match {
-				foundFile = ResolveLink(vfs, path, rootDir, d, maxLinkDepth)
+				foundFile, err = resolveLink(vfs, path, rootDir, d, constants.MaxLinkDepth)
+				if err != nil {
+					return err
+				}
 				return io.EOF
 			}
 			return nil
@@ -499,18 +499,21 @@ func getBaseDir(path string) string {
 }
 
 // resolveLink attempts to resolve a symlink, if any. Returns the original given path
-// if not a symlink or if it can't be resolved.
-func ResolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth int) string {
+// if not a symlink. In case of error returns error and the original given path.
+func resolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth int) (string, error) {
 	var err error
 	var resolved string
 	var f fs.FileInfo
 
 	f, err = d.Info()
 	if err != nil {
-		return path
+		return path, err
 	}
 
-	if f.Mode()&os.ModeSymlink == os.ModeSymlink && depth > 0 {
+	if f.Mode()&os.ModeSymlink == os.ModeSymlink {
+		if depth <= 0 {
+			return path, fmt.Errorf("can't resolve this path '%s', too many nested links", path)
+		}
 		resolved, err = readlink(vfs, path)
 		if err == nil {
 			if !filepath.IsAbs(resolved) {
@@ -519,11 +522,24 @@ func ResolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth in
 				resolved = filepath.Join(rootDir, resolved)
 			}
 			if f, err = vfs.Lstat(resolved); err == nil {
-				return ResolveLink(vfs, resolved, rootDir, &statDirEntry{f}, depth-1)
+				return resolveLink(vfs, resolved, rootDir, &statDirEntry{f}, depth-1)
 			}
+			return path, err
 		}
+		return path, err
 	}
-	return path
+	return path, nil
+}
+
+// ResolveLink attempts to resolve a symlink, if any. Returns the original given path
+// if not a symlink or if it can't be resolved.
+func ResolveLink(vfs v1.FS, path string, rootDir string, depth int) (string, error) {
+	f, err := vfs.Lstat(path)
+	if err != nil {
+		return path, err
+	}
+
+	return resolveLink(vfs, path, rootDir, &statDirEntry{f}, depth)
 }
 
 // CalcFileChecksum opens the given file and returns the sha256 checksum of it.

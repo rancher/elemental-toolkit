@@ -742,39 +742,33 @@ var _ = Describe("Utils", Label("utils"), func() {
 
 		It("resolves a simple relative symlink", func() {
 			systemPath := filepath.Join(rootDir, relSymlink)
-			f, err := fs.Lstat(systemPath)
-			Expect(err).To(BeNil())
-			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, constants.MaxLinkDepth)).To(Equal(filepath.Join(rootDir, file)))
 		})
 
 		It("resolves a simple absolute symlink", func() {
 			systemPath := filepath.Join(rootDir, absSymlink)
-			f, err := fs.Lstat(systemPath)
-			Expect(err).To(BeNil())
-			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, constants.MaxLinkDepth)).To(Equal(filepath.Join(rootDir, file)))
 		})
 
 		It("resolves some nested symlinks", func() {
 			systemPath := filepath.Join(rootDir, nestSymlink)
-			f, err := fs.Lstat(systemPath)
-			Expect(err).To(BeNil())
-			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(filepath.Join(rootDir, file)))
+			Expect(utils.ResolveLink(fs, systemPath, rootDir, constants.MaxLinkDepth)).To(Equal(filepath.Join(rootDir, file)))
 		})
 
 		It("does not resolve broken links", func() {
 			systemPath := filepath.Join(rootDir, brokenSymlink)
-			f, err := fs.Lstat(systemPath)
-			Expect(err).To(BeNil())
 			// Return the symlink path without resolving it
-			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 4)).To(Equal(systemPath))
+			resolved, err := utils.ResolveLink(fs, systemPath, rootDir, constants.MaxLinkDepth)
+			Expect(resolved).To(Equal(systemPath))
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("does not resolve too many levels of netsed links", func() {
 			systemPath := filepath.Join(rootDir, nestSymlink)
-			f, err := fs.Lstat(systemPath)
-			Expect(err).To(BeNil())
 			// Returns the symlink resolution up to the second level
-			Expect(utils.ResolveLink(fs, systemPath, rootDir, utils.DirEntryFromFileInfo(f), 2)).To(Equal(filepath.Join(rootDir, "/path/to/nest2nd")))
+			resolved, err := utils.ResolveLink(fs, systemPath, rootDir, 2)
+			Expect(resolved).To(Equal(filepath.Join(rootDir, "/path/to/nest2nd")))
+			Expect(err).To(HaveOccurred())
 		})
 	})
 	Describe("FindFile", func() {
