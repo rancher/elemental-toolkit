@@ -681,6 +681,8 @@ type BuildConfig struct {
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (b *BuildConfig) Sanitize() error {
+	// Always include default cloud-init paths
+	b.CloudInitPaths = append(constants.GetCloudInitPaths(), b.CloudInitPaths...)
 	return b.Config.Sanitize()
 }
 
