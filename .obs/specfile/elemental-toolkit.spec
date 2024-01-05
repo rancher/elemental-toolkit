@@ -83,5 +83,7 @@ install -m755 build/elemental %{buildroot}%{_bindir}
 %defattr(-,root,root,-)
 %license LICENSE
 %{_bindir}/*
+%dir %{_unitdir}
+%ghost %{_unitdir}/elemental-setup.*
 
 %changelog
