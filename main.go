@@ -18,6 +18,8 @@ package main
 
 import "github.com/rancher/elemental-toolkit/cmd"
 
+// Just a change to code to be sure it causes a recompile - DELETEME
+
 func main() {
 	cmd.Execute()
 }
