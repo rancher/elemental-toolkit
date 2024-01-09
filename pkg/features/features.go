@@ -49,7 +49,8 @@ const (
 
 var (
 	All = []string{
-		FeatureImmutableRootfs,
+		FeatureElementalRootfs,
+		FeatureElementalSysroot,
 		FeatureGrubConfig,
 		FeatureGrubDefaultBootargs,
 		FeatureElementalSetup,
