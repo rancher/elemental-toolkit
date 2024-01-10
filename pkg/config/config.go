@@ -524,7 +524,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
-func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
+func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 
 	// does not return error on v1.EFI use case
@@ -610,7 +610,7 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 	)
 
 	return &v1.DiskSpec{
-		Partitions: NewDiskElementalParitions(workdir),
+		Partitions: NewDiskElementalPartitions(workdir),
 		GrubConf:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		Active:     activeImg,
 		Recovery:   recoveryImg,
