@@ -380,7 +380,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("sanitize", func() {
 			It("runs method", func() {
-				Expect(spec.Partitions.EFI).To(BeNil())
+				Expect(spec.Partitions.EFI).ToNot(BeNil())
 				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
 
 				// Creates firmware partitions

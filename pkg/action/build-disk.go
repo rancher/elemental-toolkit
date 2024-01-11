@@ -178,7 +178,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.StatePartName])
+	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.EfiPartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
@@ -199,7 +199,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	grubVars := b.spec.GetGrubLabels()
 	err = b.bootloader.SetPersistentVariables(
-		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
+		filepath.Join(b.roots[constants.EfiPartName], constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -208,7 +208,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	err = b.bootloader.InstallEFI(
-		activeRoot, b.roots[constants.StatePartName],
+		activeRoot, b.roots[constants.EfiPartName],
 		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
@@ -217,7 +217,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Rebrand
-	err = b.bootloader.SetDefaultEntry(b.roots[constants.StatePartName], activeRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], activeRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}

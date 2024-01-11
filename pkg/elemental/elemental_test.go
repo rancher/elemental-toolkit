@@ -178,6 +178,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
 
+			parts.EFI.Path = "/dev/device1"
 			parts.OEM.Path = "/dev/device2"
 			parts.Recovery.Path = "/dev/device3"
 			parts.State.Path = "/dev/device4"
@@ -188,7 +189,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
 			Expect(err).To(BeNil())
 			lst, _ := mounter.List()
-			Expect(len(lst)).To(Equal(4))
+			Expect(len(lst)).To(Equal(5))
 		})
 
 		It("Mounts disk partitions excluding recovery", func() {
@@ -223,6 +224,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
 
+			parts.EFI.Path = "/dev/device1"
 			parts.OEM.Path = "/dev/device2"
 			parts.Recovery.Path = "/dev/device3"
 			parts.State.Path = "/dev/device4"

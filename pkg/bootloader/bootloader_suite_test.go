@@ -25,5 +25,5 @@ import (
 
 func TestTypes(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "booloader type test suite")
+	RunSpecs(t, "bootloader type test suite")
 }

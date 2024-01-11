@@ -27,16 +27,12 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 
 	efilib "github.com/canonical/go-efilib"
+
 	eleefi "github.com/rancher/elemental-toolkit/pkg/efi"
 )
 
 const (
-	grubPrefix  = "/grub2"
 	grubCfgFile = "grub.cfg"
-
-	grubEFICfgTmpl = "search --no-floppy --label --set=root %s" +
-		"\nset prefix=($root)%s" +
-		"\nconfigfile $prefix/" + grubCfgFile
 )
 
 func getGModulePatterns(module string) []string {
@@ -80,7 +76,6 @@ func NewGrub(cfg *v1.Config, opts ...GrubOptions) *Grub {
 		logger:         cfg.Logger,
 		runner:         cfg.Runner,
 		platform:       cfg.Platform,
-		grubPrefix:     grubPrefix,
 		configFile:     grubCfgFile,
 		elementalCfg:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		clearBootEntry: true,
@@ -208,15 +203,15 @@ func (g *Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) error {
 	return nil
 }
 
-func (g *Grub) InstallEFIFallbackBinaries(rootDir, efiDir, deviceLabel string) error {
-	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.FallbackEFIPath, deviceLabel)
+func (g *Grub) InstallEFIFallbackBinaries(rootDir, efiDir, _ string) error {
+	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.FallbackEFIPath)
 }
 
-func (g *Grub) InstallEFIElementalBinaries(rootDir, efiDir, deviceLabel string) error {
-	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.EntryEFIPath, deviceLabel)
+func (g *Grub) InstallEFIElementalBinaries(rootDir, efiDir, _ string) error {
+	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.EntryEFIPath)
 }
 
-func (g *Grub) installEFIPartitionBinaries(rootDir, efiDir, efiPath, deviceLabel string) error {
+func (g *Grub) installEFIPartitionBinaries(rootDir, efiDir, efiPath string) error {
 	err := g.findEFIImages(rootDir)
 	if err != nil {
 		return err
@@ -272,12 +267,6 @@ func (g *Grub) installEFIPartitionBinaries(rootDir, efiDir, efiPath, deviceLabel
 	err = utils.CopyFile(g.fs, g.grubEfiImg, grubEfi)
 	if err != nil {
 		return fmt.Errorf("failed copying %s to %s: %s", g.grubEfiImg, installPath, err.Error())
-	}
-
-	grubCfgContent := []byte(fmt.Sprintf(grubEFICfgTmpl, deviceLabel, g.grubPrefix))
-	err = g.fs.WriteFile(filepath.Join(efiDir, efiPath, grubCfgFile), grubCfgContent, constants.FilePerm)
-	if err != nil {
-		return fmt.Errorf("error writing %s: %s", filepath.Join(efiDir, efiPath, grubCfgFile), err)
 	}
 
 	return nil
@@ -402,8 +391,8 @@ func (g *Grub) SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry strin
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g *Grub) Install(rootDir, bootDir, stateLabel string) (err error) {
-	err = g.InstallEFI(rootDir, bootDir, constants.EfiDir, stateLabel)
+func (g *Grub) Install(rootDir, bootDir, deviceLabel string) (err error) {
+	err = g.InstallEFI(rootDir, bootDir, constants.EfiDir, deviceLabel)
 	if err != nil {
 		return err
 	}
@@ -425,21 +414,25 @@ func (g *Grub) Install(rootDir, bootDir, stateLabel string) (err error) {
 // InstallConfig installs grub configuraton files to the expected location.  rootDir is the root
 // of the OS image, bootDir is the folder grub read the configuration from, usually state partition mountpoint
 func (g Grub) InstallConfig(rootDir, bootDir string) error {
-	grubFile := filepath.Join(rootDir, g.elementalCfg)
-	dstGrubFile := filepath.Join(bootDir, g.grubPrefix, g.configFile)
+	for _, path := range []string{constants.FallbackEFIPath, constants.EntryEFIPath} {
+		grubFile := filepath.Join(rootDir, g.elementalCfg)
+		dstGrubFile := filepath.Join(bootDir, path, g.configFile)
 
-	g.logger.Infof("Using grub config file %s", grubFile)
+		g.logger.Infof("Using grub config file %s", grubFile)
 
-	// Create Needed dir under state partition to store the grub.cfg and any needed modules
-	err := utils.MkdirAll(g.fs, filepath.Join(bootDir, g.grubPrefix), constants.DirPerm)
-	if err != nil {
-		return fmt.Errorf("error creating grub dir: %s", err)
+		// Create Needed dir under state partition to store the grub.cfg and any needed modules
+		err := utils.MkdirAll(g.fs, filepath.Join(bootDir, path), constants.DirPerm)
+		if err != nil {
+			return fmt.Errorf("error creating grub dir: %s", err)
+		}
+
+		g.logger.Infof("Copying grub config file from %s to %s", grubFile, dstGrubFile)
+		err = utils.CopyFile(g.fs, grubFile, dstGrubFile)
+		if err != nil {
+			g.logger.Errorf("Failed copying grub config file: %s", err)
+			return err
+		}
 	}
 
-	g.logger.Infof("Copying grub config file from %s to %s", grubFile, dstGrubFile)
-	err = utils.CopyFile(g.fs, grubFile, dstGrubFile)
-	if err != nil {
-		g.logger.Errorf("Failed copying grub config file: %s", err)
-	}
-	return err
+	return nil
 }
