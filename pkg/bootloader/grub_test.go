@@ -105,6 +105,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 			config.WithLogger(logger),
 			config.WithRunner(runner),
 			config.WithFs(fs),
+			config.WithPlatform("linux/amd64"),
 		)
 	})
 
