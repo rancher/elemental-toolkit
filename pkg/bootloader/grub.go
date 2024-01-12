@@ -32,7 +32,8 @@ import (
 )
 
 const (
-	grubCfgFile = "grub.cfg"
+	defaultGrubPrefix = "/EFI/BOOT"
+	grubCfgFile       = "grub.cfg"
 )
 
 func getGModulePatterns(module string) []string {
@@ -77,6 +78,7 @@ func NewGrub(cfg *v1.Config, opts ...GrubOptions) *Grub {
 		runner:         cfg.Runner,
 		platform:       cfg.Platform,
 		configFile:     grubCfgFile,
+		grubPrefix:     defaultGrubPrefix,
 		elementalCfg:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		clearBootEntry: true,
 		secureBoot:     secureBoot,

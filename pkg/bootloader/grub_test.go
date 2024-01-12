@@ -123,11 +123,11 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(data).To(Equal(grubCfg))
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/loopback.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check everything is copied in EFI directory
@@ -150,11 +150,11 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/loopback.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check secureboot files are NOT there
@@ -232,11 +232,11 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/loopback.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check everything is copied in EFI directory
