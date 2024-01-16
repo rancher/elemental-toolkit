@@ -20,7 +20,31 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-type CleanJob func() error
+const (
+	errorOnly = iota
+	successOnly
+	always
+)
+
+type CleanFunc func() error
+
+// CleanJob represents a clean task. In can be of three different types. ErrorOnly type
+// is a clean job only executed on error, successOnly type is executed only on sucess and always
+// is always executed regardless the error value.
+type CleanJob struct {
+	cleanFunc CleanFunc
+	jobType   int
+}
+
+// Run executes the defined job
+func (cj CleanJob) Run() error {
+	return cj.cleanFunc()
+}
+
+// Type returns the CleanJob type
+func (cj CleanJob) Type() int {
+	return cj.jobType
+}
 
 // NewCleanStack returns a new stack.
 func NewCleanStack() *CleanStack {
@@ -29,18 +53,30 @@ func NewCleanStack() *CleanStack {
 
 // Stack is a basic LIFO stack that resizes as needed.
 type CleanStack struct {
-	jobs  []CleanJob
+	jobs  []*CleanJob
 	count int
 }
 
-// Push adds a node to the stack
-func (clean *CleanStack) Push(job CleanJob) {
-	clean.jobs = append(clean.jobs[:clean.count], job)
+// Push adds a node to the stack that will be always executed
+func (clean *CleanStack) Push(cFunc CleanFunc) {
+	clean.jobs = append(clean.jobs[:clean.count], &CleanJob{cleanFunc: cFunc, jobType: always})
+	clean.count++
+}
+
+// PushErrorOnly adds an error only node to the stack
+func (clean *CleanStack) PushErrorOnly(cFunc CleanFunc) {
+	clean.jobs = append(clean.jobs[:clean.count], &CleanJob{cleanFunc: cFunc, jobType: errorOnly})
+	clean.count++
+}
+
+// PushSuccessOnly adds a success only node to the stack
+func (clean *CleanStack) PushSuccessOnly(cFunc CleanFunc) {
+	clean.jobs = append(clean.jobs[:clean.count], &CleanJob{cleanFunc: cFunc, jobType: successOnly})
 	clean.count++
 }
 
 // Pop removes and returns a node from the stack in last to first order.
-func (clean *CleanStack) Pop() CleanJob {
+func (clean *CleanStack) Pop() *CleanJob {
 	if clean.count == 0 {
 		return nil
 	}
@@ -57,10 +93,26 @@ func (clean *CleanStack) Cleanup(err error) error {
 	}
 	for clean.count > 0 {
 		job := clean.Pop()
-		err = job()
-		if err != nil {
-			errs = multierror.Append(errs, err)
+		switch job.Type() {
+		case successOnly:
+			if errs == nil {
+				errs = runCleanJob(job, errs)
+			}
+		case errorOnly:
+			if errs != nil {
+				errs = runCleanJob(job, errs)
+			}
+		default:
+			errs = runCleanJob(job, errs)
 		}
+	}
+	return errs
+}
+
+func runCleanJob(job *CleanJob, errs error) error {
+	err := job.Run()
+	if err != nil {
+		errs = multierror.Append(errs, err)
 	}
 	return errs
 }

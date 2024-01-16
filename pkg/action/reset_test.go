@@ -18,7 +18,7 @@ package action_test
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"path/filepath"
 
 	"github.com/jaypipes/ghw/pkg/block"
@@ -84,7 +84,7 @@ var _ = Describe("Reset action tests", func() {
 		var err error
 		BeforeEach(func() {
 			cmdFail = ""
-			recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+			recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgFile)
 			err = utils.MkdirAll(fs, filepath.Dir(recoveryImg), constants.DirPerm)
 			Expect(err).To(BeNil())
 			_, err = fs.Create(recoveryImg)
@@ -130,7 +130,7 @@ var _ = Describe("Reset action tests", func() {
 			bootedFrom = constants.RecoveryImgFile
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == cmdFail {
-					return []byte{}, errors.New("Command failed")
+					return []byte{}, fmt.Errorf("Command '%s' failed", cmd)
 				}
 				switch cmd {
 				case "cat":
@@ -142,9 +142,11 @@ var _ = Describe("Reset action tests", func() {
 
 			spec, err = conf.NewResetSpec(config.Config)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Active.Source.IsEmpty()).To(BeFalse())
+			Expect(spec.System.IsEmpty()).To(BeFalse())
 
-			spec.Active.Size = 16
+			loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+			Expect(ok).To(BeTrue())
+			loopCfg.Size = 16
 
 			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
@@ -152,7 +154,8 @@ var _ = Describe("Reset action tests", func() {
 			_, err = fs.Create(grubCfg)
 			Expect(err).To(BeNil())
 
-			reset = action.NewResetAction(config, spec, action.WithResetBootloader(bootloader))
+			reset, err = action.NewResetAction(config, spec, action.WithResetBootloader(bootloader))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -174,7 +177,7 @@ var _ = Describe("Reset action tests", func() {
 		It("Successfully resets from a squashfs recovery image", Label("channel"), func() {
 			err := utils.MkdirAll(config.Fs, constants.ISOBaseTree, constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
-			spec.Active.Source = v1.NewDirSrc(constants.ISOBaseTree)
+			spec.System = v1.NewDirSrc(constants.ISOBaseTree)
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {
@@ -182,7 +185,7 @@ var _ = Describe("Reset action tests", func() {
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
-			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
+			spec.System = v1.NewDockerSrc("my/image:latest")
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a channel package", Label("channel"), func() {
@@ -206,25 +209,22 @@ var _ = Describe("Reset action tests", func() {
 		})
 		It("Fails formatting state partition", func() {
 			cmdFail = "mkfs.ext4"
-			Expect(reset.Run()).NotTo(BeNil())
+			err = reset.Run()
+			Expect(err).To(HaveOccurred())
 			Expect(runner.IncludesCmds([][]string{{"mkfs.ext4"}}))
-		})
-		It("Fails setting the active label on non-squashfs recovery", func() {
-			cmdFail = "tune2fs"
-			Expect(reset.Run()).NotTo(BeNil())
-		})
-		It("Fails setting the passive label on squashfs recovery", func() {
-			cmdFail = "tune2fs"
-			Expect(reset.Run()).NotTo(BeNil())
-			Expect(runner.IncludesCmds([][]string{{"tune2fs"}}))
+			Expect(err.Error()).To(ContainSubstring("Command 'mkfs.ext4' failed"))
 		})
 		It("Fails mounting partitions", func() {
 			mounter.ErrorOnMount = true
-			Expect(reset.Run()).NotTo(BeNil())
+			err = reset.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("mount error"))
 		})
 		It("Fails unmounting partitions", func() {
 			mounter.ErrorOnUnmount = true
-			Expect(reset.Run()).NotTo(BeNil())
+			err = reset.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unmount error"))
 		})
 	})
 })

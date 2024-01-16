@@ -147,15 +147,19 @@ var _ = Describe("Install action tests", func() {
 				}
 			}
 			// Need to create the IsoBaseTree, like if we are booting from iso
-			err = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
-			Expect(err).To(BeNil())
+			Expect(utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)).To(Succeed())
 
 			spec = conf.NewInstallSpec(config.Config)
-			spec.Active.Size = 16
+			loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+			Expect(ok).To(BeTrue())
+			loopCfg.Size = 16
+			Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
+			Expect(spec.System.IsDir()).To(BeTrue())
+			Expect(spec.RecoverySystem.Source.Value()).To(Equal(constants.ISOBaseTree))
+			//spec.System = v1.NewDockerSrc("fake/image:tag")
 
 			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
-			err = utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)
-			Expect(err).To(BeNil())
+			Expect(utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)).To(Succeed())
 			_, err = fs.Create(grubCfg)
 			Expect(err).To(BeNil())
 
@@ -182,16 +186,6 @@ var _ = Describe("Install action tests", func() {
 						Type:            "ext4",
 					},
 					{
-						Name:            "device4",
-						FilesystemLabel: "COS_ACTIVE",
-						Type:            "ext4",
-					},
-					{
-						Name:            "device5",
-						FilesystemLabel: "COS_PASSIVE",
-						Type:            "ext4",
-					},
-					{
 						Name:            "device5",
 						FilesystemLabel: "COS_RECOVERY",
 						Type:            "ext4",
@@ -207,7 +201,8 @@ var _ = Describe("Install action tests", func() {
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 
-			installer = action.NewInstallAction(config, spec, action.WithInstallBootloader(bootloader))
+			installer, err = action.NewInstallAction(config, spec, action.WithInstallBootloader(bootloader))
+			Expect(err).ToNot(HaveOccurred())
 		})
 		AfterEach(func() {
 			ghwTest.Clean()
@@ -266,7 +261,7 @@ var _ = Describe("Install action tests", func() {
 
 		It("Successfully installs a docker image", Label("docker"), func() {
 			spec.Target = device
-			spec.Active.Source = v1.NewDockerSrc("my/image:latest")
+			spec.System = v1.NewDockerSrc("my/image:latest")
 			Expect(installer.Run()).To(BeNil())
 		})
 
@@ -319,11 +314,13 @@ var _ = Describe("Install action tests", func() {
 			spec.Iso = "cOS.iso"
 			spec.Target = device
 			Expect(installer.Run()).NotTo(BeNil())
-			Expect(spec.Active.Source.Value()).To(ContainSubstring("/rootfs"))
-			Expect(spec.Active.Source.IsDir()).To(BeTrue())
+			Expect(spec.System.Value()).To(ContainSubstring("/rootfs"))
+			Expect(spec.System.IsDir()).To(BeTrue())
 		})
 
 		It("Fails to install without formatting if a previous install is detected", Label("no-format", "disk"), func() {
+			Expect(utils.MkdirAll(fs, filepath.Dir(constants.ActiveMode), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
 			spec.NoFormat = true
 			spec.Force = false
 			spec.Target = device
@@ -333,27 +330,35 @@ var _ = Describe("Install action tests", func() {
 		It("Fails to mount partitions", Label("disk", "mount"), func() {
 			spec.Target = device
 			mounter.ErrorOnMount = true
-			Expect(installer.Run()).NotTo(BeNil())
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("mount error"))
 		})
 
 		It("Fails on blkdeactivate errors", Label("disk", "partitions"), func() {
 			spec.Target = device
 			cmdFail = "blkdeactivate"
-			Expect(installer.Run()).NotTo(BeNil())
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
 			Expect(runner.MatchMilestones([][]string{{"parted"}}))
+			Expect(err.Error()).To(ContainSubstring("blkdeactivate"))
 		})
 
 		It("Fails on parted errors", Label("disk", "partitions"), func() {
 			spec.Target = device
 			cmdFail = "parted"
-			Expect(installer.Run()).NotTo(BeNil())
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
 			Expect(runner.MatchMilestones([][]string{{"parted"}}))
+			Expect(err.Error()).To(ContainSubstring("parted"))
 		})
 
 		It("Fails to unmount partitions", Label("disk", "partitions"), func() {
 			spec.Target = device
 			mounter.ErrorOnUnmount = true
-			Expect(installer.Run()).NotTo(BeNil())
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("unmount error"))
 		})
 
 		It("Fails to create a filesystem image", Label("disk", "image"), func() {
@@ -373,22 +378,21 @@ var _ = Describe("Install action tests", func() {
 		It("Fails on grub install errors", Label("grub"), func() {
 			spec.Target = device
 			bootloader.ErrorInstall = true
-			Expect(installer.Run()).NotTo(BeNil())
-		})
-
-		It("Fails copying Passive image", Label("copy", "active"), func() {
-			spec.Target = device
-			cmdFail = "tune2fs"
-			Expect(installer.Run()).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{{"tune2fs", "-L", constants.PassiveLabel}}))
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("error installing grub"))
 		})
 
 		It("Fails setting the grub default entry", Label("grub"), func() {
 			spec.Target = device
 			spec.GrubDefEntry = "cOS"
 			bootloader.ErrorSetDefaultEntry = true
-			Expect(installer.Run()).NotTo(BeNil())
+			err = installer.Run()
+			Expect(err).NotTo(BeNil())
 			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.EfiDir, constants.GrubOEMEnv)}}))
 		})
+
+		// Start transaction
+		// Close transaction
 	})
 })

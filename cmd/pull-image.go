@@ -64,11 +64,14 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			cfg.Logger.Infof("Pulling image %s platform %s", image, cfg.Platform.String())
 
+			var digest string
 			e := v1.OCIImageExtractor{}
-			if err = e.ExtractImage(image, destination, cfg.Platform.String(), local); err != nil {
+			if digest, err = e.ExtractImage(image, destination, cfg.Platform.String(), local); err != nil {
 				cfg.Logger.Error(err.Error())
 				return elementalError.NewFromError(err, elementalError.UnpackImage)
 			}
+
+			cfg.Logger.Info("Extracted image digest: %s", digest)
 
 			return nil
 		},

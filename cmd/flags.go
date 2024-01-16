@@ -43,7 +43,7 @@ func addPowerFlags(cmd *cobra.Command) {
 // addSharedInstallUpgradeFlags add flags shared between install, upgrade and reset
 func addSharedInstallUpgradeFlags(cmd *cobra.Command) {
 	addResetFlags(cmd)
-	cmd.Flags().String("recovery-system.uri", "", "Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')")
+	addRecoverySystemFlag(cmd)
 	addSquashFsCompressionFlags(cmd)
 }
 
@@ -55,12 +55,22 @@ func addResetFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("docker-image", "d", "", "Install a specified container image")
 	_ = cmd.Flags().MarkDeprecated("docker-image", "'docker-image' is deprecated please use 'system' instead")
 
-	cmd.Flags().String("system.uri", "", "Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')")
 	cmd.Flags().Bool("verify", false, "Enable mtree checksum verification (requires images manifests generated with mtree separately)")
 	cmd.Flags().Bool("strict", false, "Enable strict check of hooks (They need to exit with 0)")
 
+	addSystemFlag(cmd)
 	addCosignFlags(cmd)
 	addPowerFlags(cmd)
+}
+
+// addSystemFlag adds system flag to define source OS
+func addSystemFlag(cmd *cobra.Command) {
+	cmd.Flags().String("system", "", "Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')")
+}
+
+// addRecoverySystemFlag adds the recovery-system.uri flag to define recovery source OS
+func addRecoverySystemFlag(cmd *cobra.Command) {
+	cmd.Flags().String("recovery-system.uri", "", "Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')")
 }
 
 // addLocalImageFlag add local image flag shared between install, pull-image, upgrade
@@ -69,7 +79,7 @@ func addLocalImageFlag(cmd *cobra.Command) {
 }
 
 func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {
-	systemFlag := "system.uri"
+	systemFlag := "system"
 	doc, _ := flags.GetString("docker-image")
 	if doc != "" {
 		_ = flags.Set(systemFlag, fmt.Sprintf("docker:%s", doc))
@@ -96,7 +106,7 @@ func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
 
 func validateSourceFlags(_ v1.Logger, flags *pflag.FlagSet) error {
 	msg := "flags docker-image, directory and system are mutually exclusive, please only set one of them"
-	system, _ := flags.GetString("system.uri")
+	system, _ := flags.GetString("system")
 	directory, _ := flags.GetString("directory")
 	dockerImg, _ := flags.GetString("docker-image")
 	// docker-image, directory and system are mutually exclusive. Can't have your cake and eat it too.

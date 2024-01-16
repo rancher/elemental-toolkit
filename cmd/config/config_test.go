@@ -56,6 +56,11 @@ var _ = Describe("Config", Label("config"), func() {
 			It("reads values correctly", func() {
 				cfg, err := ReadConfigRun("fixtures/simple/", nil, mounter)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(7), litter.Sdump(cfg))
+				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType), litter.Sdump(cfg))
+				loop, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
+				Expect(ok).To(BeTrue())
+				Expect(loop.Size).To(Equal(uint(2000)))
 
 				Expect(cfg.Config.Cosign).To(BeTrue(), litter.Sdump(cfg))
 
@@ -63,13 +68,11 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).Should(HaveOccurred(), litter.Sdump(cfg))
 
 				Expect(up.GrubDefEntry).To(Equal("so"))
-				Expect(up.Active.Size).To(Equal(uint(2000)), litter.Sdump(up))
 
 				inst, err := ReadInstallSpec(cfg, nil)
 				Expect(err).Should(HaveOccurred(), litter.Sdump(cfg))
 
 				Expect(inst.GrubDefEntry).To(Equal("mockme"))
-				Expect(inst.Active.Size).To(Equal(uint(2000)), litter.Sdump(up))
 			})
 		})
 	})
@@ -187,9 +190,8 @@ var _ = Describe("Config", Label("config"), func() {
 				// From config file
 				Expect(disk.Size).To(Equal(uint(32768)))
 				Expect(disk.Partitions.OEM.Size).To(Equal(uint(32)))
-				Expect(disk.Unprivileged).To(BeTrue())
 				Expect(disk.Expandable).To(BeTrue())
-				Expect(disk.Recovery.Label).To(BeEmpty())
+				Expect(disk.RecoverySystem.Label).To(BeEmpty())
 			})
 		})
 	})
@@ -219,7 +221,6 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Runner != nil).To(BeTrue())
 			_, ok := cfg.Runner.(*v1.RealRunner)
 			Expect(ok).To(BeTrue())
-			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.MaxSnaps))
 		})
 		It("uses provided configs and flags, flags have priority", func() {
 			cfg, err := ReadConfigRun("fixtures/config/", flags, mounter)
@@ -249,10 +250,12 @@ var _ = Describe("Config", Label("config"), func() {
 		It("reads the snaphotter configuration", func() {
 			// Default value
 			cfg, err := ReadConfigRun("fixtures/config/", nil, mounter)
+			Expect(err).ShouldNot(HaveOccurred())
+
 			Expect(err).To(BeNil())
 			Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
 			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(7))
-			snapshooterCfg, ok := cfg.Snapshotter.Config.(v1.LoopDeviceConfig)
+			snapshooterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			Expect(snapshooterCfg.FS).To(Equal("xfs"))
 			Expect(snapshooterCfg.Size).To(Equal(uint(1024)))
@@ -307,8 +310,8 @@ var _ = Describe("Config", Label("config"), func() {
 
 			BeforeEach(func() {
 				flags = pflag.NewFlagSet("testflags", 1)
-				flags.String("system.uri", "", "testing flag")
-				flags.Set("system.uri", "docker:image/from:flag")
+				flags.String("system", "", "testing flag")
+				flags.Set("system", "docker:image/from:flag")
 			})
 			It("inits a default install spec if no configs are provided", func() {
 				spec, err := ReadInstallSpec(cfg, nil)
@@ -333,11 +336,11 @@ var _ = Describe("Config", Label("config"), func() {
 				// Overwrites target from environment variables
 				Expect(spec.Target == "/env/disk")
 				// Overwrites system image, flags have priority over files and env vars
-				Expect(spec.Active.Source.Value() == "image/from:flag")
+				Expect(spec.System.Value() == "image/from:flag")
 				// Overwerites default value for DisableBootEntry from an env var
 				Expect(spec.DisableBootEntry).To(BeTrue())
 				// Uses recovery and no-format defined in confing.yaml
-				Expect(spec.Recovery.Source.Value() == "recovery/image:latest")
+				Expect(spec.RecoverySystem.Source.Value() == "recovery/image:latest")
 				Expect(spec.NoFormat == true)
 				// Gets multiple cloud-init files from env vars as comma separated values
 				Expect(len(spec.CloudInit)).To(Equal(2))
@@ -411,7 +414,7 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(spec.CloudInit[0]).To(Equal("path/to/file1.yaml"))
 				Expect(spec.CloudInit[1]).To(Equal("/absolute/path/to/file2.yaml"))
 				// Overwrites system image, flags have priority over files and env vars
-				Expect(spec.Active.Source.Value() == "image/from:flag")
+				Expect(spec.System.Value() == "image/from:flag")
 				// From config files
 				Expect(spec.DisableBootEntry).To(BeTrue())
 				// From env vars
@@ -459,9 +462,9 @@ var _ = Describe("Config", Label("config"), func() {
 				spec, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars
-				Expect(spec.Recovery.Source.Value() == "image/from:flag")
+				Expect(spec.RecoverySystem.Source.Value() == "image/from:flag")
 				// System image from config files
-				Expect(spec.Active.Source.Value() == "system/cos")
+				Expect(spec.System.Value() == "system/cos")
 				// Sets recovery upgrade from environment variables
 				Expect(spec.RecoveryUpgrade).To(BeTrue())
 			})

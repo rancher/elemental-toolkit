@@ -86,7 +86,14 @@ func (c Config) WriteInstallState(i *InstallState, statePath, recoveryPath strin
 
 // LoadInstallState loads the state.yaml file and unmarshals it to an InstallState object
 func (c Config) LoadInstallState() (*InstallState, error) {
-	installState := &InstallState{}
+	installState := &InstallState{
+		Snapshotter: SnapshotterConfig{
+			Type:     constants.LoopDeviceSnapshotterType,
+			MaxSnaps: constants.MaxSnaps,
+			Config:   NewLoopDeviceConfig(),
+		},
+	}
+
 	data, err := c.Fs.ReadFile(filepath.Join(constants.RunningStateDir, constants.InstallStateFile))
 	if err != nil {
 		return nil, err
@@ -96,7 +103,7 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 		return nil, err
 	}
 
-	// Set default filesystem labels if missing, see racnher/elemental-toolkit#1827
+	// Set default filesystem labels if missing, see rancher/elemental-toolkit#1827
 	if installState.Partitions[constants.EfiPartName] != nil && installState.Partitions[constants.EfiPartName].FSLabel == "" {
 		installState.Partitions[constants.EfiPartName].FSLabel = constants.EfiLabel
 	}
@@ -106,19 +113,15 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 	if installState.Partitions[constants.RecoveryPartName] != nil && installState.Partitions[constants.RecoveryPartName].FSLabel == "" {
 		installState.Partitions[constants.RecoveryPartName].FSLabel = constants.RecoveryLabel
 		recovery := installState.Partitions[constants.RecoveryPartName]
-		if recovery.Images[constants.RecoveryImgName] != nil && recovery.Images[constants.RecoveryImgName].Label == "" {
-			recovery.Images[constants.RecoveryImgName].Label = constants.SystemLabel
+		if recovery.RecoveryImage.FS == "" {
+			recovery.RecoveryImage.FS = constants.SquashFs
+		}
+		if recovery.RecoveryImage.Label == "" && recovery.RecoveryImage.FS != constants.SquashFs {
+			recovery.RecoveryImage.Label = constants.SystemLabel
 		}
 	}
 	if installState.Partitions[constants.StatePartName] != nil && installState.Partitions[constants.StatePartName].FSLabel == "" {
 		installState.Partitions[constants.StatePartName].FSLabel = constants.StateLabel
-		state := installState.Partitions[constants.StatePartName]
-		if state.Images[constants.ActiveImgName] != nil && state.Images[constants.ActiveImgName].Label == "" {
-			state.Images[constants.ActiveImgName].Label = constants.ActiveLabel
-		}
-		if state.Images[constants.PassiveImgName] != nil && state.Images[constants.PassiveImgName].Label == "" {
-			state.Images[constants.PassiveImgName].Label = constants.PassiveLabel
-		}
 	}
 	if installState.Partitions[constants.PersistentPartName] != nil && installState.Partitions[constants.PersistentPartName].FSLabel == "" {
 		installState.Partitions[constants.PersistentPartName].FSLabel = constants.PersistentLabel
@@ -187,29 +190,29 @@ type InstallSpec struct {
 	CloudInit        []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
 	Iso              string              `yaml:"iso,omitempty" mapstructure:"iso"`
 	GrubDefEntry     string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Active           Image               `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery         Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	Passive          Image
-	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	System           *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem   Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	DisableBootEntry bool                `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (i *InstallSpec) Sanitize() error {
-	if i.Active.Source.IsEmpty() && i.Iso == "" {
+	if i.System.IsEmpty() && i.Iso == "" {
 		return fmt.Errorf("undefined system source to install")
 	}
 	if i.Partitions.State == nil || i.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
 	}
 
-	// Unset labels for squashfs filesystem
-	if i.Active.FS == constants.SquashFs {
-		i.Active.Label = ""
-		i.Passive.Label = ""
+	// If not special recovery is defined use main system source
+	if i.RecoverySystem.Source.IsEmpty() {
+		i.RecoverySystem.Source = i.System
 	}
-	if i.Recovery.FS == constants.SquashFs {
-		i.Recovery.Label = ""
+
+	// Set default label for non squashfs images
+	if i.RecoverySystem.FS != constants.SquashFs && i.RecoverySystem.Label == "" {
+		i.RecoverySystem.Label = constants.SystemLabel
 	}
 
 	// Check for extra partitions having set its size to 0
@@ -308,10 +311,9 @@ type ResetSpec struct {
 	FormatPersistent bool `yaml:"reset-persistent,omitempty" mapstructure:"reset-persistent"`
 	FormatOEM        bool `yaml:"reset-oem,omitempty" mapstructure:"reset-oem"`
 
-	CloudInit        []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	GrubDefEntry     string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Active           Image    `yaml:"system,omitempty" mapstructure:"system"`
-	Passive          Image
+	CloudInit        []string     `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	GrubDefEntry     string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	System           *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
 	Partitions       ElementalPartitions
 	Target           string
 	Efi              bool
@@ -322,26 +324,21 @@ type ResetSpec struct {
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (r *ResetSpec) Sanitize() error {
-	if r.Active.Source.IsEmpty() {
+	if r.System.IsEmpty() {
 		return fmt.Errorf("undefined system source to reset to")
 	}
 	if r.Partitions.State == nil || r.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
 	}
-	// Unset labels for squashfs filesystem
-	if r.Active.FS == constants.SquashFs {
-		r.Active.Label = ""
-		r.Passive.Label = ""
-	}
+
 	return nil
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade bool   `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	Active          Image  `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery        Image  `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry    string `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Passive         Image
+	RecoveryUpgrade bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System          *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem  Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry    string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	Partitions      ElementalPartitions
 	State           *InstallState
 }
@@ -349,29 +346,29 @@ type UpgradeSpec struct {
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (u *UpgradeSpec) Sanitize() error {
+	if u.Partitions.State == nil || u.Partitions.State.MountPoint == "" {
+		return fmt.Errorf("undefined state partition")
+	}
+	if u.System.IsEmpty() {
+		return fmt.Errorf("undefined upgrade source")
+	}
+
 	if u.RecoveryUpgrade {
 		if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
 			return fmt.Errorf("undefined recovery partition")
 		}
-		if u.Recovery.Source.IsEmpty() {
-			return fmt.Errorf("undefined upgrade source")
-		}
-	} else {
-		if u.Partitions.State == nil || u.Partitions.State.MountPoint == "" {
-			return fmt.Errorf("undefined state partition")
-		}
-		if u.Active.Source.IsEmpty() {
-			return fmt.Errorf("undefined upgrade source")
+		if u.RecoverySystem.Source.IsEmpty() {
+			u.RecoverySystem.Source = u.System
 		}
 	}
-	// Unset labels for squashfs filesystem
-	if u.Active.FS == constants.SquashFs {
-		u.Active.Label = ""
-		u.Passive.Label = ""
+
+	// Set default label for non squashfs images
+	if u.RecoverySystem.FS != constants.SquashFs && u.RecoverySystem.Label == "" {
+		u.RecoverySystem.Label = constants.SystemLabel
+	} else if u.RecoverySystem.FS == constants.SquashFs {
+		u.RecoverySystem.Label = ""
 	}
-	if u.Recovery.FS == constants.SquashFs {
-		u.Recovery.Label = ""
-	}
+
 	return nil
 }
 
@@ -666,9 +663,10 @@ type Repository struct {
 
 // BuildConfig represents the config we need for building isos, raw images, artifacts
 type BuildConfig struct {
-	Date   bool   `yaml:"date,omitempty" mapstructure:"date"`
-	Name   string `yaml:"name,omitempty" mapstructure:"name"`
-	OutDir string `yaml:"output,omitempty" mapstructure:"output"`
+	Date        bool              `yaml:"date,omitempty" mapstructure:"date"`
+	Name        string            `yaml:"name,omitempty" mapstructure:"name"`
+	OutDir      string            `yaml:"output,omitempty" mapstructure:"output"`
+	Snapshotter SnapshotterConfig `yaml:"snapshotter,omitempty" mapstructure:"snapshotter"`
 
 	// 'inline' and 'squash' labels ensure config fields
 	// are embedded from a yaml and map PoV
@@ -684,33 +682,34 @@ func (b *BuildConfig) Sanitize() error {
 }
 
 type DiskSpec struct {
-	Size         uint                `yaml:"size,omitempty" mapstructure:"size"`
-	Partitions   ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	Expandable   bool                `yaml:"expandable,omitempty" mapstructure:"expandable"`
-	Unprivileged bool                `yaml:"unprivileged,omitempty" mapstructure:"unprivileged"`
-	Active       Image               `yaml:"system,omitempty" mapstructure:"system"`
-	Recovery     Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	Passive      Image
-	GrubConf     string
-	CloudInit    []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	GrubDefEntry string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Type         string   `yaml:"type,omitempty" mapstructure:"type"`
-	DeployCmd    []string `yaml:"deploy-command,omitempty" mapstructure:"deploy-command"`
+	Size           uint                `yaml:"size,omitempty" mapstructure:"size"`
+	Partitions     ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	Expandable     bool                `yaml:"expandable,omitempty" mapstructure:"expandable"`
+	System         *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubConf       string
+	CloudInit      []string `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	GrubDefEntry   string   `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	Type           string   `yaml:"type,omitempty" mapstructure:"type"`
+	DeployCmd      []string `yaml:"deploy-command,omitempty" mapstructure:"deploy-command"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
 // if unsolvable inconsistencies are found
 func (d *DiskSpec) Sanitize() error {
-	// Set passive filesystem as active
-	d.Passive.FS = d.Active.FS
-
-	// Unset default label for squashed images
-	if d.Active.FS == constants.SquashFs {
-		d.Active.Label = ""
-		d.Passive.Label = ""
+	// If not special recovery is defined use main system source
+	if d.System.IsEmpty() {
+		return fmt.Errorf("undefined image source")
 	}
-	if d.Recovery.FS == constants.SquashFs {
-		d.Recovery.Label = ""
+
+	if d.RecoverySystem.Source.IsEmpty() {
+		d.RecoverySystem.Source = d.System
+	}
+
+	if d.RecoverySystem.FS == constants.SquashFs {
+		d.RecoverySystem.Label = ""
+	} else if d.RecoverySystem.Label == "" {
+		d.RecoverySystem.Label = constants.SystemLabel
 	}
 
 	// The disk size is enough for all partitions
@@ -741,74 +740,23 @@ func (d *DiskSpec) MinDiskSize() uint {
 
 // InstallState tracks the installation data of the whole system
 type InstallState struct {
-	Date       string                     `yaml:"date,omitempty"`
-	Partitions map[string]*PartitionState `yaml:",omitempty,inline"`
+	Date        string                     `yaml:"date,omitempty"`
+	Partitions  map[string]*PartitionState `yaml:",omitempty,inline"`
+	Snapshotter SnapshotterConfig          `yaml:"snapshotter,omitempty"`
 }
 
 // PartState tracks installation data of a partition
 type PartitionState struct {
-	FSLabel string                 `yaml:"label,omitempty"`
-	Images  map[string]*ImageState `yaml:",omitempty,inline"`
+	FSLabel       string               `yaml:"label,omitempty"`
+	RecoveryImage *SystemState         `yaml:"recovery,omitempty"`
+	Snapshots     map[int]*SystemState `yaml:"snapshots,omitempty"`
 }
 
-// ImageState represents data of a deployed image
-type ImageState struct {
-	Source         *ImageSource `yaml:"source,omitempty"`
-	SourceMetadata interface{}  `yaml:"source-metadata,omitempty"`
-	Label          string       `yaml:"label,omitempty"`
-	FS             string       `yaml:"fs,omitempty"`
-}
-
-func (i *ImageState) UnmarshalYAML(value *yaml.Node) error {
-	type iState ImageState
-	var srcMeta *yaml.Node
-	var err error
-
-	err = value.Decode((*iState)(i))
-	if err != nil {
-		return err
-	}
-
-	if i.SourceMetadata != nil {
-		for i, n := range value.Content {
-			if n.Value == "source-metadata" && n.Kind == yaml.ScalarNode {
-				if len(value.Content) >= i+1 && value.Content[i+1].Kind == yaml.MappingNode {
-					srcMeta = value.Content[i+1]
-				}
-				break
-			}
-		}
-	}
-
-	i.SourceMetadata = nil
-	if srcMeta != nil {
-		d := &DockerImageMeta{}
-		err = srcMeta.Decode(d)
-		if err == nil && (d.Digest != "" || d.Size != 0) {
-			i.SourceMetadata = d
-			return nil
-		}
-		c := &ChannelImageMeta{}
-		err = srcMeta.Decode(c)
-		if err == nil && c.Name != "" {
-			i.SourceMetadata = c
-		}
-	}
-
-	return err
-}
-
-// DockerImageMeta represents metadata of a docker container image type
-type DockerImageMeta struct {
-	Digest string `yaml:"digest,omitempty"`
-	Size   int64  `yaml:"size,omitempty"`
-}
-
-// ChannelImageMeta represents metadata of a channel image type
-type ChannelImageMeta struct {
-	Category    string       `yaml:"category,omitempty"`
-	Name        string       `yaml:"name,omitempty"`
-	Version     string       `yaml:"version,omitempty"`
-	FingerPrint string       `yaml:"finger-print,omitempty"`
-	Repos       []Repository `yaml:"repositories,omitempty"`
+// SystemState represents data of a deployed OS image
+type SystemState struct {
+	Source *ImageSource `yaml:"source,omitempty"`
+	Digest string       `yaml:"digest,omitempty"`
+	Active bool         `yaml:"active,omitempty"`
+	Label  string       `yaml:"label,omitempty"` // Only meaningful for the recovery image
+	FS     string       `yaml:"fs,omitempty"`    // Only meaningful for the recovery image
 }

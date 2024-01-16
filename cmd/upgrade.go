@@ -75,7 +75,12 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			cfg.Logger.Infof("Upgrade called")
-			upgrade := action.NewUpgradeAction(cfg, spec)
+			upgrade, err := action.NewUpgradeAction(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("failed to initialize upgrade action: %v", err)
+				return err
+			}
+
 			return upgrade.Run()
 		},
 	}

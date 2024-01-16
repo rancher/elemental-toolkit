@@ -21,6 +21,7 @@ import (
 
 	mapstructure "github.com/mitchellh/mapstructure"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"gopkg.in/yaml.v3"
 )
 
 type Snapshotter interface {
@@ -30,6 +31,7 @@ type Snapshotter interface {
 	CloseTransactionOnError(snap *Snapshot) error
 	DeleteSnapshot(id int) error
 	GetSnapshots() ([]int, error)
+	SnapshotToImageSource(snap *Snapshot) (*ImageSource, error)
 }
 
 type SnapshotterConfig struct {
@@ -52,24 +54,24 @@ type LoopDeviceConfig struct {
 	FS   string `yaml:"fs,omitempty" mapstructure:"fs"`
 }
 
-func NewLoopDeviceConfig() LoopDeviceConfig {
-	return LoopDeviceConfig{
-		FS:   constants.LinuxFs,
+func NewLoopDeviceConfig() *LoopDeviceConfig {
+	return &LoopDeviceConfig{
+		FS:   constants.LinuxImgFs,
 		Size: constants.ImgSize,
 	}
 }
 
 type snapshotterConfFactory func(defConfig interface{}, data interface{}) (interface{}, error)
 
+var snapshotterConfFactories = map[string]snapshotterConfFactory{}
+
 func newLoopDeviceConfig(defConfig interface{}, data interface{}) (interface{}, error) {
-	cfg, ok := defConfig.(LoopDeviceConfig)
+	cfg, ok := defConfig.(*LoopDeviceConfig)
 	if !ok {
 		cfg = NewLoopDeviceConfig()
 	}
-	return innerConfigDecoder[LoopDeviceConfig](cfg, data)
+	return innerConfigDecoder[*LoopDeviceConfig](cfg, data)
 }
-
-var snapshotterConfFactories = map[string]snapshotterConfFactory{}
 
 func innerConfigDecoder[T any](defaultConf T, data interface{}) (T, error) {
 	confMap, ok := data.(map[string]interface{})
@@ -119,6 +121,25 @@ func (c *SnapshotterConfig) CustomUnmarshal(data interface{}) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func (c *SnapshotterConfig) UnmarshalYAML(node *yaml.Node) error {
+	type alias SnapshotterConfig
+
+	err := node.Decode((*alias)(c))
+	if err != nil {
+		return err
+	}
+
+	if c.Config != nil {
+		factory := snapshotterConfFactories[c.Type]
+		conf, err := factory(nil, c.Config)
+		if err != nil {
+			return err
+		}
+		c.Config = conf
+	}
+	return nil
 }
 
 func init() {

@@ -40,7 +40,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var mounter *v1mocks.FakeMounter
 		var cleanup func()
 		var err error
-		var dockerState, channelState *v1.ImageState
+		var systemState *v1.SystemState
 		var installState *v1.InstallState
 		var statePath, recoveryPath string
 
@@ -55,29 +55,32 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				conf.WithRunner(runner),
 				conf.WithMounter(mounter),
 			)
-			dockerState = &v1.ImageState{
+			systemState = &v1.SystemState{
 				Source: v1.NewDockerSrc("registry.org/my/image:tag"),
 				Label:  "active_label",
 				FS:     "ext2",
-				SourceMetadata: &v1.DockerImageMeta{
-					Digest: "adadgadg",
-					Size:   23452345,
-				},
+				Digest: "adadgadg",
 			}
 			installState = &v1.InstallState{
 				Date: "somedate",
+				Snapshotter: v1.SnapshotterConfig{
+					Type:     "loopdevice",
+					MaxSnaps: 7,
+					Config: &v1.LoopDeviceConfig{
+						Size: 1024,
+						FS:   constants.SquashFs,
+					},
+				},
 				Partitions: map[string]*v1.PartitionState{
 					"state": {
 						FSLabel: "state_label",
-						Images: map[string]*v1.ImageState{
-							"active": dockerState,
+						Snapshots: map[int]*v1.SystemState{
+							1: systemState,
 						},
 					},
 					"recovery": {
-						FSLabel: "state_label",
-						Images: map[string]*v1.ImageState{
-							"recovery": channelState,
-						},
+						FSLabel:       "state_label",
+						RecoveryImage: systemState,
 					},
 				},
 			}
@@ -121,30 +124,23 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		It("Loads a state file with missing fields", func() {
 			incompleteState := "state:\n"
-			incompleteState += "  active:\n"
-			incompleteState += "    source: dir:///tmp/new_root\n"
-			incompleteState += "    fs: ext2\n"
-			incompleteState += "  passive: null\n"
+			incompleteState += "  1:\n"
+			incompleteState += "    dir:///some/root\n"
 			incompleteState += "recovery:\n"
 			incompleteState += "  recovery:\n"
 			incompleteState += "    source: dir:///tmp/new_root\n"
 			Expect(fs.WriteFile(statePath, []byte(incompleteState), constants.FilePerm)).To(Succeed())
 
 			loadedInstallState, err := config.LoadInstallState()
-			Expect(err).ShouldNot(HaveOccurred())
 
+			Expect(err).ShouldNot(HaveOccurred())
 			Expect(loadedInstallState.Partitions[constants.RecoveryPartName].FSLabel).To(Equal(constants.RecoveryLabel))
-			Expect(loadedInstallState.Partitions[constants.RecoveryPartName].Images[constants.RecoveryImgName].Label).To(Equal(constants.SystemLabel))
 			Expect(loadedInstallState.Partitions[constants.StatePartName].FSLabel).To(Equal(constants.StateLabel))
-			Expect(loadedInstallState.Partitions[constants.StatePartName].Images[constants.PassiveImgName]).To(BeNil())
-			Expect(loadedInstallState.Partitions[constants.StatePartName].Images[constants.ActiveImgName].Label).To(Equal(constants.ActiveLabel))
 		})
 		It("Loads a state file with other missing fields", func() {
 			incompleteState := "state:\n"
-			incompleteState += "  passive:\n"
-			incompleteState += "    source: dir:///tmp/new_root\n"
-			incompleteState += "    fs: ext2\n"
-			incompleteState += "  active: null\n"
+			incompleteState += "  1:\n"
+			incompleteState += "    dir:///some/root\n"
 			Expect(fs.WriteFile(statePath, []byte(incompleteState), constants.FilePerm)).To(Succeed())
 
 			loadedInstallState, err := config.LoadInstallState()
@@ -152,8 +148,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 			Expect(loadedInstallState.Partitions[constants.RecoveryPartName]).To(BeNil())
 			Expect(loadedInstallState.Partitions[constants.StatePartName].FSLabel).To(Equal(constants.StateLabel))
-			Expect(loadedInstallState.Partitions[constants.StatePartName].Images[constants.ActiveImgName]).To(BeNil())
-			Expect(loadedInstallState.Partitions[constants.StatePartName].Images[constants.PassiveImgName].Label).To(Equal(constants.PassiveLabel))
 		})
 	})
 	Describe("ElementalPartitions", func() {
@@ -381,23 +375,20 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		Describe("sanitize", func() {
 			It("runs method", func() {
 				Expect(spec.Partitions.EFI).ToNot(BeNil())
-				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
+				Expect(spec.System.IsEmpty()).To(BeTrue())
 
 				// Creates firmware partitions
-				spec.Active.Source = v1.NewDirSrc("/dir")
+				spec.System = v1.NewDirSrc("/dir")
 				spec.Firmware = v1.EFI
 				err := spec.Sanitize()
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 
 				// Sets image labels to empty string on squashfs
-				spec.Active.FS = constants.SquashFs
-				spec.Recovery.FS = constants.SquashFs
+				spec.RecoverySystem.FS = constants.SquashFs
 				err = spec.Sanitize()
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(spec.Recovery.Label).To(BeEmpty())
-				Expect(spec.Active.Label).To(BeEmpty())
-				Expect(spec.Passive.Label).To(BeEmpty())
+				Expect(spec.RecoverySystem.Label).To(BeEmpty())
 
 				// Fails without state partition
 				spec.Partitions.State = nil
@@ -405,14 +396,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).Should(HaveOccurred())
 
 				// Fails without an install source
-				spec.Active.Source = v1.NewEmptySrc()
+				spec.System = v1.NewEmptySrc()
 				err = spec.Sanitize()
 				Expect(err).Should(HaveOccurred())
 			})
 			Describe("with extra partitions", func() {
 				BeforeEach(func() {
 					// Set a source for the install
-					spec.Active.Source = v1.NewDirSrc("/dir")
+					spec.System = v1.NewDirSrc("/dir")
 				})
 				It("fails if persistent and an extra partition have size == 0", func() {
 					spec.ExtraPartitions = append(spec.ExtraPartitions, &v1.Partition{Size: 0})
@@ -440,9 +431,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("ResetSpec", func() {
 		It("runs sanitize method", func() {
 			spec := &v1.ResetSpec{
-				Active: v1.Image{
-					Source: v1.NewDirSrc("/dir"),
-				},
+				System: v1.NewDirSrc("/dir"),
 				Partitions: v1.ElementalPartitions{
 					State: &v1.Partition{
 						MountPoint: "mountpoint",
@@ -452,20 +441,13 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			err := spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
 
-			// Sets image labels to empty string on squashfs
-			spec.Active.FS = constants.SquashFs
-			err = spec.Sanitize()
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Active.Label).To(BeEmpty())
-			Expect(spec.Passive.Label).To(BeEmpty())
-
 			//Fails on missing state partition
 			spec.Partitions.State = nil
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
 
 			//Fails on empty source
-			spec.Active.Source = v1.NewEmptySrc()
+			spec.System = v1.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
 		})
@@ -473,11 +455,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("UpgradeSpec", func() {
 		It("runs sanitize method", func() {
 			spec := &v1.UpgradeSpec{
-				Active: v1.Image{
+				System: v1.NewDirSrc("/dir"),
+				RecoverySystem: v1.Image{
 					Source: v1.NewDirSrc("/dir"),
-				},
-				Recovery: v1.Image{
-					Source: v1.NewDirSrc("/dir"),
+					Label:  "SOMELABEL",
 				},
 				Partitions: v1.ElementalPartitions{
 					State: &v1.Partition{
@@ -492,27 +473,26 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			// Sets image labels to empty string on squashfs
-			spec.Active.FS = constants.SquashFs
-			spec.Recovery.FS = constants.SquashFs
+			spec.RecoverySystem.FS = constants.SquashFs
 			err = spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(spec.Recovery.Label).To(BeEmpty())
-			Expect(spec.Active.Label).To(BeEmpty())
-			Expect(spec.Passive.Label).To(BeEmpty())
+			Expect(spec.RecoverySystem.Label).To(BeEmpty())
 
 			//Fails on empty source for active upgrade
-			spec.Active.Source = v1.NewEmptySrc()
+			spec.System = v1.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
+
+			//Sets recovery source to system source if empty
+			spec.System = v1.NewDockerSrc("some/image:tag")
+			spec.RecoveryUpgrade = true
+			spec.RecoverySystem.Source = v1.NewEmptySrc()
+			err = spec.Sanitize()
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
 
 			//Fails on missing state partition for active upgrade
 			spec.Partitions.State = nil
-			err = spec.Sanitize()
-			Expect(err).Should(HaveOccurred())
-
-			//Fails on empty source for recovery upgrade
-			spec.RecoveryUpgrade = true
-			spec.Recovery.Source = v1.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
 

@@ -67,7 +67,11 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			cfg.Logger.Infof("Reset called")
-			reset := action.NewResetAction(cfg, spec)
+			reset, err := action.NewResetAction(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("failed to initialize reset action: %v", err)
+				return err
+			}
 			return reset.Run()
 		},
 	}

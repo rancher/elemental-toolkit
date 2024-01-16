@@ -105,12 +105,12 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			cfg := config.NewRunConfig(config.WithMounter(mounter))
 			Expect(cfg.Mounter).To(Equal(mounter))
 			Expect(cfg.Runner).NotTo(BeNil())
-			It("sets the default snapshot as expected", func() {
+			It("sets the default snapshot", func() {
 				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.MaxSnaps))
 				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
-				snapshotterCfg, ok := cfg.Snapshotter.Config.(v1.LoopDeviceConfig)
+				snapshotterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
-				Expect(snapshotterCfg.FS).To(Equal(constants.LinuxFs))
+				Expect(snapshotterCfg.FS).To(Equal(constants.LinuxImgFs))
 				Expect(snapshotterCfg.Size).To(Equal(constants.ImgSize))
 			})
 		})
@@ -130,8 +130,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 				spec := config.NewInstallSpec(*c)
 				Expect(spec.Firmware).To(Equal(v1.EFI))
-				Expect(spec.Active.Source.Value()).To(Equal(constants.ISOBaseTree))
-				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
+				Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
+				Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
 				Expect(spec.PartTable).To(Equal(v1.GPT))
 
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
@@ -139,8 +139,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("sets installation defaults without being on installation media", Label("install"), func() {
 				spec := config.NewInstallSpec(*c)
 				Expect(spec.Firmware).To(Equal(v1.EFI))
-				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
-				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
+				Expect(spec.System.IsEmpty()).To(BeTrue())
+				Expect(spec.RecoverySystem.Source.IsEmpty()).To(BeTrue())
 				Expect(spec.PartTable).To(Equal(v1.GPT))
 			})
 		})
@@ -211,9 +211,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(spec.Partitions.EFI.MountPoint).To(Equal(constants.EfiDir))
 				})
-				It("sets reset defaults on bios from non-squashed recovery", func() {
+				It("sets reset defaults to recovery image", func() {
 					// Set non-squashfs recovery image detection
-					recoveryImg := filepath.Join(constants.RunningStateDir, "cOS", constants.RecoveryImgFile)
+					recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgFile)
 					err = utils.MkdirAll(fs, filepath.Dir(recoveryImg), constants.DirPerm)
 					Expect(err).ShouldNot(HaveOccurred())
 					_, err = fs.Create(recoveryImg)
@@ -221,12 +221,12 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Active.Source.Value()).To(Equal(recoveryImg))
+					Expect(spec.System.Value()).To(Equal(recoveryImg))
 				})
-				It("sets reset defaults on bios from unknown recovery", func() {
+				It("sets reset defaults to empty of no recovery image is available", func() {
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
+					Expect(spec.System.IsEmpty()).To(BeTrue())
 				})
 			})
 			Describe("Failures", func() {
@@ -342,42 +342,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				})
 				AfterEach(func() {
 					ghwTest.Clean()
-				})
-				It("sets upgrade defaults for active upgrade", func() {
-					spec, err := config.NewUpgradeSpec(*c)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
-				})
-				It("sets upgrade defaults for non-squashed recovery upgrade", func() {
-					spec, err := config.NewUpgradeSpec(*c)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Recovery.Source.IsEmpty()).To(BeTrue())
-					Expect(spec.Recovery.FS).To(Equal(constants.LinuxImgFs))
-				})
-				It("sets upgrade defaults for squashed recovery upgrade", func() {
-					//Set squashed recovery detection
-					// Create installState with squashed recovery
-					Expect(utils.MkdirAll(c.Fs, constants.RunningStateDir, constants.DirPerm)).To(Succeed())
-					statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-					installState := &v1.InstallState{
-						Partitions: map[string]*v1.PartitionState{
-							constants.RecoveryPartName: {
-								FSLabel: constants.RecoveryLabel,
-								Images: map[string]*v1.ImageState{
-									constants.RecoveryImgName: {
-										FS: constants.SquashFs,
-									},
-								},
-							},
-						},
-					}
-					err = c.WriteInstallState(installState, statePath, statePath)
-					Expect(err).ShouldNot(HaveOccurred())
-
-					spec, err := config.NewUpgradeSpec(*c)
-					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Recovery.Source.IsEmpty()).To(BeTrue())
-					Expect(spec.Recovery.FS).To(Equal(constants.SquashFs))
 				})
 			})
 		})

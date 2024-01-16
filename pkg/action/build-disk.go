@@ -34,6 +34,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/partitioner"
+	"github.com/rancher/elemental-toolkit/pkg/snapshotter"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
@@ -50,23 +51,27 @@ const (
 )
 
 type BuildDiskAction struct {
-	cfg        *v1.BuildConfig
-	spec       *v1.DiskSpec
-	bootloader v1.Bootloader
+	cfg         *v1.BuildConfig
+	spec        *v1.DiskSpec
+	bootloader  v1.Bootloader
+	snapshotter v1.Snapshotter
+	snapshot    *v1.Snapshot
 	// holds the root path within the working directory of all partitions
 	roots map[string]string
 }
 
 type BuildDiskActionOption func(b *BuildDiskAction) error
 
-func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDiskActionOption) *BuildDiskAction {
+func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDiskActionOption) (*BuildDiskAction, error) {
+	var err error
+
 	b := &BuildDiskAction{cfg: cfg, spec: spec}
 
 	for _, o := range opts {
-		err := o(b)
+		err = o(b)
 		if err != nil {
 			cfg.Logger.Errorf("error applying config option: %s", err.Error())
-			return nil
+			return nil, err
 		}
 	}
 
@@ -74,7 +79,11 @@ func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDis
 		b.bootloader = bootloader.NewGrub(&cfg.Config)
 	}
 
-	return b
+	if b.snapshotter == nil {
+		b.snapshotter, err = snapshotter.NewLoopDeviceSnapshotter(cfg.Config, cfg.Snapshotter, b.bootloader)
+	}
+
+	return b, err
 }
 
 func WithDiskBootloader(bootloader v1.Bootloader) BuildDiskActionOption {
@@ -145,30 +154,13 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		b.cfg.Logger.Errorf("failed preparing working directories: %s", err.Error())
 		return err
 	}
-
-	recRoot := filepath.Join(workdir, filepath.Base(b.spec.Recovery.File)+rootSuffix)
-	// Assume active and recovery image source is the same, later will check if they differ
-	activeRoot := recRoot
+	recRoot := filepath.Join(workdir, filepath.Base(b.spec.RecoverySystem.File)+rootSuffix)
 
 	// Create recovery root
-	recInfo, err = elemental.DumpSource(b.cfg.Config, recRoot, b.spec.Recovery.Source)
+	err = elemental.DumpSource(b.cfg.Config, recRoot, b.spec.RecoverySystem.Source)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed loading recovery image source tree: %s", err.Error())
 		return err
-	}
-
-	if !b.spec.Expandable {
-		activeInfo = recInfo
-		// Check if active and recovery sources are configured differently
-		if !b.spec.Active.Source.IsEmpty() {
-			// Create active root
-			activeRoot = filepath.Join(workdir, filepath.Base(b.spec.Active.File)+rootSuffix)
-			activeInfo, err = elemental.DumpSource(b.cfg.Config, activeRoot, b.spec.Active.Source)
-			if err != nil {
-				b.cfg.Logger.Errorf("failed loading active image source tree: %s", err.Error())
-				return err
-			}
-		}
 	}
 
 	// Copy cloud-init if any
@@ -178,7 +170,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.EfiPartName])
+	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.StatePartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
@@ -208,7 +200,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	err = b.bootloader.InstallEFI(
-		activeRoot, b.roots[constants.EfiPartName],
+		recRoot, b.roots[constants.EfiPartName],
 	)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub efi binaries: %s", err.Error())
@@ -216,20 +208,20 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Rebrand
-	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], activeRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], recRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
 
 	// Relabel SELinux
-	err = b.applySelinuxLabels(activeRoot, b.spec.Unprivileged)
+	err = b.applySelinuxLabels(recRoot, b.spec.Expandable)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
 	// After disk hook happens after deploying the OS tree into a temporary folder
-	if !b.spec.Unprivileged {
-		err = b.buildDiskChrootHook(constants.AfterDiskChrootHook, activeRoot)
+	if !b.spec.Expandable {
+		err = b.buildDiskChrootHook(constants.AfterDiskChrootHook, recRoot)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.HookAfterDiskChroot)
 		}
@@ -239,33 +231,10 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return elementalError.NewFromError(err, elementalError.HookAfterDisk)
 	}
 
-	// Create OS images
-	if !b.spec.Expandable {
-		// Create active image
-		err = elemental.CreateImageFromTree(b.cfg.Config, &b.spec.Active, activeRoot, b.spec.Unprivileged)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed creating active image from root-tree: %s", err.Error())
-			return err
-		}
-
-		// Create passive image
-		err = elemental.CreateImageFromTree(b.cfg.Config, &b.spec.Passive, activeRoot, b.spec.Unprivileged)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed creating passive image from root-tree: %s", err.Error())
-			return err
-		}
-	}
-
-	// Create recovery image and removes recovery and active roots when done
+	// Create recovery image and removes recovery root when done
 	err = elemental.CreateImageFromTree(
-		b.cfg.Config, &b.spec.Recovery, recRoot, b.spec.Unprivileged,
-		func() error {
-			cErr := b.cfg.Fs.RemoveAll(recRoot)
-			if cErr == nil {
-				cErr = b.cfg.Fs.RemoveAll(activeRoot)
-			}
-			return cErr
-		},
+		b.cfg.Config, &b.spec.RecoverySystem, recRoot, b.spec.Expandable,
+		func() error { return b.cfg.Fs.RemoveAll(recRoot) },
 	)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating recovery image from root-tree: %s", err.Error())
@@ -280,11 +249,48 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		}
 		// Omit persistent partition and minimize state partition size
 		b.spec.Partitions.State.Size = constants.MinPartSize
+	} else {
+		// Run a snapshotter transaction for System source in state partition
+		err = b.snapshotter.InitSnapshotter(b.roots[constants.StatePartName])
+		if err != nil {
+			b.cfg.Logger.Errorf("failed initializing snapshotter")
+			return elementalError.NewFromError(err, elementalError.SnapshotterInit)
+		}
+		// Starting snapshotter transaction
+		b.cfg.Logger.Info("Starting snapshotter transaction")
+		b.snapshot, err = b.snapshotter.StartTransaction()
+		if err != nil {
+			b.cfg.Logger.Errorf("failed to start snapshotter transaction")
+			return elementalError.NewFromError(err, elementalError.SnapshotterStart)
+		}
+		cleanup.PushErrorOnly(func() error { return b.snapshotter.CloseTransactionOnError(b.snapshot) })
+
+		system := b.spec.System
+		if b.spec.RecoverySystem.Source.String() == b.spec.System.String() {
+			// Reuse already deployed root-tree from recovery image
+			system = v1.NewFileSrc(b.spec.RecoverySystem.File)
+			b.spec.System.SetDigest(b.spec.RecoverySystem.Source.GetDigest())
+		}
+
+		// Deploy system image
+		err = elemental.DumpSource(b.cfg.Config, b.snapshot.WorkDir, system)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed deploying source: %s", system.String())
+			return elementalError.NewFromError(err, elementalError.DumpSource)
+		}
+
+		// Closing snapshotter transaction
+		b.cfg.Logger.Info("Closing snapshotter transaction")
+		err = b.snapshotter.CloseTransaction(b.snapshot)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed closing snapshot transaction: %v", err)
+			return err
+		}
 	}
 
 	// Add state.yaml file on state and recovery partitions
 	err = b.createBuildDiskStateYaml(
-		activeInfo, recInfo, b.roots[constants.StatePartName],
+		b.roots[constants.StatePartName],
 		b.roots[constants.RecoveryPartName],
 	)
 	if err != nil {
@@ -413,7 +419,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
 		img = part.ToImage()
 		err = elemental.CreateImageFromTree(
-			b.cfg.Config, img, b.roots[part.Name], b.spec.Unprivileged,
+			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
 		)
 		if err != nil {
@@ -647,51 +653,35 @@ func (b *BuildDiskAction) applySelinuxLabels(root string, unprivileged bool) err
 	)
 }
 
-func (b *BuildDiskAction) createBuildDiskStateYaml(sysMeta, recMeta interface{}, stateRoot, recoveryRoot string) error {
+func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot string) error {
 	if b.spec.Partitions.State == nil || b.spec.Partitions.Recovery == nil {
 		return fmt.Errorf("undefined state or recovery partition")
 	}
 
-	// If active sources is empty recovery one is used
-	activeSource := b.spec.Recovery.Source
-	if !b.spec.Active.Source.IsEmpty() {
-		activeSource = b.spec.Active.Source
-	}
-
-	systemImages := map[string]*v1.ImageState{}
+	snapshots := map[int]*v1.SystemState{}
 	if !b.spec.Expandable {
-		systemImages = map[string]*v1.ImageState{
-			constants.ActiveImgName: {
-				Source:         activeSource,
-				SourceMetadata: sysMeta,
-				Label:          b.spec.Active.Label,
-				FS:             b.spec.Active.FS,
-			},
-			constants.PassiveImgName: {
-				Source:         b.spec.Active.Source,
-				SourceMetadata: sysMeta,
-				Label:          b.spec.Passive.Label,
-				FS:             b.spec.Passive.FS,
-			},
+		snapshots[b.snapshot.ID] = &v1.SystemState{
+			Source: b.spec.System,
+			Digest: b.spec.System.GetDigest(),
+			Active: true,
 		}
 	}
 
 	installState := &v1.InstallState{
-		Date: time.Now().Format(time.RFC3339),
+		Date:        time.Now().Format(time.RFC3339),
+		Snapshotter: b.cfg.Snapshotter,
 		Partitions: map[string]*v1.PartitionState{
 			constants.StatePartName: {
-				FSLabel: b.spec.Partitions.State.FilesystemLabel,
-				Images:  systemImages,
+				FSLabel:   b.spec.Partitions.State.FilesystemLabel,
+				Snapshots: snapshots,
 			},
 			constants.RecoveryPartName: {
 				FSLabel: b.spec.Partitions.Recovery.FilesystemLabel,
-				Images: map[string]*v1.ImageState{
-					constants.RecoveryImgName: {
-						Source:         b.spec.Recovery.Source,
-						SourceMetadata: recMeta,
-						Label:          b.spec.Recovery.Label,
-						FS:             b.spec.Recovery.FS,
-					},
+				RecoveryImage: &v1.SystemState{
+					Source: b.spec.RecoverySystem.Source,
+					Digest: b.spec.RecoverySystem.Source.GetDigest(),
+					Label:  b.spec.RecoverySystem.Label,
+					FS:     b.spec.RecoverySystem.FS,
 				},
 			},
 		},
@@ -724,8 +714,8 @@ func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
 	var deployCmd []string
 
 	deployCmd = b.spec.DeployCmd
-	if !b.spec.Active.Source.IsEmpty() {
-		deployCmd = append(deployCmd, "--system.uri", b.spec.Active.Source.String())
+	if b.spec.System.String() != b.spec.RecoverySystem.Source.String() && !b.spec.System.IsEmpty() {
+		deployCmd = append(deployCmd, "--system", b.spec.System.String())
 	}
 
 	conf := &schema.YipConfig{

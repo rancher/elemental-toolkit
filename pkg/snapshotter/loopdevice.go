@@ -58,13 +58,13 @@ func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootl
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 	}
-	loopDevCfg, ok := snapCfg.Config.(v1.LoopDeviceConfig)
+	loopDevCfg, ok := snapCfg.Config.(*v1.LoopDeviceConfig)
 	if !ok {
 		msg := "failed casting LoopDeviceConfig type"
 		cfg.Logger.Errorf(msg)
 		return nil, fmt.Errorf(msg)
 	}
-	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: loopDevCfg, bootloader: bootloader}, nil
+	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: *loopDevCfg, bootloader: bootloader}, nil
 }
 
 func (l *LoopDevice) InitSnapshotter(rootDir string) error {
@@ -296,6 +296,19 @@ func (l *LoopDevice) GetSnapshots() ([]int, error) {
 		return append(ids, id), nil
 	}
 	return ids, nil
+}
+
+func (l *LoopDevice) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error) {
+	ok, err := utils.Exists(l.cfg.Fs, snap.Path)
+	if err != nil || !ok {
+		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
+		l.cfg.Logger.Errorf(msg)
+		if err == nil {
+			err = fmt.Errorf(msg)
+		}
+		return nil, err
+	}
+	return v1.NewFileSrc(snap.Path), nil
 }
 
 func (l *LoopDevice) getNextSnapshotID() (int, error) {

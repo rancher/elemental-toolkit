@@ -18,9 +18,11 @@ package mocks
 
 import v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 
+const FakeDigest = "fakeDigest"
+
 type FakeImageExtractor struct {
 	Logger     v1.Logger
-	SideEffect func(imageRef, destination, platformRef string, local bool) error
+	SideEffect func(imageRef, destination, platformRef string, local bool) (string, error)
 }
 
 var _ v1.ImageExtractor = FakeImageExtractor{}
@@ -31,12 +33,12 @@ func NewFakeImageExtractor(logger v1.Logger) *FakeImageExtractor {
 	}
 }
 
-func (f FakeImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) error {
+func (f FakeImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) (string, error) {
 	f.Logger.Debugf("extracting %s to %s in platform %s", imageRef, destination, platformRef)
 	if f.SideEffect != nil {
 		f.Logger.Debugf("running sideeffect")
 		return f.SideEffect(imageRef, destination, platformRef, local)
 	}
 
-	return nil
+	return FakeDigest, nil
 }

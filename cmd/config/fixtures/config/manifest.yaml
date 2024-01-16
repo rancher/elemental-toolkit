@@ -19,10 +19,9 @@ disk:
     persistent:
       size: 0
       fs: xfs
-  unprivileged: true
   expandable: true
+  system: some.registry.org/my/image:mytag
   recovery-system:
-    uri: some.registry.org/my/image:mytag
     fs: squashfs
   type: raw
 

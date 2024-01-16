@@ -247,5 +247,11 @@ const HookPostDisk = 82
 // Error occured checking configured size is bigger than minimum required size
 const InvalidSize = 83
 
+// Error occured initializing snapshotter
+const SnapshotterInit = 84
+
+// Error occured starting an snapshotter transaction
+const SnapshotterStart = 85
+
 // Unknown error
 const Unknown int = 255

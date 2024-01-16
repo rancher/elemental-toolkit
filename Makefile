@@ -89,8 +89,8 @@ build-disk: build-os
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
-		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --unprivileged --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
-		--squash-no-compression -o /build $(REPO):$(VERSION)
+		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
+		--squash-no-compression -o /build --system $(REPO):$(VERSION)
 	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 

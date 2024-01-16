@@ -21,7 +21,6 @@ import (
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	eleError "github.com/rancher/elemental-toolkit/pkg/error"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 
 	"github.com/spf13/cobra"
@@ -38,7 +37,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "build-disk image",
 		Short: "Build a disk image using the given image (experimental and subject to change)",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.ExactArgs(0),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addCheckRoot {
 				return CheckRoot()
@@ -48,7 +47,6 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			var cfg *v1.BuildConfig
 			var spec *v1.DiskSpec
-			var imgSource *v1.ImageSource
 
 			defer func() {
 				if cfg != nil && err != nil {
@@ -83,16 +81,11 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return eleError.NewFromError(err, eleError.ReadingBuildDiskConfig)
 			}
 
-			if len(args) > 0 {
-				imgSource, err = v1.NewSrcFromURI(args[0])
-				if err != nil {
-					cfg.Logger.Errorf("not a valid image argument: %s", args[0])
-					return elementalError.NewFromError(err, elementalError.IdentifySource)
-				}
-				spec.Recovery.Source = imgSource
+			builder, err := action.NewBuildDiskAction(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("failed to initialize build disk action: %v", err)
+				return err
 			}
-
-			builder := action.NewBuildDiskAction(cfg, spec)
 			return builder.BuildDiskRun()
 		},
 	}
@@ -102,11 +95,12 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().StringP("output", "o", "", "Output directory (defaults to current directory)")
 	c.Flags().Bool("date", false, "Adds a date suffix into the generated disk file")
 	c.Flags().Bool("expandable", false, "Creates an expandable image including only the recovery image")
-	c.Flags().Bool("unprivileged", false, "Makes a build runnable within a non-privileged container, avoids mounting filesystems (experimental)")
 	c.Flags().VarP(imgType, "type", "t", "Type of image to create")
 	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files to include in disk")
 	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run during build")
 	c.Flags().StringSlice("deploy-command", []string{"elemental", "--debug", "reset", "--reboot"}, "Deployment command for expandable images")
+	addSystemFlag(c)
+	addRecoverySystemFlag(c)
 	addPlatformFlags(c)
 	addLocalImageFlag(c)
 	addSquashFsCompressionFlags(c)

@@ -18,9 +18,7 @@ package snapshotter_test
 
 import (
 	"bytes"
-	"fmt"
 	"path/filepath"
-	"strconv"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -151,24 +149,10 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	Describe("using loopdevice on sixth snapshot", func() {
 		var err error
 		var lp *snapshotter.LoopDevice
-		var snapshotsPrefix string
 
 		BeforeEach(func() {
-			var snapshotFile string
-			var i int
-			snapshotsPrefix = filepath.Join(rootDir, ".snapshots")
-			for i = 1; i < 6; i++ {
-				Expect(utils.MkdirAll(cfg.Fs, filepath.Join(rootDir, ".snapshots", strconv.Itoa(i)), constants.DirPerm)).To(Succeed())
-				snapshotFile = filepath.Join(snapshotsPrefix, strconv.Itoa(i), "snapshot.img")
-				Expect(fs.WriteFile(snapshotFile, []byte(fmt.Sprintf("This is snapshot %d", i)), constants.FilePerm)).To(Succeed())
-			}
-			Expect(fs.Symlink(filepath.Join(strconv.Itoa(5), "snapshot.img"), filepath.Join(snapshotsPrefix, constants.ActiveSnapshot))).To(Succeed())
-			passivesPath := filepath.Join(snapshotsPrefix, "passives")
-			Expect(utils.MkdirAll(fs, passivesPath, constants.DirPerm))
-			for i = 1; i < 5; i++ {
-				snapshotFile = filepath.Join("..", strconv.Itoa(i), "snapshot.img")
-				Expect(fs.Symlink(snapshotFile, filepath.Join(passivesPath, fmt.Sprintf(constants.PassiveSnapshot, i)))).To(Succeed())
-			}
+
+			v1mock.FakeLoopDeviceSnapshotsStatus(fs, rootDir, 5)
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == "losetup" {
@@ -195,7 +179,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 		It("fails to start a transaction if active snapshot can't be detected", func() {
 			// delete current active symlink and create a broken one
-			activeLink := filepath.Join(snapshotsPrefix, constants.ActiveSnapshot)
+			activeLink := filepath.Join(filepath.Join(rootDir, ".snapshots"), constants.ActiveSnapshot)
 			Expect(fs.Remove(activeLink)).To(Succeed())
 			Expect(fs.Symlink("nonExistingFile", activeLink)).To(Succeed())
 

@@ -80,7 +80,11 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			cfg.Logger.Infof("Install called")
-			install := action.NewInstallAction(cfg, spec)
+			install, err := action.NewInstallAction(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("failed to initialize install action: %v", err)
+				return err
+			}
 			return install.Run()
 		},
 	}

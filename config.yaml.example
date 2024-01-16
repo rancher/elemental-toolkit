@@ -59,20 +59,20 @@ install:
   iso: https://my.domain.org/some/powerful.iso
 
   # main OS image
-  # size in MiB
-  system:
-    label: COS_ACTIVE
-    size: 1024
-    fs: ext2
-    uri: oci:some.registry.org/elemental/image:latest
+  system: oci:some.registry.org/elemental/image:latest
 
   # recovery OS image
   recovery-system:
     fs: squashfs
     uri: oci:recovery/elemental
 
-  # filesystem label of the passive backup image
-  passive.label: COS_PASSIVE
+  snapshotter:
+    type: loopdevice
+    max-snaps: 4
+    config:
+      size: 0
+      fs: ext2
+      
 
   # extra cloud-init config file URI to include during the installation
   cloud-init: "https://some.cloud-init.org/my-config-file"

@@ -81,7 +81,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/squash4.mod"), []byte(""), constants.FilePerm)).To(Succeed())
 		Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/xzio.mod"), []byte(""), constants.FilePerm)).To(Succeed())
 
-		// os-release file
+		// OS-Release file
 		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "/etc"), constants.DirPerm)).To(Succeed())
 		Expect(fs.WriteFile(filepath.Join(rootDir, "/etc/os-release"), osRelease, constants.FilePerm)).To(Succeed())
 

@@ -29,7 +29,7 @@ elemental_img=$(getarg elemental.image=)
 [ -z "${cos_img}" && -z "${elemental_img}" ] && return 0
 [ -z "${root}" ] && root=$(getarg root=)
 
-[ -n "${elemental_img}" ] && cos_img="/cOS/${elemental_img}.img"
+[ -n "${elemental_img}" ] && cos_img="${elemental_img}"
 
 cos_root_perm="ro"
 if getargbool 0 rd.cos.debugrw; then

@@ -65,14 +65,14 @@ var _ = Describe("Install", Label("install", "cmd"), func() {
 		Expect(err.(*elementalError.ElementalError).ExitCode()).To(Equal(elementalError.ReadingInstallUpgradeFlags))
 	})
 	It("Errors out if no installation source is defined", Label("args"), func() {
-		_, _, err := executeCommandC(rootCmd, "install")
+		_, _, err := executeCommandC(rootCmd, "install", "/dev/nonexisting")
 		Expect(err).ToNot(BeNil())
 		Expect(buf.String()).To(ContainSubstring("undefined system source to install"))
 	})
 	It("Errors out if no installation target is defined", Label("args"), func() {
 		_, _, err := executeCommandC(rootCmd, "install", "--directory", "dir")
 		Expect(err).ToNot(BeNil())
-		Expect(buf.String()).To(ContainSubstring("at least a target device must be supplied"))
+		Expect(buf.String()).To(ContainSubstring("target device must be supplied"))
 		Expect(err.(*elementalError.ElementalError)).ToNot(BeNil())
 		Expect(err.(*elementalError.ElementalError).ExitCode()).To(Equal(elementalError.InvalidTarget))
 	})

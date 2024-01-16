@@ -57,14 +57,15 @@ const (
 	HTTPTimeout        = 60
 	GPT                = "gpt"
 	BuildImgName       = "elemental"
-	UsrLocalPath       = "/usr/local"
-	OEMPath            = "/oem"
-	ConfigDir          = "/etc/elemental"
-	OverlayMode        = "overlay"
-	BindMode           = "bind"
-	Tmpfs              = "tmpfs"
-	Autofs             = "auto"
-	Block              = "block"
+	//UsrLocalPath       = "/usr/local"
+	OEMPath        = "/oem"
+	PersistentPath = PersistentDir
+	ConfigDir      = "/etc/elemental"
+	OverlayMode    = "overlay"
+	BindMode       = "bind"
+	Tmpfs          = "tmpfs"
+	Autofs         = "auto"
+	Block          = "block"
 
 	// Maxium number of nested symlinks to resolve
 	MaxLinkDepth = 4
@@ -105,6 +106,11 @@ const (
 	OverlayDir         = "/run/elemental/overlay"
 	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
 
+	// Running mode sentinel files
+	ActiveMode   = "/run/elemental/active_mode"
+	PassiveMode  = "/run/elemental/passive_mode"
+	RecoveryMode = "/run/elemental/recovery_mode"
+
 	// Live image mountpoints
 	ISOBaseTree = "/run/rootfsbase"
 	LiveDir     = "/run/initramfs/live"
@@ -113,13 +119,8 @@ const (
 	ActiveImgName     = "active"
 	PassiveImgName    = "passive"
 	RecoveryImgName   = "recovery"
-	ActiveImgFile     = "active.img"
-	PassiveImgFile    = "passive.img"
 	RecoveryImgFile   = "recovery.img"
 	TransitionImgFile = "transition.img"
-	ActiveImgPath     = "/cOS/active.img"
-	PassiveImgPath    = "/cOS/passive.img"
-	RecoveryImgPath   = "/cOS/recovery.img"
 
 	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"
@@ -282,23 +283,23 @@ func GetMountKeyEnvMap() map[string]string {
 // GetInstallKeyEnvMap returns environment variable bindings to InstallSpec data
 func GetInstallKeyEnvMap() map[string]string {
 	return map[string]string{
-		"target":              "TARGET",
-		"system.uri":          "SYSTEM",
-		"recovery-system.uri": "RECOVERY_SYSTEM",
-		"cloud-init":          "CLOUD_INIT",
-		"iso":                 "ISO",
-		"firmware":            "FIRMWARE",
-		"part-table":          "PART_TABLE",
-		"no-format":           "NO_FORMAT",
-		"grub-entry-name":     "GRUB_ENTRY_NAME",
-		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
+		"target":             "TARGET",
+		"system":             "SYSTEM",
+		"recovery-system":    "RECOVERY_SYSTEM",
+		"cloud-init":         "CLOUD_INIT",
+		"iso":                "ISO",
+		"firmware":           "FIRMWARE",
+		"part-table":         "PART_TABLE",
+		"no-format":          "NO_FORMAT",
+		"grub-entry-name":    "GRUB_ENTRY_NAME",
+		"disable-boot-entry": "DISABLE_BOOT_ENTRY",
 	}
 }
 
 // GetResetKeyEnvMap returns environment variable bindings to ResetSpec data
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
-		"system.uri":         "SYSTEM",
+		"system":             "SYSTEM",
 		"grub-entry-name":    "GRUB_ENTRY_NAME",
 		"cloud-init":         "CLOUD_INIT",
 		"reset-persistent":   "PERSISTENT",
