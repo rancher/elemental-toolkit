@@ -224,12 +224,20 @@ func NewInitSpec() *v1.InitSpec {
 
 func NewMountSpec() *v1.MountSpec {
 	partitions := v1.ElementalPartitions{
+		EFI: &v1.Partition{
+			FilesystemLabel: constants.EfiLabel,
+			Size:            constants.EfiSize,
+			Name:            constants.EfiPartName,
+			FS:              constants.EfiFs,
+			MountPoint:      constants.EfiDir,
+			Flags:           []string{"ro"},
+		},
 		State: &v1.Partition{
 			FilesystemLabel: constants.StateLabel,
 			Size:            constants.StateSize,
 			Name:            constants.StatePartName,
 			FS:              constants.LinuxFs,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		Persistent: &v1.Partition{
 			FilesystemLabel: constants.PersistentLabel,
@@ -237,7 +245,7 @@ func NewMountSpec() *v1.MountSpec {
 			Name:            constants.PersistentPartName,
 			FS:              constants.LinuxFs,
 			MountPoint:      constants.PersistentDir,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		OEM: &v1.Partition{
 			FilesystemLabel: constants.OEMLabel,
@@ -245,14 +253,14 @@ func NewMountSpec() *v1.MountSpec {
 			Name:            constants.OEMPartName,
 			FS:              constants.LinuxFs,
 			MountPoint:      constants.OEMPath,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		Recovery: &v1.Partition{
 			FilesystemLabel: constants.RecoveryLabel,
 			Size:            constants.RecoverySize,
 			Name:            constants.RecoveryPartName,
 			FS:              constants.LinuxFs,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 	}
 

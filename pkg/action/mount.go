@@ -211,7 +211,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 			part.Path = device
 		}
 
-		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
+		data = data + fstab(part.Path, part.MountPoint, "auto", part.Flags)
 	}
 
 	for _, rw := range spec.Ephemeral.Paths {
