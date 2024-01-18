@@ -32,8 +32,8 @@ var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 	bootAssessmentInstalled := func() {
 		// Auto assessment was installed
-		out, _ := s.Command("sudo cat /run/initramfs/elemental-state/grubcustom")
-		Expect(out).To(ContainSubstring("bootfile_loc"))
+		out, _ := s.Command("sudo cat /run/elemental/efi/grubcustom")
+		Expect(out).To(ContainSubstring("bootfile"))
 
 		out, _ = s.Command("sudo cat /run/initramfs/elemental-state/grub_boot_assessment")
 		Expect(out).To(ContainSubstring("boot_assessment_file"))
