@@ -413,8 +413,9 @@ func (g *Grub) Install(rootDir, bootDir, deviceLabel string) (err error) {
 	return g.InstallConfig(rootDir, bootDir)
 }
 
-// InstallConfig installs grub configuraton files to the expected location.  rootDir is the root
-// of the OS image, bootDir is the folder grub read the configuration from, usually state partition mountpoint
+// InstallConfig installs grub configuraton files to the expected location.
+// rootDir is the root of the OS image, bootDir is the folder grub read the
+// configuration from, usually EFI partition mountpoint
 func (g Grub) InstallConfig(rootDir, bootDir string) error {
 	for _, path := range []string{constants.FallbackEFIPath, constants.EntryEFIPath} {
 		grubFile := filepath.Join(rootDir, g.elementalCfg)
