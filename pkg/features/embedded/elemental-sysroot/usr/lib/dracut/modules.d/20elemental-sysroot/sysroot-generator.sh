@@ -16,7 +16,7 @@ fi
 cos_img=$(getarg cos-img/filename=)
 elemental_img=$(getarg elemental.image=)
 [ -z "${cos_img}" && -z "${elemental_img}" ] && exit 0
-[ -z "${cos_img}" ] && cos_img="/cOS/${elemental_img}.img"
+[ -z "${cos_img}" ] && cos_img="${elemental_img}"
 
 [ -z "${root}" ] && root=$(getarg root=)
 

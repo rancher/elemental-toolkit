@@ -1,0 +1,5 @@
+name: "Setup cos config"
+stages:
+   after-upgrade-chroot:
+     - commands:
+        - rm -rf /usr/lib/systemd /usr/bin/bash

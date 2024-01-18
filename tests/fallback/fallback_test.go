@@ -17,7 +17,6 @@ limitations under the License.
 package elemental_test
 
 import (
-	"fmt"
 	"time"
 
 	sut "github.com/rancher/elemental-toolkit/tests/vm"
@@ -58,38 +57,21 @@ var _ = Describe("Elemental booting fallback tests", func() {
 	})
 
 	Context("image is corrupted", func() {
-		breakPaths := []string{"usr/lib/systemd", "bin/sh", "bin/bash", "usr/bin/bash", "usr/bin/sh"}
 		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
 			currentVersion := s.GetOSRelease("TIMESTAMP")
 
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage()))
+			err := s.SendFile("../assets/break_upgrade_hook.yaml", "/oem/break_upgrade_hook.yaml", "0770")
+			Expect(err).ToNot(HaveOccurred())
+
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
 			out, _ = s.Command("sudo cat /run/elemental/efi/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
-
-			// Break the upgrade
-			out, _ = s.Command("sudo mount -o rw,remount /run/initramfs/elemental-state")
-			fmt.Println(out)
-
-			out, _ = s.Command("sudo mkdir -p /tmp/mnt/STATE")
-			fmt.Println(out)
-
-			s.Command("sudo mount /run/initramfs/elemental-state/cOS/active.img /tmp/mnt/STATE")
-
-			for _, d := range breakPaths {
-				out, _ = s.Command("sudo rm -rfv /tmp/mnt/STATE/" + d)
-			}
-
-			out, _ = s.Command("sudo ls -liah /tmp/mnt/STATE/")
-			fmt.Println(out)
-
-			out, _ = s.Command("sudo umount /tmp/mnt/STATE")
-			s.Command("sudo sync")
 
 			s.Reboot(700)
 
@@ -97,7 +79,7 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(v).To(Equal(currentVersion))
 
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(And(ContainSubstring("image=passive"), ContainSubstring("upgrade_failure")), cmdline)
+			Expect(cmdline).To(And(ContainSubstring("passive"), ContainSubstring("upgrade_failure")), cmdline)
 
 			Eventually(func() string {
 				out, _ := s.Command("sudo ls -liah /run/elemental")

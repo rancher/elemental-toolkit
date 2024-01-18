@@ -41,36 +41,21 @@ var _ = Describe("Elemental booting fallback tests", func() {
 
 	Context("GRUB cannot mount image", func() {
 		When("COS_ACTIVE image was corrupted", func() {
-			It("fallbacks by booting into passive", func() {
-				Expect(s.BootFrom()).To(Equal(sut.Active))
-
-				_, err := s.Command("mount -o rw,remount /run/initramfs/elemental-state")
-				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/active.img")
-				Expect(err).ToNot(HaveOccurred())
-
-				s.Reboot()
-
-				Expect(s.BootFrom()).To(Equal(sut.Passive))
-
-				// Here we did fallback from grub. boot assessment didn't kicked in here
-				cmdline, _ := s.Command("sudo cat /proc/cmdline")
-				Expect(cmdline).ToNot(And(ContainSubstring("upgrade_failure")), cmdline)
-			})
-		})
-		When("COS_ACTIVE and COS_PASSIVE images are corrupted", func() {
 			It("fallbacks by booting into recovery", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
 				_, err := s.Command("mount -o rw,remount /run/initramfs/elemental-state")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/active.img")
+				_, err = s.Command("rm -rf /run/initramfs/elemental-state/.snapshots/1/snapshot.img")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/elemental-state/cOS/passive.img")
-				Expect(err).ToNot(HaveOccurred())
+
 				s.Reboot()
 
 				Expect(s.BootFrom()).To(Equal(sut.Recovery))
+
+				// Here we did fallback from grub. boot assessment didn't kicked in here
+				cmdline, _ := s.Command("sudo cat /proc/cmdline")
+				Expect(cmdline).ToNot(And(ContainSubstring("upgrade_failure")), cmdline)
 			})
 		})
 	})
