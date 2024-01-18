@@ -19,7 +19,7 @@ package elemental_test
 import (
 	"time"
 
-	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	sut "github.com/rancher/elemental-toolkit/tests/vm"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

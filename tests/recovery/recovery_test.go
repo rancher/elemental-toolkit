@@ -19,7 +19,7 @@ package elemental_test
 import (
 	"fmt"
 
-	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	sut "github.com/rancher/elemental-toolkit/tests/vm"
 
 	comm "github.com/rancher/elemental-toolkit/tests/common"
 
