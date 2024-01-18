@@ -35,7 +35,7 @@ stages:
         owner: 0
         group: 0
     after-install:
-    # After install, reset, and upgrade, we install additional GRUB configuration for boot assessment into COS_STATE.
+    # After install, reset, and upgrade, we install additional GRUB configuration for boot assessment into COS_GRUB.
 
     - &efimount
       name: "Mount efi"
@@ -74,7 +74,7 @@ stages:
        - path: "/tmp/mnt/EFI/grub_boot_assessment"
          owner: 0
          group: 0
-         permsisions: 0600
+         permissions: 0600
          content: |
             set extra_active_cmdline="rd.emergency=reboot rd.shell=0 panic=5 systemd.crash_reboot systemd.crash_shell=0"
             set boot_assessment_file="/boot_assessment"
