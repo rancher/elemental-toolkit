@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	grubPrefixDir  = "/boot/grub2"
+	grubPrefixDir  = "/EFI/BOOT"
 	isoBootCatalog = "/boot/boot.catalog"
 )
 
@@ -73,7 +73,7 @@ func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOAc
 	}
 
 	if b.bootloader == nil {
-		b.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubPrefix(grubPrefixDir))
+		b.bootloader = bootloader.NewGrub(&cfg.Config)
 	}
 
 	return b
