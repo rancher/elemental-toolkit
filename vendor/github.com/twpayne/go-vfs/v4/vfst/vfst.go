@@ -4,29 +4,29 @@ package vfst
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"testing"
 
-	vfs "github.com/twpayne/go-vfs"
+	vfs "github.com/twpayne/go-vfs/v4"
 )
 
-//nolint:gochecknoglobals
-var umask os.FileMode
+var umask fs.FileMode
 
 // A Dir is a directory with a specified permissions and zero or more Entries.
 type Dir struct {
-	Perm    os.FileMode
+	Perm    fs.FileMode
 	Entries map[string]interface{}
 }
 
 // A File is a file with a specified permissions and contents.
 type File struct {
-	Perm     os.FileMode
+	Perm     fs.FileMode
 	Contents []byte
 }
 
@@ -46,12 +46,12 @@ type BuilderOption func(*Builder)
 
 // A Builder populates an vfs.FS.
 type Builder struct {
-	umask   os.FileMode
+	umask   fs.FileMode
 	verbose bool
 }
 
 // BuilderUmask sets a builder's umask.
-func BuilderUmask(umask os.FileMode) BuilderOption {
+func BuilderUmask(umask fs.FileMode) BuilderOption {
 	return func(b *Builder) {
 		b.umask = umask
 	}
@@ -78,22 +78,22 @@ func NewBuilder(options ...BuilderOption) *Builder {
 }
 
 // build is a recursive helper for Build.
-func (b *Builder) build(fs vfs.FS, path string, i interface{}) error {
+func (b *Builder) build(fileSystem vfs.FS, path string, i interface{}) error {
 	switch i := i.(type) {
 	case []interface{}:
 		for _, element := range i {
-			if err := b.build(fs, path, element); err != nil {
+			if err := b.build(fileSystem, path, element); err != nil {
 				return err
 			}
 		}
 		return nil
 	case *Dir:
 		if parentDir := filepath.Dir(path); parentDir != "." {
-			if err := b.MkdirAll(fs, parentDir, 0o777); err != nil {
+			if err := b.MkdirAll(fileSystem, parentDir, 0o777); err != nil {
 				return err
 			}
 		}
-		if err := b.Mkdir(fs, path, i.Perm); err != nil {
+		if err := b.Mkdir(fileSystem, path, i.Perm); err != nil {
 			return err
 		}
 		entryNames := make([]string, 0, len(i.Entries))
@@ -102,13 +102,13 @@ func (b *Builder) build(fs vfs.FS, path string, i interface{}) error {
 		}
 		sort.Strings(entryNames)
 		for _, entryName := range entryNames {
-			if err := b.build(fs, filepath.Join(path, entryName), i.Entries[entryName]); err != nil {
+			if err := b.build(fileSystem, filepath.Join(path, entryName), i.Entries[entryName]); err != nil {
 				return err
 			}
 		}
 		return nil
 	case map[string]interface{}:
-		if err := b.MkdirAll(fs, path, 0o777); err != nil {
+		if err := b.MkdirAll(fileSystem, path, 0o777); err != nil {
 			return err
 		}
 		entryNames := make([]string, 0, len(i))
@@ -117,13 +117,13 @@ func (b *Builder) build(fs vfs.FS, path string, i interface{}) error {
 		}
 		sort.Strings(entryNames)
 		for _, entryName := range entryNames {
-			if err := b.build(fs, filepath.Join(path, entryName), i[entryName]); err != nil {
+			if err := b.build(fileSystem, filepath.Join(path, entryName), i[entryName]); err != nil {
 				return err
 			}
 		}
 		return nil
 	case map[string]string:
-		if err := b.MkdirAll(fs, path, 0o777); err != nil {
+		if err := b.MkdirAll(fileSystem, path, 0o777); err != nil {
 			return err
 		}
 		entryNames := make([]string, 0, len(i))
@@ -132,19 +132,19 @@ func (b *Builder) build(fs vfs.FS, path string, i interface{}) error {
 		}
 		sort.Strings(entryNames)
 		for _, entryName := range entryNames {
-			if err := b.WriteFile(fs, filepath.Join(path, entryName), []byte(i[entryName]), 0o666); err != nil {
+			if err := b.WriteFile(fileSystem, filepath.Join(path, entryName), []byte(i[entryName]), 0o666); err != nil {
 				return err
 			}
 		}
 		return nil
 	case *File:
-		return b.WriteFile(fs, path, i.Contents, i.Perm)
+		return b.WriteFile(fileSystem, path, i.Contents, i.Perm)
 	case string:
-		return b.WriteFile(fs, path, []byte(i), 0o666)
+		return b.WriteFile(fileSystem, path, []byte(i), 0o666)
 	case []byte:
-		return b.WriteFile(fs, path, i, 0o666)
+		return b.WriteFile(fileSystem, path, i, 0o666)
 	case *Symlink:
-		return b.Symlink(fs, i.Target, path)
+		return b.Symlink(fileSystem, i.Target, path)
 	case nil:
 		return nil
 	default:
@@ -152,25 +152,25 @@ func (b *Builder) build(fs vfs.FS, path string, i interface{}) error {
 	}
 }
 
-// Build populates fs from root.
-func (b *Builder) Build(fs vfs.FS, root interface{}) error {
-	return b.build(fs, "/", root)
+// Build populates fileSystem from root.
+func (b *Builder) Build(fileSystem vfs.FS, root interface{}) error {
+	return b.build(fileSystem, "/", root)
 }
 
 // Mkdir creates directory path with permissions perm. It is idempotent and
 // will not fail if path already exists, is a directory, and has permissions
 // perm.
-func (b *Builder) Mkdir(fs vfs.FS, path string, perm os.FileMode) error {
-	if info, err := fs.Lstat(path); os.IsNotExist(err) {
+func (b *Builder) Mkdir(fileSystem vfs.FS, path string, perm fs.FileMode) error {
+	if info, err := fileSystem.Lstat(path); errors.Is(err, fs.ErrNotExist) {
 		if b.verbose {
 			log.Printf("mkdir -m 0%o %s", perm&^b.umask, path)
 		}
-		return fs.Mkdir(path, perm&^b.umask)
+		return fileSystem.Mkdir(path, perm&^b.umask)
 	} else if err != nil {
 		return err
 	} else if !info.IsDir() {
 		return fmt.Errorf("%s: not a directory", path)
-	} else if gotPerm, wantPerm := info.Mode()&os.ModePerm, perm&^b.umask; !permEqual(gotPerm, wantPerm) {
+	} else if gotPerm, wantPerm := info.Mode()&fs.ModePerm, perm&^b.umask; !PermEqual(gotPerm, wantPerm) {
 		return fmt.Errorf("%s has permissions 0%o, want 0%o", path, gotPerm, wantPerm)
 	}
 	return nil
@@ -179,11 +179,11 @@ func (b *Builder) Mkdir(fs vfs.FS, path string, perm os.FileMode) error {
 // MkdirAll creates directory path and any missing parent directories with
 // permissions perm. It is idempotent and will not file if path already exists
 // and is a directory.
-func (b *Builder) MkdirAll(fs vfs.FS, path string, perm os.FileMode) error {
+func (b *Builder) MkdirAll(fileSystem vfs.FS, path string, perm fs.FileMode) error {
 	// Check path.
-	info, err := fs.Lstat(path)
+	info, err := fileSystem.Lstat(path)
 	switch {
-	case err != nil && os.IsNotExist(err):
+	case err != nil && errors.Is(err, fs.ErrNotExist):
 		// path does not exist, fallthrough to create.
 	case err == nil && info.IsDir():
 		// path already exists and is a directory.
@@ -200,23 +200,23 @@ func (b *Builder) MkdirAll(fs vfs.FS, path string, perm os.FileMode) error {
 	if b.verbose {
 		log.Printf("mkdir -p -m 0%o %s", perm&^b.umask, path)
 	}
-	return vfs.MkdirAll(fs, path, perm&^b.umask)
+	return vfs.MkdirAll(fileSystem, path, perm&^b.umask)
 }
 
 // Symlink creates a symbolic link from newname to oldname. It will create any
 // missing parent directories with default permissions. It is idempotent and
 // will not fail if the symbolic link already exists and points to oldname.
-func (b *Builder) Symlink(fs vfs.FS, oldname, newname string) error {
+func (b *Builder) Symlink(fileSystem vfs.FS, oldname, newname string) error {
 	// Check newname.
-	info, err := fs.Lstat(newname)
+	info, err := fileSystem.Lstat(newname)
 	switch {
-	case err == nil && info.Mode()&os.ModeType != os.ModeSymlink:
+	case err == nil && info.Mode()&fs.ModeType != fs.ModeSymlink:
 		// newname exists, but it's not a symlink.
 		return fmt.Errorf("%s: not a symbolic link", newname)
 	case err == nil:
 		// newname exists, and it's a symlink. Check that it is a symlink to
 		// oldname.
-		gotTarget, err := fs.Readlink(newname)
+		gotTarget, err := fileSystem.Readlink(newname)
 		if err != nil {
 			return err
 		}
@@ -224,7 +224,7 @@ func (b *Builder) Symlink(fs vfs.FS, oldname, newname string) error {
 			return fmt.Errorf("%s: has target %s, want %s", newname, gotTarget, oldname)
 		}
 		return nil
-	case os.IsNotExist(err):
+	case errors.Is(err, fs.ErrNotExist):
 		// newname does not exist, fallthrough to create.
 	default:
 		// Some other error, return it.
@@ -232,30 +232,30 @@ func (b *Builder) Symlink(fs vfs.FS, oldname, newname string) error {
 	}
 
 	// Create newname.
-	if err := b.MkdirAll(fs, filepath.Dir(newname), 0o777); err != nil {
+	if err := b.MkdirAll(fileSystem, filepath.Dir(newname), 0o777); err != nil {
 		return err
 	}
 	if b.verbose {
 		log.Printf("ln -s %s %s", oldname, newname)
 	}
-	return fs.Symlink(oldname, newname)
+	return fileSystem.Symlink(oldname, newname)
 }
 
-// WriteFile writes file path withe contents contents and permissions perm. It
-// will create any missing parent directories with default permissions. It is
-// idempotent and will not fail if the file already exists, has contents
-// contents, and permissions perm.
-func (b *Builder) WriteFile(fs vfs.FS, path string, contents []byte, perm os.FileMode) error {
-	if info, err := fs.Lstat(path); os.IsNotExist(err) {
-		// fallthrough to fs.WriteFile
+// WriteFile writes file path with contents and permissions perm. It will create
+// any missing parent directories with default permissions. It is idempotent and
+// will not fail if the file already exists, has contents contents, and
+// permissions perm.
+func (b *Builder) WriteFile(fileSystem vfs.FS, path string, contents []byte, perm fs.FileMode) error {
+	if info, err := fileSystem.Lstat(path); errors.Is(err, fs.ErrNotExist) {
+		// fallthrough to fileSystem.WriteFile
 	} else if err != nil {
 		return err
 	} else if !info.Mode().IsRegular() {
 		return fmt.Errorf("%s: not a regular file", path)
-	} else if gotPerm, wantPerm := info.Mode()&os.ModePerm, perm&^b.umask; !permEqual(gotPerm, wantPerm) {
+	} else if gotPerm, wantPerm := info.Mode()&fs.ModePerm, perm&^b.umask; !PermEqual(gotPerm, wantPerm) {
 		return fmt.Errorf("%s has permissions 0%o, want 0%o", path, gotPerm, wantPerm)
 	} else {
-		gotContents, err := fs.ReadFile(path)
+		gotContents, err := fileSystem.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -264,17 +264,17 @@ func (b *Builder) WriteFile(fs vfs.FS, path string, contents []byte, perm os.Fil
 		}
 		return nil
 	}
-	if err := b.MkdirAll(fs, filepath.Dir(path), 0o777); err != nil {
+	if err := b.MkdirAll(fileSystem, filepath.Dir(path), 0o777); err != nil {
 		return err
 	}
 	if b.verbose {
 		log.Printf("install -m 0%o /dev/null %s", perm&^b.umask, path)
 	}
-	return fs.WriteFile(path, contents, perm&^b.umask)
+	return fileSystem.WriteFile(path, contents, perm&^b.umask)
 }
 
-// runTests recursively runs tests on fs.
-func runTests(t *testing.T, fs vfs.FS, name string, test interface{}) {
+// runTests recursively runs tests on fileSystem.
+func runTests(t *testing.T, fileSystem vfs.FS, name string, test interface{}) {
 	t.Helper()
 	prefix := ""
 	if name != "" {
@@ -282,12 +282,12 @@ func runTests(t *testing.T, fs vfs.FS, name string, test interface{}) {
 	}
 	switch test := test.(type) {
 	case Test:
-		test(t, fs)
+		test(t, fileSystem)
 	case []Test:
 		for i, test := range test {
 			t.Run(prefix+strconv.Itoa(i), func(t *testing.T) {
 				//nolint:scopelint
-				test(t, fs)
+				test(t, fileSystem)
 			})
 		}
 	case map[string]Test:
@@ -299,12 +299,12 @@ func runTests(t *testing.T, fs vfs.FS, name string, test interface{}) {
 		for _, testName := range testNames {
 			t.Run(prefix+testName, func(t *testing.T) {
 				//nolint:scopelint
-				test[testName](t, fs)
+				test[testName](t, fileSystem)
 			})
 		}
 	case []interface{}:
 		for _, u := range test {
-			runTests(t, fs, name, u)
+			runTests(t, fileSystem, name, u)
 		}
 	case map[string]interface{}:
 		testNames := make([]string, 0, len(test))
@@ -313,7 +313,7 @@ func runTests(t *testing.T, fs vfs.FS, name string, test interface{}) {
 		}
 		sort.Strings(testNames)
 		for _, testName := range testNames {
-			runTests(t, fs, prefix+testName, test[testName])
+			runTests(t, fileSystem, prefix+testName, test[testName])
 		}
 	case nil:
 	default:
@@ -321,19 +321,19 @@ func runTests(t *testing.T, fs vfs.FS, name string, test interface{}) {
 	}
 }
 
-// RunTests recursively runs tests on fs.
-func RunTests(t *testing.T, fs vfs.FS, name string, tests ...interface{}) {
+// RunTests recursively runs tests on fileSystem.
+func RunTests(t *testing.T, fileSystem vfs.FS, name string, tests ...interface{}) {
 	t.Helper()
-	runTests(t, fs, name, tests)
+	runTests(t, fileSystem, name, tests)
 }
 
 // TestContents returns a PathTest that verifies the contents of the file are
 // equal to wantContents.
 func TestContents(wantContents []byte) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		if gotContents, err := fs.ReadFile(path); err != nil || !bytes.Equal(gotContents, wantContents) {
-			t.Errorf("fs.ReadFile(%q) == %v, %v, want %v, <nil>", path, gotContents, err, wantContents)
+		if gotContents, err := fileSystem.ReadFile(path); err != nil || !bytes.Equal(gotContents, wantContents) {
+			t.Errorf("fileSystem.ReadFile(%q) == %v, %v, want %v, <nil>", path, gotContents, err, wantContents)
 		}
 	}
 }
@@ -341,78 +341,74 @@ func TestContents(wantContents []byte) PathTest {
 // TestContentsString returns a PathTest that verifies the contetnts of the
 // file are equal to wantContentsStr.
 func TestContentsString(wantContentsStr string) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		if gotContents, err := fs.ReadFile(path); err != nil || string(gotContents) != wantContentsStr {
-			t.Errorf("fs.ReadFile(%q) == %q, %v, want %q, <nil>", path, gotContents, err, wantContentsStr)
+		if gotContents, err := fileSystem.ReadFile(path); err != nil || string(gotContents) != wantContentsStr {
+			t.Errorf("fileSystem.ReadFile(%q) == %q, %v, want %q, <nil>", path, gotContents, err, wantContentsStr)
 		}
 	}
 }
 
 // testDoesNotExist is a PathTest that verifies that a file or directory does
 // not exist.
-//nolint:gochecknoglobals
-var testDoesNotExist = func(t *testing.T, fs vfs.FS, path string) {
+var testDoesNotExist = func(t *testing.T, fileSystem vfs.FS, path string) {
 	t.Helper()
-	_, err := fs.Lstat(path)
-	if got, want := os.IsNotExist(err), true; got != want {
-		t.Errorf("_, err := fs.Lstat(%q); os.IsNotExist(err) == %v, want %v", path, got, want)
+	_, err := fileSystem.Lstat(path)
+	if got, want := errors.Is(err, fs.ErrNotExist), true; got != want {
+		t.Errorf("_, err := fileSystem.Lstat(%q); errors.Is(err, fs.ErrNotExist) == %v, want %v", path, got, want)
 	}
 }
 
 // TestDoesNotExist is a PathTest that verifies that a file or directory does
 // not exist.
-//nolint:gochecknoglobals
 var TestDoesNotExist PathTest = testDoesNotExist
 
 // TestIsDir is a PathTest that verifies that the path is a directory.
-//nolint:gochecknoglobals
-var TestIsDir = TestModeType(os.ModeDir)
+var TestIsDir = TestModeType(fs.ModeDir)
 
 // TestModePerm returns a PathTest that verifies that the path's permissions
 // are equal to wantPerm.
-func TestModePerm(wantPerm os.FileMode) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+func TestModePerm(wantPerm fs.FileMode) PathTest {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		info, err := fs.Lstat(path)
+		info, err := fileSystem.Lstat(path)
 		if err != nil {
-			t.Errorf("fs.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
+			t.Errorf("fileSystem.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
 			return
 		}
-		if gotPerm := info.Mode() & os.ModePerm; !permEqual(gotPerm, wantPerm) {
-			t.Errorf("fs.Lstat(%q).Mode()&os.ModePerm == 0%o, want 0%o", path, gotPerm, wantPerm)
+		if gotPerm := info.Mode() & fs.ModePerm; !PermEqual(gotPerm, wantPerm) {
+			t.Errorf("fileSystem.Lstat(%q).Mode()&fs.ModePerm == 0%o, want 0%o", path, gotPerm, wantPerm)
 		}
 	}
 }
 
 // TestModeIsRegular is a PathTest that tests that the path is a regular file.
-//nolint:gochecknoglobals
 var TestModeIsRegular = TestModeType(0)
 
 // TestModeType returns a PathTest that verifies that the path's mode type is
 // equal to wantModeType.
-func TestModeType(wantModeType os.FileMode) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+func TestModeType(wantModeType fs.FileMode) PathTest {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		info, err := fs.Lstat(path)
+		info, err := fileSystem.Lstat(path)
 		if err != nil {
-			t.Errorf("fs.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
+			t.Errorf("fileSystem.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
 			return
 		}
-		if gotModeType := info.Mode() & os.ModeType; gotModeType != wantModeType {
-			t.Errorf("fs.Lstat(%q).Mode()&os.ModeType == %v, want %v", path, gotModeType, wantModeType)
+		if gotModeType := info.Mode() & fs.ModeType; gotModeType != wantModeType {
+			t.Errorf("fileSystem.Lstat(%q).Mode()&fs.ModeType == %v, want %v", path, gotModeType, wantModeType)
 		}
 	}
 }
 
 // TestPath returns a Test that runs pathTests on path.
 func TestPath(path string, pathTests ...PathTest) Test {
-	return func(t *testing.T, fs vfs.FS) {
+	return func(t *testing.T, fileSystem vfs.FS) {
 		t.Helper()
 		for i, pathTest := range pathTests {
 			t.Run(strconv.Itoa(i), func(t *testing.T) {
 				//nolint:scopelint
-				pathTest(t, fs, path)
+				pathTest(t, fileSystem, path)
 			})
 		}
 	}
@@ -421,25 +417,25 @@ func TestPath(path string, pathTests ...PathTest) Test {
 // TestSize returns a PathTest that tests that path's Size() is equal to
 // wantSize.
 func TestSize(wantSize int64) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		info, err := fs.Lstat(path)
+		info, err := fileSystem.Lstat(path)
 		if err != nil {
-			t.Errorf("fs.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
+			t.Errorf("fileSystem.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
 			return
 		}
 		if gotSize := info.Size(); gotSize != wantSize {
-			t.Errorf("fs.Lstat(%q).Size() == %d, want %d", path, gotSize, wantSize)
+			t.Errorf("fileSystem.Lstat(%q).Size() == %d, want %d", path, gotSize, wantSize)
 		}
 	}
 }
 
 // TestSymlinkTarget returns a PathTest that tests that path's target is wantTarget.
 func TestSymlinkTarget(wantTarget string) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		if gotTarget, err := fs.Readlink(path); err != nil || gotTarget != wantTarget {
-			t.Errorf("fs.Readlink(%q) == %q, %v, want %q, <nil>", path, gotTarget, err, wantTarget)
+		if gotTarget, err := fileSystem.Readlink(path); err != nil || gotTarget != wantTarget {
+			t.Errorf("fileSystem.Readlink(%q) == %q, %v, want %q, <nil>", path, gotTarget, err, wantTarget)
 			return
 		}
 	}
@@ -448,15 +444,15 @@ func TestSymlinkTarget(wantTarget string) PathTest {
 // TestMinSize returns a PathTest that tests that path's Size() is at least
 // wantMinSize.
 func TestMinSize(wantMinSize int64) PathTest {
-	return func(t *testing.T, fs vfs.FS, path string) {
+	return func(t *testing.T, fileSystem vfs.FS, path string) {
 		t.Helper()
-		info, err := fs.Lstat(path)
+		info, err := fileSystem.Lstat(path)
 		if err != nil {
-			t.Errorf("fs.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
+			t.Errorf("fileSystem.Lstat(%q) == %+v, %v, want !<nil>, <nil>", path, info, err)
 			return
 		}
 		if gotSize := info.Size(); gotSize < wantMinSize {
-			t.Errorf("fs.Lstat(%q).Size() == %d, want >=%d", path, gotSize, wantMinSize)
+			t.Errorf("fileSystem.Lstat(%q).Size() == %d, want >=%d", path, gotSize, wantMinSize)
 		}
 	}
 }

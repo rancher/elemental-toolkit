@@ -24,8 +24,8 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/pkg/config"

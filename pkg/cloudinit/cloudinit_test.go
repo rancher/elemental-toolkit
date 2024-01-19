@@ -17,6 +17,7 @@ limitations under the License.
 package cloudinit_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -26,8 +27,8 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	"github.com/mudler/yip/pkg/schema"
 
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	. "github.com/rancher/elemental-toolkit/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -49,7 +50,13 @@ const printOutput = `BYT;
 var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
 	// unit test stolen from yip
 	Describe("loading yaml files", func() {
-		logger := v1.NewNullLogger()
+		var logger v1.Logger
+		var buffer *bytes.Buffer
+		BeforeEach(func() {
+			buffer = bytes.NewBuffer([]byte{})
+			logger = v1.NewBufferLogger(buffer)
+			logger.SetLevel(v1.DebugLevel())
+		})
 
 		It("executes commands", func() {
 
@@ -85,6 +92,7 @@ stages:
 			Expect(err).Should(BeNil())
 
 			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			Expect(buffer.String()).To(ContainSubstring("running on a TestFS"))
 
 			err = runner.Run("test", "/some/yip")
 			Expect(err).Should(BeNil())

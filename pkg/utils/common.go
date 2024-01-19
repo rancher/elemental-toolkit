@@ -109,7 +109,7 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 
 	var sourceFile *os.File
 	for _, source := range sources {
-		sourceFile, err = fs.Open(source)
+		sourceFile, err = fs.OpenFile(source, os.O_RDONLY, constants.FilePerm)
 		if err != nil {
 			return err
 		}

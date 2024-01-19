@@ -32,8 +32,8 @@ import (
 	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {

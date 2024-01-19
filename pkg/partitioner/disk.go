@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
 
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"

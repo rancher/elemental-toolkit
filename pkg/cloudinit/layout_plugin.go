@@ -24,7 +24,8 @@ import (
 	"github.com/mudler/yip/pkg/logger"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/twpayne/go-vfs"
+
+	v1vfs "github.com/twpayne/go-vfs"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/partitioner"
@@ -34,7 +35,7 @@ import (
 
 // layoutPlugin is the elemental's implementation of Layout yip's plugin based
 // on partitioner package
-func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins.Console) (err error) {
+func (y YipCloudInitRunner) layoutPlugin(l logger.Interface, s schema.Stage, _ v1vfs.FS, console plugins.Console) (err error) {
 	if s.Layout.Device == nil {
 		return nil
 	}
@@ -60,14 +61,14 @@ func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins
 			partDevice.Disk,
 			partitioner.WithRunner(runner),
 			partitioner.WithLogger(log),
-			partitioner.WithFS(fs),
+			partitioner.WithFS(y.fs),
 		)
 	} else if len(strings.TrimSpace(s.Layout.Device.Path)) > 0 {
 		dev = partitioner.NewDisk(
 			s.Layout.Device.Path,
 			partitioner.WithRunner(runner),
 			partitioner.WithLogger(log),
-			partitioner.WithFS(fs),
+			partitioner.WithFS(y.fs),
 		)
 	} else {
 		l.Warnf("No target device defined, nothing to do")

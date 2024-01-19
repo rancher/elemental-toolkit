@@ -110,6 +110,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tredoe/osutil/v2 v2.0.0-rc.16 // indirect
+	github.com/twpayne/go-vfs/v4 v4.3.0
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
