@@ -188,7 +188,7 @@ func (s *SUT) Reset() {
 		err := s.ChangeBootOnce(Recovery)
 		Expect(err).ToNot(HaveOccurred())
 		s.Reboot()
-		Expect(s.BootFrom()).To(Equal(Recovery))
+		s.EventuallyBootedFrom(Recovery)
 	}
 
 	By("Running elemental reset")
@@ -218,6 +218,17 @@ func (s *SUT) BootFrom() string {
 	default:
 		return UnknownBoot
 	}
+}
+
+func (s *SUT) EventuallyBootedFrom(image string) {
+	Eventually(func() error {
+		actual := s.BootFrom()
+		if actual != image {
+			return fmt.Errorf("Expected boot from %s, actual %s", image, actual)
+		}
+
+		return nil
+	}, time.Duration(60)*time.Second, time.Duration(10)*time.Second).ShouldNot(HaveOccurred())
 }
 
 func (s *SUT) GetOSRelease(ss string) string {

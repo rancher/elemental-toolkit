@@ -50,7 +50,7 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 			Expect(s.ChangeBoot(sut.Recovery)).To(Succeed())
 
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(sut.Recovery))
+			s.EventuallyBootedFrom(sut.Recovery)
 
 			By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
 
@@ -66,7 +66,7 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s.Reboot()
-			ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
+			s.EventuallyBootedFrom(sut.Active)
 
 			upgradedVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
@@ -94,11 +94,11 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 				// TODO: verify state.yaml matches expectations
 
 				s.Reboot()
-				Expect(s.BootFrom()).To(Equal(sut.Recovery))
+				s.EventuallyBootedFrom(sut.Recovery)
 
 				By("rebooting back to active")
 				s.Reboot()
-				Expect(s.BootFrom()).To(Equal(sut.Active))
+				s.EventuallyBootedFrom(sut.Active)
 			})
 		})
 	})
