@@ -49,7 +49,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
 		bootloader = &v1mock.FakeBootloader{}
-		memLog = &bytes.Buffer{}
+		memLog = bytes.NewBuffer(nil)
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(v1.DebugLevel())
 
@@ -99,6 +99,22 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
 	})
 
+	It("inits a snapshotter on a legacy system on passive mode", func() {
+		Expect(utils.MkdirAll(fs, filepath.Dir(constants.PassiveMode), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(constants.PassiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
+
+		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
+		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
+		Expect(fs.ReadFile(filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(Equal([]byte("passive image")))
+	})
+
 	It("fails to init if it can't create working directories", func() {
 		cfg.Fs = vfs.NewReadOnlyFS(fs)
 		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
@@ -120,6 +136,28 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(snap.ID).To(Equal(1))
 		Expect(snap.InProgress).To(BeTrue())
 		Expect(snap.Path).To(Equal(filepath.Join(rootDir, ".snapshots/1/snapshot.img")))
+	})
+
+	It("starts and closes a transaction on a legacy system", func() {
+		Expect(utils.MkdirAll(fs, filepath.Dir(constants.ActiveMode), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/active.img"), []byte("active image"), constants.FilePerm)).To(Succeed())
+
+		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
+
+		snap, err := lp.StartTransaction()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(snap.ID).To(Equal(2))
+		Expect(snap.InProgress).To(BeTrue())
+		Expect(snap.Path).To(Equal(filepath.Join(rootDir, ".snapshots/2/snapshot.img")))
+
+		Expect(lp.CloseTransaction(snap)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS"))).To(BeFalse())
 	})
 
 	It("fails to start a transaction without being initiated first", func() {

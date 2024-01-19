@@ -93,10 +93,16 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 			Config:   NewLoopDeviceConfig(),
 		},
 	}
-
-	data, err := c.Fs.ReadFile(filepath.Join(constants.RunningStateDir, constants.InstallStateFile))
+	stateFile := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
+	data, err := c.Fs.ReadFile(stateFile)
 	if err != nil {
-		return nil, err
+		c.Logger.Warning("Could not read state file %s", stateFile)
+		stateFile = filepath.Join(constants.LegacyStateDir, constants.InstallStateFile)
+		c.Logger.Debug("Attempting to read state file %s", stateFile)
+		data, err = c.Fs.ReadFile(stateFile)
+		if err != nil {
+			return nil, err
+		}
 	}
 	err = yaml.Unmarshal(data, installState)
 	if err != nil {
@@ -335,12 +341,13 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	System          *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem  Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry    string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	Partitions      ElementalPartitions
-	State           *InstallState
+	RecoveryUpgrade   bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System            *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	Partitions        ElementalPartitions
+	State             *InstallState
 }
 
 // Sanitize checks the consistency of the struct, returns error

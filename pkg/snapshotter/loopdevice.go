@@ -40,6 +40,10 @@ const (
 	loopDevicePassivePath  = loopDeviceSnapsPath + "/passives"
 )
 
+const legacyImagesPath = "cOS"
+const legacyPassivePath = legacyImagesPath + "/passive.img"
+const legacyActivePath = legacyImagesPath + "/active.img"
+
 var _ v1.Snapshotter = (*LoopDevice)(nil)
 
 type LoopDevice struct {
@@ -50,6 +54,7 @@ type LoopDevice struct {
 	currentSnapshotID int
 	activeSnapshotID  int
 	bootloader        v1.Bootloader
+	legacyClean       bool
 }
 
 func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (*LoopDevice, error) {
@@ -71,9 +76,31 @@ func (l *LoopDevice) InitSnapshotter(rootDir string) error {
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", rootDir)
 	l.rootDir = rootDir
 
-	// TODO detect legacy layout in /cOS/active.img and /cOS/passive.img and create hard links to new locations
+	err := utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
+	if err != nil {
+		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
+		return err
+	}
 
-	return utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
+	// Check the existence of a legacy deployment
+	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, legacyImagesPath)); ok {
+		l.cfg.Logger.Info("Legacy deployment detected running migration logic")
+		l.legacyClean = true
+		image := filepath.Join(rootDir, legacyActivePath)
+
+		// Migrate passive image if running the transaction in passive mode
+		if elemental.IsPassiveMode(l.cfg) {
+			l.cfg.Logger.Debug("Running in passive mode, migrating passive image")
+			image = filepath.Join(rootDir, legacyPassivePath)
+		}
+		err = l.legacyImageToSnapsot(image)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed moving legacy image to a new snapshot image: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
@@ -155,6 +182,13 @@ func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
 		err = rErr
 	}
 
+	if l.legacyClean {
+		rErr = l.cfg.Fs.RemoveAll(filepath.Join(l.rootDir, loopDeviceSnapsPath))
+		if rErr != nil && err == nil {
+			err = rErr
+		}
+	}
+
 	return err
 }
 
@@ -222,6 +256,7 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	// Active system does not require specific bootloader setup, only old snapshots
 	_ = l.cleanOldSnapshots()
 	_ = l.setBootloader()
+	_ = l.cleanLegacyImages()
 
 	snapshot.InProgress = false
 	return err
@@ -472,9 +507,58 @@ func (l *LoopDevice) getPassiveSnapshots() ([]int, error) {
 				l.cfg.Logger.Warnf("image for snapshot %d doesn't exist", id)
 			}
 		}
-		l.cfg.Logger.Debugf("Passive snaps: %v", ids)
+		l.cfg.Logger.Debugf("Passive snapshots: %v", ids)
 		return ids, nil
 	}
 	l.cfg.Logger.Errorf("path %s does not exist", snapsPath)
 	return ids, fmt.Errorf("cannot determine passive snapshots, initate snapshotter first")
+}
+
+func (l *LoopDevice) legacyImageToSnapsot(image string) error {
+	if ok, _ := utils.Exists(l.cfg.Fs, image); ok {
+		id, err := l.getNextSnapshotID()
+		if err != nil {
+			l.cfg.Logger.Errorf("failed setting the snaphsot ID for legacy images: %v", err)
+			return err
+		}
+		l.cfg.Logger.Debugf("Migrating image %s to snapshot %d", image, id)
+
+		snapPath := filepath.Join(l.rootDir, loopDeviceSnapsPath, strconv.FormatInt(int64(id), 10))
+		err = utils.MkdirAll(l.cfg.Fs, snapPath, constants.DirPerm)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed creating snapshot folders for legacy images: %v", err)
+			return err
+		}
+		err = l.cfg.Fs.Link(image, filepath.Join(snapPath, loopDeviceImgName))
+		if err != nil {
+			l.cfg.Logger.Errorf("failed copying legacy image as snapshot: %v", err)
+			return err
+		}
+
+		passiveLink := fmt.Sprintf("../%d/%s", id, loopDeviceImgName)
+		newPassive := filepath.Join(l.rootDir, loopDevicePassivePath, fmt.Sprintf(constants.PassiveSnapshot, id))
+		err = l.cfg.Fs.Symlink(passiveLink, newPassive)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed creating the passive link for legacy images: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (l *LoopDevice) cleanLegacyImages() error {
+	var path string
+
+	if l.legacyClean {
+		path = filepath.Join(l.rootDir, legacyActivePath)
+		if elemental.IsPassiveMode(l.cfg) {
+			path = filepath.Join(l.rootDir, legacyPassivePath)
+		} else if elemental.IsRecoveryMode(l.cfg) {
+			path = filepath.Join(l.rootDir, legacyImagesPath)
+		}
+		if ok, _ := utils.Exists(l.cfg.Fs, path); ok {
+			return l.cfg.Fs.RemoveAll(path)
+		}
+	}
+	return nil
 }

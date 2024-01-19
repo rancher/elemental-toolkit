@@ -85,7 +85,8 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 	root.AddCommand(c)
-	c.Flags().Bool("recovery", false, "Upgrade the recovery")
+	c.Flags().Bool("recovery", false, "Upgrade recovery image too")
+	c.Flags().Bool("bootloader", false, "Reinstall bootloader during the upgrade")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	return c

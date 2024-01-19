@@ -105,6 +105,7 @@ const (
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
 	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
+	LegacyStateDir     = "/run/initramfs/cos-state"
 
 	// Running mode sentinel files
 	ActiveMode   = "/run/elemental/active_mode"

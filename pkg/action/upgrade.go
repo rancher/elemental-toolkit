@@ -63,7 +63,7 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 	}
 
 	if u.bootloader == nil {
-		u.bootloader = bootloader.NewGrub(&config.Config)
+		u.bootloader = bootloader.NewGrub(&config.Config, bootloader.WithGrubDisableBootEntry(true))
 	}
 
 	if u.snapshotter == nil {
@@ -146,7 +146,10 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 			FSLabel:   u.spec.Partitions.State.FilesystemLabel,
 			Snapshots: map[int]*v1.SystemState{},
 		}
-		u.spec.State.Partitions[constants.StatePartName] = statePart
+	}
+
+	if statePart.Snapshots == nil {
+		statePart.Snapshots = map[int]*v1.SystemState{}
 	}
 
 	for id, state := range statePart.Snapshots {
@@ -171,6 +174,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 	for _, id := range deletedIDs {
 		delete(statePart.Snapshots, id)
 	}
+
+	u.spec.State.Partitions[constants.StatePartName] = statePart
 
 	if u.spec.RecoveryUpgrade {
 		recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
@@ -282,7 +287,7 @@ func (u *UpgradeAction) Run() (err error) {
 		recoverySystem := u.spec.RecoverySystem
 		u.cfg.Logger.Info("Deploying recovery system")
 		if recoverySystem.Source.String() == u.spec.System.String() {
-			// Reuse already deployed root-tree from actice snapshot
+			// Reuse already deployed root-tree from active snapshot
 			recoverySystem.Source, err = u.snapshotter.SnapshotToImageSource(u.snapshot)
 			if err != nil {
 				return err
@@ -296,10 +301,12 @@ func (u *UpgradeAction) Run() (err error) {
 		}
 		recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
 		transitionFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.TransitionImgFile)
-		err = u.cfg.Fs.Remove(recoveryFile)
-		if err != nil {
-			u.Error("failed removing old recovery image")
-			return err
+		if ok, _ := utils.Exists(u.cfg.Fs, recoveryFile); ok {
+			err = u.cfg.Fs.Remove(recoveryFile)
+			if err != nil {
+				u.Error("failed removing old recovery image")
+				return err
+			}
 		}
 		err = u.cfg.Fs.Rename(transitionFile, recoveryFile)
 		if err != nil {
@@ -333,8 +340,23 @@ func (u *UpgradeAction) Run() (err error) {
 }
 
 func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
+	var err error
+
+	// Install grub
+	if u.spec.BootloaderUpgrade {
+		err = u.bootloader.Install(
+			u.snapshot.WorkDir,
+			u.spec.Partitions.State.MountPoint,
+			u.spec.Partitions.State.FilesystemLabel,
+		)
+		if err != nil {
+			u.cfg.Logger.Errorf("failed installing grub: %v", err)
+			return elementalError.NewFromError(err, elementalError.InstallGrub)
+		}
+	}
+
 	// Relabel SELinux
-	err := elemental.ApplySelinuxLabels(u.cfg.Config, u.spec.Partitions)
+	err = elemental.ApplySelinuxLabels(u.cfg.Config, u.spec.Partitions)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed setting SELinux labels: %v", err)
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
