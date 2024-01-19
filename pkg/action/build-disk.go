@@ -488,7 +488,7 @@ func Raw2Gce(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) error
 	// The disk image filename must be disk.raw.
 	// The compressed file must be a .tar.gz file that uses gzip compression and the --format=oldgnu option for the tar utility.
 	logger.Info("Transforming raw image into gce format")
-	actImg, err := fs.Open(source)
+	actImg, err := fs.OpenFile(source, os.O_CREATE|os.O_APPEND|os.O_WRONLY, constants.FilePerm)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.OpenFile)
 	}

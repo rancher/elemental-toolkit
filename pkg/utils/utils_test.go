@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,8 +31,8 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	conf "github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -40,7 +41,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-func getNamesFromListFiles(list []os.FileInfo) []string {
+func getNamesFromListFiles(list []fs.DirEntry) []string {
 	var names []string
 	for _, f := range list {
 		names = append(names, f.Name())
@@ -1025,7 +1026,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			f, _ := fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 			utils.RawDiskToFixedVhd(f)
 			_ = f.Close()
-			f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+			f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_RDONLY, constants.FilePerm)
 			info, _ := f.Stat()
 			// Should only have the footer in teh file, hence 512 bytes
 			Expect(info.Size()).To(BeNumerically("==", 512))
@@ -1054,7 +1055,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 				utils.RawDiskToFixedVhd(f)
 				_ = f.Close()
-				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_RDONLY, constants.FilePerm)
 				info, _ := f.Stat()
 				// Dump the header from the file into our VHDHeader
 				buff := make([]byte, 512)
@@ -1088,7 +1089,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 				utils.RawDiskToFixedVhd(f)
 				_ = f.Close()
-				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_RDONLY, constants.FilePerm)
 				info, _ := f.Stat()
 				// Dump the header from the file into our VHDHeader
 				buff := make([]byte, 512)
@@ -1117,7 +1118,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 				utils.RawDiskToFixedVhd(f)
 				_ = f.Close()
-				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_RDONLY, constants.FilePerm)
 				info, _ := f.Stat()
 				// Dump the header from the file into our VHDHeader
 				buff := make([]byte, 512)
@@ -1146,7 +1147,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 				utils.RawDiskToFixedVhd(f)
 				_ = f.Close()
-				f, _ = fs.Open(filepath.Join(tmpDir, "test.vhd"))
+				f, _ = fs.OpenFile(filepath.Join(tmpDir, "test.vhd"), os.O_RDONLY, constants.FilePerm)
 				info, _ := f.Stat()
 				// Dump the header from the file into our VHDHeader
 				buff := make([]byte, 512)

@@ -572,7 +572,10 @@ github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt
 # github.com/twpayne/go-vfs v1.7.2
 ## explicit; go 1.13
 github.com/twpayne/go-vfs
-github.com/twpayne/go-vfs/vfst
+# github.com/twpayne/go-vfs/v4 v4.3.0
+## explicit; go 1.19
+github.com/twpayne/go-vfs/v4
+github.com/twpayne/go-vfs/v4/vfst
 # github.com/ulikunitz/xz v0.5.11
 ## explicit; go 1.12
 github.com/ulikunitz/xz

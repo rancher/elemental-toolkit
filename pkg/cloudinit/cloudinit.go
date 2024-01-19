@@ -24,7 +24,9 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
-	"github.com/twpayne/go-vfs"
+	v1vfs "github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 	"gopkg.in/yaml.v3"
 
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -33,12 +35,37 @@ import (
 type YipCloudInitRunner struct {
 	exec    executor.Executor
 	fs      vfs.FS
+	v1fs    v1vfs.FS
 	console plugins.Console
 }
 
 // NewYipCloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
 func NewYipCloudInitRunner(l v1.Logger, r v1.Runner, fs vfs.FS) *YipCloudInitRunner {
+	var v1fs v1vfs.FS
+	var err error
+	var root string
+
+	// This is just to convert vfs instances of version v4 to equivalents of version 1
+	// required because yip is stuck on v1 and the plugin API requries a v1
+	v1fs = v1vfs.OSFS
+	if _, ok := fs.(*vfst.TestFS); ok {
+		root, err = fs.RawPath("/")
+		if err != nil {
+			l.Errorf("failed to set testfs to yip runner: %v. Fallback to v1vfs.OSFS filesystem.", err)
+			v1fs = v1vfs.OSFS
+		} else {
+			v1fs = v1vfs.NewPathFS(v1fs, root)
+			l.Debugf("Yip running on a TestFS based on %s", root)
+		}
+	} else if _, ok := fs.(*vfs.ReadOnlyFS); ok {
+		v1fs = v1vfs.NewReadOnlyFS(v1vfs.OSFS)
+	}
+
+	y := &YipCloudInitRunner{
+		fs: fs, console: newCloudInitConsole(l, r),
+		v1fs: v1fs,
+	}
 	exec := executor.NewExecutor(
 		executor.WithConditionals(
 			plugins.NodeConditional,
@@ -65,17 +92,15 @@ func NewYipCloudInitRunner(l v1.Logger, r v1.Runner, fs vfs.FS) *YipCloudInitRun
 			plugins.Environment,
 			plugins.SystemdFirstboot,
 			plugins.DataSources,
-			layoutPlugin,
+			y.layoutPlugin,
 		),
 	)
-	return &YipCloudInitRunner{
-		exec: exec, fs: fs,
-		console: newCloudInitConsole(l, r),
-	}
+	y.exec = exec
+	return y
 }
 
 func (ci YipCloudInitRunner) Run(stage string, args ...string) error {
-	return ci.exec.Run(stage, ci.fs, ci.console, args...)
+	return ci.exec.Run(stage, ci.v1fs, ci.console, args...)
 }
 
 func (ci *YipCloudInitRunner) SetModifier(m schema.Modifier) {

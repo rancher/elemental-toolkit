@@ -22,7 +22,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
 
 	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/pkg/constants"

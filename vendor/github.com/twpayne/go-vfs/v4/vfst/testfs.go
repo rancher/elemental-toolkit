@@ -1,10 +1,9 @@
 package vfst
 
 import (
-	"io/ioutil"
 	"os"
 
-	vfs "github.com/twpayne/go-vfs"
+	vfs "github.com/twpayne/go-vfs/v4"
 )
 
 // A TestFS is a virtual filesystem based in a temporary directory.
@@ -14,8 +13,9 @@ type TestFS struct {
 	keep    bool
 }
 
-func newTestFS() (*TestFS, func(), error) {
-	tempDir, err := ioutil.TempDir("", "go-vfs-vfst")
+// NewEmptyTestFS returns a new empty TestFS and a cleanup function.
+func NewEmptyTestFS() (*TestFS, func(), error) {
+	tempDir, err := os.MkdirTemp("", "go-vfs-vfst")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -29,16 +29,16 @@ func newTestFS() (*TestFS, func(), error) {
 
 // NewTestFS returns a new *TestFS populated with root and a cleanup function.
 func NewTestFS(root interface{}, builderOptions ...BuilderOption) (*TestFS, func(), error) {
-	fs, cleanup, err := newTestFS()
+	fileSystem, cleanup, err := NewEmptyTestFS()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	if err := NewBuilder(builderOptions...).Build(fs, root); err != nil {
+	if err := NewBuilder(builderOptions...).Build(fileSystem, root); err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	return fs, cleanup, nil
+	return fileSystem, cleanup, nil
 }
 
 // Keep prevents t's cleanup function from removing the temporary directory. It
