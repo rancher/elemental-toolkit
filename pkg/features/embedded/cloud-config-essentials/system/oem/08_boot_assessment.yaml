@@ -113,6 +113,11 @@ stages:
 
     after-reset:
     - <<: *efimount
+    - name: "Remove GRUB sentinels"
+      commands:
+      - |
+          grub2-editenv /tmp/mnt/EFI/boot_assessment set enable_boot_assessment=
+          grub2-editenv /tmp/mnt/EFI/boot_assessment set boot_assessment_tentative=
     # Reset completely restores COS_STATE, so we re-inject ourselves
     - <<: *customhook
     - <<: *bootgrub
