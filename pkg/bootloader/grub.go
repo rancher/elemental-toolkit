@@ -32,8 +32,11 @@ import (
 )
 
 const (
-	defaultGrubPrefix = "/EFI/BOOT"
-	grubCfgFile       = "grub.cfg"
+	grubCfgFile = "grub.cfg"
+)
+
+var (
+	defaultGrubPrefixes = []string{"/EFI/ELEMENTAL", "/EFI/BOOT"}
 )
 
 func getGModulePatterns(module string) []string {
@@ -54,7 +57,7 @@ type Grub struct {
 	grubEfiImg string
 	mokMngr    string
 
-	grubPrefix       string
+	grubPrefixes     []string
 	configFile       string
 	elementalCfg     string
 	disableBootEntry bool
@@ -78,7 +81,7 @@ func NewGrub(cfg *v1.Config, opts ...GrubOptions) *Grub {
 		runner:         cfg.Runner,
 		platform:       cfg.Platform,
 		configFile:     grubCfgFile,
-		grubPrefix:     defaultGrubPrefix,
+		grubPrefixes:   defaultGrubPrefixes,
 		elementalCfg:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		clearBootEntry: true,
 		secureBoot:     secureBoot,
@@ -104,7 +107,7 @@ func WithSecureBoot(secureboot bool) func(g *Grub) error {
 
 func WithGrubPrefix(prefix string) func(g *Grub) error {
 	return func(g *Grub) error {
-		g.grubPrefix = prefix
+		g.grubPrefixes = append(g.grubPrefixes, prefix)
 		return nil
 	}
 }
@@ -171,16 +174,18 @@ func (g *Grub) installModules(rootDir, bootDir string, modules ...string) error 
 	if err != nil {
 		return err
 	}
-	for _, module := range modules {
-		fileWriteName := filepath.Join(bootDir, g.grubPrefix, fmt.Sprintf("%s-efi", g.platform.Arch), filepath.Base(module))
-		g.logger.Debugf("Copying %s to %s", module, fileWriteName)
-		err = utils.MkdirAll(g.fs, filepath.Dir(fileWriteName), constants.DirPerm)
-		if err != nil {
-			return fmt.Errorf("error creating destination folder: %v", err)
-		}
-		err = utils.CopyFile(g.fs, module, fileWriteName)
-		if err != nil {
-			return fmt.Errorf("error copying %s to %s: %s", module, fileWriteName, err.Error())
+	for _, grubPrefix := range g.grubPrefixes {
+		for _, module := range modules {
+			fileWriteName := filepath.Join(bootDir, grubPrefix, fmt.Sprintf("%s-efi", g.platform.Arch), filepath.Base(module))
+			g.logger.Debugf("Copying %s to %s", module, fileWriteName)
+			err = utils.MkdirAll(g.fs, filepath.Dir(fileWriteName), constants.DirPerm)
+			if err != nil {
+				return fmt.Errorf("error creating destination folder: %v", err)
+			}
+			err = utils.CopyFile(g.fs, module, fileWriteName)
+			if err != nil {
+				return fmt.Errorf("error copying %s to %s: %s", module, fileWriteName, err.Error())
+			}
 		}
 	}
 	return nil
