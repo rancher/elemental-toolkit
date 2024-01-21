@@ -96,6 +96,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
           sudo df -h
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+        name: Build toolkit
+        run: |
+          make build
+      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
