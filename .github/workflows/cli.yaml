@@ -8,6 +8,7 @@ on:
       - make/**
       - .github/**
       - Makefile
+      - tests/**
   push:
     branches:
       - main
