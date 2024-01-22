@@ -181,6 +181,23 @@ const (
 	PassiveSnapshot           = "passive_%d"
 )
 
+// GetDefaultSystemEcludes returns a list of transient paths
+// that are commonly present in an Elemental based running system.
+// Those paths are not needed or wanted in order to replicate the
+// root-tree as they are generated at runtime.
+func GetDefaultSystemExcludes() []string {
+	return []string{
+		"/mnt",
+		"/proc",
+		"/sys",
+		"/dev",
+		"/tmp",
+		"/run",
+		"/host",
+		"/etc/resolv.conf",
+	}
+}
+
 func GetKernelPatterns() []string {
 	return []string{
 		"/boot/uImage*",
