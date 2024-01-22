@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 type Bootloader interface {
-	Install(rootDir, bootDir, stateLabel string) (err error)
+	Install(rootDir, bootDir, deviceLabel string) (err error)
 	InstallConfig(rootDir, bootDir string) error
 	DoEFIEntries(shimName, efiDir string) error
 	InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) error

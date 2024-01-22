@@ -32,7 +32,7 @@ var _ = Describe("Elemental Feature tests", func() {
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
-		Expect(s.BootFrom()).To(Equal(sut.Active))
+		s.EventuallyBootedFrom(sut.Active)
 	})
 
 	Context("After install", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(sut.Active))
+			s.EventuallyBootedFrom(sut.Active)
 			currentVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(currentVersion).NotTo(Equal(originalVersion))
 

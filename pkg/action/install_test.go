@@ -169,7 +169,7 @@ var _ = Describe("Install action tests", func() {
 					{
 						Name:            "device1",
 						FilesystemLabel: "COS_GRUB",
-						Type:            "ext4",
+						Type:            "vfat",
 					},
 					{
 						Name:            "device2",
@@ -388,7 +388,7 @@ var _ = Describe("Install action tests", func() {
 			spec.GrubDefEntry = "cOS"
 			bootloader.ErrorSetDefaultEntry = true
 			Expect(installer.Run()).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.StateDir, constants.GrubOEMEnv)}}))
+			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.EfiDir, constants.GrubOEMEnv)}}))
 		})
 	})
 })

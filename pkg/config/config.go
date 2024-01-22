@@ -317,6 +317,9 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		MountPoint:      constants.PersistentDir,
 		Flags:           []string{},
 	}
+
+	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+
 	return partitions
 }
 

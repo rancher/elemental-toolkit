@@ -134,12 +134,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
 				Expect(spec.PartTable).To(Equal(v1.GPT))
 
-				// No firmware partitions added yet
-				Expect(spec.Partitions.EFI).To(BeNil())
-
-				// Adding firmware partitions
-				err = spec.Partitions.SetFirmwarePartitions(spec.Firmware, spec.PartTable)
-				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {

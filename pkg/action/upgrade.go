@@ -182,6 +182,11 @@ func (u *UpgradeAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
 	}
 	cleanup.Push(umount)
+	umount, err = elemental.MountRWPartition(u.config.Config, u.spec.Partitions.EFI)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.MountPartitions)
+	}
+	cleanup.Push(umount)
 
 	// Cleanup transition image file before leaving
 	cleanup.Push(func() error { return u.remove(upgradeImg.File) })
@@ -253,7 +258,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	grubVars := u.spec.GetGrubLabels()
 	err = u.bootloader.SetPersistentVariables(
-		filepath.Join(u.spec.Partitions.State.MountPoint, constants.GrubOEMEnv),
+		filepath.Join(u.spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -265,7 +270,7 @@ func (u *UpgradeAction) Run() (err error) {
 	if !u.spec.RecoveryUpgrade {
 		u.Info("rebranding")
 
-		err = u.bootloader.SetDefaultEntry(u.spec.Partitions.State.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
+		err = u.bootloader.SetDefaultEntry(u.spec.Partitions.EFI.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
 		if err != nil {
 			u.Error("failed setting default entry")
 			return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
