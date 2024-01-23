@@ -219,6 +219,11 @@ func (u *UpgradeAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
 	}
 	cleanup.Push(umount)
+	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.EFI)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.MountEFIPartition)
+	}
+	cleanup.Push(umount)
 
 	// Recovery does not mount persistent, so try to mount it. Ignore errors, as it's not mandatory.
 	persistentPart := u.spec.Partitions.Persistent

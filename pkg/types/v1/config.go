@@ -369,6 +369,12 @@ func (u *UpgradeSpec) Sanitize() error {
 		}
 	}
 
+	if u.BootloaderUpgrade {
+		if u.Partitions.EFI == nil || u.Partitions.EFI.MountPoint == "" {
+			return fmt.Errorf("undefined EFI partition")
+		}
+	}
+
 	// Set default label for non squashfs images
 	if u.RecoverySystem.FS != constants.SquashFs && u.RecoverySystem.Label == "" {
 		u.RecoverySystem.Label = constants.SystemLabel

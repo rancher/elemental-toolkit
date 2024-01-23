@@ -123,7 +123,6 @@ func (b *BuildDiskAction) preparePartitionsRoot() error {
 }
 
 func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
-	var recInfo, activeInfo interface{}
 	var rawImg string
 
 	b.cfg.Logger.Infof("Building disk image type %s for arch %s", b.spec.Type, b.cfg.Arch)
@@ -170,7 +169,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.StatePartName])
+	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.EfiPartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err

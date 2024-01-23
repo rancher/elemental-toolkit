@@ -224,7 +224,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
 
 				// Writes filesystem labels to GRUB oem env file
-				grubOEMEnv := filepath.Join(spec.Partitions.State.MountPoint, constants.GrubOEMEnv)
+				grubOEMEnv := filepath.Join(spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv)
 				Expect(runner.IncludesCmds(
 					[][]string{{"grub2-editenv", grubOEMEnv, "set", "passive_snaps=passive_2"}},
 				)).To(Succeed())

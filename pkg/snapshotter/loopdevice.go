@@ -463,7 +463,7 @@ func (l *LoopDevice) setBootloader() error {
 	}
 	snapsList := strings.Join(passives, " ")
 	fallbackList := strings.Join(fallbacks, " ")
-	envFile := filepath.Join(l.rootDir, constants.GrubOEMEnv)
+	envFile := filepath.Join(constants.EfiDir, constants.GrubOEMEnv)
 
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
@@ -550,9 +550,9 @@ func (l *LoopDevice) cleanLegacyImages() error {
 	var path string
 
 	if l.legacyClean {
-		path = filepath.Join(l.rootDir, legacyActivePath)
+		path = filepath.Join(l.rootDir, legacyPassivePath)
 		if elemental.IsPassiveMode(l.cfg) {
-			path = filepath.Join(l.rootDir, legacyPassivePath)
+			path = filepath.Join(l.rootDir, legacyActivePath)
 		} else if elemental.IsRecoveryMode(l.cfg) {
 			path = filepath.Join(l.rootDir, legacyImagesPath)
 		}

@@ -253,5 +253,8 @@ const SnapshotterInit = 84
 // Error occured starting an snapshotter transaction
 const SnapshotterStart = 85
 
+// Error mounting EFI partition
+const MountEFIPartition = 86
+
 // Unknown error
 const Unknown int = 255

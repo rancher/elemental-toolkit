@@ -143,6 +143,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
 		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
 		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/active.img"), []byte("active image"), constants.FilePerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
 
 		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
@@ -157,7 +158,8 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(snap.Path).To(Equal(filepath.Join(rootDir, ".snapshots/2/snapshot.img")))
 
 		Expect(lp.CloseTransaction(snap)).To(Succeed())
-		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS"))).To(BeFalse())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS/passive.img"))).To(BeFalse())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS/active.img"))).To(BeTrue())
 	})
 
 	It("fails to start a transaction without being initiated first", func() {

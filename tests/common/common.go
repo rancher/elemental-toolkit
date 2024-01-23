@@ -18,7 +18,7 @@ package common
 
 import "flag"
 
-const upImg = "ghcr.io/rancher/elemental-toolkit/elemental-green:v1.3.0"
+const upImg = "ghcr.io/rancher/elemental-toolkit/elemental-green:v0.10.7-g3e4a3c56"
 
 var upgradeImg string
 
