@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,19 +22,22 @@ import (
 )
 
 type FS interface {
-	Open(name string) (*os.File, error)
-	Chmod(name string, mode os.FileMode) error
+	Chmod(name string, mode fs.FileMode) error
 	Create(name string) (*os.File, error)
-	Mkdir(name string, perm os.FileMode) error
-	Stat(name string) (os.FileInfo, error)
-	Lstat(name string) (os.FileInfo, error)
-	RemoveAll(path string) error
+	Glob(pattern string) ([]string, error)
+	Link(oldname, newname string) error
+	Lstat(name string) (fs.FileInfo, error)
+	Mkdir(name string, perm fs.FileMode) error
+	Open(name string) (fs.File, error)
+	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
+	RawPath(name string) (string, error)
+	ReadDir(dirname string) ([]fs.DirEntry, error)
 	ReadFile(filename string) ([]byte, error)
 	Readlink(name string) (string, error)
-	RawPath(name string) (string, error)
-	ReadDir(dirname string) ([]os.FileInfo, error)
 	Remove(name string) error
-	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
-	WriteFile(filename string, data []byte, perm os.FileMode) error
+	RemoveAll(name string) error
+	Rename(oldpath, newpath string) error
+	Stat(name string) (fs.FileInfo, error)
 	Symlink(oldname, newname string) error
+	WriteFile(filename string, data []byte, perm fs.FileMode) error
 }

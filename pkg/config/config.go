@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
 
 	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -224,12 +224,20 @@ func NewInitSpec() *v1.InitSpec {
 
 func NewMountSpec() *v1.MountSpec {
 	partitions := v1.ElementalPartitions{
+		EFI: &v1.Partition{
+			FilesystemLabel: constants.EfiLabel,
+			Size:            constants.EfiSize,
+			Name:            constants.EfiPartName,
+			FS:              constants.EfiFs,
+			MountPoint:      constants.EfiDir,
+			Flags:           []string{"ro"},
+		},
 		State: &v1.Partition{
 			FilesystemLabel: constants.StateLabel,
 			Size:            constants.StateSize,
 			Name:            constants.StatePartName,
 			FS:              constants.LinuxFs,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		Persistent: &v1.Partition{
 			FilesystemLabel: constants.PersistentLabel,
@@ -237,7 +245,7 @@ func NewMountSpec() *v1.MountSpec {
 			Name:            constants.PersistentPartName,
 			FS:              constants.LinuxFs,
 			MountPoint:      constants.PersistentDir,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		OEM: &v1.Partition{
 			FilesystemLabel: constants.OEMLabel,
@@ -245,14 +253,14 @@ func NewMountSpec() *v1.MountSpec {
 			Name:            constants.OEMPartName,
 			FS:              constants.LinuxFs,
 			MountPoint:      constants.OEMPath,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 		Recovery: &v1.Partition{
 			FilesystemLabel: constants.RecoveryLabel,
 			Size:            constants.RecoverySize,
 			Name:            constants.RecoveryPartName,
 			FS:              constants.LinuxFs,
-			Flags:           []string{},
+			Flags:           []string{"defaults"},
 		},
 	}
 
@@ -309,6 +317,9 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		MountPoint:      constants.PersistentDir,
 		Flags:           []string{},
 	}
+
+	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+
 	return partitions
 }
 
@@ -524,7 +535,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
-func NewDiskElementalParitions(workdir string) v1.ElementalPartitions {
+func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 	partitions := v1.ElementalPartitions{}
 
 	// does not return error on v1.EFI use case
@@ -610,7 +621,7 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 	)
 
 	return &v1.DiskSpec{
-		Partitions: NewDiskElementalParitions(workdir),
+		Partitions: NewDiskElementalPartitions(workdir),
 		GrubConf:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		Active:     activeImg,
 		Recovery:   recoveryImg,

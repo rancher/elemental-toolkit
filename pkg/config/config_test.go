@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
@@ -134,12 +134,6 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(spec.Recovery.Source.Value()).To(Equal(spec.Active.File))
 				Expect(spec.PartTable).To(Equal(v1.GPT))
 
-				// No firmware partitions added yet
-				Expect(spec.Partitions.EFI).To(BeNil())
-
-				// Adding firmware partitions
-				err = spec.Partitions.SetFirmwarePartitions(spec.Firmware, spec.PartTable)
-				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {

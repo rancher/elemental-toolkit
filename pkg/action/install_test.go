@@ -1,5 +1,5 @@
 /*
-   Copyright © 2022 - 2023 SUSE LLC
+   Copyright © 2022 - 2024 SUSE LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/pkg/config"
@@ -169,7 +169,7 @@ var _ = Describe("Install action tests", func() {
 					{
 						Name:            "device1",
 						FilesystemLabel: "COS_GRUB",
-						Type:            "ext4",
+						Type:            "vfat",
 					},
 					{
 						Name:            "device2",
@@ -388,7 +388,7 @@ var _ = Describe("Install action tests", func() {
 			spec.GrubDefEntry = "cOS"
 			bootloader.ErrorSetDefaultEntry = true
 			Expect(installer.Run()).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.StateDir, constants.GrubOEMEnv)}}))
+			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.EfiDir, constants.GrubOEMEnv)}}))
 		})
 	})
 })

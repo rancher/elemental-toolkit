@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/config"
 	conf "github.com/rancher/elemental-toolkit/pkg/config"
@@ -380,7 +380,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("sanitize", func() {
 			It("runs method", func() {
-				Expect(spec.Partitions.EFI).To(BeNil())
+				Expect(spec.Partitions.EFI).ToNot(BeNil())
 				Expect(spec.Active.Source.IsEmpty()).To(BeTrue())
 
 				// Creates firmware partitions

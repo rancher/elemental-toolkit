@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -178,7 +178,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.StatePartName])
+	err = b.bootloader.InstallConfig(activeRoot, b.roots[constants.EfiPartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
@@ -199,7 +199,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	grubVars := b.spec.GetGrubLabels()
 	err = b.bootloader.SetPersistentVariables(
-		filepath.Join(b.roots[constants.StatePartName], constants.GrubOEMEnv),
+		filepath.Join(b.roots[constants.EfiPartName], constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -208,7 +208,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	err = b.bootloader.InstallEFI(
-		activeRoot, b.roots[constants.StatePartName],
+		activeRoot, b.roots[constants.EfiPartName],
 		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
@@ -217,7 +217,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Rebrand
-	err = b.bootloader.SetDefaultEntry(b.roots[constants.StatePartName], activeRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], activeRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
@@ -488,7 +488,7 @@ func Raw2Gce(source string, fs v1.FS, logger v1.Logger, keepOldImage bool) error
 	// The disk image filename must be disk.raw.
 	// The compressed file must be a .tar.gz file that uses gzip compression and the --format=oldgnu option for the tar utility.
 	logger.Info("Transforming raw image into gce format")
-	actImg, err := fs.Open(source)
+	actImg, err := fs.OpenFile(source, os.O_CREATE|os.O_APPEND|os.O_WRONLY, constants.FilePerm)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.OpenFile)
 	}

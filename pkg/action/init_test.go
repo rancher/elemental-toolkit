@@ -1,5 +1,5 @@
 /*
-   Copyright © 2022 - 2023 SUSE LLC
+   Copyright © 2022 - 2024 SUSE LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	"github.com/rancher/elemental-toolkit/pkg/config"
@@ -42,6 +42,7 @@ var _ = Describe("Init Action", func() {
 	var logger v1.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
+	var expectedNumUnits int
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -54,6 +55,14 @@ var _ = Describe("Init Action", func() {
 			config.WithRunner(runner),
 			config.WithLogger(logger),
 		)
+
+		feats, err := features.Get(features.All)
+		Expect(err).To(BeNil())
+
+		expectedNumUnits = 0
+		for _, feat := range feats {
+			expectedNumUnits += len(feat.Units)
+		}
 	})
 	AfterEach(func() {
 		cleanup()
@@ -104,10 +113,7 @@ var _ = Describe("Init Action", func() {
 		It("Successfully runs init and install files", func() {
 			Expect(action.RunInit(cfg, spec)).To(Succeed())
 
-			feats, err := features.Get([]string{features.FeatureElementalSetup})
-			Expect(err).To(BeNil())
-			Expect(len(feats)).To(Equal(1))
-			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
 				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
@@ -133,11 +139,7 @@ var _ = Describe("Init Action", func() {
 			Expect(fs.Remove("/boot/vmlinuz-6.4")).To(Succeed())
 			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
 
-			// Features where already enabled at that error stage
-			feats, err := features.Get([]string{features.FeatureElementalSetup})
-			Expect(err).To(BeNil())
-			Expect(len(feats)).To(Equal(1))
-			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
 				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
@@ -149,11 +151,7 @@ var _ = Describe("Init Action", func() {
 			errCmd = "dracut"
 			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
 
-			// Features where already enabled at that error stage
-			feats, err := features.Get([]string{features.FeatureElementalSetup})
-			Expect(err).To(BeNil())
-			Expect(len(feats)).To(Equal(1))
-			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
 				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
@@ -165,11 +163,7 @@ var _ = Describe("Init Action", func() {
 			initrdFile = "/boot/wrongInird"
 			Expect(action.RunInit(cfg, spec)).NotTo(Succeed())
 
-			// Features where already enabled at that error stage
-			feats, err := features.Get([]string{features.FeatureElementalSetup})
-			Expect(err).To(BeNil())
-			Expect(len(feats)).To(Equal(1))
-			Expect(len(enabledUnits)).To(Equal(len(feats[0].Units)))
+			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
 				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))

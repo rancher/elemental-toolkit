@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	sut "github.com/rancher/elemental-toolkit/tests/vm"
 
 	comm "github.com/rancher/elemental-toolkit/tests/common"
 )
@@ -32,7 +32,7 @@ var _ = Describe("Elemental Feature tests", func() {
 	BeforeEach(func() {
 		s = sut.NewSUT()
 		s.EventuallyConnects()
-		Expect(s.BootFrom()).To(Equal(sut.Active))
+		s.EventuallyBootedFrom(sut.Active)
 	})
 
 	Context("After install", func() {
@@ -51,7 +51,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
 			s.Reboot()
-			Expect(s.BootFrom()).To(Equal(sut.Active))
+			s.EventuallyBootedFrom(sut.Active)
 			currentVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(currentVersion).NotTo(Equal(originalVersion))
 

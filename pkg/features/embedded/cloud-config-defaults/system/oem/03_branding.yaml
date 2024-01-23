@@ -9,7 +9,7 @@ name: "Branding"
 stages:
    initramfs:
      - name: "Branding"
-       if: '[ ! -f "/run/elemental/recovery_mode" ]'
+       if: '[ -f "/run/elemental/active_mode" ]'
        hostname: "elemental"
        files:
         - path: /etc/issue
@@ -24,6 +24,25 @@ stages:
             IP address \4
             Login with user: root, password: cos
             Start the installer with "elemental install <device>" to install it in the local system
+          permissions: 0644
+          owner: 0
+          group: 0
+     - name: "Branding"
+       if: '[ -f "/run/elemental/passive_mode" ]'
+       hostname: "elemental"
+       files:
+        - path: /etc/issue
+          content: |
+            .-----.
+            | .-. |
+            | |.| |
+            | `-' |
+            `-----'
+
+            Welcome to \S (passive)!
+            IP address \4
+            Login with user: root, password: cos
+            There might be an issue with the active partition, booted in passive.
           permissions: 0644
           owner: 0
           group: 0

@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -197,8 +197,8 @@ func (i InstallAction) Run() (err error) {
 	// Install grub
 	err = i.bootloader.Install(
 		cnst.WorkingImgDir,
-		i.spec.Partitions.State.MountPoint,
-		i.spec.Partitions.State.FilesystemLabel,
+		i.spec.Partitions.EFI.MountPoint,
+		i.spec.Partitions.EFI.FilesystemLabel,
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.InstallGrub)
@@ -221,7 +221,7 @@ func (i InstallAction) Run() (err error) {
 
 	grubVars := i.spec.GetGrubLabels()
 	err = i.bootloader.SetPersistentVariables(
-		filepath.Join(i.spec.Partitions.State.MountPoint, cnst.GrubOEMEnv),
+		filepath.Join(i.spec.Partitions.EFI.MountPoint, cnst.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -231,7 +231,7 @@ func (i InstallAction) Run() (err error) {
 
 	// Installation rebrand (only grub for now)
 	err = i.bootloader.SetDefaultEntry(
-		i.spec.Partitions.State.MountPoint,
+		i.spec.Partitions.EFI.MountPoint,
 		cnst.WorkingImgDir,
 		i.spec.GrubDefEntry,
 	)

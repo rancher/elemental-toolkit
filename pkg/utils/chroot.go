@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -163,7 +163,7 @@ func (c *Chroot) RunCallback(callback func() error) (err error) {
 	}
 
 	// Store current root
-	oldRootF, err = c.config.Fs.Open("/")
+	oldRootF, err = c.config.Fs.OpenFile("/", os.O_RDONLY, constants.DirPerm)
 	if err != nil {
 		c.config.Logger.Errorf("Can't open current root")
 		return err

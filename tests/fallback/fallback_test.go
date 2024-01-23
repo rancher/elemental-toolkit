@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	sut "github.com/rancher-sandbox/ele-testhelpers/vm"
+	sut "github.com/rancher/elemental-toolkit/tests/vm"
 
 	comm "github.com/rancher/elemental-toolkit/tests/common"
 
@@ -32,10 +32,10 @@ var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 	bootAssessmentInstalled := func() {
 		// Auto assessment was installed
-		out, _ := s.Command("sudo cat /run/initramfs/elemental-state/grubcustom")
-		Expect(out).To(ContainSubstring("bootfile_loc"))
+		out, _ := s.Command("sudo cat /run/elemental/efi/grubcustom")
+		Expect(out).To(ContainSubstring("bootfile"))
 
-		out, _ = s.Command("sudo cat /run/initramfs/elemental-state/grub_boot_assessment")
+		out, _ = s.Command("sudo cat /run/elemental/efi/grub_boot_assessment")
 		Expect(out).To(ContainSubstring("boot_assessment_file"))
 
 		cmdline, _ := s.Command("sudo cat /proc/cmdline")
@@ -69,7 +69,7 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
-			out, _ = s.Command("sudo cat /run/initramfs/elemental-state/boot_assessment")
+			out, _ = s.Command("sudo cat /run/elemental/efi/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
 
 			// Break the upgrade

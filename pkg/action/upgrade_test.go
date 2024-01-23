@@ -1,5 +1,5 @@
 /*
-   Copyright © 2022 - 2023 SUSE LLC
+   Copyright © 2022 - 2024 SUSE LLC
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/pkg/config"
@@ -98,6 +98,7 @@ var _ = Describe("Runtime Actions", func() {
 			logger.SetLevel(logrus.DebugLevel)
 
 			// Create paths used by tests
+			utils.MkdirAll(fs, constants.EfiDir, constants.DirPerm)
 			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.RunningStateDir), constants.DirPerm)
 			utils.MkdirAll(fs, fmt.Sprintf("%s/cOS", constants.LiveDir), constants.DirPerm)
 
@@ -107,7 +108,8 @@ var _ = Describe("Runtime Actions", func() {
 					{
 						Name:            "device1",
 						FilesystemLabel: "COS_GRUB",
-						Type:            "ext4",
+						Type:            "vfat",
+						MountPoint:      constants.EfiDir,
 					},
 					{
 						Name:            "device2",
@@ -337,7 +339,7 @@ var _ = Describe("Runtime Actions", func() {
 				err := upgrade.Run()
 				Expect(err).ToNot(HaveOccurred())
 
-				actualBytes, err := fs.ReadFile(filepath.Join(constants.RunningStateDir, "grub_oem_env"))
+				actualBytes, err := fs.ReadFile(filepath.Join(constants.EfiDir, "grub_oem_env"))
 				Expect(err).To(BeNil())
 
 				expected := map[string]string{

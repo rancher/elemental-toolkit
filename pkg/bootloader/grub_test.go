@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	efi "github.com/canonical/go-efilib"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/rancher/elemental-toolkit/cmd"
 	"github.com/rancher/elemental-toolkit/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/pkg/config"
@@ -32,8 +33,8 @@ import (
 	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
-	"github.com/twpayne/go-vfs"
-	"github.com/twpayne/go-vfs/vfst"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
@@ -104,6 +105,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 			config.WithLogger(logger),
 			config.WithRunner(runner),
 			config.WithFs(fs),
+			config.WithPlatform("linux/amd64"),
 		)
 	})
 
@@ -111,15 +113,21 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
 
-		// Check everything is copied in boot directory
-		data, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
+		// Check grub config in EFI directory
+		data, err := fs.ReadFile(filepath.Join(bootDir, "/EFI/BOOT/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/loopback.mod", bootDir))
+
+		data, err = fs.ReadFile(filepath.Join(bootDir, "/EFI/ELEMENTAL/grub.cfg"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/xzio.mod", bootDir))
+		Expect(data).To(Equal(grubCfg))
+
+		// Check everything is copied in boot directory
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/squash4.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check everything is copied in EFI directory
@@ -137,19 +145,16 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(err).To(BeNil())
 	})
 
-	It("installs just fine without sercure boot", func() {
+	It("installs just fine without secure boot", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true), bootloader.WithSecureBoot(false))
 		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
 
 		// Check everything is copied in boot directory
-		data, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		Expect(data).To(Equal(grubCfg))
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/loopback.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/xzio.mod", bootDir))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/squash4.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check secureboot files are NOT there
@@ -167,6 +172,15 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(err).To(BeNil())
 		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/grub.efi"))
 		Expect(err).To(BeNil())
+
+		// Check grub config in EFI directory
+		data, err := fs.ReadFile(filepath.Join(bootDir, "EFI/BOOT/grub.cfg"))
+		Expect(err).To(BeNil())
+		Expect(data).To(Equal(grubCfg))
+
+		data, err = fs.ReadFile(filepath.Join(bootDir, "EFI/ELEMENTAL/grub.cfg"))
+		Expect(err).To(BeNil())
+		Expect(data).To(Equal(grubCfg))
 	})
 
 	It("fails to install if squash4.mod is missing", func() {
@@ -196,7 +210,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(grub.InstallConfig(rootDir, bootDir)).To(Succeed())
 
 		// Check everything is copied in boot directory
-		data, err := fs.ReadFile(fmt.Sprintf("%s/grub2/grub.cfg", bootDir))
+		data, err := fs.ReadFile(filepath.Join(bootDir, "EFI/ELEMENTAL/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 	})
@@ -218,11 +232,11 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/loopback.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/xzio.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(fmt.Sprintf("%s/grub2/x86_64-efi/squash4.mod", bootDir))
+		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check everything is copied in EFI directory

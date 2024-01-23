@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	grubPrefixDir  = "/boot/grub2"
+	grubPrefixDir  = "/EFI/BOOT"
 	isoBootCatalog = "/boot/boot.catalog"
 )
 
@@ -73,7 +73,7 @@ func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOAc
 	}
 
 	if b.bootloader == nil {
-		b.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubPrefix(grubPrefixDir))
+		b.bootloader = bootloader.NewGrub(&cfg.Config)
 	}
 
 	return b

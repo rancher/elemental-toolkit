@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 			part.Path = device
 		}
 
-		data = data + fstab(part.Path, part.MountPoint, "auto", []string{"defaults"})
+		data = data + fstab(part.Path, part.MountPoint, "auto", part.Flags)
 	}
 
 	for _, rw := range spec.Ephemeral.Paths {

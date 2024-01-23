@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -171,14 +171,14 @@ func MountRWPartition(c v1.Config, part *v1.Partition) (umount func() error, err
 	if mnt, _ := IsMounted(c, part); mnt {
 		err = MountPartition(c, part, "remount", "rw")
 		if err != nil {
-			c.Logger.Errorf("failed mounting %s partition: %v", part.Name, err)
+			c.Logger.Errorf("Failed mounting %s partition: %s", part.Name, err.Error())
 			return nil, err
 		}
 		umount = func() error { return MountPartition(c, part, "remount", "ro") }
 	} else {
 		err = MountPartition(c, part, "rw")
 		if err != nil {
-			c.Logger.Error("failed mounting %s partition: %v", part.Name, err)
+			c.Logger.Errorf("Failed mounting %s partition: %s", part.Name, err.Error())
 			return nil, err
 		}
 		umount = func() error { return UnmountPartition(c, part) }

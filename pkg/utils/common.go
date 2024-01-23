@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 
 	var sourceFile *os.File
 	for _, source := range sources {
-		sourceFile, err = fs.Open(source)
+		sourceFile, err = fs.OpenFile(source, os.O_RDONLY, constants.FilePerm)
 		if err != nil {
 			return err
 		}
