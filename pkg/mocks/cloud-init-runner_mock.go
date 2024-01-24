@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 )
 
 type FakeCloudInitRunner struct {

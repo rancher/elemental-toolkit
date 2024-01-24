@@ -17,7 +17,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-//go:build windows
 // +build windows
 
 package sshagent
@@ -32,8 +31,6 @@ import (
 	"sync"
 	"syscall"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
 )
 
 // Maximum size of message can be sent to pageant
@@ -62,16 +59,13 @@ type copyData struct {
 var (
 	lock sync.Mutex
 
-	user32dll      = windows.NewLazySystemDLL("user32.dll")
-	winFindWindow  = winAPI(user32dll, "FindWindowW")
-	winSendMessage = winAPI(user32dll, "SendMessageW")
-
-	kernel32dll           = windows.NewLazySystemDLL("kernel32.dll")
-	winGetCurrentThreadID = winAPI(kernel32dll, "GetCurrentThreadId")
+	winFindWindow         = winAPI("user32.dll", "FindWindowW")
+	winGetCurrentThreadID = winAPI("kernel32.dll", "GetCurrentThreadId")
+	winSendMessage        = winAPI("user32.dll", "SendMessageW")
 )
 
-func winAPI(dll *windows.LazyDLL, funcName string) func(...uintptr) (uintptr, uintptr, error) {
-	proc := dll.NewProc(funcName)
+func winAPI(dllName, funcName string) func(...uintptr) (uintptr, uintptr, error) {
+	proc := syscall.MustLoadDLL(dllName).MustFindProc(funcName)
 	return func(a ...uintptr) (uintptr, uintptr, error) { return proc.Call(a...) }
 }
 

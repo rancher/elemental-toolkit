@@ -24,7 +24,7 @@ import (
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

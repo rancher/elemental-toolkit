@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 )
 
 type CloudInitRunner interface {

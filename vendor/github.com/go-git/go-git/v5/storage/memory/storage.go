@@ -193,16 +193,12 @@ func (o *ObjectStorage) DeleteOldObjectPackAndIndex(plumbing.Hash, time.Time) er
 	return nil
 }
 
-var errNotSupported = fmt.Errorf("not supported")
+var errNotSupported = fmt.Errorf("Not supported")
 
 func (o *ObjectStorage) LooseObjectTime(hash plumbing.Hash) (time.Time, error) {
 	return time.Time{}, errNotSupported
 }
 func (o *ObjectStorage) DeleteLooseObject(plumbing.Hash) error {
-	return errNotSupported
-}
-
-func (o *ObjectStorage) AddAlternate(remote string) error {
 	return errNotSupported
 }
 

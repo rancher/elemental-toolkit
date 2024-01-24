@@ -15,14 +15,6 @@ import (
 // not be used.
 type Path []Noder
 
-func (p Path) Skip() bool {
-	if len(p) > 0 {
-		return p.Last().Skip()
-	}
-
-	return false
-}
-
 // String returns the full path of the final noder as a string, using
 // "/" as the separator.
 func (p Path) String() string {

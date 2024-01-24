@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/idxfile"
 	"github.com/go-git/go-git/v5/plumbing/format/objfile"
 	"github.com/go-git/go-git/v5/plumbing/format/packfile"
-	"github.com/go-git/go-git/v5/plumbing/hash"
 
 	"github.com/go-git/go-billy/v5"
 )
@@ -278,8 +277,8 @@ func (w *ObjectWriter) Close() error {
 }
 
 func (w *ObjectWriter) save() error {
-	hex := w.Hash().String()
-	file := w.fs.Join(objectsPath, hex[0:2], hex[2:hash.HexSize])
+	hash := w.Hash().String()
+	file := w.fs.Join(objectsPath, hash[0:2], hash[2:40])
 
 	return w.fs.Rename(w.f.Name(), file)
 }

@@ -11,10 +11,6 @@ type Encoder struct {
 	w io.Writer
 }
 
-var (
-	subsectionReplacer = strings.NewReplacer(`"`, `\"`, `\`, `\\`)
-	valueReplacer = strings.NewReplacer(`"`, `\"`, `\`, `\\`, "\n", `\n`, "\t", `\t`, "\b", `\b`)
-)
 // NewEncoder returns a new encoder that writes to w.
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w}
@@ -52,7 +48,8 @@ func (e *Encoder) encodeSection(s *Section) error {
 }
 
 func (e *Encoder) encodeSubsection(sectionName string, s *Subsection) error {
-	if err := e.printf("[%s \"%s\"]\n", sectionName, subsectionReplacer.Replace(s.Name)); err != nil {
+	//TODO: escape
+	if err := e.printf("[%s \"%s\"]\n", sectionName, s.Name); err != nil {
 		return err
 	}
 
@@ -61,14 +58,12 @@ func (e *Encoder) encodeSubsection(sectionName string, s *Subsection) error {
 
 func (e *Encoder) encodeOptions(opts Options) error {
 	for _, o := range opts {
-		var value string
-		if strings.ContainsAny(o.Value, "#;\"\t\n\\") || strings.HasPrefix(o.Value, " ") || strings.HasSuffix(o.Value, " ") {
-			value = `"`+valueReplacer.Replace(o.Value)+`"`
-		} else {
-			value = o.Value
+		pattern := "\t%s = %s\n"
+		if strings.Contains(o.Value, "\\") {
+			pattern = "\t%s = %q\n"
 		}
 
-		if err := e.printf("\t%s = %s\n", o.Key, value); err != nil {
+		if err := e.printf(pattern, o.Key, o.Value); err != nil {
 			return err
 		}
 	}

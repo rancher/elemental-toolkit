@@ -1,4 +1,3 @@
-//go:build windows
 // +build windows
 
 package osfs
@@ -10,6 +9,15 @@ import (
 
 	"golang.org/x/sys/windows"
 )
+
+type fileInfo struct {
+	os.FileInfo
+	name string
+}
+
+func (fi *fileInfo) Name() string {
+	return fi.name
+}
 
 var (
 	kernel32DLL    = windows.NewLazySystemDLL("kernel32.dll")
@@ -50,9 +58,4 @@ func (f *file) Unlock() error {
 
 func rename(from, to string) error {
 	return os.Rename(from, to)
-}
-
-func umask(new int) func() {
-	return func() {
-	}
 }

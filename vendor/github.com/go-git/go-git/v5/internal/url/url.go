@@ -5,10 +5,8 @@ import (
 )
 
 var (
-	isSchemeRegExp = regexp.MustCompile(`^[^:]+://`)
-
-	// Ref: https://github.com/git/git/blob/master/Documentation/urls.txt#L37
-	scpLikeUrlRegExp = regexp.MustCompile(`^(?:(?P<user>[^@]+)@)?(?P<host>[^:\s]+):(?:(?P<port>[0-9]{1,5}):)?(?P<path>[^\\].*)$`)
+	isSchemeRegExp   = regexp.MustCompile(`^[^:]+://`)
+	scpLikeUrlRegExp = regexp.MustCompile(`^(?:(?P<user>[^@]+)@)?(?P<host>[^:\s]+):(?:(?P<port>[0-9]{1,5})(?:\/|:))?(?P<path>[^\\].*\/[^\\].*)$`)
 )
 
 // MatchesScheme returns true if the given string matches a URL-like

@@ -25,7 +25,7 @@ import (
 	"os"
 
 	"github.com/jaypipes/ghw/pkg/block"
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
@@ -92,7 +92,6 @@ stages:
 			Expect(err).Should(BeNil())
 
 			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
-			Expect(buffer.String()).To(ContainSubstring("running on a TestFS"))
 
 			err = runner.Run("test", "/some/yip")
 			Expect(err).Should(BeNil())

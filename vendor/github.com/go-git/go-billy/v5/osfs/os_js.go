@@ -1,4 +1,3 @@
-//go:build js
 // +build js
 
 package osfs
@@ -17,9 +16,6 @@ var globalMemFs = memfs.New()
 var Default = memfs.New()
 
 // New returns a new OS filesystem.
-func New(baseDir string, _ ...Option) billy.Filesystem {
+func New(baseDir string) billy.Filesystem {
 	return chroot.New(Default, Default.Join("/", baseDir))
-}
-
-type options struct {
 }

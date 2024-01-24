@@ -96,6 +96,10 @@ func filePatchWithContext(ctx context.Context, c *Change) (fdiff.FilePatch, erro
 
 }
 
+func filePatch(c *Change) (fdiff.FilePatch, error) {
+	return filePatchWithContext(context.Background(), c)
+}
+
 func fileContent(f *File) (content string, isBinary bool, err error) {
 	if f == nil {
 		return
@@ -317,8 +321,8 @@ func getFileStatsFromFilePatches(filePatches []fdiff.FilePatch) FileStats {
 			// File is deleted.
 			cs.Name = from.Path()
 		} else if from.Path() != to.Path() {
-			// File is renamed.
-			cs.Name = fmt.Sprintf("%s => %s", from.Path(), to.Path())
+			// File is renamed. Not supported.
+			// cs.Name = fmt.Sprintf("%s => %s", from.Path(), to.Path())
 		} else {
 			cs.Name = from.Path()
 		}

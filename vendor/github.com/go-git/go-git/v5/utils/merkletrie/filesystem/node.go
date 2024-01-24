@@ -61,10 +61,6 @@ func (n *node) IsDir() bool {
 	return n.isDir
 }
 
-func (n *node) Skip() bool {
-	return false
-}
-
 func (n *node) Children() ([]noder.Noder, error) {
 	if err := n.calculateChildren(); err != nil {
 		return nil, err
@@ -100,10 +96,6 @@ func (n *node) calculateChildren() error {
 
 	for _, file := range files {
 		if _, ok := ignore[file.Name()]; ok {
-			continue
-		}
-
-		if file.Mode()&os.ModeSocket != 0 {
 			continue
 		}
 

@@ -14,7 +14,7 @@ import (
 
 	efi "github.com/canonical/go-efilib"
 	efi_linux "github.com/canonical/go-efilib/linux"
-	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
 )
 
 // Variables abstracts away the host-specific bits of the efivars module

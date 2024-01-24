@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/utils/sync"
 )
 
 var (
@@ -19,9 +18,9 @@ var (
 // not close the underlying io.Writer.
 type Writer struct {
 	raw    io.Writer
+	zlib   io.WriteCloser
 	hasher plumbing.Hasher
 	multi  io.Writer
-	zlib   *zlib.Writer
 
 	closed  bool
 	pending int64 // number of unwritten bytes
@@ -32,10 +31,9 @@ type Writer struct {
 // The returned Writer implements io.WriteCloser. Close should be called when
 // finished with the Writer. Close will not close the underlying io.Writer.
 func NewWriter(w io.Writer) *Writer {
-	zlib := sync.GetZlibWriter(w)
 	return &Writer{
 		raw:  w,
-		zlib: zlib,
+		zlib: zlib.NewWriter(w),
 	}
 }
 
@@ -102,7 +100,6 @@ func (w *Writer) Hash() plumbing.Hash {
 // Calling Close does not close the wrapped io.Writer originally passed to
 // NewWriter.
 func (w *Writer) Close() error {
-	defer sync.PutZlibWriter(w.zlib)
 	if err := w.zlib.Close(); err != nil {
 		return err
 	}

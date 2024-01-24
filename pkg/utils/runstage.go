@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 	"gopkg.in/yaml.v3"
 
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
