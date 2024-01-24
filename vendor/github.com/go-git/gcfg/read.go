@@ -3,16 +3,16 @@ package gcfg
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
-	"gopkg.in/warnings.v0"
-
 	"github.com/go-git/gcfg/scanner"
 	"github.com/go-git/gcfg/token"
+	"gopkg.in/warnings.v0"
 )
 
-var unescape = map[rune]rune{'\\': '\\', '"': '"', 'n': '\n', 't': '\t', 'b': '\b', '\n': '\n'}
+var unescape = map[rune]rune{'\\': '\\', '"': '"', 'n': '\n', 't': '\t', 'b': '\b'}
 
 // no error: invalid literals should be caught by scanner
 func unquote(s string) string {
@@ -224,7 +224,7 @@ func readInto(config interface{}, fset *token.FileSet, file *token.File,
 //
 // If callback returns an error, ReadWithCallback terminates with an error too.
 func ReadWithCallback(reader io.Reader, callback func(string, string, string, string, bool) error) error {
-	src, err := io.ReadAll(reader)
+	src, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func ReadWithCallback(reader io.Reader, callback func(string, string, string, st
 // ReadInto reads gcfg formatted data from reader and sets the values into the
 // corresponding fields in config.
 func ReadInto(config interface{}, reader io.Reader) error {
-	src, err := io.ReadAll(reader)
+	src, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func ReadFileInto(config interface{}, filename string) error {
 		return err
 	}
 	defer f.Close()
-	src, err := io.ReadAll(f)
+	src, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}

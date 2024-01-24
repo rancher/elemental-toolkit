@@ -1,4 +1,3 @@
-//go:build plan9
 // +build plan9
 
 package osfs
@@ -83,9 +82,4 @@ func dirwstat(name string, d *syscall.Dir) error {
 		return &os.PathError{"dirwstat", name, err}
 	}
 	return nil
-}
-
-func umask(new int) func() {
-	return func() {
-	}
 }

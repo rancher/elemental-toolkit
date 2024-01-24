@@ -47,8 +47,6 @@ func (c *Compressed) parse(r io.Reader) error {
 	}
 
 	switch buf[0] {
-	case 0:
-		c.Body = r
 	case 1:
 		c.Body = flate.NewReader(r)
 	case 2:

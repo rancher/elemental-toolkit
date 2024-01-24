@@ -84,8 +84,11 @@ func (w *Writer) OnFooter(h plumbing.Hash) error {
 	w.checksum = h
 	w.finished = true
 	_, err := w.createIndex()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 // creatIndex returns a filled MemoryIndex with the information filled by
@@ -136,23 +139,15 @@ func (w *Writer) createIndex() (*MemoryIndex, error) {
 
 		offset := o.Offset
 		if offset > math.MaxInt32 {
-			var err error
-			offset, err = w.addOffset64(offset)
-			if err != nil {
-				return nil, err
-			}
+			offset = w.addOffset64(offset)
 		}
 
 		buf.Truncate(0)
-		if err := binary.WriteUint32(buf, uint32(offset)); err != nil {
-			return nil, err
-		}
+		binary.WriteUint32(buf, uint32(offset))
 		idx.Offset32[bucket] = append(idx.Offset32[bucket], buf.Bytes()...)
 
 		buf.Truncate(0)
-		if err := binary.WriteUint32(buf, o.CRC32); err != nil {
-			return nil, err
-		}
+		binary.WriteUint32(buf, o.CRC32)
 		idx.CRC32[bucket] = append(idx.CRC32[bucket], buf.Bytes()...)
 	}
 
@@ -166,17 +161,15 @@ func (w *Writer) createIndex() (*MemoryIndex, error) {
 	return idx, nil
 }
 
-func (w *Writer) addOffset64(pos uint64) (uint64, error) {
+func (w *Writer) addOffset64(pos uint64) uint64 {
 	buf := new(bytes.Buffer)
-	if err := binary.WriteUint64(buf, pos); err != nil {
-		return 0, err
-	}
-
+	binary.WriteUint64(buf, pos)
 	w.index.Offset64 = append(w.index.Offset64, buf.Bytes()...)
+
 	index := uint64(w.offset64 | (1 << 31))
 	w.offset64++
 
-	return index, nil
+	return index
 }
 
 func (o objects) Len() int {

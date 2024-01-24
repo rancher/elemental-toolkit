@@ -8,7 +8,6 @@ import (
 	encbin "encoding/binary"
 
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/hash"
 )
 
 const (
@@ -54,8 +53,8 @@ type MemoryIndex struct {
 	Offset32         [][]byte
 	CRC32            [][]byte
 	Offset64         []byte
-	PackfileChecksum [hash.Size]byte
-	IdxChecksum      [hash.Size]byte
+	PackfileChecksum [20]byte
+	IdxChecksum      [20]byte
 
 	offsetHash       map[int64]plumbing.Hash
 	offsetHashIsFull bool

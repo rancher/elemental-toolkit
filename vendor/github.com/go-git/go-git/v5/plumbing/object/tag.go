@@ -1,16 +1,18 @@
 package object
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
+	stdioutil "io/ioutil"
 	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/utils/ioutil"
-	"github.com/go-git/go-git/v5/utils/sync"
 )
 
 // Tag represents an annotated tag object. It points to a single git object of
@@ -91,9 +93,9 @@ func (t *Tag) Decode(o plumbing.EncodedObject) (err error) {
 	}
 	defer ioutil.CheckClose(reader, &err)
 
-	r := sync.GetBufioReader(reader)
-	defer sync.PutBufioReader(r)
-
+	r := bufPool.Get().(*bufio.Reader)
+	defer bufPool.Put(r)
+	r.Reset(reader)
 	for {
 		var line []byte
 		line, err = r.ReadBytes('\n')
@@ -126,15 +128,40 @@ func (t *Tag) Decode(o plumbing.EncodedObject) (err error) {
 		}
 	}
 
-	data, err := io.ReadAll(r)
+	data, err := stdioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
-	if sm, _ := parseSignedBytes(data); sm >= 0 {
-		t.PGPSignature = string(data[sm:])
-		data = data[:sm]
+
+	var pgpsig bool
+	// Check if data contains PGP signature.
+	if bytes.Contains(data, []byte(beginpgp)) {
+		// Split the lines at newline.
+		messageAndSig := bytes.Split(data, []byte("\n"))
+
+		for _, l := range messageAndSig {
+			if pgpsig {
+				if bytes.Contains(l, []byte(endpgp)) {
+					t.PGPSignature += endpgp + "\n"
+					break
+				} else {
+					t.PGPSignature += string(l) + "\n"
+				}
+				continue
+			}
+
+			// Check if it's the beginning of a PGP signature.
+			if bytes.Contains(l, []byte(beginpgp)) {
+				t.PGPSignature += beginpgp + "\n"
+				pgpsig = true
+				continue
+			}
+
+			t.Message += string(l) + "\n"
+		}
+	} else {
+		t.Message = string(data)
 	}
-	t.Message = string(data)
 
 	return nil
 }

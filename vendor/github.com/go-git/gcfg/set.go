@@ -2,7 +2,6 @@ package gcfg
 
 import (
 	"bytes"
-	"encoding"
 	"encoding/gob"
 	"fmt"
 	"math/big"
@@ -11,9 +10,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"gopkg.in/warnings.v0"
-
 	"github.com/go-git/gcfg/types"
+	"gopkg.in/warnings.v0"
 )
 
 type tag struct {
@@ -67,7 +65,7 @@ var setters = []setter{
 }
 
 func textUnmarshalerSetter(d interface{}, blank bool, val string, t tag) error {
-	dtu, ok := d.(encoding.TextUnmarshaler)
+	dtu, ok := d.(textUnmarshaler)
 	if !ok {
 		return errUnsupportedType
 	}

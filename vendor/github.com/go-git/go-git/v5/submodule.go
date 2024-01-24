@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"path"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/index"
-	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 var (
@@ -133,29 +133,29 @@ func (s *Submodule) Repository() (*Repository, error) {
 		return nil, err
 	}
 
-	moduleEndpoint, err := transport.NewEndpoint(s.c.URL)
+	moduleURL, err := url.Parse(s.c.URL)
 	if err != nil {
 		return nil, err
 	}
 
-	if !path.IsAbs(moduleEndpoint.Path) && moduleEndpoint.Protocol == "file" {
+	if !path.IsAbs(moduleURL.Path) {
 		remotes, err := s.w.r.Remotes()
 		if err != nil {
 			return nil, err
 		}
 
-		rootEndpoint, err := transport.NewEndpoint(remotes[0].c.URLs[0])
+		rootURL, err := url.Parse(remotes[0].c.URLs[0])
 		if err != nil {
 			return nil, err
 		}
 
-		rootEndpoint.Path = path.Join(rootEndpoint.Path, moduleEndpoint.Path)
-		*moduleEndpoint = *rootEndpoint
+		rootURL.Path = path.Join(rootURL.Path, moduleURL.Path)
+		*moduleURL = *rootURL
 	}
 
 	_, err = r.CreateRemote(&config.RemoteConfig{
 		Name: DefaultRemoteName,
-		URLs: []string{moduleEndpoint.String()},
+		URLs: []string{moduleURL.String()},
 	})
 
 	return r, err
@@ -243,7 +243,7 @@ func (s *Submodule) fetchAndCheckout(
 	ctx context.Context, r *Repository, o *SubmoduleUpdateOptions, hash plumbing.Hash,
 ) error {
 	if !o.NoFetch {
-		err := r.FetchContext(ctx, &FetchOptions{Auth: o.Auth, Depth: o.Depth})
+		err := r.FetchContext(ctx, &FetchOptions{Auth: o.Auth})
 		if err != nil && err != NoErrAlreadyUpToDate {
 			return err
 		}
@@ -265,7 +265,6 @@ func (s *Submodule) fetchAndCheckout(
 			err := r.FetchContext(ctx, &FetchOptions{
 				Auth:     o.Auth,
 				RefSpecs: []config.RefSpec{refSpec},
-				Depth:    o.Depth,
 			})
 			if err != nil && err != NoErrAlreadyUpToDate && err != ErrExactSHA1NotSupported {
 				return err

@@ -32,7 +32,7 @@ func NewOID(bytes []byte) *OID {
 		panic("encoding: NewOID argument length is reserved")
 	default:
 		if len(bytes) > maxOID {
-			panic("encoding: NewOID argument too large")
+			panic("encoding: NewOID argment too large")
 		}
 	}
 

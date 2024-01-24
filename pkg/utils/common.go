@@ -30,7 +30,7 @@ import (
 
 	"github.com/distribution/distribution/reference"
 	"github.com/joho/godotenv"
-	"github.com/twpayne/go-vfs"
+	"github.com/twpayne/go-vfs/v4"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
