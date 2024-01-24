@@ -1,3 +1,10 @@
+go: inconsistent vendoring in /home/frelon/src/elemental-toolkit:
+	github.com/rancher/yip@v1.4.6: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
+	github.com/mudler/yip@v1.4.6: is marked as explicit in vendor/modules.txt, but not explicitly required in go.mod
+
+	To ignore the vendor directory, use -mod=readonly or -mod=mod.
+	To sync the vendor directory, run:
+		go mod vendor
 /*
 Copyright © 2022 - 2024 SUSE LLC
 
@@ -19,11 +26,11 @@ package cloudinit
 import (
 	"path/filepath"
 
-	"github.com/mudler/yip/pkg/executor"
-	"github.com/mudler/yip/pkg/plugins"
-	"github.com/mudler/yip/pkg/schema"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/yip/pkg/executor"
+	"github.com/rancher/yip/pkg/plugins"
+	"github.com/rancher/yip/pkg/schema"
 	v1vfs "github.com/twpayne/go-vfs"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"

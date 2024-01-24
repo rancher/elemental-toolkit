@@ -1,3 +1,10 @@
+go: inconsistent vendoring in /home/frelon/src/elemental-toolkit:
+	github.com/rancher/yip@v1.4.6: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
+	github.com/mudler/yip@v1.4.6: is marked as explicit in vendor/modules.txt, but not explicitly required in go.mod
+
+	To ignore the vendor directory, use -mod=readonly or -mod=mod.
+	To sync the vendor directory, run:
+		go mod vendor
 /*
 Copyright © 2022 - 2024 SUSE LLC
 
@@ -24,7 +31,7 @@ import (
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 
-	"github.com/mudler/yip/pkg/schema"
+	"github.com/rancher/yip/pkg/schema"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
