@@ -10,12 +10,12 @@ if getargbool 0 elemental.disable; then
 fi
 
 # Omit any immutable rootfs module logic if no image path provided
-elemental_image=$(getarg elemental.image=)
-[ -z "${elemental_image}" ] && exit 0
+cos_img=$(getarg cos-img/filename=)
+elemental_img=$(getarg elemental.image=)
+[ -z "${cos_img}" && -z "${elemental_img}" ] && exit 0
+[ -z "${cos_img}" ] && cos_img="/cOS/${elemental_img}.img"
 
 [ -z "${root}" ] && root=$(getarg root=)
-
-img=/cOS/${elemental_image}.img
 
 root_perm="ro"
 
@@ -71,7 +71,7 @@ mkdir -p "$GENERATOR_DIR/$dev.device.d"
     echo "RequiresMountsFor=${root_part_mnt}"
     echo "[Mount]"
     echo "Where=/sysroot"
-    echo "What=${root_part_mnt}/${img#/}"
+    echo "What=${root_part_mnt}/${cos_img#/}"
     echo "Options=${root_perm},suid,dev,exec,auto,nouser,async"
 } > "$GENERATOR_DIR"/sysroot.mount
 
