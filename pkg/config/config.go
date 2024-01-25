@@ -373,6 +373,12 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 		}
 	}
 
+	if ep.EFI != nil {
+		if ep.EFI.MountPoint == "" {
+			ep.EFI.MountPoint = constants.EfiDir
+		}
+	}
+
 	// This is needed if we want to use the persistent as tmpdir for the upgrade images
 	// as tmpfs is 25% of the total RAM, we cannot rely on the tmp dir having enough space for our image
 	// This enables upgrades on low ram devices
