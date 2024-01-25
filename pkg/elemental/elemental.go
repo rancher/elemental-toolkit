@@ -108,13 +108,18 @@ func createPartitions(c v1.Config, disk *partitioner.Disk, parts v1.PartitionLis
 
 // MountPartitions mounts configured partitions. Partitions with an unset mountpoint are not mounted.
 // Note umounts must be handled by caller logic.
-func MountPartitions(c v1.Config, parts v1.PartitionList) error {
+func MountPartitions(c v1.Config, parts v1.PartitionList, overwriteFlags ...string) error {
 	c.Logger.Infof("Mounting disk partitions")
 	var err error
+	var flags []string
 
 	for _, part := range parts {
 		if part.MountPoint != "" {
-			err = MountPartition(c, part, "rw")
+			flags = part.Flags
+			if len(overwriteFlags) > 0 {
+				flags = overwriteFlags
+			}
+			err = MountPartition(c, part, flags...)
 			if err != nil {
 				_ = UnmountPartitions(c, parts)
 				return err

@@ -175,7 +175,7 @@ func (r ResetAction) Run() (err error) {
 		}
 	}
 	// Mount configured partitions
-	err = elemental.MountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery))
+	err = elemental.MountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(false, r.spec.Partitions.Recovery), "rw")
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountPartitions)
 	}

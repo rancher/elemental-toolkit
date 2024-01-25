@@ -168,7 +168,7 @@ func (i InstallAction) Run() (err error) {
 		return err
 	}
 
-	err = elemental.MountPartitions(i.cfg.Config, i.spec.Partitions.PartitionsByMountPoint(false))
+	err = elemental.MountPartitions(i.cfg.Config, i.spec.Partitions.PartitionsByMountPoint(false), "rw")
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountPartitions)
 	}
