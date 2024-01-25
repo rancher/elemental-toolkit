@@ -17,7 +17,6 @@ limitations under the License.
 package elemental
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -27,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/partitioner"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
@@ -107,14 +107,18 @@ func createPartitions(c v1.Config, disk *partitioner.Disk, parts v1.PartitionLis
 }
 
 // MountPartitions mounts configured partitions. Partitions with an unset mountpoint are not mounted.
-// Note umounts must be handled by caller logic.
+// Paritions already mounted are not remounted. Note umounts must be handled by caller logic.
 func MountPartitions(c v1.Config, parts v1.PartitionList, overwriteFlags ...string) error {
 	c.Logger.Infof("Mounting disk partitions")
 	var err error
 	var flags []string
 
 	for _, part := range parts {
-		if part.MountPoint != "" {
+		if part.MountPoint == "" {
+			c.Logger.Debugf("Not mounting partition '%s', mountpoint undefined", part.Name)
+			continue
+		}
+		if ok, _ := IsMounted(c, part); !ok {
 			flags = part.Flags
 			if len(overwriteFlags) > 0 {
 				flags = overwriteFlags
@@ -124,33 +128,38 @@ func MountPartitions(c v1.Config, parts v1.PartitionList, overwriteFlags ...stri
 				_ = UnmountPartitions(c, parts)
 				return err
 			}
+		} else {
+			c.Logger.Debugf("Not mounting partition '%s', it is already mounted", part.Name)
 		}
 	}
 
 	return err
 }
 
-// UnmountPartitions unmounts configured partitiosn. Partitions with an unset mountpoint are not unmounted.
+// UnmountPartitions unmounts configured partitions. Partitions with an unset mountpoint are ignored.
+// Already unmounted partitions are also ignored.
 func UnmountPartitions(c v1.Config, parts v1.PartitionList) error {
+	var errs error
 	c.Logger.Infof("Unmounting disk partitions")
-	var err error
-	errMsg := ""
-	failure := false
 
 	// If there is an early error we still try to unmount other partitions
 	for _, part := range parts {
-		if part.MountPoint != "" {
-			err = UnmountPartition(c, part)
+		if part.MountPoint == "" {
+			c.Logger.Debugf("Not unmounting partition '%s', mountpoint undefined", part.Name)
+			continue
+		}
+		if ok, _ := IsMounted(c, part); ok {
+			err := UnmountPartition(c, part)
 			if err != nil {
-				errMsg += fmt.Sprintf("Failed to unmount %s\n", part.MountPoint)
-				failure = true
+				c.Logger.Errorf("Failed to unmount %s\n", part.MountPoint)
+				errs = multierror.Append(errs, err)
 			}
+		} else {
+			c.Logger.Debugf("Not unmounting partition '%s', already unmounted", part.Name)
 		}
 	}
-	if failure {
-		return errors.New(errMsg)
-	}
-	return nil
+
+	return errs
 }
 
 // Is Mounted checks if the given partition is mounted or not

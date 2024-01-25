@@ -186,10 +186,26 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Mounts disk partitions", func() {
+			// Ignores an already unmounted parition
+			Expect(elemental.MountPartition(*config, parts.PartitionsByMountPoint(false)[0])).To(Succeed())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(1))
+
+			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
+			Expect(err).To(BeNil())
+			lst, _ = mounter.List()
+			Expect(len(lst)).To(Equal(len(parts.PartitionsByMountPoint(false))))
+		})
+
+		It("Ignores partitions with undefiend mountpoints", func() {
+			parts.EFI.MountPoint = ""
+
 			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
 			Expect(err).To(BeNil())
 			lst, _ := mounter.List()
-			Expect(len(lst)).To(Equal(5))
+			for _, i := range lst {
+				Expect(i.Path).NotTo(Equal("/dev/device1"))
+			}
 		})
 
 		It("Mounts disk partitions excluding recovery", func() {
@@ -216,6 +232,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 	Describe("UnmountPartitions", Label("UnmountPartitions", "disk", "partition", "unmount"), func() {
 		var parts v1.ElementalPartitions
+
 		BeforeEach(func() {
 			parts = conf.NewInstallElementalPartitions()
 
@@ -232,13 +249,28 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 			err = elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
 			Expect(err).ToNot(HaveOccurred())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(len(parts.PartitionsByMountPoint(false))))
 		})
 
 		It("Unmounts disk partitions", func() {
+			Expect(elemental.UnmountPartition(*config, parts.PartitionsByMountPoint(false)[0])).To(Succeed())
+			lst, _ := mounter.List()
+			Expect(len(lst)).To(Equal(len(parts.PartitionsByMountPoint(false)) - 1))
+
+			err := elemental.UnmountPartitions(*config, parts.PartitionsByMountPoint(true))
+			Expect(err).To(BeNil())
+			lst, _ = mounter.List()
+			Expect(len(lst)).To(Equal(0))
+		})
+
+		It("Ignores partitions with undefiend mountpoints", func() {
+			parts.EFI.MountPoint = ""
+
 			err := elemental.UnmountPartitions(*config, parts.PartitionsByMountPoint(true))
 			Expect(err).To(BeNil())
 			lst, _ := mounter.List()
-			Expect(len(lst)).To(Equal(0))
+			Expect(len(lst)).To(Equal(1))
 		})
 
 		It("Fails to unmount disk partitions", func() {

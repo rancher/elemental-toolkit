@@ -228,6 +228,8 @@ func NewMountSpec(cfg v1.Config) (*v1.MountSpec, error) {
 	if err != nil {
 		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
 	}
+
+	// Lists detected partitions on current system including mountpoint if mounted
 	parts, err := utils.GetAllPartitions()
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
@@ -241,11 +243,15 @@ func NewMountSpec(cfg v1.Config) (*v1.MountSpec, error) {
 	}
 	if ep.OEM != nil && ep.OEM.MountPoint == "" {
 		ep.OEM.MountPoint = constants.OEMDir
-		ep.OEM.Flags = []string{"rw", "defaults"}
 	}
 	if ep.Persistent != nil && ep.Persistent.MountPoint == "" {
 		ep.Persistent.MountPoint = constants.PersistentDir
-		ep.Persistent.Flags = []string{"rw", "defaults"}
+	}
+	if ep.Recovery != nil {
+		ep.Recovery.Flags = []string{"ro", "defaults"}
+	}
+	if ep.State != nil {
+		ep.State.Flags = []string{"ro", "defaults"}
 	}
 	if (ep.Recovery == nil || ep.Recovery.MountPoint == "") &&
 		(ep.State == nil || ep.State.MountPoint == "") {

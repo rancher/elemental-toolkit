@@ -57,6 +57,7 @@ func (e FakeMounter) Unmount(target string) error {
 
 func (e FakeMounter) IsLikelyNotMountPoint(file string) (bool, error) {
 	mnts, _ := e.List()
+
 	for _, mnt := range mnts {
 		if file == mnt.Path {
 			return false, nil

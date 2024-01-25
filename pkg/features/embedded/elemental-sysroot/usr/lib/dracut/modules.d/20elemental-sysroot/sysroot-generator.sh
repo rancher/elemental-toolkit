@@ -8,6 +8,9 @@ root_part_mnt="/run/initramfs/elemental-state"
 if getargbool 0 elemental.disable; then
     exit 0
 fi
+if getargbool 0 rd.cos.disable; then
+    exit 0
+fi
 
 # Omit any immutable rootfs module logic if no image path provided
 cos_img=$(getarg cos-img/filename=)

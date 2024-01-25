@@ -298,9 +298,6 @@ func (spec *MountSpec) Sanitize() error {
 
 	if spec.Mode == constants.RecoveryImgName {
 		spec.Partitions.Persistent = nil
-		spec.Partitions.Recovery.MountPoint = constants.RunningStateDir
-	} else {
-		spec.Partitions.State.MountPoint = constants.RunningStateDir
 	}
 
 	return nil
