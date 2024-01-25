@@ -44,14 +44,14 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 		return err
 	}
 
-	if spec.Partitions.Persistent != nil {
+	if ok, _ := elemental.IsMounted(cfg.Config, spec.Partitions.Persistent); ok {
 		cfg.Logger.Debugf("Mounting persistent directories")
 		if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
 			cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
 			return err
 		}
 	} else {
-		cfg.Logger.Warn("No persistent partition defined, omitting any persistent paths configuration")
+		cfg.Logger.Warn("No persistent partition defined or mounted, omitting any persistent paths configuration")
 	}
 
 	cfg.Logger.Debugf("Writing fstab")
@@ -213,64 +213,57 @@ func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 
 	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
 		if part.Path == "" {
-			// Lets error out only after 10 attempts to find the device
-			device, err := utils.GetDeviceByLabel(cfg.Runner, part.FilesystemLabel, 10)
-			if err != nil {
-				cfg.Logger.Errorf("Could not find a device with label %s", part.FilesystemLabel)
-				return err
-			}
-			part.Path = device
+			cfg.Logger.Warnf("Partition '%s' has undefined device, can't be included in fstab", part.Name)
+			continue
 		}
 
 		data = data + fstab(part.Path, part.MountPoint, "auto", part.Flags)
 	}
 
 	for _, rw := range spec.Ephemeral.Paths {
-		trimmed := strings.TrimPrefix(rw, "/")
-		pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
-		upper := fmt.Sprintf("%s/%s/upper", constants.OverlayDir, pathName)
-		work := fmt.Sprintf("%s/%s/work", constants.OverlayDir, pathName)
-
-		options := []string{"defaults"}
-		options = append(options, fmt.Sprintf("lowerdir=%s", rw))
-		options = append(options, fmt.Sprintf("upperdir=%s", upper))
-		options = append(options, fmt.Sprintf("workdir=%s", work))
-		options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.OverlayDir))
-		data = data + fstab("overlay", rw, "overlay", options)
+		data += overlayLine(rw, constants.OverlayDir, constants.OverlayDir)
 	}
 
-	for _, path := range spec.Persistent.Paths {
-		if spec.Persistent.Mode == constants.OverlayMode {
-			trimmed := strings.TrimPrefix(path, "/")
-			pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
-			upper := fmt.Sprintf("%s/%s/upper", constants.PersistentStateDir, pathName)
-			work := fmt.Sprintf("%s/%s/work", constants.PersistentStateDir, pathName)
+	if ok, _ := elemental.IsMounted(cfg.Config, spec.Partitions.Persistent); ok {
+		for _, path := range spec.Persistent.Paths {
+			if spec.Persistent.Mode == constants.OverlayMode {
+				data += overlayLine(path, constants.PersistentStateDir, constants.PersistentDir)
+				continue
+			}
 
-			options := []string{"defaults"}
-			options = append(options, fmt.Sprintf("lowerdir=%s", path))
-			options = append(options, fmt.Sprintf("upperdir=%s", upper))
-			options = append(options, fmt.Sprintf("workdir=%s", work))
-			options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", constants.PersistentDir))
-			data = data + fstab("overlay", path, "overlay", options)
+			if spec.Persistent.Mode == constants.BindMode {
+				trimmed := strings.TrimPrefix(path, "/")
+				pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
+				stateDir := fmt.Sprintf("%s/%s", constants.PersistentStateDir, pathName)
 
-			continue
+				data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
+				continue
+			}
+
+			return fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode)
 		}
-
-		if spec.Persistent.Mode == constants.BindMode {
-			trimmed := strings.TrimPrefix(path, "/")
-			pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
-			stateDir := fmt.Sprintf("%s/%s", constants.PersistentStateDir, pathName)
-
-			data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
-			continue
-		}
-
-		return fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode)
 	}
 
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
 }
 
 func fstab(device, path, fstype string, flags []string) string {
+	if len(flags) == 0 {
+		flags = []string{"defaults"}
+	}
 	return fmt.Sprintf("%s\t%s\t%s\t%s\t0\t0\n", device, path, fstype, strings.Join(flags, ","))
+}
+
+func overlayLine(path, upperPath, requriedMount string) string {
+	trimmed := strings.TrimPrefix(path, "/")
+	pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
+	upper := fmt.Sprintf("%s/%s/upper", upperPath, pathName)
+	work := fmt.Sprintf("%s/%s/work", upperPath, pathName)
+
+	options := []string{"defaults"}
+	options = append(options, fmt.Sprintf("lowerdir=%s", path))
+	options = append(options, fmt.Sprintf("upperdir=%s", upper))
+	options = append(options, fmt.Sprintf("workdir=%s", work))
+	options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", requriedMount))
+	return fstab("overlay", path, "overlay", options)
 }

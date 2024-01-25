@@ -467,6 +467,34 @@ var _ = Describe("Config", Label("config"), func() {
 			})
 		})
 		Describe("Read MountSpec", Label("mount"), func() {
+			var ghwTest v1mock.GhwMock
+			BeforeEach(func() {
+				mainDisk := block.Disk{
+					Name: "device",
+					Partitions: []*block.Partition{
+						{
+							Name:            "device2",
+							FilesystemLabel: "COS_STATE",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
+						},
+						{
+							Name:            "device3",
+							FilesystemLabel: "COS_RECOVERY",
+							Type:            "ext4",
+							MountPoint:      constants.RunningStateDir,
+						},
+					},
+				}
+				ghwTest = v1mock.GhwMock{}
+				ghwTest.AddDisk(mainDisk)
+				ghwTest.CreateDevices()
+			})
+
+			AfterEach(func() {
+				ghwTest.Clean()
+			})
+
 			It("inits a mount spec according to given configs", func() {
 				err := os.Setenv("ELEMENTAL_MOUNT_SYSROOT", "/newroot")
 				spec, err := ReadMountSpec(cfg, nil)
