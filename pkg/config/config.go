@@ -222,52 +222,40 @@ func NewInitSpec() *v1.InitSpec {
 	}
 }
 
-func NewMountSpec() *v1.MountSpec {
-	partitions := v1.ElementalPartitions{
-		EFI: &v1.Partition{
-			FilesystemLabel: constants.EfiLabel,
-			Size:            constants.EfiSize,
-			Name:            constants.EfiPartName,
-			FS:              constants.EfiFs,
-			MountPoint:      constants.EfiDir,
-			Flags:           []string{"ro"},
-		},
-		State: &v1.Partition{
-			FilesystemLabel: constants.StateLabel,
-			Size:            constants.StateSize,
-			Name:            constants.StatePartName,
-			FS:              constants.LinuxFs,
-			Flags:           []string{"defaults"},
-		},
-		Persistent: &v1.Partition{
-			FilesystemLabel: constants.PersistentLabel,
-			Size:            constants.PersistentSize,
-			Name:            constants.PersistentPartName,
-			FS:              constants.LinuxFs,
-			MountPoint:      constants.PersistentDir,
-			Flags:           []string{"defaults"},
-		},
-		OEM: &v1.Partition{
-			FilesystemLabel: constants.OEMLabel,
-			Size:            constants.OEMSize,
-			Name:            constants.OEMPartName,
-			FS:              constants.LinuxFs,
-			MountPoint:      constants.OEMPath,
-			Flags:           []string{"defaults"},
-		},
-		Recovery: &v1.Partition{
-			FilesystemLabel: constants.RecoveryLabel,
-			Size:            constants.RecoverySize,
-			Name:            constants.RecoveryPartName,
-			FS:              constants.LinuxFs,
-			Flags:           []string{"defaults"},
-		},
+func NewMountSpec(cfg v1.Config) (*v1.MountSpec, error) {
+	// Check current installed system setup and discover partitions
+	installState, err := cfg.LoadInstallState()
+	if err != nil {
+		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
+	}
+	parts, err := utils.GetAllPartitions()
+	if err != nil {
+		return nil, fmt.Errorf("could not read host partitions")
+	}
+
+	ep := v1.NewElementalPartitionsFromList(parts, installState)
+
+	if ep.EFI != nil && ep.EFI.MountPoint == "" {
+		ep.EFI.MountPoint = constants.EfiDir
+		ep.EFI.Flags = []string{"ro", "defaults"}
+	}
+	if ep.OEM != nil && ep.OEM.MountPoint == "" {
+		ep.OEM.MountPoint = constants.OEMDir
+		ep.OEM.Flags = []string{"rw", "defaults"}
+	}
+	if ep.Persistent != nil && ep.Persistent.MountPoint == "" {
+		ep.Persistent.MountPoint = constants.PersistentDir
+		ep.Persistent.Flags = []string{"rw", "defaults"}
+	}
+	if (ep.Recovery == nil || ep.Recovery.MountPoint == "") &&
+		(ep.State == nil || ep.State.MountPoint == "") {
+		return nil, fmt.Errorf("neither state or recovery partitions are mounted")
 	}
 
 	return &v1.MountSpec{
 		Sysroot:    "/sysroot",
 		WriteFstab: true,
-		Partitions: partitions,
+		Partitions: ep,
 		Ephemeral: v1.EphemeralMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",
@@ -277,7 +265,7 @@ func NewMountSpec() *v1.MountSpec {
 			Mode:  constants.OverlayMode,
 			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/var/log"},
 		},
-	}
+	}, nil
 }
 
 func NewInstallElementalPartitions() v1.ElementalPartitions {

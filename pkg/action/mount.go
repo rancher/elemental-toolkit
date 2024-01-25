@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
@@ -31,16 +32,26 @@ const overlaySuffix = ".overlay"
 func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	cfg.Logger.Info("Running mount command")
 
+	cfg.Logger.Debug("Mounting elemental partitions")
+	if err := elemental.MountPartitions(cfg.Config, spec.Partitions.PartitionsByMountPoint(false)); err != nil {
+		cfg.Logger.Errorf("Error mounting elemental partitions: %s", err.Error())
+		return err
+	}
+
 	cfg.Logger.Debugf("Mounting ephemeral directories")
 	if err := MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral); err != nil {
 		cfg.Logger.Errorf("Error mounting overlays: %s", err.Error())
 		return err
 	}
 
-	cfg.Logger.Debugf("Mounting persistent directories")
-	if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
-		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
-		return err
+	if spec.Partitions.Persistent != nil {
+		cfg.Logger.Debugf("Mounting persistent directories")
+		if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
+			cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
+			return err
+		}
+	} else {
+		cfg.Logger.Warn("No persistent partition defined, omitting any persistent paths configuration")
 	}
 
 	cfg.Logger.Debugf("Writing fstab")
