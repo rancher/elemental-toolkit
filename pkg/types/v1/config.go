@@ -219,6 +219,8 @@ func (i *InstallSpec) Sanitize() error {
 	// Set default label for non squashfs images
 	if i.RecoverySystem.FS != constants.SquashFs && i.RecoverySystem.Label == "" {
 		i.RecoverySystem.Label = constants.SystemLabel
+	} else if i.RecoverySystem.FS == constants.SquashFs {
+		i.RecoverySystem.Label = ""
 	}
 
 	// Check for extra partitions having set its size to 0

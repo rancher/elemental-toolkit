@@ -97,14 +97,12 @@ const (
 	OEMDir             = "/run/elemental/oem"
 	PersistentDir      = "/run/elemental/persistent"
 	PersistentStateDir = "/run/elemental/persistent/.state"
-	ActiveDir          = "/run/elemental/active"
 	TransitionDir      = "/run/elemental/transition"
 	EfiDir             = "/run/elemental/efi"
 	ImgSrcDir          = "/run/elemental/imgsrc"
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
 	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
-	LegacyStateDir     = "/run/initramfs/cos-state"
 
 	// Running mode sentinel files
 	ActiveMode   = "/run/elemental/active_mode"
@@ -183,6 +181,7 @@ const (
 	LegacyImagesPath  = "cOS"
 	LegacyPassivePath = LegacyImagesPath + "/passive.img"
 	LegacyActivePath  = LegacyImagesPath + "/active.img"
+	LegacyStateDir    = "/run/initramfs/cos-state"
 )
 
 // GetDefaultSystemEcludes returns a list of transient paths

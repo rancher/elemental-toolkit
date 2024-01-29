@@ -197,9 +197,10 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	}
 
 	recoverySystem.Source = system
-	recoverySystem.FS = constants.SquashFs
-	recoverySystem.Label = ""
+	recoverySystem.FS = constants.LinuxImgFs
+	recoverySystem.Label = constants.SystemLabel
 	recoverySystem.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgFile)
+	recoverySystem.MountPoint = constants.TransitionDir
 
 	return &v1.InstallSpec{
 		Firmware:       v1.EFI,

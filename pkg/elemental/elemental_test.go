@@ -348,7 +348,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				Size:       32,
 				File:       filepath.Join(constants.StateDir, "some.img"),
 				FS:         constants.LinuxImgFs,
-				MountPoint: constants.ActiveDir,
+				MountPoint: constants.TransitionDir,
 				Source:     v1.NewDirSrc(constants.ISOBaseTree),
 			}
 			_ = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
