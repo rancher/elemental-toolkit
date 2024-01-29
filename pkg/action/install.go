@@ -198,7 +198,6 @@ func (i InstallAction) Run() (err error) {
 	err = i.bootloader.Install(
 		cnst.WorkingImgDir,
 		i.spec.Partitions.EFI.MountPoint,
-		i.spec.Partitions.EFI.FilesystemLabel,
 	)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.InstallGrub)

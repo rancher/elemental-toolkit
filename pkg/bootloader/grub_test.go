@@ -45,7 +45,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 	var err error
 	var grub *bootloader.Grub
 	var cfg *v1.Config
-	var rootDir, bootDir, efiDir string
+	var rootDir, efiDir string
 	var grubCfg, osRelease []byte
 	var efivars eleefi.Variables
 	var relativeTo string
@@ -67,10 +67,6 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 
 		// Root tree
 		rootDir = "/some/working/directory"
-		Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
-
-		// Boot directory
-		bootDir = "/some/other/working/directory"
 		Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
 
 		// Efi binaries
@@ -111,74 +107,74 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 
 	It("installs without errors", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).To(Succeed())
 
 		// Check grub config in EFI directory
-		data, err := fs.ReadFile(filepath.Join(bootDir, "/EFI/BOOT/grub.cfg"))
+		data, err := fs.ReadFile(filepath.Join(efiDir, "/EFI/BOOT/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 
-		data, err = fs.ReadFile(filepath.Join(bootDir, "/EFI/ELEMENTAL/grub.cfg"))
+		data, err = fs.ReadFile(filepath.Join(efiDir, "/EFI/ELEMENTAL/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check everything is copied in EFI directory
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/MokManager.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/MokManager.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/grub.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/grub.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/bootx64.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/bootx64.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/shim.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/shim.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/MokManager.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/MokManager.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/grub.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.efi"))
 		Expect(err).To(BeNil())
 	})
 
 	It("installs just fine without secure boot", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true), bootloader.WithSecureBoot(false))
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).To(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).To(Succeed())
 
 		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 
 		// Check secureboot files are NOT there
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/MokManager.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/MokManager.efi"))
 		Expect(err).NotTo(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/grub.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/grub.efi"))
 		Expect(err).NotTo(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/shim.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/shim.efi"))
 		Expect(err).NotTo(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/MokManager.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/MokManager.efi"))
 		Expect(err).NotTo(BeNil())
 
 		// Check grub image in EFI directory
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/BOOT/bootx64.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/bootx64.efi"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(constants.EfiDir, "EFI/ELEMENTAL/grub.efi"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.efi"))
 		Expect(err).To(BeNil())
 
 		// Check grub config in EFI directory
-		data, err := fs.ReadFile(filepath.Join(bootDir, "EFI/BOOT/grub.cfg"))
+		data, err := fs.ReadFile(filepath.Join(efiDir, "EFI/BOOT/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 
-		data, err = fs.ReadFile(filepath.Join(bootDir, "EFI/ELEMENTAL/grub.cfg"))
+		data, err = fs.ReadFile(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 	})
@@ -186,31 +182,31 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 	It("fails to install if squash4.mod is missing", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/squash4.mod"))).To(Succeed())
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).ToNot(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).ToNot(Succeed())
 	})
 
 	It("fails to install if it can't write efi boot entry", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(false), bootloader.WithGrubClearBootEntry(false))
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).ToNot(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).ToNot(Succeed())
 	})
 
 	It("fails to install if it can't clear efi boot entries", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(false), bootloader.WithGrubClearBootEntry(true))
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).ToNot(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).ToNot(Succeed())
 	})
 
 	It("fails to install if grub.cfg is missing", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, constants.GrubCfgPath, constants.GrubCfg))).To(Succeed())
-		Expect(grub.Install(rootDir, bootDir, "DEVICE_LABEL")).ToNot(Succeed())
+		Expect(grub.Install(rootDir, efiDir)).ToNot(Succeed())
 	})
 
 	It("installs grub.cfg without errors", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallConfig(rootDir, bootDir)).To(Succeed())
+		Expect(grub.InstallConfig(rootDir, efiDir)).To(Succeed())
 
 		// Check everything is copied in boot directory
-		data, err := fs.ReadFile(filepath.Join(bootDir, "EFI/ELEMENTAL/grub.cfg"))
+		data, err := fs.ReadFile(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.cfg"))
 		Expect(err).To(BeNil())
 		Expect(data).To(Equal(grubCfg))
 	})
@@ -218,125 +214,76 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 	It("fails to install grub.cfg without write permissions", func() {
 		cfg.Fs = vfs.NewReadOnlyFS(fs)
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallConfig(rootDir, bootDir)).NotTo(Succeed())
+		Expect(grub.InstallConfig(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install grub.cfg if the file is missing", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, constants.GrubCfgPath, constants.GrubCfg))).To(Succeed())
-		Expect(grub.InstallConfig(rootDir, bootDir)).NotTo(Succeed())
+		Expect(grub.InstallConfig(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("installs EFI binaries without errors", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
+		Expect(grub.InstallEFI(rootDir, efiDir)).To(Succeed())
 
-		// Check everything is copied in boot directory
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
+		// Check everything is copied in fallback directory
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/loopback.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/xzio.mod"))
 		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(bootDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
-
-		// Check everything is copied in EFI directory
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/MokManager.efi"))
 		Expect(err).To(BeNil())
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/grub.efi"))
 		Expect(err).To(BeNil())
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/bootx64.efi"))
 		Expect(err).To(BeNil())
+
+		// Check everything is copied in EFI directory
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/shim.efi"))
 		Expect(err).To(BeNil())
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/MokManager.efi"))
 		Expect(err).To(BeNil())
 		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.efi"))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/x86_64-efi/loopback.mod"))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/x86_64-efi/xzio.mod"))
+		Expect(err).To(BeNil())
+		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/x86_64-efi/squash4.mod"))
 		Expect(err).To(BeNil())
 	})
 
 	It("fails to install EFI binaries if some module is missing", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/xzio.mod"))).To(Succeed())
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
+		Expect(grub.InstallEFI(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install EFI binaries without write permission", func() {
 		cfg.Fs = vfs.NewReadOnlyFS(fs)
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
+		Expect(grub.InstallEFI(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install EFI binaries if efi image is not found", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/grub2/x86_64-efi/grub.efi"))).To(Succeed())
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
+		Expect(grub.InstallEFI(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install EFI binaries if shim image is not found", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/efi/x86_64/shim.efi"))).To(Succeed())
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
+		Expect(grub.InstallEFI(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install EFI binaries if mok not found", func() {
 		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
 		Expect(fs.Remove(filepath.Join(rootDir, "/usr/share/efi/x86_64/MokManager.efi"))).To(Succeed())
-		Expect(grub.InstallEFI(rootDir, bootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
-	})
-
-	It("installs EFI fallback binaries without errors", func() {
-		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFIFallbackBinaries(rootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
-
-		// Check everything is copied in EFI directory
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/MokManager.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/grub.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/bootx64.efi"))
-		Expect(err).To(BeNil())
-		// Elemental entry is not installed, just fallback
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL"))
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("installs EFI fallback binaries without errors for arm", func() {
-		cfg.Platform.Arch = "arm64"
-		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFIFallbackBinaries(rootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
-
-		// Check everything is copied in EFI directory
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/MokManager.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/grub.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT/bootaa64.efi"))
-		Expect(err).To(BeNil())
-		// Elemental entry is not installed, just fallback
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL"))
-		Expect(err).NotTo(BeNil())
-	})
-
-	It("fails to install EFI fallback binaries for an unsupported platform", func() {
-		cfg.Platform.Arch = "exotic-arch"
-		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFIFallbackBinaries(rootDir, efiDir, "DEVICE_LABEL")).NotTo(Succeed())
-	})
-
-	It("installs EFI Elemental binaries without errors", func() {
-		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
-		Expect(grub.InstallEFIElementalBinaries(rootDir, efiDir, "DEVICE_LABEL")).To(Succeed())
-
-		// Check everything is copied in EFI directory
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/MokManager.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/grub.efi"))
-		Expect(err).To(BeNil())
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/ELEMENTAL/shim.efi"))
-		Expect(err).To(BeNil())
-		// Fallback entry is not installed, just the elemental one
-		_, err = fs.Stat(filepath.Join(efiDir, "EFI/BOOT"))
-		Expect(err).NotTo(BeNil())
+		Expect(grub.InstallEFI(rootDir, efiDir)).NotTo(Succeed())
 	})
 
 	It("fails to install if it can't write efi boot entry", func() {
@@ -447,33 +394,33 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 
 	It("Sets default grub menu entry name from the os-release file", func() {
 		grub = bootloader.NewGrub(cfg)
-		Expect(grub.SetDefaultEntry(bootDir, rootDir, "")).To(Succeed())
+		Expect(grub.SetDefaultEntry(efiDir, rootDir, "")).To(Succeed())
 		Expect(runner.CmdsMatch([][]string{
-			{"grub2-editenv", filepath.Join(bootDir, constants.GrubOEMEnv), "set", "default_menu_entry=some-name"},
+			{"grub2-editenv", filepath.Join(efiDir, constants.GrubOEMEnv), "set", "default_menu_entry=some-name"},
 		})).To(BeNil())
 	})
 
 	It("Sets default grub menu entry name from the os-release file despite providing a default value", func() {
 		grub = bootloader.NewGrub(cfg)
-		Expect(grub.SetDefaultEntry(bootDir, rootDir, "this.is.ignored")).To(Succeed())
+		Expect(grub.SetDefaultEntry(efiDir, rootDir, "this.is.ignored")).To(Succeed())
 		Expect(runner.CmdsMatch([][]string{
-			{"grub2-editenv", filepath.Join(bootDir, constants.GrubOEMEnv), "set", "default_menu_entry=some-name"},
+			{"grub2-editenv", filepath.Join(efiDir, constants.GrubOEMEnv), "set", "default_menu_entry=some-name"},
 		})).To(BeNil())
 	})
 
 	It("Sets default grub menu entry name to the given value if other value in os-release file is found", func() {
 		Expect(fs.Remove(filepath.Join(rootDir, "/etc/os-release"))).To(Succeed())
 		grub = bootloader.NewGrub(cfg)
-		Expect(grub.SetDefaultEntry(bootDir, rootDir, "given-value")).To(Succeed())
+		Expect(grub.SetDefaultEntry(efiDir, rootDir, "given-value")).To(Succeed())
 		Expect(runner.CmdsMatch([][]string{
-			{"grub2-editenv", filepath.Join(bootDir, constants.GrubOEMEnv), "set", "default_menu_entry=given-value"},
+			{"grub2-editenv", filepath.Join(efiDir, constants.GrubOEMEnv), "set", "default_menu_entry=given-value"},
 		})).To(BeNil())
 	})
 
 	It("Does nothing if no value is provided and the os-release file does not contain any", func() {
 		Expect(fs.Remove(filepath.Join(rootDir, "/etc/os-release"))).To(Succeed())
 		grub = bootloader.NewGrub(cfg)
-		Expect(grub.SetDefaultEntry(bootDir, rootDir, "")).To(Succeed())
+		Expect(grub.SetDefaultEntry(efiDir, rootDir, "")).To(Succeed())
 		Expect(runner.CmdsMatch([][]string{})).To(BeNil())
 	})
 

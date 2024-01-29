@@ -209,7 +209,6 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	err = b.bootloader.InstallEFI(
 		activeRoot, b.roots[constants.EfiPartName],
-		b.roots[constants.EfiPartName], b.spec.Partitions.State.FilesystemLabel,
 	)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub efi binaries: %s", err.Error())

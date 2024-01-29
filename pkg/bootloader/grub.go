@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	defaultGrubPrefixes = []string{"/EFI/ELEMENTAL", "/EFI/BOOT"}
+	defaultGrubPrefixes = []string{constants.FallbackEFIPath, constants.EntryEFIPath}
 )
 
 func getGModulePatterns(module string) []string {
@@ -105,9 +105,9 @@ func WithSecureBoot(secureboot bool) func(g *Grub) error {
 	}
 }
 
-func WithGrubPrefix(prefix string) func(g *Grub) error {
+func WithGrubPrefixes(prefixes ...string) func(g *Grub) error {
 	return func(g *Grub) error {
-		g.grubPrefixes = append(g.grubPrefixes, prefix)
+		g.grubPrefixes = prefixes
 		return nil
 	}
 }
@@ -191,40 +191,29 @@ func (g *Grub) installModules(rootDir, bootDir string, modules ...string) error 
 	return nil
 }
 
-func (g *Grub) InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) error {
-	err := g.installModules(rootDir, bootDir, constants.GetDefaultGrubModules()...)
+func (g *Grub) InstallEFI(rootDir, efiDir string) error {
+	err := g.installModules(rootDir, efiDir, constants.GetDefaultGrubModules()...)
 	if err != nil {
 		return err
 	}
 
-	err = g.InstallEFIFallbackBinaries(rootDir, efiDir, deviceLabel)
-	if err != nil {
-		return err
-	}
-
-	err = g.InstallEFIElementalBinaries(rootDir, efiDir, deviceLabel)
-	if err != nil {
-		return err
+	for _, prefix := range g.grubPrefixes {
+		err = g.InstallEFIBinaries(rootDir, efiDir, prefix)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (g *Grub) InstallEFIFallbackBinaries(rootDir, efiDir, _ string) error {
-	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.FallbackEFIPath)
-}
-
-func (g *Grub) InstallEFIElementalBinaries(rootDir, efiDir, _ string) error {
-	return g.installEFIPartitionBinaries(rootDir, efiDir, constants.EntryEFIPath)
-}
-
-func (g *Grub) installEFIPartitionBinaries(rootDir, efiDir, efiPath string) error {
+func (g *Grub) InstallEFIBinaries(rootDir, efiDir, prefix string) error {
 	err := g.findEFIImages(rootDir)
 	if err != nil {
 		return err
 	}
 
-	installPath := filepath.Join(efiDir, efiPath)
+	installPath := filepath.Join(efiDir, prefix)
 	err = utils.MkdirAll(g.fs, installPath, constants.DirPerm)
 	if err != nil {
 		g.logger.Errorf("Error creating dirs: %s", err)
@@ -235,7 +224,7 @@ func (g *Grub) installEFIPartitionBinaries(rootDir, efiDir, efiPath string) erro
 	grubEfi := filepath.Join(installPath, filepath.Base(g.grubEfiImg))
 
 	var bootImg string
-	if efiPath == constants.FallbackEFIPath {
+	if prefix == constants.FallbackEFIPath {
 		switch g.platform.Arch {
 		case constants.ArchAmd64, constants.Archx86:
 			bootImg = filepath.Join(installPath, constants.EfiImgX86)
@@ -398,8 +387,8 @@ func (g *Grub) SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry strin
 }
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
-func (g *Grub) Install(rootDir, bootDir, deviceLabel string) (err error) {
-	err = g.InstallEFI(rootDir, bootDir, constants.EfiDir, deviceLabel)
+func (g *Grub) Install(rootDir, bootDir string) (err error) {
+	err = g.InstallEFI(rootDir, bootDir)
 	if err != nil {
 		return err
 	}
@@ -422,7 +411,7 @@ func (g *Grub) Install(rootDir, bootDir, deviceLabel string) (err error) {
 // rootDir is the root of the OS image, bootDir is the folder grub read the
 // configuration from, usually EFI partition mountpoint
 func (g Grub) InstallConfig(rootDir, bootDir string) error {
-	for _, path := range []string{constants.FallbackEFIPath, constants.EntryEFIPath} {
+	for _, path := range g.grubPrefixes {
 		grubFile := filepath.Join(rootDir, g.elementalCfg)
 		dstGrubFile := filepath.Join(bootDir, path, g.configFile)
 

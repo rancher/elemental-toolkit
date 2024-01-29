@@ -17,12 +17,11 @@ limitations under the License.
 package v1
 
 type Bootloader interface {
-	Install(rootDir, bootDir, deviceLabel string) (err error)
+	Install(rootDir, bootDir string) (err error)
 	InstallConfig(rootDir, bootDir string) error
 	DoEFIEntries(shimName, efiDir string) error
-	InstallEFI(rootDir, bootDir, efiDir, deviceLabel string) error
-	InstallEFIFallbackBinaries(rootDir, efiDir, deviceLabel string) error
-	InstallEFIElementalBinaries(rootDir, efiDir, deviceLabel string) error
+	InstallEFI(rootDir, efiDir string) error
+	InstallEFIBinaries(rootDir, efiDir, efiPath string) error
 	SetPersistentVariables(envFile string, vars map[string]string) error
 	SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry string) error
 }
