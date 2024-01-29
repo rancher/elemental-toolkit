@@ -351,8 +351,8 @@ func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
 	if u.spec.BootloaderUpgrade {
 		err = u.bootloader.Install(
 			u.snapshot.WorkDir,
-			u.spec.Partitions.State.MountPoint,
-			u.spec.Partitions.State.FilesystemLabel,
+			u.spec.Partitions.EFI.MountPoint,
+			u.spec.Partitions.EFI.FilesystemLabel,
 		)
 		if err != nil {
 			u.cfg.Logger.Errorf("failed installing grub: %v", err)
