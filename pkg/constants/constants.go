@@ -57,15 +57,14 @@ const (
 	HTTPTimeout        = 60
 	GPT                = "gpt"
 	BuildImgName       = "elemental"
-	//UsrLocalPath       = "/usr/local"
-	OEMPath        = "/oem"
-	PersistentPath = PersistentDir
-	ConfigDir      = "/etc/elemental"
-	OverlayMode    = "overlay"
-	BindMode       = "bind"
-	Tmpfs          = "tmpfs"
-	Autofs         = "auto"
-	Block          = "block"
+	OEMPath            = "/oem"
+	PersistentPath     = PersistentDir
+	ConfigDir          = "/etc/elemental"
+	OverlayMode        = "overlay"
+	BindMode           = "bind"
+	Tmpfs              = "tmpfs"
+	Autofs             = "auto"
+	Block              = "block"
 
 	// Maxium number of nested symlinks to resolve
 	MaxLinkDepth = 4
@@ -175,7 +174,7 @@ const (
 	Rsync = "rsync"
 
 	// Snapshotters
-	MaxSnaps                  = 4
+	MaxSnaps                  = 2
 	LoopDeviceSnapshotterType = "loopdevice"
 	ActiveSnapshot            = "active"
 	PassiveSnapshot           = "passive_%d"

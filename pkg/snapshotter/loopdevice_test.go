@@ -268,7 +268,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Expect(snap.ID).To(Equal(6))
 			Expect(snap.InProgress).To(BeTrue())
 			Expect(lp.CloseTransaction(snap)).To(Succeed())
-			Expect(lp.GetSnapshots()).To(Equal([]int{3, 4, 5, 6}))
+			Expect(lp.GetSnapshots()).To(Equal([]int{5, 6}))
 		})
 
 		It("closes a started transaction and cleans old snapshots up to current active", func() {
@@ -287,8 +287,8 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Expect(snap.InProgress).To(BeTrue())
 			Expect(lp.CloseTransaction(snap)).To(Succeed())
 
-			// Could not delete 2 as it is in use and stopped cleaning
-			Expect(lp.GetSnapshots()).To(Equal([]int{2, 3, 4, 5, 6}))
+			// Could not delete 2 as it is in use
+			Expect(lp.GetSnapshots()).To(Equal([]int{2, 5, 6}))
 		})
 
 		It("closes and drops a started transaction if snapshot is not in progress", func() {
