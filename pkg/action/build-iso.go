@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	grubPrefixDir  = "/EFI/BOOT"
 	isoBootCatalog = "/boot/boot.catalog"
 )
 
@@ -73,7 +72,7 @@ func NewBuildISOAction(cfg *v1.BuildConfig, spec *v1.LiveISO, opts ...BuildISOAc
 	}
 
 	if b.bootloader == nil {
-		b.bootloader = bootloader.NewGrub(&cfg.Config)
+		b.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubPrefixes(constants.FallbackEFIPath))
 	}
 
 	return b
@@ -187,27 +186,30 @@ func (b *BuildISOAction) ISORun() error {
 }
 
 func (b *BuildISOAction) PrepareEFI(rootDir, uefiDir string) error {
-	return b.bootloader.InstallEFIFallbackBinaries(rootDir, uefiDir, b.spec.Label)
+	err := b.renderGrubTemplate(uefiDir)
+	if err != nil {
+		return err
+	}
+	return b.bootloader.InstallEFI(rootDir, uefiDir)
 }
 
 func (b *BuildISOAction) PrepareISO(rootDir, imageDir string) error {
-	err := utils.MkdirAll(b.cfg.Fs, filepath.Join(imageDir, grubPrefixDir), constants.DirPerm)
+	// Include EFI contents in iso root too
+	return b.PrepareEFI(rootDir, imageDir)
+}
+
+func (b *BuildISOAction) renderGrubTemplate(rootDir string) error {
+	err := utils.MkdirAll(b.cfg.Fs, filepath.Join(rootDir, constants.FallbackEFIPath), constants.DirPerm)
 	if err != nil {
 		return err
 	}
 
 	// Write grub.cfg file
-	err = b.cfg.Fs.WriteFile(
-		filepath.Join(imageDir, grubPrefixDir, constants.GrubCfg),
+	return b.cfg.Fs.WriteFile(
+		filepath.Join(rootDir, constants.FallbackEFIPath, constants.GrubCfg),
 		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch), b.spec.GrubEntry, b.spec.Label)),
 		constants.FilePerm,
 	)
-	if err != nil {
-		return err
-	}
-
-	// Include EFI contents in iso root too
-	return b.PrepareEFI(rootDir, imageDir)
 }
 
 func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {

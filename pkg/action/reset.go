@@ -206,7 +206,6 @@ func (r ResetAction) Run() (err error) {
 	err = r.bootloader.Install(
 		cnst.WorkingImgDir,
 		r.spec.Partitions.EFI.MountPoint,
-		r.spec.Partitions.EFI.FilesystemLabel,
 	)
 
 	if err != nil {

@@ -29,13 +29,12 @@ type FakeBootloader struct {
 	ErrorInstallConfig          bool
 	ErrorDoEFIEntries           bool
 	ErrorInstallEFI             bool
-	ErrorInstallEFIFallback     bool
-	ErrorInstallEFIElemental    bool
+	ErrorInstallEFIBinaries     bool
 	ErrorSetPersistentVariables bool
 	ErrorSetDefaultEntry        bool
 }
 
-func (f *FakeBootloader) Install(_, _, _ string) error {
+func (f *FakeBootloader) Install(_, _ string) error {
 	if f.ErrorInstall {
 		return fmt.Errorf("error installing grub")
 	}
@@ -49,23 +48,16 @@ func (f *FakeBootloader) InstallConfig(_, _ string) error {
 	return nil
 }
 
-func (f *FakeBootloader) InstallEFI(_, _, _, _ string) error {
+func (f *FakeBootloader) InstallEFI(_, _ string) error {
 	if f.ErrorInstallEFI {
 		return fmt.Errorf("error installing efi binaries")
 	}
 	return nil
 }
 
-func (f *FakeBootloader) InstallEFIFallbackBinaries(_, _, _ string) error {
-	if f.ErrorInstallEFIFallback {
-		return fmt.Errorf("error installing fallback efi binaries")
-	}
-	return nil
-}
-
-func (f *FakeBootloader) InstallEFIElementalBinaries(_, _, _ string) error {
-	if f.ErrorInstallEFIFallback {
-		return fmt.Errorf("error installing elemental efi binaries")
+func (f *FakeBootloader) InstallEFIBinaries(_, _, _ string) error {
+	if f.ErrorInstallEFIBinaries {
+		return fmt.Errorf("error installing efi binaries")
 	}
 	return nil
 }
