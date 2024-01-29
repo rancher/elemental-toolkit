@@ -178,6 +178,11 @@ const (
 	LoopDeviceSnapshotterType = "loopdevice"
 	ActiveSnapshot            = "active"
 	PassiveSnapshot           = "passive_%d"
+
+	// Legacy paths
+	LegacyImagesPath  = "cOS"
+	LegacyPassivePath = LegacyImagesPath + "/passive.img"
+	LegacyActivePath  = LegacyImagesPath + "/active.img"
 )
 
 // GetDefaultSystemEcludes returns a list of transient paths

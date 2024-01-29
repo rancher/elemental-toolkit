@@ -41,10 +41,6 @@ const (
 	loopDevicePassivePath  = loopDeviceSnapsPath + "/passives"
 )
 
-const legacyImagesPath = "cOS"
-const legacyPassivePath = legacyImagesPath + "/passive.img"
-const legacyActivePath = legacyImagesPath + "/active.img"
-
 var _ v1.Snapshotter = (*LoopDevice)(nil)
 
 type LoopDevice struct {
@@ -87,15 +83,15 @@ func (l *LoopDevice) InitSnapshotter(rootDir string) error {
 	}
 
 	// Check the existence of a legacy deployment
-	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, legacyImagesPath)); ok {
+	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, constants.LegacyImagesPath)); ok {
 		l.cfg.Logger.Info("Legacy deployment detected running migration logic")
 		l.legacyClean = true
-		image := filepath.Join(rootDir, legacyActivePath)
+		image := filepath.Join(rootDir, constants.LegacyActivePath)
 
 		// Migrate passive image if running the transaction in passive mode
 		if elemental.IsPassiveMode(l.cfg) {
 			l.cfg.Logger.Debug("Running in passive mode, migrating passive image")
-			image = filepath.Join(rootDir, legacyPassivePath)
+			image = filepath.Join(rootDir, constants.LegacyPassivePath)
 		}
 		err = l.legacyImageToSnapsot(image)
 		if err != nil {
@@ -575,13 +571,13 @@ func (l *LoopDevice) cleanLegacyImages() error {
 
 	if l.legacyClean {
 		// delete passive image
-		path = filepath.Join(l.rootDir, legacyPassivePath)
+		path = filepath.Join(l.rootDir, constants.LegacyPassivePath)
 		if elemental.IsPassiveMode(l.cfg) {
 			// delete active image
-			path = filepath.Join(l.rootDir, legacyActivePath)
+			path = filepath.Join(l.rootDir, constants.LegacyActivePath)
 		} else if l.currentSnapshotID > 0 || elemental.IsRecoveryMode(l.cfg) {
 			// delete passive and active if we are not booting from any of them
-			path = filepath.Join(l.rootDir, legacyImagesPath)
+			path = filepath.Join(l.rootDir, constants.LegacyImagesPath)
 		}
 		if ok, _ := utils.Exists(l.cfg.Fs, path); ok {
 			return l.cfg.Fs.RemoveAll(path)
