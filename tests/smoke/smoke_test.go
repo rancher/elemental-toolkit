@@ -17,8 +17,12 @@ limitations under the License.
 package elemental_test
 
 import (
+	"fmt"
+	"math/rand"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	sut "github.com/rancher/elemental-toolkit/tests/vm"
 )
 
@@ -37,11 +41,17 @@ var _ = Describe("Elemental Smoke tests", func() {
 	})
 
 	Context("After install", func() {
-
 		It("has default services on", func() {
 			for _, svc := range []string{"systemd-timesyncd"} {
 				sut.SystemdUnitIsActive(svc, s)
 			}
+		})
+
+		persistentFileName := fmt.Sprintf("file-%v.txt", rand.Int())
+		persistentData := rand.Uint32()
+		It("can save a file to persistent storage", func() {
+			_, err := s.Command(fmt.Sprintf("echo %v > %v", persistentData, persistentFileName))
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("can boot into passive", func() {
@@ -78,6 +88,12 @@ var _ = Describe("Elemental Smoke tests", func() {
 			By("switching back to active")
 			s.ChangeBoot(sut.Active)
 			s.Reboot()
+		})
+
+		It("can read the file from persistent storage", func() {
+			data, err := s.Command(fmt.Sprintf("cat %v", persistentFileName))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(data).To(Equal(fmt.Sprintf("%v\n", persistentData)))
 		})
 
 		It("fails running elemental reset from COS_ACTIVE", func() {
