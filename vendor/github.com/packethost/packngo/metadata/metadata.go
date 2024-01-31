@@ -9,10 +9,14 @@ import (
 	"net/http"
 )
 
-const BaseURL = "https://metadata.packet.net"
+const BaseURL = "https://metadata.platformequinix.com"
 
 func GetMetadata() (*CurrentDevice, error) {
-	res, err := http.Get(BaseURL + "/metadata")
+	return GetMetadataFromURL(BaseURL)
+}
+
+func GetMetadataFromURL(baseURL string) (*CurrentDevice, error) {
+	res, err := http.Get(baseURL + "/metadata")
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +44,11 @@ func GetMetadata() (*CurrentDevice, error) {
 }
 
 func GetUserData() ([]byte, error) {
-	res, err := http.Get(BaseURL + "/userdata")
+	return GetUserDataFromURL(BaseURL)
+}
+
+func GetUserDataFromURL(baseURL string) ([]byte, error) {
+	res, err := http.Get(baseURL + "/userdata")
 	if err != nil {
 		return nil, err
 	}
@@ -101,16 +109,18 @@ func (m BondingMode) String() string {
 }
 
 type CurrentDevice struct {
-	ID       string          `json:"id"`
-	Hostname string          `json:"hostname"`
-	IQN      string          `json:"iqn"`
-	Plan     string          `json:"plan"`
-	Facility string          `json:"facility"`
-	Tags     []string        `json:"tags"`
-	SSHKeys  []string        `json:"ssh_keys"`
-	OS       OperatingSystem `json:"operating_system"`
-	Network  NetworkInfo     `json:"network"`
-	Volumes  []VolumeInfo    `json:"volume"`
+	ID         string                 `json:"id"`
+	Hostname   string                 `json:"hostname"`
+	IQN        string                 `json:"iqn"`
+	Plan       string                 `json:"plan"`
+	Metro      string                 `json:"metro"`
+	Facility   string                 `json:"facility"`
+	Tags       []string               `json:"tags"`
+	SSHKeys    []string               `json:"ssh_keys"`
+	OS         OperatingSystem        `json:"operating_system"`
+	Network    NetworkInfo            `json:"network"`
+	Volumes    []VolumeInfo           `json:"volumes"`
+	CustomData map[string]interface{} `json:"customdata"`
 
 	// This is available, but is actually inaccurate, currently:
 	//   APIBaseURL string          `json:"api_url"`
