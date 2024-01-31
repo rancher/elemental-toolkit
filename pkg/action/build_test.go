@@ -106,24 +106,24 @@ var _ = Describe("Build Actions", func() {
 			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = []*v1.ImageSource{rootSrc}
 
-			extractor.SideEffect = func(_, destination, platform string, _ bool) error {
+			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
 				bootDir := filepath.Join(destination, "boot")
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
 				if err != nil {
-					return err
+					return v1mock.FakeDigest, err
 				}
 				err = utils.MkdirAll(fs, filepath.Join(destination, "lib/modules/6.4"), constants.DirPerm)
 				if err != nil {
-					return err
+					return v1mock.FakeDigest, err
 				}
 				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz-6.4"))
 				if err != nil {
-					return err
+					return v1mock.FakeDigest, err
 				}
 
 				_, err = fs.Create(filepath.Join(bootDir, "initrd"))
-				return err
+				return v1mock.FakeDigest, err
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -208,18 +208,19 @@ var _ = Describe("Build Actions", func() {
 			cfg.Date = false
 			cfg.OutDir = tmpDir
 			disk = config.NewDisk(cfg)
-			disk.Recovery.Source = v1.NewDockerSrc("some/image/ref:tag")
+			disk.System = v1.NewDockerSrc("some/image/ref:tag")
+			disk.RecoverySystem.Source = disk.System
 			disk.Partitions.Recovery.Size = constants.MinPartSize
 			disk.Partitions.State.Size = constants.MinPartSize
 		})
 		It("Successfully builds a full raw disk", func() {
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
+			buildDisk, err := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
+			Expect(err).NotTo(HaveOccurred())
+
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/active.img"},
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"losetup", "--show", "-f", "/tmp/test/build/oem.part"},
@@ -233,67 +234,20 @@ var _ = Describe("Build Actions", func() {
 				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
-		It("Successfully builds a full raw disk with an unprivileged setup", func() {
-			disk.Unprivileged = true
-			disk.Active.FS = constants.LinuxImgFs
-			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
-			// Unprivileged setup, it should not run any mount
-			mounter.ErrorOnMount = true
-
-			Expect(buildDisk.BuildDiskRun()).To(Succeed())
-
-			Expect(runner.MatchMilestones([][]string{
-				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/active.img"},
-				{"mkfs.ext2", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/state/cOS/passive.img"},
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
-				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mkfs.ext4", "-L", "COS_OEM"},
-				{"mkfs.ext4", "-L", "COS_RECOVERY"},
-				{"mkfs.ext4", "-L", "COS_STATE"},
-				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
-				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partx", "-u", "/tmp/test/elemental.raw"},
-			})).To(Succeed())
-		})
-		It("Successfully builds a full raw disk with an unprivileged setup and a different active image", func() {
-			disk.Unprivileged = true
-			disk.Active.Source = v1.NewDockerSrc("some/other/image/ref:tag")
-			disk.Active.FS = constants.LinuxImgFs
-			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
-			// Unprivileged setup, it should not run any mount
-			mounter.ErrorOnMount = true
-
-			Expect(buildDisk.BuildDiskRun()).To(Succeed())
-
-			Expect(runner.MatchMilestones([][]string{
-				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/active.img"},
-				{"mkfs.ext2", "-d", "/tmp/test/build/active.img.root", "/tmp/test/build/state/cOS/passive.img"},
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
-				{"mkfs.vfat", "-n", "COS_GRUB"},
-				{"mkfs.ext4", "-L", "COS_OEM"},
-				{"mkfs.ext4", "-L", "COS_RECOVERY"},
-				{"mkfs.ext4", "-L", "COS_STATE"},
-				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
-				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
-				{"partx", "-u", "/tmp/test/elemental.raw"},
-			})).To(Succeed())
-		})
-		It("Successfully builds an expandable disk with an unprivileged setup", func() {
-			disk.Unprivileged = true
+		It("Successfully builds an expandable disk", func() {
 			disk.Expandable = true
-			disk.Active.FS = constants.LinuxImgFs
-			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
-			// Unprivileged setup, it should not run any mount
+
+			buildDisk, err := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
+			Expect(err).NotTo(HaveOccurred())
+			// Expandable setup can be executed in unprivileged envs,
+			// hence it should not run any mount
 			// test won't pass if any mount is called
 			mounter.ErrorOnMount = true
 
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
@@ -302,29 +256,10 @@ var _ = Describe("Build Actions", func() {
 				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
-		It("Fails to build an expandable disk with privileged setup when mounts are not possible", func() {
-			disk.Unprivileged = false
-			disk.Expandable = true
-			disk.Active.FS = constants.LinuxImgFs
-			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
-
-			// build will fail if mounts are not possible
-			mounter.ErrorOnMount = true
-
-			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
-
-			// fails at chroot hook step, before any preparing images
-			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
-			})).NotTo(Succeed())
-		})
 		It("Fails to build an expandable disk if expandable cloud config cannot be written", func() {
-			disk.Unprivileged = true
 			disk.Expandable = true
-			disk.Active.FS = constants.LinuxImgFs
-			disk.Passive.FS = constants.LinuxImgFs
-			buildDisk := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
+			buildDisk, err := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))
+			Expect(err).NotTo(HaveOccurred())
 
 			// fails to render the expandable cloud-config data
 			cloudInit.RenderErr = true
@@ -332,7 +267,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/cOS/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 			})).To(Succeed())
 
 			// failed before preparing partitions images

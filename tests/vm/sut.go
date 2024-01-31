@@ -161,9 +161,9 @@ func (s *SUT) ChangeBootOnce(b string) error {
 
 	switch b {
 	case Active:
-		bootEntry = Cos
+		bootEntry = "active"
 	case Passive:
-		bootEntry = "fallback"
+		bootEntry = "passive_1"
 	case Recovery:
 		bootEntry = "recovery"
 	}
@@ -207,11 +207,11 @@ func (s *SUT) BootFrom() string {
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
 	switch {
-	case strings.Contains(out, "active.img"), strings.Contains(out, "image=active"):
+	case strings.Contains(out, "active"):
 		return Active
-	case strings.Contains(out, "passive.img"), strings.Contains(out, "image=passive"):
+	case strings.Contains(out, "passive"):
 		return Passive
-	case strings.Contains(out, "recovery.img"), strings.Contains(out, "recovery.squashfs"), strings.Contains(out, "image=recovery"):
+	case strings.Contains(out, "recovery"):
 		return Recovery
 	case strings.Contains(out, "live:CDLABEL"):
 		return LiveCD

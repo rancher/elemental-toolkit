@@ -57,8 +57,8 @@ const (
 	HTTPTimeout        = 60
 	GPT                = "gpt"
 	BuildImgName       = "elemental"
-	UsrLocalPath       = "/usr/local"
 	OEMPath            = "/oem"
+	PersistentPath     = PersistentDir
 	ConfigDir          = "/etc/elemental"
 	OverlayMode        = "overlay"
 	BindMode           = "bind"
@@ -97,13 +97,17 @@ const (
 	OEMDir             = "/run/elemental/oem"
 	PersistentDir      = "/run/elemental/persistent"
 	PersistentStateDir = "/run/elemental/persistent/.state"
-	ActiveDir          = "/run/elemental/active"
 	TransitionDir      = "/run/elemental/transition"
 	EfiDir             = "/run/elemental/efi"
 	ImgSrcDir          = "/run/elemental/imgsrc"
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
 	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
+
+	// Running mode sentinel files
+	ActiveMode   = "/run/elemental/active_mode"
+	PassiveMode  = "/run/elemental/passive_mode"
+	RecoveryMode = "/run/elemental/recovery_mode"
 
 	// Live image mountpoints
 	ISOBaseTree = "/run/rootfsbase"
@@ -113,13 +117,8 @@ const (
 	ActiveImgName     = "active"
 	PassiveImgName    = "passive"
 	RecoveryImgName   = "recovery"
-	ActiveImgFile     = "active.img"
-	PassiveImgFile    = "passive.img"
 	RecoveryImgFile   = "recovery.img"
 	TransitionImgFile = "transition.img"
-	ActiveImgPath     = "/cOS/active.img"
-	PassiveImgPath    = "/cOS/passive.img"
-	RecoveryImgPath   = "/cOS/recovery.img"
 
 	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"
@@ -173,11 +172,34 @@ const (
 	Rsync = "rsync"
 
 	// Snapshotters
-	MaxSnaps                  = 4
+	MaxSnaps                  = 2
 	LoopDeviceSnapshotterType = "loopdevice"
 	ActiveSnapshot            = "active"
 	PassiveSnapshot           = "passive_%d"
+
+	// Legacy paths
+	LegacyImagesPath  = "cOS"
+	LegacyPassivePath = LegacyImagesPath + "/passive.img"
+	LegacyActivePath  = LegacyImagesPath + "/active.img"
+	LegacyStateDir    = "/run/initramfs/cos-state"
 )
+
+// GetDefaultSystemEcludes returns a list of transient paths
+// that are commonly present in an Elemental based running system.
+// Those paths are not needed or wanted in order to replicate the
+// root-tree as they are generated at runtime.
+func GetDefaultSystemExcludes() []string {
+	return []string{
+		"/mnt",
+		"/proc",
+		"/sys",
+		"/dev",
+		"/tmp",
+		"/run",
+		"/host",
+		"/etc/resolv.conf",
+	}
+}
 
 func GetKernelPatterns() []string {
 	return []string{
@@ -282,23 +304,23 @@ func GetMountKeyEnvMap() map[string]string {
 // GetInstallKeyEnvMap returns environment variable bindings to InstallSpec data
 func GetInstallKeyEnvMap() map[string]string {
 	return map[string]string{
-		"target":              "TARGET",
-		"system.uri":          "SYSTEM",
-		"recovery-system.uri": "RECOVERY_SYSTEM",
-		"cloud-init":          "CLOUD_INIT",
-		"iso":                 "ISO",
-		"firmware":            "FIRMWARE",
-		"part-table":          "PART_TABLE",
-		"no-format":           "NO_FORMAT",
-		"grub-entry-name":     "GRUB_ENTRY_NAME",
-		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
+		"target":             "TARGET",
+		"system":             "SYSTEM",
+		"recovery-system":    "RECOVERY_SYSTEM",
+		"cloud-init":         "CLOUD_INIT",
+		"iso":                "ISO",
+		"firmware":           "FIRMWARE",
+		"part-table":         "PART_TABLE",
+		"no-format":          "NO_FORMAT",
+		"grub-entry-name":    "GRUB_ENTRY_NAME",
+		"disable-boot-entry": "DISABLE_BOOT_ENTRY",
 	}
 }
 
 // GetResetKeyEnvMap returns environment variable bindings to ResetSpec data
 func GetResetKeyEnvMap() map[string]string {
 	return map[string]string{
-		"system.uri":         "SYSTEM",
+		"system":             "SYSTEM",
 		"grub-entry-name":    "GRUB_ENTRY_NAME",
 		"cloud-init":         "CLOUD_INIT",
 		"reset-persistent":   "PERSISTENT",

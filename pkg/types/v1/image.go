@@ -32,22 +32,22 @@ import (
 )
 
 type ImageExtractor interface {
-	ExtractImage(imageRef, destination, platformRef string, local bool) error
+	ExtractImage(imageRef, destination, platformRef string, local bool) (string, error)
 }
 
 type OCIImageExtractor struct{}
 
 var _ ImageExtractor = OCIImageExtractor{}
 
-func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) error {
+func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) (string, error) {
 	platform, err := v1.ParsePlatform(platformRef)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var img v1.Image
@@ -57,13 +57,18 @@ func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef strin
 		return err
 	}, backoff.WithMaxRetries(backoff.NewConstantBackOff(3*time.Second), 3))
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	digest, err := img.Digest()
+	if err != nil {
+		return "", err
 	}
 
 	reader := mutate.Extract(img)
 
 	_, err = archive.Apply(context.Background(), destination, reader)
-	return err
+	return digest.String(), err
 }
 
 func image(ref name.Reference, platform v1.Platform, local bool) (v1.Image, error) {

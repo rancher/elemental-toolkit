@@ -23,8 +23,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jaypipes/ghw/pkg/block"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/twpayne/go-vfs/v4"
@@ -223,10 +221,21 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).NotTo(BeNil())
 		})
 
-		It("Fails if oem partition is not found ", func() {
+		It("does not mount partitions without a mountpoint ", func() {
+			parts.OEM.MountPoint = ""
+			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
+			Expect(err).To(BeNil())
+			lst, _ := mounter.List()
+			for _, i := range lst {
+				Expect(i.Path).NotTo(Equal("/dev/device2"))
+			}
+		})
+
+		It("fails to mount missing partitions", func() {
+			// Without path tries to get devices by label
 			parts.OEM.Path = ""
 			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
@@ -337,9 +346,9 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			img = &v1.Image{
 				Label:      constants.ActiveLabel,
 				Size:       32,
-				File:       filepath.Join(constants.StateDir, constants.ActiveImgPath),
+				File:       filepath.Join(constants.StateDir, "some.img"),
 				FS:         constants.LinuxImgFs,
-				MountPoint: constants.ActiveDir,
+				MountPoint: constants.TransitionDir,
 				Source:     v1.NewDirSrc(constants.ISOBaseTree),
 			}
 			_ = utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)
@@ -549,46 +558,48 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				return []byte{}, nil
 			}
 
-			_, err := elemental.DumpSource(*config, "/dest", v1.NewDirSrc("/source"))
+			err := elemental.DumpSource(*config, "/dest", v1.NewDirSrc("/source"))
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(rsyncCount).To(Equal(1))
 			Expect(src).To(HaveSuffix("/source/"))
 			Expect(dest).To(HaveSuffix("/dest/"))
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
-			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
+			dockerSrc := v1.NewDockerSrc("docker/image:latest")
+			err := elemental.DumpSource(*config, destDir, dockerSrc)
+			Expect(dockerSrc.GetDigest()).To(Equal("fakeDigest"))
 			Expect(err).To(BeNil())
 		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.Cosign = true
-			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
+			err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
 			runner.ReturnError = errors.New("cosign error")
 			config.Cosign = true
-			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
+			err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			unpackErr := errors.New("failed to unpack")
-			extractor.SideEffect = func(_, _, _ string, _ bool) error { return unpackErr }
-			_, err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
+			extractor.SideEffect = func(_, _, _ string, _ bool) (string, error) { return "", unpackErr }
+			err := elemental.DumpSource(*config, destDir, v1.NewDockerSrc("docker/image:latest"))
 			Expect(err).To(Equal(unpackErr))
 		})
 		It("Copies image file to target", func() {
 			sourceImg := "/source.img"
 			destFile := filepath.Join(destDir, "active.img")
 
-			_, err := elemental.DumpSource(*config, destFile, v1.NewFileSrc(sourceImg))
+			err := elemental.DumpSource(*config, destFile, v1.NewFileSrc(sourceImg))
 			Expect(err).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 		It("Fails to copy, source can't be mounted", func() {
 			mounter.ErrorOnMount = true
-			_, err := elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
+			err := elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
 			Expect(err).To(HaveOccurred())
 		})
 		It("Fails to copy, no write permissions", func() {
@@ -596,7 +607,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err := fs.Create(sourceImg)
 			Expect(err).To(BeNil())
 			config.Fs = vfs.NewReadOnlyFS(fs)
-			_, err = elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
+			err = elemental.DumpSource(*config, "whatever", v1.NewFileSrc("/source.img"))
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -617,14 +628,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			}
 		})
 		It("Deploys an image including the root tree contents", func() {
-			_, cleaner, err := elemental.DeployImgTree(*config, img, root)
+			cleaner, err := elemental.DeployImgTree(*config, img, root)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 			Expect(cleaner()).To(Succeed())
 		})
 		It("Fails setting a bind mount to root", func() {
 			mounter.ErrorOnMount = true
-			_, _, err := elemental.DeployImgTree(*config, img, root)
+			_, err := elemental.DeployImgTree(*config, img, root)
 			Expect(err).Should(HaveOccurred())
 		})
 	})
@@ -712,13 +723,13 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			}
 		})
 		It("Deploys image source into a filesystem image", func() {
-			_, err := elemental.DeployImage(*config, img)
+			err := elemental.DeployImage(*config, img)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
 		})
 		It("Fails to dump source without write permissions", func() {
 			config.Fs = vfs.NewReadOnlyFS(fs)
-			_, err := elemental.DeployImage(*config, img)
+			err := elemental.DeployImage(*config, img)
 			Expect(err).Should(HaveOccurred())
 			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).NotTo(Succeed())
 		})
@@ -729,7 +740,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				}
 				return []byte{}, nil
 			}
-			_, err := elemental.DeployImage(*config, img)
+			err := elemental.DeployImage(*config, img)
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("calling mkfs.ext2"))
 			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).To(Succeed())
@@ -794,30 +805,26 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 	})
 	Describe("CheckActiveDeployment", Label("check"), func() {
-		It("deployment found", func() {
-			ghwTest := v1mock.GhwMock{}
-			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
-				{
-					Name:            "device1",
-					FilesystemLabel: constants.ActiveLabel,
-				},
-			}}
-			ghwTest.AddDisk(disk)
-			ghwTest.CreateDevices()
-			defer ghwTest.Clean()
-			runner.ReturnValue = []byte(
-				fmt.Sprintf(
-					`{"blockdevices": [{"label": "%s", "type": "loop", "path": "/some/device"}]}`,
-					constants.ActiveLabel,
-				),
-			)
+		BeforeEach(func() {
+			Expect(utils.MkdirAll(config.Fs, filepath.Dir(constants.ActiveMode), constants.DirPerm)).To(Succeed())
+		})
+		It("deployment found on active", func() {
+			Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+			Expect(elemental.CheckActiveDeployment(*config)).To(BeTrue())
+		})
 
-			Expect(elemental.CheckActiveDeployment(*config, []string{constants.ActiveLabel, constants.PassiveLabel})).To(BeTrue())
+		It("deployment found on passive", func() {
+			Expect(fs.WriteFile(constants.PassiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+			Expect(elemental.CheckActiveDeployment(*config)).To(BeTrue())
+		})
+
+		It("deployment found on recovery", func() {
+			Expect(fs.WriteFile(constants.RecoveryMode, []byte("1"), constants.FilePerm)).To(Succeed())
+			Expect(elemental.CheckActiveDeployment(*config)).To(BeTrue())
 		})
 
 		It("Should not error out", func() {
-			runner.ReturnValue = []byte("")
-			Expect(elemental.CheckActiveDeployment(*config, []string{constants.ActiveLabel, constants.PassiveLabel})).To(BeFalse())
+			Expect(elemental.CheckActiveDeployment(*config)).To(BeFalse())
 		})
 	})
 	Describe("SelinuxRelabel", Label("SelinuxRelabel", "selinux"), func() {

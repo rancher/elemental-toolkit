@@ -17,7 +17,6 @@ limitations under the License.
 package config
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -305,22 +304,20 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 		}
 
 		switch split[0] {
-		case "elemental.image":
-			mount.Mode = val
-		case "elemental.disable", "rd.cos.disable":
-			mount.Disable = true
-		case "cos-img/filename":
-			switch val {
-			case constants.ActiveImgPath:
+		case "elemental.image", "cos-img/filename":
+			switch {
+			case strings.Contains(val, constants.ActiveImgName):
 				mount.Mode = constants.ActiveImgName
-			case constants.PassiveImgPath:
+			case strings.Contains(val, constants.PassiveImgName):
 				mount.Mode = constants.PassiveImgName
-			case constants.RecoveryImgPath:
+			case strings.Contains(val, constants.RecoveryImgName):
 				mount.Mode = constants.RecoveryImgName
 			default:
 				r.Logger.Errorf("Error parsing cmdline %s", cmd)
-				return errors.New("Unknown image path")
+				return fmt.Errorf("Unknown image path: %s", val)
 			}
+		case "elemental.disable", "rd.cos.disable":
+			mount.Disable = true
 		case "elemental.overlay", "rd.cos.overlay":
 			err := applyMountOverlay(mount, val)
 			if err != nil {

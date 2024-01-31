@@ -961,7 +961,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			cleaner.Push(callback)
 			poppedJob := cleaner.Pop()
 			Expect(poppedJob).NotTo(BeNil())
-			poppedJob()
+			poppedJob.Run()
 			Expect(flag).To(BeTrue())
 		})
 		It("On Cleanup runs callback stack in reverse order", func() {
@@ -978,15 +978,29 @@ var _ = Describe("Utils", Label("utils"), func() {
 				result = result + "three "
 				return nil
 			}
+			callback4 := func() error {
+				result = result + "four "
+				return nil
+			}
+			callback5 := func() error {
+				result = result + "successOnly "
+				return nil
+			}
 			cleaner.Push(callback1)
 			cleaner.Push(callback2)
 			cleaner.Push(callback3)
+			cleaner.PushErrorOnly(callback4)
+			cleaner.PushSuccessOnly(callback5)
 			cleaner.Cleanup(nil)
-			Expect(result).To(Equal("three two one "))
+
+			// Fourth callback is not executed if no error is reported
+			Expect(result).To(Equal("successOnly three two one "))
 		})
-		It("On Cleanup keeps former error and all callbacks are executed", func() {
+		It("cleans up keeping former error", func() {
 			err := errors.New("Former error")
 			count := 0
+			onErrorCallback := false
+			onSuccessCallback := false
 			callback := func() error {
 				count++
 				if count == 2 {
@@ -994,16 +1008,30 @@ var _ = Describe("Utils", Label("utils"), func() {
 				}
 				return nil
 			}
+			successOnlyCallback := func() error {
+				onSuccessCallback = true
+				return nil
+			}
+			errorOnlyCallback := func() error {
+				onErrorCallback = true
+				return nil
+			}
 			cleaner.Push(callback)
 			cleaner.Push(callback)
 			cleaner.Push(callback)
+			cleaner.PushSuccessOnly(successOnlyCallback)
+			cleaner.PushErrorOnly(errorOnlyCallback)
 			err = cleaner.Cleanup(err)
 			Expect(count).To(Equal(3))
 			Expect(err.Error()).To(ContainSubstring("Former error"))
+			Expect(onSuccessCallback).To(BeFalse())
+			Expect(onErrorCallback).To(BeTrue())
 		})
 		It("On Cleanup error reports first error and all callbacks are executed", func() {
 			var err error
 			count := 0
+			onErrorCallback := false
+			onSuccessCallback := false
 			callback := func() error {
 				count++
 				if count >= 2 {
@@ -1011,6 +1039,16 @@ var _ = Describe("Utils", Label("utils"), func() {
 				}
 				return nil
 			}
+			successOnlyCallback := func() error {
+				onSuccessCallback = true
+				return nil
+			}
+			errorOnlyCallback := func() error {
+				onErrorCallback = true
+				return nil
+			}
+			cleaner.PushSuccessOnly(successOnlyCallback)
+			cleaner.PushErrorOnly(errorOnlyCallback)
 			cleaner.Push(callback)
 			cleaner.Push(callback)
 			cleaner.Push(callback)
@@ -1018,6 +1056,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(count).To(Equal(3))
 			Expect(err.Error()).To(ContainSubstring("Cleanup error 2"))
 			Expect(err.Error()).To(ContainSubstring("Cleanup error 3"))
+			Expect(onSuccessCallback).To(BeFalse())
+			Expect(onErrorCallback).To(BeTrue())
 		})
 	})
 	Describe("VHD utils", Label("vhd"), func() {

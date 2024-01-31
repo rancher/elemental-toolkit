@@ -324,29 +324,29 @@ func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload b
 	return nil
 }
 
-// DeployImgTree will deploy the given image into the given root tree. Returns source metadata in info,
-// a tree cleaner function and error. The given root will be a bind mount of a temporary directory into the same
+// DeployImgTree will deploy the given image into the given root tree. Returns a tree cleaner
+// function and error. The given root will be a bind mount of a temporary directory into the same
 // filesystem of img.File, this is helpful to make the deployment easily accessible in after-* hooks.
-func DeployImgTree(c v1.Config, img *v1.Image, root string) (info interface{}, cleaner func() error, err error) {
+func DeployImgTree(c v1.Config, img *v1.Image, root string) (cleaner func() error, err error) {
 	// We prepare the rootTree next to the target image file, in the same base path
 	c.Logger.Infof("Preparing root tree for image: %s", img.File)
 	tmp := strings.TrimSuffix(img.File, filepath.Ext(img.File))
 	tmp += ".imgTree"
 	err = utils.MkdirAll(c.Fs, tmp, cnst.DirPerm)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = utils.MkdirAll(c.Fs, root, cnst.DirPerm)
 	if err != nil {
 		_ = c.Fs.RemoveAll(tmp)
-		return nil, nil, err
+		return nil, err
 	}
 	err = c.Mounter.Mount(tmp, root, "bind", []string{"bind"})
 	if err != nil {
 		_ = c.Fs.RemoveAll(tmp)
 		_ = c.Fs.RemoveAll(root)
-		return nil, nil, err
+		return nil, err
 	}
 
 	cleaner = func() error {
@@ -358,18 +358,13 @@ func DeployImgTree(c v1.Config, img *v1.Image, root string) (info interface{}, c
 		return c.Fs.RemoveAll(tmp)
 	}
 
-	info, err = DumpSource(c, root, img.Source)
+	err = DumpSource(c, root, img.Source)
 	if err != nil {
 		_ = cleaner()
-		return nil, nil, err
-	}
-	err = utils.CreateDirStructure(c.Fs, root)
-	if err != nil {
-		_ = cleaner()
-		return nil, nil, err
+		return nil, err
 	}
 
-	return info, cleaner, err
+	return cleaner, err
 }
 
 // CreateImageFromTree creates the given image including the given root tree. If preload flag is true
@@ -455,28 +450,31 @@ func CopyFileImg(c v1.Config, img *v1.Image) error {
 
 // DeployImage will deploy the given image into the target. This method
 // creates the filesystem image file and fills it with the correspondant data
-func DeployImage(c v1.Config, img *v1.Image) (interface{}, error) {
+func DeployImage(c v1.Config, img *v1.Image) error {
 	c.Logger.Infof("Deploying image: %s", img.File)
-	info, cleaner, err := DeployImgTree(c, img, cnst.WorkingImgDir)
+	cleaner, err := DeployImgTree(c, img, cnst.WorkingImgDir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = CreateImageFromTree(c, img, cnst.WorkingImgDir, false, cleaner)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return info, nil
+	return nil
 }
 
 // DumpSource sets the image data according to the image source type
-func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) (info interface{}, err error) { // nolint:gocyclo
+func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) error { // nolint:gocyclo
+	var err error
+	var digest string
+
 	c.Logger.Infof("Copying %s source...", imgSrc.Value())
 
 	err = utils.MkdirAll(c.Fs, target, cnst.DirPerm)
 	if err != nil {
 		c.Logger.Errorf("failed to create target directory %s", target)
-		return nil, err
+		return err
 	}
 
 	if imgSrc.IsImage() {
@@ -488,41 +486,46 @@ func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) (info interf
 			)
 			if err != nil {
 				c.Logger.Errorf("Cosign verification failed: %s", out)
-				return nil, err
+				return err
 			}
 		}
 
-		err = c.ImageExtractor.ExtractImage(imgSrc.Value(), target, c.Platform.String(), c.LocalImage)
+		digest, err = c.ImageExtractor.ExtractImage(imgSrc.Value(), target, c.Platform.String(), c.LocalImage)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
-		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
+		excludes := cnst.GetDefaultSystemExcludes()
 		err = utils.SyncData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if imgSrc.IsFile() {
 		err = utils.MkdirAll(c.Fs, cnst.ImgSrcDir, cnst.DirPerm)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		img := &v1.Image{File: imgSrc.Value(), MountPoint: cnst.ImgSrcDir}
 		err = MountFileSystemImage(c, img, "auto", "ro")
 		if err != nil {
-			return nil, err
+			return err
 		}
 		defer UnmountFileSystemImage(c, img) // nolint:errcheck
-		excludes := []string{"/mnt", "/proc", "/sys", "/dev", "/tmp", "/host", "/run"}
-		err = utils.SyncData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target, excludes...)
+		err = utils.SyncData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else {
-		return nil, fmt.Errorf("unknown image source type")
+		return fmt.Errorf("unknown image source type")
+	}
+	// Create essential directories such as /tmp, /dev, etc.
+	err = utils.CreateDirStructure(c.Fs, target)
+	if err != nil {
+		return err
 	}
 	c.Logger.Infof("Finished copying %s into %s", imgSrc.Value(), target)
-	return info, nil
+	return nil
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
@@ -570,16 +573,54 @@ func SelinuxRelabel(c v1.Config, rootDir string, raiseError bool) error {
 	return nil
 }
 
-// CheckActiveDeployment returns true if at least one of the provided filesystem labels is found within the system
-func CheckActiveDeployment(c v1.Config, labels []string) bool {
-	c.Logger.Infof("Checking for active deployment")
+// ApplySelinuxLabels sets SELinux extended attributes to the root-tree being installed
+func ApplySelinuxLabels(cfg v1.Config, parts v1.ElementalPartitions) error {
+	binds := map[string]string{}
+	if mnt, _ := IsMounted(cfg, parts.Persistent); mnt {
+		binds[parts.Persistent.MountPoint] = cnst.PersistentPath
+	}
+	if mnt, _ := IsMounted(cfg, parts.OEM); mnt {
+		binds[parts.OEM.MountPoint] = cnst.OEMPath
+	}
+	return utils.ChrootedCallback(
+		&cfg, cnst.WorkingImgDir, binds, func() error { return SelinuxRelabel(cfg, "/", true) },
+	)
+}
 
-	for _, label := range labels {
-		found, _ := utils.GetDeviceByLabel(c.Runner, label, 1)
-		if found != "" {
-			c.Logger.Debug("there is already an active deployment in the system")
+// CheckActiveDeployment returns true if at least one of the mode sentinel files is found
+func CheckActiveDeployment(cfg v1.Config) bool {
+	cfg.Logger.Infof("Checking for active deployment")
+
+	tests := []func(v1.Config) bool{IsActiveMode, IsPassiveMode, IsRecoveryMode}
+	for _, t := range tests {
+		if t(cfg) {
 			return true
 		}
+	}
+
+	return false
+}
+
+// IsActiveMode checks if the active mode sentinel file exists
+func IsActiveMode(cfg v1.Config) bool {
+	if ok, _ := utils.Exists(cfg.Fs, cnst.ActiveMode); ok {
+		return true
+	}
+	return false
+}
+
+// IsPassiveMode checks if the passive mode sentinel file exists
+func IsPassiveMode(cfg v1.Config) bool {
+	if ok, _ := utils.Exists(cfg.Fs, cnst.PassiveMode); ok {
+		return true
+	}
+	return false
+}
+
+// IsRecoveryMode checks if the recovery mode sentinel file exists
+func IsRecoveryMode(cfg v1.Config) bool {
+	if ok, _ := utils.Exists(cfg.Fs, cnst.RecoveryMode); ok {
+		return true
 	}
 	return false
 }
@@ -634,11 +675,17 @@ func SourceFormISO(c v1.Config, iso string) (*v1.ImageSource, func() error, erro
 // DeactivateDevice deactivates unmounted the block devices present within the system.
 // Useful to deactivate LVM volumes, if any, related to the target device.
 func DeactivateDevices(c v1.Config) error {
-	out, err := c.Runner.Run(
-		"blkdeactivate", "--lvmoptions", "retry,wholevg",
-		"--dmoptions", "force,retry", "--errors",
-	)
-	c.Logger.Debugf("blkdeactivate command output: %s", string(out))
+	var err error
+	var out []byte
+
+	// Best effort, just deactivate devices if lvm is installed
+	if c.Runner.CommandExists("blkdeactivate") {
+		out, err = c.Runner.Run(
+			"blkdeactivate", "--lvmoptions", "retry,wholevg",
+			"--dmoptions", "force,retry", "--errors",
+		)
+		c.Logger.Debugf("blkdeactivate command output: %s", string(out))
+	}
 	return err
 }
 

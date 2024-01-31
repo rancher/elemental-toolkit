@@ -37,6 +37,15 @@ const (
 type ImageSource struct {
 	source  string
 	srcType string
+	digest  string
+}
+
+func (i *ImageSource) SetDigest(digest string) {
+	i.digest = digest
+}
+
+func (i ImageSource) GetDigest() string {
+	return i.digest
 }
 
 func (i ImageSource) Value() string {

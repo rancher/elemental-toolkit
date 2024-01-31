@@ -23,10 +23,7 @@ import (
 func (i InstallSpec) GetGrubLabels() map[string]string {
 	grubEnv := map[string]string{
 		"state_label":    i.Partitions.State.FilesystemLabel,
-		"active_label":   i.Active.Label,
-		"passive_label":  i.Passive.Label,
 		"recovery_label": i.Partitions.Recovery.FilesystemLabel,
-		"system_label":   i.Recovery.Label,
 		"oem_label":      i.Partitions.OEM.FilesystemLabel,
 	}
 
@@ -40,10 +37,7 @@ func (i InstallSpec) GetGrubLabels() map[string]string {
 func (u UpgradeSpec) GetGrubLabels() map[string]string {
 	grubVars := map[string]string{
 		"state_label":    u.Partitions.State.FilesystemLabel,
-		"active_label":   u.Active.Label,
-		"passive_label":  u.Passive.Label,
 		"recovery_label": u.Partitions.Recovery.FilesystemLabel,
-		"system_label":   u.Recovery.Label,
 		"oem_label":      u.Partitions.OEM.FilesystemLabel,
 	}
 
@@ -57,8 +51,6 @@ func (u UpgradeSpec) GetGrubLabels() map[string]string {
 func (r ResetSpec) GetGrubLabels() map[string]string {
 	grubVars := map[string]string{
 		"state_label":    r.Partitions.State.FilesystemLabel,
-		"active_label":   r.Active.Label,
-		"passive_label":  r.Passive.Label,
 		"recovery_label": r.Partitions.Recovery.FilesystemLabel,
 		"oem_label":      r.Partitions.OEM.FilesystemLabel,
 	}
@@ -66,9 +58,7 @@ func (r ResetSpec) GetGrubLabels() map[string]string {
 	if r.State != nil {
 		if recoveryPart, ok := r.State.Partitions[constants.RecoveryPartName]; ok {
 			grubVars["recovery_label"] = recoveryPart.FSLabel
-			if recoveryImg, ok := recoveryPart.Images[constants.RecoveryImgName]; ok {
-				grubVars["system_label"] = recoveryImg.Label
-			}
+			grubVars["system_label"] = recoveryPart.RecoveryImage.Label
 		}
 	}
 
@@ -86,8 +76,5 @@ func (d DiskSpec) GetGrubLabels() map[string]string {
 		"recovery_label":   d.Partitions.Recovery.FilesystemLabel,
 		"state_label":      d.Partitions.State.FilesystemLabel,
 		"persistent_label": d.Partitions.Persistent.FilesystemLabel,
-		"active_label":     d.Active.Label,
-		"passive_label":    d.Passive.Label,
-		"system_label":     d.Recovery.Label,
 	}
 }

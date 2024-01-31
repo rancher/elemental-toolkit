@@ -54,24 +54,6 @@ var _ = Describe("Elemental Smoke tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("can boot into passive", func() {
-			err := s.ChangeBootOnce(sut.Passive)
-			Expect(err).ToNot(HaveOccurred())
-
-			By("rebooting into passive")
-			s.Reboot()
-
-			Expect(s.BootFrom()).To(Equal(sut.Passive))
-			_, err = s.Command("cat /run/cos/recovery_mode")
-			Expect(err).To(HaveOccurred())
-
-			_, err = s.Command("cat /run/cos/live_mode")
-			Expect(err).To(HaveOccurred())
-
-			By("reboot back to active")
-			s.Reboot()
-		})
-
 		It("can boot into recovery", func() {
 			s.ChangeBoot(sut.Recovery)
 			By("rebooting into recovery")
@@ -82,12 +64,11 @@ var _ = Describe("Elemental Smoke tests", func() {
 			out, err := s.Command("cat /run/cos/recovery_mode")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).To(Equal("1"))
-			_, err = s.Command("cat /run/cos/live_mode")
-			Expect(err).To(HaveOccurred())
 
 			By("switching back to active")
 			s.ChangeBoot(sut.Active)
 			s.Reboot()
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 		})
 
 		It("can read the file from persistent storage", func() {
@@ -97,6 +78,7 @@ var _ = Describe("Elemental Smoke tests", func() {
 		})
 
 		It("fails running elemental reset from COS_ACTIVE", func() {
+			Expect(s.BootFrom()).To(Equal(sut.Active))
 			out, err := s.Command(s.ElementalCmd("reset"))
 			Expect(err).To(HaveOccurred())
 			Expect(out).Should(ContainSubstring("reset can only be called from the recovery system"))

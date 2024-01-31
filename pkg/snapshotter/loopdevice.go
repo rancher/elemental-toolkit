@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 
@@ -50,32 +51,59 @@ type LoopDevice struct {
 	currentSnapshotID int
 	activeSnapshotID  int
 	bootloader        v1.Bootloader
+	legacyClean       bool
 }
 
+// NewLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
 func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (*LoopDevice, error) {
 	if snapCfg.Type != constants.LoopDeviceSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 	}
-	loopDevCfg, ok := snapCfg.Config.(v1.LoopDeviceConfig)
+	loopDevCfg, ok := snapCfg.Config.(*v1.LoopDeviceConfig)
 	if !ok {
 		msg := "failed casting LoopDeviceConfig type"
 		cfg.Logger.Errorf(msg)
 		return nil, fmt.Errorf(msg)
 	}
-	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: loopDevCfg, bootloader: bootloader}, nil
+	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: *loopDevCfg, bootloader: bootloader}, nil
 }
 
+// InitSnapshotter initiates the snapshotter to the given root directory. More over this method includes logic to migrate
+// from older elemental-toolkit versions.
 func (l *LoopDevice) InitSnapshotter(rootDir string) error {
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", rootDir)
 	l.rootDir = rootDir
 
-	// TODO detect legacy layout in /cOS/active.img and /cOS/passive.img and create hard links to new locations
+	err := utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
+	if err != nil {
+		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
+		return err
+	}
 
-	return utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
+	// Check the existence of a legacy deployment
+	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, constants.LegacyImagesPath)); ok {
+		l.cfg.Logger.Info("Legacy deployment detected running migration logic")
+		l.legacyClean = true
+		image := filepath.Join(rootDir, constants.LegacyActivePath)
+
+		// Migrate passive image if running the transaction in passive mode
+		if elemental.IsPassiveMode(l.cfg) {
+			l.cfg.Logger.Debug("Running in passive mode, migrating passive image")
+			image = filepath.Join(rootDir, constants.LegacyPassivePath)
+		}
+		err = l.legacyImageToSnapsot(image)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed moving legacy image to a new snapshot image: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }
 
+// StartTransaction starts a transaction for this snapshotter instance and returns the work in progress snapshot object.
 func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
 	l.cfg.Logger.Infof("Starting a snapshotter transaction")
 	nextID, err := l.getNextSnapshotID()
@@ -139,6 +167,8 @@ func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
 	return snapshot, nil
 }
 
+// CloseTransactionOnError is a destructor method to clean the given initated snapshot. Useful in case of an error once
+// the transaction has already started.
 func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
 	var err error
 
@@ -155,9 +185,18 @@ func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
 		err = rErr
 	}
 
+	if l.legacyClean {
+		rErr = l.cfg.Fs.RemoveAll(filepath.Join(l.rootDir, loopDeviceSnapsPath))
+		if rErr != nil && err == nil {
+			err = rErr
+		}
+	}
+
 	return err
 }
 
+// CloseTransaction closes the transaction for the given snapshot. This is the responsible of setting new active and
+// passive snapshots.
 func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	var linkDst, newPassive, activeSnap string
 
@@ -222,11 +261,13 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	// Active system does not require specific bootloader setup, only old snapshots
 	_ = l.cleanOldSnapshots()
 	_ = l.setBootloader()
+	_ = l.cleanLegacyImages()
 
 	snapshot.InProgress = false
 	return err
 }
 
+// DeleteSnapshot deletes the snapshot of the given ID. It cannot delete an snapshot that is actually booted.
 func (l *LoopDevice) DeleteSnapshot(id int) error {
 	var err error
 	var snapLink string
@@ -279,6 +320,7 @@ func (l *LoopDevice) DeleteSnapshot(id int) error {
 	return err
 }
 
+// GetSnapshots returns a list of the available snapshots IDs.
 func (l *LoopDevice) GetSnapshots() ([]int, error) {
 	var ids []int
 
@@ -298,6 +340,22 @@ func (l *LoopDevice) GetSnapshots() ([]int, error) {
 	return ids, nil
 }
 
+// SnapshotImageToSource converts the given snapshot into an ImageSource. This is useful to deploy a system
+// from a given snapshot, for instance setting the recovery image from a snapshot.
+func (l *LoopDevice) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error) {
+	ok, err := utils.Exists(l.cfg.Fs, snap.Path)
+	if err != nil || !ok {
+		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
+		l.cfg.Logger.Errorf(msg)
+		if err == nil {
+			err = fmt.Errorf(msg)
+		}
+		return nil, err
+	}
+	return v1.NewFileSrc(snap.Path), nil
+}
+
+// getNextSnapshotID returns the next ID number for a new snapshot.
 func (l *LoopDevice) getNextSnapshotID() (int, error) {
 	var id int
 
@@ -322,6 +380,7 @@ func (l *LoopDevice) getNextSnapshotID() (int, error) {
 	return id + 1, nil
 }
 
+// getActiveSnapshot returns the ID of the active snapshot
 func (l *LoopDevice) getActiveSnapshot() (int, error) {
 	snapPath := filepath.Join(l.rootDir, loopDeviceSnapsPath, constants.ActiveSnapshot)
 	exists, err := utils.Exists(l.cfg.Fs, snapPath, true)
@@ -349,6 +408,7 @@ func (l *LoopDevice) getActiveSnapshot() (int, error) {
 	return int(id), nil
 }
 
+// isSnapshotInUse checks if the given snapshot ID is actually the current system
 func (l *LoopDevice) isSnapshotInUse(id int) (bool, error) {
 	backedFiles, err := l.cfg.Runner.Run("losetup", "-ln", "--output", "BACK-FILE")
 	if err != nil {
@@ -366,6 +426,7 @@ func (l *LoopDevice) isSnapshotInUse(id int) (bool, error) {
 	return false, nil
 }
 
+// snapshotToImage is a helper method to convert an snapshot object into an image object.
 func (l *LoopDevice) snapshotToImage(snapshot *v1.Snapshot) *v1.Image {
 	return &v1.Image{
 		File:       snapshot.Path,
@@ -376,26 +437,30 @@ func (l *LoopDevice) snapshotToImage(snapshot *v1.Snapshot) *v1.Image {
 	}
 }
 
+// cleanOldSnapshots deletes old snapshots to prevent exceeding the configured maximum
 func (l *LoopDevice) cleanOldSnapshots() error {
+	var errs error
+
 	l.cfg.Logger.Infof("Cleaning old passive snapshots")
-	ids, err := l.GetSnapshots()
+	ids, err := l.getPassiveSnapshots()
 	if err != nil {
 		l.cfg.Logger.Warnf("could not get current snapshots")
 		return err
 	}
 
 	sort.Ints(ids)
-	for len(ids) > l.snapshotterCfg.MaxSnaps {
+	for len(ids) > l.snapshotterCfg.MaxSnaps-1 {
 		err = l.DeleteSnapshot(ids[0])
 		if err != nil {
 			l.cfg.Logger.Warnf("could not delete snapshot %d", ids[0])
-			return err
+			errs = multierror.Append(errs, err)
 		}
 		ids = ids[1:]
 	}
-	return nil
+	return errs
 }
 
+// setBootloader sets the bootloader variables to update new passives
 func (l *LoopDevice) setBootloader() error {
 	var passives, fallbacks []string
 
@@ -415,7 +480,7 @@ func (l *LoopDevice) setBootloader() error {
 	}
 	snapsList := strings.Join(passives, " ")
 	fallbackList := strings.Join(fallbacks, " ")
-	envFile := filepath.Join(l.rootDir, constants.GrubOEMEnv)
+	envFile := filepath.Join(constants.EfiDir, constants.GrubOEMEnv)
 
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
@@ -431,6 +496,7 @@ func (l *LoopDevice) setBootloader() error {
 	return err
 }
 
+// getPassiveSnapshots returns a list of available passive snapshots
 func (l *LoopDevice) getPassiveSnapshots() ([]int, error) {
 	var ids []int
 
@@ -459,9 +525,63 @@ func (l *LoopDevice) getPassiveSnapshots() ([]int, error) {
 				l.cfg.Logger.Warnf("image for snapshot %d doesn't exist", id)
 			}
 		}
-		l.cfg.Logger.Debugf("Passive snaps: %v", ids)
+		l.cfg.Logger.Debugf("Passive snapshots: %v", ids)
 		return ids, nil
 	}
 	l.cfg.Logger.Errorf("path %s does not exist", snapsPath)
 	return ids, fmt.Errorf("cannot determine passive snapshots, initate snapshotter first")
+}
+
+// legacyImageToSnapshot is method to migrate existing legacy passive.img or active.img as a new loop device snapshot
+func (l *LoopDevice) legacyImageToSnapsot(image string) error {
+	if ok, _ := utils.Exists(l.cfg.Fs, image); ok {
+		id, err := l.getNextSnapshotID()
+		if err != nil {
+			l.cfg.Logger.Errorf("failed setting the snaphsot ID for legacy images: %v", err)
+			return err
+		}
+		l.cfg.Logger.Debugf("Migrating image %s to snapshot %d", image, id)
+
+		snapPath := filepath.Join(l.rootDir, loopDeviceSnapsPath, strconv.FormatInt(int64(id), 10))
+		err = utils.MkdirAll(l.cfg.Fs, snapPath, constants.DirPerm)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed creating snapshot folders for legacy images: %v", err)
+			return err
+		}
+		err = l.cfg.Fs.Link(image, filepath.Join(snapPath, loopDeviceImgName))
+		if err != nil {
+			l.cfg.Logger.Errorf("failed copying legacy image as snapshot: %v", err)
+			return err
+		}
+
+		passiveLink := fmt.Sprintf("../%d/%s", id, loopDeviceImgName)
+		newPassive := filepath.Join(l.rootDir, loopDevicePassivePath, fmt.Sprintf(constants.PassiveSnapshot, id))
+		err = l.cfg.Fs.Symlink(passiveLink, newPassive)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed creating the passive link for legacy images: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// cleanLegacyImages deletes old legacy images if any
+func (l *LoopDevice) cleanLegacyImages() error {
+	var path string
+
+	if l.legacyClean {
+		// delete passive image
+		path = filepath.Join(l.rootDir, constants.LegacyPassivePath)
+		if elemental.IsPassiveMode(l.cfg) {
+			// delete active image
+			path = filepath.Join(l.rootDir, constants.LegacyActivePath)
+		} else if l.currentSnapshotID > 0 || elemental.IsRecoveryMode(l.cfg) {
+			// delete passive and active if we are not booting from any of them
+			path = filepath.Join(l.rootDir, constants.LegacyImagesPath)
+		}
+		if ok, _ := utils.Exists(l.cfg.Fs, path); ok {
+			return l.cfg.Fs.RemoveAll(path)
+		}
+	}
+	return nil
 }

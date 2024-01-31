@@ -43,10 +43,8 @@ var _ = Describe("Elemental Feature tests", func() {
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
 			By(fmt.Sprintf("and upgrading the to %s", comm.UpgradeImage()))
-			// TODO: make use of verified images and check unsigned images can't be pulled
-			//out, err := s.Command(s.ElementalCmd("upgrade", "--verify", "--system.uri", comm.UpgradeImage()))
-			//Expect(err).To(HaveOccurred())
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage()))
+
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 

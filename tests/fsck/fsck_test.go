@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Elemental booting fallback tests", func() {
+var _ = Describe("Elemental filesystem check tests", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {

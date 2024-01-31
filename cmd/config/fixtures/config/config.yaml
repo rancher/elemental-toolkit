@@ -7,17 +7,15 @@ install:
   target: "someDisk"
 
   no-format: true
-  system:
-    uri: docker:some/image:latest
+  system: docker:some/image:latest
   recovery-system:
     uri: docker:recovery/image:latest
-
+    
 reset:
   disable-boot-entry: true
 
 upgrade:
-  system:
-    uri: some/image:latest
+  system: some/image:latest
   recovery-system:
     uri: recovery/image:latest
 

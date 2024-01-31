@@ -54,7 +54,7 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 
 			By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
 
-			cmd := s.ElementalCmd("upgrade", "--system.uri", comm.UpgradeImage())
+			cmd := s.ElementalCmd("upgrade", "--system", comm.UpgradeImage())
 			By(fmt.Sprintf("running %s", cmd))
 
 			out, err := s.Command(cmd)

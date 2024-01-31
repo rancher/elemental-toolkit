@@ -18,9 +18,7 @@ package snapshotter_test
 
 import (
 	"bytes"
-	"fmt"
 	"path/filepath"
-	"strconv"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -51,7 +49,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
 		bootloader = &v1mock.FakeBootloader{}
-		memLog = &bytes.Buffer{}
+		memLog = bytes.NewBuffer(nil)
 		logger = v1.NewBufferLogger(memLog)
 		logger.SetLevel(v1.DebugLevel())
 
@@ -101,6 +99,22 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
 	})
 
+	It("inits a snapshotter on a legacy system on passive mode", func() {
+		Expect(utils.MkdirAll(fs, filepath.Dir(constants.PassiveMode), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(constants.PassiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
+
+		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
+		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
+		Expect(fs.ReadFile(filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(Equal([]byte("passive image")))
+	})
+
 	It("fails to init if it can't create working directories", func() {
 		cfg.Fs = vfs.NewReadOnlyFS(fs)
 		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
@@ -122,6 +136,30 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(snap.ID).To(Equal(1))
 		Expect(snap.InProgress).To(BeTrue())
 		Expect(snap.Path).To(Equal(filepath.Join(rootDir, ".snapshots/1/snapshot.img")))
+	})
+
+	It("starts and closes a transaction on a legacy system", func() {
+		Expect(utils.MkdirAll(fs, filepath.Dir(constants.ActiveMode), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/active.img"), []byte("active image"), constants.FilePerm)).To(Succeed())
+		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
+
+		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
+
+		snap, err := lp.StartTransaction()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(snap.ID).To(Equal(2))
+		Expect(snap.InProgress).To(BeTrue())
+		Expect(snap.Path).To(Equal(filepath.Join(rootDir, ".snapshots/2/snapshot.img")))
+
+		Expect(lp.CloseTransaction(snap)).To(Succeed())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS/passive.img"))).To(BeFalse())
+		Expect(utils.Exists(fs, filepath.Join(rootDir, "cOS/active.img"))).To(BeTrue())
 	})
 
 	It("fails to start a transaction without being initiated first", func() {
@@ -151,24 +189,10 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	Describe("using loopdevice on sixth snapshot", func() {
 		var err error
 		var lp *snapshotter.LoopDevice
-		var snapshotsPrefix string
 
 		BeforeEach(func() {
-			var snapshotFile string
-			var i int
-			snapshotsPrefix = filepath.Join(rootDir, ".snapshots")
-			for i = 1; i < 6; i++ {
-				Expect(utils.MkdirAll(cfg.Fs, filepath.Join(rootDir, ".snapshots", strconv.Itoa(i)), constants.DirPerm)).To(Succeed())
-				snapshotFile = filepath.Join(snapshotsPrefix, strconv.Itoa(i), "snapshot.img")
-				Expect(fs.WriteFile(snapshotFile, []byte(fmt.Sprintf("This is snapshot %d", i)), constants.FilePerm)).To(Succeed())
-			}
-			Expect(fs.Symlink(filepath.Join(strconv.Itoa(5), "snapshot.img"), filepath.Join(snapshotsPrefix, constants.ActiveSnapshot))).To(Succeed())
-			passivesPath := filepath.Join(snapshotsPrefix, "passives")
-			Expect(utils.MkdirAll(fs, passivesPath, constants.DirPerm))
-			for i = 1; i < 5; i++ {
-				snapshotFile = filepath.Join("..", strconv.Itoa(i), "snapshot.img")
-				Expect(fs.Symlink(snapshotFile, filepath.Join(passivesPath, fmt.Sprintf(constants.PassiveSnapshot, i)))).To(Succeed())
-			}
+
+			v1mock.FakeLoopDeviceSnapshotsStatus(fs, rootDir, 5)
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == "losetup" {
@@ -195,7 +219,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 		It("fails to start a transaction if active snapshot can't be detected", func() {
 			// delete current active symlink and create a broken one
-			activeLink := filepath.Join(snapshotsPrefix, constants.ActiveSnapshot)
+			activeLink := filepath.Join(filepath.Join(rootDir, ".snapshots"), constants.ActiveSnapshot)
 			Expect(fs.Remove(activeLink)).To(Succeed())
 			Expect(fs.Symlink("nonExistingFile", activeLink)).To(Succeed())
 
@@ -244,7 +268,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Expect(snap.ID).To(Equal(6))
 			Expect(snap.InProgress).To(BeTrue())
 			Expect(lp.CloseTransaction(snap)).To(Succeed())
-			Expect(lp.GetSnapshots()).To(Equal([]int{3, 4, 5, 6}))
+			Expect(lp.GetSnapshots()).To(Equal([]int{5, 6}))
 		})
 
 		It("closes a started transaction and cleans old snapshots up to current active", func() {
@@ -263,8 +287,8 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Expect(snap.InProgress).To(BeTrue())
 			Expect(lp.CloseTransaction(snap)).To(Succeed())
 
-			// Could not delete 2 as it is in use and stopped cleaning
-			Expect(lp.GetSnapshots()).To(Equal([]int{2, 3, 4, 5, 6}))
+			// Could not delete 2 as it is in use
+			Expect(lp.GetSnapshots()).To(Equal([]int{2, 5, 6}))
 		})
 
 		It("closes and drops a started transaction if snapshot is not in progress", func() {
