@@ -44,6 +44,7 @@ RUN dnf install -y \
     mtools \
     xorriso \
     patch \
+    podman \
     which
 
 # Create non FHS paths

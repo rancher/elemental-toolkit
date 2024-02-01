@@ -49,6 +49,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   patch \
   netplan.io \
   locales \
+  podman \
   xz-utils
 
 # Create non FHS paths

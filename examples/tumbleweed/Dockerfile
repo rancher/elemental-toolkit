@@ -59,6 +59,7 @@ RUN ARCH=$(uname -m); \
       sed \
       patch \
       iproute2 \
+      podman \
       ${ADD_PKGS}
 
 # Just add the elemental cli
