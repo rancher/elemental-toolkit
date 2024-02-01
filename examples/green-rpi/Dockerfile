@@ -44,6 +44,7 @@ RUN zypper --non-interactive install --no-recommends -- \
       less \
       sudo \
       curl \
+      podman \
       sed
 
 # Just add the elemental cli
