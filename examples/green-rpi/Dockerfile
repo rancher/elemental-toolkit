@@ -4,20 +4,22 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM opensuse/tumbleweed:latest as OS
+FROM registry.opensuse.org/opensuse/leap:15.5 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
 
 # install kernel, systemd, dracut, grub2 and other required tools
-RUN ARCH=$(uname -m); \
-    if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi; \
-    zypper --non-interactive install --no-recommends -- \
+RUN zypper --non-interactive install --no-recommends -- \
       kernel-default \
       device-mapper \
       dracut \
       grub2 \
-      grub2-${ARCH}-efi \
+      grub2-arm64-efi \
+      raspberrypi-firmware \
+      raspberrypi-firmware-config \
+      raspberrypi-firmware-dt \
+      u-boot-rpiarm64 \
       shim \
       haveged \
       systemd \
@@ -42,10 +44,8 @@ RUN ARCH=$(uname -m); \
       less \
       sudo \
       curl \
-      sed \
-      patch \
-      iproute2 \
-      podman
+      podman \
+      sed
 
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
@@ -53,8 +53,8 @@ COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 # Enable essential services
 RUN systemctl enable NetworkManager.service
 
-# This is for automatic testing purposes, do not do this in production.
-RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
+# Enable /tmp to be on tmpfs
+RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
 RUN elemental init -f && \
@@ -73,5 +73,4 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
 
 # Good for validation after the build
 CMD /bin/bash
-
 

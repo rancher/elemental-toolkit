@@ -42,6 +42,8 @@ RUN ARCH=$(uname -m); \
       less \
       sudo \
       curl \
+      iproute2 \
+      podman \
       sed
 
 # Just add the elemental cli
