@@ -54,6 +54,7 @@ func GetAllPartitions() (v1.PartitionList, error) {
 			parts = append(parts, ghwPartitionToInternalPartition(part))
 		}
 	}
+
 	return parts, nil
 }
 
@@ -78,5 +79,5 @@ func GetPartitionFS(partition string) (string, error) {
 			}
 		}
 	}
-	return "", fmt.Errorf("could not find filesystem for partition %s", partition)
+	return "", fmt.Errorf("could not find partition %s", partition)
 }

@@ -43,6 +43,9 @@ RUN ARCH=$(uname -m); \
       sudo \
       curl \
       iproute2 \
+      btrfsprogs \
+      btrfsmaintenance \
+      snapper \
       podman \
       sed && \
     zypper clean --all
@@ -61,6 +64,9 @@ ADD 05_network.yaml /system/oem/05_network.yaml
 
 # Generate initrd with required elemental services
 RUN elemental init --debug --force
+
+# Add default snapshotter setup
+ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
