@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/rancher/elemental-toolkit/pkg/bootloader"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
@@ -65,7 +66,14 @@ func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec, opts ...InstallAc
 	}
 
 	if i.snapshotter == nil {
-		i.snapshotter, err = snapshotter.NewLoopDeviceSnapshotter(cfg.Config, cfg.Snapshotter, i.bootloader)
+		i.snapshotter, err = snapshotter.NewSnapshotter(cfg.Config, cfg.Snapshotter, i.bootloader)
+	}
+
+	if i.cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
+		if spec.Partitions.State.FS != constants.Btrfs {
+			cfg.Logger.Warning("Btrfs snapshotter type, forcing btrfs filesystem on state partition")
+			spec.Partitions.State.FS = constants.Btrfs
+		}
 	}
 
 	return i, err

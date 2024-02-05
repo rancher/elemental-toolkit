@@ -54,11 +54,17 @@ type LoopDeviceConfig struct {
 	FS   string `yaml:"fs,omitempty" mapstructure:"fs"`
 }
 
+type BtrfsConfig struct{}
+
 func NewLoopDeviceConfig() *LoopDeviceConfig {
 	return &LoopDeviceConfig{
 		FS:   constants.LinuxImgFs,
 		Size: constants.ImgSize,
 	}
+}
+
+func NewBtrfsConfig() *BtrfsConfig {
+	return &BtrfsConfig{}
 }
 
 type snapshotterConfFactory func(defConfig interface{}, data interface{}) (interface{}, error)
@@ -70,7 +76,21 @@ func newLoopDeviceConfig(defConfig interface{}, data interface{}) (interface{}, 
 	if !ok {
 		cfg = NewLoopDeviceConfig()
 	}
+	if data == nil {
+		return cfg, nil
+	}
 	return innerConfigDecoder[*LoopDeviceConfig](cfg, data)
+}
+
+func newBtrfsConfig(defConfig interface{}, data interface{}) (interface{}, error) {
+	cfg, ok := defConfig.(*BtrfsConfig)
+	if !ok {
+		cfg = NewBtrfsConfig()
+	}
+	if data == nil {
+		return cfg, nil
+	}
+	return innerConfigDecoder[*BtrfsConfig](cfg, data)
 }
 
 func innerConfigDecoder[T any](defaultConf T, data interface{}) (T, error) {
@@ -84,11 +104,11 @@ func innerConfigDecoder[T any](defaultConf T, data interface{}) (T, error) {
 	}
 	dec, err := mapstructure.NewDecoder(cfg)
 	if err != nil {
-		return defaultConf, fmt.Errorf("failed creating a decoder to unmarshal a loop device snapshotter: %v", err)
+		return defaultConf, fmt.Errorf("failed creating a decoder to unmarshal a snapshotter configuration: %v", err)
 	}
 	err = dec.Decode(confMap)
 	if err != nil {
-		return defaultConf, fmt.Errorf("failed to decode loopdevice configuration, invalid format: %v", err)
+		return defaultConf, fmt.Errorf("failed to decode snapshotter configuration, invalid format: %v", err)
 	}
 	return defaultConf, nil
 }
@@ -111,14 +131,15 @@ func (c *SnapshotterConfig) CustomUnmarshal(data interface{}) (bool, error) {
 			c.MaxSnaps = maxSnaps
 		}
 
-		if mData["config"] != nil {
-			factory := snapshotterConfFactories[c.Type]
-			conf, err := factory(c.Config, mData["config"])
-			if err != nil {
-				return false, fmt.Errorf("failed decoding snapshotter configuration: %v", err)
-			}
-			c.Config = conf
+		factory := snapshotterConfFactories[c.Type]
+		if factory == nil {
+			return false, fmt.Errorf("failed to load snapshotter configuration for type %s", c.Type)
 		}
+		conf, err := factory(c.Config, mData["config"])
+		if err != nil {
+			return false, fmt.Errorf("failed decoding snapshotter configuration: %v", err)
+		}
+		c.Config = conf
 	}
 	return false, nil
 }
@@ -144,4 +165,5 @@ func (c *SnapshotterConfig) UnmarshalYAML(node *yaml.Node) error {
 
 func init() {
 	snapshotterConfFactories[constants.LoopDeviceSnapshotterType] = newLoopDeviceConfig
+	snapshotterConfFactories[constants.BtrfsSnapshotterType] = newBtrfsConfig
 }

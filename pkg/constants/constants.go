@@ -42,6 +42,7 @@ const (
 	LinuxImgFs         = "ext2"
 	SquashFs           = "squashfs"
 	EfiFs              = "vfat"
+	Btrfs              = "btrfs"
 	BiosFs             = ""
 	MinPartSize        = uint(64)
 	EfiSize            = MinPartSize
@@ -173,6 +174,7 @@ const (
 	// Snapshotters
 	MaxSnaps                  = 2
 	LoopDeviceSnapshotterType = "loopdevice"
+	BtrfsSnapshotterType      = "btrfs"
 	ActiveSnapshot            = "active"
 	PassiveSnapshot           = "passive_%d"
 

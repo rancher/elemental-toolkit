@@ -67,7 +67,7 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 	}
 
 	if u.snapshotter == nil {
-		u.snapshotter, err = snapshotter.NewLoopDeviceSnapshotter(config.Config, config.Snapshotter, u.bootloader)
+		u.snapshotter, err = snapshotter.NewSnapshotter(config.Config, config.Snapshotter, u.bootloader)
 		if err != nil {
 			config.Logger.Errorf("error initializing snapshotter of type '%s'", config.Snapshotter.Type)
 			return nil, err
@@ -78,6 +78,11 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 	if spec.State != nil && spec.State.Snapshotter.Type != config.Snapshotter.Type {
 		config.Logger.Errorf("can't change snaphsotter type on upgrades, not supported. Please review upgrade configuration")
 		return nil, fmt.Errorf("failed setting snapshotter for the upgrade, unexpected type '%s'", config.Snapshotter.Type)
+	}
+
+	if u.spec.RecoveryUpgrade && elemental.IsRecoveryMode(config.Config) {
+		config.Logger.Errorf("Upgrading recovery image from the recovery system itself is not supported")
+		return nil, fmt.Errorf("Not supported")
 	}
 
 	return u, nil
@@ -193,52 +198,59 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		}
 	}
 
+	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
+	if u.spec.Partitions.Recovery.MountPoint == constants.RunningStateDir {
+		statePath = filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile)
+	}
+
 	return u.cfg.WriteInstallState(
-		u.spec.State,
-		filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile),
+		u.spec.State, statePath,
 		filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
 	)
 }
 
-func (u *UpgradeAction) Run() (err error) {
-	var umount func() error
+func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
+	umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.EFI)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.MountEFIPartition)
+	}
+	cleanup.Push(umount)
 
+	if !elemental.IsRecoveryMode(u.cfg.Config) {
+		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
+		}
+		cleanup.Push(umount)
+	} else {
+		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.MountStatePartition)
+		}
+		cleanup.Push(umount)
+	}
+
+	if u.spec.Partitions.Persistent != nil {
+		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Persistent)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.MountPersistentPartition)
+		}
+		cleanup.Push(umount)
+	}
+
+	return nil
+}
+
+func (u *UpgradeAction) Run() (err error) {
 	cleanup := utils.NewCleanStack()
 	defer func() {
 		err = cleanup.Cleanup(err)
 	}()
 
 	// Mount required partitions as RW
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
+	err = u.mountRWPartitions(cleanup)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountStatePartition)
-	}
-	cleanup.Push(umount)
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
-	}
-	cleanup.Push(umount)
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.EFI)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountEFIPartition)
-	}
-	cleanup.Push(umount)
-
-	// Recovery does not mount persistent, so try to mount it. Ignore errors, as it's not mandatory.
-	persistentPart := u.spec.Partitions.Persistent
-	if persistentPart != nil {
-		// Create the dir otherwise the check for mounted dir fails
-		_ = utils.MkdirAll(u.cfg.Fs, persistentPart.MountPoint, constants.DirPerm)
-		if mnt, err := elemental.IsMounted(u.cfg.Config, persistentPart); !mnt && err == nil {
-			u.Debug("mounting persistent partition")
-			umount, err = elemental.MountRWPartition(u.cfg.Config, persistentPart)
-			if err != nil {
-				u.cfg.Logger.Warn("could not mount persistent partition: %s", err.Error())
-			} else {
-				cleanup.Push(umount)
-			}
-		}
+		return err
 	}
 
 	// Init snapshotter

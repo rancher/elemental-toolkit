@@ -54,8 +54,8 @@ type LoopDevice struct {
 	legacyClean       bool
 }
 
-// NewLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
-func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (*LoopDevice, error) {
+// newLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
+func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error) {
 	if snapCfg.Type != constants.LoopDeviceSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
@@ -202,7 +202,7 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 
 	if !snapshot.InProgress {
 		l.cfg.Logger.Debugf("No transaction to close for snapshot %d workdir", snapshot.ID)
-		return l.cfg.Fs.RemoveAll(filepath.Dir(snapshot.Path))
+		return fmt.Errorf("given snapshot is not in progress")
 	}
 	defer func() {
 		if err != nil {
@@ -211,7 +211,7 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	}()
 
 	l.cfg.Logger.Infof("Closing transaction for snapshot %d workdir", snapshot.ID)
-	l.cfg.Logger.Debugf("Unmount %s", constants.WorkingImgDir)
+	l.cfg.Logger.Debugf("Unmount %s", snapshot.MountPoint)
 	err = l.cfg.Mounter.Unmount(snapshot.MountPoint)
 	if err != nil {
 		l.cfg.Logger.Errorf("failed umounting snapshot %d workdir bind mount", snapshot.ID)
@@ -399,13 +399,13 @@ func (l *LoopDevice) getActiveSnapshot() (int, error) {
 		return -1, err
 	}
 
-	id, err := strconv.ParseInt(filepath.Base(filepath.Dir(resolved)), 10, 32)
+	id, err := strconv.Atoi(filepath.Base(filepath.Dir(resolved)))
 	if err != nil {
 		l.cfg.Logger.Errorf("failed parsing snapshot ID from path %s: %v", resolved, err)
 		return -1, err
 	}
 
-	return int(id), nil
+	return id, nil
 }
 
 // isSnapshotInUse checks if the given snapshot ID is actually the current system
@@ -470,8 +470,8 @@ func (l *LoopDevice) setBootloader() error {
 		l.cfg.Logger.Warnf("failed getting current passive snapshots: %v", err)
 		return err
 	}
-	for _, id := range ids {
-		passives = append(passives, fmt.Sprintf(constants.PassiveSnapshot, id))
+	for i := len(ids) - 1; i >= 0; i-- {
+		passives = append(passives, strconv.Itoa(ids[i]))
 	}
 
 	// We count first is active, then all passives and finally the recovery
@@ -514,13 +514,13 @@ func (l *LoopDevice) getPassiveSnapshots() ([]int, error) {
 				continue
 			}
 			matches := r.FindStringSubmatch(link.Name())
-			id, err := strconv.ParseInt(matches[1], 10, 32)
+			id, err := strconv.Atoi(matches[1])
 			if err != nil {
 				continue
 			}
 			linkPath := filepath.Join(snapsPath, link.Name())
 			if exists, _ := utils.Exists(l.cfg.Fs, linkPath); exists {
-				ids = append(ids, int(id))
+				ids = append(ids, id)
 			} else {
 				l.cfg.Logger.Warnf("image for snapshot %d doesn't exist", id)
 			}

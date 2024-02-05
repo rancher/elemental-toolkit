@@ -87,10 +87,17 @@ func NewResetAction(cfg *v1.RunConfig, spec *v1.ResetSpec, opts ...ResetActionOp
 	}
 
 	if r.snapshotter == nil {
-		r.snapshotter, err = snapshotter.NewLoopDeviceSnapshotter(cfg.Config, cfg.Snapshotter, r.bootloader)
+		r.snapshotter, err = snapshotter.NewSnapshotter(cfg.Config, cfg.Snapshotter, r.bootloader)
 		if err != nil {
 			cfg.Logger.Errorf("error initializing snapshotter of type '%s'", cfg.Snapshotter.Type)
 			return nil, err
+		}
+	}
+
+	if r.cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
+		if spec.Partitions.State.FS != constants.Btrfs {
+			cfg.Logger.Warning("Btrfs snapshotter type, forcing btrfs filesystem on state partition")
+			spec.Partitions.State.FS = constants.Btrfs
 		}
 	}
 

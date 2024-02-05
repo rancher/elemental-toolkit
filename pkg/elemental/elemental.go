@@ -148,14 +148,10 @@ func UnmountPartitions(c v1.Config, parts v1.PartitionList) error {
 			c.Logger.Debugf("Not unmounting partition '%s', mountpoint undefined", part.Name)
 			continue
 		}
-		if ok, _ := IsMounted(c, part); ok {
-			err := UnmountPartition(c, part)
-			if err != nil {
-				c.Logger.Errorf("Failed to unmount %s\n", part.MountPoint)
-				errs = multierror.Append(errs, err)
-			}
-		} else {
-			c.Logger.Debugf("Not unmounting partition '%s', already unmounted", part.Name)
+		err := UnmountPartition(c, part)
+		if err != nil {
+			c.Logger.Errorf("Failed to unmount %s\n", part.MountPoint)
+			errs = multierror.Append(errs, err)
 		}
 	}
 
@@ -180,9 +176,25 @@ func IsMounted(c v1.Config, part *v1.Partition) (bool, error) {
 	return !notMnt, nil
 }
 
+func IsRWMountPoint(c v1.Config, mountPoint string) (bool, error) {
+	cmdOut, err := c.Runner.Run("findmnt", "-fno", "OPTIONS", mountPoint)
+	if err != nil {
+		return false, err
+	}
+	for _, opt := range strings.Split(strings.TrimSpace(string(cmdOut)), ",") {
+		if opt == "rw" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // MountRWPartition mounts, or remounts if needed, a partition with RW permissions
 func MountRWPartition(c v1.Config, part *v1.Partition) (umount func() error, err error) {
 	if mnt, _ := IsMounted(c, part); mnt {
+		if ok, _ := IsRWMountPoint(c, part.MountPoint); ok {
+			return func() error { return nil }, nil
+		}
 		err = MountPartition(c, part, "remount", "rw")
 		if err != nil {
 			c.Logger.Errorf("Failed mounting %s partition: %s", part.Name, err.Error())
@@ -591,26 +603,20 @@ func CheckActiveDeployment(cfg v1.Config) bool {
 
 // IsActiveMode checks if the active mode sentinel file exists
 func IsActiveMode(cfg v1.Config) bool {
-	if ok, _ := utils.Exists(cfg.Fs, cnst.ActiveMode); ok {
-		return true
-	}
-	return false
+	ok, _ := utils.Exists(cfg.Fs, cnst.ActiveMode)
+	return ok
 }
 
 // IsPassiveMode checks if the passive mode sentinel file exists
 func IsPassiveMode(cfg v1.Config) bool {
-	if ok, _ := utils.Exists(cfg.Fs, cnst.PassiveMode); ok {
-		return true
-	}
-	return false
+	ok, _ := utils.Exists(cfg.Fs, cnst.PassiveMode)
+	return ok
 }
 
 // IsRecoveryMode checks if the recovery mode sentinel file exists
 func IsRecoveryMode(cfg v1.Config) bool {
-	if ok, _ := utils.Exists(cfg.Fs, cnst.RecoveryMode); ok {
-		return true
-	}
-	return false
+	ok, _ := utils.Exists(cfg.Fs, cnst.RecoveryMode)
+	return ok
 }
 
 // SourceISO downloads an ISO in a temporary folder, mounts it and returns the image source to be used
