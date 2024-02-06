@@ -2,7 +2,7 @@ package schema
 
 import (
 	"github.com/twpayne/go-vfs/v4"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type yipYAML struct{}
