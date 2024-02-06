@@ -26,8 +26,8 @@ const (
 	BiosPartName       = "bios"
 	EfiLabel           = "COS_GRUB"
 	EfiPartName        = "efi"
-	ActiveLabel        = "COS_ACTIVE"
-	PassiveLabel       = "COS_PASSIVE"
+	ActiveLabel        = "COS_ACTIVE"  // TODO deleteme
+	PassiveLabel       = "COS_PASSIVE" // TODO deleteme
 	SystemLabel        = "COS_SYSTEM"
 	RecoveryLabel      = "COS_RECOVERY"
 	RecoveryPartName   = "recovery"
@@ -92,16 +92,17 @@ const (
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints of images and partitions
+	RunElementalDir    = "/run/elemental"
 	RecoveryDir        = "/run/elemental/recovery"
 	StateDir           = "/run/elemental/state"
 	OEMDir             = "/run/elemental/oem"
 	PersistentDir      = "/run/elemental/persistent"
-	PersistentStateDir = "/run/elemental/persistent/.state"
 	TransitionDir      = "/run/elemental/transition"
 	EfiDir             = "/run/elemental/efi"
 	ImgSrcDir          = "/run/elemental/imgsrc"
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
+	PersistentStateDir = ".state"
 	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
 
 	// Running mode sentinel files

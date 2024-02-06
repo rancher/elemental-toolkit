@@ -124,6 +124,17 @@ upgrade:
 mount:
   sysroot: /sysroot # Path to mount system to
   write-fstab: true # Write fstab into sysroot/etc/fstab
+  volumes:
+    - mountpoint: /run/elemental/persistent
+      device: PARTLABEL=persistent
+      options: ["defaults"]
+      persisent: true
+    - mountpoint: /run/elemental/efi
+      device: PARTLABEL=efi
+      options: ["ro", "defaults"]
+    - mountpoint: /oem
+      device: LABEL=COS_OEM
+      options: ["defaults"]
   ephemeral:
     type: tmpfs # tmpfs|block
     device: /dev/sda6 # Block device used to store overlay. Used when type is set to block
