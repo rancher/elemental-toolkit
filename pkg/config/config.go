@@ -220,46 +220,26 @@ func NewInitSpec() *v1.InitSpec {
 	}
 }
 
-func NewMountSpec(cfg v1.Config) (*v1.MountSpec, error) {
-	// Check current installed system setup and discover partitions
-	installState, err := cfg.LoadInstallState()
-	if err != nil {
-		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
-	}
-
-	// Lists detected partitions on current system including mountpoint if mounted
-	parts, err := utils.GetAllPartitions()
-	if err != nil {
-		return nil, fmt.Errorf("could not read host partitions")
-	}
-
-	ep := v1.NewElementalPartitionsFromList(parts, installState)
-
-	if ep.EFI != nil && ep.EFI.MountPoint == "" {
-		ep.EFI.MountPoint = constants.EfiDir
-		ep.EFI.Flags = []string{"ro", "defaults"}
-	}
-	if ep.OEM != nil && ep.OEM.MountPoint == "" {
-		ep.OEM.MountPoint = constants.OEMDir
-	}
-	if ep.Persistent != nil && ep.Persistent.MountPoint == "" {
-		ep.Persistent.MountPoint = constants.PersistentDir
-	}
-	if ep.Recovery != nil {
-		ep.Recovery.Flags = []string{"ro", "defaults"}
-	}
-	if ep.State != nil {
-		ep.State.Flags = []string{"ro", "defaults"}
-	}
-	if (ep.Recovery == nil || ep.Recovery.MountPoint == "") &&
-		(ep.State == nil || ep.State.MountPoint == "") {
-		return nil, fmt.Errorf("neither state or recovery partitions are mounted")
-	}
-
+func NewMountSpec() *v1.MountSpec {
 	return &v1.MountSpec{
 		Sysroot:    "/sysroot",
 		WriteFstab: true,
-		Partitions: ep,
+		Volumes: []*v1.VolumeMount{
+			{
+				Mountpoint: constants.PersistentDir,
+				Device:     fmt.Sprintf("PARTLABEL=%s", constants.PersistentPartName),
+				Options:    []string{"rw", "defaults"},
+				Persistent: true,
+			}, {
+				Mountpoint: constants.OEMPath,
+				Device:     fmt.Sprintf("PARTLABEL=%s", constants.OEMPartName),
+				Options:    []string{"rw", "defaults"},
+			}, {
+				Mountpoint: constants.EfiDir,
+				Device:     fmt.Sprintf("PARTLABEL=%s", constants.EfiPartName),
+				Options:    []string{"ro", "defaults"},
+			},
+		},
 		Ephemeral: v1.EphemeralMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",
@@ -269,7 +249,7 @@ func NewMountSpec(cfg v1.Config) (*v1.MountSpec, error) {
 			Mode:  constants.OverlayMode,
 			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/var/log"},
 		},
-	}, nil
+	}
 }
 
 func NewInstallElementalPartitions() v1.ElementalPartitions {

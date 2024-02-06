@@ -30,7 +30,6 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	"github.com/rancher/elemental-toolkit/pkg/config"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
@@ -62,7 +61,7 @@ var _ = Describe("Mount Action", func() {
 		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 			switch cmd {
 			case "findmnt":
-				return []byte("/dev/loop0"), nil
+				return []byte("/dev/loop0\t/sysroot\text2\tro,relatime"), nil
 			default:
 				return []byte{}, nil
 			}
@@ -75,6 +74,7 @@ var _ = Describe("Mount Action", func() {
 	Describe("Write fstab", Label("mount", "fstab"), func() {
 		It("Writes a simple fstab", func() {
 			spec := &v1.MountSpec{
+				Sysroot:    "/sysroot",
 				WriteFstab: true,
 				Ephemeral: v1.EphemeralMounts{
 					Size: "30%",
@@ -83,29 +83,34 @@ var _ = Describe("Mount Action", func() {
 					Mode:  constants.BindMode,
 					Paths: []string{"/some/path"},
 				},
-				Partitions: v1.ElementalPartitions{
-					Persistent: &v1.Partition{
-						Path:       "/some/device",
-						MountPoint: "/mnt",
+				Volumes: []*v1.VolumeMount{
+					{
+						Mountpoint: constants.PersistentDir,
+						Device:     "/dev/somedevice",
+						Persistent: true,
+						Options:    []string{"rw", "defaults"},
 					},
 				},
 			}
-			Expect(elemental.MountPartition(cfg.Config, spec.Partitions.Persistent)).To(Succeed())
-			utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)
-			err := action.WriteFstab(cfg, spec)
+
+			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
+			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
+			Expect(err).To(BeNil())
+			err = action.WriteFstab(cfg, spec, fstabData)
 			Expect(err).To(BeNil())
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
 			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
-			expectedFstab += "/some/device\t/mnt\tauto\tdefaults\t0\t0\n"
+			expectedFstab += "/dev/somedevice\t/run/elemental/persistent\tauto\trw,defaults\t0\t0\n"
 			expectedFstab += "/run/elemental/persistent/.state/some-path.bind\t/some/path\tnone\tdefaults,bind\t0\t0\n"
 			Expect(string(fstab)).To(Equal(expectedFstab))
 		})
 
 		It("Writes a simple fstab with overlay mode", func() {
 			spec := &v1.MountSpec{
+				Sysroot:    "/sysroot",
 				WriteFstab: true,
 				Ephemeral: v1.EphemeralMounts{
 					Size: "30%",
@@ -114,25 +119,29 @@ var _ = Describe("Mount Action", func() {
 					Mode:  constants.OverlayMode,
 					Paths: []string{"/some/path"},
 				},
-				Partitions: v1.ElementalPartitions{
-					Persistent: &v1.Partition{
-						Path:       "/some/device",
-						MountPoint: "/mnt",
+				Volumes: []*v1.VolumeMount{
+					{
+						Mountpoint: constants.PersistentDir,
+						Device:     "/dev/somedevice",
+						Persistent: true,
+						Options:    []string{"rw", "defaults"},
 					},
 				},
 			}
-			Expect(elemental.MountPartition(cfg.Config, spec.Partitions.Persistent)).To(Succeed())
-			utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)
-			err := action.WriteFstab(cfg, spec)
+			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
+			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
+			Expect(err).To(BeNil())
+			err = action.WriteFstab(cfg, spec, fstabData)
 			Expect(err).To(BeNil())
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
 			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
-			expectedFstab += "/some/device\t/mnt\tauto\tdefaults\t0\t0\n"
+			expectedFstab += "/dev/somedevice\t/run/elemental/persistent\tauto\trw,defaults\t0\t0\n"
 			expectedFstab += "overlay\t/some/path\toverlay\t"
 			expectedFstab += "defaults,lowerdir=/some/path,upperdir=/run/elemental/persistent/.state/some-path.overlay/upper,workdir=/run/elemental/persistent/.state/some-path.overlay/work,x-systemd.requires-mounts-for=/run/elemental/persistent\t0\t0\n"
+
 			Expect(string(fstab)).To(Equal(expectedFstab))
 		})
 
@@ -144,7 +153,7 @@ var _ = Describe("Mount Action", func() {
 				},
 			}
 			utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)
-			err := action.WriteFstab(cfg, spec)
+			err := action.WriteFstab(cfg, spec, "")
 			Expect(err).To(BeNil())
 
 			ok, _ := utils.Exists(fs, filepath.Join(spec.Sysroot, "/etc/fstab"))

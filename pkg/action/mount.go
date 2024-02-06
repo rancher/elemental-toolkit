@@ -17,51 +17,111 @@ limitations under the License.
 package action
 
 import (
+	"bufio"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 const overlaySuffix = ".overlay"
+const labelPref = "LABEL="
+const partLabelPref = "PARTLABEL="
+const uuidPref = "UUID="
+const devPref = "/dev/"
+const diskBy = "/dev/disk/by-"
+const diskByLabel = diskBy + "label"
+const diskByPartLabel = diskBy + "partlabel"
+const diskByUUID = diskBy + "uuid"
+const runPath = "/run"
 
 func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
+	var fstabData string
+	var err error
+
 	cfg.Logger.Info("Running mount command")
 
-	cfg.Logger.Debug("Mounting elemental partitions")
-	if err := elemental.MountPartitions(cfg.Config, spec.Partitions.PartitionsByMountPoint(false)); err != nil {
-		cfg.Logger.Errorf("Error mounting elemental partitions: %s", err.Error())
+	if spec.WriteFstab {
+		cfg.Logger.Debug("Generating inital sysroot fstab lines")
+		fstabData, err = InitialFstabData(cfg.Runner, spec.Sysroot)
+		if err != nil {
+			cfg.Logger.Errorf("Error mounting volumes: %s", err.Error())
+			return err
+		}
+
+	}
+
+	cfg.Logger.Debug("Mounting volumes")
+	if err = MountVolumes(cfg, spec.Sysroot, spec.Volumes); err != nil {
+		cfg.Logger.Errorf("Error mounting volumes: %s", err.Error())
 		return err
 	}
 
 	cfg.Logger.Debugf("Mounting ephemeral directories")
-	if err := MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral); err != nil {
+	if err = MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral); err != nil {
 		cfg.Logger.Errorf("Error mounting overlays: %s", err.Error())
 		return err
 	}
 
-	if ok, _ := elemental.IsMounted(cfg.Config, spec.Partitions.Persistent); ok {
-		cfg.Logger.Debugf("Mounting persistent directories")
-		if err := MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
-			cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
-			return err
-		}
-	} else {
-		cfg.Logger.Warn("No persistent partition defined or mounted, omitting any persistent paths configuration")
+	cfg.Logger.Debugf("Mounting persistent directories")
+	if err = MountPersistent(cfg, spec.Sysroot, spec.Persistent, spec.Volumes); err != nil {
+		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
+		return err
 	}
 
 	cfg.Logger.Debugf("Writing fstab")
-	if err := WriteFstab(cfg, spec); err != nil {
+	if err = WriteFstab(cfg, spec, fstabData); err != nil {
 		cfg.Logger.Errorf("Error writing new fstab: %s", err.Error())
 		return err
 	}
 
 	cfg.Logger.Info("Mount command finished successfully")
 	return nil
+}
+
+func MountVolumes(cfg *v1.RunConfig, sysroot string, volumes []*v1.VolumeMount) error {
+	var errs error
+
+	for _, vol := range volumes {
+		var dev string
+		switch {
+		case strings.HasPrefix(vol.Device, labelPref):
+			dev = filepath.Join(diskByLabel, strings.TrimPrefix(vol.Device, labelPref))
+		case strings.HasPrefix(vol.Device, partLabelPref):
+			dev = filepath.Join(diskByPartLabel, strings.TrimPrefix(vol.Device, partLabelPref))
+		case strings.HasPrefix(vol.Device, uuidPref):
+			dev = filepath.Join(diskByUUID, strings.TrimPrefix(vol.Device, uuidPref))
+		case strings.HasPrefix(vol.Device, devPref):
+			dev = vol.Device
+		default:
+			cfg.Logger.Errorf("Unknown device reference, it should be LABEL, PARTLABEL, UUID or a /dev/* path")
+			errs = multierror.Append(errs, fmt.Errorf("Unkown device reference: %s", vol.Device))
+			continue
+		}
+		mountpoint := vol.Mountpoint
+		if !strings.HasPrefix(mountpoint, runPath) {
+			mountpoint = filepath.Join(sysroot, mountpoint)
+		}
+
+		err := utils.MkdirAll(cfg.Fs, mountpoint, constants.DirPerm)
+		if err != nil {
+			cfg.Logger.Errorf("failed creating mountpoint %s", mountpoint)
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		err = cfg.Mounter.Mount(dev, mountpoint, "auto", vol.Options)
+		if err != nil {
+			cfg.Logger.Errorf("failed mounting device %s to %s", dev, mountpoint)
+			errs = multierror.Append(errs, err)
+		}
+	}
+	return errs
 }
 
 func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMounts) error {
@@ -105,16 +165,30 @@ func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMount
 	return nil
 }
 
-func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
+func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts, volumes []*v1.VolumeMount) error {
+	var vol *v1.VolumeMount
+
 	mountFunc := MountOverlayPath
 	if persistent.Mode == "bind" {
 		mountFunc = MountBindPath
 	}
 
+	for _, v := range volumes {
+		if v.Persistent {
+			vol = v
+			break
+		}
+	}
+	if vol == nil {
+		cfg.Logger.Debug("No persistent device defined, omitting persistent paths mounts")
+		return nil
+	}
+
 	for _, path := range persistent.Paths {
 		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
 
-		if err := mountFunc(cfg, sysroot, constants.PersistentStateDir, path); err != nil {
+		target := filepath.Join(vol.Mountpoint, constants.PersistentStateDir)
+		if err := mountFunc(cfg, sysroot, target, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
 		}
@@ -192,59 +266,71 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	return nil
 }
 
-func findmnt(runner v1.Runner, mountpoint string) (string, error) {
-	output, err := runner.Run("findmnt", "-fno", "SOURCE", mountpoint)
-	return strings.TrimSuffix(string(output), "\n"), err
-}
+func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec, data string) error {
+	var errs error
+	var persistentVol *v1.VolumeMount
 
-func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	if !spec.WriteFstab {
 		cfg.Logger.Debug("Skipping writing fstab")
 		return nil
 	}
 
-	loop, err := findmnt(cfg.Runner, spec.Sysroot)
-	if err != nil {
-		return err
-	}
+	data += fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Ephemeral.Size)})
 
-	data := fstab(loop, "/", "ext2", []string{"ro", "relatime"})
-	data = data + fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Ephemeral.Size)})
-
-	for _, part := range spec.Partitions.PartitionsByMountPoint(false) {
-		if part.Path == "" {
-			cfg.Logger.Warnf("Partition '%s' has undefined device, can't be included in fstab", part.Name)
-			continue
+	for _, vol := range spec.Volumes {
+		if vol.Persistent {
+			persistentVol = vol
 		}
 
-		data = data + fstab(part.Path, part.MountPoint, "auto", part.Flags)
+		data = data + fstab(vol.Device, vol.Mountpoint, "auto", vol.Options)
 	}
 
 	for _, rw := range spec.Ephemeral.Paths {
 		data += overlayLine(rw, constants.OverlayDir, constants.OverlayDir)
 	}
 
-	if ok, _ := elemental.IsMounted(cfg.Config, spec.Partitions.Persistent); ok {
+	if persistentVol != nil {
 		for _, path := range spec.Persistent.Paths {
 			if spec.Persistent.Mode == constants.OverlayMode {
-				data += overlayLine(path, constants.PersistentStateDir, constants.PersistentDir)
+				data += overlayLine(path, filepath.Join(persistentVol.Mountpoint, constants.PersistentStateDir), constants.PersistentDir)
 				continue
 			}
 
 			if spec.Persistent.Mode == constants.BindMode {
 				trimmed := strings.TrimPrefix(path, "/")
 				pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
-				stateDir := fmt.Sprintf("%s/%s", constants.PersistentStateDir, pathName)
+				stateDir := filepath.Join(persistentVol.Mountpoint, constants.PersistentStateDir, pathName)
 
 				data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
 				continue
 			}
-
-			return fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode)
+			errs = multierror.Append(errs, fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode))
 		}
 	}
 
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
+}
+
+func InitialFstabData(runner v1.Runner, sysroot string) (string, error) {
+	var data string
+
+	mounts, err := findmnt(runner, "/")
+	if err != nil {
+		return "", err
+	}
+	for _, mnt := range mounts {
+		if mnt.Mountpoint == sysroot {
+			data += fstab(mnt.Device, "/", "auto", mnt.Options)
+		} else if strings.HasPrefix(mnt.Mountpoint, sysroot) {
+			data += fstab(mnt.Device, strings.TrimPrefix(mnt.Mountpoint, sysroot), "auto", mnt.Options)
+		} else if strings.HasPrefix(mnt.Mountpoint, constants.RunElementalDir) {
+			data += fstab(mnt.Device, mnt.Mountpoint, "auto", mnt.Options)
+		} else if mnt.Mountpoint == constants.RunningStateDir {
+			data += fstab(mnt.Device, mnt.Mountpoint, "auto", mnt.Options)
+		}
+	}
+
+	return data, nil
 }
 
 func fstab(device, path, fstype string, flags []string) string {
@@ -252,6 +338,35 @@ func fstab(device, path, fstype string, flags []string) string {
 		flags = []string{"defaults"}
 	}
 	return fmt.Sprintf("%s\t%s\t%s\t%s\t0\t0\n", device, path, fstype, strings.Join(flags, ","))
+}
+
+func findmnt(runner v1.Runner, mountpoint string) ([]*v1.VolumeMount, error) {
+	mounts := []*v1.VolumeMount{}
+	output, err := runner.Run("findmnt", "-Rrfno", "SOURCE,TARGET,FSTYPE,OPTIONS", mountpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(output))))
+	for scanner.Scan() {
+		lineFields := strings.Fields(scanner.Text())
+		if len(lineFields) != 4 {
+			continue
+		}
+		if lineFields[2] == "btrfs" {
+			r := regexp.MustCompile(`(/.+)\[.*\]`)
+			if r.MatchString(lineFields[0]) {
+				match := r.FindStringSubmatch(lineFields[0])
+				lineFields[0] = match[1]
+			}
+		}
+		mounts = append(mounts, &v1.VolumeMount{
+			Device:     lineFields[0],
+			Mountpoint: lineFields[1],
+			Options:    strings.Split(lineFields[3], ","),
+		})
+	}
+	return mounts, nil
 }
 
 func overlayLine(path, upperPath, requriedMount string) string {

@@ -251,13 +251,20 @@ type InitSpec struct {
 
 // MountSpec struct represents all the mount action details
 type MountSpec struct {
-	WriteFstab bool   `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
-	Disable    bool   `yaml:"disable,omitempty" mapstructure:"disable"`
-	Sysroot    string `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
-	Mode       string `yaml:"mode,omitempty" mapstructure:"mode"`
-	Partitions ElementalPartitions
+	WriteFstab bool             `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	Disable    bool             `yaml:"disable,omitempty" mapstructure:"disable"`
+	Sysroot    string           `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode       string           `yaml:"mode,omitempty" mapstructure:"mode"`
+	Volumes    []*VolumeMount   `yaml:"volumes,omitempty" mapstructure:"volumes"`
 	Ephemeral  EphemeralMounts  `yaml:"ephemeral,omitempty" mapstructure:"ephemeral"`
 	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+}
+
+type VolumeMount struct {
+	Mountpoint string   `yaml:"mountpoint,omitempty" mapstructure:"mountpoint"`
+	Device     string   `yaml:"device,omitempty" mapstructure:"device"`
+	Options    []string `yaml:"options,omitempty" mapstructure:"options"`
+	Persistent bool     `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
 // PersistentMounts struct contains settings for which paths to mount as
@@ -307,8 +314,14 @@ func (spec *MountSpec) Sanitize() error {
 		})
 	}
 
+	// Ignore the volume used for persistent paths in recovery mode
 	if spec.Mode == constants.RecoveryImgName {
-		spec.Partitions.Persistent = nil
+		for i, v := range spec.Volumes {
+			if v.Persistent {
+				spec.Volumes = append(spec.Volumes[:i], spec.Volumes[i+1:]...)
+				break
+			}
+		}
 	}
 
 	return nil
