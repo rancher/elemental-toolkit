@@ -9,6 +9,8 @@ on:
       - .github/**
       - Makefile
       - tests/**
+      - go.mod
+      - go.sum
   push:
     branches:
       - main

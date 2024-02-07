@@ -26,8 +26,32 @@ jobs:
           echo "flavor=['green']" >> $GITHUB_OUTPUT
         fi
 
+  build-toolkit:
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    env:
+      ARCH: x86_64
+      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git fetch --prune --unshallow
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build toolkit
+        run: |
+          make DOCKER_ARGS=--load build
+          make DOCKER_ARGS=--push build
+
   build-matrix:
-    needs: detect
+    needs:
+      - detect
+      - build-toolkit
     strategy:
       matrix:
         flavor: ${{fromJson(needs.detect.outputs.flavor)}}
