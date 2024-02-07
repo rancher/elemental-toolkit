@@ -1,6 +1,6 @@
 module github.com/rancher/elemental-toolkit
 
-go 1.21
+go 1.22
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.2.1
