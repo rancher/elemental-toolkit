@@ -67,12 +67,6 @@ func (r *RealRunner) SetLogger(logger Logger) {
 	r.Logger = logger
 }
 
-func (r RealRunner) error(msg string) {
-	if r.Logger != nil {
-		r.Logger.Error(msg)
-	}
-}
-
 func (r RealRunner) debug(msg string) {
 	if r.Logger != nil {
 		r.Logger.Debug(msg)
