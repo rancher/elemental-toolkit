@@ -324,55 +324,15 @@ func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload b
 	return nil
 }
 
-// DeployImgTree will deploy the given image into the given root tree. Returns a tree cleaner
-// function and error. The given root will be a bind mount of a temporary directory into the same
-// filesystem of img.File, this is helpful to make the deployment easily accessible in after-* hooks.
-func DeployImgTree(c v1.Config, img *v1.Image, root string) (cleaner func() error, err error) {
-	// We prepare the rootTree next to the target image file, in the same base path
-	c.Logger.Infof("Preparing root tree for image: %s", img.File)
-	tmp := strings.TrimSuffix(img.File, filepath.Ext(img.File))
-	tmp += ".imgTree"
-	err = utils.MkdirAll(c.Fs, tmp, cnst.DirPerm)
-	if err != nil {
-		return nil, err
-	}
-
-	err = utils.MkdirAll(c.Fs, root, cnst.DirPerm)
-	if err != nil {
-		_ = c.Fs.RemoveAll(tmp)
-		return nil, err
-	}
-	err = c.Mounter.Mount(tmp, root, "bind", []string{"bind"})
-	if err != nil {
-		_ = c.Fs.RemoveAll(tmp)
-		_ = c.Fs.RemoveAll(root)
-		return nil, err
-	}
-
-	cleaner = func() error {
-		_ = c.Mounter.Unmount(root)
-		err := c.Fs.RemoveAll(root)
-		if err != nil {
-			return err
-		}
-		return c.Fs.RemoveAll(tmp)
-	}
-
-	err = DumpSource(c, root, img.Source)
-	if err != nil {
-		_ = cleaner()
-		return nil, err
-	}
-
-	return cleaner, err
-}
-
 // CreateImageFromTree creates the given image including the given root tree. If preload flag is true
 // it attempts to preload the root tree at filesystem format time. This allows creating images with the
 // given root tree without the need of mounting them.
 func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload bool, cleaners ...func() error) (err error) {
 	defer func() {
 		for _, cleaner := range cleaners {
+			if cleaner == nil {
+				continue
+			}
 			cErr := cleaner()
 			if cErr != nil && err == nil {
 				err = cErr
@@ -417,6 +377,7 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			c.Logger.Infof("Sync %s to %s", rootDir, img.MountPoint)
 			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint)
 			if err != nil {
+				c.Logger.Errorf("failed syncing data to the target loop image: %v", err)
 				return err
 			}
 		}
@@ -451,14 +412,41 @@ func CopyFileImg(c v1.Config, img *v1.Image) error {
 // DeployImage will deploy the given image into the target. This method
 // creates the filesystem image file and fills it with the correspondant data
 func DeployImage(c v1.Config, img *v1.Image) error {
-	c.Logger.Infof("Deploying image: %s", img.File)
-	cleaner, err := DeployImgTree(c, img, cnst.WorkingImgDir)
-	if err != nil {
-		return err
-	}
+	var err error
+	var cleaner func() error
 
-	err = CreateImageFromTree(c, img, cnst.WorkingImgDir, false, cleaner)
+	c.Logger.Infof("Deploying image: %s", img.File)
+	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
+	if img.Source.IsDir() {
+		transientTree = img.Source.Value()
+	} else if img.Source.IsFile() {
+		srcImg := &v1.Image{
+			File:       img.Source.Value(),
+			MountPoint: transientTree,
+		}
+		err := MountFileSystemImage(c, srcImg)
+		if err != nil {
+			c.Logger.Errorf("failed mounting image tree: %v", err)
+			return err
+		}
+		cleaner = func() error {
+			err := UnmountFileSystemImage(c, srcImg)
+			if err != nil {
+				return err
+			}
+			return c.Fs.RemoveAll(transientTree)
+		}
+	} else if img.Source.IsImage() {
+		err = DumpSource(c, transientTree, img.Source)
+		if err != nil {
+			c.Logger.Errorf("failed dumping image tree: %v", err)
+			return err
+		}
+		cleaner = func() error { return c.Fs.RemoveAll(transientTree) }
+	}
+	err = CreateImageFromTree(c, img, transientTree, false, cleaner)
 	if err != nil {
+		c.Logger.Errorf("failed creating image from image tree: %v", err)
 		return err
 	}
 	return nil

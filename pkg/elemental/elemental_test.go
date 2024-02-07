@@ -611,34 +611,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-	Describe("DeployImgTree", Label("deployImgTree"), func() {
-		var imgFile, srcDir, root string
-		var img *v1.Image
-
-		BeforeEach(func() {
-			imgFile = "/statePart/dst.img"
-			root = "/workingDir"
-
-			srcDir = "/srcDir"
-			Expect(utils.MkdirAll(fs, srcDir, constants.DirPerm)).To(Succeed())
-
-			img = &v1.Image{
-				File:   imgFile,
-				Source: v1.NewDirSrc(srcDir),
-			}
-		})
-		It("Deploys an image including the root tree contents", func() {
-			cleaner, err := elemental.DeployImgTree(*config, img, root)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
-			Expect(cleaner()).To(Succeed())
-		})
-		It("Fails setting a bind mount to root", func() {
-			mounter.ErrorOnMount = true
-			_, err := elemental.DeployImgTree(*config, img, root)
-			Expect(err).Should(HaveOccurred())
-		})
-	})
 	Describe("CreateImageFromTree", Label("createImg"), func() {
 		var imgFile, root string
 		var img *v1.Image
@@ -722,10 +694,66 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				Source:     v1.NewDirSrc(srcDir),
 			}
 		})
-		It("Deploys image source into a filesystem image", func() {
+		It("Deploys a directory image source into a filesystem image", func() {
 			err := elemental.DeployImage(*config, img)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
+		})
+		It("Deploys a file image source into a filesystem image", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == "losetup" {
+					return []byte("/dev/loop0"), nil
+				}
+				return []byte{}, nil
+			}
+			img.Source = v1.NewFileSrc("/some/file/path")
+			err := elemental.DeployImage(*config, img)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"losetup"}, {"mkfs.ext2"}, {"rsync"}, {"losetup"}})).To(Succeed())
+		})
+		It("Deploys a container image source into a filesystem image", func() {
+			img.Source = v1.NewDockerSrc("image:tag")
+			err := elemental.DeployImage(*config, img)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
+		})
+		It("Fails to extract a docker image", func() {
+			extractor.SideEffect = func(_, _, _ string, _ bool) (string, error) {
+				return "", fmt.Errorf("failed extracting image")
+			}
+			img.Source = v1.NewDockerSrc("image:tag")
+			err := elemental.DeployImage(*config, img)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("extracting image"))
+		})
+		It("Fails to create a loop device", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == "losetup" {
+					return []byte{}, fmt.Errorf("Failed calling losetup")
+				}
+				return []byte{}, nil
+			}
+			img.Source = v1.NewFileSrc("/some/file/path")
+			err := elemental.DeployImage(*config, img)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("calling losetup"))
+			Expect(runner.IncludesCmds([][]string{{"losetup"}})).To(Succeed())
+		})
+		It("Fails to delete a loop device", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				if cmd == "losetup" {
+					if args[0] == "-d" {
+						return []byte{}, fmt.Errorf("Failed deleting loop")
+					}
+					return []byte("/dev/loop0"), nil
+				}
+				return []byte{}, nil
+			}
+			img.Source = v1.NewFileSrc("/some/file/path")
+			err := elemental.DeployImage(*config, img)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("deleting loop"))
+			Expect(runner.IncludesCmds([][]string{{"losetup"}, {"mkfs.ext2"}, {"rsync"}, {"losetup"}})).To(Succeed())
 		})
 		It("Fails to dump source without write permissions", func() {
 			config.Fs = vfs.NewReadOnlyFS(fs)
