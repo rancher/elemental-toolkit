@@ -124,11 +124,7 @@ upgrade:
 mount:
   sysroot: /sysroot # Path to mount system to
   write-fstab: true # Write fstab into sysroot/etc/fstab
-  volumes:
-    - mountpoint: /run/elemental/persistent
-      device: PARTLABEL=persistent
-      options: ["defaults"]
-      persisent: true
+  extra-volumes:
     - mountpoint: /run/elemental/efi
       device: PARTLABEL=efi
       options: ["ro", "defaults"]
@@ -145,6 +141,10 @@ mount:
       - /srv
   persistent:
     mode: overlay # overlay|bind
+    volume:
+      mountpoint: /run/elemental/persistent
+      device: PARTLABEL=persistent
+      options: ["defaults"]
     paths:
       - /etc/systemd
       - /etc/ssh

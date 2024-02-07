@@ -255,7 +255,7 @@ type MountSpec struct {
 	Disable    bool             `yaml:"disable,omitempty" mapstructure:"disable"`
 	Sysroot    string           `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
 	Mode       string           `yaml:"mode,omitempty" mapstructure:"mode"`
-	Volumes    []*VolumeMount   `yaml:"volumes,omitempty" mapstructure:"volumes"`
+	Volumes    []*VolumeMount   `yaml:"extra-volumes,omitempty" mapstructure:"extra-volumes"`
 	Ephemeral  EphemeralMounts  `yaml:"ephemeral,omitempty" mapstructure:"ephemeral"`
 	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
@@ -264,14 +264,15 @@ type VolumeMount struct {
 	Mountpoint string   `yaml:"mountpoint,omitempty" mapstructure:"mountpoint"`
 	Device     string   `yaml:"device,omitempty" mapstructure:"device"`
 	Options    []string `yaml:"options,omitempty" mapstructure:"options"`
-	Persistent bool     `yaml:"persistent,omitempty" mapstructure:"persistent"`
+	FSType     string   `yaml:"fs,omitempty" mapstructure:"fs"`
 }
 
 // PersistentMounts struct contains settings for which paths to mount as
 // persistent
 type PersistentMounts struct {
-	Mode  string   `yaml:"mode,omitempty" mapstructure:"mode"`
-	Paths []string `yaml:"paths,omitempty" mapstructure:"paths"`
+	Mode   string      `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths  []string    `yaml:"paths,omitempty" mapstructure:"paths"`
+	Volume VolumeMount `yaml:"volume,omitempty" mapstructure:"volume"`
 }
 
 // EphemeralMounts contains information about the RW overlay mounted over the
@@ -314,17 +315,12 @@ func (spec *MountSpec) Sanitize() error {
 		})
 	}
 
-	// Ignore the volume used for persistent paths in recovery mode
-	if spec.Mode == constants.RecoveryImgName {
-		for i, v := range spec.Volumes {
-			if v.Persistent {
-				spec.Volumes = append(spec.Volumes[:i], spec.Volumes[i+1:]...)
-				break
-			}
-		}
-	}
-
 	return nil
+}
+
+func (spec *MountSpec) HasPersistent() bool {
+	return spec.Mode != constants.RecoveryImgName &&
+		spec.Persistent.Volume.Device != "" && spec.Persistent.Volume.Mountpoint != ""
 }
 
 // ResetSpec struct represents all the reset action details

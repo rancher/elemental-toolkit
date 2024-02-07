@@ -82,13 +82,17 @@ var _ = Describe("Mount Action", func() {
 				Persistent: v1.PersistentMounts{
 					Mode:  constants.BindMode,
 					Paths: []string{"/some/path"},
+					Volume: v1.VolumeMount{
+						Mountpoint: constants.PersistentDir,
+						Device:     "/dev/persistentdev",
+					},
 				},
 				Volumes: []*v1.VolumeMount{
 					{
-						Mountpoint: constants.PersistentDir,
+						Mountpoint: "/run/elemental",
 						Device:     "/dev/somedevice",
-						Persistent: true,
 						Options:    []string{"rw", "defaults"},
+						FSType:     "vfat",
 					},
 				},
 			}
@@ -102,9 +106,10 @@ var _ = Describe("Mount Action", func() {
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
 			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
-			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
-			expectedFstab += "/dev/somedevice\t/run/elemental/persistent\tauto\trw,defaults\t0\t0\n"
+			expectedFstab += "/dev/somedevice\t/run/elemental\tvfat\trw,defaults\t0\t0\n"
+			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "/run/elemental/persistent/.state/some-path.bind\t/some/path\tnone\tdefaults,bind\t0\t0\n"
+			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
 			Expect(string(fstab)).To(Equal(expectedFstab))
 		})
 
@@ -118,13 +123,17 @@ var _ = Describe("Mount Action", func() {
 				Persistent: v1.PersistentMounts{
 					Mode:  constants.OverlayMode,
 					Paths: []string{"/some/path"},
+					Volume: v1.VolumeMount{
+						Mountpoint: constants.PersistentDir,
+						Device:     "/dev/persistentdev",
+					},
 				},
 				Volumes: []*v1.VolumeMount{
 					{
-						Mountpoint: constants.PersistentDir,
+						Mountpoint: constants.PersistentDir + "/somedir",
 						Device:     "/dev/somedevice",
-						Persistent: true,
 						Options:    []string{"rw", "defaults"},
+						FSType:     "vfat",
 					},
 				},
 			}
@@ -137,10 +146,11 @@ var _ = Describe("Mount Action", func() {
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
 			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
-			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
-			expectedFstab += "/dev/somedevice\t/run/elemental/persistent\tauto\trw,defaults\t0\t0\n"
+			expectedFstab += "/dev/somedevice\t/run/elemental/persistent/somedir\tvfat\trw,defaults\t0\t0\n"
+			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "overlay\t/some/path\toverlay\t"
 			expectedFstab += "defaults,lowerdir=/some/path,upperdir=/run/elemental/persistent/.state/some-path.overlay/upper,workdir=/run/elemental/persistent/.state/some-path.overlay/work,x-systemd.requires-mounts-for=/run/elemental/persistent\t0\t0\n"
+			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
 
 			Expect(string(fstab)).To(Equal(expectedFstab))
 		})
