@@ -11,7 +11,8 @@ on:
       - .github/**
       - pkg/**
       - cmd/**
-      - go.{mod,sum}
+      - go.mod
+      - go.sum
       - examples/**
 
 jobs:
