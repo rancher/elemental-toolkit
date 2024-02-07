@@ -3,12 +3,13 @@ package resolvconf
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/containerd/log"
 )
 
 const (
@@ -51,7 +52,7 @@ func Path() string {
 		ns := GetNameservers(candidateResolvConf, IP)
 		if len(ns) == 1 && ns[0] == "127.0.0.53" {
 			pathAfterSystemdDetection = alternatePath
-			logrus.Infof("detected 127.0.0.53 nameserver, assuming systemd-resolved, so using resolv.conf: %s", alternatePath)
+			log.G(context.TODO()).Infof("detected 127.0.0.53 nameserver, assuming systemd-resolved, so using resolv.conf: %s", alternatePath)
 		}
 	})
 	return pathAfterSystemdDetection
@@ -88,7 +89,7 @@ var (
 // File contains the resolv.conf content and its hash
 type File struct {
 	Content []byte
-	Hash    string
+	Hash    []byte
 }
 
 // Get returns the contents of /etc/resolv.conf and its hash
@@ -102,11 +103,7 @@ func GetSpecific(path string) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	hash, err := hashData(bytes.NewReader(resolv))
-	if err != nil {
-		return nil, err
-	}
-	return &File{Content: resolv, Hash: hash}, nil
+	return &File{Content: resolv, Hash: hashData(resolv)}, nil
 }
 
 // FilterResolvDNS cleans up the config in resolvConf.  It has two main jobs:
@@ -124,19 +121,15 @@ func FilterResolvDNS(resolvConf []byte, ipv6Enabled bool) (*File, error) {
 	// if the resulting resolvConf has no more nameservers defined, add appropriate
 	// default DNS servers for IPv4 and (optionally) IPv6
 	if len(GetNameservers(cleanedResolvConf, IP)) == 0 {
-		logrus.Infof("No non-localhost DNS nameservers are left in resolv.conf. Using default external servers: %v", defaultIPv4Dns)
+		log.G(context.TODO()).Infof("No non-localhost DNS nameservers are left in resolv.conf. Using default external servers: %v", defaultIPv4Dns)
 		dns := defaultIPv4Dns
 		if ipv6Enabled {
-			logrus.Infof("IPv6 enabled; Adding default IPv6 external servers: %v", defaultIPv6Dns)
+			log.G(context.TODO()).Infof("IPv6 enabled; Adding default IPv6 external servers: %v", defaultIPv6Dns)
 			dns = append(dns, defaultIPv6Dns...)
 		}
 		cleanedResolvConf = append(cleanedResolvConf, []byte("\n"+strings.Join(dns, "\n"))...)
 	}
-	hash, err := hashData(bytes.NewReader(cleanedResolvConf))
-	if err != nil {
-		return nil, err
-	}
-	return &File{Content: cleanedResolvConf, Hash: hash}, nil
+	return &File{Content: cleanedResolvConf, Hash: hashData(cleanedResolvConf)}, nil
 }
 
 // getLines parses input into lines and strips away comments.
@@ -144,7 +137,7 @@ func getLines(input []byte, commentMarker []byte) [][]byte {
 	lines := bytes.Split(input, []byte("\n"))
 	var output [][]byte
 	for _, currentLine := range lines {
-		var commentIndex = bytes.Index(currentLine, commentMarker)
+		commentIndex := bytes.Index(currentLine, commentMarker)
 		if commentIndex == -1 {
 			output = append(output, currentLine)
 		} else {
@@ -156,7 +149,7 @@ func getLines(input []byte, commentMarker []byte) [][]byte {
 
 // GetNameservers returns nameservers (if any) listed in /etc/resolv.conf
 func GetNameservers(resolvConf []byte, kind int) []string {
-	nameservers := []string{}
+	var nameservers []string
 	for _, line := range getLines(resolvConf, []byte("#")) {
 		var ns [][]byte
 		if kind == IP {
@@ -177,7 +170,7 @@ func GetNameservers(resolvConf []byte, kind int) []string {
 // /etc/resolv.conf as CIDR blocks (e.g., "1.2.3.4/32")
 // This function's output is intended for net.ParseCIDR
 func GetNameserversAsCIDR(resolvConf []byte) []string {
-	nameservers := []string{}
+	var nameservers []string
 	for _, nameserver := range GetNameservers(resolvConf, IP) {
 		var address string
 		// If IPv6, strip zone if present
@@ -195,7 +188,7 @@ func GetNameserversAsCIDR(resolvConf []byte) []string {
 // If more than one search line is encountered, only the contents of the last
 // one is returned.
 func GetSearchDomains(resolvConf []byte) []string {
-	domains := []string{}
+	var domains []string
 	for _, line := range getLines(resolvConf, []byte("#")) {
 		match := searchRegexp.FindSubmatch(line)
 		if match == nil {
@@ -210,7 +203,7 @@ func GetSearchDomains(resolvConf []byte) []string {
 // If more than one options line is encountered, only the contents of the last
 // one is returned.
 func GetOptions(resolvConf []byte) []string {
-	options := []string{}
+	var options []string
 	for _, line := range getLines(resolvConf, []byte("#")) {
 		match := optionsRegexp.FindSubmatch(line)
 		if match == nil {
@@ -221,10 +214,11 @@ func GetOptions(resolvConf []byte) []string {
 	return options
 }
 
-// Build writes a configuration file to path containing a "nameserver" entry
-// for every element in dns, a "search" entry for every element in
-// dnsSearch, and an "options" entry for every element in dnsOptions.
-func Build(path string, dns, dnsSearch, dnsOptions []string) (*File, error) {
+// Build generates and writes a configuration file to path containing a nameserver
+// entry for every element in nameservers, a "search" entry for every element in
+// dnsSearch, and an "options" entry for every element in dnsOptions. It returns
+// a File containing the generated content and its (sha256) hash.
+func Build(path string, nameservers, dnsSearch, dnsOptions []string) (*File, error) {
 	content := bytes.NewBuffer(nil)
 	if len(dnsSearch) > 0 {
 		if searchString := strings.Join(dnsSearch, " "); strings.Trim(searchString, " ") != "." {
@@ -233,7 +227,7 @@ func Build(path string, dns, dnsSearch, dnsOptions []string) (*File, error) {
 			}
 		}
 	}
-	for _, dns := range dns {
+	for _, dns := range nameservers {
 		if _, err := content.WriteString("nameserver " + dns + "\n"); err != nil {
 			return nil, err
 		}
@@ -246,10 +240,9 @@ func Build(path string, dns, dnsSearch, dnsOptions []string) (*File, error) {
 		}
 	}
 
-	hash, err := hashData(bytes.NewReader(content.Bytes()))
-	if err != nil {
+	if err := os.WriteFile(path, content.Bytes(), 0o644); err != nil {
 		return nil, err
 	}
 
-	return &File{Content: content.Bytes(), Hash: hash}, os.WriteFile(path, content.Bytes(), 0644)
+	return &File{Content: content.Bytes(), Hash: hashData(content.Bytes())}, nil
 }
