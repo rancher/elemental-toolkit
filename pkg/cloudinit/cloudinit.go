@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 - 2023 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import (
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/plugins"
 	"github.com/mudler/yip/pkg/schema"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
 	"github.com/twpayne/go-vfs"
 	"gopkg.in/yaml.v3"
+
+	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
