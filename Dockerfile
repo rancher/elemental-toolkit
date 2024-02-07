@@ -55,7 +55,8 @@ RUN ARCH=$(uname -m); \
         xorriso \
         cosign \
         gptfdisk \
-        lvm2
+        lvm2 && \
+    zypper cc -a
 
 # Copy the built CLI
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
