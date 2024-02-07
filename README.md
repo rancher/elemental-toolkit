@@ -26,7 +26,7 @@ Check out our [getting-started](https://rancher.github.io/elemental-toolkit/docs
 
 ## License
 
-Copyright (c) 2020-2023 [SUSE, LLC](http://suse.com)
+Copyright (c) 2020-2024 [SUSE, LLC](http://suse.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
