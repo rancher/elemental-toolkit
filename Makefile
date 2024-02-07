@@ -59,6 +59,10 @@ build:
 push-toolkit:
 	$(DOCKER) push $(TOOLKIT_REPO):$(VERSION)
 
+.PHONY: pull-toolkit
+pull-toolkit:
+	$(DOCKER) pull $(TOOLKIT_REPO):$(VERSION)
+
 .PHONY: build-cli
 build-cli:
 	go build -ldflags '$(LDFLAGS)' -o build/elemental
