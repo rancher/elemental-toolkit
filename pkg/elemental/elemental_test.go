@@ -344,7 +344,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		var img *v1.Image
 		BeforeEach(func() {
 			img = &v1.Image{
-				Label:      constants.ActiveLabel,
+				Label:      "SOME_LABEL",
 				Size:       32,
 				File:       filepath.Join(constants.StateDir, "some.img"),
 				FS:         constants.LinuxImgFs,

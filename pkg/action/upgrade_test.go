@@ -131,7 +131,7 @@ var _ = Describe("Runtime Actions", func() {
 		AfterEach(func() {
 			ghwTest.Clean()
 		})
-		Describe(fmt.Sprintf("Booting from %s", constants.ActiveLabel), Label("active_label"), func() {
+		Describe("Booting from active system", func() {
 			var err error
 			BeforeEach(func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)

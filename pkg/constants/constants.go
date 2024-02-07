@@ -26,8 +26,6 @@ const (
 	BiosPartName       = "bios"
 	EfiLabel           = "COS_GRUB"
 	EfiPartName        = "efi"
-	ActiveLabel        = "COS_ACTIVE"  // TODO deleteme
-	PassiveLabel       = "COS_PASSIVE" // TODO deleteme
 	SystemLabel        = "COS_SYSTEM"
 	RecoveryLabel      = "COS_RECOVERY"
 	RecoveryPartName   = "recovery"
