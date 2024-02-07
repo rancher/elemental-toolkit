@@ -12,29 +12,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # detect step checks what machines the later steps should run on
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      tests: ${{ steps.detect.outputs.tests }}
-    steps:
-      - id: detect
-        env:
-          FLAVOR: ${{ inputs.flavor }}
-        run: |
-          if [ "${FLAVOR}" == green ]; then
-            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
-          else
-            echo "tests=['test-active']" >> $GITHUB_OUTPUT
-          fi
-
-
-  build-iso:
-    needs: detect
+  build-toolkit:
+    permissions: write-all
     runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
+      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+      REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git fetch --prune --unshallow
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build toolkit
+        run: |
+          make DOCKER_ARGS=--load build
+          make DOCKER_ARGS=--push build
+          make ARCH=${{ env.ARCH }} DOCKER_ARGS=--load build-os
+          make ARCH=${{ env.ARCH }} DOCKER_ARGS=--push build-os
+
+  build-iso:
+    needs: build-toolkit
+    runs-on: ubuntu-latest
+    env:
+      FLAVOR: ${{ inputs.flavor }}
+      ARCH: x86_64
+      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+      REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
     steps:
       - uses: actions/checkout@v4
       - run: |
@@ -49,10 +61,6 @@ jobs:
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
-        name: Build toolkit
-        run: |
-          make build
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build ISO
         run: |
@@ -70,7 +78,7 @@ jobs:
           enableCrossOsArchive: true
 
   build-disk:
-    needs: detect
+    needs: build-toolkit
     runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
@@ -96,14 +104,9 @@ jobs:
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
           sudo df -h
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Build toolkit
-        run: |
-          make build
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
-          make ARCH=${{ env.ARCH }} build-os
           sudo -E make ARCH=${{ env.ARCH }} build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
@@ -117,10 +120,25 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
 
+  detect-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.detect.outputs.tests }}
+    steps:
+      - id: detect
+        env:
+          FLAVOR: ${{ inputs.flavor }}
+        run: |
+          if [ "${FLAVOR}" == green ]; then
+            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+          else
+            echo "tests=['test-active']" >> $GITHUB_OUTPUT
+          fi
+
   tests-matrix:
     needs:
       - build-disk
-      - detect
+      - detect-tests
     runs-on: macos-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
@@ -181,7 +199,7 @@ jobs:
   test-installer:
     needs:
       - build-iso
-      - detect
+      - detect-tests
     runs-on: macos-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
