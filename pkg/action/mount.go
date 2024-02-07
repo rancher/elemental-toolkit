@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -57,7 +58,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	cfg.Logger.Debug("Mounting volumes")
-	if err = MountVolumes(cfg, spec.Sysroot, spec.Volumes); err != nil {
+	if err = MountVolumes(cfg, spec); err != nil {
 		cfg.Logger.Errorf("Error mounting volumes: %s", err.Error())
 		return err
 	}
@@ -69,7 +70,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	cfg.Logger.Debugf("Mounting persistent directories")
-	if err = MountPersistent(cfg, spec.Sysroot, spec.Persistent, spec.Volumes); err != nil {
+	if err = MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
 		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
 		return err
 	}
@@ -84,28 +85,42 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	return nil
 }
 
-func MountVolumes(cfg *v1.RunConfig, sysroot string, volumes []*v1.VolumeMount) error {
+func MountVolumes(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	var errs error
 
-	for _, vol := range volumes {
+	volumes := map[string]*v1.VolumeMount{}
+	keys := []string{}
+	if spec.HasPersistent() {
+		volumes[spec.Persistent.Volume.Mountpoint] = &spec.Persistent.Volume
+		keys = append(keys, spec.Persistent.Volume.Mountpoint)
+	}
+
+	for _, v := range spec.Volumes {
+		volumes[v.Mountpoint] = v
+		keys = append(keys, v.Mountpoint)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
 		var dev string
 		switch {
-		case strings.HasPrefix(vol.Device, labelPref):
-			dev = filepath.Join(diskByLabel, strings.TrimPrefix(vol.Device, labelPref))
-		case strings.HasPrefix(vol.Device, partLabelPref):
-			dev = filepath.Join(diskByPartLabel, strings.TrimPrefix(vol.Device, partLabelPref))
-		case strings.HasPrefix(vol.Device, uuidPref):
-			dev = filepath.Join(diskByUUID, strings.TrimPrefix(vol.Device, uuidPref))
-		case strings.HasPrefix(vol.Device, devPref):
-			dev = vol.Device
+		case strings.HasPrefix(volumes[k].Device, labelPref):
+			dev = filepath.Join(diskByLabel, strings.TrimPrefix(volumes[k].Device, labelPref))
+		case strings.HasPrefix(volumes[k].Device, partLabelPref):
+			dev = filepath.Join(diskByPartLabel, strings.TrimPrefix(volumes[k].Device, partLabelPref))
+		case strings.HasPrefix(volumes[k].Device, uuidPref):
+			dev = filepath.Join(diskByUUID, strings.TrimPrefix(volumes[k].Device, uuidPref))
+		case strings.HasPrefix(volumes[k].Device, devPref):
+			dev = volumes[k].Device
 		default:
 			cfg.Logger.Errorf("Unknown device reference, it should be LABEL, PARTLABEL, UUID or a /dev/* path")
-			errs = multierror.Append(errs, fmt.Errorf("Unkown device reference: %s", vol.Device))
+			errs = multierror.Append(errs, fmt.Errorf("Unkown device reference: %s", volumes[k].Device))
 			continue
 		}
-		mountpoint := vol.Mountpoint
+		mountpoint := volumes[k].Mountpoint
 		if !strings.HasPrefix(mountpoint, runPath) {
-			mountpoint = filepath.Join(sysroot, mountpoint)
+			mountpoint = filepath.Join(spec.Sysroot, mountpoint)
 		}
 
 		err := utils.MkdirAll(cfg.Fs, mountpoint, constants.DirPerm)
@@ -115,7 +130,13 @@ func MountVolumes(cfg *v1.RunConfig, sysroot string, volumes []*v1.VolumeMount) 
 			continue
 		}
 
-		err = cfg.Mounter.Mount(dev, mountpoint, "auto", vol.Options)
+		fstype := volumes[k].FSType
+		if fstype == "" {
+			fstype = "auto"
+		}
+
+		cfg.Logger.Debugf("Mounting %s to %s", dev, mountpoint)
+		err = cfg.Mounter.Mount(dev, mountpoint, fstype, volumes[k].Options)
 		if err != nil {
 			cfg.Logger.Errorf("failed mounting device %s to %s", dev, mountpoint)
 			errs = multierror.Append(errs, err)
@@ -165,21 +186,13 @@ func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMount
 	return nil
 }
 
-func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts, volumes []*v1.VolumeMount) error {
-	var vol *v1.VolumeMount
-
+func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
 	mountFunc := MountOverlayPath
 	if persistent.Mode == "bind" {
 		mountFunc = MountBindPath
 	}
 
-	for _, v := range volumes {
-		if v.Persistent {
-			vol = v
-			break
-		}
-	}
-	if vol == nil {
+	if persistent.Volume.Device == "" || persistent.Volume.Mountpoint == "" {
 		cfg.Logger.Debug("No persistent device defined, omitting persistent paths mounts")
 		return nil
 	}
@@ -187,7 +200,7 @@ func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.Persistent
 	for _, path := range persistent.Paths {
 		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
 
-		target := filepath.Join(vol.Mountpoint, constants.PersistentStateDir)
+		target := filepath.Join(persistent.Volume.Mountpoint, constants.PersistentStateDir)
 		if err := mountFunc(cfg, sysroot, target, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
@@ -268,44 +281,41 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 
 func WriteFstab(cfg *v1.RunConfig, spec *v1.MountSpec, data string) error {
 	var errs error
-	var persistentVol *v1.VolumeMount
 
 	if !spec.WriteFstab {
 		cfg.Logger.Debug("Skipping writing fstab")
 		return nil
 	}
 
-	data += fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Ephemeral.Size)})
-
 	for _, vol := range spec.Volumes {
-		if vol.Persistent {
-			persistentVol = vol
-		}
-
-		data = data + fstab(vol.Device, vol.Mountpoint, "auto", vol.Options)
+		data += fstab(vol.Device, vol.Mountpoint, vol.FSType, vol.Options)
 	}
 
-	for _, rw := range spec.Ephemeral.Paths {
-		data += overlayLine(rw, constants.OverlayDir, constants.OverlayDir)
-	}
+	if spec.HasPersistent() {
+		pVol := spec.Persistent.Volume
+		data += fstab(pVol.Device, pVol.Mountpoint, pVol.FSType, pVol.Options)
 
-	if persistentVol != nil {
 		for _, path := range spec.Persistent.Paths {
 			if spec.Persistent.Mode == constants.OverlayMode {
-				data += overlayLine(path, filepath.Join(persistentVol.Mountpoint, constants.PersistentStateDir), constants.PersistentDir)
+				data += overlayLine(path, filepath.Join(pVol.Mountpoint, constants.PersistentStateDir), constants.PersistentDir)
 				continue
 			}
 
 			if spec.Persistent.Mode == constants.BindMode {
 				trimmed := strings.TrimPrefix(path, "/")
 				pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
-				stateDir := filepath.Join(persistentVol.Mountpoint, constants.PersistentStateDir, pathName)
+				stateDir := filepath.Join(pVol.Mountpoint, constants.PersistentStateDir, pathName)
 
 				data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
 				continue
 			}
 			errs = multierror.Append(errs, fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode))
 		}
+	}
+
+	data += fstab("tmpfs", constants.OverlayDir, "tmpfs", []string{"defaults", fmt.Sprintf("size=%s", spec.Ephemeral.Size)})
+	for _, rw := range spec.Ephemeral.Paths {
+		data += overlayLine(rw, constants.OverlayDir, constants.OverlayDir)
 	}
 
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
@@ -322,11 +332,11 @@ func InitialFstabData(runner v1.Runner, sysroot string) (string, error) {
 		if mnt.Mountpoint == sysroot {
 			data += fstab(mnt.Device, "/", "auto", mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, sysroot) {
-			data += fstab(mnt.Device, strings.TrimPrefix(mnt.Mountpoint, sysroot), "auto", mnt.Options)
+			data += fstab(mnt.Device, strings.TrimPrefix(mnt.Mountpoint, sysroot), mnt.FSType, mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, constants.RunElementalDir) {
-			data += fstab(mnt.Device, mnt.Mountpoint, "auto", mnt.Options)
+			data += fstab(mnt.Device, mnt.Mountpoint, mnt.FSType, mnt.Options)
 		} else if mnt.Mountpoint == constants.RunningStateDir {
-			data += fstab(mnt.Device, mnt.Mountpoint, "auto", mnt.Options)
+			data += fstab(mnt.Device, mnt.Mountpoint, mnt.FSType, mnt.Options)
 		}
 	}
 
@@ -336,6 +346,10 @@ func InitialFstabData(runner v1.Runner, sysroot string) (string, error) {
 func fstab(device, path, fstype string, flags []string) string {
 	if len(flags) == 0 {
 		flags = []string{"defaults"}
+	}
+
+	if fstype == "" {
+		fstype = "auto"
 	}
 	return fmt.Sprintf("%s\t%s\t%s\t%s\t0\t0\n", device, path, fstype, strings.Join(flags, ","))
 }

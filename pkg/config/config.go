@@ -226,11 +226,6 @@ func NewMountSpec() *v1.MountSpec {
 		WriteFstab: true,
 		Volumes: []*v1.VolumeMount{
 			{
-				Mountpoint: constants.PersistentDir,
-				Device:     fmt.Sprintf("PARTLABEL=%s", constants.PersistentPartName),
-				Options:    []string{"rw", "defaults"},
-				Persistent: true,
-			}, {
 				Mountpoint: constants.OEMPath,
 				Device:     fmt.Sprintf("PARTLABEL=%s", constants.OEMPartName),
 				Options:    []string{"rw", "defaults"},
@@ -248,6 +243,11 @@ func NewMountSpec() *v1.MountSpec {
 		Persistent: v1.PersistentMounts{
 			Mode:  constants.OverlayMode,
 			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/var/log"},
+			Volume: v1.VolumeMount{
+				Mountpoint: constants.PersistentDir,
+				Device:     fmt.Sprintf("PARTLABEL=%s", constants.PersistentPartName),
+				Options:    []string{"rw", "defaults"},
+			},
 		},
 	}
 }
