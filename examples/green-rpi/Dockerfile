@@ -45,7 +45,8 @@ RUN zypper --non-interactive install --no-recommends -- \
       sudo \
       curl \
       podman \
-      sed
+      sed && \
+    zypper clean --all
 
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental

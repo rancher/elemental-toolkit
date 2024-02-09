@@ -60,7 +60,8 @@ RUN ARCH=$(uname -m); \
       patch \
       iproute2 \
       podman \
-      ${ADD_PKGS}
+      ${ADD_PKGS} && \
+    zypper clean --all
 
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
