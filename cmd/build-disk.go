@@ -38,13 +38,13 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:   "build-disk image",
 		Short: "Build a disk image using the given image (experimental and subject to change)",
 		Args:  cobra.ExactArgs(0),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if addCheckRoot {
 				return CheckRoot()
 			}
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) (err error) {
+		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			var cfg *v1.BuildConfig
 			var spec *v1.DiskSpec
 

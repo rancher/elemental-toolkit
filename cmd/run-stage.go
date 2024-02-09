@@ -31,9 +31,6 @@ func NewRunStage(root *cobra.Command) *cobra.Command {
 		Use:   "run-stage STAGE",
 		Short: "Run stage from cloud-init",
 		Args:  cobra.MinimumNArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
-
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v1.NewDummyMounter())
 			if err != nil {

@@ -386,7 +386,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 		return nil, err
 	}
 
-	err = utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, d fs.DirEntry, err error) error {
+	err = utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, _ fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

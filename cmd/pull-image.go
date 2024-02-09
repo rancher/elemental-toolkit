@@ -32,7 +32,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:   "pull-image IMAGE DESTINATION",
 		Short: "Pull remote image to local file",
 		Args:  cobra.ExactArgs(2),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if addCheckRoot {
 				return CheckRoot()
 			}

@@ -36,7 +36,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:   "install DEVICE",
 		Short: "Elemental installer",
 		Args:  cobra.MaximumNArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if addCheckRoot {
 				return CheckRoot()
 			}
