@@ -31,7 +31,7 @@ func NewMountCmd(root *cobra.Command) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "mount",
 		Short: "Mount an elemental system into the specified sysroot",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			mounter := mount.New(constants.MountBinary)
 
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)

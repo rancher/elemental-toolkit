@@ -33,13 +33,13 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		Use:   "reset",
 		Short: "Reset OS",
 		Args:  cobra.ExactArgs(0),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if addCheckRoot {
 				return CheckRoot()
 			}
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			path, err := exec.LookPath("mount")
 			if err != nil {
 				return err

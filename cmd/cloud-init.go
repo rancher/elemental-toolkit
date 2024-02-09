@@ -34,7 +34,7 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 		Use:   "cloud-init",
 		Short: "Run cloud-init",
 		Args:  cobra.MinimumNArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRun: func(cmd *cobra.Command, _ []string) {
 			_ = viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
