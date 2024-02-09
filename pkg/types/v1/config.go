@@ -96,9 +96,9 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 	stateFile := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	data, err := c.Fs.ReadFile(stateFile)
 	if err != nil {
-		c.Logger.Warning("Could not read state file %s", stateFile)
+		c.Logger.Warnf("Could not read state file %s", stateFile)
 		stateFile = filepath.Join(constants.LegacyStateDir, constants.InstallStateFile)
-		c.Logger.Debug("Attempting to read state file %s", stateFile)
+		c.Logger.Debugf("Attempting to read state file %s", stateFile)
 		data, err = c.Fs.ReadFile(stateFile)
 		if err != nil {
 			return nil, err
