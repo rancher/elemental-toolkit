@@ -1,6 +1,6 @@
 name: PR
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - tests/**
       - make/**
@@ -35,6 +35,8 @@ jobs:
       TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Log in to ghcr.io

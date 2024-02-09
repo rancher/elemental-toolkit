@@ -23,6 +23,8 @@ jobs:
       REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Log in to registry
@@ -50,6 +52,8 @@ jobs:
       REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
@@ -87,6 +91,8 @@ jobs:
       ARCH: x86_64
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
@@ -152,6 +158,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -209,6 +217,8 @@ jobs:
       COS_TIMEOUT: 1600
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - name: Install Go
         uses: actions/setup-go@v5
         with:
