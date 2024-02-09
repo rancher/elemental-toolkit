@@ -44,7 +44,8 @@ RUN ARCH=$(uname -m); \
       curl \
       iproute2 \
       podman \
-      sed
+      sed && \
+    zypper clean --all
 
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
