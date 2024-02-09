@@ -55,6 +55,15 @@ build:
 			--build-arg BASE_OS_VERSION=$(BASE_OS_VERSION) \
 			--target elemental-toolkit -t $(TOOLKIT_REPO):$(VERSION) .
 
+.PHONY: build-docker-cli
+build-docker-cli:
+	$(DOCKER) build --platform $(PLATFORM) ${DOCKER_ARGS} \
+			--build-arg ELEMENTAL_VERSION=$(GIT_TAG) \
+			--build-arg ELEMENTAL_COMMIT=$(GIT_COMMIT) \
+			--build-arg BASE_OS_IMAGE=$(BASE_OS_IMAGE) \
+			--build-arg BASE_OS_VERSION=$(BASE_OS_VERSION) \
+			--target elemental-toolkit -t $(TOOLKIT_REPO):dev .
+
 .PHONY: push-toolkit
 push-toolkit:
 	$(DOCKER) push $(TOOLKIT_REPO):$(VERSION)
