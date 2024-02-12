@@ -1,6 +1,6 @@
 ARG BASE_OS_IMAGE=registry.opensuse.org/opensuse/leap
 ARG BASE_OS_VERSION=15.5
-ARG GO_VERSION=1.21
+ARG GO_VERSION=1.22
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as elemental-bin
 
