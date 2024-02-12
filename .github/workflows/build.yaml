@@ -1,5 +1,8 @@
-name: PR
+name: Build
 on:
+  push:
+    tags:
+      - v**
   pull_request_target:
     paths:
       - tests/**
@@ -17,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.set-matrix.outputs.flavor }}
+      platform: ${{ steps.set-platform.outputs.platform }}
     steps:
     - id: set-matrix
       run: |
@@ -25,20 +29,32 @@ jobs:
         else
           echo "flavor=['green']" >> $GITHUB_OUTPUT
         fi
+    - id: set-platform
+      run: |
+        if [ "${{ startsWith(github.event.ref, 'refs/tags/v') }}" == "true" ]; then
+          echo "platform='linux/x86_64,linux/arm64" >> $GITHUB_OUTPUT
+        else
+          echo "platform='linux/x86_64'" >> $GITHUB_OUTPUT
+        fi
 
   build-toolkit:
     permissions:
       packages: write
     runs-on: ubuntu-latest
     env:
-      ARCH: x86_64
+      PLATFORM: ${{ needs.detect.outputs.platform }}
       TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - run: |
           git fetch --prune --unshallow
+      - id: set-version
+        run: |
+          git describe --tags --candidates=50 >> $GITHUB_OUTPUT
       - name: Log in to ghcr.io
         uses: docker/login-action@v3
         with:
@@ -47,7 +63,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build toolkit
         run: |
-          make DOCKER_ARGS=--load build
           make DOCKER_ARGS=--push build
 
   build-matrix:
@@ -61,3 +76,16 @@ jobs:
     uses: ./.github/workflows/build_and_test_x86.yaml
     with:
       flavor: ${{ matrix.flavor }}
+
+  cleanup:
+    needs:
+      - build-toolkit
+      - build-matrix
+    steps:
+      - uses: actions/delete-package-versions@v4
+        if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
+        with:
+          package-version-ids: ${{ needs.build-toolkit.outputs.version }}
+          owner: ${{ github.owner }}
+          package-name: elemental-toolkit/elemental-cli
+          package-type: container
