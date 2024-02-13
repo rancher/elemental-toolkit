@@ -42,6 +42,8 @@ jobs:
         fi
 
   build-toolkit:
+    needs:
+      - detect
     permissions:
       packages: write
     runs-on: ubuntu-latest
@@ -58,7 +60,7 @@ jobs:
           git fetch --prune --unshallow
       - id: set-version
         run: |
-          git describe --tags --candidates=50 >> $GITHUB_OUTPUT
+          echo "version="$(git describe --tags --candidates=50) >> $GITHUB_OUTPUT
       - name: Log in to ghcr.io
         uses: docker/login-action@v3
         with:
@@ -81,18 +83,19 @@ jobs:
     with:
       flavor: ${{ matrix.flavor }}
 
-  cleanup:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    needs:
-      - build-toolkit
-      - build-matrix
-    steps:
-      - uses: actions/delete-package-versions@v4
-        if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
-        with:
-          package-version-ids: ${{ needs.build-toolkit.outputs.version }}
-          owner: ${{ github.owner }}
-          package-name: elemental-toolkit/elemental-cli
-          package-type: container
+  # TODO: use integer package-version-id instead of tag.
+  # cleanup:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     packages: write
+  #   needs:
+  #     - build-toolkit
+  #     - build-matrix
+  #   steps:
+  #     - uses: actions/delete-package-versions@v4
+  #       if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
+  #       with:
+  #         package-version-ids: ${{ needs.build-toolkit.outputs.version }}
+  #         owner: ${{ github.owner }}
+  #         package-name: elemental-toolkit/elemental-cli
+  #         package-type: container

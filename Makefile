@@ -68,7 +68,7 @@ build-cli:
 	go build -ldflags '$(LDFLAGS)' -o build/elemental
 
 .PHONY: build-os
-build-os: build
+build-os:
 	$(DOCKER) build --platform $(PLATFORM) ${DOCKER_ARGS} \
 			--build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) \
 			--build-arg VERSION=$(VERSION) \
@@ -79,8 +79,12 @@ build-os: build
 push-os:
 	$(DOCKER) push $(REPO):$(VERSION)
 
+.PHONY: pull-os
+pull-os:
+	$(DOCKER) pull $(REPO):$(VERSION)
+
 .PHONY: build-iso
-build-iso: build-os
+build-iso:
 	@echo Building $(ARCH) ISO
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
@@ -88,7 +92,7 @@ build-iso: build-os
 		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
 
 .PHONY: build-disk
-build-disk: build-os
+build-disk:
 	@echo Building $(ARCH) disk
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
@@ -99,7 +103,7 @@ build-disk: build-os
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
 .PHONY: build-rpi-disk
-build-rpi-disk: build-os
+build-rpi-disk:
 ifneq ("$(PLATFORM)","linux/arm64")
 	@echo "Cannot build Raspberry Pi disk for $(PLATFORM)"
 	@exit 1
@@ -112,7 +116,7 @@ endif
 		--squash-no-compression --deploy-command elemental,--debug,reset,--reboot,--disable-boot-entry -o /build $(REPO):$(VERSION)
 
 PHONY: build-vf2-disk
-build-vf2-disk: build-os
+build-vf2-disk:
 ifneq ("$(PLATFORM)","linux/riscv64")
 	@echo "Cannot build VisionFive2 disk for $(PLATFORM)"
 	@exit 1
