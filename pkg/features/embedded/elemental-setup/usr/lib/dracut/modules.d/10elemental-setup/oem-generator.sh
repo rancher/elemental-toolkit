@@ -24,7 +24,7 @@ if [ -n "${oem_label}" ]; then
         echo "Before=elemental-setup-rootfs.service"
         echo "After=dracut-initqueue.service"
         echo "Wants=dracut-initqueue.service"
-        echo "Conflicts=initrd-switch-root.target"
+	echo "PartOf=initrd.target"
         echo "[Mount]"
         echo "Where=/oem"
         echo "What=/dev/disk/by-label/${oem_label}"
