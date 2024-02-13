@@ -3,7 +3,7 @@ on:
   push:
     tags:
       - v**
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - synchronize
@@ -83,18 +83,19 @@ jobs:
     with:
       flavor: ${{ matrix.flavor }}
 
-  cleanup:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    needs:
-      - build-toolkit
-      - build-matrix
-    steps:
-      - uses: actions/delete-package-versions@v4
-        if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
-        with:
-          package-version-ids: ${{ needs.build-toolkit.outputs.version }}
-          owner: ${{ github.owner }}
-          package-name: elemental-toolkit/elemental-cli
-          package-type: container
+  # TODO: use integer package-version-id instead of tag.
+  # cleanup:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     packages: write
+  #   needs:
+  #     - build-toolkit
+  #     - build-matrix
+  #   steps:
+  #     - uses: actions/delete-package-versions@v4
+  #       if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
+  #       with:
+  #         package-version-ids: ${{ needs.build-toolkit.outputs.version }}
+  #         owner: ${{ github.owner }}
+  #         package-name: elemental-toolkit/elemental-cli
+  #         package-type: container

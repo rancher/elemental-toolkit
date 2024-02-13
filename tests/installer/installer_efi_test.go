@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	sut "github.com/rancher/elemental-toolkit/tests/vm"
 )
 
@@ -43,9 +44,9 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					Expect(out).To(ContainSubstring("Partitioning device..."))
 					Expect(out).To(ContainSubstring("Running after-install hook"))
 
-					// Reboot so we boot into the just installed cos
+					// Reboot so we boot into the just installed system
 					s.Reboot()
-					By("Checking we booted from the installed cOS")
+					By("Checking we booted from the installed system")
 					ExpectWithOffset(1, s.BootFrom()).To(Equal(sut.Active))
 					// check partition values
 					// Values have to match the yaml under ../assets/layout.yaml
