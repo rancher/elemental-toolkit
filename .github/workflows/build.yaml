@@ -4,6 +4,10 @@ on:
     tags:
       - v**
   pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
     paths:
       - tests/**
       - make/**
@@ -78,6 +82,9 @@ jobs:
       flavor: ${{ matrix.flavor }}
 
   cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
     needs:
       - build-toolkit
       - build-matrix
