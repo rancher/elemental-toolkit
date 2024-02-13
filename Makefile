@@ -79,6 +79,10 @@ build-os: build
 push-os:
 	$(DOCKER) push $(REPO):$(VERSION)
 
+.PHONY: pull-os
+pull-os:
+	$(DOCKER) pull $(REPO):$(VERSION)
+
 .PHONY: build-iso
 build-iso: build-os
 	@echo Building $(ARCH) ISO
