@@ -16,8 +16,13 @@ limitations under the License.
 
 package main
 
-import "github.com/rancher/elemental-toolkit/cmd"
+import (
+	"fmt"
+
+	"github.com/rancher/elemental-toolkit/cmd"
+)
 
 func main() {
+	fmt.Println("TEST, DO NOT MERGE")
 	cmd.Execute()
 }

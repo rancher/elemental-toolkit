@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -65,6 +66,8 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 	root.AddCommand(c)
 	c.Flags().Bool("mkinitrd", true, "Run dracut to generate initramdisk")
 	c.Flags().BoolP("force", "f", false, "Force run")
+
+	fmt.Println("HERE AS WELL")
 	return c
 }
 
