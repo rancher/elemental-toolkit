@@ -105,7 +105,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
 			expectedFstab += "/dev/somedevice\t/run/elemental\tvfat\trw,defaults\t0\t0\n"
 			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "/run/elemental/persistent/.state/some-path.bind\t/some/path\tnone\tdefaults,bind\t0\t0\n"
@@ -145,7 +145,7 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
 			expectedFstab += "/dev/somedevice\t/run/elemental/persistent/somedir\tvfat\trw,defaults\t0\t0\n"
 			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "overlay\t/some/path\toverlay\t"

@@ -226,7 +226,7 @@ var _ = Describe("Runtime Actions", func() {
 				// Writes filesystem labels to GRUB oem env file
 				grubOEMEnv := filepath.Join(spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv)
 				Expect(runner.IncludesCmds(
-					[][]string{{"grub2-editenv", grubOEMEnv, "set", "passive_snaps=passive_2"}},
+					[][]string{{"grub2-editenv", grubOEMEnv, "set", "passive_snaps=2"}},
 				)).To(Succeed())
 
 				// Expect snapshot 2 and 3 to be there and 1 deleted
