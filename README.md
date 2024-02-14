@@ -1,6 +1,6 @@
 # Elemental Toolkit
 
-[![PR](https://github.com/rancher/elemental-toolkit/actions/workflows/pr.yaml/badge.svg?branch=main)](https://github.com/rancher/elemental-toolkit/actions/workflows/pr.yaml)
+[![PR](https://github.com/rancher/elemental-toolkit/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/rancher/elemental-toolkit/actions/workflows/build.yaml)
 [![nightly](https://github.com/rancher/elemental-toolkit/actions/workflows/nightly.yaml/badge.svg?branch=main)](https://github.com/rancher/elemental-toolkit/actions/workflows/nightly.yaml)
 
 Elemental-toolkit is a toolkit to build, ship and maintain cloud-init driven Linux derivatives based on container images with a common featureset - allows container images to be bootable in VMs, baremetals, embedded devices, and much more.
