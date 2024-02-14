@@ -70,7 +70,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	cfg.Logger.Debugf("Mounting persistent directories")
-	if err = MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
+	if err = MountPersistent(cfg, spec); err != nil {
 		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
 		return err
 	}
@@ -186,22 +186,22 @@ func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMount
 	return nil
 }
 
-func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
+func MountPersistent(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	mountFunc := MountOverlayPath
-	if persistent.Mode == "bind" {
+	if spec.Persistent.Mode == "bind" {
 		mountFunc = MountBindPath
 	}
 
-	if persistent.Volume.Device == "" || persistent.Volume.Mountpoint == "" {
+	if !spec.HasPersistent() {
 		cfg.Logger.Debug("No persistent device defined, omitting persistent paths mounts")
 		return nil
 	}
 
-	for _, path := range persistent.Paths {
-		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
+	for _, path := range spec.Persistent.Paths {
+		cfg.Logger.Debugf("Mounting path %s into %s", path, spec.Sysroot)
 
-		target := filepath.Join(persistent.Volume.Mountpoint, constants.PersistentStateDir)
-		if err := mountFunc(cfg, sysroot, target, path); err != nil {
+		target := filepath.Join(spec.Persistent.Volume.Mountpoint, constants.PersistentStateDir)
+		if err := mountFunc(cfg, spec.Sysroot, target, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
 		}
@@ -330,7 +330,7 @@ func InitialFstabData(runner v1.Runner, sysroot string) (string, error) {
 	}
 	for _, mnt := range mounts {
 		if mnt.Mountpoint == sysroot {
-			data += fstab(mnt.Device, "/", "auto", mnt.Options)
+			data += fstab(mnt.Device, "/", mnt.FSType, mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, sysroot) {
 			data += fstab(mnt.Device, strings.TrimPrefix(mnt.Mountpoint, sysroot), mnt.FSType, mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, constants.RunElementalDir) {
@@ -368,9 +368,8 @@ func findmnt(runner v1.Runner, mountpoint string) ([]*v1.VolumeMount, error) {
 			continue
 		}
 		if lineFields[2] == "btrfs" {
-			r := regexp.MustCompile(`(/.+)\[.*\]`)
-			if r.MatchString(lineFields[0]) {
-				match := r.FindStringSubmatch(lineFields[0])
+			r := regexp.MustCompile(`^(/[^\[\]]+)`)
+			if match := r.FindStringSubmatch(lineFields[0]); match != nil {
 				lineFields[0] = match[1]
 			}
 		}
@@ -378,6 +377,7 @@ func findmnt(runner v1.Runner, mountpoint string) ([]*v1.VolumeMount, error) {
 			Device:     lineFields[0],
 			Mountpoint: lineFields[1],
 			Options:    strings.Split(lineFields[3], ","),
+			FSType:     lineFields[2],
 		})
 	}
 	return mounts, nil

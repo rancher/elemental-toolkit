@@ -8,19 +8,12 @@ root_part_mnt="/run/initramfs/elemental-state"
 if getargbool 0 elemental.disable; then
     exit 0
 fi
-if getargbool 0 rd.cos.disable; then
-    exit 0
-fi
 
-# Omit any immutable rootfs module logic if no image path provided
-cos_img=$(getarg cos-img/filename=)
+elemental_mode=$(getarg elemental.mode=)
 elemental_img=$(getarg elemental.image=)
-[ -z "${cos_img}" && -z "${elemental_img}" ] && exit 0
-[ -z "${cos_img}" ] && cos_img="${elemental_img}"
-
-[ -z "${root}" ] && root=$(getarg root=)
-
-root_perm="ro"
+root=$(getarg root=)
+rootok=0
+snapshotter=$(getarg elemental.snapshotter=)
 
 GENERATOR_DIR="$2"
 [ -z "$GENERATOR_DIR" ] && exit 1
@@ -40,24 +33,6 @@ esac
 
 [ "${rootok}" != "1" ] && exit 0
 
-root_part_unit="${root_part_mnt#/}"
-root_part_unit="${root_part_unit//-/\\x2d}"
-root_part_unit="${root_part_unit//\//-}.mount"
-
-state_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
-
-{
-    echo "[Unit]"
-    echo "Before=initrd-root-fs.target"
-    echo "DefaultDependencies=no"
-    echo "After=dracut-initqueue.service"
-    echo "Wants=dracut-initqueue.service"
-    echo "[Mount]"
-    echo "Where=${root_part_mnt}"
-    echo "What=${root}"
-    echo "Options=${root_perm},suid,dev,exec,auto,nouser,async"
-} > "$GENERATOR_DIR/${state_unit}"
-
 dev=$(dev_unit_name "${root}")
 
 mkdir -p "$GENERATOR_DIR/$dev.device.d"
@@ -67,19 +42,96 @@ mkdir -p "$GENERATOR_DIR/$dev.device.d"
     echo "JobRunningTimeoutSec=300"
 } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
 
-{
-    echo "[Unit]"
-    echo "Before=initrd-root-fs.target"
-    echo "DefaultDependencies=no"
-    echo "RequiresMountsFor=${root_part_mnt}"
-    echo "[Mount]"
-    echo "Where=/sysroot"
-    echo "What=${root_part_mnt}/${cos_img#/}"
-    echo "Options=${root_perm},suid,dev,exec,auto,nouser,async"
-} > "$GENERATOR_DIR"/sysroot.mount
+if [ "${snapshotter}" == "btrfs" ]; then
+    snapshots_unit=$(systemd-escape -p --suffix=mount /sysroot/.snapshots)
+    rootvol_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
+    case "${elemental_mode}" in
+        *active*)
+            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2" ;;
+        *passive*)
+            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@/.snapshots/${elemental_img}/snapshot" ;;
+        *)
+            exit 1 ;;
+    esac
 
-if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.requires/sysroot.mount" ]; then
-    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
-    ln -s "$GENERATOR_DIR"/sysroot.mount \
-        "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "DefaultDependencies=no"
+        echo "After=dracut-initqueue.service"
+        echo "Wants=dracut-initqueue.service"
+        echo "[Mount]"
+        echo "Where=/sysroot"
+        echo "What=${root}"
+        echo "Options=${opts}"
+    } > "$GENERATOR_DIR/sysroot.mount"
+
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "DefaultDependencies=no"
+        echo "PartOf=initrd.target"
+        echo "[Mount]"
+        echo "Where=${root_part_mnt}"
+        echo "What=${root}"
+        echo "Options=rw,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@"
+    } > "$GENERATOR_DIR/${rootvol_unit}"
+
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "DefaultDependencies=no"
+        echo "RequiresMountsFor=/sysroot"
+        echo "PartOf=initrd.target"
+        echo "[Mount]"
+        echo "Where=/sysroot/.snapshots"
+        echo "What=${root}"
+        echo "Options=rw,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@/.snapshots"
+    } > "$GENERATOR_DIR/${snapshots_unit}"
+
+    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
+    ln -s "$GENERATOR_DIR/${snapshots_unit}" \
+        "$GENERATOR_DIR/initrd-root-fs.target.wants/${snapshots_unit}"
+    ln -s "$GENERATOR_DIR/${rootvol_unit}" \
+        "$GENERATOR_DIR/initrd-root-fs.target.wants/${rootvol_unit}"
+else
+    state_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
+    case "${elemental_mode}" in
+        *active*)
+            image=".snapshots/active" ;;
+        *passive*)
+            image=".snapshots/${elemental_img}/snapshot" ;;
+        *recovery*)
+            image="recovery.img" ;;
+        *)
+            exit 1 ;;
+    esac
+
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "DefaultDependencies=no"
+        echo "After=dracut-initqueue.service"
+        echo "Wants=dracut-initqueue.service"
+        echo "[Mount]"
+        echo "Where=${root_part_mnt}"
+        echo "What=${root}"
+        echo "Options=rw,suid,dev,exec,auto,nouser,async"
+    } > "$GENERATOR_DIR/${state_unit}"
+
+    {
+        echo "[Unit]"
+        echo "Before=initrd-root-fs.target"
+        echo "DefaultDependencies=no"
+        echo "RequiresMountsFor=${root_part_mnt}"
+        echo "[Mount]"
+        echo "Where=/sysroot"
+        echo "What=${root_part_mnt}/${image}"
+        echo "Options=ro,suid,dev,exec,auto,nouser,async"
+    } > "$GENERATOR_DIR"/sysroot.mount
 fi
+
+mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
+ln -s "$GENERATOR_DIR"/sysroot.mount \
+    "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
+    

@@ -24,18 +24,12 @@ if [ -n "${oem_label}" ]; then
         echo "Before=elemental-setup-rootfs.service"
         echo "After=dracut-initqueue.service"
         echo "Wants=dracut-initqueue.service"
-	echo "PartOf=initrd.target"
+        echo "PartOf=initrd.target"
         echo "[Mount]"
         echo "Where=/oem"
         echo "What=/dev/disk/by-label/${oem_label}"
         echo "Options=rw,suid,dev,exec,noauto,nouser,async"
     } > "$GENERATOR_DIR"/${oem_unit}
-
-    if [ ! -e "$GENERATOR_DIR/elemental-setup-rootfs.service.wants/${oem_unit}" ]; then
-        mkdir -p "$GENERATOR_DIR"/elemental-setup-rootfs.service.wants
-        ln -s "$GENERATOR_DIR"/${oem_unit} \
-            "$GENERATOR_DIR"/elemental-setup-rootfs.service.wants/${oem_unit}
-    fi
 
     mkdir -p "$GENERATOR_DIR/$dev.device.d"
     {
@@ -44,10 +38,8 @@ if [ -n "${oem_label}" ]; then
         echo "JobRunningTimeoutSec=${oem_timeout}"
     } > "$GENERATOR_DIR/$dev.device.d/timeout.conf"
 
-    if [ ! -e "$GENERATOR_DIR/initrd-root-fs.target.wants/$dev.device" ]; then
-        mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
-        ln -s "$GENERATOR_DIR"/"$dev".device \
-            "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
-    fi
+    mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
+    ln -s "$GENERATOR_DIR"/"$dev".device \
+        "$GENERATOR_DIR"/initrd-root-fs.target.wants/"$dev".device
 fi
 

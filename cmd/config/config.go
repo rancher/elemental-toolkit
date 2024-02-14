@@ -301,7 +301,7 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 		}
 
 		switch split[0] {
-		case "elemental.image", "cos-img/filename":
+		case "elemental.mode":
 			switch {
 			case strings.Contains(val, constants.ActiveImgName):
 				mount.Mode = constants.ActiveImgName
@@ -313,14 +313,14 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 				r.Logger.Errorf("Error parsing cmdline %s", cmd)
 				return fmt.Errorf("Unknown image path: %s", val)
 			}
-		case "elemental.disable", "rd.cos.disable":
+		case "elemental.disable":
 			mount.Disable = true
-		case "elemental.overlay", "rd.cos.overlay":
+		case "elemental.overlay":
 			err := applyMountOverlay(mount, val)
 			if err != nil {
 				return err
 			}
-		case "elemental.oemlabel", "rd.cos.oemlabel":
+		case "elemental.oemlabel":
 			oemdev := fmt.Sprintf("LABEL=%s", val)
 			var mnt *v1.VolumeMount
 			for _, mnt = range mount.Volumes {

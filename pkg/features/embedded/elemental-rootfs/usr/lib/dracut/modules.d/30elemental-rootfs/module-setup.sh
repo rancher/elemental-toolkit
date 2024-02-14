@@ -35,9 +35,9 @@ install() {
 
     inst_simple "/etc/systemd/system/elemental-rootfs.service" \
         "${systemdsystemunitdir}/elemental-rootfs.service"
-    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.requires"
+    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.wants"
     ln_r "../elemental-rootfs.service" \
-        "${systemdsystemunitdir}/initrd-fs.target.requires/elemental-rootfs.service"
+        "${systemdsystemunitdir}/initrd-fs.target.wants/elemental-rootfs.service"
 
     dracut_need_initqueue
 }

@@ -8,6 +8,9 @@ if getargbool 0 elemental.disable; then
     return 0
 fi
 
+root=$(getarg root=)
+rootok=0
+
 case "${root}" in
     LABEL=*) \
         root="${root//\//\\x2f}"
@@ -33,9 +36,9 @@ if [ "${fsck_mode}" == "force" ]; then
     /sbin/initqueue --finished --unique /sbin/elemental-fsck
 fi
 
-elemental_img=$(getarg elemental.image=)
+elemental_mode=$(getarg elemental.mode=)
 mkdir -p /run/elemental
-case "${elemental_img}" in
+case "${elemental_mode}" in
     *recovery*)
         echo -n 1 > /run/elemental/recovery_mode ;;
     *active*)
@@ -46,7 +49,7 @@ esac
 
 # support some backwards compatibility
 mkdir -p /run/cos
-case "${elemental_img}" in
+case "${elemental_mode}" in
     *recovery*)
         echo -n 1 > /run/cos/recovery_mode ;;
     *active*)
