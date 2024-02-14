@@ -8,7 +8,6 @@ Before=initrd.target
 [Service]
 RootDirectory=/sysroot
 BindPaths=/proc /sys /dev /run /tmp
-BindPaths=-/oem
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/elemental run-stage initramfs
