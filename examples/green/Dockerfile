@@ -42,6 +42,7 @@ RUN ARCH=$(uname -m); \
       less \
       sudo \
       curl \
+      podman \
       sed
 
 # Just add the elemental cli
