@@ -80,7 +80,18 @@ func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDis
 	}
 
 	if b.snapshotter == nil {
-		b.snapshotter, err = snapshotter.NewLoopDeviceSnapshotter(cfg.Config, cfg.Snapshotter, b.bootloader)
+		b.snapshotter, err = snapshotter.NewSnapshotter(cfg.Config, cfg.Snapshotter, b.bootloader)
+	}
+
+	if b.cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
+		if !b.spec.Expandable {
+			cfg.Logger.Errorf("Non expandable disk images are not supported for btrfs snapshotter")
+			return nil, fmt.Errorf("Not supported")
+		}
+		if spec.Partitions.State.FS != constants.Btrfs {
+			cfg.Logger.Warning("Btrfs snapshotter type, forcing btrfs filesystem on state partition")
+			spec.Partitions.State.FS = constants.Btrfs
+		}
 	}
 
 	return b, err
@@ -104,14 +115,14 @@ func (b *BuildDiskAction) buildDiskChrootHook(hook string, root string) error {
 
 func (b *BuildDiskAction) preparePartitionsRoot() error {
 	var err error
-	var exclude *v1.Partition
+	var excludes []*v1.Partition
 
 	rootMap := map[string]string{}
 
 	if b.spec.Expandable {
-		exclude = b.spec.Partitions.Persistent
+		excludes = append(excludes, b.spec.Partitions.Persistent, b.spec.Partitions.State)
 	}
-	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, exclude) {
+	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...) {
 		rootMap[part.Name] = strings.TrimSuffix(part.Path, filepath.Ext(part.Path))
 		err = utils.MkdirAll(b.cfg.Fs, rootMap[part.Name], constants.DirPerm)
 		if err != nil {
@@ -246,8 +257,6 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 			b.cfg.Logger.Errorf("failed creating expandable cloud-config: %s", err.Error())
 			return err
 		}
-		// Omit persistent partition and minimize state partition size
-		b.spec.Partitions.State.Size = constants.MinPartSize
 	} else {
 		// Run a snapshotter transaction for System source in state partition
 		err = b.snapshotter.InitSnapshotter(b.roots[constants.StatePartName])
@@ -375,7 +384,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 
 	excludes = append(excludes, b.spec.Partitions.EFI)
 	if b.spec.Expandable {
-		excludes = append(excludes, b.spec.Partitions.Persistent)
+		excludes = append(excludes, b.spec.Partitions.State, b.spec.Partitions.Persistent)
 	}
 
 	b.cfg.Logger.Infof("Creating EFI partition image")
@@ -611,7 +620,7 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	}
 
 	if b.spec.Expandable {
-		excludes = append(excludes, b.spec.Partitions.Persistent)
+		excludes = append(excludes, b.spec.Partitions.State, b.spec.Partitions.Persistent)
 	}
 	elParts := b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...)
 	for i, part := range elParts {
@@ -653,8 +662,11 @@ func (b *BuildDiskAction) applySelinuxLabels(root string, unprivileged bool) err
 }
 
 func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot string) error {
-	if b.spec.Partitions.State == nil || b.spec.Partitions.Recovery == nil {
-		return fmt.Errorf("undefined state or recovery partition")
+	if b.spec.Partitions.Recovery == nil {
+		return fmt.Errorf("undefined recovery partition")
+	}
+	if b.spec.Partitions.State == nil && !b.spec.Expandable {
+		return fmt.Errorf("undefined state partition")
 	}
 
 	snapshots := map[int]*v1.SystemState{}
@@ -702,9 +714,13 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 		}
 	}
 
+	statePath := ""
+	if !b.spec.Expandable {
+		statePath = filepath.Join(stateRoot, constants.InstallStateFile)
+	}
+
 	return b.cfg.WriteInstallState(
-		installState,
-		filepath.Join(stateRoot, constants.InstallStateFile),
+		installState, statePath,
 		filepath.Join(recoveryRoot, constants.InstallStateFile),
 	)
 }
@@ -722,20 +738,25 @@ func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
 		Stages: map[string][]schema.Stage{
 			layoutSetStage: {
 				schema.Stage{
-					Name: "Expand state partition",
+					Name: "Add state partition",
 					Layout: schema.Layout{
 						Device: &schema.Device{
-							Label: b.spec.Partitions.State.FilesystemLabel,
+							Label: b.spec.Partitions.Recovery.FilesystemLabel,
 						},
-						Expand: &schema.Expand{
-							Size: b.spec.Partitions.State.Size,
+						Parts: []schema.Partition{
+							{
+								FSLabel:    b.spec.Partitions.State.FilesystemLabel,
+								Size:       b.spec.Partitions.State.Size,
+								PLabel:     b.spec.Partitions.State.Name,
+								FileSystem: b.spec.Partitions.State.FS,
+							},
 						},
 					},
 				}, schema.Stage{
 					Name: "Add persistent partition",
 					Layout: schema.Layout{
 						Device: &schema.Device{
-							Label: b.spec.Partitions.State.FilesystemLabel,
+							Label: b.spec.Partitions.Recovery.FilesystemLabel,
 						},
 						Parts: []schema.Partition{
 							{
