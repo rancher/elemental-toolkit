@@ -333,9 +333,9 @@ func GetResetKeyEnvMap() map[string]string {
 // GetUpgradeKeyEnvMap returns environment variable bindings to UpgradeSpec data
 func GetUpgradeKeyEnvMap() map[string]string {
 	return map[string]string{
-		"recovery":            "RECOVERY",
-		"system.uri":          "SYSTEM",
-		"recovery-system.uri": "RECOVERY_SYSTEM",
+		"recovery":        "RECOVERY",
+		"system":          "SYSTEM",
+		"recovery-system": "RECOVERY_SYSTEM",
 	}
 }
 
