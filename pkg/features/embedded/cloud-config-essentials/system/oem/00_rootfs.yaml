@@ -18,6 +18,18 @@ stages:
       environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
+        RW_PATHS: "/var /etc /srv"
+        PERSISTENT_STATE_PATHS: >-
+          /etc/systemd
+          /etc/ssh
+          /etc/iscsi
+          /home
+          /opt
+          /root
+          /usr/libexec
+          /usr/local
+          /var/log
+          /var/lib/NetworkManager
   initramfs:
     - if: '[ ! -f "/run/cos/recovery_mode" ]'
       name: "Persist /etc/machine-id"
