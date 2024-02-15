@@ -946,6 +946,29 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+	Describe("WriteEnvFile", func() {
+		BeforeEach(func() {
+			fs.Mkdir("/etc", constants.DirPerm)
+		})
+		It("writes new file and also updates values if the file exists", func() {
+			envData := map[string]string{
+				"TESTKEY":  "TESTVALUE",
+				"TESTKEY2": "VALUE2",
+			}
+			err := utils.WriteEnvFile(fs, envData, "/etc/envfile")
+			Expect(err).ToNot(HaveOccurred())
+			loadedData, err := utils.LoadEnvFile(fs, "/etc/envfile")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(loadedData).To(Equal(envData))
+
+			loadedData["TESTKEY2"] = "NEWVALUE"
+			loadedData["NEWKEY"] = "DATA"
+			utils.WriteEnvFile(fs, loadedData, "/etc/envfile")
+			envData, err = utils.LoadEnvFile(fs, "/etc/envfile")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(envData).To(Equal(loadedData))
+		})
+	})
 	Describe("CleanStack", Label("CleanStack"), func() {
 		var cleaner *utils.CleanStack
 		BeforeEach(func() {
