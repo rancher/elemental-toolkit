@@ -148,11 +148,17 @@ jobs:
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
           fi
+      - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
       - id: image
         env:
           FLAVOR: ${{ inputs.flavor }}
         run: |
-          export VERSION=$(git describe --tags --candidates=50)
+          git fetch --prune --unshallow
+          export TAG=$(git describe --tags --candidates=50 --abbrev=0)
+          export COMMIT=$(git rev-parse --short HEAD)
+          export VERSION=${TAG}-g${COMMIT}
           echo "upgrade=ghcr.io/rancher/elemental-toolkit/elemental-${FLAVOR}:${VERSION}" >> $GITHUB_OUTPUT
           echo "toolkit=ghcr.io/rancher/elemental-toolkit/elemental-cli:${VERSION}" >> $GITHUB_OUTPUT
 
@@ -186,7 +192,7 @@ jobs:
       - if: ${{ matrix.test == 'test-upgrade' }}
         name: Download specific disk
         run: |
-          wget https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-${{ inputs.flavor }}-v1.1.4.${{ env.ARCH }}.qcow2 -O /tmp/elemental-${{ inputs.flavor }}.${{ env.ARCH }}.qcow2
+          wget -q --tries=3 https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-${{ inputs.flavor }}-v1.1.4.${{ env.ARCH }}.qcow2 -O /tmp/elemental-${{ inputs.flavor }}.${{ env.ARCH }}.qcow2
       - if: ${{ matrix.test != 'test-upgrade' }}
         name: Cached Disk
         id: cache-disk
