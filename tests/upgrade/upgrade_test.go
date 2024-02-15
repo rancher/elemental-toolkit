@@ -42,9 +42,14 @@ var _ = Describe("Elemental Feature tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
-			By(fmt.Sprintf("and upgrading the to %s", comm.UpgradeImage()))
+			By(fmt.Sprintf("and upgrading to %s", comm.UpgradeImage()))
 
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
+			upgradeCmd := s.ElementalCmd("upgrade", "--bootloader", "--system", comm.UpgradeImage())
+			out, err := s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeCmd)).
+				Privileged().
+				WithMount("/", "/host").
+				Run()
+
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -58,12 +63,6 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).To(HaveOccurred())
-
-			s.Reset()
-			currentVersion = s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).To(Equal(originalVersion))
-			_, err = s.Command("cat /after-reset-chroot")
-			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

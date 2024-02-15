@@ -18,14 +18,21 @@ package common
 
 import "flag"
 
-const upImg = "ghcr.io/rancher/elemental-toolkit/elemental-green:v0.10.7-g3e4a3c56"
+const defaultUpgradeImage = "ghcr.io/rancher/elemental-toolkit/elemental-green:v1.1.4"
+const defaultToolkitImage = "ghcr.io/rancher/elemental-toolkit/elemental-cli:v1.1.4"
 
-var upgradeImg string
+var upgradeImage string
+var toolkitImage string
 
 func init() {
-	flag.StringVar(&upgradeImg, "upgradeImg", upImg, "Default image to use in `upgrade` calls")
+	flag.StringVar(&upgradeImage, "upgrade-image", defaultUpgradeImage, "Default image to use in `upgrade` calls")
+	flag.StringVar(&toolkitImage, "toolkit-image", defaultToolkitImage, "Default image to use when calling `upgrade`")
 }
 
 func UpgradeImage() string {
-	return upgradeImg
+	return upgradeImage
+}
+
+func ToolkitImage() string {
+	return toolkitImage
 }

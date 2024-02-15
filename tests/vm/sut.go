@@ -279,6 +279,21 @@ func (s *SUT) IsVMRunning() bool {
 	return proc.Signal(syscall.Signal(0)) == nil
 }
 
+func (s *SUT) NewPodmanRunCommand(image, command string) *PodmanRunCommand {
+	return &PodmanRunCommand{
+		sut:        s,
+		image:      image,
+		entrypoint: "/bin/bash",
+		command:    command,
+		mounts: []VolumeMount{
+			{
+				from: "/tmp",
+				to:   "/tmp",
+			},
+		},
+	}
+}
+
 // Command sends a command to the SUIT and waits for reply
 func (s *SUT) Command(cmd string) (string, error) {
 	if !s.IsVMRunning() {

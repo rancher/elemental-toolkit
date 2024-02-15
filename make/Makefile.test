@@ -1,6 +1,6 @@
-GINKGO?="github.com/onsi/ginkgo/v2/ginkgo"
-
-GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
+GINKGO       ?= "github.com/onsi/ginkgo/v2/ginkgo"
+GINKGO_ARGS  ?= -v --fail-fast -r --timeout=3h
+UPGRADE_ARGS ?= 
 
 .PHONY: prepare-test
 prepare-test:
@@ -59,7 +59,7 @@ test-fsck: test-active
 
 .PHONY: test-upgrade
 test-upgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade -- $(UPGRADE_ARGS)
 
 .PHONY: test-deps
 test-deps:
