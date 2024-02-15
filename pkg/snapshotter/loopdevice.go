@@ -61,11 +61,17 @@ func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootl
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 	}
-	loopDevCfg, ok := snapCfg.Config.(*v1.LoopDeviceConfig)
-	if !ok {
-		msg := "failed casting LoopDeviceConfig type"
-		cfg.Logger.Errorf(msg)
-		return nil, fmt.Errorf(msg)
+	var loopDevCfg *v1.LoopDeviceConfig
+	var ok bool
+	if snapCfg.Config == nil {
+		loopDevCfg = v1.NewLoopDeviceConfig()
+	} else {
+		loopDevCfg, ok = snapCfg.Config.(*v1.LoopDeviceConfig)
+		if !ok {
+			msg := "failed casting LoopDeviceConfig type"
+			cfg.Logger.Errorf(msg)
+			return nil, fmt.Errorf(msg)
+		}
 	}
 	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: *loopDevCfg, bootloader: bootloader}, nil
 }

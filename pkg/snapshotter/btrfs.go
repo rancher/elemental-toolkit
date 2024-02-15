@@ -114,11 +114,17 @@ func newBtrfsSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.BtrfsSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.BtrfsSnapshotterType)
 	}
-	btrfsCfg, ok := snapCfg.Config.(*v1.BtrfsConfig)
-	if !ok {
-		msg := "failed casting BtrfsConfig type"
-		cfg.Logger.Errorf(msg)
-		return nil, fmt.Errorf(msg)
+	var btrfsCfg *v1.BtrfsConfig
+	var ok bool
+	if snapCfg.Config == nil {
+		btrfsCfg = v1.NewBtrfsConfig()
+	} else {
+		btrfsCfg, ok = snapCfg.Config.(*v1.BtrfsConfig)
+		if !ok {
+			msg := "failed casting BtrfsConfig type"
+			cfg.Logger.Errorf(msg)
+			return nil, fmt.Errorf(msg)
+		}
 	}
 	return &Btrfs{
 		cfg: cfg, snapshotterCfg: snapCfg, btrfsCfg: *btrfsCfg,
@@ -268,7 +274,7 @@ func (b *Btrfs) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	}
 	defer func() {
 		if err != nil {
-			err = b.DeleteSnapshot(snapshot.ID)
+			_ = b.DeleteSnapshot(snapshot.ID)
 		}
 		newErr := b.snapshotsUmount()
 		if err == nil {
