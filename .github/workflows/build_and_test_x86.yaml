@@ -173,7 +173,12 @@ jobs:
           make test-deps
       - run: |
           git fetch --prune --unshallow
-      - name: Cached Disk
+      - if: ${{ matrix.test == 'test-upgrade' }}
+        name: Download specific disk
+        run: |
+          wget https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-${{ inputs.flavor }}-v1.1.4.${{ env.ARCH }}.qcow2 -O /tmp/elemental-${{ inputs.flavor }}.${{ env.ARCH }}.qcow2
+      - if: ${{ matrix.test != 'test-upgrade' }}
+        name: Cached Disk
         id: cache-disk
         uses: actions/cache/restore@v4
         env:
