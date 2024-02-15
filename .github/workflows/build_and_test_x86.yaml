@@ -136,6 +136,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
+      upgrade: ${{ steps.image.outputs.upgrade }}
+      toolkit: ${{ steps.image.outputs.toolkit }}
     steps:
       - id: detect
         env:
@@ -146,6 +148,13 @@ jobs:
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
           fi
+      - id: image
+        env:
+          FLAVOR: ${{ inputs.flavor }}
+        run: |
+          export VERSION=$(git describe --tags --candidates=50)
+          echo "upgrade=ghcr.io/rancher/elemental-toolkit/elemental-${FLAVOR}:${VERSION}" >> $GITHUB_OUTPUT
+          echo "toolkit=ghcr.io/rancher/elemental-toolkit/elemental-cli:${VERSION}" >> $GITHUB_OUTPUT
 
   tests-matrix:
     needs:
@@ -156,6 +165,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
       COS_TIMEOUT: 1600
+      UPGRADE_ARGS: --toolkit-image=${{ needs.detect.outputs.toolkit }} --upgrade-image=${{ needs.detect.outputs.upgrade }}
     strategy:
       matrix:
         test: ${{ fromJson(needs.detect.outputs.tests) }}
