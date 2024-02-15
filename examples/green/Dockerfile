@@ -46,6 +46,7 @@ RUN ARCH=$(uname -m); \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
+      transactional-update \
       podman \
       sed && \
     zypper clean --all
