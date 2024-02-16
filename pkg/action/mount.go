@@ -224,14 +224,18 @@ func MountBindPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
 	trimmed := strings.TrimPrefix(path, "/")
 	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
 	stateDir := fmt.Sprintf("%s/%s", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, stateDir, constants.DirPerm); err != nil {
-		cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
-		return err
-	}
 
-	if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
-		cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
-		return err
+	// Only sync data once, otherwise it could modify persistent data from a previous boot
+	if ok, _ := utils.Exists(cfg.Fs, stateDir); !ok {
+		if err := utils.MkdirAll(cfg.Fs, stateDir, constants.DirPerm); err != nil {
+			cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
+			return err
+		}
+
+		if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
+			cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
+			return err
+		}
 	}
 
 	if err := cfg.Mounter.Mount(stateDir, base, "none", []string{"defaults", "bind"}); err != nil {
@@ -246,7 +250,7 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	cfg.Logger.Debugf("Mounting overlay path %s", path)
 
 	lower := filepath.Join(sysroot, path)
-	if err := utils.MkdirAll(cfg.Config.Fs, lower, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, lower, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating directory %s: %s", path, err.Error())
 		return err
 	}
@@ -254,13 +258,13 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	trimmed := strings.TrimPrefix(path, "/")
 	pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 	upper := fmt.Sprintf("%s/%s/upper", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, upper, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, upper, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating upperdir %s: %s", upper, err.Error())
 		return err
 	}
 
 	work := fmt.Sprintf("%s/%s/work", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, work, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, work, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating workdir %s: %s", work, err.Error())
 		return err
 	}
