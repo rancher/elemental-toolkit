@@ -24,12 +24,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Build
+        run: make build-cli
       - name: Analysis
         uses: golangci/golangci-lint-action@v4
         with:
           args: -v
-      - name: Build
-        run: make build-cli
       - name: Deps
         run: make test-deps
       - name: Run tests
