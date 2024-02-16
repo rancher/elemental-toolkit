@@ -144,7 +144,7 @@ jobs:
           FLAVOR: ${{ inputs.flavor }}
         run: |
           if [ "${FLAVOR}" == green ]; then
-            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+            echo "tests=['test-upgrade', 'test-downgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
           fi

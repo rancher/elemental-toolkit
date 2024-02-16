@@ -57,6 +57,10 @@ test-fallback: test-active
 test-fsck: test-active
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/fsck
 
+.PHONY: test-downgrade
+test-downgrade: test-active
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade
+
 .PHONY: test-upgrade
 test-upgrade: test-active
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade -- $(UPGRADE_ARGS)
