@@ -18,6 +18,7 @@ package elemental_test
 
 import (
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,6 +27,11 @@ import (
 
 	comm "github.com/rancher/elemental-toolkit/tests/common"
 )
+
+func TestTests(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Elemental upgrade test Suite")
+}
 
 var _ = Describe("Elemental Feature tests", func() {
 	var s *sut.SUT
@@ -36,20 +42,15 @@ var _ = Describe("Elemental Feature tests", func() {
 	})
 
 	Context("After install", func() {
-		It("upgrades to a signed image including upgrade and reset hooks", func() {
+		It("downgrades to a signed image including upgrade and reset hooks", func() {
 			By("setting /oem/chroot_hooks.yaml")
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
-			By(fmt.Sprintf("and upgrading to %s", comm.UpgradeImage()))
+			By(fmt.Sprintf("and upgrading the to %s", comm.UpgradeImage()))
 
-			upgradeCmd := s.ElementalCmd("upgrade", "--bootloader", "--system", comm.UpgradeImage())
-			out, err := s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeCmd)).
-				Privileged().
-				WithMount("/", "/host").
-				Run()
-
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
@@ -63,6 +64,12 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).To(HaveOccurred())
+
+			s.Reset()
+			currentVersion = s.GetOSRelease("TIMESTAMP")
+			Expect(currentVersion).To(Equal(originalVersion))
+			_, err = s.Command("cat /after-reset-chroot")
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

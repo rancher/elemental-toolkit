@@ -136,16 +136,31 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
+      upgrade: ${{ steps.image.outputs.upgrade }}
+      toolkit: ${{ steps.image.outputs.toolkit }}
     steps:
       - id: detect
         env:
           FLAVOR: ${{ inputs.flavor }}
         run: |
           if [ "${FLAVOR}" == green ]; then
-            echo "tests=['test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+            echo "tests=['test-upgrade', 'test-downgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
           fi
+      - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
+      - id: image
+        env:
+          FLAVOR: ${{ inputs.flavor }}
+        run: |
+          git fetch --prune --unshallow
+          export TAG=$(git describe --tags --candidates=50 --abbrev=0)
+          export COMMIT=$(git rev-parse --short HEAD)
+          export VERSION=${TAG}-g${COMMIT}
+          echo "upgrade=ghcr.io/rancher/elemental-toolkit/elemental-${FLAVOR}:${VERSION}" >> $GITHUB_OUTPUT
+          echo "toolkit=ghcr.io/rancher/elemental-toolkit/elemental-cli:${VERSION}" >> $GITHUB_OUTPUT
 
   tests-matrix:
     needs:
@@ -156,6 +171,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
       COS_TIMEOUT: 1600
+      UPGRADE_ARGS: --toolkit-image=${{ needs.detect.outputs.toolkit }} --upgrade-image=${{ needs.detect.outputs.upgrade }}
     strategy:
       matrix:
         test: ${{ fromJson(needs.detect.outputs.tests) }}
@@ -173,7 +189,12 @@ jobs:
           make test-deps
       - run: |
           git fetch --prune --unshallow
-      - name: Cached Disk
+      - if: ${{ matrix.test == 'test-upgrade' }}
+        name: Download specific disk
+        run: |
+          wget -q --tries=3 https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-${{ inputs.flavor }}-v1.1.4.${{ env.ARCH }}.qcow2 -O /tmp/elemental-${{ inputs.flavor }}.${{ env.ARCH }}.qcow2
+      - if: ${{ matrix.test != 'test-upgrade' }}
+        name: Cached Disk
         id: cache-disk
         uses: actions/cache/restore@v4
         env:
