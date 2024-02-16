@@ -30,11 +30,13 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-//go:embed all:embedded
+//go:generate go run generate-tarballs.go ./embedded ./generated
+
+//go:embed all:generated
 var files embed.FS
 
 const (
-	embeddedRoot = "embedded"
+	embeddedRoot = "generated"
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
 	FeatureElementalRootfs       = "elemental-rootfs"
