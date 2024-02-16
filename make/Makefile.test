@@ -73,6 +73,7 @@ test-deps:
 
 .PHONY: test-cli
 test-cli:
+	go generate ./...
 	go run $(GINKGO) --label-filter '!root' --fail-fast --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-toolkit/... -p -r ${PKG}
 
 .PHONY: test-root
