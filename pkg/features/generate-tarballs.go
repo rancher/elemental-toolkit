@@ -1,5 +1,4 @@
 //go:build ignore
-// +build ignore
 
 /*
 Copyright © 2022 - 2024 SUSE LLC
@@ -24,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
 func usage() {
@@ -59,17 +57,17 @@ func main() {
 	}
 
 	for _, dir := range dirs {
-		input := filepath.Join(inputDir, dir.Name())
+		input := dir.Name()
 		output := fmt.Sprintf("%s/%s.tar", outputDir, dir.Name())
 
 		fmt.Printf("Generate %s from %s\n", output, input)
 
-		cmd := exec.Command("tar", "cvf", output, input)
+		cmd := exec.Command("tar", "-C", inputDir, "-cvf", output, input)
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating tarball: %s", err.Error())
-			fmt.Fprintf(os.Stderr, "Read: %s", string(out))
+			fmt.Fprintf(os.Stderr, "Error creating tarball: %s\n", err.Error())
+			fmt.Fprintf(os.Stderr, "Read: %s\n", string(out))
 			return
 		}
 	}
