@@ -25,7 +25,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Analysis
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v4
         with:
           args: -v
       - name: Build
