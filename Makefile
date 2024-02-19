@@ -157,4 +157,5 @@ lint: fmt vet
 .PHONY: build-docs
 build-docs:
 	@./scripts/docs-build.sh
+	go generate ./...
 	cd docs && go run generate_docs.go
