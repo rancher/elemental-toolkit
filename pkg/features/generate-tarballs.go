@@ -58,11 +58,11 @@ func main() {
 
 	for _, dir := range dirs {
 		input := dir.Name()
-		output := fmt.Sprintf("%s/%s.tar", outputDir, dir.Name())
+		output := fmt.Sprintf("%s/%s.tar.gz", outputDir, dir.Name())
 
 		fmt.Printf("Generate %s from %s\n", output, input)
 
-		cmd := exec.Command("tar", "-C", inputDir, "-cvf", output, input)
+		cmd := exec.Command("tar", "-C", inputDir, "-czvf", output, input)
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {

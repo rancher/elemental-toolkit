@@ -18,6 +18,7 @@ package features
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"embed"
 	"fmt"
 	"io"
@@ -79,14 +80,14 @@ func New(name string, units []*systemd.Unit) *Feature {
 }
 
 func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
-	path := filepath.Join(embeddedRoot, fmt.Sprintf("%s.tar", f.Name))
+	path := filepath.Join(embeddedRoot, fmt.Sprintf("%s.tar.gz", f.Name))
 	tar, err := files.Open(path)
 	if err != nil {
 		log.Errorf("Error opening '%s': %s", path, err.Error())
 		return err
 	}
 
-	err = extractTar(log, tar, destFs, f.Name)
+	err = extractTarGzip(log, tar, destFs, f.Name)
 	if err != nil {
 		log.Errorf("Error walking files for feature %s: %s", f.Name, err.Error())
 		return err
@@ -164,8 +165,14 @@ func Get(names []string) ([]*Feature, error) {
 	return features, nil
 }
 
-func extractTar(log v1.Logger, tarFile io.Reader, destFs v1.FS, featureName string) error {
-	reader := tar.NewReader(tarFile)
+func extractTarGzip(log v1.Logger, tarFile io.Reader, destFs v1.FS, featureName string) error {
+	gzipReader, err := gzip.NewReader(tarFile)
+	if err != nil {
+		return err
+	}
+	defer gzipReader.Close()
+
+	reader := tar.NewReader(gzipReader)
 
 	for {
 		header, err := reader.Next()
