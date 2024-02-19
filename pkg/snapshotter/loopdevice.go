@@ -79,19 +79,33 @@ func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootl
 // InitSnapshotter initiates the snapshotter to the given root directory. More over this method includes logic to migrate
 // from older elemental-toolkit versions.
 func (l *LoopDevice) InitSnapshotter(rootDir string) error {
+	var err error
+
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", rootDir)
 	l.rootDir = rootDir
-
-	err := utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
-	if err != nil {
-		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
-		return err
-	}
 
 	// Check the existence of a legacy deployment
 	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, constants.LegacyImagesPath)); ok {
 		l.cfg.Logger.Info("Legacy deployment detected running migration logic")
 		l.legacyClean = true
+
+		// Legacy deployments might not include RW mounts for state partitions
+		if ok, _ := elemental.IsRWMountPoint(l.cfg, l.rootDir); !ok {
+			err = l.cfg.Mounter.Mount("", l.rootDir, "auto", []string{"remount", "rw"})
+			if err != nil {
+				l.cfg.Logger.Errorf("Failed remounting root as RW: %v", err)
+				return err
+			}
+		}
+	}
+
+	err = utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDeviceSnapsPath), constants.DirPerm)
+	if err != nil {
+		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
+		return err
+	}
+
+	if l.legacyClean {
 		image := filepath.Join(rootDir, constants.LegacyActivePath)
 
 		// Migrate passive image if running the transaction in passive mode
