@@ -17,24 +17,31 @@ limitations under the License.
 package features
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/systemd"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-//go:embed all:embedded
+// Generate a tarball for each feature in ./embedded and put them in
+// ./generated.
+//go:generate go run generate-tarballs.go ./embedded ./generated
+
+//go:embed all:generated
 var files embed.FS
 
 const (
-	embeddedRoot = "embedded"
+	embeddedRoot = "generated"
 
 	FeatureImmutableRootfs       = "immutable-rootfs"
 	FeatureElementalRootfs       = "elemental-rootfs"
@@ -73,39 +80,14 @@ func New(name string, units []*systemd.Unit) *Feature {
 }
 
 func (f *Feature) Install(log v1.Logger, destFs v1.FS, runner v1.Runner) error {
-	featurePath := filepath.Join(embeddedRoot, f.Name)
-	err := fs.WalkDir(files, featurePath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			log.Errorf("Error accessing embedded file '%s': %s", path, err.Error())
-			return err
-		}
+	path := filepath.Join(embeddedRoot, fmt.Sprintf("%s.tar.gz", f.Name))
+	tar, err := files.Open(path)
+	if err != nil {
+		log.Errorf("Error opening '%s': %s", path, err.Error())
+		return err
+	}
 
-		if d.IsDir() {
-			log.Debugf("Skipping dir %s", path)
-			return nil
-		}
-
-		targetPath, err := filepath.Rel(featurePath, path)
-		if err != nil {
-			log.Errorf("Could not calculate relative path for file '%s': %s", path, err.Error())
-			return err
-		}
-		targetPath = filepath.Join("/", targetPath)
-
-		if err := utils.MkdirAll(destFs, filepath.Dir(targetPath), constants.DirPerm); err != nil {
-			log.Errorf("Error mkdir: %s", err.Error())
-			return err
-		}
-
-		content, err := files.ReadFile(path)
-		if err != nil {
-			log.Errorf("Error reading embedded file '%s': %s", path, err.Error())
-			return err
-		}
-
-		log.Debugf("Writing file '%s' to '%s'", path, targetPath)
-		return destFs.WriteFile(targetPath, content, 0755)
-	})
+	err = extractTarGzip(log, tar, destFs, f.Name)
 	if err != nil {
 		log.Errorf("Error walking files for feature %s: %s", f.Name, err.Error())
 		return err
@@ -181,4 +163,57 @@ func Get(names []string) ([]*Feature, error) {
 	}
 
 	return features, nil
+}
+
+func extractTarGzip(log v1.Logger, tarFile io.Reader, destFs v1.FS, featureName string) error {
+	gzipReader, err := gzip.NewReader(tarFile)
+	if err != nil {
+		return err
+	}
+	defer gzipReader.Close()
+
+	reader := tar.NewReader(gzipReader)
+
+	for {
+		header, err := reader.Next()
+
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return err
+		case header == nil:
+			continue
+		}
+
+		log.Debugf("Extracting %s for feature %s", header.Name, featureName)
+		trimmed := strings.TrimPrefix(header.Name, featureName)
+		target := filepath.Join("/", trimmed)
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := destFs.Stat(target); err != nil {
+				if err := utils.MkdirAll(destFs, target, fs.FileMode(header.Mode)); err != nil {
+					return err
+				}
+			}
+		case tar.TypeReg:
+			destFile, err := destFs.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				log.Errorf("Error opening file '%s': %s", target, err.Error())
+				return err
+			}
+
+			written, err := io.Copy(destFile, reader)
+			if err != nil {
+				log.Errorf("Error copying file '%s': %s", target, err.Error())
+				return err
+			}
+
+			log.Debugf("Wrote %d bytes to %s", written, target)
+
+			_ = destFile.Close()
+
+		}
+	}
 }

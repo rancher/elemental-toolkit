@@ -65,6 +65,7 @@ pull-toolkit:
 
 .PHONY: build-cli
 build-cli:
+	go generate ./...
 	go build -ldflags '$(LDFLAGS)' -o build/elemental
 
 .PHONY: build-os
