@@ -116,7 +116,7 @@ var _ = Describe("Init Action", func() {
 			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
-				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				exists, err := utils.Exists(fs, fmt.Sprintf("/etc/systemd/system/%v", unit))
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeTrue())
 			}
@@ -142,7 +142,7 @@ var _ = Describe("Init Action", func() {
 			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
-				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				exists, err := utils.Exists(fs, fmt.Sprintf("/etc/systemd/system/%v", unit))
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeTrue())
 			}
@@ -154,7 +154,7 @@ var _ = Describe("Init Action", func() {
 			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
-				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				exists, err := utils.Exists(fs, fmt.Sprintf("/etc/systemd/system/%v", unit))
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeTrue())
 			}
@@ -166,7 +166,7 @@ var _ = Describe("Init Action", func() {
 			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
 
 			for _, unit := range enabledUnits {
-				exists, err := utils.Exists(fs, fmt.Sprintf("/usr/lib/systemd/system/%v", unit))
+				exists, err := utils.Exists(fs, fmt.Sprintf("/etc/systemd/system/%v", unit))
 				Expect(err).To(BeNil())
 				Expect(exists).To(BeTrue())
 			}
