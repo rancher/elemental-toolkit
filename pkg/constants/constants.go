@@ -176,7 +176,6 @@ const (
 	LoopDeviceSnapshotterType = "loopdevice"
 	BtrfsSnapshotterType      = "btrfs"
 	ActiveSnapshot            = "active"
-	PassiveSnapshot           = "passive_%d"
 
 	// Legacy paths
 	LegacyImagesPath  = "cOS"
