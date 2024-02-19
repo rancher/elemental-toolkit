@@ -25,12 +25,12 @@ import (
 	"github.com/jaypipes/ghw/pkg/block"
 	ghwUtil "github.com/jaypipes/ghw/pkg/util"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
-// ghwPartitionToInternalPartition transforms a block.Partition from ghw lib to our v1.Partition type
-func ghwPartitionToInternalPartition(partition *block.Partition) *v1.Partition {
-	return &v1.Partition{
+// ghwPartitionToInternalPartition transforms a block.Partition from ghw lib to our v2.Partition type
+func ghwPartitionToInternalPartition(partition *block.Partition) *v2.Partition {
+	return &v2.Partition{
 		FilesystemLabel: partition.FilesystemLabel,
 		Size:            uint(partition.SizeBytes / (1024 * 1024)), // Converts B to MB
 		Name:            partition.Label,
@@ -43,8 +43,8 @@ func ghwPartitionToInternalPartition(partition *block.Partition) *v1.Partition {
 }
 
 // GetAllPartitions returns all partitions in the system for all disks
-func GetAllPartitions() (v1.PartitionList, error) {
-	var parts []*v1.Partition
+func GetAllPartitions() (v2.PartitionList, error) {
+	var parts []*v2.Partition
 	blockDevices, err := block.New(ghw.WithDisableTools(), ghw.WithDisableWarnings())
 	if err != nil {
 		return nil, err

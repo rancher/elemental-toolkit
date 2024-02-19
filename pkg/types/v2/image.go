@@ -25,7 +25,7 @@ import (
 	"github.com/containerd/containerd/archive"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	v2 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -40,7 +40,7 @@ type OCIImageExtractor struct{}
 var _ ImageExtractor = OCIImageExtractor{}
 
 func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) (string, error) {
-	platform, err := v1.ParsePlatform(platformRef)
+	platform, err := v2.ParsePlatform(platformRef)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef strin
 		return "", err
 	}
 
-	var img v1.Image
+	var img v2.Image
 
 	err = backoff.Retry(func() error {
 		img, err = image(ref, *platform, local)
@@ -71,7 +71,7 @@ func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef strin
 	return digest.String(), err
 }
 
-func image(ref name.Reference, platform v1.Platform, local bool) (v1.Image, error) {
+func image(ref name.Reference, platform v2.Platform, local bool) (v2.Image, error) {
 	if local {
 		return daemon.Image(ref)
 	}

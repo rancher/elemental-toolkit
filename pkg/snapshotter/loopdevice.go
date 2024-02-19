@@ -26,11 +26,11 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const (
@@ -40,33 +40,33 @@ const (
 	loopDeviceLabelPattern = "EL_SNAP%d"
 )
 
-var _ v1.Snapshotter = (*LoopDevice)(nil)
+var _ v2.Snapshotter = (*LoopDevice)(nil)
 
 type LoopDevice struct {
-	cfg               v1.Config
-	snapshotterCfg    v1.SnapshotterConfig
-	loopDevCfg        v1.LoopDeviceConfig
+	cfg               v2.Config
+	snapshotterCfg    v2.SnapshotterConfig
+	loopDevCfg        v2.LoopDeviceConfig
 	rootDir           string
 	efiDir            string
 	currentSnapshotID int
 	activeSnapshotID  int
-	bootloader        v1.Bootloader
+	bootloader        v2.Bootloader
 	legacyClean       bool
 }
 
 // newLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
-func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error) {
+func newLoopDeviceSnapshotter(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error) {
 	if snapCfg.Type != constants.LoopDeviceSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 	}
-	var loopDevCfg *v1.LoopDeviceConfig
+	var loopDevCfg *v2.LoopDeviceConfig
 	var ok bool
 	if snapCfg.Config == nil {
-		loopDevCfg = v1.NewLoopDeviceConfig()
+		loopDevCfg = v2.NewLoopDeviceConfig()
 	} else {
-		loopDevCfg, ok = snapCfg.Config.(*v1.LoopDeviceConfig)
+		loopDevCfg, ok = snapCfg.Config.(*v2.LoopDeviceConfig)
 		if !ok {
 			msg := "failed casting LoopDeviceConfig type"
 			cfg.Logger.Errorf(msg)
@@ -125,7 +125,7 @@ func (l *LoopDevice) InitSnapshotter(state *v1.Partition, efiDir string) error {
 }
 
 // StartTransaction starts a transaction for this snapshotter instance and returns the work in progress snapshot object.
-func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
+func (l *LoopDevice) StartTransaction() (*v2.Snapshot, error) {
 	l.cfg.Logger.Infof("Starting a snapshotter transaction")
 	nextID, err := l.getNextSnapshotID()
 	if err != nil {
@@ -175,7 +175,7 @@ func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
 		return nil, err
 	}
 
-	snapshot := &v1.Snapshot{
+	snapshot := &v2.Snapshot{
 		ID:         nextID,
 		Path:       filepath.Join(snapPath, loopDeviceImgName),
 		WorkDir:    workDir,
@@ -190,7 +190,7 @@ func (l *LoopDevice) StartTransaction() (*v1.Snapshot, error) {
 
 // CloseTransactionOnError is a destructor method to clean the given initated snapshot. Useful in case of an error once
 // the transaction has already started.
-func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
+func (l *LoopDevice) CloseTransactionOnError(snapshot *v2.Snapshot) error {
 	var err error
 
 	if snapshot == nil {
@@ -218,7 +218,7 @@ func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
 
 // CloseTransaction closes the transaction for the given snapshot. This is the responsible of setting new active and
 // passive snapshots.
-func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
+func (l *LoopDevice) CloseTransaction(snapshot *v2.Snapshot) (err error) {
 	var linkDst, activeSnap string
 
 	defer func() {
@@ -356,7 +356,7 @@ func (l *LoopDevice) GetSnapshots() ([]int, error) {
 
 // SnapshotImageToSource converts the given snapshot into an ImageSource. This is useful to deploy a system
 // from a given snapshot, for instance setting the recovery image from a snapshot.
-func (l *LoopDevice) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error) {
+func (l *LoopDevice) SnapshotToImageSource(snap *v2.Snapshot) (*v2.ImageSource, error) {
 	ok, err := utils.Exists(l.cfg.Fs, snap.Path)
 	if err != nil || !ok {
 		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
@@ -366,7 +366,7 @@ func (l *LoopDevice) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, 
 		}
 		return nil, err
 	}
-	return v1.NewFileSrc(snap.Path), nil
+	return v2.NewFileSrc(snap.Path), nil
 }
 
 // getNextSnapshotID returns the next ID number for a new snapshot.
@@ -441,8 +441,8 @@ func (l *LoopDevice) isSnapshotInUse(id int) (bool, error) {
 }
 
 // snapshotToImage is a helper method to convert an snapshot object into an image object.
-func (l *LoopDevice) snapshotToImage(snapshot *v1.Snapshot) *v1.Image {
-	return &v1.Image{
+func (l *LoopDevice) snapshotToImage(snapshot *v2.Snapshot) *v2.Image {
+	return &v2.Image{
 		File:       snapshot.Path,
 		Label:      snapshot.Label,
 		Size:       l.loopDevCfg.Size,

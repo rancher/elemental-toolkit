@@ -22,9 +22,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/rancher/elemental-toolkit/cmd/config"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/cmd/config"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
@@ -39,7 +39,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v1.NewDummyMounter())
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v2.NewDummyMounter())
 			if err != nil {
 				cfg.Logger.Errorf("Error reading config: %s\n", err)
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
@@ -65,7 +65,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cfg.Logger.Infof("Pulling image %s platform %s", image, cfg.Platform.String())
 
 			var digest string
-			e := v1.OCIImageExtractor{}
+			e := v2.OCIImageExtractor{}
 			if digest, err = e.ExtractImage(image, destination, cfg.Platform.String(), local); err != nil {
 				cfg.Logger.Error(err.Error())
 				return elementalError.NewFromError(err, elementalError.UnpackImage)

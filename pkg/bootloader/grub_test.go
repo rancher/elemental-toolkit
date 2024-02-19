@@ -25,36 +25,36 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/elemental-toolkit/cmd"
-	"github.com/rancher/elemental-toolkit/pkg/bootloader"
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	eleefi "github.com/rancher/elemental-toolkit/pkg/efi"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/cmd"
+	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	eleefi "github.com/rancher/elemental-toolkit/v2/pkg/efi"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
-	var logger v1.Logger
+	var logger v2.Logger
 	var fs vfs.FS
-	var runner *v1mock.FakeRunner
+	var runner *v2mock.FakeRunner
 	var cleanup func()
 	var err error
 	var grub *bootloader.Grub
-	var cfg *v1.Config
+	var cfg *v2.Config
 	var rootDir, efiDir string
 	var grubCfg, osRelease []byte
 	var efivars eleefi.Variables
 	var relativeTo string
 
 	BeforeEach(func() {
-		logger = v1.NewNullLogger()
+		logger = v2.NewNullLogger()
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
-		runner = v1mock.NewFakeRunner()
+		runner = v2mock.NewFakeRunner()
 		grubCfg = []byte("grub configuration")
 		osRelease = []byte("GRUB_ENTRY_NAME=some-name")
 

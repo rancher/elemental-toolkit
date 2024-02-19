@@ -19,15 +19,15 @@ package snapshotter
 import (
 	"fmt"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
-type snapshotterFactory func(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error)
+type snapshotterFactory func(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error)
 
 var snapshotterFactories = map[string]snapshotterFactory{}
 
-func NewSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error) {
+func NewSnapshotter(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error) {
 	factory := snapshotterFactories[snapCfg.Type]
 	if factory != nil {
 		return factory(cfg, snapCfg, bootloader)

@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 )
 
 func (i InstallSpec) GetGrubLabels() map[string]string {

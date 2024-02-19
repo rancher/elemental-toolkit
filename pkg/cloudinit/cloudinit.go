@@ -25,10 +25,10 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"gopkg.in/yaml.v3"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 type YipCloudInitRunner struct {
@@ -39,7 +39,7 @@ type YipCloudInitRunner struct {
 
 // NewYipCloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
-func NewYipCloudInitRunner(l v1.Logger, r v1.Runner, fs vfs.FS) *YipCloudInitRunner {
+func NewYipCloudInitRunner(l v2.Logger, r v2.Runner, fs vfs.FS) *YipCloudInitRunner {
 	y := &YipCloudInitRunner{
 		fs: fs, console: newCloudInitConsole(l, r),
 	}

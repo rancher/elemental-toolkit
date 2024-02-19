@@ -25,7 +25,7 @@ import (
 
 	"github.com/sanity-io/litter"
 
-	. "github.com/rancher/elemental-toolkit/cmd/config"
+	. "github.com/rancher/elemental-toolkit/v2/cmd/config"
 
 	"github.com/jaypipes/ghw/pkg/block"
 	. "github.com/onsi/ginkgo/v2"
@@ -36,16 +36,16 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 var _ = Describe("Config", Label("config"), func() {
-	var mounter *v1mock.FakeMounter
+	var mounter *v2mock.FakeMounter
 
 	BeforeEach(func() {
-		mounter = v1mock.NewFakeMounter()
+		mounter = v2mock.NewFakeMounter()
 	})
 	AfterEach(func() {
 		viper.Reset()
@@ -58,7 +58,7 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(7), litter.Sdump(cfg))
 				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType), litter.Sdump(cfg))
-				loop, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
+				loop, ok := cfg.Snapshotter.Config.(*v2.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				Expect(loop.Size).To(Equal(uint(2000)))
 
@@ -132,26 +132,26 @@ var _ = Describe("Config", Label("config"), func() {
 	})
 
 	Describe("Read build specs", Label("build"), func() {
-		var cfg *v1.BuildConfig
-		var runner *v1mock.FakeRunner
+		var cfg *v2.BuildConfig
+		var runner *v2mock.FakeRunner
 		var fs vfs.FS
-		var logger v1.Logger
-		var mounter *v1mock.FakeMounter
-		var syscall *v1mock.FakeSyscall
-		var client *v1mock.FakeHTTPClient
-		var cloudInit *v1mock.FakeCloudInitRunner
+		var logger v2.Logger
+		var mounter *v2mock.FakeMounter
+		var syscall *v2mock.FakeSyscall
+		var client *v2mock.FakeHTTPClient
+		var cloudInit *v2mock.FakeCloudInitRunner
 		var cleanup func()
 		var memLog *bytes.Buffer
 		var err error
 
 		BeforeEach(func() {
-			runner = v1mock.NewFakeRunner()
-			syscall = &v1mock.FakeSyscall{}
-			mounter = v1mock.NewFakeMounter()
-			client = &v1mock.FakeHTTPClient{}
+			runner = v2mock.NewFakeRunner()
+			syscall = &v2mock.FakeSyscall{}
+			mounter = v2mock.NewFakeMounter()
+			client = &v2mock.FakeHTTPClient{}
 			memLog = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(memLog)
-			cloudInit = &v1mock.FakeCloudInitRunner{}
+			logger = v2.NewBufferLogger(memLog)
+			cloudInit = &v2mock.FakeCloudInitRunner{}
 
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
@@ -219,7 +219,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Mounter == mounter).To(BeTrue())
 			// Sets a RealRunner instance by default
 			Expect(cfg.Runner != nil).To(BeTrue())
-			_, ok := cfg.Runner.(*v1.RealRunner)
+			_, ok := cfg.Runner.(*v2.RealRunner)
 			Expect(ok).To(BeTrue())
 		})
 		It("uses provided configs and flags, flags have priority", func() {
@@ -257,7 +257,7 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(cfg.Reboot).To(BeTrue())
 			Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
 			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.LoopDeviceMaxSnaps))
-			snapshooterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
+			snapshooterCfg, ok := cfg.Snapshotter.Config.(*v2.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			Expect(snapshooterCfg.FS).To(Equal("xfs"))
 			Expect(snapshooterCfg.Size).To(Equal(uint(1024)))
@@ -274,26 +274,26 @@ var _ = Describe("Config", Label("config"), func() {
 		})
 	})
 	Describe("Read runtime specs", Label("spec"), func() {
-		var cfg *v1.RunConfig
-		var runner *v1mock.FakeRunner
+		var cfg *v2.RunConfig
+		var runner *v2mock.FakeRunner
 		var fs vfs.FS
-		var logger v1.Logger
-		var mounter *v1mock.FakeMounter
-		var syscall *v1mock.FakeSyscall
-		var client *v1mock.FakeHTTPClient
-		var cloudInit *v1mock.FakeCloudInitRunner
+		var logger v2.Logger
+		var mounter *v2mock.FakeMounter
+		var syscall *v2mock.FakeSyscall
+		var client *v2mock.FakeHTTPClient
+		var cloudInit *v2mock.FakeCloudInitRunner
 		var cleanup func()
 		var memLog *bytes.Buffer
 		var err error
 
 		BeforeEach(func() {
-			runner = v1mock.NewFakeRunner()
-			syscall = &v1mock.FakeSyscall{}
-			mounter = v1mock.NewFakeMounter()
-			client = &v1mock.FakeHTTPClient{}
+			runner = v2mock.NewFakeRunner()
+			syscall = &v2mock.FakeSyscall{}
+			mounter = v2mock.NewFakeMounter()
+			client = &v2mock.FakeHTTPClient{}
 			memLog = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(memLog)
-			cloudInit = &v1mock.FakeCloudInitRunner{}
+			logger = v2.NewBufferLogger(memLog)
+			cloudInit = &v2mock.FakeCloudInitRunner{}
 
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
@@ -329,8 +329,8 @@ var _ = Describe("Config", Label("config"), func() {
 				spec, err := ReadInstallSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Target == "")
-				Expect(spec.PartTable == v1.GPT)
-				Expect(spec.Firmware == v1.BIOS)
+				Expect(spec.PartTable == v2.GPT)
+				Expect(spec.Firmware == v2.BIOS)
 				Expect(spec.NoFormat == false)
 			})
 			It("inits an install spec according to given configs", func() {
@@ -365,7 +365,7 @@ var _ = Describe("Config", Label("config"), func() {
 		Describe("Read ResetSpec", Label("install"), func() {
 			var flags *pflag.FlagSet
 			var bootedFrom string
-			var ghwTest v1mock.GhwMock
+			var ghwTest v2mock.GhwMock
 
 			BeforeEach(func() {
 				bootedFrom = constants.RecoveryImgFile
@@ -398,7 +398,7 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v1mock.GhwMock{}
+				ghwTest = v2mock.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 			})
@@ -437,7 +437,7 @@ var _ = Describe("Config", Label("config"), func() {
 		})
 		Describe("Read UpgradeSpec", Label("upgrade", "upgrade-recovery"), func() {
 			var flags *pflag.FlagSet
-			var ghwTest v1mock.GhwMock
+			var ghwTest v2mock.GhwMock
 
 			BeforeEach(func() {
 				flags = pflag.NewFlagSet("testflags", 1)
@@ -467,13 +467,13 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v1mock.GhwMock{}
+				ghwTest = v2mock.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 				defer ghwTest.Clean()
 
 				err := os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")
-				spec, err := ReadUpgradeSpec(cfg, nil, false)
+				spec, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars
 				Expect(spec.RecoverySystem.Source.Value() == "image/from:flag")
@@ -489,7 +489,7 @@ var _ = Describe("Config", Label("config"), func() {
 			})
 		})
 		Describe("Read MountSpec", Label("mount"), func() {
-			var ghwTest v1mock.GhwMock
+			var ghwTest v2mock.GhwMock
 			BeforeEach(func() {
 				mainDisk := block.Disk{
 					Name: "device",
@@ -508,7 +508,7 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v1mock.GhwMock{}
+				ghwTest = v2mock.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 			})

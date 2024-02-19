@@ -23,11 +23,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/rancher/elemental-toolkit/cmd/config"
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/cmd/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // NewBuildISO returns a new instance of the buid-iso subcommand and appends it to
@@ -53,7 +53,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return elementalError.NewFromError(err, elementalError.StatFile)
 			}
-			mounter := v1.NewMounter(path)
+			mounter := v2.NewMounter(path)
 
 			cfg, err := config.ReadConfigBuild(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
@@ -78,12 +78,12 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			if len(args) == 1 {
-				imgSource, err := v1.NewSrcFromURI(args[0])
+				imgSource, err := v2.NewSrcFromURI(args[0])
 				if err != nil {
 					cfg.Logger.Errorf("not a valid rootfs source image argument: %s", args[0])
 					return elementalError.NewFromError(err, elementalError.IdentifySource)
 				}
-				spec.RootFS = []*v1.ImageSource{imgSource}
+				spec.RootFS = []*v2.ImageSource{imgSource}
 			} else if len(spec.RootFS) == 0 {
 				errmsg := "rootfs source image for building ISO was not provided"
 				cfg.Logger.Errorf(errmsg)
@@ -98,7 +98,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			if oRootfs != "" {
 				if ok, err := utils.Exists(cfg.Fs, oRootfs); ok {
-					spec.RootFS = append(spec.RootFS, v1.NewDirSrc(oRootfs))
+					spec.RootFS = append(spec.RootFS, v2.NewDirSrc(oRootfs))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oRootfs, err)
 					cfg.Logger.Errorf(msg)
@@ -107,7 +107,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oUEFI != "" {
 				if ok, err := utils.Exists(cfg.Fs, oUEFI); ok {
-					spec.UEFI = append(spec.UEFI, v1.NewDirSrc(oUEFI))
+					spec.UEFI = append(spec.UEFI, v2.NewDirSrc(oUEFI))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oUEFI, err)
 					cfg.Logger.Errorf(msg)
@@ -116,7 +116,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 			if oISO != "" {
 				if ok, err := utils.Exists(cfg.Fs, oISO); ok {
-					spec.Image = append(spec.Image, v1.NewDirSrc(oISO))
+					spec.Image = append(spec.Image, v2.NewDirSrc(oISO))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oISO, err)
 					cfg.Logger.Errorf(msg)
@@ -129,7 +129,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 
-	firmType := newEnumFlag([]string{v1.EFI}, v1.EFI)
+	firmType := newEnumFlag([]string{v2.EFI}, v2.EFI)
 
 	root.AddCommand(c)
 	c.Flags().StringP("name", "n", "", "Basename of the generated ISO file")

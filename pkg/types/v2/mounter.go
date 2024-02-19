@@ -20,7 +20,7 @@ import (
 	"k8s.io/mount-utils"
 )
 
-// This is is just a redefinition of mount.Interface to v1.Mounter types
+// This is is just a redefinition of mount.Interface to v2.Mounter types
 type Mounter interface {
 	Mount(source string, target string, fstype string, options []string) error
 	Unmount(target string) error

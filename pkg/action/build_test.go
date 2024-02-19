@@ -31,39 +31,39 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Build Actions", func() {
-	var cfg *v1.BuildConfig
-	var runner *v1mock.FakeRunner
+	var cfg *v2.BuildConfig
+	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var cloudInit *v1mock.FakeCloudInitRunner
-	var extractor *v1mock.FakeImageExtractor
+	var logger v2.Logger
+	var mounter *v2mock.FakeMounter
+	var syscall *v2mock.FakeSyscall
+	var client *v2mock.FakeHTTPClient
+	var cloudInit *v2mock.FakeCloudInitRunner
+	var extractor *v2mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var bootloader *v1mock.FakeBootloader
+	var bootloader *v2mock.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
+		runner = v2mock.NewFakeRunner()
+		syscall = &v2mock.FakeSyscall{}
+		mounter = v2mock.NewFakeMounter()
+		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		bootloader = &v1mock.FakeBootloader{}
-		logger = v1.NewBufferLogger(memLog)
+		bootloader = &v2mock.FakeBootloader{}
+		logger = v2.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
-		extractor = v1mock.NewFakeImageExtractor(logger)
-		cloudInit = &v1mock.FakeCloudInitRunner{}
+		extractor = v2mock.NewFakeImageExtractor(logger)
+		cloudInit = &v2mock.FakeCloudInitRunner{}
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewBuildConfig(
 			config.WithFs(fs),
@@ -82,7 +82,7 @@ var _ = Describe("Build Actions", func() {
 		cleanup()
 	})
 	Describe("Build ISO", Label("iso"), func() {
-		var iso *v1.LiveISO
+		var iso *v2.LiveISO
 		BeforeEach(func() {
 			iso = config.NewISO()
 
@@ -103,27 +103,27 @@ var _ = Describe("Build Actions", func() {
 			}
 		})
 		It("Successfully builds an ISO from an OCI image", func() {
-			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
+			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
+			iso.RootFS = []*v2.ImageSource{rootSrc}
 
 			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
 				bootDir := filepath.Join(destination, "boot")
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
 				if err != nil {
-					return v1mock.FakeDigest, err
+					return v2mock.FakeDigest, err
 				}
 				err = utils.MkdirAll(fs, filepath.Join(destination, "lib/modules/6.4"), constants.DirPerm)
 				if err != nil {
-					return v1mock.FakeDigest, err
+					return v2mock.FakeDigest, err
 				}
 				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz-6.4"))
 				if err != nil {
-					return v1mock.FakeDigest, err
+					return v2mock.FakeDigest, err
 				}
 
 				_, err = fs.Create(filepath.Join(bootDir, "initrd"))
-				return v1mock.FakeDigest, err
+				return v2mock.FakeDigest, err
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -134,7 +134,7 @@ var _ = Describe("Build Actions", func() {
 		It("Fails on prepare EFI", func() {
 			iso.BootloaderInRootFs = true
 
-			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
+			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -144,7 +144,7 @@ var _ = Describe("Build Actions", func() {
 		It("Fails on prepare ISO", func() {
 			iso.BootloaderInRootFs = true
 
-			rootSrc, _ := v1.NewSrcFromURI("channel:system/elemental")
+			rootSrc, _ := v2.NewSrcFromURI("channel:system/elemental")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -153,8 +153,8 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails if kernel or initrd is not found in rootfs", func() {
-			rootSrc, _ := v1.NewSrcFromURI("dir:/local/dir")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
+			rootSrc, _ := v2.NewSrcFromURI("dir:/local/dir")
+			iso.RootFS = []*v2.ImageSource{rootSrc}
 
 			err := utils.MkdirAll(fs, "/local/dir/boot", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -172,18 +172,18 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing uefi sources", func() {
-			rootSrc, _ := v1.NewSrcFromURI("docker:elemental:latest")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
-			uefiSrc, _ := v1.NewSrcFromURI("dir:/overlay/efi")
-			iso.UEFI = []*v1.ImageSource{uefiSrc}
+			rootSrc, _ := v2.NewSrcFromURI("docker:elemental:latest")
+			iso.RootFS = []*v2.ImageSource{rootSrc}
+			uefiSrc, _ := v2.NewSrcFromURI("dir:/overlay/efi")
+			iso.UEFI = []*v2.ImageSource{uefiSrc}
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
 			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on ISO filesystem creation", func() {
-			rootSrc, _ := v1.NewSrcFromURI("oci:elementalos:latest")
-			iso.RootFS = []*v1.ImageSource{rootSrc}
+			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
+			iso.RootFS = []*v2.ImageSource{rootSrc}
 
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "xorriso" {
@@ -199,7 +199,7 @@ var _ = Describe("Build Actions", func() {
 		})
 	})
 	Describe("Build disk", Label("disk", "build"), func() {
-		var disk *v1.DiskSpec
+		var disk *v2.DiskSpec
 
 		BeforeEach(func() {
 			tmpDir, err := utils.TempDir(fs, "", "test")
@@ -208,7 +208,7 @@ var _ = Describe("Build Actions", func() {
 			cfg.Date = false
 			cfg.OutDir = tmpDir
 			disk = config.NewDisk(cfg)
-			disk.System = v1.NewDockerSrc("some/image/ref:tag")
+			disk.System = v2.NewDockerSrc("some/image/ref:tag")
 			disk.RecoverySystem.Source = disk.System
 			disk.Partitions.Recovery.Size = constants.MinPartSize
 			disk.Partitions.State.Size = constants.MinPartSize

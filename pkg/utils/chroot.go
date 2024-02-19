@@ -24,8 +24,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 // Chroot represents the struct that will allow us to run commands inside a given chroot
@@ -34,10 +34,10 @@ type Chroot struct {
 	defaultMounts []string
 	extraMounts   map[string]string
 	activeMounts  []string
-	config        *v1.Config
+	config        *v2.Config
 }
 
-func NewChroot(path string, config *v1.Config) *Chroot {
+func NewChroot(path string, config *v2.Config) *Chroot {
 	return &Chroot{
 		path:          path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},
@@ -48,7 +48,7 @@ func NewChroot(path string, config *v1.Config) *Chroot {
 }
 
 // ChrootedCallback runs the given callback in a chroot environment
-func ChrootedCallback(cfg *v1.Config, path string, bindMounts map[string]string, callback func() error) error {
+func ChrootedCallback(cfg *v2.Config, path string, bindMounts map[string]string, callback func() error) error {
 	chroot := NewChroot(path, cfg)
 	chroot.SetExtraMounts(bindMounts)
 	return chroot.RunCallback(callback)

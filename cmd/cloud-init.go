@@ -20,9 +20,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/rancher/elemental-toolkit/cmd/config"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/cmd/config"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 
 	"github.com/rancher/yip/pkg/schema"
 	"github.com/spf13/cobra"
@@ -38,7 +38,7 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			_ = viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v1.NewDummyMounter())
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v2.NewDummyMounter())
 			if err != nil {
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}

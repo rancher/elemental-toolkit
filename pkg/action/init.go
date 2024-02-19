@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	"github.com/rancher/elemental-toolkit/pkg/features"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/features"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
-func RunInit(cfg *v1.RunConfig, spec *v1.InitSpec) error {
+func RunInit(cfg *v2.RunConfig, spec *v2.InitSpec) error {
 	if exists, _ := utils.Exists(cfg.Fs, "/.dockerenv"); !exists && !spec.Force {
 		return elementalError.New("running outside of container, pass --force to run anyway", elementalError.StatFile)
 	}

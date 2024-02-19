@@ -27,10 +27,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const (
@@ -54,17 +54,17 @@ func configTemplatesPaths() []string {
 	}
 }
 
-var _ v1.Snapshotter = (*Btrfs)(nil)
+var _ v2.Snapshotter = (*Btrfs)(nil)
 
 type Btrfs struct {
-	cfg               v1.Config
-	snapshotterCfg    v1.SnapshotterConfig
-	btrfsCfg          v1.BtrfsConfig
+	cfg               v2.Config
+	snapshotterCfg    v2.SnapshotterConfig
+	btrfsCfg          v2.BtrfsConfig
 	rootDir           string
 	efiDir            string
 	currentSnapshotID int
 	activeSnapshotID  int
-	bootloader        v1.Bootloader
+	bootloader        v2.Bootloader
 	installing        bool
 	snapperArgs       []string
 	snapshotsUmount   func() error
@@ -109,18 +109,18 @@ func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 }
 
 // NewLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
-func newBtrfsSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error) {
+func newBtrfsSnapshotter(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error) {
 	if snapCfg.Type != constants.BtrfsSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.BtrfsSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.BtrfsSnapshotterType)
 	}
-	var btrfsCfg *v1.BtrfsConfig
+	var btrfsCfg *v2.BtrfsConfig
 	var ok bool
 	if snapCfg.Config == nil {
-		btrfsCfg = v1.NewBtrfsConfig()
+		btrfsCfg = v2.NewBtrfsConfig()
 	} else {
-		btrfsCfg, ok = snapCfg.Config.(*v1.BtrfsConfig)
+		btrfsCfg, ok = snapCfg.Config.(*v2.BtrfsConfig)
 		if !ok {
 			msg := "failed casting BtrfsConfig type"
 			cfg.Logger.Errorf(msg)
@@ -158,11 +158,11 @@ func (b *Btrfs) InitSnapshotter(state *v1.Partition, efiDir string) error {
 	return b.setBtrfsForFirstTime(state)
 }
 
-func (b *Btrfs) StartTransaction() (*v1.Snapshot, error) {
+func (b *Btrfs) StartTransaction() (*v2.Snapshot, error) {
 	var newID int
 	var err error
 	var workingDir, path string
-	snapshot := &v1.Snapshot{}
+	snapshot := &v2.Snapshot{}
 
 	b.cfg.Logger.Info("Starting a btrfs snapshotter transaction")
 
@@ -244,7 +244,7 @@ func (b *Btrfs) StartTransaction() (*v1.Snapshot, error) {
 	return snapshot, err
 }
 
-func (b *Btrfs) CloseTransactionOnError(snapshot *v1.Snapshot) (err error) {
+func (b *Btrfs) CloseTransactionOnError(snapshot *v2.Snapshot) (err error) {
 	if snapshot.InProgress {
 		err = b.cfg.Mounter.Unmount(snapshot.MountPoint)
 	}
@@ -258,7 +258,7 @@ func (b *Btrfs) CloseTransactionOnError(snapshot *v1.Snapshot) (err error) {
 	return err
 }
 
-func (b *Btrfs) CloseTransaction(snapshot *v1.Snapshot) (err error) {
+func (b *Btrfs) CloseTransaction(snapshot *v2.Snapshot) (err error) {
 	var cmdOut []byte
 	var subvolID int
 
@@ -423,7 +423,7 @@ func (b *Btrfs) loadSnapshots() ([]int, error) {
 
 // SnapshotImageToSource converts the given snapshot into an ImageSource. This is useful to deploy a system
 // from a given snapshot, for instance setting the recovery image from a snapshot.
-func (b *Btrfs) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error) {
+func (b *Btrfs) SnapshotToImageSource(snap *v2.Snapshot) (*v2.ImageSource, error) {
 	ok, err := utils.Exists(b.cfg.Fs, snap.Path)
 	if err != nil || !ok {
 		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
@@ -433,7 +433,7 @@ func (b *Btrfs) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error
 		}
 		return nil, err
 	}
-	return v1.NewDirSrc(snap.Path), nil
+	return v2.NewDirSrc(snap.Path), nil
 }
 
 func (b *Btrfs) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
@@ -615,7 +615,7 @@ func (b *Btrfs) setBootloader() error {
 	return err
 }
 
-func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
+func (b *Btrfs) configureSnapper(snapshot *v2.Snapshot) error {
 	defaultTmpl, err := utils.FindFile(b.cfg.Fs, snapshot.WorkDir, configTemplatesPaths()...)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed to find default snapper configuration template")
@@ -661,7 +661,7 @@ func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
 	return nil
 }
 
-func (b *Btrfs) remountStatePartition(state *v1.Partition) error {
+func (b *Btrfs) remountStatePartition(state *v2.Partition) error {
 	b.cfg.Logger.Debugf("Umount %s", state.MountPoint)
 	err := b.cfg.Mounter.Unmount(state.MountPoint)
 	if err != nil {
@@ -720,7 +720,7 @@ func (b *Btrfs) setBtrfsForFirstTime(state *v1.Partition) error {
 	return b.remountStatePartition(state)
 }
 
-func (b *Btrfs) configureSnapperAndRootDir(state *v1.Partition) error {
+func (b *Btrfs) configureSnapperAndRootDir(state *v2.Partition) error {
 	rootDir, stateMount, err := findStateMount(b.cfg.Runner, state.Path)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed setting snapper root and state partition mountpoint: %v", err)

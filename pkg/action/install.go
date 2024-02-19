@@ -21,34 +21,34 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rancher/elemental-toolkit/pkg/bootloader"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	"github.com/rancher/elemental-toolkit/pkg/snapshotter"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 type InstallAction struct {
-	cfg         *v1.RunConfig
-	spec        *v1.InstallSpec
-	bootloader  v1.Bootloader
-	snapshotter v1.Snapshotter
-	snapshot    *v1.Snapshot
+	cfg         *v2.RunConfig
+	spec        *v2.InstallSpec
+	bootloader  v2.Bootloader
+	snapshotter v2.Snapshotter
+	snapshot    *v2.Snapshot
 }
 
 type InstallActionOption func(i *InstallAction) error
 
-func WithInstallBootloader(bootloader v1.Bootloader) func(i *InstallAction) error {
+func WithInstallBootloader(bootloader v2.Bootloader) func(i *InstallAction) error {
 	return func(i *InstallAction) error {
 		i.bootloader = bootloader
 		return nil
 	}
 }
 
-func NewInstallAction(cfg *v1.RunConfig, spec *v1.InstallSpec, opts ...InstallActionOption) (*InstallAction, error) {
+func NewInstallAction(cfg *v2.RunConfig, spec *v2.InstallSpec, opts ...InstallActionOption) (*InstallAction, error) {
 	var err error
 
 	i := &InstallAction{cfg: cfg, spec: spec}
@@ -105,13 +105,13 @@ func (i *InstallAction) createInstallStateYaml() error {
 		return fmt.Errorf("undefined installed snapshot")
 	}
 
-	installState := &v1.InstallState{
+	installState := &v2.InstallState{
 		Date:        time.Now().Format(time.RFC3339),
 		Snapshotter: i.cfg.Snapshotter,
-		Partitions: map[string]*v1.PartitionState{
+		Partitions: map[string]*v2.PartitionState{
 			cnst.StatePartName: {
 				FSLabel: i.spec.Partitions.State.FilesystemLabel,
-				Snapshots: map[int]*v1.SystemState{
+				Snapshots: map[int]*v2.SystemState{
 					i.snapshot.ID: {
 						Source: i.spec.System,
 						Digest: i.spec.System.GetDigest(),
@@ -121,7 +121,7 @@ func (i *InstallAction) createInstallStateYaml() error {
 			},
 			cnst.RecoveryPartName: {
 				FSLabel: i.spec.Partitions.Recovery.FilesystemLabel,
-				RecoveryImage: &v1.SystemState{
+				RecoveryImage: &v2.SystemState{
 					Source: i.spec.RecoverySystem.Source,
 					Digest: i.spec.RecoverySystem.Source.GetDigest(),
 					Label:  i.spec.RecoverySystem.Label,
@@ -132,17 +132,17 @@ func (i *InstallAction) createInstallStateYaml() error {
 	}
 
 	if i.spec.Partitions.OEM != nil {
-		installState.Partitions[cnst.OEMPartName] = &v1.PartitionState{
+		installState.Partitions[cnst.OEMPartName] = &v2.PartitionState{
 			FSLabel: i.spec.Partitions.OEM.FilesystemLabel,
 		}
 	}
 	if i.spec.Partitions.Persistent != nil {
-		installState.Partitions[cnst.PersistentPartName] = &v1.PartitionState{
+		installState.Partitions[cnst.PersistentPartName] = &v2.PartitionState{
 			FSLabel: i.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
 	if i.spec.Partitions.EFI != nil {
-		installState.Partitions[cnst.EfiPartName] = &v1.PartitionState{
+		installState.Partitions[cnst.EfiPartName] = &v2.PartitionState{
 			FSLabel: i.spec.Partitions.EFI.FilesystemLabel,
 		}
 	}

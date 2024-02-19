@@ -17,7 +17,7 @@ limitations under the License.
 package systemd
 
 import (
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 type Unit struct {
@@ -30,12 +30,12 @@ func NewUnit(name string) *Unit {
 	}
 }
 
-func Enable(runner v1.Runner, unit *Unit) error {
+func Enable(runner v2.Runner, unit *Unit) error {
 	_, err := runner.Run("systemctl", "enable", unit.Name)
 	return err
 }
 
-func Start(runner v1.Runner, unit *Unit) error {
+func Start(runner v2.Runner, unit *Unit) error {
 	_, err := runner.Run("systemctl", "start", unit.Name)
 	return err
 }

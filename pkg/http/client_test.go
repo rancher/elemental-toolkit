@@ -20,8 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rancher/elemental-toolkit/pkg/http"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/http"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,11 +31,11 @@ const source = "https://raw.githubusercontent.com/rancher/elemental-toolkit/main
 
 var _ = Describe("HTTPClient", Label("http"), func() {
 	var client *http.Client
-	var log v1.Logger
+	var log v2.Logger
 	var destDir string
 	BeforeEach(func() {
 		client = http.NewClient()
-		log = v1.NewNullLogger()
+		log = v2.NewNullLogger()
 		destDir, _ = os.MkdirTemp("", "elemental-test")
 	})
 	AfterEach(func() {

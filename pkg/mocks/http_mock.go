@@ -19,7 +19,7 @@ package mocks
 import (
 	"errors"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 // FakeHTTPClient is an implementation of HTTPClient interface used for testing
@@ -30,7 +30,7 @@ type FakeHTTPClient struct {
 }
 
 // GetURL will return a FakeHttpBody and store the url call into ClientCalls
-func (m *FakeHTTPClient) GetURL(_ v1.Logger, url string, _ string) error {
+func (m *FakeHTTPClient) GetURL(_ v2.Logger, url string, _ string) error {
 	// Store calls to the mock client, so we can verify that we didnt mangled them or anything
 	m.ClientCalls = append(m.ClientCalls, url)
 	if m.Error {

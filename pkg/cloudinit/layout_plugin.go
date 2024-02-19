@@ -27,10 +27,10 @@ import (
 
 	"github.com/twpayne/go-vfs/v4"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/partitioner"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // layoutPlugin is the elemental's implementation of Layout yip's plugin based
@@ -46,9 +46,9 @@ func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins
 		return errors.New("provided console is not an instance of 'cloudInitConsole' type")
 	}
 	runner := elemConsole.getRunner()
-	log, ok := l.(v1.Logger)
+	log, ok := l.(v2.Logger)
 	if !ok {
-		return errors.New("provided logger is not implementing v1.Logger interface")
+		return errors.New("provided logger is not implementing v2.Logger interface")
 	}
 
 	if len(strings.TrimSpace(s.Layout.Device.Label)) > 0 {

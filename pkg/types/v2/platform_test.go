@@ -20,27 +20,27 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 var _ = Describe("Platform", Label("types", "platform"), func() {
 	Describe("Source", func() {
 		It("initiates platform as expected", func() {
-			platform, err := v1.NewPlatform("linux", "x86_64")
+			platform, err := v2.NewPlatform("linux", "x86_64")
 			Expect(err).To(BeNil())
 			Expect(platform.OS).To(Equal("linux"))
 			Expect(platform.Arch).To(Equal("x86_64"))
 			Expect(platform.GolangArch).To(Equal("amd64"))
 		})
 		It("parses platform as expected", func() {
-			platform, err := v1.ParsePlatform("linux/amd64")
+			platform, err := v2.ParsePlatform("linux/amd64")
 			Expect(err).To(BeNil())
 			Expect(platform.OS).To(Equal("linux"))
 			Expect(platform.Arch).To(Equal("x86_64"))
 			Expect(platform.GolangArch).To(Equal("amd64"))
 		})
 		It("initiates arm64 platform as expected", func() {
-			platform, err := v1.NewPlatformFromArch("arm64")
+			platform, err := v2.NewPlatformFromArch("arm64")
 			Expect(err).To(BeNil())
 			Expect(platform.OS).To(Equal("linux"))
 			Expect(platform.Arch).To(Equal("arm64"))

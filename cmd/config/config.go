@@ -31,11 +31,11 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/rancher/elemental-toolkit/internal/version"
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/internal/version"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var decodeHook = viper.DecodeHook(
@@ -96,8 +96,8 @@ func bindGivenFlags(vp *viper.Viper, flagSet *pflag.FlagSet) {
 	}
 }
 
-func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter v1.Mounter) (*v1.BuildConfig, error) {
-	logger := v1.NewLogger()
+func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter v2.Mounter) (*v2.BuildConfig, error) {
+	logger := v2.NewLogger()
 
 	cfg := config.NewBuildConfig(
 		config.WithLogger(logger),
@@ -142,9 +142,9 @@ func ReadConfigBuild(configDir string, flags *pflag.FlagSet, mounter v1.Mounter)
 	return cfg, err
 }
 
-func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter v1.Mounter) (*v1.RunConfig, error) {
+func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter v2.Mounter) (*v2.RunConfig, error) {
 	cfg := config.NewRunConfig(
-		config.WithLogger(v1.NewLogger()),
+		config.WithLogger(v2.NewLogger()),
 		config.WithMounter(mounter),
 		config.WithOCIImageExtractor(),
 	)
@@ -214,7 +214,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter v1.Mounter) (
 	return cfg, err
 }
 
-func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InstallSpec, error) {
+func ReadInstallSpec(r *v2.RunConfig, flags *pflag.FlagSet) (*v2.InstallSpec, error) {
 	install := config.NewInstallSpec(r.Config)
 	vp := viper.Sub("install")
 	if vp == nil {
@@ -234,7 +234,7 @@ func ReadInstallSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InstallSpec, er
 	return install, err
 }
 
-func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
+func ReadInitSpec(r *v2.RunConfig, flags *pflag.FlagSet) (*v2.InitSpec, error) {
 	init := config.NewInitSpec()
 	vp := viper.Sub("init")
 	if vp == nil {
@@ -252,7 +252,7 @@ func ReadInitSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.InitSpec, error) {
 	return init, err
 }
 
-func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error) {
+func ReadMountSpec(r *v2.RunConfig, flags *pflag.FlagSet) (*v2.MountSpec, error) {
 	mount := config.NewMountSpec()
 
 	vp := viper.Sub("mount")
@@ -285,7 +285,7 @@ func ReadMountSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.MountSpec, error)
 	return mount, err
 }
 
-func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
+func applyKernelCmdline(r *v2.RunConfig, mount *v2.MountSpec) error {
 	cmdline, err := r.Config.Fs.ReadFile("/proc/cmdline")
 	if err != nil {
 		r.Logger.Errorf("Error reading /proc/cmdline: %s", err.Error())
@@ -322,7 +322,7 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 			}
 		case "elemental.oemlabel":
 			oemdev := fmt.Sprintf("LABEL=%s", val)
-			var mnt *v1.VolumeMount
+			var mnt *v2.VolumeMount
 			for _, mnt = range mount.Volumes {
 				if mnt.Mountpoint == constants.OEMPath {
 					mnt.Device = oemdev
@@ -330,7 +330,7 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 				}
 			}
 			if mnt == nil {
-				mount.Volumes = append(mount.Volumes, &v1.VolumeMount{
+				mount.Volumes = append(mount.Volumes, &v2.VolumeMount{
 					Mountpoint: constants.OEMPath,
 					Device:     oemdev,
 					Options:    []string{"rw", "defaults"},
@@ -342,7 +342,7 @@ func applyKernelCmdline(r *v1.RunConfig, mount *v1.MountSpec) error {
 	return nil
 }
 
-func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
+func applyMountEnvVars(r *v2.RunConfig, mount *v2.MountSpec) error {
 	r.Logger.Debugf("Applying mount env-vars")
 
 	overlay := os.Getenv("OVERLAY")
@@ -376,7 +376,7 @@ func applyMountEnvVars(r *v1.RunConfig, mount *v1.MountSpec) error {
 	return nil
 }
 
-func applyMountOverlay(mount *v1.MountSpec, overlay string) error {
+func applyMountOverlay(mount *v2.MountSpec, overlay string) error {
 	split := strings.Split(overlay, ":")
 
 	if len(split) == 2 && split[0] == constants.Tmpfs {
@@ -406,7 +406,7 @@ func applyMountOverlay(mount *v1.MountSpec, overlay string) error {
 	return nil
 }
 
-func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error) {
+func ReadResetSpec(r *v2.RunConfig, flags *pflag.FlagSet) (*v2.ResetSpec, error) {
 	reset, err := config.NewResetSpec(r.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed initializing reset spec: %v", err)
@@ -429,7 +429,7 @@ func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error)
 	return reset, err
 }
 
-func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, recoveryOnly bool) (*v1.UpgradeSpec, error) {
+func ReadUpgradeSpec(r *v2.RunConfig, flags *pflag.FlagSet, recoveryOnly bool) (*v2.UpgradeSpec, error) {
 	upgrade, err := config.NewUpgradeSpec(r.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed initializing upgrade spec: %v", err)
@@ -457,7 +457,7 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, recoveryOnly bool) (
 	return upgrade, err
 }
 
-func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) {
+func ReadBuildISO(b *v2.BuildConfig, flags *pflag.FlagSet) (*v2.LiveISO, error) {
 	iso := config.NewISO()
 	vp := viper.Sub("iso")
 	if vp == nil {
@@ -477,7 +477,7 @@ func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) 
 	return iso, err
 }
 
-func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.DiskSpec, error) {
+func ReadBuildDisk(b *v2.BuildConfig, flags *pflag.FlagSet) (*v2.DiskSpec, error) {
 	disk := config.NewDisk(b)
 	vp := viper.Sub("disk")
 	if vp == nil {
@@ -497,10 +497,10 @@ func ReadBuildDisk(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.DiskSpec, error
 	return disk, err
 }
 
-func configLogger(log v1.Logger, vfs v1.FS) {
+func configLogger(log v2.Logger, vfs v2.FS) {
 	// Set debug level
 	if viper.GetBool("debug") {
-		log.SetLevel(v1.DebugLevel())
+		log.SetLevel(v2.DebugLevel())
 	}
 
 	// Set formatter so both file and stdout format are equal

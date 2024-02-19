@@ -19,10 +19,10 @@ package mocks
 import (
 	"fmt"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
-var _ v1.Bootloader = (*FakeBootloader)(nil)
+var _ v2.Bootloader = (*FakeBootloader)(nil)
 
 type FakeBootloader struct {
 	ErrorInstall                bool

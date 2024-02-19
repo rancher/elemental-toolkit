@@ -21,10 +21,10 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/mount-utils"
 
-	"github.com/rancher/elemental-toolkit/cmd/config"
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/cmd/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 )
 
 func NewMountCmd(root *cobra.Command) *cobra.Command {

@@ -1,4 +1,4 @@
-module github.com/rancher/elemental-toolkit
+module github.com/rancher/elemental-toolkit/v2
 
 go 1.22
 

@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 type partedCall struct {
@@ -34,7 +34,7 @@ type partedCall struct {
 	parts     []*Partition
 	deletions []int
 	label     string
-	runner    v1.Runner
+	runner    v2.Runner
 	flags     []partFlag
 }
 
@@ -46,7 +46,7 @@ type partFlag struct {
 
 var _ Partitioner = (*partedCall)(nil)
 
-func newPartedCall(dev string, runner v1.Runner) *partedCall {
+func newPartedCall(dev string, runner v2.Runner) *partedCall {
 	return &partedCall{dev: dev, wipe: false, parts: []*Partition{}, deletions: []int{}, label: "", runner: runner, flags: []partFlag{}}
 }
 

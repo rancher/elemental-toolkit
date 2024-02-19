@@ -22,28 +22,28 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 // cloudInitConsole represents a yip's Console implementations using
-// the elemental v1.Runner interface.
+// the elemental v2.Runner interface.
 type cloudInitConsole struct {
-	runner v1.Runner
-	logger v1.Logger
+	runner v2.Runner
+	logger v2.Logger
 }
 
 // newCloudInitConsole returns an instance of the cloudInitConsole based on the
-// given v1.Runner and v1.Logger.
-func newCloudInitConsole(l v1.Logger, r v1.Runner) *cloudInitConsole {
+// given v2.Runner and v2.Logger.
+func newCloudInitConsole(l v2.Logger, r v2.Runner) *cloudInitConsole {
 	return &cloudInitConsole{logger: l, runner: r}
 }
 
 // getRunner returns the internal runner used within this Console
-func (c cloudInitConsole) getRunner() v1.Runner {
+func (c cloudInitConsole) getRunner() v2.Runner {
 	return c.runner
 }
 
-// Run runs a command using the v1.Runner internal instance
+// Run runs a command using the v2.Runner internal instance
 func (c cloudInitConsole) Run(command string, opts ...func(cmd *exec.Cmd)) (string, error) {
 	c.logger.Debugf("running command `%s`", command)
 	cmd := c.runner.InitCmd("sh", "-c", command)
@@ -58,7 +58,7 @@ func (c cloudInitConsole) Run(command string, opts ...func(cmd *exec.Cmd)) (stri
 	return string(out), err
 }
 
-// Start runs a non blocking command using the v1.Runner internal instance
+// Start runs a non blocking command using the v2.Runner internal instance
 func (c cloudInitConsole) Start(cmd *exec.Cmd, opts ...func(cmd *exec.Cmd)) error {
 	c.logger.Debugf("running command `%s`", cmd)
 	for _, o := range opts {
@@ -67,7 +67,7 @@ func (c cloudInitConsole) Start(cmd *exec.Cmd, opts ...func(cmd *exec.Cmd)) erro
 	return cmd.Run()
 }
 
-// RunTemplate runs a sequence of non-blocking templated commands using the v1.Runner internal instance
+// RunTemplate runs a sequence of non-blocking templated commands using the v2.Runner internal instance
 func (c cloudInitConsole) RunTemplate(st []string, template string) error {
 	var errs error
 

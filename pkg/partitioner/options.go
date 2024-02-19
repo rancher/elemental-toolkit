@@ -17,26 +17,26 @@ limitations under the License.
 package partitioner
 
 import (
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 type DiskOptions func(d *Disk) error
 
-func WithFS(fs v1.FS) func(d *Disk) error {
+func WithFS(fs v2.FS) func(d *Disk) error {
 	return func(d *Disk) error {
 		d.fs = fs
 		return nil
 	}
 }
 
-func WithRunner(runner v1.Runner) func(d *Disk) error {
+func WithRunner(runner v2.Runner) func(d *Disk) error {
 	return func(d *Disk) error {
 		d.runner = runner
 		return nil
 	}
 }
 
-func WithLogger(logger v1.Logger) func(d *Disk) error {
+func WithLogger(logger v2.Logger) func(d *Disk) error {
 	return func(d *Disk) error {
 		d.logger = logger
 		return nil
@@ -50,7 +50,7 @@ func WithGdisk() func(d *Disk) error {
 	}
 }
 
-func WithMounter(mounter v1.Mounter) func(d *Disk) error {
+func WithMounter(mounter v2.Mounter) func(d *Disk) error {
 	return func(d *Disk) error {
 		d.mounter = mounter
 		return nil

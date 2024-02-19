@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 // addCosignFlags adds flags related to cosign
@@ -90,7 +90,7 @@ func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {
 	}
 }
 
-func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
+func validateCosignFlags(log v2.Logger, flags *pflag.FlagSet) error {
 	cosignKey, _ := flags.GetString("cosign-key")
 	cosign, _ := flags.GetBool("cosign")
 
@@ -104,7 +104,7 @@ func validateCosignFlags(log v1.Logger, flags *pflag.FlagSet) error {
 	return nil
 }
 
-func validateSourceFlags(_ v1.Logger, flags *pflag.FlagSet) error {
+func validateSourceFlags(_ v2.Logger, flags *pflag.FlagSet) error {
 	msg := "flags docker-image, directory and system are mutually exclusive, please only set one of them"
 	system, _ := flags.GetString("system")
 	directory, _ := flags.GetString("directory")
@@ -119,7 +119,7 @@ func validateSourceFlags(_ v1.Logger, flags *pflag.FlagSet) error {
 	return nil
 }
 
-func validatePowerFlags(_ v1.Logger, flags *pflag.FlagSet) error {
+func validatePowerFlags(_ v2.Logger, flags *pflag.FlagSet) error {
 	reboot, _ := flags.GetBool("reboot")
 	poweroff, _ := flags.GetBool("poweroff")
 	if reboot && poweroff {
@@ -129,7 +129,7 @@ func validatePowerFlags(_ v1.Logger, flags *pflag.FlagSet) error {
 }
 
 // validateUpgradeFlags is a helper call to check all the flags for the upgrade command
-func validateInstallUpgradeFlags(log v1.Logger, flags *pflag.FlagSet) error {
+func validateInstallUpgradeFlags(log v2.Logger, flags *pflag.FlagSet) error {
 	if err := validateSourceFlags(log, flags); err != nil {
 		return err
 	}

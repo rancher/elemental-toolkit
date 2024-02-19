@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/elemental-toolkit/internal/version"
+	"github.com/rancher/elemental-toolkit/v2/internal/version"
 )
 
 var _ = Describe("Version", Label("version", "cmd"), func() {

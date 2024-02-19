@@ -24,7 +24,7 @@ import (
 	"github.com/rancher/yip/pkg/schema"
 	"gopkg.in/yaml.v3"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 func onlyYAMLPartialErrors(er error) bool {
@@ -43,7 +43,7 @@ func onlyYAMLPartialErrors(er error) bool {
 	return true
 }
 
-func checkYAMLError(cfg *v1.Config, allErrors, err error) error {
+func checkYAMLError(cfg *v2.Config, allErrors, err error) error {
 	if !onlyYAMLPartialErrors(err) {
 		// here we absorb errors only if are related to YAML unmarshalling
 		// As cmdline is parsed out as a yaml file
@@ -57,7 +57,7 @@ func checkYAMLError(cfg *v1.Config, allErrors, err error) error {
 }
 
 // RunStage will run yip
-func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...string) error {
+func RunStage(cfg *v2.Config, stage string, strict bool, cloudInitPaths ...string) error {
 	var allErrors error
 
 	cfg.Logger.Debugf("Cloud-init paths set to %v", cloudInitPaths)
@@ -118,7 +118,7 @@ func RunStage(cfg *v1.Config, stage string, strict bool, cloudInitPaths ...strin
 
 // filterNonExistingLocalURIs attempts to remove non existing local paths from the given URI slice.
 // Returns the filtered slice.
-func filterNonExistingLocalURIs(cfg *v1.Config, uris ...string) []string {
+func filterNonExistingLocalURIs(cfg *v2.Config, uris ...string) []string {
 	filteredPaths := []string{}
 	for _, cp := range uris {
 		if local, _ := IsLocalURI(cp); local {

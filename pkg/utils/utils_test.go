@@ -34,11 +34,11 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 func getNamesFromListFiles(list []fs.DirEntry) []string {
@@ -50,25 +50,25 @@ func getNamesFromListFiles(list []fs.DirEntry) []string {
 }
 
 var _ = Describe("Utils", Label("utils"), func() {
-	var config *v1.Config
-	var runner *v1mock.FakeRunner
-	var realRunner *v1.RealRunner
-	var logger v1.Logger
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var mounter *v1mock.FakeMounter
-	var extractor *v1mock.FakeImageExtractor
+	var config *v2.Config
+	var runner *v2mock.FakeRunner
+	var realRunner *v2.RealRunner
+	var logger v2.Logger
+	var syscall *v2mock.FakeSyscall
+	var client *v2mock.FakeHTTPClient
+	var mounter *v2mock.FakeMounter
+	var extractor *v2mock.FakeImageExtractor
 	var fs vfs.FS
 	var cleanup func()
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
-		logger = v1.NewNullLogger()
-		realRunner = &v1.RealRunner{Logger: logger}
-		extractor = v1mock.NewFakeImageExtractor(logger)
+		runner = v2mock.NewFakeRunner()
+		syscall = &v2mock.FakeSyscall{}
+		mounter = v2mock.NewFakeMounter()
+		client = &v2mock.FakeHTTPClient{}
+		logger = v2.NewNullLogger()
+		realRunner = &v2.RealRunner{Logger: logger}
+		extractor = v2mock.NewFakeImageExtractor(logger)
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 		fs.Mkdir("/tmp", constants.DirPerm)
@@ -200,7 +200,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			}
 		})
 		It("returns found device", func() {
-			ghwTest := v1mock.GhwMock{}
+			ghwTest := v2mock.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",
@@ -222,9 +222,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("GetAllPartitions", Label("lsblk", "partitions"), func() {
-		var ghwTest v1mock.GhwMock
+		var ghwTest v2mock.GhwMock
 		BeforeEach(func() {
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = v2mock.GhwMock{}
 			disk1 := block.Disk{
 				Name: "sda",
 				Partitions: []*block.Partition{
@@ -264,9 +264,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("GetPartitionFS", Label("lsblk", "partitions"), func() {
-		var ghwTest v1mock.GhwMock
+		var ghwTest v2mock.GhwMock
 		BeforeEach(func() {
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = v2mock.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name: "device1",
@@ -338,9 +338,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 				{"udevadm", "settle"},
 			}
 		})
-		It("returns found v1.Partition", func() {
+		It("returns found v2.Partition", func() {
 			var flags []string
-			ghwTest := v1mock.GhwMock{}
+			ghwTest := v2mock.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",

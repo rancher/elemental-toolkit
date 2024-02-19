@@ -16,18 +16,18 @@ limitations under the License.
 
 package mocks
 
-import v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+import v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 
 const FakeDigest = "fakeDigest"
 
 type FakeImageExtractor struct {
-	Logger     v1.Logger
+	Logger     v2.Logger
 	SideEffect func(imageRef, destination, platformRef string, local bool) (string, error)
 }
 
-var _ v1.ImageExtractor = FakeImageExtractor{}
+var _ v2.ImageExtractor = FakeImageExtractor{}
 
-func NewFakeImageExtractor(logger v1.Logger) *FakeImageExtractor {
+func NewFakeImageExtractor(logger v2.Logger) *FakeImageExtractor {
 	return &FakeImageExtractor{
 		Logger: logger,
 	}

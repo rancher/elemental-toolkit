@@ -27,12 +27,12 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/cloudinit"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const testingStages = `
@@ -42,7 +42,7 @@ stages:
     - echo "I have a very bad feeling about this"
 `
 
-func writeCmdline(s string, fs v1.FS) error {
+func writeCmdline(s string, fs v2.FS) error {
 	if err := fs.Mkdir("/proc", os.ModePerm); err != nil {
 		return err
 	}
@@ -50,12 +50,12 @@ func writeCmdline(s string, fs v1.FS) error {
 }
 
 var _ = Describe("run stage", Label("RunStage"), func() {
-	var config *v1.Config
-	var runner *v1mock.FakeRunner
-	var logger v1.Logger
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var mounter *v1mock.FakeMounter
+	var config *v2.Config
+	var runner *v2mock.FakeRunner
+	var logger v2.Logger
+	var syscall *v2mock.FakeSyscall
+	var client *v2mock.FakeHTTPClient
+	var mounter *v2mock.FakeMounter
 	var fs vfs.FS
 	var memLog *bytes.Buffer
 
@@ -64,11 +64,11 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 
 	BeforeEach(func() {
 		strict = false
-		runner = v1mock.NewFakeRunner()
+		runner = v2mock.NewFakeRunner()
 		// Use a different config with a buffer for logger, so we can check the output
 		// We also use the real fs
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
+		logger = v2.NewBufferLogger(memLog)
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 
 		config = conf.NewConfig(
@@ -152,7 +152,7 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 	})
 
 	It("ignores non existing cloud-init paths", func() {
-		ci := &v1mock.FakeCloudInitRunner{}
+		ci := &v2mock.FakeCloudInitRunner{}
 		config.CloudInitRunner = ci
 		Expect(utils.MkdirAll(fs, "/existing", constants.DirPerm)).To(Succeed())
 		// Symlinks to existing directoryes are also valid

@@ -29,12 +29,12 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const printOutput = `BYT;
@@ -43,34 +43,34 @@ const partTmpl = `
 %d:%ss:%ss:2048s:ext4::type=83;`
 
 var _ = Describe("Install action tests", func() {
-	var config *v1.RunConfig
-	var runner *v1mock.FakeRunner
+	var config *v2.RunConfig
+	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var cloudInit *v1mock.FakeCloudInitRunner
-	var extractor *v1mock.FakeImageExtractor
+	var logger v2.Logger
+	var mounter *v2mock.FakeMounter
+	var syscall *v2mock.FakeSyscall
+	var client *v2mock.FakeHTTPClient
+	var cloudInit *v2mock.FakeCloudInitRunner
+	var extractor *v2mock.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var ghwTest v1mock.GhwMock
-	var bootloader *v1mock.FakeBootloader
+	var ghwTest v2mock.GhwMock
+	var bootloader *v2mock.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
+		runner = v2mock.NewFakeRunner()
+		syscall = &v2mock.FakeSyscall{}
+		mounter = v2mock.NewFakeMounter()
+		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
-		logger.SetLevel(v1.DebugLevel())
-		extractor = v1mock.NewFakeImageExtractor(logger)
+		logger = v2.NewBufferLogger(memLog)
+		logger.SetLevel(v2.DebugLevel())
+		extractor = v2mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 
-		cloudInit = &v1mock.FakeCloudInitRunner{}
+		cloudInit = &v2mock.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
@@ -92,7 +92,7 @@ var _ = Describe("Install action tests", func() {
 		var device, cmdFail string
 		var err error
 		var cmdline func() ([]byte, error)
-		var spec *v1.InstallSpec
+		var spec *v2.InstallSpec
 		var installer *action.InstallAction
 
 		BeforeEach(func() {
@@ -102,7 +102,7 @@ var _ = Describe("Install action tests", func() {
 			_, err = fs.Create(device)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			bootloader = &v1mock.FakeBootloader{}
+			bootloader = &v2mock.FakeBootloader{}
 
 			partNum := 0
 			partedOut := printOutput
@@ -150,13 +150,13 @@ var _ = Describe("Install action tests", func() {
 			Expect(utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)).To(Succeed())
 
 			spec = conf.NewInstallSpec(config.Config)
-			loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+			loopCfg, ok := config.Snapshotter.Config.(*v2.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			loopCfg.Size = 16
 			Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
 			Expect(spec.System.IsDir()).To(BeTrue())
 			Expect(spec.RecoverySystem.Source.Value()).To(Equal(constants.ISOBaseTree))
-			//spec.System = v1.NewDockerSrc("fake/image:tag")
+			//spec.System = v2.NewDockerSrc("fake/image:tag")
 
 			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			Expect(utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)).To(Succeed())
@@ -197,7 +197,7 @@ var _ = Describe("Install action tests", func() {
 					},
 				},
 			}
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = v2mock.GhwMock{}
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 
@@ -261,7 +261,7 @@ var _ = Describe("Install action tests", func() {
 
 		It("Successfully installs a docker image", Label("docker"), func() {
 			spec.Target = device
-			spec.System = v1.NewDockerSrc("my/image:latest")
+			spec.System = v2.NewDockerSrc("my/image:latest")
 			Expect(installer.Run()).To(BeNil())
 		})
 

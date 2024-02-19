@@ -21,14 +21,14 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // FakeLoopDeviceSnapshotsStatus creates fake snapshots files according to the LoopDevice behavior.
 // Used for unit testing only.
-func FakeLoopDeviceSnapshotsStatus(fs v1.FS, rootDir string, snapsCount int) error {
+func FakeLoopDeviceSnapshotsStatus(fs v2.FS, rootDir string, snapsCount int) error {
 	var snapshotFile, snapshotsPrefix string
 	var i int
 	var err error

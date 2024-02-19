@@ -22,14 +22,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rancher/elemental-toolkit/pkg/bootloader"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	"github.com/rancher/elemental-toolkit/pkg/snapshotter"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 func (r *ResetAction) resetHook(hook string) error {
@@ -40,18 +39,18 @@ func (r *ResetAction) resetChrootHook(hook string, root string) error {
 	extraMounts := map[string]string{}
 	persistent := r.spec.Partitions.Persistent
 	if persistent != nil && persistent.MountPoint != "" {
-		extraMounts[persistent.MountPoint] = cnst.PersistentPath
+		extraMounts[persistent.MountPoint] = constants.PersistentPath
 	}
 	oem := r.spec.Partitions.OEM
 	if oem != nil && oem.MountPoint != "" {
-		extraMounts[oem.MountPoint] = cnst.OEMPath
+		extraMounts[oem.MountPoint] = constants.OEMPath
 	}
 	return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, root, extraMounts, r.cfg.CloudInitPaths...)
 }
 
 type ResetActionOption func(r *ResetAction) error
 
-func WithResetBootloader(bootloader v1.Bootloader) func(r *ResetAction) error {
+func WithResetBootloader(bootloader v2.Bootloader) func(r *ResetAction) error {
 	return func(i *ResetAction) error {
 		i.bootloader = bootloader
 		return nil
@@ -59,14 +58,14 @@ func WithResetBootloader(bootloader v1.Bootloader) func(r *ResetAction) error {
 }
 
 type ResetAction struct {
-	cfg         *v1.RunConfig
-	spec        *v1.ResetSpec
-	bootloader  v1.Bootloader
-	snapshotter v1.Snapshotter
-	snapshot    *v1.Snapshot
+	cfg         *v2.RunConfig
+	spec        *v2.ResetSpec
+	bootloader  v2.Bootloader
+	snapshotter v2.Snapshotter
+	snapshot    *v2.Snapshot
 }
 
-func NewResetAction(cfg *v1.RunConfig, spec *v1.ResetSpec, opts ...ResetActionOption) (*ResetAction, error) {
+func NewResetAction(cfg *v2.RunConfig, spec *v2.ResetSpec, opts ...ResetActionOption) (*ResetAction, error) {
 	var err error
 
 	r := &ResetAction{cfg: cfg, spec: spec}
@@ -123,13 +122,13 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 		}
 	}
 
-	installState := &v1.InstallState{
+	installState := &v2.InstallState{
 		Date:        time.Now().Format(time.RFC3339),
 		Snapshotter: r.cfg.Snapshotter,
-		Partitions: map[string]*v1.PartitionState{
-			cnst.StatePartName: {
+		Partitions: map[string]*v2.PartitionState{
+			constants.StatePartName: {
 				FSLabel: r.spec.Partitions.State.FilesystemLabel,
-				Snapshots: map[int]*v1.SystemState{
+				Snapshots: map[int]*v2.SystemState{
 					r.snapshot.ID: {
 						Source: src,
 						Digest: src.GetDigest(),
@@ -140,17 +139,17 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 		},
 	}
 	if r.spec.Partitions.OEM != nil {
-		installState.Partitions[cnst.OEMPartName] = &v1.PartitionState{
+		installState.Partitions[constants.OEMPartName] = &v2.PartitionState{
 			FSLabel: r.spec.Partitions.OEM.FilesystemLabel,
 		}
 	}
 	if r.spec.Partitions.Persistent != nil {
-		installState.Partitions[cnst.PersistentPartName] = &v1.PartitionState{
+		installState.Partitions[constants.PersistentPartName] = &v2.PartitionState{
 			FSLabel: r.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
 	if r.spec.State != nil && r.spec.State.Partitions != nil {
-		installState.Partitions[cnst.RecoveryPartName] = r.spec.State.Partitions[cnst.RecoveryPartName]
+		installState.Partitions[constants.RecoveryPartName] = r.spec.State.Partitions[constants.RecoveryPartName]
 	}
 
 	umount, err := elemental.MountRWPartition(r.cfg.Config, r.spec.Partitions.Recovery)
@@ -161,8 +160,8 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 
 	return r.cfg.WriteInstallState(
 		installState,
-		filepath.Join(r.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
-		filepath.Join(r.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
+		filepath.Join(r.spec.Partitions.State.MountPoint, constants.InstallStateFile),
+		filepath.Join(r.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
 	)
 }
 
@@ -220,7 +219,7 @@ func (r ResetAction) Run() (err error) {
 	}
 
 	// Before reset hook happens once partitions are aready and before deploying the OS image
-	err = r.resetHook(cnst.BeforeResetHook)
+	err = r.resetHook(constants.BeforeResetHook)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookBeforeReset)
 	}
@@ -257,7 +256,7 @@ func (r ResetAction) Run() (err error) {
 		return err
 	}
 
-	err = r.resetHook(cnst.PostResetHook)
+	err = r.resetHook(constants.PostResetHook)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookPostReset)
 	}
@@ -299,12 +298,12 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
-	err = r.resetChrootHook(cnst.AfterResetChrootHook, cnst.WorkingImgDir)
+	err = r.resetChrootHook(constants.AfterResetChrootHook, constants.WorkingImgDir)
 	if err != nil {
 		r.cfg.Logger.Errorf("failed after-reset-chroot hook: %v", err)
 		return elementalError.NewFromError(err, elementalError.HookAfterResetChroot)
 	}
-	err = r.resetHook(cnst.AfterResetHook)
+	err = r.resetHook(constants.AfterResetHook)
 	if err != nil {
 		r.cfg.Logger.Errorf("failed after-reset hook: %v", err)
 		return elementalError.NewFromError(err, elementalError.HookAfterReset)
@@ -312,7 +311,7 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 
 	grubVars := r.spec.GetGrubLabels()
 	err = r.bootloader.SetPersistentVariables(
-		filepath.Join(r.spec.Partitions.EFI.MountPoint, cnst.GrubOEMEnv),
+		filepath.Join(r.spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -323,7 +322,7 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 	// Installation rebrand (only grub for now)
 	err = r.bootloader.SetDefaultEntry(
 		r.spec.Partitions.EFI.MountPoint,
-		cnst.WorkingImgDir,
+		constants.WorkingImgDir,
 		r.spec.GrubDefEntry,
 	)
 	if err != nil {

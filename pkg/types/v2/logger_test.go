@@ -24,34 +24,34 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
 )
 
 var _ = Describe("logger", Label("log", "logger", "types"), func() {
 	It("TestNewLogger returns a logger interface", func() {
-		l1 := v1.NewLogger()
+		l1 := v2.NewLogger()
 		l2 := logrus.New()
 		Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
 	})
 	It("TestNewNullLogger returns logger interface", func() {
-		l1 := v1.NewNullLogger()
+		l1 := v2.NewNullLogger()
 		l2 := logrus.New()
 		Expect(reflect.TypeOf(l1).Kind()).To(Equal(reflect.TypeOf(l2).Kind()))
 	})
 	It("DebugLevel returns the proper log level for debug output", func() {
-		Expect(v1.DebugLevel()).To(Equal(logrus.DebugLevel))
+		Expect(v2.DebugLevel()).To(Equal(logrus.DebugLevel))
 	})
 	It("Returns true on IsDebugLevel when log level is set to debug", func() {
-		l := v1.NewLogger()
-		l.SetLevel(v1.DebugLevel())
-		Expect(v1.IsDebugLevel(l)).To(BeTrue())
+		l := v2.NewLogger()
+		l.SetLevel(v2.DebugLevel())
+		Expect(v2.IsDebugLevel(l)).To(BeTrue())
 	})
 	It("Returns false on IsDebugLevel when log level is not set to debug", func() {
-		Expect(v1.IsDebugLevel(v1.NewLogger())).To(BeFalse())
+		Expect(v2.IsDebugLevel(v2.NewLogger())).To(BeFalse())
 	})
 	It("NewBufferLogger stores content in a buffer", func() {
 		b := &bytes.Buffer{}
-		l1 := v1.NewBufferLogger(b)
+		l1 := v2.NewBufferLogger(b)
 		l1.Info("TEST")
 		Expect(b).To(ContainSubstring("TEST"))
 	})

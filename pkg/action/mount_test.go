@@ -27,29 +27,29 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Mount Action", func() {
-	var cfg *v1.RunConfig
-	var mounter *v1mock.FakeMounter
-	var runner *v1mock.FakeRunner
+	var cfg *v2.RunConfig
+	var mounter *v2mock.FakeMounter
+	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
+	var logger v2.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var spec *v1.MountSpec
+	var spec *v2.MountSpec
 
 	BeforeEach(func() {
-		mounter = v1mock.NewFakeMounter()
+		mounter = v2mock.NewFakeMounter()
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
-		runner = v1mock.NewFakeRunner()
+		logger = v2.NewBufferLogger(memLog)
+		runner = v2mock.NewFakeRunner()
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewRunConfig(
@@ -72,22 +72,22 @@ var _ = Describe("Mount Action", func() {
 			}
 		}
 
-		spec = &v1.MountSpec{
+		spec = &v2.MountSpec{
 			Sysroot:    "/sysroot",
 			WriteFstab: true,
-			Ephemeral: v1.EphemeralMounts{
+			Ephemeral: v2.EphemeralMounts{
 				Type: "tmpfs",
 				Size: "30%",
 			},
-			Persistent: v1.PersistentMounts{
+			Persistent: v2.PersistentMounts{
 				Mode:  constants.BindMode,
 				Paths: []string{"/some/path"},
-				Volume: v1.VolumeMount{
+				Volume: v2.VolumeMount{
 					Mountpoint: constants.PersistentDir,
 					Device:     "/dev/persistentdev",
 				},
 			},
-			Volumes: []*v1.VolumeMount{
+			Volumes: []*v2.VolumeMount{
 				{
 					Mountpoint: "/run/elemental",
 					Device:     "/dev/somedevice",
@@ -147,9 +147,9 @@ var _ = Describe("Mount Action", func() {
 		})
 
 		It("Does not write fstab if not requested", func() {
-			spec := &v1.MountSpec{
+			spec := &v2.MountSpec{
 				WriteFstab: false,
-				Ephemeral: v1.EphemeralMounts{
+				Ephemeral: v2.EphemeralMounts{
 					Size: "30%",
 				},
 			}
@@ -164,13 +164,13 @@ var _ = Describe("Mount Action", func() {
 	Describe("Mount Volumes", func() {
 		It("mounts expected volumes without errors", func() {
 			spec.Volumes = append(spec.Volumes,
-				&v1.VolumeMount{
+				&v2.VolumeMount{
 					Device:     "LABEL=TEST",
 					Mountpoint: "/a/path",
-				}, &v1.VolumeMount{
+				}, &v2.VolumeMount{
 					Device:     "PARTLABEL=partitionlabel",
 					Mountpoint: "/a/different/path",
-				}, &v1.VolumeMount{
+				}, &v2.VolumeMount{
 					Device:     "UUID=someuuidgoeshere",
 					Mountpoint: "/a/path",
 				},
@@ -191,7 +191,7 @@ var _ = Describe("Mount Action", func() {
 		})
 		It("fails to understand a non supported device reference", func() {
 			spec.Volumes = append(spec.Volumes,
-				&v1.VolumeMount{
+				&v2.VolumeMount{
 					Device:     "ThisIsNotADevice",
 					Mountpoint: "/a/path",
 				},
