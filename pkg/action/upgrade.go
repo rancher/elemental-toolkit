@@ -198,9 +198,11 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		}
 	}
 
-	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-	if u.spec.Partitions.Recovery.MountPoint == constants.RunningStateDir {
-		statePath = filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile)
+	// Hack to ensure we are not using / or /.snapshots mountpoints which could be reported
+	// from ghw if btrfs snapshots are in use.
+	statePath := filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile)
+	if u.spec.Partitions.State.MountPoint == "/" || u.spec.Partitions.State.MountPoint == "/.snapshots" {
+		statePath = filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	}
 
 	return u.cfg.WriteInstallState(
