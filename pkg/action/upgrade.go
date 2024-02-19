@@ -198,8 +198,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		}
 	}
 
-	// Hack to ensure we are not using / or /.snapshots mountpoints which could be reported
-	// from ghw if btrfs snapshots are in use.
+	// Hack to ensure we are not using / or /.snapshots mountpoints. Btrfs based deployments
+	// mount state partition into multiple locations
 	statePath := filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile)
 	if u.spec.Partitions.State.MountPoint == "/" || u.spec.Partitions.State.MountPoint == "/.snapshots" {
 		statePath = filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
