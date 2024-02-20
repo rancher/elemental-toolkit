@@ -7,6 +7,27 @@ on:
     - cron:  '30 2 * * *'
 
 jobs:
+  build-toolkit:
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    env:
+      PLATFORM: x86_64
+      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git fetch --prune --unshallow
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build toolkit
+        run: |
+          make DOCKER_ARGS=--push build
+
   build-matrix:
     strategy:
       matrix:
