@@ -77,8 +77,7 @@ func NewUpgradeRecoveryCmd(root *cobra.Command, addCheckRoot bool) *cobra.Comman
 		},
 	}
 	root.AddCommand(c)
-	addRecoverySystemFlag(c)
-	addLocalImageFlag(c)
+	addSystemFlag(c)
 	return c
 }
 

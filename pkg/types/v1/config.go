@@ -394,7 +394,8 @@ func (u *UpgradeSpec) Sanitize() error {
 }
 
 type UpgradeRecoverySpec struct {
-	RecoverySystem Image `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	System         *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem Image
 	Partitions     ElementalPartitions
 	State          *InstallState
 }
@@ -405,10 +406,11 @@ func (u *UpgradeRecoverySpec) Sanitize() error {
 	if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
 		return fmt.Errorf("undefined recovery partition")
 	}
-
-	if u.RecoverySystem.Source.IsEmpty() {
+	if u.System.IsEmpty() {
 		return fmt.Errorf("undefined recovery upgrade source")
 	}
+
+	u.RecoverySystem.Source = u.System
 
 	// Set default label for non squashfs images
 	if u.RecoverySystem.FS != constants.SquashFs && u.RecoverySystem.Label == "" {
