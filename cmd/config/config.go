@@ -468,10 +468,10 @@ func ReadUpgradeRecoverySpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.Upgrade
 
 	err = vp.Unmarshal(upgrade, setDecoder, decodeHook)
 	if err != nil {
-		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
+		r.Logger.Warnf("error unmarshalling UpgradeRecoverySpec: %s", err)
 	}
 	err = upgrade.Sanitize()
-	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
+	r.Logger.Debugf("Loaded upgrade UpgradeRecoverySpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
 }
 
