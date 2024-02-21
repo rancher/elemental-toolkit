@@ -107,11 +107,6 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}()
 
 	// Mount state and recovery partitions as RW
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountStatePartition)
-	}
-	cleanup.Push(umount)
 	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
