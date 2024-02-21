@@ -90,7 +90,7 @@ build-iso:
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
-		--local --platform $(PLATFORM) --squash-no-compression -o /build $(REPO):$(VERSION)
+		--local --platform $(PLATFORM) -o /build $(REPO):$(VERSION)
 
 .PHONY: build-disk
 build-disk:

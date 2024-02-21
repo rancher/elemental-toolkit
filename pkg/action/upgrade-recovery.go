@@ -147,7 +147,7 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Upgrade recovery
-	err = elemental.DeployImage(u.cfg.Config, &u.spec.RecoverySystem)
+	err = elemental.DeployRecoverySystem(u.cfg.Config, &u.spec.RecoverySystem, u.spec.Partitions.Recovery.MountPoint)
 	if err != nil {
 		u.cfg.Logger.Error("failed deploying recovery image")
 		return elementalError.NewFromError(err, elementalError.DeployImage)

@@ -154,7 +154,7 @@ func (i *InstallAction) createInstallStateYaml() error {
 	)
 }
 
-// InstallRun will install the system from a given configuration
+// Run will install the system from a given configuration
 func (i InstallAction) Run() (err error) {
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
@@ -237,11 +237,11 @@ func (i InstallAction) Run() (err error) {
 		if err != nil {
 			return err
 		}
-		i.spec.RecoverySystem.Source.SetDigest(i.spec.System.GetDigest())
+		recoverySystem.Source.SetDigest(i.spec.System.GetDigest())
 	}
-	err = elemental.DeployImage(i.cfg.Config, &recoverySystem)
+	err = elemental.DeployRecoverySystem(i.cfg.Config, &recoverySystem, i.spec.Partitions.Recovery.MountPoint)
 	if err != nil {
-		i.cfg.Logger.Error("failed deploying recovery image")
+		i.cfg.Logger.Error("Failed deploying recovery image")
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 

@@ -522,7 +522,7 @@ func FindInitrd(fs types.FS, rootDir string) (string, error) {
 // FindKernelInitrd finds for kernel and intird files inside a given root tree path.
 // It assumes kernel and initrd files match certain patterns.
 // This is a comodity method of a combination of FindKernel and FindInitrd.
-func FindKernelInitrd(fs types.FS, rootDir string) (kernel string, initrd string, err error) {
+func FindKernelInitrd(fs types.FS, rootDir string) (kernel, initrd string, err error) {
 	kernel, _, err = FindKernel(fs, rootDir)
 	if err != nil {
 		return "", "", err

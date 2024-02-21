@@ -176,7 +176,8 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.EfiPartName])
+	efiDir := b.roots[constants.EfiPartName]
+	err = b.bootloader.InstallConfig(recRoot, efiDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
@@ -197,7 +198,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	grubVars := b.spec.GetGrubLabels()
 	err = b.bootloader.SetPersistentVariables(
-		filepath.Join(b.roots[constants.EfiPartName], constants.GrubOEMEnv),
+		filepath.Join(efiDir, constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -205,16 +206,14 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return err
 	}
 
-	err = b.bootloader.InstallEFI(
-		recRoot, b.roots[constants.EfiPartName],
-	)
+	err = b.bootloader.InstallEFI(recRoot, efiDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub efi binaries: %s", err.Error())
 		return err
 	}
 
 	// Rebrand
-	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], recRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(efiDir, recRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
@@ -237,14 +236,17 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return elementalError.NewFromError(err, elementalError.HookAfterDisk)
 	}
 
-	// Create recovery image and removes recovery root when done
-	err = elemental.CreateImageFromTree(
-		b.cfg.Config, &b.spec.RecoverySystem, recRoot, b.spec.Expandable,
-		func() error { return b.cfg.Fs.RemoveAll(recRoot) },
-	)
+	b.cfg.Logger.Infof("Preparing disk image root tree...")
+	err = elemental.DeployRecoverySystem(b.cfg.Config, &b.spec.RecoverySystem, recRoot)
 	if err != nil {
-		b.cfg.Logger.Errorf("failed creating recovery image from root-tree: %s", err.Error())
-		return err
+		b.cfg.Logger.Errorf("Failed preparing recovery root tree: %v", err)
+		return elementalError.NewFromError(err, elementalError.DeployImage)
+	}
+
+	// Clean up recovery root when done
+	if err = b.cfg.Fs.RemoveAll(recRoot); err != nil {
+		b.cfg.Logger.Errorf("Failed cleaning recovery root tree: %v", err)
+		return elementalError.NewFromError(err, elementalError.RemoveFile)
 	}
 
 	if b.spec.Expandable {

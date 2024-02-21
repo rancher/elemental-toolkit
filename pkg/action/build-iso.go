@@ -41,7 +41,7 @@ func grubCfgTemplate(arch string) string {
 
 	menuentry "%s" --class os --unrestricted {
 		echo Loading kernel...
-		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 rd.cos.disable cos.setup=` + constants.ISOCloudInitPath + `
+		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 elemental.disable elemental.setup=` + constants.ISOCloudInitPath + `
 		echo Loading initrd...
 		initrd ($root)` + constants.ISOInitrdPath(arch) + `
 	}
@@ -131,6 +131,36 @@ func (b *BuildISOAction) ISORun() error {
 		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
+	err = b.applySources(isoDir, b.spec.Image...)
+	if err != nil {
+		b.cfg.Logger.Errorf("Failed installing ISO image packages: %v", err)
+		return err
+	}
+
+	b.cfg.Logger.Infof("Preparing ISO image root tree...")
+	recoveryImagePath := filepath.Join(isoDir, constants.ISORootFile)
+
+	recImg := &types.Image{
+		Source: types.NewDirSrc(rootDir),
+		File:   recoveryImagePath,
+		FS:     constants.SquashFs,
+		Label:  constants.SystemLabel,
+	}
+
+	err = elemental.DeployRecoverySystem(b.cfg.Config, recImg, isoDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
+		return elementalError.NewFromError(err, elementalError.DeployImage)
+	}
+
+	if b.spec.BootloaderInRootFs {
+		err = b.PrepareEFI(rootDir, isoDir)
+		if err != nil {
+			b.cfg.Logger.Errorf("Failed fetching bootloader binaries: %v", err)
+			return elementalError.NewFromError(err, elementalError.CreateFile)
+		}
+	}
+
 	if b.spec.Firmware == types.EFI {
 		b.cfg.Logger.Infof("Preparing EFI image...")
 		if b.spec.BootloaderInRootFs {
@@ -140,34 +170,14 @@ func (b *BuildISOAction) ISORun() error {
 				return elementalError.NewFromError(err, elementalError.CopyData)
 			}
 		}
+
+		b.cfg.Logger.Info("Applying UEFI sources...")
 		err = b.applySources(uefiDir, b.spec.UEFI...)
 		if err != nil {
 			b.cfg.Logger.Errorf("Failed installing EFI packages: %v", err)
 			return err
 		}
-	}
 
-	b.cfg.Logger.Infof("Preparing ISO image root tree...")
-	if b.spec.BootloaderInRootFs {
-		err = b.PrepareISO(rootDir, isoDir)
-		if err != nil {
-			b.cfg.Logger.Errorf("Failed fetching bootloader binaries: %v", err)
-			return elementalError.NewFromError(err, elementalError.CreateFile)
-		}
-	}
-	err = b.applySources(isoDir, b.spec.Image...)
-	if err != nil {
-		b.cfg.Logger.Errorf("Failed installing ISO image packages: %v", err)
-		return err
-	}
-
-	err = b.prepareISORoot(isoDir, rootDir)
-	if err != nil {
-		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
-		return err
-	}
-
-	if b.spec.Firmware == types.EFI {
 		b.cfg.Logger.Info("Creating EFI image...")
 		err = b.createEFI(uefiDir, filepath.Join(isoTmpDir, constants.ISOEFIImg))
 		if err != nil {
@@ -193,11 +203,6 @@ func (b *BuildISOAction) PrepareEFI(rootDir, uefiDir string) error {
 	return b.bootloader.InstallEFI(rootDir, uefiDir)
 }
 
-func (b *BuildISOAction) PrepareISO(rootDir, imageDir string) error {
-	// Include EFI contents in iso root too
-	return b.PrepareEFI(rootDir, imageDir)
-}
-
 func (b *BuildISOAction) renderGrubTemplate(rootDir string) error {
 	err := utils.MkdirAll(b.cfg.Fs, filepath.Join(rootDir, constants.FallbackEFIPath), constants.DirPerm)
 	if err != nil {
@@ -210,35 +215,6 @@ func (b *BuildISOAction) renderGrubTemplate(rootDir string) error {
 		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch), b.spec.GrubEntry, b.spec.Label)),
 		constants.FilePerm,
 	)
-}
-
-func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
-	kernel, initrd, err := utils.FindKernelInitrd(b.cfg.Fs, rootDir)
-	if err != nil {
-		b.cfg.Logger.Error("Could not find kernel and/or initrd")
-		return elementalError.NewFromError(err, elementalError.StatFile)
-	}
-	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, constants.ISOLoaderPath(b.cfg.Platform.Arch)), constants.DirPerm)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CreateDir)
-	}
-	//TODO document boot/kernel and boot/initrd expectation in bootloader config
-	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
-	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath(b.cfg.Platform.Arch)))
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
-	}
-
-	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
-	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath(b.cfg.Platform.Arch)))
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
-	}
-
-	b.cfg.Logger.Info("Creating squashfs...")
-	squashOptions := append(constants.GetDefaultSquashfsOptions(), b.cfg.SquashFsCompressionConfig...)
-	err = utils.CreateSquashFS(b.cfg.Runner, b.cfg.Logger, rootDir, filepath.Join(isoDir, constants.ISORootFile), squashOptions)
-	return elementalError.NewFromError(err, elementalError.MKFSCall)
 }
 
 func (b BuildISOAction) createEFI(root string, img string) error {
