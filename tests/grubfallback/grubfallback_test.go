@@ -17,6 +17,8 @@ limitations under the License.
 package elemental_test
 
 import (
+	"fmt"
+
 	sut "github.com/rancher/elemental-toolkit/tests/vm"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -44,9 +46,15 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			It("fallbacks by booting into recovery", func() {
 				Expect(s.BootFrom()).To(Equal(sut.Active))
 
-				_, err := s.Command("mount -o rw,remount /run/initramfs/elemental-state")
+				_, err := s.Command("mount -o rw,remount /run/elemental/efi")
 				Expect(err).ToNot(HaveOccurred())
-				_, err = s.Command("rm -rf /run/initramfs/elemental-state/.snapshots/1/snapshot.img")
+				cmd := "grub2-editenv"
+				_, err = s.Command(fmt.Sprintf("which %s", cmd))
+				if err != nil {
+					cmd = "grub-editenv"
+				}
+
+				_, err = s.Command(fmt.Sprintf("%s /run/elemental/efi/grub_oem_env set state_label=wrongvalue", cmd))
 				Expect(err).ToNot(HaveOccurred())
 
 				s.Reboot()

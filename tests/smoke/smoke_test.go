@@ -47,14 +47,14 @@ var _ = Describe("Elemental Smoke tests", func() {
 			}
 		})
 
-		persistentFileName := fmt.Sprintf("file-%v.txt", rand.Int())
-		persistentData := rand.Uint32()
-		It("can save a file to persistent storage", func() {
+		It("it can reboot into recovery and back to active having active persistent data still available", func() {
+			By("Adding some persistent data in root folder")
+			persistentFileName := fmt.Sprintf("file-%v.txt", rand.Int())
+			persistentData := rand.Uint32()
 			_, err := s.Command(fmt.Sprintf("echo %v > %v", persistentData, persistentFileName))
 			Expect(err).ToNot(HaveOccurred())
-		})
 
-		It("can boot into recovery", func() {
+			Expect(err).ToNot(HaveOccurred())
 			s.ChangeBoot(sut.Recovery)
 			By("rebooting into recovery")
 			s.Reboot()
@@ -69,12 +69,13 @@ var _ = Describe("Elemental Smoke tests", func() {
 			s.ChangeBoot(sut.Active)
 			s.Reboot()
 			Expect(s.BootFrom()).To(Equal(sut.Active))
-		})
 
-		It("can read the file from persistent storage", func() {
+			By("reading previously stored data")
 			data, err := s.Command(fmt.Sprintf("cat %v", persistentFileName))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data).To(Equal(fmt.Sprintf("%v\n", persistentData)))
+			_, err = s.Command(fmt.Sprintf("rm %v", persistentFileName))
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("fails running elemental reset from COS_ACTIVE", func() {

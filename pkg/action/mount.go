@@ -70,7 +70,7 @@ func RunMount(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	}
 
 	cfg.Logger.Debugf("Mounting persistent directories")
-	if err = MountPersistent(cfg, spec.Sysroot, spec.Persistent); err != nil {
+	if err = MountPersistent(cfg, spec); err != nil {
 		cfg.Logger.Errorf("Error mounting persistent overlays: %s", err.Error())
 		return err
 	}
@@ -186,22 +186,22 @@ func MountEphemeral(cfg *v1.RunConfig, sysroot string, overlay v1.EphemeralMount
 	return nil
 }
 
-func MountPersistent(cfg *v1.RunConfig, sysroot string, persistent v1.PersistentMounts) error {
+func MountPersistent(cfg *v1.RunConfig, spec *v1.MountSpec) error {
 	mountFunc := MountOverlayPath
-	if persistent.Mode == "bind" {
+	if spec.Persistent.Mode == "bind" {
 		mountFunc = MountBindPath
 	}
 
-	if persistent.Volume.Device == "" || persistent.Volume.Mountpoint == "" {
+	if !spec.HasPersistent() {
 		cfg.Logger.Debug("No persistent device defined, omitting persistent paths mounts")
 		return nil
 	}
 
-	for _, path := range persistent.Paths {
-		cfg.Logger.Debugf("Mounting path %s into %s", path, sysroot)
+	for _, path := range spec.Persistent.Paths {
+		cfg.Logger.Debugf("Mounting path %s into %s", path, spec.Sysroot)
 
-		target := filepath.Join(persistent.Volume.Mountpoint, constants.PersistentStateDir)
-		if err := mountFunc(cfg, sysroot, target, path); err != nil {
+		target := filepath.Join(spec.Persistent.Volume.Mountpoint, constants.PersistentStateDir)
+		if err := mountFunc(cfg, spec.Sysroot, target, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
 		}
@@ -224,14 +224,18 @@ func MountBindPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
 	trimmed := strings.TrimPrefix(path, "/")
 	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
 	stateDir := fmt.Sprintf("%s/%s", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, stateDir, constants.DirPerm); err != nil {
-		cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
-		return err
-	}
 
-	if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
-		cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
-		return err
+	// Only sync data once, otherwise it could modify persistent data from a previous boot
+	if ok, _ := utils.Exists(cfg.Fs, stateDir); !ok {
+		if err := utils.MkdirAll(cfg.Fs, stateDir, constants.DirPerm); err != nil {
+			cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
+			return err
+		}
+
+		if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
+			cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
+			return err
+		}
 	}
 
 	if err := cfg.Mounter.Mount(stateDir, base, "none", []string{"defaults", "bind"}); err != nil {
@@ -246,7 +250,7 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	cfg.Logger.Debugf("Mounting overlay path %s", path)
 
 	lower := filepath.Join(sysroot, path)
-	if err := utils.MkdirAll(cfg.Config.Fs, lower, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, lower, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating directory %s: %s", path, err.Error())
 		return err
 	}
@@ -254,13 +258,13 @@ func MountOverlayPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error
 	trimmed := strings.TrimPrefix(path, "/")
 	pathName := strings.ReplaceAll(trimmed, "/", "-") + overlaySuffix
 	upper := fmt.Sprintf("%s/%s/upper", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, upper, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, upper, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating upperdir %s: %s", upper, err.Error())
 		return err
 	}
 
 	work := fmt.Sprintf("%s/%s/work", overlayDir, pathName)
-	if err := utils.MkdirAll(cfg.Config.Fs, work, constants.DirPerm); err != nil {
+	if err := utils.MkdirAll(cfg.Fs, work, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating workdir %s: %s", work, err.Error())
 		return err
 	}
@@ -330,7 +334,7 @@ func InitialFstabData(runner v1.Runner, sysroot string) (string, error) {
 	}
 	for _, mnt := range mounts {
 		if mnt.Mountpoint == sysroot {
-			data += fstab(mnt.Device, "/", "auto", mnt.Options)
+			data += fstab(mnt.Device, "/", mnt.FSType, mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, sysroot) {
 			data += fstab(mnt.Device, strings.TrimPrefix(mnt.Mountpoint, sysroot), mnt.FSType, mnt.Options)
 		} else if strings.HasPrefix(mnt.Mountpoint, constants.RunElementalDir) {
@@ -368,9 +372,8 @@ func findmnt(runner v1.Runner, mountpoint string) ([]*v1.VolumeMount, error) {
 			continue
 		}
 		if lineFields[2] == "btrfs" {
-			r := regexp.MustCompile(`(/.+)\[.*\]`)
-			if r.MatchString(lineFields[0]) {
-				match := r.FindStringSubmatch(lineFields[0])
+			r := regexp.MustCompile(`^(/[^\[\]]+)`)
+			if match := r.FindStringSubmatch(lineFields[0]); match != nil {
 				lineFields[0] = match[1]
 			}
 		}
@@ -378,6 +381,7 @@ func findmnt(runner v1.Runner, mountpoint string) ([]*v1.VolumeMount, error) {
 			Device:     lineFields[0],
 			Mountpoint: lineFields[1],
 			Options:    strings.Split(lineFields[3], ","),
+			FSType:     lineFields[2],
 		})
 	}
 	return mounts, nil

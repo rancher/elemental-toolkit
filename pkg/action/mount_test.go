@@ -18,6 +18,7 @@ package action_test
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -25,7 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
-	"k8s.io/mount-utils"
 
 	"github.com/rancher/elemental-toolkit/pkg/action"
 	"github.com/rancher/elemental-toolkit/pkg/config"
@@ -37,15 +37,16 @@ import (
 
 var _ = Describe("Mount Action", func() {
 	var cfg *v1.RunConfig
-	var mounter *mount.FakeMounter
+	var mounter *v1mock.FakeMounter
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS
 	var logger v1.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
+	var spec *v1.MountSpec
 
 	BeforeEach(func() {
-		mounter = &mount.FakeMounter{}
+		mounter = v1mock.NewFakeMounter()
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
 		runner = v1mock.NewFakeRunner()
@@ -61,10 +62,39 @@ var _ = Describe("Mount Action", func() {
 		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 			switch cmd {
 			case "findmnt":
-				return []byte("/dev/loop0\t/sysroot\text2\tro,relatime"), nil
+				mountPoints := "/dev/loop0\t/sysroot\text2\tro,relatime\n"
+				mountPoints += "/dev/loop1\t/sysroot/volume\text2\tro,relatime\n"
+				mountPoints += "/dev/loop2\t/run/elemental/extra\txfs\trw,relatime\n"
+				mountPoints += "/dev/sda4\t/run/initramfs/elemental-state\text2\tro,relatime\n"
+				return []byte(mountPoints), nil
 			default:
 				return []byte{}, nil
 			}
+		}
+
+		spec = &v1.MountSpec{
+			Sysroot:    "/sysroot",
+			WriteFstab: true,
+			Ephemeral: v1.EphemeralMounts{
+				Type: "tmpfs",
+				Size: "30%",
+			},
+			Persistent: v1.PersistentMounts{
+				Mode:  constants.BindMode,
+				Paths: []string{"/some/path"},
+				Volume: v1.VolumeMount{
+					Mountpoint: constants.PersistentDir,
+					Device:     "/dev/persistentdev",
+				},
+			},
+			Volumes: []*v1.VolumeMount{
+				{
+					Mountpoint: "/run/elemental",
+					Device:     "/dev/somedevice",
+					Options:    []string{"rw", "defaults"},
+					FSType:     "vfat",
+				},
+			},
 		}
 
 	})
@@ -73,30 +103,6 @@ var _ = Describe("Mount Action", func() {
 	})
 	Describe("Write fstab", Label("mount", "fstab"), func() {
 		It("Writes a simple fstab", func() {
-			spec := &v1.MountSpec{
-				Sysroot:    "/sysroot",
-				WriteFstab: true,
-				Ephemeral: v1.EphemeralMounts{
-					Size: "30%",
-				},
-				Persistent: v1.PersistentMounts{
-					Mode:  constants.BindMode,
-					Paths: []string{"/some/path"},
-					Volume: v1.VolumeMount{
-						Mountpoint: constants.PersistentDir,
-						Device:     "/dev/persistentdev",
-					},
-				},
-				Volumes: []*v1.VolumeMount{
-					{
-						Mountpoint: "/run/elemental",
-						Device:     "/dev/somedevice",
-						Options:    []string{"rw", "defaults"},
-						FSType:     "vfat",
-					},
-				},
-			}
-
 			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
 			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
 			Expect(err).To(BeNil())
@@ -105,38 +111,20 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
+			expectedFstab += "/dev/loop1\t/volume\text2\tro,relatime\t0\t0\n"
+			expectedFstab += "/dev/loop2\t/run/elemental/extra\txfs\trw,relatime\t0\t0\n"
+			expectedFstab += "/dev/sda4\t/run/initramfs/elemental-state\text2\tro,relatime\t0\t0\n"
 			expectedFstab += "/dev/somedevice\t/run/elemental\tvfat\trw,defaults\t0\t0\n"
 			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "/run/elemental/persistent/.state/some-path.bind\t/some/path\tnone\tdefaults,bind\t0\t0\n"
 			expectedFstab += "tmpfs\t/run/elemental/overlay\ttmpfs\tdefaults,size=30%\t0\t0\n"
+
 			Expect(string(fstab)).To(Equal(expectedFstab))
 		})
 
 		It("Writes a simple fstab with overlay mode", func() {
-			spec := &v1.MountSpec{
-				Sysroot:    "/sysroot",
-				WriteFstab: true,
-				Ephemeral: v1.EphemeralMounts{
-					Size: "30%",
-				},
-				Persistent: v1.PersistentMounts{
-					Mode:  constants.OverlayMode,
-					Paths: []string{"/some/path"},
-					Volume: v1.VolumeMount{
-						Mountpoint: constants.PersistentDir,
-						Device:     "/dev/persistentdev",
-					},
-				},
-				Volumes: []*v1.VolumeMount{
-					{
-						Mountpoint: constants.PersistentDir + "/somedir",
-						Device:     "/dev/somedevice",
-						Options:    []string{"rw", "defaults"},
-						FSType:     "vfat",
-					},
-				},
-			}
+			spec.Persistent.Mode = constants.OverlayMode
 			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
 			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
 			Expect(err).To(BeNil())
@@ -145,8 +133,11 @@ var _ = Describe("Mount Action", func() {
 
 			fstab, err := cfg.Config.Fs.ReadFile(filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(err).To(BeNil())
-			expectedFstab := "/dev/loop0\t/\tauto\tro,relatime\t0\t0\n"
-			expectedFstab += "/dev/somedevice\t/run/elemental/persistent/somedir\tvfat\trw,defaults\t0\t0\n"
+			expectedFstab := "/dev/loop0\t/\text2\tro,relatime\t0\t0\n"
+			expectedFstab += "/dev/loop1\t/volume\text2\tro,relatime\t0\t0\n"
+			expectedFstab += "/dev/loop2\t/run/elemental/extra\txfs\trw,relatime\t0\t0\n"
+			expectedFstab += "/dev/sda4\t/run/initramfs/elemental-state\text2\tro,relatime\t0\t0\n"
+			expectedFstab += "/dev/somedevice\t/run/elemental\tvfat\trw,defaults\t0\t0\n"
 			expectedFstab += "/dev/persistentdev\t/run/elemental/persistent\tauto\tdefaults\t0\t0\n"
 			expectedFstab += "overlay\t/some/path\toverlay\t"
 			expectedFstab += "defaults,lowerdir=/some/path,upperdir=/run/elemental/persistent/.state/some-path.overlay/upper,workdir=/run/elemental/persistent/.state/some-path.overlay/work,x-systemd.requires-mounts-for=/run/elemental/persistent\t0\t0\n"
@@ -168,6 +159,109 @@ var _ = Describe("Mount Action", func() {
 
 			ok, _ := utils.Exists(fs, filepath.Join(spec.Sysroot, "/etc/fstab"))
 			Expect(ok).To(BeFalse())
+		})
+	})
+	Describe("Mount Volumes", func() {
+		It("mounts expected volumes without errors", func() {
+			spec.Volumes = append(spec.Volumes,
+				&v1.VolumeMount{
+					Device:     "LABEL=TEST",
+					Mountpoint: "/a/path",
+				}, &v1.VolumeMount{
+					Device:     "PARTLABEL=partitionlabel",
+					Mountpoint: "/a/different/path",
+				}, &v1.VolumeMount{
+					Device:     "UUID=someuuidgoeshere",
+					Mountpoint: "/a/path",
+				},
+			)
+			Expect(action.MountVolumes(cfg, spec)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(len(list)).To(Equal(5))
+			// Note they were sorted according to the mountpoint
+			Expect(list[0].Device).To(Equal("/dev/disk/by-partlabel/partitionlabel"))
+			Expect(list[1].Path).To(Equal("/sysroot/a/path"))
+			Expect(list[2].Device).To(Equal("/dev/disk/by-uuid/someuuidgoeshere"))
+			Expect(list[3].Device).To(Equal("/dev/somedevice"))
+			Expect(list[4].Device).To(Equal("/dev/persistentdev"))
+		})
+		It("fails to mount a volume", func() {
+			mounter.ErrorOnMount = true
+			Expect(action.MountVolumes(cfg, spec)).NotTo(Succeed())
+		})
+		It("fails to understand a non supported device reference", func() {
+			spec.Volumes = append(spec.Volumes,
+				&v1.VolumeMount{
+					Device:     "ThisIsNotADevice",
+					Mountpoint: "/a/path",
+				},
+			)
+			Expect(action.MountVolumes(cfg, spec)).NotTo(Succeed())
+		})
+	})
+	Describe("Mounts ephemeral paths", func() {
+		It("mounts tmpfs overlays paths without errors", func() {
+			spec.Ephemeral.Paths = []string{"/etc"}
+			Expect(action.MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(list[0].Device).To(Equal("tmpfs"))
+			Expect(list[1].Path).To(Equal("/sysroot/etc"))
+			Expect(list[1].Device).To(Equal("overlay"))
+		})
+		It("mounts overlays paths on a block device without errors", func() {
+			spec.Ephemeral.Paths = []string{"/etc"}
+			spec.Ephemeral.Type = "block"
+			spec.Ephemeral.Device = "/dev/some/device"
+			Expect(action.MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(list[0].Device).To(Equal("/dev/some/device"))
+			Expect(list[1].Path).To(Equal("/sysroot/etc"))
+			Expect(list[1].Device).To(Equal("overlay"))
+		})
+		It("fails to mount a volume", func() {
+			mounter.ErrorOnMount = true
+			Expect(action.MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral)).NotTo(Succeed())
+		})
+		It("fails with invalid overlay type", func() {
+			spec.Ephemeral.Type = "invalid"
+			Expect(action.MountEphemeral(cfg, spec.Sysroot, spec.Ephemeral)).NotTo(Succeed())
+		})
+	})
+	Describe("Mounts persistent paths", func() {
+		It("mounts persistent binded paths without errors", func() {
+			Expect(action.MountPersistent(cfg, spec)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(list[0].Device).To(ContainSubstring("some-path.bind"))
+			Expect(list[0].Path).To(ContainSubstring("/sysroot/some/path"))
+		})
+		It("mounts persistent overlay paths without errors", func() {
+			spec.Persistent.Mode = constants.OverlayMode
+			Expect(action.MountPersistent(cfg, spec)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(list[0].Device).To(ContainSubstring("overlay"))
+			Expect(list[0].Path).To(ContainSubstring("/sysroot/some/path"))
+		})
+		It("does nothing recovery mode", func() {
+			spec.Mode = constants.RecoveryImgName
+			Expect(action.MountPersistent(cfg, spec)).To(Succeed())
+			list, _ := mounter.List()
+			Expect(len(list)).To(Equal(0))
+		})
+		It("fails to mount a path", func() {
+			mounter.ErrorOnMount = true
+			Expect(action.MountPersistent(cfg, spec)).NotTo(Succeed())
+		})
+		It("fails to sync bind mounts", func() {
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				switch cmd {
+				case "rsync":
+					return []byte{}, fmt.Errorf("rsync error")
+				default:
+					return []byte{}, nil
+				}
+			}
+			err := action.MountPersistent(cfg, spec)
+			Expect(err.Error()).To(ContainSubstring("rsync error"))
 		})
 	})
 })

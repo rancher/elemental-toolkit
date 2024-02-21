@@ -175,7 +175,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 	log.Infof("Starting rsync...")
 
-	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls"}
+	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--delete"}
 	for _, e := range excludes {
 		args = append(args, fmt.Sprintf("--exclude=%s", e))
 	}
@@ -284,7 +284,7 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 	return nil
 }
 
-// LoadEnvFile will try to parse the file given and return a map with the kye/values
+// LoadEnvFile will try to parse the file given and return a map with the key/values
 func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 	var envMap map[string]string
 	var err error
@@ -301,6 +301,37 @@ func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 	}
 
 	return envMap, err
+}
+
+// WriteEnvFile will write the given environment file with the given key/values
+func WriteEnvFile(fs v1.FS, envs map[string]string, filename string) error {
+	var bkFile string
+
+	rawPath, err := fs.RawPath(filename)
+	if err != nil {
+		return err
+	}
+
+	if ok, _ := Exists(fs, filename, true); ok {
+		bkFile = filename + ".bk"
+		err = fs.Rename(filename, bkFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = godotenv.Write(envs, rawPath)
+	if err != nil {
+		if bkFile != "" {
+			// try to restore renamed file
+			_ = fs.Rename(bkFile, filename)
+		}
+		return err
+	}
+	if bkFile != "" {
+		_ = fs.Remove(bkFile)
+	}
+	return nil
 }
 
 // IsLocalURI returns true if the uri has "file" scheme or no scheme and URI is

@@ -61,7 +61,7 @@ stages:
     # 
     - &bootgrub
       name: "Add boot assessment grub configuration"
-      if: '[ ! -f "/run/elemental/state/grub_boot_assessment" ]'
+      if: '[ ! -f "/run/elemental/efi/grub_boot_assessment" ]'
       files:
        - path: "/run/elemental/efi/grub_boot_assessment"
          owner: 0

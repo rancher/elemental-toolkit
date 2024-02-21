@@ -54,12 +54,5 @@ func FakeLoopDeviceSnapshotsStatus(fs v1.FS, rootDir string, snapsCount int) err
 	if err != nil {
 		return err
 	}
-	for i = 1; i <= snapsCount-1; i++ {
-		snapshotFile = filepath.Join("..", strconv.Itoa(i), "snapshot.img")
-		err = fs.Symlink(snapshotFile, filepath.Join(passivesPath, fmt.Sprintf(constants.PassiveSnapshot, i)))
-		if err != nil {
-			return err
-		}
-	}
 	return err
 }

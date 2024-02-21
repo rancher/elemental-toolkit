@@ -78,20 +78,20 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	})
 
 	It("creates a new LoopDevice snapshotter instance", func() {
-		Expect(snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)).Error().NotTo(HaveOccurred())
+		Expect(snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)).Error().NotTo(HaveOccurred())
 
 		// Invalid snapshotter type
 		snapCfg.Type = "invalid"
-		Expect(snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)).Error().To(HaveOccurred())
+		Expect(snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)).Error().To(HaveOccurred())
 
 		// Invalid snapshotter type
 		snapCfg.Type = constants.LoopDeviceSnapshotterType
 		snapCfg.Config = map[string]string{}
-		Expect(snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)).Error().To(HaveOccurred())
+		Expect(snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)).Error().To(HaveOccurred())
 	})
 
 	It("inits a snapshotter", func() {
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
@@ -105,7 +105,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "cOS"), constants.DirPerm)).To(Succeed())
 		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
 
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
@@ -117,7 +117,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 	It("fails to init if it can't create working directories", func() {
 		cfg.Fs = vfs.NewReadOnlyFS(fs)
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
@@ -126,7 +126,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	})
 
 	It("starts a transaction", func() {
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
@@ -145,7 +145,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/active.img"), []byte("active image"), constants.FilePerm)).To(Succeed())
 		Expect(fs.WriteFile(filepath.Join(rootDir, "cOS/passive.img"), []byte("passive image"), constants.FilePerm)).To(Succeed())
 
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
@@ -163,14 +163,14 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	})
 
 	It("fails to start a transaction without being initiated first", func() {
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(lp.StartTransaction()).Error().To(HaveOccurred())
 	})
 
 	It("fails to start a transaction if working directory bind mount fails", func() {
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		mounter.ErrorOnMount = true
@@ -180,7 +180,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	})
 
 	It("fails to get available snapshots on a not initated system", func() {
-		lp, err := snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(lp.GetSnapshots()).Error().To(HaveOccurred())
@@ -188,7 +188,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 	Describe("using loopdevice on sixth snapshot", func() {
 		var err error
-		var lp *snapshotter.LoopDevice
+		var lp v1.Snapshotter
 
 		BeforeEach(func() {
 
@@ -201,7 +201,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 				return []byte(""), nil
 			}
 
-			lp, err = snapshotter.NewLoopDeviceSnapshotter(cfg, snapCfg, bootloader)
+			lp, err = snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
 		})
@@ -299,7 +299,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Expect(snap.InProgress).To(BeTrue())
 
 			snap.InProgress = false
-			Expect(lp.CloseTransaction(snap)).To(Succeed())
+			Expect(lp.CloseTransaction(snap)).NotTo(Succeed())
 			Expect(lp.GetSnapshots()).To(Equal([]int{1, 2, 3, 4, 5}))
 		})
 

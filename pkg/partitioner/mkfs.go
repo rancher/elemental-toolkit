@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
 
@@ -49,6 +50,9 @@ func (mkfs MkfsCall) buildOptions() ([]string, error) {
 		}
 		if len(mkfs.customOpts) > 0 {
 			opts = append(opts, mkfs.customOpts...)
+		}
+		if mkfs.fileSystem == constants.Btrfs {
+			opts = append(opts, "-f")
 		}
 		opts = append(opts, mkfs.dev)
 	case fatFS:

@@ -2,16 +2,15 @@
 Description=Elemental system initramfs setup before switch root
 DefaultDependencies=no
 After=initrd-fs.target
-Requires=initrd-fs.target
+Wants=initrd-fs.target
 Before=initrd.target
 
 [Service]
 RootDirectory=/sysroot
 BindPaths=/proc /sys /dev /run /tmp
-BindPaths=-/oem
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/elemental run-stage initramfs
 
 [Install]
-RequiredBy=initrd.target
+WantedBy=initrd.target

@@ -2,7 +2,7 @@
 Description=Elemental system rootfs overlay mounts
 DefaultDependencies=no
 After=initrd-root-fs.target
-Requires=initrd-root-fs.target
+Wants=initrd-root-fs.target
 Before=initrd-fs.target
 ConditionKernelCommandLine=!rd.cos.disable
 ConditionKernelCommandLine=!elemental.disable
@@ -16,4 +16,4 @@ EnvironmentFile=-/run/elemental/mount-layout.env
 ExecStart=/usr/bin/elemental mount --debug
 
 [Install]
-RequiredBy=initrd-fs.target
+WantedBy=initrd-fs.target

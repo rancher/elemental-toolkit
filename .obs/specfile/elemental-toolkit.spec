@@ -34,7 +34,9 @@ Requires:       parted
 Requires:       rsync
 Requires:       udev
 Requires:       xfsprogs
-Requires:       xorriso >= 1.5.6
+Requires:       btrfsprogs
+Requires:       snapper
+Requires:       xorriso >= 1.5
 Requires:       mtools
 Requires:       util-linux
 Requires:       gptfdisk

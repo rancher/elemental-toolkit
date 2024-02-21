@@ -15,4 +15,4 @@ ExecStartPre=/usr/bin/ln -sf -t / /sysroot/system
 ExecStart=/usr/bin/elemental run-stage rootfs
 
 [Install]
-RequiredBy=initrd-root-fs.target
+WantedBy=initrd-root-fs.target

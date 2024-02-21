@@ -38,7 +38,6 @@ const (
 	loopDeviceImgName      = "snapshot.img"
 	loopDeviceWorkDir      = "snapshot.workDir"
 	loopDeviceLabelPattern = "EL_SNAP%d"
-	loopDevicePassivePath  = loopDeviceSnapsPath + "/passives"
 )
 
 var _ v1.Snapshotter = (*LoopDevice)(nil)
@@ -54,18 +53,24 @@ type LoopDevice struct {
 	legacyClean       bool
 }
 
-// NewLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
-func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (*LoopDevice, error) {
+// newLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
+func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader v1.Bootloader) (v1.Snapshotter, error) {
 	if snapCfg.Type != constants.LoopDeviceSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
 		cfg.Logger.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 		return nil, fmt.Errorf(msg, snapCfg.Type, constants.LoopDeviceSnapshotterType)
 	}
-	loopDevCfg, ok := snapCfg.Config.(*v1.LoopDeviceConfig)
-	if !ok {
-		msg := "failed casting LoopDeviceConfig type"
-		cfg.Logger.Errorf(msg)
-		return nil, fmt.Errorf(msg)
+	var loopDevCfg *v1.LoopDeviceConfig
+	var ok bool
+	if snapCfg.Config == nil {
+		loopDevCfg = v1.NewLoopDeviceConfig()
+	} else {
+		loopDevCfg, ok = snapCfg.Config.(*v1.LoopDeviceConfig)
+		if !ok {
+			msg := "failed casting LoopDeviceConfig type"
+			cfg.Logger.Errorf(msg)
+			return nil, fmt.Errorf(msg)
+		}
 	}
 	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: *loopDevCfg, bootloader: bootloader}, nil
 }
@@ -73,19 +78,33 @@ func NewLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootl
 // InitSnapshotter initiates the snapshotter to the given root directory. More over this method includes logic to migrate
 // from older elemental-toolkit versions.
 func (l *LoopDevice) InitSnapshotter(rootDir string) error {
+	var err error
+
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", rootDir)
 	l.rootDir = rootDir
-
-	err := utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDevicePassivePath), constants.DirPerm)
-	if err != nil {
-		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
-		return err
-	}
 
 	// Check the existence of a legacy deployment
 	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, constants.LegacyImagesPath)); ok {
 		l.cfg.Logger.Info("Legacy deployment detected running migration logic")
 		l.legacyClean = true
+
+		// Legacy deployments might not include RW mounts for state partitions
+		if ok, _ := elemental.IsRWMountPoint(l.cfg, l.rootDir); !ok {
+			err = l.cfg.Mounter.Mount("", l.rootDir, "auto", []string{"remount", "rw"})
+			if err != nil {
+				l.cfg.Logger.Errorf("Failed remounting root as RW: %v", err)
+				return err
+			}
+		}
+	}
+
+	err = utils.MkdirAll(l.cfg.Fs, filepath.Join(rootDir, loopDeviceSnapsPath), constants.DirPerm)
+	if err != nil {
+		l.cfg.Logger.Errorf("failed creating snapshots directory tree: %v", err)
+		return err
+	}
+
+	if l.legacyClean {
 		image := filepath.Join(rootDir, constants.LegacyActivePath)
 
 		// Migrate passive image if running the transaction in passive mode
@@ -198,20 +217,21 @@ func (l *LoopDevice) CloseTransactionOnError(snapshot *v1.Snapshot) error {
 // CloseTransaction closes the transaction for the given snapshot. This is the responsible of setting new active and
 // passive snapshots.
 func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
-	var linkDst, newPassive, activeSnap string
+	var linkDst, activeSnap string
 
-	if !snapshot.InProgress {
-		l.cfg.Logger.Debugf("No transaction to close for snapshot %d workdir", snapshot.ID)
-		return l.cfg.Fs.RemoveAll(filepath.Dir(snapshot.Path))
-	}
 	defer func() {
 		if err != nil {
 			_ = l.CloseTransactionOnError(snapshot)
 		}
 	}()
 
+	if !snapshot.InProgress {
+		l.cfg.Logger.Debugf("No transaction to close for snapshot %d workdir", snapshot.ID)
+		return fmt.Errorf("given snapshot is not in progress")
+	}
+
 	l.cfg.Logger.Infof("Closing transaction for snapshot %d workdir", snapshot.ID)
-	l.cfg.Logger.Debugf("Unmount %s", constants.WorkingImgDir)
+	l.cfg.Logger.Debugf("Unmount %s", snapshot.MountPoint)
 	err = l.cfg.Mounter.Unmount(snapshot.MountPoint)
 	if err != nil {
 		l.cfg.Logger.Errorf("failed umounting snapshot %d workdir bind mount", snapshot.ID)
@@ -229,19 +249,6 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 		return err
 	}
 
-	// Create fallback link for current active snapshot
-	newPassive = filepath.Join(l.rootDir, loopDevicePassivePath, fmt.Sprintf(constants.PassiveSnapshot, l.activeSnapshotID))
-	if l.activeSnapshotID > 0 {
-		linkDst = fmt.Sprintf("../%d/%s", l.activeSnapshotID, loopDeviceImgName)
-		l.cfg.Logger.Debugf("creating symlink %s to %s", newPassive, linkDst)
-		err = l.cfg.Fs.Symlink(linkDst, newPassive)
-		if err != nil {
-			l.cfg.Logger.Errorf("failed creating the new passive link: %v", err)
-			return err
-		}
-		l.cfg.Logger.Infof("New passive snapshot fallback from active (%d) created", l.activeSnapshotID)
-	}
-
 	// Remove old symlink and create a new one
 	activeSnap = filepath.Join(l.rootDir, loopDeviceSnapsPath, constants.ActiveSnapshot)
 	linkDst = fmt.Sprintf("%d/%s", snapshot.ID, loopDeviceImgName)
@@ -250,7 +257,6 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	err = l.cfg.Fs.Symlink(linkDst, activeSnap)
 	if err != nil {
 		l.cfg.Logger.Errorf("failed default snapshot image for snapshot %d: %v", snapshot.ID, err)
-		_ = l.cfg.Fs.Remove(newPassive)
 		sErr := l.cfg.Fs.Symlink(fmt.Sprintf("%d/%s", l.activeSnapshotID, loopDeviceImgName), activeSnap)
 		if sErr != nil {
 			l.cfg.Logger.Warnf("could not restore previous active link")
@@ -270,7 +276,6 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 // DeleteSnapshot deletes the snapshot of the given ID. It cannot delete an snapshot that is actually booted.
 func (l *LoopDevice) DeleteSnapshot(id int) error {
 	var err error
-	var snapLink string
 
 	l.cfg.Logger.Infof("Deleting snapshot %d", id)
 	inUse, err := l.isSnapshotInUse(id)
@@ -301,15 +306,12 @@ func (l *LoopDevice) DeleteSnapshot(id int) error {
 	}
 
 	if l.activeSnapshotID == id {
-		snapLink = filepath.Join(l.rootDir, loopDeviceSnapsPath, constants.ActiveSnapshot)
-	} else {
-		snapLink = filepath.Join(l.rootDir, loopDevicePassivePath, fmt.Sprintf(constants.PassiveSnapshot, id))
-	}
-
-	err = l.cfg.Fs.Remove(snapLink)
-	if err != nil {
-		l.cfg.Logger.Errorf("failed removing snapshot link %s: %v", snapLink, err)
-		return err
+		snapLink := filepath.Join(l.rootDir, loopDeviceSnapsPath, constants.ActiveSnapshot)
+		err = l.cfg.Fs.Remove(snapLink)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed removing snapshot link %s: %v", snapLink, err)
+			return err
+		}
 	}
 
 	snapDir := filepath.Join(l.rootDir, loopDeviceSnapsPath, strconv.Itoa(id))
@@ -324,20 +326,30 @@ func (l *LoopDevice) DeleteSnapshot(id int) error {
 func (l *LoopDevice) GetSnapshots() ([]int, error) {
 	var ids []int
 
-	ids, err := l.getPassiveSnapshots()
-	if err != nil {
-		return nil, err
+	snapsPath := filepath.Join(l.rootDir, loopDeviceSnapsPath)
+	r := regexp.MustCompile(`^\d+$`)
+	if ok, _ := utils.Exists(l.cfg.Fs, snapsPath); ok {
+		dirs, err := l.cfg.Fs.ReadDir(snapsPath)
+		if err != nil {
+			l.cfg.Logger.Errorf("failed reading %s contents", snapsPath)
+			return ids, err
+		}
+		for _, dir := range dirs {
+			// Find snapshots based numeric directory names
+			if !r.MatchString(dir.Name()) {
+				continue
+			}
+			id, err := strconv.Atoi(dir.Name())
+			if err != nil {
+				continue
+			}
+			ids = append(ids, id)
+		}
+		l.cfg.Logger.Debugf("Found snapshots: %v", ids)
+		return ids, nil
 	}
-
-	id, err := l.getActiveSnapshot()
-	if err != nil {
-		return nil, err
-	}
-
-	if id > 0 {
-		return append(ids, id), nil
-	}
-	return ids, nil
+	l.cfg.Logger.Errorf("path %s does not exist", snapsPath)
+	return ids, fmt.Errorf("cannot determine snapshots, initate snapshotter first")
 }
 
 // SnapshotImageToSource converts the given snapshot into an ImageSource. This is useful to deploy a system
@@ -399,13 +411,13 @@ func (l *LoopDevice) getActiveSnapshot() (int, error) {
 		return -1, err
 	}
 
-	id, err := strconv.ParseInt(filepath.Base(filepath.Dir(resolved)), 10, 32)
+	id, err := strconv.Atoi(filepath.Base(filepath.Dir(resolved)))
 	if err != nil {
 		l.cfg.Logger.Errorf("failed parsing snapshot ID from path %s: %v", resolved, err)
 		return -1, err
 	}
 
-	return int(id), nil
+	return id, nil
 }
 
 // isSnapshotInUse checks if the given snapshot ID is actually the current system
@@ -470,8 +482,8 @@ func (l *LoopDevice) setBootloader() error {
 		l.cfg.Logger.Warnf("failed getting current passive snapshots: %v", err)
 		return err
 	}
-	for _, id := range ids {
-		passives = append(passives, fmt.Sprintf(constants.PassiveSnapshot, id))
+	for i := len(ids) - 1; i >= 0; i-- {
+		passives = append(passives, strconv.Itoa(ids[i]))
 	}
 
 	// We count first is active, then all passives and finally the recovery
@@ -498,38 +510,27 @@ func (l *LoopDevice) setBootloader() error {
 
 // getPassiveSnapshots returns a list of available passive snapshots
 func (l *LoopDevice) getPassiveSnapshots() ([]int, error) {
-	var ids []int
-
-	snapsPath := filepath.Join(l.rootDir, loopDevicePassivePath)
-	r := regexp.MustCompile(`passive_(\d+)`)
-	if ok, _ := utils.Exists(l.cfg.Fs, snapsPath); ok {
-		links, err := l.cfg.Fs.ReadDir(snapsPath)
-		if err != nil {
-			l.cfg.Logger.Errorf("failed reading %s contents", snapsPath)
-			return ids, err
-		}
-		for _, link := range links {
-			// Find snapshots based numeric directory names
-			if !r.MatchString(link.Name()) {
-				continue
-			}
-			matches := r.FindStringSubmatch(link.Name())
-			id, err := strconv.ParseInt(matches[1], 10, 32)
-			if err != nil {
-				continue
-			}
-			linkPath := filepath.Join(snapsPath, link.Name())
-			if exists, _ := utils.Exists(l.cfg.Fs, linkPath); exists {
-				ids = append(ids, int(id))
-			} else {
-				l.cfg.Logger.Warnf("image for snapshot %d doesn't exist", id)
-			}
-		}
-		l.cfg.Logger.Debugf("Passive snapshots: %v", ids)
-		return ids, nil
+	allIDs, err := l.GetSnapshots()
+	if err != nil {
+		l.cfg.Logger.Errorf("failed processing available snapshots list: %s", err.Error())
+		return nil, err
 	}
-	l.cfg.Logger.Errorf("path %s does not exist", snapsPath)
-	return ids, fmt.Errorf("cannot determine passive snapshots, initate snapshotter first")
+
+	activeID, err := l.getActiveSnapshot()
+	if err != nil {
+		l.cfg.Logger.Errorf("failed processing current active snapshot: %s", err.Error())
+		return nil, err
+	}
+
+	passiveIDs := []int{}
+	for _, id := range allIDs {
+		if id == activeID {
+			continue
+		}
+		passiveIDs = append(passiveIDs, id)
+	}
+
+	return passiveIDs, nil
 }
 
 // legacyImageToSnapshot is method to migrate existing legacy passive.img or active.img as a new loop device snapshot
@@ -551,14 +552,6 @@ func (l *LoopDevice) legacyImageToSnapsot(image string) error {
 		err = l.cfg.Fs.Link(image, filepath.Join(snapPath, loopDeviceImgName))
 		if err != nil {
 			l.cfg.Logger.Errorf("failed copying legacy image as snapshot: %v", err)
-			return err
-		}
-
-		passiveLink := fmt.Sprintf("../%d/%s", id, loopDeviceImgName)
-		newPassive := filepath.Join(l.rootDir, loopDevicePassivePath, fmt.Sprintf(constants.PassiveSnapshot, id))
-		err = l.cfg.Fs.Symlink(passiveLink, newPassive)
-		if err != nil {
-			l.cfg.Logger.Errorf("failed creating the passive link for legacy images: %v", err)
 			return err
 		}
 	}

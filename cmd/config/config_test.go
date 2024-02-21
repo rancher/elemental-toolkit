@@ -288,7 +288,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 			err = fs.Mkdir("/proc", constants.DirPerm)
 			Expect(err).Should(BeNil())
-			err = fs.WriteFile("/proc/cmdline", []byte("root=LABEL=COS_STATE elemental.image=active elemental.overlay=tmpfs:30%"), 0444)
+			err = fs.WriteFile("/proc/cmdline", []byte("root=LABEL=COS_STATE elemental.mode=active elemental.overlay=tmpfs:30%"), 0444)
 			Expect(err).Should(BeNil())
 
 			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)

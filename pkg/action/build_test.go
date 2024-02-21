@@ -251,7 +251,6 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
-				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
 				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())

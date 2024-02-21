@@ -17,5 +17,7 @@ func CheckPartitionValues(diskLayout sut.DiskLayout, entry sut.PartitionEntry) {
 	part, err := diskLayout.GetPartition(entry.Label)
 	Expect(err).To(BeNil())
 	Expect((part.Size / 1024) / 1024).To(Equal(entry.Size))
-	Expect(part.FsType).To(Equal(entry.FsType))
+	if entry.FsType != "" {
+		Expect(part.FsType).To(Equal(entry.FsType))
+	}
 }

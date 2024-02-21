@@ -26,15 +26,15 @@ install() {
 
     inst_simple "/etc/systemd/system/elemental-setup-rootfs.service" \
         "${systemdsystemunitdir}/elemental-setup-rootfs.service"
-    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-root-fs.target.requires"
+    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-root-fs.target.wants"
     ln_r "../elemental-setup-rootfs.service" \
-        "${systemdsystemunitdir}/initrd-root-fs.target.requires/elemental-setup-rootfs.service"
+        "${systemdsystemunitdir}/initrd-root-fs.target.wants/elemental-setup-rootfs.service"
 
     inst_simple "/etc/systemd/system/elemental-setup-initramfs.service" \
         "${systemdsystemunitdir}/elemental-setup-initramfs.service"
-    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-fs.target.requires"
+    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd.target.wants"
     ln_r "../elemental-setup-initramfs.service" \
-        "${systemdsystemunitdir}/initrd-fs.target.requires/elemental-setup-initramfs.service"
+        "${systemdsystemunitdir}/initrd.target.wants/elemental-setup-initramfs.service"
 
     dracut_need_initqueue
 }

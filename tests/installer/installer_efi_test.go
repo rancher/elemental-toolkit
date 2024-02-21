@@ -55,9 +55,8 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 
 					for _, part := range []sut.PartitionEntry{
 						{
-							Label:  "COS_STATE",
-							Size:   6144,
-							FsType: sut.Ext4,
+							Label: "COS_STATE",
+							Size:  6144,
 						},
 						{
 							Label:  "COS_OEM",
