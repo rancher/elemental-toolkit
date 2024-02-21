@@ -159,11 +159,21 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 	}
 	cleanup.Push(umount)
 
-	return r.cfg.WriteInstallState(
+	if err := r.cfg.WriteInstallState(
 		installState,
 		filepath.Join(r.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
+	); err != nil {
+		return fmt.Errorf("writing install state: %w", err)
+	}
+
+	if err := r.cfg.WriteInstallState(
+		installState,
 		filepath.Join(r.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
-	)
+	); err != nil {
+		return fmt.Errorf("writing recovery install state: %w", err)
+	}
+
+	return nil
 }
 
 // ResetRun will reset the cos system to by following several steps

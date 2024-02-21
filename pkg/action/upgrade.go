@@ -206,8 +206,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 	}
 
 	return u.cfg.WriteInstallState(
-		u.spec.State, statePath,
-		filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
+		u.spec.State,
+		statePath,
 	)
 }
 
@@ -325,24 +325,17 @@ func (u *UpgradeAction) Run() (err error) {
 			}
 			recoverySystem.Source.SetDigest(u.spec.System.GetDigest())
 		}
-		err = elemental.DeployImage(u.cfg.Config, &recoverySystem)
+
+		upgradeRecoveryAction, err := NewUpgradeRecoveryAction(u.cfg, &v1.UpgradeRecoverySpec{
+			RecoverySystem: recoverySystem,
+			Partitions:     u.spec.Partitions,
+			State:          u.spec.State,
+		})
 		if err != nil {
-			u.cfg.Logger.Error("failed deploying recovery image")
-			return elementalError.NewFromError(err, elementalError.DeployImage)
+			return fmt.Errorf("creating new upgrade recovery action: %w", err)
 		}
-		recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
-		transitionFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.TransitionImgFile)
-		if ok, _ := utils.Exists(u.cfg.Fs, recoveryFile); ok {
-			err = u.cfg.Fs.Remove(recoveryFile)
-			if err != nil {
-				u.Error("failed removing old recovery image")
-				return err
-			}
-		}
-		err = u.cfg.Fs.Rename(transitionFile, recoveryFile)
-		if err != nil {
-			u.Error("failed renaming transition recovery image")
-			return err
+		if err := upgradeRecoveryAction.Run(); err != nil {
+			return fmt.Errorf("upgrading recovery: %w", err)
 		}
 	}
 

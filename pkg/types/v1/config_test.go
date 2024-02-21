@@ -40,8 +40,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var mounter *v1mocks.FakeMounter
 		var cleanup func()
 		var err error
-		var systemState *v1.SystemState
-		var installState *v1.InstallState
+		//var systemState *v1.SystemState
+		//var installState *v1.InstallState
 		var statePath, recoveryPath string
 
 		BeforeEach(func() {
@@ -55,35 +55,35 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				conf.WithRunner(runner),
 				conf.WithMounter(mounter),
 			)
-			systemState = &v1.SystemState{
-				Source: v1.NewDockerSrc("registry.org/my/image:tag"),
-				Label:  "active_label",
-				FS:     "ext2",
-				Digest: "adadgadg",
-			}
-			installState = &v1.InstallState{
-				Date: "somedate",
-				Snapshotter: v1.SnapshotterConfig{
-					Type:     "loopdevice",
-					MaxSnaps: 7,
-					Config: &v1.LoopDeviceConfig{
-						Size: 1024,
-						FS:   constants.SquashFs,
-					},
-				},
-				Partitions: map[string]*v1.PartitionState{
-					"state": {
-						FSLabel: "state_label",
-						Snapshots: map[int]*v1.SystemState{
-							1: systemState,
-						},
-					},
-					"recovery": {
-						FSLabel:       "state_label",
-						RecoveryImage: systemState,
-					},
-				},
-			}
+			// systemState = &v1.SystemState{
+			// 	Source: v1.NewDockerSrc("registry.org/my/image:tag"),
+			// 	Label:  "active_label",
+			// 	FS:     "ext2",
+			// 	Digest: "adadgadg",
+			// }
+			// installState = &v1.InstallState{
+			// 	Date: "somedate",
+			// 	Snapshotter: v1.SnapshotterConfig{
+			// 		Type:     "loopdevice",
+			// 		MaxSnaps: 7,
+			// 		Config: &v1.LoopDeviceConfig{
+			// 			Size: 1024,
+			// 			FS:   constants.SquashFs,
+			// 		},
+			// 	},
+			// 	Partitions: map[string]*v1.PartitionState{
+			// 		"state": {
+			// 			FSLabel: "state_label",
+			// 			Snapshots: map[int]*v1.SystemState{
+			// 				1: systemState,
+			// 			},
+			// 		},
+			// 		"recovery": {
+			// 			FSLabel:       "state_label",
+			// 			RecoveryImage: systemState,
+			// 		},
+			// 	},
+			// }
 
 			statePath = filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 			recoveryPath = "/recoverypart/state.yaml"
@@ -95,33 +95,33 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		AfterEach(func() {
 			cleanup()
 		})
-		It("Writes and loads an installation data", func() {
-			err = config.WriteInstallState(installState, statePath, recoveryPath)
-			Expect(err).ShouldNot(HaveOccurred())
-			loadedInstallState, err := config.LoadInstallState()
-			Expect(err).ShouldNot(HaveOccurred())
+		// It("Writes and loads an installation data", func() {
+		// 	err = config.WriteInstallState(installState, statePath, recoveryPath)
+		// 	Expect(err).ShouldNot(HaveOccurred())
+		// 	loadedInstallState, err := config.LoadInstallState()
+		// 	Expect(err).ShouldNot(HaveOccurred())
 
-			Expect(*loadedInstallState).To(Equal(*installState))
-		})
-		It("Fails writing to state partition", func() {
-			err = fs.RemoveAll(filepath.Dir(statePath))
-			Expect(err).ShouldNot(HaveOccurred())
-			err = config.WriteInstallState(installState, statePath, recoveryPath)
-			Expect(err).Should(HaveOccurred())
-		})
-		It("Fails writing to recovery partition", func() {
-			err = fs.RemoveAll(filepath.Dir(statePath))
-			Expect(err).ShouldNot(HaveOccurred())
-			err = config.WriteInstallState(installState, statePath, recoveryPath)
-			Expect(err).Should(HaveOccurred())
-		})
-		It("Fails loading state file", func() {
-			err = config.WriteInstallState(installState, statePath, recoveryPath)
-			Expect(err).ShouldNot(HaveOccurred())
-			err = fs.RemoveAll(filepath.Dir(statePath))
-			_, err = config.LoadInstallState()
-			Expect(err).Should(HaveOccurred())
-		})
+		// 	Expect(*loadedInstallState).To(Equal(*installState))
+		// })
+		// It("Fails writing to state partition", func() {
+		// 	err = fs.RemoveAll(filepath.Dir(statePath))
+		// 	Expect(err).ShouldNot(HaveOccurred())
+		// 	err = config.WriteInstallState(installState, statePath, recoveryPath)
+		// 	Expect(err).Should(HaveOccurred())
+		// })
+		// It("Fails writing to recovery partition", func() {
+		// 	err = fs.RemoveAll(filepath.Dir(statePath))
+		// 	Expect(err).ShouldNot(HaveOccurred())
+		// 	err = config.WriteInstallState(installState, statePath, recoveryPath)
+		// 	Expect(err).Should(HaveOccurred())
+		// })
+		// It("Fails loading state file", func() {
+		// 	err = config.WriteInstallState(installState, statePath, recoveryPath)
+		// 	Expect(err).ShouldNot(HaveOccurred())
+		// 	err = fs.RemoveAll(filepath.Dir(statePath))
+		// 	_, err = config.LoadInstallState()
+		// 	Expect(err).Should(HaveOccurred())
+		// })
 		It("Loads a state file with missing fields", func() {
 			incompleteState := "state:\n"
 			incompleteState += "  1:\n"

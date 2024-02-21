@@ -377,6 +377,46 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 	}, nil
 }
 
+// NewUpgradeRecoverySpec returns an UpgradeRecoverySpec struct all based on defaults and current host state
+func NewUpgradeRecoverySpec(cfg v1.Config) (*v1.UpgradeRecoverySpec, error) {
+	var rState *v1.SystemState
+	var recovery v1.Image
+
+	installState, err := cfg.LoadInstallState()
+	if err != nil {
+		cfg.Logger.Warnf("failed reading installation state: %s", err.Error())
+	}
+
+	rState = getRecoveryState(installState)
+
+	parts, err := utils.GetAllPartitions()
+	if err != nil {
+		return nil, fmt.Errorf("could not read host partitions")
+	}
+	ep := v1.NewElementalPartitionsFromList(parts, installState)
+
+	if ep.Recovery != nil {
+		if ep.Recovery.MountPoint == "" {
+			ep.Recovery.MountPoint = constants.RecoveryDir
+		}
+
+		recovery = v1.Image{
+			File:       filepath.Join(ep.Recovery.MountPoint, constants.TransitionImgFile),
+			Size:       constants.ImgSize,
+			Label:      rState.Label,
+			FS:         rState.FS,
+			MountPoint: constants.TransitionDir,
+			Source:     v1.NewEmptySrc(),
+		}
+	}
+
+	return &v1.UpgradeRecoverySpec{
+		RecoverySystem: recovery,
+		Partitions:     ep,
+		State:          installState,
+	}, nil
+}
+
 // NewResetSpec returns a ResetSpec struct all based on defaults and current host state
 func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	var imgSource *v1.ImageSource

@@ -147,11 +147,21 @@ func (i *InstallAction) createInstallStateYaml() error {
 		}
 	}
 
-	return i.cfg.WriteInstallState(
+	if err := i.cfg.WriteInstallState(
 		installState,
 		filepath.Join(i.spec.Partitions.State.MountPoint, cnst.InstallStateFile),
+	); err != nil {
+		return fmt.Errorf("writing install state: %w", err)
+	}
+
+	if err := i.cfg.WriteInstallState(
+		installState,
 		filepath.Join(i.spec.Partitions.Recovery.MountPoint, cnst.InstallStateFile),
-	)
+	); err != nil {
+		return fmt.Errorf("writing recovery install state: %w", err)
+	}
+
+	return nil
 }
 
 // InstallRun will install the system from a given configuration

@@ -452,6 +452,29 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, er
 	return upgrade, err
 }
 
+func ReadUpgradeRecoverySpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeRecoverySpec, error) {
+	upgrade, err := config.NewUpgradeRecoverySpec(r.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed initializing upgrade spec: %v", err)
+	}
+	vp := viper.Sub("upgrade")
+	if vp == nil {
+		vp = viper.New()
+	}
+	// Bind upgrade cmd flags
+	bindGivenFlags(vp, flags)
+	// Bind upgrade env vars
+	viperReadEnv(vp, "UPGRADE", constants.GetUpgradeKeyEnvMap())
+
+	err = vp.Unmarshal(upgrade, setDecoder, decodeHook)
+	if err != nil {
+		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
+	}
+	err = upgrade.Sanitize()
+	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
+	return upgrade, err
+}
+
 func ReadBuildISO(b *v1.BuildConfig, flags *pflag.FlagSet) (*v1.LiveISO, error) {
 	iso := config.NewISO()
 	vp := viper.Sub("iso")

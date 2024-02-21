@@ -714,15 +714,21 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 		}
 	}
 
-	statePath := ""
-	if !b.spec.Expandable {
-		statePath = filepath.Join(stateRoot, constants.InstallStateFile)
+	if err := b.cfg.WriteInstallState(
+		installState,
+		filepath.Join(stateRoot, constants.InstallStateFile),
+	); err != nil {
+		return fmt.Errorf("writing install state: %w", err)
 	}
 
-	return b.cfg.WriteInstallState(
-		installState, statePath,
+	if err := b.cfg.WriteInstallState(
+		installState,
 		filepath.Join(recoveryRoot, constants.InstallStateFile),
-	)
+	); err != nil {
+		return fmt.Errorf("writing recovery install state: %w", err)
+	}
+
+	return nil
 }
 
 func (b *BuildDiskAction) SetExpandableCloudInitStage() error {

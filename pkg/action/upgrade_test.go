@@ -205,7 +205,7 @@ var _ = Describe("Runtime Actions", func() {
 						},
 					},
 				}
-				err = config.WriteInstallState(installState, statePath, statePath)
+				err = config.WriteInstallState(installState, statePath)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				// Limit maximum snapshots to 2
@@ -314,7 +314,7 @@ var _ = Describe("Runtime Actions", func() {
 						},
 					},
 				}
-				err = config.WriteInstallState(installState, statePath, statePath)
+				err = config.WriteInstallState(installState, statePath)
 				Expect(err).ShouldNot(HaveOccurred())
 
 				recoveryImg = filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
