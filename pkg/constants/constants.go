@@ -182,6 +182,7 @@ const (
 	LegacyPassivePath = LegacyImagesPath + "/passive.img"
 	LegacyActivePath  = LegacyImagesPath + "/active.img"
 	LegacyStateDir    = "/run/initramfs/cos-state"
+	LegacyGrubCfgPath = "/etc/cos"
 )
 
 // GetDefaultSystemEcludes returns a list of transient paths
