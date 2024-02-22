@@ -28,28 +28,28 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
-	var cfg v2.Config
+	var cfg types.Config
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var cleanup func()
 	var bootloader *v2mock.FakeBootloader
 	var memLog *bytes.Buffer
-	var snapCfg v2.SnapshotterConfig
+	var snapCfg types.SnapshotterConfig
 	var rootDir, efiDir string
-	var statePart *v2.Partition
+	var statePart *types.Partition
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
-		statePart = &v2.Partition{
+		statePart = &types.Partition{
 			Name:       constants.StatePartName,
 			Path:       "/dev/state-device",
 			MountPoint: rootDir,
@@ -59,8 +59,8 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 		mounter = v2mock.NewFakeMounter()
 		bootloader = &v2mock.FakeBootloader{}
 		memLog = bytes.NewBuffer(nil)
-		logger = v2.NewBufferLogger(memLog)
-		logger.SetLevel(v2.DebugLevel())
+		logger = types.NewBufferLogger(memLog)
+		logger.SetLevel(types.DebugLevel())
 
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -73,7 +73,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			conf.WithMounter(mounter),
 			conf.WithPlatform("linux/amd64"),
 		)
-		snapCfg = v2.SnapshotterConfig{
+		snapCfg = types.SnapshotterConfig{
 			Type:     constants.BtrfsSnapshotterType,
 			MaxSnaps: 4,
 		}
@@ -97,7 +97,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 	})
 
 	Describe("Running transaction", func() {
-		var b v2.Snapshotter
+		var b types.Snapshotter
 		var err error
 
 		BeforeEach(func() {
@@ -127,7 +127,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			})
 
 			Describe("Closing a transaction on a clean install", func() {
-				var snap *v2.Snapshot
+				var snap *types.Snapshot
 				BeforeEach(func() {
 					snap, err = b.StartTransaction()
 					Expect(err).NotTo(HaveOccurred())
@@ -288,7 +288,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			})
 
 			Describe("Closing a transaction on a recovery system", func() {
-				var snap *v2.Snapshot
+				var snap *types.Snapshot
 				BeforeEach(func() {
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 						fullCmd := strings.Join(append([]string{cmd}, args...), " ")
@@ -482,7 +482,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			})
 
 			Describe("Closing a transaction on an active system", func() {
-				var snap *v2.Snapshot
+				var snap *types.Snapshot
 				BeforeEach(func() {
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 						fullCmd := strings.Join(append([]string{cmd}, args...), " ")

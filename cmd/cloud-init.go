@@ -22,7 +22,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/cmd/config"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 
 	"github.com/rancher/yip/pkg/schema"
 	"github.com/spf13/cobra"
@@ -38,7 +38,7 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			_ = viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), v2.NewDummyMounter())
+			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), types.NewDummyMounter())
 			if err != nil {
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}

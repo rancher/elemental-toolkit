@@ -25,7 +25,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -49,20 +49,20 @@ func grubCfgTemplate(arch string) string {
 }
 
 type BuildISOAction struct {
-	cfg        *v2.BuildConfig
-	spec       *v2.LiveISO
-	bootloader v2.Bootloader
+	cfg        *types.BuildConfig
+	spec       *types.LiveISO
+	bootloader types.Bootloader
 }
 
 type BuildISOActionOption func(a *BuildISOAction)
 
-func WithLiveBootloader(b v2.Bootloader) BuildISOActionOption {
+func WithLiveBootloader(b types.Bootloader) BuildISOActionOption {
 	return func(a *BuildISOAction) {
 		a.bootloader = b
 	}
 }
 
-func NewBuildISOAction(cfg *v2.BuildConfig, spec *v2.LiveISO, opts ...BuildISOActionOption) *BuildISOAction {
+func NewBuildISOAction(cfg *types.BuildConfig, spec *types.LiveISO, opts ...BuildISOActionOption) *BuildISOAction {
 	b := &BuildISOAction{
 		cfg:  cfg,
 		spec: spec,
@@ -131,7 +131,7 @@ func (b *BuildISOAction) ISORun() error {
 		return elementalError.NewFromError(err, elementalError.CreateDir)
 	}
 
-	if b.spec.Firmware == v2.EFI {
+	if b.spec.Firmware == types.EFI {
 		b.cfg.Logger.Infof("Preparing EFI image...")
 		if b.spec.BootloaderInRootFs {
 			err = b.PrepareEFI(rootDir, uefiDir)
@@ -167,7 +167,7 @@ func (b *BuildISOAction) ISORun() error {
 		return err
 	}
 
-	if b.spec.Firmware == v2.EFI {
+	if b.spec.Firmware == types.EFI {
 		b.cfg.Logger.Info("Creating EFI image...")
 		err = b.createEFI(uefiDir, filepath.Join(isoTmpDir, constants.ISOEFIImg))
 		if err != nil {
@@ -251,7 +251,7 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 	align := int64(4 * 1024 * 1024)
 	efiSizeMB := (efiSize/align*align + align) / (1024 * 1024)
 
-	err = elemental.CreateFileSystemImage(b.cfg.Config, &v2.Image{
+	err = elemental.CreateFileSystemImage(b.cfg.Config, &types.Image{
 		File:  img,
 		Size:  uint(efiSizeMB),
 		FS:    constants.EfiFs,
@@ -327,7 +327,7 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 	return nil
 }
 
-func (b BuildISOAction) applySources(target string, sources ...*v2.ImageSource) error {
+func (b BuildISOAction) applySources(target string, sources ...*types.ImageSource) error {
 	for _, src := range sources {
 		err := elemental.DumpSource(b.cfg.Config, target, src)
 		if err != nil {

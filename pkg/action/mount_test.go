@@ -31,24 +31,24 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Mount Action", func() {
-	var cfg *v2.RunConfig
+	var cfg *types.RunConfig
 	var mounter *v2mock.FakeMounter
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var spec *v2.MountSpec
+	var spec *types.MountSpec
 
 	BeforeEach(func() {
 		mounter = v2mock.NewFakeMounter()
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		runner = v2mock.NewFakeRunner()
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
@@ -72,22 +72,22 @@ var _ = Describe("Mount Action", func() {
 			}
 		}
 
-		spec = &v2.MountSpec{
+		spec = &types.MountSpec{
 			Sysroot:    "/sysroot",
 			WriteFstab: true,
-			Ephemeral: v2.EphemeralMounts{
+			Ephemeral: types.EphemeralMounts{
 				Type: "tmpfs",
 				Size: "30%",
 			},
-			Persistent: v2.PersistentMounts{
+			Persistent: types.PersistentMounts{
 				Mode:  constants.BindMode,
 				Paths: []string{"/some/path"},
-				Volume: v2.VolumeMount{
+				Volume: types.VolumeMount{
 					Mountpoint: constants.PersistentDir,
 					Device:     "/dev/persistentdev",
 				},
 			},
-			Volumes: []*v2.VolumeMount{
+			Volumes: []*types.VolumeMount{
 				{
 					Mountpoint: "/run/elemental",
 					Device:     "/dev/somedevice",
@@ -147,9 +147,9 @@ var _ = Describe("Mount Action", func() {
 		})
 
 		It("Does not write fstab if not requested", func() {
-			spec := &v2.MountSpec{
+			spec := &types.MountSpec{
 				WriteFstab: false,
-				Ephemeral: v2.EphemeralMounts{
+				Ephemeral: types.EphemeralMounts{
 					Size: "30%",
 				},
 			}
@@ -164,13 +164,13 @@ var _ = Describe("Mount Action", func() {
 	Describe("Mount Volumes", func() {
 		It("mounts expected volumes without errors", func() {
 			spec.Volumes = append(spec.Volumes,
-				&v2.VolumeMount{
+				&types.VolumeMount{
 					Device:     "LABEL=TEST",
 					Mountpoint: "/a/path",
-				}, &v2.VolumeMount{
+				}, &types.VolumeMount{
 					Device:     "PARTLABEL=partitionlabel",
 					Mountpoint: "/a/different/path",
-				}, &v2.VolumeMount{
+				}, &types.VolumeMount{
 					Device:     "UUID=someuuidgoeshere",
 					Mountpoint: "/a/path",
 				},
@@ -191,7 +191,7 @@ var _ = Describe("Mount Action", func() {
 		})
 		It("fails to understand a non supported device reference", func() {
 			spec.Volumes = append(spec.Volumes,
-				&v2.VolumeMount{
+				&types.VolumeMount{
 					Device:     "ThisIsNotADevice",
 					Mountpoint: "/a/path",
 				},

@@ -31,27 +31,27 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	eleefi "github.com/rancher/elemental-toolkit/v2/pkg/efi"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
-	var logger v2.Logger
+	var logger types.Logger
 	var fs vfs.FS
 	var runner *v2mock.FakeRunner
 	var cleanup func()
 	var err error
 	var grub *bootloader.Grub
-	var cfg *v2.Config
+	var cfg *types.Config
 	var rootDir, efiDir string
 	var grubCfg, osRelease []byte
 	var efivars eleefi.Variables
 	var relativeTo string
 
 	BeforeEach(func() {
-		logger = v2.NewNullLogger()
+		logger = types.NewNullLogger()
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 		runner = v2mock.NewFakeRunner()

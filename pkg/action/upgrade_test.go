@@ -32,15 +32,15 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Runtime Actions", func() {
-	var config *v2.RunConfig
+	var config *types.RunConfig
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
@@ -57,7 +57,7 @@ var _ = Describe("Runtime Actions", func() {
 		mounter = v2mock.NewFakeMounter()
 		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		bootloader = &v2mock.FakeBootloader{}
 		extractor = v2mock.NewFakeImageExtractor(logger)
 		var err error
@@ -81,13 +81,13 @@ var _ = Describe("Runtime Actions", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Upgrade Action", Label("upgrade"), func() {
-		var spec *v2.UpgradeSpec
+		var spec *types.UpgradeSpec
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
 
 		BeforeEach(func() {
 			memLog = &bytes.Buffer{}
-			logger = v2.NewBufferLogger(memLog)
+			logger = types.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
 
@@ -139,8 +139,8 @@ var _ = Describe("Runtime Actions", func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec.System = v2.NewDockerSrc("alpine")
-				loopCfg, ok := config.Snapshotter.Config.(*v2.LoopDeviceConfig)
+				spec.System = types.NewDockerSrc("alpine")
+				loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				loopCfg.Size = 16
 
@@ -188,18 +188,18 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(v2mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 2)).To(Succeed())
 				// Create installState with previous install state
 				statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-				installState := &v2.InstallState{
-					Partitions: map[string]*v2.PartitionState{
+				installState := &types.InstallState{
+					Partitions: map[string]*types.PartitionState{
 						constants.StatePartName: {
 							FSLabel: "COS_STATE",
-							Snapshots: map[int]*v2.SystemState{
+							Snapshots: map[int]*types.SystemState{
 								2: {
-									Source: v2.NewDockerSrc("some/image:v2"),
+									Source: types.NewDockerSrc("some/image:v2"),
 									Digest: "somehash2",
 									Active: true,
 								},
 								1: {
-									Source: v2.NewDockerSrc("some/image:v1"),
+									Source: types.NewDockerSrc("some/image:v1"),
 									Digest: "somehash",
 								},
 							},
@@ -215,7 +215,7 @@ var _ = Describe("Runtime Actions", func() {
 				// Create a new spec to load state yaml
 				spec, err = conf.NewUpgradeSpec(config.Config)
 
-				spec.System = v2.NewDockerSrc("alpine")
+				spec.System = types.NewDockerSrc("alpine")
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())
 				err := upgrade.Run()
@@ -257,7 +257,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			It("Successfully reboots after upgrade from docker image", func() {
 				Expect(v2mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v2.NewDockerSrc("alpine")
+				spec.System = types.NewDockerSrc("alpine")
 				config.Reboot = true
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())
@@ -276,7 +276,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			It("Successfully powers off after upgrade from docker image", func() {
 				Expect(v2mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v2.NewDockerSrc("alpine")
+				spec.System = types.NewDockerSrc("alpine")
 				config.PowerOff = true
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())

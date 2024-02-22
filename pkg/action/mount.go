@@ -26,7 +26,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -41,7 +41,7 @@ const diskByPartLabel = diskBy + "partlabel"
 const diskByUUID = diskBy + "uuid"
 const runPath = "/run"
 
-func RunMount(cfg *v2.RunConfig, spec *v2.MountSpec) error {
+func RunMount(cfg *types.RunConfig, spec *types.MountSpec) error {
 	var fstabData string
 	var err error
 
@@ -85,10 +85,10 @@ func RunMount(cfg *v2.RunConfig, spec *v2.MountSpec) error {
 	return nil
 }
 
-func MountVolumes(cfg *v2.RunConfig, spec *v2.MountSpec) error {
+func MountVolumes(cfg *types.RunConfig, spec *types.MountSpec) error {
 	var errs error
 
-	volumes := map[string]*v2.VolumeMount{}
+	volumes := map[string]*types.VolumeMount{}
 	keys := []string{}
 	if spec.HasPersistent() {
 		volumes[spec.Persistent.Volume.Mountpoint] = &spec.Persistent.Volume
@@ -145,7 +145,7 @@ func MountVolumes(cfg *v2.RunConfig, spec *v2.MountSpec) error {
 	return errs
 }
 
-func MountEphemeral(cfg *v2.RunConfig, sysroot string, overlay v2.EphemeralMounts) error {
+func MountEphemeral(cfg *types.RunConfig, sysroot string, overlay types.EphemeralMounts) error {
 	if err := utils.MkdirAll(cfg.Config.Fs, constants.OverlayDir, constants.DirPerm); err != nil {
 		cfg.Logger.Errorf("Error creating directory %s: %s", constants.OverlayDir, err.Error())
 		return err
@@ -186,7 +186,7 @@ func MountEphemeral(cfg *v2.RunConfig, sysroot string, overlay v2.EphemeralMount
 	return nil
 }
 
-func MountPersistent(cfg *v2.RunConfig, spec *v2.MountSpec) error {
+func MountPersistent(cfg *types.RunConfig, spec *types.MountSpec) error {
 	mountFunc := MountOverlayPath
 	if spec.Persistent.Mode == "bind" {
 		mountFunc = MountBindPath
@@ -210,9 +210,9 @@ func MountPersistent(cfg *v2.RunConfig, spec *v2.MountSpec) error {
 	return nil
 }
 
-type MountFunc func(cfg *v2.RunConfig, sysroot, overlayDir, path string) error
+type MountFunc func(cfg *types.RunConfig, sysroot, overlayDir, path string) error
 
-func MountBindPath(cfg *v2.RunConfig, sysroot, overlayDir, path string) error {
+func MountBindPath(cfg *types.RunConfig, sysroot, overlayDir, path string) error {
 	cfg.Logger.Debugf("Mounting bind path %s", path)
 
 	base := filepath.Join(sysroot, path)
@@ -243,7 +243,7 @@ func MountBindPath(cfg *v2.RunConfig, sysroot, overlayDir, path string) error {
 	return nil
 }
 
-func MountOverlayPath(cfg *v2.RunConfig, sysroot, overlayDir, path string) error {
+func MountOverlayPath(cfg *types.RunConfig, sysroot, overlayDir, path string) error {
 	cfg.Logger.Debugf("Mounting overlay path %s", path)
 
 	lower := filepath.Join(sysroot, path)
@@ -280,7 +280,7 @@ func MountOverlayPath(cfg *v2.RunConfig, sysroot, overlayDir, path string) error
 	return nil
 }
 
-func WriteFstab(cfg *v2.RunConfig, spec *v2.MountSpec, data string) error {
+func WriteFstab(cfg *types.RunConfig, spec *types.MountSpec, data string) error {
 	var errs error
 
 	if !spec.WriteFstab {
@@ -322,7 +322,7 @@ func WriteFstab(cfg *v2.RunConfig, spec *v2.MountSpec, data string) error {
 	return cfg.Config.Fs.WriteFile(filepath.Join(spec.Sysroot, "/etc/fstab"), []byte(data), 0644)
 }
 
-func InitialFstabData(runner v2.Runner, sysroot string) (string, error) {
+func InitialFstabData(runner types.Runner, sysroot string) (string, error) {
 	var data string
 
 	mounts, err := findmnt(runner, "/")
@@ -355,8 +355,8 @@ func fstab(device, path, fstype string, flags []string) string {
 	return fmt.Sprintf("%s\t%s\t%s\t%s\t0\t0\n", device, path, fstype, strings.Join(flags, ","))
 }
 
-func findmnt(runner v2.Runner, mountpoint string) ([]*v2.VolumeMount, error) {
-	mounts := []*v2.VolumeMount{}
+func findmnt(runner types.Runner, mountpoint string) ([]*types.VolumeMount, error) {
+	mounts := []*types.VolumeMount{}
 	output, err := runner.Run("findmnt", "-Rrfno", "SOURCE,TARGET,FSTYPE,OPTIONS", mountpoint)
 	if err != nil {
 		return nil, err
@@ -374,7 +374,7 @@ func findmnt(runner v2.Runner, mountpoint string) ([]*v2.VolumeMount, error) {
 				lineFields[0] = match[1]
 			}
 		}
-		mounts = append(mounts, &v2.VolumeMount{
+		mounts = append(mounts, &types.VolumeMount{
 			Device:     lineFields[0],
 			Mountpoint: lineFields[1],
 			Options:    strings.Split(lineFields[3], ","),

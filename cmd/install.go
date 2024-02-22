@@ -26,8 +26,8 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
         "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
-	"github.com/rancher/elemental-toolkit/v2pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // NewInstallCmd returns a new instance of the install subcommand and appends it to
@@ -49,7 +49,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mounter := v2.NewMounter(path)
+			mounter := types.NewMounter(path)
 
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {
@@ -93,8 +93,8 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return install.Run()
 		},
 	}
-	firmType := newEnumFlag([]string{v2.EFI}, v2.EFI)
-	pTableType := newEnumFlag([]string{v2.GPT}, v2.GPT)
+	firmType := newEnumFlag([]string{types.EFI}, types.EFI)
+	pTableType := newEnumFlag([]string{types.GPT}, types.GPT)
 	snapshotterType := newEnumFlag(
 		[]string{constants.LoopDeviceSnapshotterType, constants.BtrfsSnapshotterType},
 		constants.LoopDeviceSnapshotterType,

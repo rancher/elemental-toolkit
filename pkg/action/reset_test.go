@@ -31,15 +31,15 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Reset action tests", func() {
-	var config *v2.RunConfig
+	var config *types.RunConfig
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
@@ -56,7 +56,7 @@ var _ = Describe("Reset action tests", func() {
 		mounter = v2mock.NewFakeMounter()
 		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		extractor = v2mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -78,7 +78,7 @@ var _ = Describe("Reset action tests", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Reset Action", Label("reset"), func() {
-		var spec *v2.ResetSpec
+		var spec *types.ResetSpec
 		var reset *action.ResetAction
 		var cmdFail, bootedFrom string
 		var err error
@@ -144,7 +144,7 @@ var _ = Describe("Reset action tests", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(spec.System.IsEmpty()).To(BeFalse())
 
-			loopCfg, ok := config.Snapshotter.Config.(*v2.LoopDeviceConfig)
+			loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			loopCfg.Size = 16
 
@@ -177,7 +177,7 @@ var _ = Describe("Reset action tests", func() {
 		It("Successfully resets from a squashfs recovery image", Label("channel"), func() {
 			err := utils.MkdirAll(config.Fs, constants.ISOBaseTree, constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
-			spec.System = v2.NewDirSrc(constants.ISOBaseTree)
+			spec.System = types.NewDirSrc(constants.ISOBaseTree)
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {
@@ -185,7 +185,7 @@ var _ = Describe("Reset action tests", func() {
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
-			spec.System = v2.NewDockerSrc("my/image:latest")
+			spec.System = types.NewDockerSrc("my/image:latest")
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a channel package", Label("channel"), func() {

@@ -27,7 +27,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -50,7 +50,7 @@ func (r *ResetAction) resetChrootHook(hook string, root string) error {
 
 type ResetActionOption func(r *ResetAction) error
 
-func WithResetBootloader(bootloader v2.Bootloader) func(r *ResetAction) error {
+func WithResetBootloader(bootloader types.Bootloader) func(r *ResetAction) error {
 	return func(i *ResetAction) error {
 		i.bootloader = bootloader
 		return nil
@@ -58,14 +58,14 @@ func WithResetBootloader(bootloader v2.Bootloader) func(r *ResetAction) error {
 }
 
 type ResetAction struct {
-	cfg         *v2.RunConfig
-	spec        *v2.ResetSpec
-	bootloader  v2.Bootloader
-	snapshotter v2.Snapshotter
-	snapshot    *v2.Snapshot
+	cfg         *types.RunConfig
+	spec        *types.ResetSpec
+	bootloader  types.Bootloader
+	snapshotter types.Snapshotter
+	snapshot    *types.Snapshot
 }
 
-func NewResetAction(cfg *v2.RunConfig, spec *v2.ResetSpec, opts ...ResetActionOption) (*ResetAction, error) {
+func NewResetAction(cfg *types.RunConfig, spec *types.ResetSpec, opts ...ResetActionOption) (*ResetAction, error) {
 	var err error
 
 	r := &ResetAction{cfg: cfg, spec: spec}
@@ -122,13 +122,13 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 		}
 	}
 
-	installState := &v2.InstallState{
+	installState := &types.InstallState{
 		Date:        time.Now().Format(time.RFC3339),
 		Snapshotter: r.cfg.Snapshotter,
-		Partitions: map[string]*v2.PartitionState{
+		Partitions: map[string]*types.PartitionState{
 			constants.StatePartName: {
 				FSLabel: r.spec.Partitions.State.FilesystemLabel,
-				Snapshots: map[int]*v2.SystemState{
+				Snapshots: map[int]*types.SystemState{
 					r.snapshot.ID: {
 						Source: src,
 						Digest: src.GetDigest(),
@@ -139,12 +139,12 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 		},
 	}
 	if r.spec.Partitions.OEM != nil {
-		installState.Partitions[constants.OEMPartName] = &v2.PartitionState{
+		installState.Partitions[constants.OEMPartName] = &types.PartitionState{
 			FSLabel: r.spec.Partitions.OEM.FilesystemLabel,
 		}
 	}
 	if r.spec.Partitions.Persistent != nil {
-		installState.Partitions[constants.PersistentPartName] = &v2.PartitionState{
+		installState.Partitions[constants.PersistentPartName] = &types.PartitionState{
 			FSLabel: r.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}

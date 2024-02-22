@@ -23,7 +23,7 @@ import (
 	"github.com/cavaliergopher/grab/v3"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 type Client struct {
@@ -37,7 +37,7 @@ func NewClient() *Client {
 }
 
 // GetURL attempts to download the contents of the given URL to the given destination
-func (c Client) GetURL(log v2.Logger, url string, destination string) error { // nolint:revive
+func (c Client) GetURL(log types.Logger, url string, destination string) error { // nolint:revive
 	req, err := grab.NewRequest(destination, url)
 	if err != nil {
 		log.Errorf("Failed creating a request to '%s'", url)

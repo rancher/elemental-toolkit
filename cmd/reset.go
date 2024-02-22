@@ -25,7 +25,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/cmd/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
@@ -44,7 +44,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mounter := v2.NewMounter(path)
+			mounter := types.NewMounter(path)
 
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), mounter)
 			if err != nil {

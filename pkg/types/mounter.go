@@ -14,12 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
-// SourceNotFound is the error to raise when we can't find a source for install/upgrade
-type SourceNotFound struct {
+import (
+	"k8s.io/mount-utils"
+)
+
+// This is is just a redefinition of mount.Interface to types.Mounter types
+type Mounter interface {
+	Mount(source string, target string, fstype string, options []string) error
+	Unmount(target string) error
+	IsLikelyNotMountPoint(file string) (bool, error)
 }
 
-func (s *SourceNotFound) Error() string {
-	return "could not find source"
+func NewMounter(binary string) Mounter {
+	return mount.New(binary)
+}
+
+func NewDummyMounter() Mounter {
+	return mount.NewFakeMounter([]mount.MountPoint{})
 }

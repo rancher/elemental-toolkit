@@ -33,7 +33,7 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -43,10 +43,10 @@ const partTmpl = `
 %d:%ss:%ss:2048s:ext4::type=83;`
 
 var _ = Describe("Install action tests", func() {
-	var config *v2.RunConfig
+	var config *types.RunConfig
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
@@ -63,8 +63,8 @@ var _ = Describe("Install action tests", func() {
 		mounter = v2mock.NewFakeMounter()
 		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
-		logger.SetLevel(v2.DebugLevel())
+		logger = types.NewBufferLogger(memLog)
+		logger.SetLevel(types.DebugLevel())
 		extractor = v2mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -92,7 +92,7 @@ var _ = Describe("Install action tests", func() {
 		var device, cmdFail string
 		var err error
 		var cmdline func() ([]byte, error)
-		var spec *v2.InstallSpec
+		var spec *types.InstallSpec
 		var installer *action.InstallAction
 
 		BeforeEach(func() {
@@ -150,13 +150,13 @@ var _ = Describe("Install action tests", func() {
 			Expect(utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)).To(Succeed())
 
 			spec = conf.NewInstallSpec(config.Config)
-			loopCfg, ok := config.Snapshotter.Config.(*v2.LoopDeviceConfig)
+			loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			loopCfg.Size = 16
 			Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
 			Expect(spec.System.IsDir()).To(BeTrue())
 			Expect(spec.RecoverySystem.Source.Value()).To(Equal(constants.ISOBaseTree))
-			//spec.System = v2.NewDockerSrc("fake/image:tag")
+			//spec.System = types.NewDockerSrc("fake/image:tag")
 
 			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			Expect(utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)).To(Succeed())
@@ -261,7 +261,7 @@ var _ = Describe("Install action tests", func() {
 
 		It("Successfully installs a docker image", Label("docker"), func() {
 			spec.Target = device
-			spec.System = v2.NewDockerSrc("my/image:latest")
+			spec.System = types.NewDockerSrc("my/image:latest")
 			Expect(installer.Run()).To(BeNil())
 		})
 

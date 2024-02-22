@@ -20,13 +20,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // Hook is RunStage wrapper that only adds logic to ignore errors
-// in case v2.RunConfig.Strict is set to false
-func Hook(config *v2.Config, hook string, strict bool, cloudInitPaths ...string) error {
+// in case types.RunConfig.Strict is set to false
+func Hook(config *types.Config, hook string, strict bool, cloudInitPaths ...string) error {
 	config.Logger.Infof("Running %s hook", hook)
 	oldLevel := config.Logger.GetLevel()
 	config.Logger.SetLevel(logrus.ErrorLevel)
@@ -39,7 +39,7 @@ func Hook(config *v2.Config, hook string, strict bool, cloudInitPaths ...string)
 }
 
 // ChrootHook executes Hook inside a chroot environment
-func ChrootHook(config *v2.Config, hook string, strict bool, chrootDir string, bindMounts map[string]string, cloudInitPaths ...string) (err error) {
+func ChrootHook(config *types.Config, hook string, strict bool, chrootDir string, bindMounts map[string]string, cloudInitPaths ...string) (err error) {
 	callback := func() error {
 		return Hook(config, hook, strict, cloudInitPaths...)
 	}
@@ -48,7 +48,7 @@ func ChrootHook(config *v2.Config, hook string, strict bool, chrootDir string, b
 
 // PowerAction executes a power-action (Reboot/PowerOff) after completed
 // install or upgrade and returns any encountered error.
-func PowerAction(cfg *v2.RunConfig) error {
+func PowerAction(cfg *types.RunConfig) error {
 	// Reboot, poweroff or nothing
 	var (
 		err  error

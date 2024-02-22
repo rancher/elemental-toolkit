@@ -19,11 +19,11 @@ package mocks
 import (
 	"errors"
 
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"k8s.io/mount-utils"
 )
 
-var _ v2.Mounter = (*FakeMounter)(nil)
+var _ types.Mounter = (*FakeMounter)(nil)
 
 // FakeMounter is a fake mounter for tests that can error out.
 type FakeMounter struct {

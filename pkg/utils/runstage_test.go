@@ -31,7 +31,7 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -42,7 +42,7 @@ stages:
     - echo "I have a very bad feeling about this"
 `
 
-func writeCmdline(s string, fs v2.FS) error {
+func writeCmdline(s string, fs types.FS) error {
 	if err := fs.Mkdir("/proc", os.ModePerm); err != nil {
 		return err
 	}
@@ -50,9 +50,9 @@ func writeCmdline(s string, fs v2.FS) error {
 }
 
 var _ = Describe("run stage", Label("RunStage"), func() {
-	var config *v2.Config
+	var config *types.Config
 	var runner *v2mock.FakeRunner
-	var logger v2.Logger
+	var logger types.Logger
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
 	var mounter *v2mock.FakeMounter
@@ -68,7 +68,7 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 		// Use a different config with a buffer for logger, so we can check the output
 		// We also use the real fs
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 
 		config = conf.NewConfig(

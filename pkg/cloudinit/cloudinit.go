@@ -28,7 +28,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 type YipCloudInitRunner struct {
@@ -39,7 +39,7 @@ type YipCloudInitRunner struct {
 
 // NewYipCloudInitRunner returns a default yip cloud init executor with the Elemental plugin set.
 // It accepts a logger which is used inside the runner.
-func NewYipCloudInitRunner(l v2.Logger, r v2.Runner, fs vfs.FS) *YipCloudInitRunner {
+func NewYipCloudInitRunner(l types.Logger, r types.Runner, fs vfs.FS) *YipCloudInitRunner {
 	y := &YipCloudInitRunner{
 		fs: fs, console: newCloudInitConsole(l, r),
 	}

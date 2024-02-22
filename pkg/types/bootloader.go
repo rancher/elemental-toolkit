@@ -14,23 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
-import (
-	"k8s.io/mount-utils"
-)
-
-// This is is just a redefinition of mount.Interface to v2.Mounter types
-type Mounter interface {
-	Mount(source string, target string, fstype string, options []string) error
-	Unmount(target string) error
-	IsLikelyNotMountPoint(file string) (bool, error)
-}
-
-func NewMounter(binary string) Mounter {
-	return mount.New(binary)
-}
-
-func NewDummyMounter() Mounter {
-	return mount.NewFakeMounter([]mount.MountPoint{})
+type Bootloader interface {
+	Install(rootDir, bootDir string) (err error)
+	InstallConfig(rootDir, bootDir string) error
+	DoEFIEntries(shimName, efiDir string) error
+	InstallEFI(rootDir, efiDir string) error
+	InstallEFIBinaries(rootDir, efiDir, efiPath string) error
+	SetPersistentVariables(envFile string, vars map[string]string) error
+	SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry string) error
 }

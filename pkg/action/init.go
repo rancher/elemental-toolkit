@@ -23,11 +23,11 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/features"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
-func RunInit(cfg *v2.RunConfig, spec *v2.InitSpec) error {
+func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 	if exists, _ := utils.Exists(cfg.Fs, "/.dockerenv"); !exists && !spec.Force {
 		return elementalError.New("running outside of container, pass --force to run anyway", elementalError.StatFile)
 	}

@@ -29,7 +29,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -46,9 +46,9 @@ func layoutPlugin(l logger.Interface, s schema.Stage, fs vfs.FS, console plugins
 		return errors.New("provided console is not an instance of 'cloudInitConsole' type")
 	}
 	runner := elemConsole.getRunner()
-	log, ok := l.(v2.Logger)
+	log, ok := l.(types.Logger)
 	if !ok {
-		return errors.New("provided logger is not implementing v2.Logger interface")
+		return errors.New("provided logger is not implementing types.Logger interface")
 	}
 
 	if len(strings.TrimSpace(s.Layout.Device.Label)) > 0 {

@@ -17,7 +17,7 @@ limitations under the License.
 package partitioner
 
 import (
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 const Parted = "parted"
@@ -47,7 +47,7 @@ type Partition struct {
 	FileSystem string
 }
 
-func NewPartitioner(dev string, runner v2.Runner, backend string) Partitioner {
+func NewPartitioner(dev string, runner types.Runner, backend string) Partitioner {
 	switch backend {
 	case Parted:
 		return newPartedCall(dev, runner)

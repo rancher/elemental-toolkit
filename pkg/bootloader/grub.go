@@ -23,7 +23,7 @@ import (
 	"regexp"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
 	efilib "github.com/canonical/go-efilib"
@@ -48,10 +48,10 @@ func getGModulePatterns(module string) []string {
 }
 
 type Grub struct {
-	logger   v2.Logger
-	fs       v2.FS
-	runner   v2.Runner
-	platform *v2.Platform
+	logger   types.Logger
+	fs       types.FS
+	runner   types.Runner
+	platform *types.Platform
 
 	shimImg    string
 	grubEfiImg string
@@ -66,11 +66,11 @@ type Grub struct {
 	secureBoot         bool
 }
 
-var _ v2.Bootloader = (*Grub)(nil)
+var _ types.Bootloader = (*Grub)(nil)
 
 type GrubOptions func(g *Grub) error
 
-func NewGrub(cfg *v2.Config, opts ...GrubOptions) *Grub {
+func NewGrub(cfg *types.Config, opts ...GrubOptions) *Grub {
 	secureBoot := true
 	if cfg.Platform.Arch == constants.ArchRiscV64 {
 		// There is no secure boot for riscv64 for the time being (Dec 2023)

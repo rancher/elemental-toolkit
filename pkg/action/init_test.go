@@ -31,15 +31,15 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/features"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Init Action", func() {
-	var cfg *v2.RunConfig
+	var cfg *types.RunConfig
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var expectedNumUnits int
@@ -47,7 +47,7 @@ var _ = Describe("Init Action", func() {
 	BeforeEach(func() {
 		runner = v2mock.NewFakeRunner()
 		memLog = &bytes.Buffer{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewRunConfig(
@@ -68,7 +68,7 @@ var _ = Describe("Init Action", func() {
 		cleanup()
 	})
 	Describe("Init System", Label("init"), func() {
-		var spec *v2.InitSpec
+		var spec *types.InitSpec
 		var enabledUnits []string
 		var errCmd, initrdFile string
 

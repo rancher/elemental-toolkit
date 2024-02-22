@@ -14,42 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1_test
+package types_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 var _ = Describe("Types", Label("types", "common"), func() {
 	Describe("Source", func() {
 		It("initiates each type as expected", func() {
-			o := &v2.ImageSource{}
+			o := &types.ImageSource{}
 			Expect(o.Value()).To(Equal(""))
 			Expect(o.IsDir()).To(BeFalse())
 			Expect(o.IsImage()).To(BeFalse())
 			Expect(o.IsFile()).To(BeFalse())
-			o = v2.NewDirSrc("dir")
+			o = types.NewDirSrc("dir")
 			Expect(o.IsDir()).To(BeTrue())
-			o = v2.NewFileSrc("file")
+			o = types.NewFileSrc("file")
 			Expect(o.IsFile()).To(BeTrue())
-			o = v2.NewDockerSrc("image")
+			o = types.NewDockerSrc("image")
 			Expect(o.IsImage()).To(BeTrue())
-			o = v2.NewEmptySrc()
+			o = types.NewEmptySrc()
 			Expect(o.IsEmpty()).To(BeTrue())
-			o, err := v2.NewSrcFromURI("registry.company.org/image")
+			o, err := types.NewSrcFromURI("registry.company.org/image")
 			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.Value()).To(Equal("registry.company.org/image:latest"))
-			o, err = v2.NewSrcFromURI("oci://registry.company.org/image:tag")
+			o, err = types.NewSrcFromURI("oci://registry.company.org/image:tag")
 			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.Value()).To(Equal("registry.company.org/image:tag"))
 		})
 		It("unmarshals each type as expected", func() {
-			o := v2.NewEmptySrc()
+			o := types.NewEmptySrc()
 			_, err := o.CustomUnmarshal("docker://some/image")
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.IsImage()).To(BeTrue())
@@ -80,35 +80,35 @@ var _ = Describe("Types", Label("types", "common"), func() {
 			Expect(o.Value()).To(Equal("registry.company.org/my/image:tag"))
 		})
 		It("convertion to string URI works are expected", func() {
-			o := v2.NewDirSrc("/some/dir")
+			o := types.NewDirSrc("/some/dir")
 			Expect(o.IsDir()).To(BeTrue())
 			Expect(o.String()).To(Equal("dir:///some/dir"))
-			o = v2.NewFileSrc("filename")
+			o = types.NewFileSrc("filename")
 			Expect(o.IsFile()).To(BeTrue())
 			Expect(o.String()).To(Equal("file://filename"))
-			o = v2.NewDockerSrc("container/image")
+			o = types.NewDockerSrc("container/image")
 			Expect(o.IsImage()).To(BeTrue())
 			Expect(o.String()).To(Equal("oci://container/image"))
-			o = v2.NewEmptySrc()
+			o = types.NewEmptySrc()
 			Expect(o.IsEmpty()).To(BeTrue())
 			Expect(o.String()).To(Equal(""))
-			o, err := v2.NewSrcFromURI("registry.company.org/image")
+			o, err := types.NewSrcFromURI("registry.company.org/image")
 			Expect(o.IsImage()).To(BeTrue())
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(o.String()).To(Equal("oci://registry.company.org/image:latest"))
 		})
 		It("fails to unmarshal non string types", func() {
-			o := v2.NewEmptySrc()
+			o := types.NewEmptySrc()
 			_, err := o.CustomUnmarshal(map[string]string{})
 			Expect(err).Should(HaveOccurred())
 		})
 		It("fails to unmarshal unknown scheme and invalid image reference", func() {
-			o := v2.NewEmptySrc()
+			o := types.NewEmptySrc()
 			_, err := o.CustomUnmarshal("scheme://some.uri.org")
 			Expect(err).Should(HaveOccurred())
 		})
 		It("fails to unmarshal invalid uri", func() {
-			o := v2.NewEmptySrc()
+			o := types.NewEmptySrc()
 			_, err := o.CustomUnmarshal("jp#afs://insanity")
 			Expect(err).Should(HaveOccurred())
 		})

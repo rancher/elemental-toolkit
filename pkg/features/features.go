@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/systemd"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -79,7 +79,7 @@ func New(name string, units []*systemd.Unit) *Feature {
 	}
 }
 
-func (f *Feature) Install(log v2.Logger, destFs v2.FS, runner v2.Runner) error {
+func (f *Feature) Install(log types.Logger, destFs types.FS, runner types.Runner) error {
 	path := filepath.Join(embeddedRoot, fmt.Sprintf("%s.tar.gz", f.Name))
 	tar, err := files.Open(path)
 	if err != nil {
@@ -165,7 +165,7 @@ func Get(names []string) ([]*Feature, error) {
 	return features, nil
 }
 
-func extractTarGzip(log v2.Logger, tarFile io.Reader, destFs v2.FS, featureName string) error {
+func extractTarGzip(log types.Logger, tarFile io.Reader, destFs types.FS, featureName string) error {
 	gzipReader, err := gzip.NewReader(tarFile)
 	if err != nil {
 		return err

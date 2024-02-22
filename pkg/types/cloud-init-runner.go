@@ -14,23 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
 import (
-	"syscall"
+	"github.com/rancher/yip/pkg/schema"
 )
 
-type SyscallInterface interface {
-	Chroot(string) error
-	Chdir(string) error
-}
-
-type RealSyscall struct{}
-
-func (r *RealSyscall) Chroot(path string) error {
-	return syscall.Chroot(path)
-}
-
-func (r *RealSyscall) Chdir(path string) error {
-	return syscall.Chdir(path)
+type CloudInitRunner interface {
+	Run(string, ...string) error
+	SetModifier(schema.Modifier)
+	CloudInitFileRender(target string, config *schema.YipConfig) error
 }

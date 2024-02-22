@@ -35,15 +35,15 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Build Actions", func() {
-	var cfg *v2.BuildConfig
+	var cfg *types.BuildConfig
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
@@ -60,7 +60,7 @@ var _ = Describe("Build Actions", func() {
 		client = &v2mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		bootloader = &v2mock.FakeBootloader{}
-		logger = v2.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		extractor = v2mock.NewFakeImageExtractor(logger)
 		cloudInit = &v2mock.FakeCloudInitRunner{}
@@ -82,7 +82,7 @@ var _ = Describe("Build Actions", func() {
 		cleanup()
 	})
 	Describe("Build ISO", Label("iso"), func() {
-		var iso *v2.LiveISO
+		var iso *types.LiveISO
 		BeforeEach(func() {
 			iso = config.NewISO()
 
@@ -103,8 +103,8 @@ var _ = Describe("Build Actions", func() {
 			}
 		})
 		It("Successfully builds an ISO from an OCI image", func() {
-			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
-			iso.RootFS = []*v2.ImageSource{rootSrc}
+			rootSrc, _ := types.NewSrcFromURI("oci:elementalos:latest")
+			iso.RootFS = []*types.ImageSource{rootSrc}
 
 			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
 				bootDir := filepath.Join(destination, "boot")
@@ -134,7 +134,7 @@ var _ = Describe("Build Actions", func() {
 		It("Fails on prepare EFI", func() {
 			iso.BootloaderInRootFs = true
 
-			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
+			rootSrc, _ := types.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -144,7 +144,7 @@ var _ = Describe("Build Actions", func() {
 		It("Fails on prepare ISO", func() {
 			iso.BootloaderInRootFs = true
 
-			rootSrc, _ := v2.NewSrcFromURI("channel:system/elemental")
+			rootSrc, _ := types.NewSrcFromURI("channel:system/elemental")
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
@@ -153,8 +153,8 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails if kernel or initrd is not found in rootfs", func() {
-			rootSrc, _ := v2.NewSrcFromURI("dir:/local/dir")
-			iso.RootFS = []*v2.ImageSource{rootSrc}
+			rootSrc, _ := types.NewSrcFromURI("dir:/local/dir")
+			iso.RootFS = []*types.ImageSource{rootSrc}
 
 			err := utils.MkdirAll(fs, "/local/dir/boot", constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -172,18 +172,18 @@ var _ = Describe("Build Actions", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing uefi sources", func() {
-			rootSrc, _ := v2.NewSrcFromURI("docker:elemental:latest")
-			iso.RootFS = []*v2.ImageSource{rootSrc}
-			uefiSrc, _ := v2.NewSrcFromURI("dir:/overlay/efi")
-			iso.UEFI = []*v2.ImageSource{uefiSrc}
+			rootSrc, _ := types.NewSrcFromURI("docker:elemental:latest")
+			iso.RootFS = []*types.ImageSource{rootSrc}
+			uefiSrc, _ := types.NewSrcFromURI("dir:/overlay/efi")
+			iso.UEFI = []*types.ImageSource{uefiSrc}
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
 			err := buildISO.ISORun()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on ISO filesystem creation", func() {
-			rootSrc, _ := v2.NewSrcFromURI("oci:elementalos:latest")
-			iso.RootFS = []*v2.ImageSource{rootSrc}
+			rootSrc, _ := types.NewSrcFromURI("oci:elementalos:latest")
+			iso.RootFS = []*types.ImageSource{rootSrc}
 
 			runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 				if command == "xorriso" {
@@ -199,7 +199,7 @@ var _ = Describe("Build Actions", func() {
 		})
 	})
 	Describe("Build disk", Label("disk", "build"), func() {
-		var disk *v2.DiskSpec
+		var disk *types.DiskSpec
 
 		BeforeEach(func() {
 			tmpDir, err := utils.TempDir(fs, "", "test")
@@ -208,7 +208,7 @@ var _ = Describe("Build Actions", func() {
 			cfg.Date = false
 			cfg.OutDir = tmpDir
 			disk = config.NewDisk(cfg)
-			disk.System = v2.NewDockerSrc("some/image/ref:tag")
+			disk.System = types.NewDockerSrc("some/image/ref:tag")
 			disk.RecoverySystem.Source = disk.System
 			disk.Partitions.Recovery.Size = constants.MinPartSize
 			disk.Partitions.State.Size = constants.MinPartSize

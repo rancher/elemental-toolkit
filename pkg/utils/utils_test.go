@@ -37,7 +37,7 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -50,10 +50,10 @@ func getNamesFromListFiles(list []fs.DirEntry) []string {
 }
 
 var _ = Describe("Utils", Label("utils"), func() {
-	var config *v2.Config
+	var config *types.Config
 	var runner *v2mock.FakeRunner
-	var realRunner *v2.RealRunner
-	var logger v2.Logger
+	var realRunner *types.RealRunner
+	var logger types.Logger
 	var syscall *v2mock.FakeSyscall
 	var client *v2mock.FakeHTTPClient
 	var mounter *v2mock.FakeMounter
@@ -66,8 +66,8 @@ var _ = Describe("Utils", Label("utils"), func() {
 		syscall = &v2mock.FakeSyscall{}
 		mounter = v2mock.NewFakeMounter()
 		client = &v2mock.FakeHTTPClient{}
-		logger = v2.NewNullLogger()
-		realRunner = &v2.RealRunner{Logger: logger}
+		logger = types.NewNullLogger()
+		realRunner = &types.RealRunner{Logger: logger}
 		extractor = v2mock.NewFakeImageExtractor(logger)
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
@@ -338,7 +338,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 				{"udevadm", "settle"},
 			}
 		})
-		It("returns found v2.Partition", func() {
+		It("returns found types.Partition", func() {
 			var flags []string
 			ghwTest := v2mock.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{

@@ -29,12 +29,12 @@ import (
 	"github.com/hashicorp/go-multierror"
 	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // FormatPartition will format an already existing partition
-func FormatPartition(c v2.Config, part *v2.Partition, opts ...string) error {
+func FormatPartition(c types.Config, part *types.Partition, opts ...string) error {
 	c.Logger.Infof("Formatting '%s' partition", part.Name)
 	return partitioner.FormatDevice(c.Runner, part.Path, part.FS, part.FilesystemLabel, opts...)
 }
@@ -42,7 +42,7 @@ func FormatPartition(c v2.Config, part *v2.Partition, opts ...string) error {
 // PartitionAndFormatDevice creates a new empty partition table on target disk
 // and applies the configured disk layout by creating and formatting all
 // required partitions
-func PartitionAndFormatDevice(c v2.Config, i *v2.InstallSpec) error {
+func PartitionAndFormatDevice(c types.Config, i *types.InstallSpec) error {
 	disk := partitioner.NewDisk(
 		i.Target,
 		partitioner.WithRunner(c.Runner),
@@ -66,7 +66,7 @@ func PartitionAndFormatDevice(c v2.Config, i *v2.InstallSpec) error {
 	return createPartitions(c, disk, parts)
 }
 
-func createAndFormatPartition(c v2.Config, disk *partitioner.Disk, part *v2.Partition) error {
+func createAndFormatPartition(c types.Config, disk *partitioner.Disk, part *types.Partition) error {
 	c.Logger.Debugf("Adding partition %s", part.Name)
 	num, err := disk.AddPartition(part.Size, part.FS, part.Name, part.Flags...)
 	if err != nil {
@@ -96,7 +96,7 @@ func createAndFormatPartition(c v2.Config, disk *partitioner.Disk, part *v2.Part
 	return nil
 }
 
-func createPartitions(c v2.Config, disk *partitioner.Disk, parts v2.PartitionList) error {
+func createPartitions(c types.Config, disk *partitioner.Disk, parts types.PartitionList) error {
 	for _, part := range parts {
 		err := createAndFormatPartition(c, disk, part)
 		if err != nil {
@@ -108,7 +108,7 @@ func createPartitions(c v2.Config, disk *partitioner.Disk, parts v2.PartitionLis
 
 // MountPartitions mounts configured partitions. Partitions with an unset mountpoint are not mounted.
 // Paritions already mounted are not remounted. Note umounts must be handled by caller logic.
-func MountPartitions(c v2.Config, parts v2.PartitionList, overwriteFlags ...string) error {
+func MountPartitions(c types.Config, parts types.PartitionList, overwriteFlags ...string) error {
 	c.Logger.Infof("Mounting disk partitions")
 	var err error
 	var flags []string
@@ -138,7 +138,7 @@ func MountPartitions(c v2.Config, parts v2.PartitionList, overwriteFlags ...stri
 
 // UnmountPartitions unmounts configured partitions. Partitions with an unset mountpoint are ignored.
 // Already unmounted partitions are also ignored.
-func UnmountPartitions(c v2.Config, parts v2.PartitionList) error {
+func UnmountPartitions(c types.Config, parts types.PartitionList) error {
 	var errs error
 	c.Logger.Infof("Unmounting disk partitions")
 
@@ -159,7 +159,7 @@ func UnmountPartitions(c v2.Config, parts v2.PartitionList) error {
 }
 
 // Is Mounted checks if the given partition is mounted or not
-func IsMounted(c v2.Config, part *v2.Partition) (bool, error) {
+func IsMounted(c types.Config, part *types.Partition) (bool, error) {
 	if part == nil {
 		return false, fmt.Errorf("nil partition")
 	}
@@ -176,7 +176,7 @@ func IsMounted(c v2.Config, part *v2.Partition) (bool, error) {
 	return !notMnt, nil
 }
 
-func IsRWMountPoint(c v2.Config, mountPoint string) (bool, error) {
+func IsRWMountPoint(c types.Config, mountPoint string) (bool, error) {
 	cmdOut, err := c.Runner.Run("findmnt", "-fno", "OPTIONS", mountPoint)
 	if err != nil {
 		return false, err
@@ -190,7 +190,7 @@ func IsRWMountPoint(c v2.Config, mountPoint string) (bool, error) {
 }
 
 // MountRWPartition mounts, or remounts if needed, a partition with RW permissions
-func MountRWPartition(c v2.Config, part *v2.Partition) (umount func() error, err error) {
+func MountRWPartition(c types.Config, part *types.Partition) (umount func() error, err error) {
 	if mnt, _ := IsMounted(c, part); mnt {
 		if ok, _ := IsRWMountPoint(c, part.MountPoint); ok {
 			c.Logger.Debugf("Already RW mounted: %s at %s", part.Name, part.MountPoint)
@@ -214,7 +214,7 @@ func MountRWPartition(c v2.Config, part *v2.Partition) (umount func() error, err
 }
 
 // MountPartition mounts a partition with the given mount options
-func MountPartition(c v2.Config, part *v2.Partition, opts ...string) error {
+func MountPartition(c types.Config, part *types.Partition, opts ...string) error {
 	c.Logger.Debugf("Mounting partition %s", part.FilesystemLabel)
 	err := utils.MkdirAll(c.Fs, part.MountPoint, cnst.DirPerm)
 	if err != nil {
@@ -239,7 +239,7 @@ func MountPartition(c v2.Config, part *v2.Partition, opts ...string) error {
 }
 
 // UnmountPartition unmounts the given partition or does nothing if not mounted
-func UnmountPartition(c v2.Config, part *v2.Partition) error {
+func UnmountPartition(c types.Config, part *types.Partition) error {
 	if mnt, _ := IsMounted(c, part); !mnt {
 		c.Logger.Debugf("Not unmounting partition, %s doesn't look like mountpoint", part.MountPoint)
 		return nil
@@ -249,7 +249,7 @@ func UnmountPartition(c v2.Config, part *v2.Partition) error {
 }
 
 // MountFileSystemImage mounts an image with the given mount options
-func MountFileSystemImage(c v2.Config, img *v2.Image, opts ...string) error {
+func MountFileSystemImage(c types.Config, img *types.Image, opts ...string) error {
 	c.Logger.Debugf("Mounting image %s to %s", img.Label, img.MountPoint)
 	err := utils.MkdirAll(c.Fs, img.MountPoint, cnst.DirPerm)
 	if err != nil {
@@ -273,7 +273,7 @@ func MountFileSystemImage(c v2.Config, img *v2.Image, opts ...string) error {
 }
 
 // UnmountFilesystemImage unmounts the given image or does nothing if not mounted
-func UnmountFileSystemImage(c v2.Config, img *v2.Image) error {
+func UnmountFileSystemImage(c types.Config, img *types.Image) error {
 	// Using IsLikelyNotMountPoint seams to be safe as we are not checking
 	// for bind mounts here
 	if notMnt, _ := c.Mounter.IsLikelyNotMountPoint(img.MountPoint); notMnt {
@@ -294,7 +294,7 @@ func UnmountFileSystemImage(c v2.Config, img *v2.Image) error {
 // CreateFileSystemImage creates the image file for the given image. An root tree path
 // can be used to determine the image size and the preload flag can be used to create an image
 // including the root tree data.
-func CreateFileSystemImage(c v2.Config, img *v2.Image, rootDir string, preload bool, excludes ...string) error {
+func CreateFileSystemImage(c types.Config, img *types.Image, rootDir string, preload bool, excludes ...string) error {
 	c.Logger.Infof("Creating image %s from rootDir %s", img.File, rootDir)
 	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
@@ -340,7 +340,7 @@ func CreateFileSystemImage(c v2.Config, img *v2.Image, rootDir string, preload b
 // CreateImageFromTree creates the given image including the given root tree. If preload flag is true
 // it attempts to preload the root tree at filesystem format time. This allows creating images with the
 // given root tree without the need of mounting them.
-func CreateImageFromTree(c v2.Config, img *v2.Image, rootDir string, preload bool, cleaners ...func() error) (err error) {
+func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, preload bool, cleaners ...func() error) (err error) {
 	defer func() {
 		for _, cleaner := range cleaners {
 			if cleaner == nil {
@@ -404,7 +404,7 @@ func CreateImageFromTree(c v2.Config, img *v2.Image, rootDir string, preload boo
 }
 
 // CopyFileImg copies the files target as the source of this image. It also applies the img label over the copied image.
-func CopyFileImg(c v2.Config, img *v2.Image) error {
+func CopyFileImg(c types.Config, img *types.Image) error {
 	if !img.Source.IsFile() {
 		return fmt.Errorf("Copying a file image requires an image source of file type")
 	}
@@ -429,7 +429,7 @@ func CopyFileImg(c v2.Config, img *v2.Image) error {
 
 // DeployImage will deploy the given image into the target. This method
 // creates the filesystem image file and fills it with the correspondant data
-func DeployImage(c v2.Config, img *v2.Image) error {
+func DeployImage(c types.Config, img *types.Image) error {
 	var err error
 	var cleaner func() error
 
@@ -438,7 +438,7 @@ func DeployImage(c v2.Config, img *v2.Image) error {
 	if img.Source.IsDir() {
 		transientTree = img.Source.Value()
 	} else if img.Source.IsFile() {
-		srcImg := &v2.Image{
+		srcImg := &types.Image{
 			File:       img.Source.Value(),
 			MountPoint: transientTree,
 		}
@@ -471,7 +471,7 @@ func DeployImage(c v2.Config, img *v2.Image) error {
 }
 
 // DumpSource sets the image data according to the image source type
-func DumpSource(c v2.Config, target string, imgSrc *v2.ImageSource) error { // nolint:gocyclo
+func DumpSource(c types.Config, target string, imgSrc *types.ImageSource) error { // nolint:gocyclo
 	var err error
 	var digest string
 
@@ -488,7 +488,7 @@ func DumpSource(c v2.Config, target string, imgSrc *v2.ImageSource) error { // n
 			c.Logger.Infof("Running cosing verification for %s", imgSrc.Value())
 			out, err := utils.CosignVerify(
 				c.Fs, c.Runner, imgSrc.Value(),
-				c.CosignPubKey, v2.IsDebugLevel(c.Logger),
+				c.CosignPubKey, types.IsDebugLevel(c.Logger),
 			)
 			if err != nil {
 				c.Logger.Errorf("Cosign verification failed: %s", out)
@@ -512,7 +512,7 @@ func DumpSource(c v2.Config, target string, imgSrc *v2.ImageSource) error { // n
 		if err != nil {
 			return err
 		}
-		img := &v2.Image{File: imgSrc.Value(), MountPoint: cnst.ImgSrcDir}
+		img := &types.Image{File: imgSrc.Value(), MountPoint: cnst.ImgSrcDir}
 		err = MountFileSystemImage(c, img, "auto", "ro")
 		if err != nil {
 			return err
@@ -535,7 +535,7 @@ func DumpSource(c v2.Config, target string, imgSrc *v2.ImageSource) error { // n
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
-func CopyCloudConfig(c v2.Config, path string, cloudInit []string) (err error) {
+func CopyCloudConfig(c types.Config, path string, cloudInit []string) (err error) {
 	if path == "" {
 		c.Logger.Warnf("empty path. Will not copy cloud config files.")
 		return nil
@@ -555,7 +555,7 @@ func CopyCloudConfig(c v2.Config, path string, cloudInit []string) (err error) {
 }
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
-func SelinuxRelabel(c v2.Config, rootDir string, raiseError bool) error {
+func SelinuxRelabel(c types.Config, rootDir string, raiseError bool) error {
 	policyFile, err := utils.FindFile(c.Fs, rootDir, filepath.Join(cnst.SELinuxTargetedPolicyPath, "policy.*"))
 	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(c.Fs, contextFile)
@@ -580,7 +580,7 @@ func SelinuxRelabel(c v2.Config, rootDir string, raiseError bool) error {
 }
 
 // ApplySelinuxLabels sets SELinux extended attributes to the root-tree being installed
-func ApplySelinuxLabels(cfg v2.Config, parts v2.ElementalPartitions) error {
+func ApplySelinuxLabels(cfg types.Config, parts types.ElementalPartitions) error {
 	binds := map[string]string{}
 	if mnt, _ := IsMounted(cfg, parts.Persistent); mnt {
 		binds[parts.Persistent.MountPoint] = cnst.PersistentPath
@@ -594,10 +594,10 @@ func ApplySelinuxLabels(cfg v2.Config, parts v2.ElementalPartitions) error {
 }
 
 // CheckActiveDeployment returns true if at least one of the mode sentinel files is found
-func CheckActiveDeployment(cfg v2.Config) bool {
+func CheckActiveDeployment(cfg types.Config) bool {
 	cfg.Logger.Infof("Checking for active deployment")
 
-	tests := []func(v2.Config) bool{IsActiveMode, IsPassiveMode, IsRecoveryMode}
+	tests := []func(types.Config) bool{IsActiveMode, IsPassiveMode, IsRecoveryMode}
 	for _, t := range tests {
 		if t(cfg) {
 			return true
@@ -608,26 +608,26 @@ func CheckActiveDeployment(cfg v2.Config) bool {
 }
 
 // IsActiveMode checks if the active mode sentinel file exists
-func IsActiveMode(cfg v2.Config) bool {
+func IsActiveMode(cfg types.Config) bool {
 	ok, _ := utils.Exists(cfg.Fs, cnst.ActiveMode)
 	return ok
 }
 
 // IsPassiveMode checks if the passive mode sentinel file exists
-func IsPassiveMode(cfg v2.Config) bool {
+func IsPassiveMode(cfg types.Config) bool {
 	ok, _ := utils.Exists(cfg.Fs, cnst.PassiveMode)
 	return ok
 }
 
 // IsRecoveryMode checks if the recovery mode sentinel file exists
-func IsRecoveryMode(cfg v2.Config) bool {
+func IsRecoveryMode(cfg types.Config) bool {
 	ok, _ := utils.Exists(cfg.Fs, cnst.RecoveryMode)
 	return ok
 }
 
 // SourceISO downloads an ISO in a temporary folder, mounts it and returns the image source to be used
 // Returns a source and cleaner method to unmount and remove the temporary folder afterwards.
-func SourceFormISO(c v2.Config, iso string) (*v2.ImageSource, func() error, error) {
+func SourceFormISO(c types.Config, iso string) (*types.ImageSource, func() error, error) {
 	nilErr := func() error { return nil }
 
 	tmpDir, err := utils.TempDir(c.Fs, "", "elemental")
@@ -669,12 +669,12 @@ func SourceFormISO(c v2.Config, iso string) (*v2.ImageSource, func() error, erro
 		return nil, cleanAll, fmt.Errorf("squashfs image not found in ISO: %s", squashfsImg)
 	}
 
-	return v2.NewFileSrc(squashfsImg), cleanAll, nil
+	return types.NewFileSrc(squashfsImg), cleanAll, nil
 }
 
 // DeactivateDevice deactivates unmounted the block devices present within the system.
 // Useful to deactivate LVM volumes, if any, related to the target device.
-func DeactivateDevices(c v2.Config) error {
+func DeactivateDevices(c types.Config) error {
 	var err error
 	var out []byte
 
@@ -693,7 +693,7 @@ func DeactivateDevices(c v2.Config) error {
 // It will respect TMPDIR and use that if exists, fallback to try the persistent partition if its mounted
 // and finally the default /tmp/ dir
 // suffix is what is appended to the dir name elemental-suffix. If empty it will randomly generate a number
-func GetTempDir(c v2.Config, suffix string) string {
+func GetTempDir(c types.Config, suffix string) string {
 	// if we got a TMPDIR var, respect and use that
 	if suffix == "" {
 		random := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -712,7 +712,7 @@ func GetTempDir(c v2.Config, suffix string) string {
 	}
 	// Check persistent and if its mounted
 	state, _ := c.LoadInstallState()
-	ep := v2.NewElementalPartitionsFromList(parts, state)
+	ep := types.NewElementalPartitionsFromList(parts, state)
 	persistent := ep.Persistent
 	if persistent != nil {
 		if mnt, _ := IsMounted(c, persistent); mnt {

@@ -27,7 +27,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -40,9 +40,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var runner *v2mock.FakeRunner
 		var client *v2mock.FakeHTTPClient
 		var sysc *v2mock.FakeSyscall
-		var logger v2.Logger
+		var logger types.Logger
 		var ci *v2mock.FakeCloudInitRunner
-		var c *v2.Config
+		var c *types.Config
 		BeforeEach(func() {
 			fs, cleanup, err = vfst.NewTestFS(nil)
 			Expect(err).ToNot(HaveOccurred())
@@ -50,7 +50,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			runner = v2mock.NewFakeRunner()
 			client = &v2mock.FakeHTTPClient{}
 			sysc = &v2mock.FakeSyscall{}
-			logger = v2.NewNullLogger()
+			logger = types.NewNullLogger()
 			ci = &v2mock.FakeCloudInitRunner{}
 			c = config.NewConfig(
 				config.WithFs(fs),
@@ -92,13 +92,13 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("should use the default mounter", Label("systemctl"), func() {
 				runner := v2mock.NewFakeRunner()
 				sysc := &v2mock.FakeSyscall{}
-				logger := v2.NewNullLogger()
+				logger := types.NewNullLogger()
 				c := config.NewConfig(
 					config.WithRunner(runner),
 					config.WithSyscall(sysc),
 					config.WithLogger(logger),
 				)
-				Expect(c.Mounter).To(Equal(v2.NewMounter(constants.MountBinary)))
+				Expect(c.Mounter).To(Equal(types.NewMounter(constants.MountBinary)))
 			})
 		})
 		Describe("RunConfig", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("sets the default snapshot", func() {
 				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.LoopDeviceMaxSnaps))
 				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
-				snapshotterCfg, ok := cfg.Snapshotter.Config.(*v2.LoopDeviceConfig)
+				snapshotterCfg, ok := cfg.Snapshotter.Config.(*types.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				Expect(snapshotterCfg.FS).To(Equal(constants.LinuxImgFs))
 				Expect(snapshotterCfg.Size).To(Equal(constants.ImgSize))
@@ -129,19 +129,19 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v2.EFI))
+				Expect(spec.Firmware).To(Equal(types.EFI))
 				Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
 				Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
-				Expect(spec.PartTable).To(Equal(v2.GPT))
+				Expect(spec.PartTable).To(Equal(types.GPT))
 
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {
 				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v2.EFI))
+				Expect(spec.Firmware).To(Equal(types.EFI))
 				Expect(spec.System.IsEmpty()).To(BeTrue())
 				Expect(spec.RecoverySystem.Source.IsEmpty()).To(BeTrue())
-				Expect(spec.PartTable).To(Equal(v2.GPT))
+				Expect(spec.PartTable).To(Equal(types.GPT))
 			})
 		})
 		Describe("ResetSpec", Label("reset"), func() {

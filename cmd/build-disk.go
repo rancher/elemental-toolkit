@@ -21,7 +21,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	eleError "github.com/rancher/elemental-toolkit/v2/pkg/error"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,8 +45,8 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
-			var cfg *v2.BuildConfig
-			var spec *v2.DiskSpec
+			var cfg *types.BuildConfig
+			var spec *types.DiskSpec
 
 			defer func() {
 				if cfg != nil && err != nil {
@@ -58,7 +58,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mounter := v2.NewMounter(path)
+			mounter := types.NewMounter(path)
 
 			flags := cmd.Flags()
 			cfg, err = config.ReadConfigBuild(viper.GetString("config-dir"), flags, mounter)

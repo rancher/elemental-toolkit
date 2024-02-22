@@ -21,7 +21,7 @@ import (
 	"os/exec"
 	"strings"
 
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 type FakeRunner struct {
@@ -29,7 +29,7 @@ type FakeRunner struct {
 	ReturnValue []byte
 	SideEffect  func(command string, args ...string) ([]byte, error)
 	ReturnError error
-	Logger      v2.Logger
+	Logger      types.Logger
 	CmdNotFound string
 }
 
@@ -137,11 +137,11 @@ func (r FakeRunner) GetCmds() [][]string {
 	return r.cmds
 }
 
-func (r FakeRunner) GetLogger() v2.Logger {
+func (r FakeRunner) GetLogger() types.Logger {
 	return r.Logger
 }
 
-func (r *FakeRunner) SetLogger(logger v2.Logger) {
+func (r *FakeRunner) SetLogger(logger types.Logger) {
 	r.Logger = logger
 }
 

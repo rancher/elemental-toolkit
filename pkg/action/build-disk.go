@@ -35,7 +35,7 @@ import (
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -51,18 +51,18 @@ const (
 )
 
 type BuildDiskAction struct {
-	cfg         *v2.BuildConfig
-	spec        *v2.DiskSpec
-	bootloader  v2.Bootloader
-	snapshotter v2.Snapshotter
-	snapshot    *v2.Snapshot
+	cfg         *types.BuildConfig
+	spec        *types.DiskSpec
+	bootloader  types.Bootloader
+	snapshotter types.Snapshotter
+	snapshot    *types.Snapshot
 	// holds the root path within the working directory of all partitions
 	roots map[string]string
 }
 
 type BuildDiskActionOption func(b *BuildDiskAction) error
 
-func NewBuildDiskAction(cfg *v2.BuildConfig, spec *v2.DiskSpec, opts ...BuildDiskActionOption) (*BuildDiskAction, error) {
+func NewBuildDiskAction(cfg *types.BuildConfig, spec *types.DiskSpec, opts ...BuildDiskActionOption) (*BuildDiskAction, error) {
 	var err error
 
 	b := &BuildDiskAction{cfg: cfg, spec: spec}
@@ -93,7 +93,7 @@ func NewBuildDiskAction(cfg *v2.BuildConfig, spec *v2.DiskSpec, opts ...BuildDis
 	return b, err
 }
 
-func WithDiskBootloader(bootloader v2.Bootloader) BuildDiskActionOption {
+func WithDiskBootloader(bootloader types.Bootloader) BuildDiskActionOption {
 	return func(b *BuildDiskAction) error {
 		b.bootloader = bootloader
 		return nil
@@ -111,14 +111,14 @@ func (b *BuildDiskAction) buildDiskChrootHook(hook string, root string) error {
 
 func (b *BuildDiskAction) preparePartitionsRoot() error {
 	var err error
-	var excludes []*v2.Partition
+	var excludes []*types.Partition
 
 	rootMap := map[string]string{}
 
 	if b.spec.Expandable {
 		excludes = append(excludes, b.spec.Partitions.Persistent, b.spec.Partitions.State)
 	}
-	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v2.PartitionList{}, excludes...) {
+	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(types.PartitionList{}, excludes...) {
 		rootMap[part.Name] = strings.TrimSuffix(part.Path, filepath.Ext(part.Path))
 		err = utils.MkdirAll(b.cfg.Fs, rootMap[part.Name], constants.DirPerm)
 		if err != nil {
@@ -326,10 +326,10 @@ func (b *BuildDiskAction) CreateRAWDisk(rawImg string) error {
 }
 
 // CreatePartitionImage creates partition image files and returns a slice of the created images
-func (b *BuildDiskAction) CreatePartitionImages() ([]*v2.Image, error) {
+func (b *BuildDiskAction) CreatePartitionImages() ([]*types.Image, error) {
 	var err error
-	var img, stateImg *v2.Image
-	var images []*v2.Image
+	var img, stateImg *types.Image
+	var images []*types.Image
 
 	// Create state partition first to compute snapshot metadata if any
 	if !b.spec.Expandable {
@@ -356,7 +356,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v2.Image, error) {
 	}
 	images = append(images, img)
 
-	for _, part := range []*v1.Partition{b.spec.Partitions.OEM, b.spec.Partitions.Recovery} {
+	for _, part := range []*types.Partition{b.spec.Partitions.OEM, b.spec.Partitions.Recovery} {
 		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
 		img = part.ToImage()
 		err = elemental.CreateImageFromTree(
@@ -391,7 +391,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v2.Image, error) {
 }
 
 // createStatePartitionImage creates the State partitions for the configured snapshotter
-func (b *BuildDiskAction) createStatePartitionImage() (*v2.Image, error) {
+func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 	stateImg := b.spec.Partitions.State.ToImage()
 
 	err := elemental.CreateFileSystemImage(b.cfg.Config, stateImg, "", false)
@@ -458,7 +458,7 @@ func (b *BuildDiskAction) createStatePartitionImage() (*v2.Image, error) {
 }
 
 // createEFIPartitionImage creates the EFI partition image
-func (b *BuildDiskAction) createEFIPartitionImage() (*v2.Image, error) {
+func (b *BuildDiskAction) createEFIPartitionImage() (*types.Image, error) {
 	img := b.spec.Partitions.EFI.ToImage()
 	err := elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
 	if err != nil {
@@ -491,7 +491,7 @@ func (b *BuildDiskAction) createEFIPartitionImage() (*v2.Image, error) {
 
 // CreateDiskImage creates the final image by truncating the image with the proper size and
 // concatenating the contents of the given partitions. No partition table is written
-func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v2.Image) error {
+func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*types.Image) error {
 	var initDiskFile, endDiskFile string
 	var err error
 	var partFiles []string
@@ -545,7 +545,7 @@ func (b *BuildDiskAction) CreateDiskImage(rawDiskFile string, partImgs ...*v2.Im
 
 // Raw2Gce transforms an image from RAW format into GCE format
 // THIS REMOVES THE SOURCE IMAGE BY DEFAULT
-func Raw2Gce(source string, fs v2.FS, logger v2.Logger, keepOldImage bool) error {
+func Raw2Gce(source string, fs types.FS, logger types.Logger, keepOldImage bool) error {
 	// The RAW image file must have a size in an increment of 1 GB. For example, the file must be either 10 GB or 11 GB but not 10.5 GB.
 	// The disk image filename must be disk.raw.
 	// The compressed file must be a .tar.gz file that uses gzip compression and the --format=oldgnu option for the tar utility.
@@ -617,7 +617,7 @@ func Raw2Gce(source string, fs v2.FS, logger v2.Logger, keepOldImage bool) error
 
 // Raw2Azure transforms an image from RAW format into Azure format
 // THIS REMOVES THE SOURCE IMAGE BY DEFAULT
-func Raw2Azure(source string, fs v2.FS, logger v2.Logger, keepOldImage bool) error {
+func Raw2Azure(source string, fs types.FS, logger types.Logger, keepOldImage bool) error {
 	// All VHDs on Azure must have a virtual size aligned to 1 MB (1024 × 1024 bytes)
 	// The Hyper-V virtual hard disk (VHDX) format isn't supported in Azure, only fixed VHD
 	logger.Info("Transforming raw image into azure format")
@@ -655,7 +655,7 @@ func Raw2Azure(source string, fs v2.FS, logger v2.Logger, keepOldImage bool) err
 
 func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	var secSize, startS, sizeS uint
-	var excludes v2.PartitionList
+	var excludes types.PartitionList
 
 	gd := partitioner.NewPartitioner(disk, b.cfg.Runner, partitioner.Gdisk)
 	dData, err := gd.Print()
@@ -671,7 +671,7 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 	if b.spec.Expandable {
 		excludes = append(excludes, b.spec.Partitions.State, b.spec.Partitions.Persistent)
 	}
-	elParts := b.spec.Partitions.PartitionsByInstallOrder(v2.PartitionList{}, excludes...)
+	elParts := b.spec.Partitions.PartitionsByInstallOrder(types.PartitionList{}, excludes...)
 	for i, part := range elParts {
 		if i == 0 {
 			//First partition is aligned at 1MiB
@@ -720,26 +720,26 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 		return fmt.Errorf("undefined state partition")
 	}
 
-	snapshots := map[int]*v2.SystemState{}
+	snapshots := map[int]*types.SystemState{}
 	if !b.spec.Expandable {
-		snapshots[b.snapshot.ID] = &v2.SystemState{
+		snapshots[b.snapshot.ID] = &types.SystemState{
 			Source: b.spec.System,
 			Digest: b.spec.System.GetDigest(),
 			Active: true,
 		}
 	}
 
-	installState := &v2.InstallState{
+	installState := &types.InstallState{
 		Date:        time.Now().Format(time.RFC3339),
 		Snapshotter: b.cfg.Snapshotter,
-		Partitions: map[string]*v2.PartitionState{
+		Partitions: map[string]*types.PartitionState{
 			constants.StatePartName: {
 				FSLabel:   b.spec.Partitions.State.FilesystemLabel,
 				Snapshots: snapshots,
 			},
 			constants.RecoveryPartName: {
 				FSLabel: b.spec.Partitions.Recovery.FilesystemLabel,
-				RecoveryImage: &v2.SystemState{
+				RecoveryImage: &types.SystemState{
 					Source: b.spec.RecoverySystem.Source,
 					Digest: b.spec.RecoverySystem.Source.GetDigest(),
 					Label:  b.spec.RecoverySystem.Label,
@@ -750,17 +750,17 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 	}
 
 	if b.spec.Partitions.OEM != nil {
-		installState.Partitions[constants.OEMPartName] = &v2.PartitionState{
+		installState.Partitions[constants.OEMPartName] = &types.PartitionState{
 			FSLabel: b.spec.Partitions.OEM.FilesystemLabel,
 		}
 	}
 	if b.spec.Partitions.Persistent != nil {
-		installState.Partitions[constants.PersistentPartName] = &v2.PartitionState{
+		installState.Partitions[constants.PersistentPartName] = &types.PartitionState{
 			FSLabel: b.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
 	if b.spec.Partitions.EFI != nil {
-		installState.Partitions[constants.EfiPartName] = &v2.PartitionState{
+		installState.Partitions[constants.EfiPartName] = &types.PartitionState{
 			FSLabel: b.spec.Partitions.EFI.FilesystemLabel,
 		}
 	}

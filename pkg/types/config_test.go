@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1_test
+package types_test
 
 import (
 	"path/filepath"
@@ -28,20 +28,20 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v1mocks "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {
 	Describe("Write and load installation state", func() {
-		var config *v2.RunConfig
+		var config *types.RunConfig
 		var runner *v1mocks.FakeRunner
 		var fs vfs.FS
 		var mounter *v1mocks.FakeMounter
 		var cleanup func()
 		var err error
-		var systemState *v2.SystemState
-		var installState *v2.InstallState
+		var systemState *types.SystemState
+		var installState *types.InstallState
 		var statePath, recoveryPath string
 
 		BeforeEach(func() {
@@ -55,26 +55,26 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				conf.WithRunner(runner),
 				conf.WithMounter(mounter),
 			)
-			systemState = &v2.SystemState{
-				Source: v2.NewDockerSrc("registry.org/my/image:tag"),
+			systemState = &types.SystemState{
+				Source: types.NewDockerSrc("registry.org/my/image:tag"),
 				Label:  "active_label",
 				FS:     "ext2",
 				Digest: "adadgadg",
 			}
-			installState = &v2.InstallState{
+			installState = &types.InstallState{
 				Date: "somedate",
-				Snapshotter: v2.SnapshotterConfig{
+				Snapshotter: types.SnapshotterConfig{
 					Type:     "loopdevice",
 					MaxSnaps: 7,
-					Config: &v2.LoopDeviceConfig{
+					Config: &types.LoopDeviceConfig{
 						Size: 1024,
 						FS:   constants.SquashFs,
 					},
 				},
-				Partitions: map[string]*v2.PartitionState{
+				Partitions: map[string]*types.PartitionState{
 					"state": {
 						FSLabel: "state_label",
-						Snapshots: map[int]*v2.SystemState{
+						Snapshots: map[int]*types.SystemState{
 							1: systemState,
 						},
 					},
@@ -151,12 +151,12 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 	})
 	Describe("ElementalPartitions", func() {
-		var p v2.PartitionList
-		var ep v2.ElementalPartitions
+		var p types.PartitionList
+		var ep types.ElementalPartitions
 		BeforeEach(func() {
-			ep = v2.ElementalPartitions{}
-			p = v2.PartitionList{
-				&v2.Partition{
+			ep = types.ElementalPartitions{}
+			p = types.PartitionList{
+				&types.Partition{
 					FilesystemLabel: "COS_OEM",
 					Size:            0,
 					Name:            "oem",
@@ -166,7 +166,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Path:            "",
 					Disk:            "",
 				},
-				&v2.Partition{
+				&types.Partition{
 					FilesystemLabel: "COS_CUSTOM",
 					Size:            0,
 					Name:            "persistent",
@@ -176,7 +176,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Path:            "",
 					Disk:            "",
 				},
-				&v2.Partition{
+				&types.Partition{
 					FilesystemLabel: "SOMETHING",
 					Size:            0,
 					Name:            "somename",
@@ -190,33 +190,33 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		It("sets firmware partitions on efi", func() {
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
-			err := ep.SetFirmwarePartitions(v2.EFI, v2.GPT)
+			err := ep.SetFirmwarePartitions(types.EFI, types.GPT)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(ep.EFI != nil && ep.BIOS == nil).To(BeTrue())
 		})
 		It("sets firmware partitions on bios", func() {
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
-			err := ep.SetFirmwarePartitions(v2.BIOS, v2.GPT)
+			err := ep.SetFirmwarePartitions(types.BIOS, types.GPT)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(ep.EFI == nil && ep.BIOS != nil).To(BeTrue())
 		})
 		It("sets firmware partitions on msdos", func() {
-			ep.State = &v2.Partition{}
+			ep.State = &types.Partition{}
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
-			err := ep.SetFirmwarePartitions(v2.BIOS, v2.MSDOS)
+			err := ep.SetFirmwarePartitions(types.BIOS, types.MSDOS)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
 			Expect(ep.State.Flags != nil && ep.State.Flags[0] == "boot").To(BeTrue())
 		})
 		It("fails to set firmware partitions of state is not defined on msdos", func() {
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
-			err := ep.SetFirmwarePartitions(v2.BIOS, v2.MSDOS)
+			err := ep.SetFirmwarePartitions(types.BIOS, types.MSDOS)
 			Expect(err).Should(HaveOccurred())
 		})
 		It("initializes an ElementalPartitions from a PartitionList", func() {
 			// Use custom label for recovery partition
-			ep := v2.NewElementalPartitionsFromList(p, &v2.InstallState{
-				Partitions: map[string]*v2.PartitionState{
+			ep := types.NewElementalPartitionsFromList(p, &types.InstallState{
+				Partitions: map[string]*types.PartitionState{
 					constants.RecoveryPartName: {
 						FSLabel: "SOMETHING",
 					},
@@ -231,23 +231,23 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("returns a partition list by install order", func() {
 			It("with no extra parts", func() {
-				ep := v2.NewElementalPartitionsFromList(p, nil)
-				lst := ep.PartitionsByInstallOrder([]*v2.Partition{})
+				ep := types.NewElementalPartitionsFromList(p, nil)
+				lst := ep.PartitionsByInstallOrder([]*types.Partition{})
 				Expect(len(lst)).To(Equal(2))
 				Expect(lst[0].Name == "oem").To(BeTrue())
 				Expect(lst[1].Name == "persistent").To(BeTrue())
 			})
 			It("with extra parts with size > 0", func() {
 				// Use custom label for state partition
-				ep := v2.NewElementalPartitionsFromList(p, &v2.InstallState{
-					Partitions: map[string]*v2.PartitionState{
+				ep := types.NewElementalPartitionsFromList(p, &types.InstallState{
+					Partitions: map[string]*types.PartitionState{
 						constants.StatePartName: {
 							FSLabel: "SOMETHING",
 						},
 					},
 				})
-				var extraParts []*v2.Partition
-				extraParts = append(extraParts, &v2.Partition{Name: "extra", Size: 5})
+				var extraParts []*types.Partition
+				extraParts = append(extraParts, &types.Partition{Name: "extra", Size: 5})
 
 				lst := ep.PartitionsByInstallOrder(extraParts)
 				Expect(len(lst)).To(Equal(4))
@@ -257,9 +257,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(lst[3].Name == "persistent").To(BeTrue())
 			})
 			It("with extra part with size == 0 and persistent.Size == 0", func() {
-				ep := v2.NewElementalPartitionsFromList(p, &v2.InstallState{})
-				var extraParts []*v2.Partition
-				extraParts = append(extraParts, &v2.Partition{Name: "extra", Size: 0})
+				ep := types.NewElementalPartitionsFromList(p, &types.InstallState{})
+				var extraParts []*types.Partition
+				extraParts = append(extraParts, &types.Partition{Name: "extra", Size: 0})
 				lst := ep.PartitionsByInstallOrder(extraParts)
 				// Should ignore the wrong partition had have the persistent over it
 				Expect(len(lst)).To(Equal(2))
@@ -267,10 +267,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(lst[1].Name == "persistent").To(BeTrue())
 			})
 			It("with extra part with size == 0 and persistent.Size > 0", func() {
-				ep := v2.NewElementalPartitionsFromList(p, nil)
+				ep := types.NewElementalPartitionsFromList(p, nil)
 				ep.Persistent.Size = 10
-				var extraParts []*v2.Partition
-				extraParts = append(extraParts, &v2.Partition{Name: "extra", FilesystemLabel: "LABEL", Size: 0})
+				var extraParts []*types.Partition
+				extraParts = append(extraParts, &types.Partition{Name: "extra", FilesystemLabel: "LABEL", Size: 0})
 				lst := ep.PartitionsByInstallOrder(extraParts)
 				// Will have our size == 0 partition the latest
 				Expect(len(lst)).To(Equal(3))
@@ -279,11 +279,11 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(lst[2].Name == "extra").To(BeTrue())
 			})
 			It("with several extra parts with size == 0 and persistent.Size > 0", func() {
-				ep := v2.NewElementalPartitionsFromList(p, nil)
+				ep := types.NewElementalPartitionsFromList(p, nil)
 				ep.Persistent.Size = 10
-				var extraParts []*v2.Partition
-				extraParts = append(extraParts, &v2.Partition{Name: "extra1", Size: 0})
-				extraParts = append(extraParts, &v2.Partition{Name: "extra2", Size: 0})
+				var extraParts []*types.Partition
+				extraParts = append(extraParts, &types.Partition{Name: "extra1", Size: 0})
+				extraParts = append(extraParts, &types.Partition{Name: "extra2", Size: 0})
 				lst := ep.PartitionsByInstallOrder(extraParts)
 				// Should ignore the wrong partition had have the first partition with size 0 added last
 				Expect(len(lst)).To(Equal(3))
@@ -294,14 +294,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 
 		It("returns a partition list by mount order", func() {
-			ep := v2.NewElementalPartitionsFromList(p, nil)
+			ep := types.NewElementalPartitionsFromList(p, nil)
 			lst := ep.PartitionsByMountPoint(false)
 			Expect(len(lst)).To(Equal(2))
 			Expect(lst[0].Name == "persistent").To(BeTrue())
 			Expect(lst[1].Name == "oem").To(BeTrue())
 		})
 		It("returns a partition list by mount reverse order", func() {
-			ep := v2.NewElementalPartitionsFromList(p, nil)
+			ep := types.NewElementalPartitionsFromList(p, nil)
 			lst := ep.PartitionsByMountPoint(true)
 			Expect(len(lst)).To(Equal(2))
 			Expect(lst[0].Name == "oem").To(BeTrue())
@@ -309,10 +309,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 	})
 	Describe("Partitionlist", func() {
-		var p v2.PartitionList
+		var p types.PartitionList
 		BeforeEach(func() {
-			p = v2.PartitionList{
-				&v2.Partition{
+			p = types.PartitionList{
+				&types.Partition{
 					FilesystemLabel: "ONE",
 					Size:            0,
 					Name:            "one",
@@ -322,7 +322,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Path:            "",
 					Disk:            "",
 				},
-				&v2.Partition{
+				&types.Partition{
 					FilesystemLabel: "TWO",
 					Size:            0,
 					Name:            "two",
@@ -335,7 +335,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			}
 		})
 		It("returns partitions by name", func() {
-			Expect(p.GetByName("two")).To(Equal(&v2.Partition{
+			Expect(p.GetByName("two")).To(Equal(&types.Partition{
 				FilesystemLabel: "TWO",
 				Size:            0,
 				Name:            "two",
@@ -350,7 +350,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(p.GetByName("nonexistent")).To(BeNil())
 		})
 		It("returns partitions by filesystem label", func() {
-			Expect(p.GetByLabel("TWO")).To(Equal(&v2.Partition{
+			Expect(p.GetByLabel("TWO")).To(Equal(&types.Partition{
 				FilesystemLabel: "TWO",
 				Size:            0,
 				Name:            "two",
@@ -366,7 +366,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 	})
 	Describe("InstallSpec", func() {
-		var spec *v2.InstallSpec
+		var spec *types.InstallSpec
 
 		BeforeEach(func() {
 			cfg := config.NewConfig(config.WithMounter(v1mocks.NewFakeMounter()))
@@ -378,8 +378,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(spec.System.IsEmpty()).To(BeTrue())
 
 				// Creates firmware partitions
-				spec.System = v2.NewDirSrc("/dir")
-				spec.Firmware = v2.EFI
+				spec.System = types.NewDirSrc("/dir")
+				spec.Firmware = types.EFI
 				err := spec.Sanitize()
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
@@ -396,31 +396,31 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).Should(HaveOccurred())
 
 				// Fails without an install source
-				spec.System = v2.NewEmptySrc()
+				spec.System = types.NewEmptySrc()
 				err = spec.Sanitize()
 				Expect(err).Should(HaveOccurred())
 			})
 			Describe("with extra partitions", func() {
 				BeforeEach(func() {
 					// Set a source for the install
-					spec.System = v2.NewDirSrc("/dir")
+					spec.System = types.NewDirSrc("/dir")
 				})
 				It("fails if persistent and an extra partition have size == 0", func() {
-					spec.ExtraPartitions = append(spec.ExtraPartitions, &v2.Partition{Size: 0})
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &types.Partition{Size: 0})
 					err := spec.Sanitize()
 					Expect(err).Should(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("both persistent partition and extra partitions have size set to 0"))
 				})
 				It("fails if more than one extra partition has size == 0", func() {
 					spec.Partitions.Persistent.Size = 10
-					spec.ExtraPartitions = append(spec.ExtraPartitions, &v2.Partition{Name: "1", Size: 0})
-					spec.ExtraPartitions = append(spec.ExtraPartitions, &v2.Partition{Name: "2", Size: 0})
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &types.Partition{Name: "1", Size: 0})
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &types.Partition{Name: "2", Size: 0})
 					err := spec.Sanitize()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("more than one extra partition has its size set to 0"))
 				})
 				It("does not fail if persistent size is > 0 and an extra partition has size == 0", func() {
-					spec.ExtraPartitions = append(spec.ExtraPartitions, &v2.Partition{Size: 0})
+					spec.ExtraPartitions = append(spec.ExtraPartitions, &types.Partition{Size: 0})
 					spec.Partitions.Persistent.Size = 10
 					err := spec.Sanitize()
 					Expect(err).ToNot(HaveOccurred())
@@ -430,10 +430,10 @@ var _ = Describe("Types", Label("types", "config"), func() {
 	})
 	Describe("ResetSpec", func() {
 		It("runs sanitize method", func() {
-			spec := &v2.ResetSpec{
-				System: v2.NewDirSrc("/dir"),
-				Partitions: v2.ElementalPartitions{
-					State: &v2.Partition{
+			spec := &types.ResetSpec{
+				System: types.NewDirSrc("/dir"),
+				Partitions: types.ElementalPartitions{
+					State: &types.Partition{
 						MountPoint: "mountpoint",
 					},
 				},
@@ -447,24 +447,24 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(err).Should(HaveOccurred())
 
 			//Fails on empty source
-			spec.System = v2.NewEmptySrc()
+			spec.System = types.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
 		})
 	})
 	Describe("UpgradeSpec", func() {
 		It("runs sanitize method", func() {
-			spec := &v2.UpgradeSpec{
-				System: v2.NewDirSrc("/dir"),
-				RecoverySystem: v2.Image{
-					Source: v2.NewDirSrc("/dir"),
+			spec := &types.UpgradeSpec{
+				System: types.NewDirSrc("/dir"),
+				RecoverySystem: types.Image{
+					Source: types.NewDirSrc("/dir"),
 					Label:  "SOMELABEL",
 				},
-				Partitions: v2.ElementalPartitions{
-					State: &v2.Partition{
+				Partitions: types.ElementalPartitions{
+					State: &types.Partition{
 						MountPoint: "mountpoint",
 					},
-					Recovery: &v2.Partition{
+					Recovery: &types.Partition{
 						MountPoint: "mountpoint",
 					},
 				},
@@ -479,14 +479,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(spec.RecoverySystem.Label).To(BeEmpty())
 
 			//Fails on empty source for active upgrade
-			spec.System = v2.NewEmptySrc()
+			spec.System = types.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).Should(HaveOccurred())
 
 			//Sets recovery source to system source if empty
-			spec.System = v2.NewDockerSrc("some/image:tag")
+			spec.System = types.NewDockerSrc("some/image:tag")
 			spec.RecoveryUpgrade = true
-			spec.RecoverySystem.Source = v2.NewEmptySrc()
+			spec.RecoverySystem.Source = types.NewEmptySrc()
 			err = spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
@@ -508,9 +508,9 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
 
 			//Success when properly provided source packages
-			spec := &v2.LiveISO{
-				RootFS: []*v2.ImageSource{
-					v2.NewDirSrc("/system/os"),
+			spec := &types.LiveISO{
+				RootFS: []*types.ImageSource{
+					types.NewDirSrc("/system/os"),
 				},
 			}
 			spec.BootloaderInRootFs = true
@@ -518,14 +518,14 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(iso.Sanitize()).ShouldNot(HaveOccurred())
 
 			//Fails when packages were provided in incorrect format
-			spec = &v2.LiveISO{
-				RootFS: []*v2.ImageSource{
+			spec = &types.LiveISO{
+				RootFS: []*types.ImageSource{
 					nil,
 				},
-				UEFI: []*v2.ImageSource{
+				UEFI: []*types.ImageSource{
 					nil,
 				},
-				Image: []*v2.ImageSource{
+				Image: []*types.ImageSource{
 					nil,
 				},
 			}

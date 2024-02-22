@@ -26,28 +26,28 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
-	var cfg v2.Config
+	var cfg types.Config
 	var runner *v2mock.FakeRunner
 	var fs vfs.FS
-	var logger v2.Logger
+	var logger types.Logger
 	var mounter *v2mock.FakeMounter
 	var cleanup func()
 	var bootloader *v2mock.FakeBootloader
 	var memLog *bytes.Buffer
-	var snapCfg v2.SnapshotterConfig
+	var snapCfg types.SnapshotterConfig
 	var rootDir, efiDir string
-	var statePart *v2.Partition
+	var statePart *types.Partition
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
-		statePart = &v1.Partition{
+		statePart = &types.Partition{
 			Name:       constants.StatePartName,
 			Path:       "/dev/state-device",
 			MountPoint: rootDir,
@@ -57,8 +57,8 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		mounter = v2mock.NewFakeMounter()
 		bootloader = &v2mock.FakeBootloader{}
 		memLog = bytes.NewBuffer(nil)
-		logger = v2.NewBufferLogger(memLog)
-		logger.SetLevel(v2.DebugLevel())
+		logger = types.NewBufferLogger(memLog)
+		logger.SetLevel(types.DebugLevel())
 
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -71,7 +71,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			conf.WithMounter(mounter),
 			conf.WithPlatform("linux/amd64"),
 		)
-		snapCfg = v2.NewLoopDevice()
+		snapCfg = types.NewLoopDevice()
 
 		Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
 	})
@@ -191,7 +191,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 	Describe("using loopdevice on sixth snapshot", func() {
 		var err error
-		var lp v2.Snapshotter
+		var lp types.Snapshotter
 
 		BeforeEach(func() {
 

@@ -14,14 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
-import (
-	"github.com/rancher/yip/pkg/schema"
-)
+// SourceNotFound is the error to raise when we can't find a source for install/upgrade
+type SourceNotFound struct {
+}
 
-type CloudInitRunner interface {
-	Run(string, ...string) error
-	SetModifier(schema.Modifier)
-	CloudInitFileRender(target string, config *schema.YipConfig) error
+func (s *SourceNotFound) Error() string {
+	return "could not find source"
 }

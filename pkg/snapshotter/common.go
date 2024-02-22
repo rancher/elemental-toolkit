@@ -20,14 +20,14 @@ import (
 	"fmt"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
-type snapshotterFactory func(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error)
+type snapshotterFactory func(cfg types.Config, snapCfg types.SnapshotterConfig, bootloader types.Bootloader) (types.Snapshotter, error)
 
 var snapshotterFactories = map[string]snapshotterFactory{}
 
-func NewSnapshotter(cfg v2.Config, snapCfg v2.SnapshotterConfig, bootloader v2.Bootloader) (v2.Snapshotter, error) {
+func NewSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, bootloader types.Bootloader) (types.Snapshotter, error) {
 	factory := snapshotterFactories[snapCfg.Type]
 	if factory != nil {
 		return factory(cfg, snapCfg, bootloader)

@@ -33,7 +33,7 @@ import (
 	. "github.com/rancher/elemental-toolkit/v2/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -50,12 +50,12 @@ const printOutput = `BYT;
 var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), func() {
 	// unit test stolen from yip
 	Describe("loading yaml files", func() {
-		var logger v2.Logger
+		var logger types.Logger
 		var buffer *bytes.Buffer
 		BeforeEach(func() {
 			buffer = bytes.NewBuffer([]byte{})
-			logger = v2.NewBufferLogger(buffer)
-			logger.SetLevel(v2.DebugLevel())
+			logger = types.NewBufferLogger(buffer)
+			logger.SetLevel(types.DebugLevel())
 		})
 
 		It("executes commands", func() {
@@ -91,7 +91,7 @@ stages:
 			err = fs2.WriteFile("/tmp/test/bar", []byte(`boo`), os.ModePerm)
 			Expect(err).Should(BeNil())
 
-			runner := NewYipCloudInitRunner(logger, &v2.RealRunner{}, fs)
+			runner := NewYipCloudInitRunner(logger, &types.RealRunner{}, fs)
 
 			err = runner.Run("test", "/some/yip")
 			Expect(err).Should(BeNil())
@@ -108,17 +108,17 @@ stages:
 	})
 	Describe("writing yaml files", func() {
 		var fs *vfst.TestFS
-		var logger v2.Logger
+		var logger types.Logger
 		var cleanup func()
 		var err error
 		var yipRunner *YipCloudInitRunner
 		var tempDir string
 
 		BeforeEach(func() {
-			logger = v2.NewNullLogger()
+			logger = types.NewNullLogger()
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
-			yipRunner = NewYipCloudInitRunner(logger, &v2.RealRunner{}, fs)
+			yipRunner = NewYipCloudInitRunner(logger, &types.RealRunner{}, fs)
 			tempDir = fs.TempDir()
 		})
 
@@ -163,7 +163,7 @@ stages:
 			}
 			Expect(utils.MkdirAll(fs, "/output", constants.DirPerm)).To(Succeed())
 			roFS := vfs.NewReadOnlyFS(fs)
-			yipRunner = NewYipCloudInitRunner(logger, &v2.RealRunner{}, roFS)
+			yipRunner = NewYipCloudInitRunner(logger, &types.RealRunner{}, roFS)
 			Expect(yipRunner.CloudInitFileRender("/conf/exmaple.yaml", conf)).NotTo(Succeed())
 		})
 	})
@@ -173,7 +173,7 @@ stages:
 		var device, cmdFail string
 		var partNum int
 		var cleanup func()
-		logger := v2.NewNullLogger()
+		logger := types.NewNullLogger()
 		BeforeEach(func() {
 			afs, cleanup, _ = vfst.NewTestFS(nil)
 			err := utils.MkdirAll(afs, "/some/yip", constants.DirPerm)

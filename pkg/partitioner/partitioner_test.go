@@ -30,7 +30,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	mocks "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	part "github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
-	v2 "github.com/rancher/elemental-toolkit/v2/pkg/types/v2"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
@@ -105,14 +105,14 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				{"sgdisk", "--zap-all", "/dev/device"},
 				{"partx", "-u", "/dev/device"},
 			}
-			Expect(gc.SetPartitionTableLabel(v2.GPT)).To(Succeed())
+			Expect(gc.SetPartitionTableLabel(types.GPT)).To(Succeed())
 			gc.WipeTable(true)
 			_, err := gc.WriteChanges()
 			Expect(err).To(BeNil())
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Fails setting a new partition label", func() {
-			Expect(gc.SetPartitionTableLabel(v2.MSDOS)).NotTo(Succeed())
+			Expect(gc.SetPartitionTableLabel(types.MSDOS)).NotTo(Succeed())
 		})
 		It("Creates a new partition", func() {
 			cmds := [][]string{
@@ -179,7 +179,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		It("Gets partition table label", func() {
 			label, _ := gc.GetPartitionTableLabel(sgdiskPrint)
-			Expect(label).To(Equal(v2.GPT))
+			Expect(label).To(Equal(types.GPT))
 		})
 		It("Gets partitions info of the disk", func() {
 			parts := gc.GetPartitions(sgdiskPrint)
