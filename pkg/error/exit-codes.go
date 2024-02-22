@@ -257,7 +257,7 @@ const SnapshotterStart = 85
 const MountEFIPartition = 86
 
 // Error mounting Persistent partition
-const MountPersistentPartition = 86
+const MountPersistentPartition = 87
 
 // Unknown error
 const Unknown int = 255
