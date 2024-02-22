@@ -147,9 +147,10 @@ func (b *Btrfs) InitSnapshotter(rootDir string) error {
 
 	b.cfg.Logger.Debug("Checking if essential subvolumes are already created")
 	if ok, err = b.isInitiated(); ok {
-		b.cfg.Logger.Debugf("snapshotter already initated, setting root directory to /")
 		if elemental.IsActiveMode(b.cfg) || elemental.IsPassiveMode(b.cfg) {
-			b.rootDir = "/"
+			if b.rootDir != "/" {
+				b.snapperArgs = []string{"--no-dbus", "--root", b.rootDir}
+			}
 			return nil
 		}
 		b.cfg.Logger.Debug("Remount state partition at root subvolume")
@@ -692,7 +693,7 @@ func (b *Btrfs) remountStatePartition(rootDev string) error {
 	}
 
 	b.cfg.Logger.Debugf("Mount snapshots subvolume in active snapshot")
-	if b.activeSnapshotID > 0 && b.rootDir != "/" {
+	if b.activeSnapshotID > 0 {
 		snapperRoot := filepath.Join(b.rootDir, fmt.Sprintf(snapshotPathTmpl, b.activeSnapshotID))
 		mountpoint := filepath.Join(snapperRoot, snapshotsPath)
 		subvol := fmt.Sprintf("subvol=%s", filepath.Join(rootSubvol, snapshotsPath))
