@@ -57,12 +57,13 @@ type Grub struct {
 	grubEfiImg string
 	mokMngr    string
 
-	grubPrefixes     []string
-	configFile       string
-	elementalCfg     string
-	disableBootEntry bool
-	clearBootEntry   bool
-	secureBoot       bool
+	grubPrefixes       []string
+	configFile         string
+	elementalCfg       string
+	legacyElementalCfg string
+	disableBootEntry   bool
+	clearBootEntry     bool
+	secureBoot         bool
 }
 
 var _ v1.Bootloader = (*Grub)(nil)
@@ -76,15 +77,16 @@ func NewGrub(cfg *v1.Config, opts ...GrubOptions) *Grub {
 		secureBoot = false
 	}
 	g := &Grub{
-		fs:             cfg.Fs,
-		logger:         cfg.Logger,
-		runner:         cfg.Runner,
-		platform:       cfg.Platform,
-		configFile:     grubCfgFile,
-		grubPrefixes:   defaultGrubPrefixes,
-		elementalCfg:   filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
-		clearBootEntry: true,
-		secureBoot:     secureBoot,
+		fs:                 cfg.Fs,
+		logger:             cfg.Logger,
+		runner:             cfg.Runner,
+		platform:           cfg.Platform,
+		configFile:         grubCfgFile,
+		grubPrefixes:       defaultGrubPrefixes,
+		elementalCfg:       filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
+		legacyElementalCfg: filepath.Join(constants.LegacyGrubCfgPath, constants.GrubCfg),
+		clearBootEntry:     true,
+		secureBoot:         secureBoot,
 	}
 
 	for _, o := range opts {
@@ -413,6 +415,11 @@ func (g *Grub) Install(rootDir, bootDir string) (err error) {
 func (g Grub) InstallConfig(rootDir, bootDir string) error {
 	for _, path := range g.grubPrefixes {
 		grubFile := filepath.Join(rootDir, g.elementalCfg)
+		if exists, _ := utils.Exists(g.fs, grubFile); !exists {
+			grubFile = filepath.Join(rootDir, g.legacyElementalCfg)
+			g.logger.Warnf("Grub config not found, using legacy config: %s", grubFile)
+		}
+
 		dstGrubFile := filepath.Join(bootDir, path, g.configFile)
 
 		g.logger.Infof("Using grub config file %s", grubFile)
