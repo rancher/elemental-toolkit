@@ -71,4 +71,13 @@
 | 76 | Error occurred while creating the OS filesystem image|
 | 77 | Error occurred while copying the filesystem image and setting new labels|
 | 78 | Error setting persistent GRUB variables|
+| 79 | Error occured on before-disk hook|
+| 80 | Error occured on after-disk hook|
+| 81 | Error occured on after-disk-chroot hook|
+| 82 | Error occured on after-disk hook|
+| 83 | Error occured checking configured size is bigger than minimum required size|
+| 84 | Error occured initializing snapshotter|
+| 85 | Error occured starting an snapshotter transaction|
+| 86 | Error mounting EFI partition|
+| 87 | Error mounting Persistent partition|
 | 255 | Unknown error|
