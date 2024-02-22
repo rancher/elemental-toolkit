@@ -31,7 +31,7 @@ import (
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
@@ -48,21 +48,21 @@ func TestElementalSuite(t *testing.T) {
 
 var _ = Describe("Elemental", Label("elemental"), func() {
 	var config *types.Config
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var logger types.Logger
 	var syscall types.SyscallInterface
-	var client *v2mock.FakeHTTPClient
-	var mounter *v2mock.FakeMounter
-	var extractor *v2mock.FakeImageExtractor
+	var client *mocks.FakeHTTPClient
+	var mounter *mocks.FakeMounter
+	var extractor *mocks.FakeImageExtractor
 	var fs *vfst.TestFS
 	var cleanup func()
 	BeforeEach(func() {
-		runner = v2mock.NewFakeRunner()
-		syscall = &v2mock.FakeSyscall{}
-		mounter = v2mock.NewFakeMounter()
-		client = &v2mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		logger = types.NewNullLogger()
-		extractor = v2mock.NewFakeImageExtractor(logger)
+		extractor = mocks.NewFakeImageExtractor(logger)
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 		config = conf.NewConfig(
 			conf.WithFs(fs),
@@ -387,14 +387,14 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 
 	})
 	Describe("PartitionAndFormatDevice", Label("PartitionAndFormatDevice", "partition", "format"), func() {
-		var cInit *v2mock.FakeCloudInitRunner
+		var cInit *mocks.FakeCloudInitRunner
 		var partNum int
 		var printOut string
 		var failPart bool
 		var install *types.InstallSpec
 
 		BeforeEach(func() {
-			cInit = &v2mock.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
+			cInit = &mocks.FakeCloudInitRunner{ExecStages: []string{}, Error: false}
 			config.CloudInitRunner = cInit
 			install = conf.NewInstallSpec(*config)
 			install.Target = "/some/device"
@@ -1030,7 +1030,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 })
 
 // PathInMountPoints will check if the given path is in the mountPoints list
-func pathInMountPoints(mounter *v2mock.FakeMounter, path string) bool {
+func pathInMountPoints(mounter *mocks.FakeMounter, path string) bool {
 	mountPoints, _ := mounter.List()
 	for _, m := range mountPoints {
 		if path == m.Path {

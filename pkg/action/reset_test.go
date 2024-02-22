@@ -30,39 +30,39 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Reset action tests", func() {
 	var config *types.RunConfig
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
 	var logger types.Logger
-	var mounter *v2mock.FakeMounter
-	var syscall *v2mock.FakeSyscall
-	var client *v2mock.FakeHTTPClient
-	var cloudInit *v2mock.FakeCloudInitRunner
-	var extractor *v2mock.FakeImageExtractor
+	var mounter *mocks.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var cloudInit *mocks.FakeCloudInitRunner
+	var extractor *mocks.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var ghwTest v2mock.GhwMock
-	var bootloader *v2mock.FakeBootloader
+	var ghwTest mocks.GhwMock
+	var bootloader *mocks.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v2mock.NewFakeRunner()
-		syscall = &v2mock.FakeSyscall{}
-		mounter = v2mock.NewFakeMounter()
-		client = &v2mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = types.NewBufferLogger(memLog)
-		extractor = v2mock.NewFakeImageExtractor(logger)
+		extractor = mocks.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 
-		cloudInit = &v2mock.FakeCloudInitRunner{}
+		cloudInit = &mocks.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
@@ -90,7 +90,7 @@ var _ = Describe("Reset action tests", func() {
 			_, err = fs.Create(recoveryImg)
 			Expect(err).To(BeNil())
 
-			bootloader = &v2mock.FakeBootloader{}
+			bootloader = &mocks.FakeBootloader{}
 
 			mainDisk := block.Disk{
 				Name: "device",
@@ -122,7 +122,7 @@ var _ = Describe("Reset action tests", func() {
 					},
 				},
 			}
-			ghwTest = v2mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 

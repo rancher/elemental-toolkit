@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
@@ -33,12 +33,12 @@ var _ = Describe("Runner", Label("types", "runner"), func() {
 		Expect(err).To(BeNil())
 	})
 	It("Runs commands on the fake runner", func() {
-		r := v2mock.NewFakeRunner()
+		r := mocks.NewFakeRunner()
 		_, err := r.Run("pwd")
 		Expect(err).To(BeNil())
 	})
 	It("Sets and gets the logger on the fake runner", func() {
-		r := v2mock.NewFakeRunner()
+		r := mocks.NewFakeRunner()
 		Expect(r.GetLogger()).To(BeNil())
 		logger := types.NewNullLogger()
 		r.SetLogger(logger)

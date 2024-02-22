@@ -36,7 +36,7 @@ import (
 
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
@@ -51,24 +51,24 @@ func getNamesFromListFiles(list []fs.DirEntry) []string {
 
 var _ = Describe("Utils", Label("utils"), func() {
 	var config *types.Config
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var realRunner *types.RealRunner
 	var logger types.Logger
-	var syscall *v2mock.FakeSyscall
-	var client *v2mock.FakeHTTPClient
-	var mounter *v2mock.FakeMounter
-	var extractor *v2mock.FakeImageExtractor
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var mounter *mocks.FakeMounter
+	var extractor *mocks.FakeImageExtractor
 	var fs vfs.FS
 	var cleanup func()
 
 	BeforeEach(func() {
-		runner = v2mock.NewFakeRunner()
-		syscall = &v2mock.FakeSyscall{}
-		mounter = v2mock.NewFakeMounter()
-		client = &v2mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		logger = types.NewNullLogger()
 		realRunner = &types.RealRunner{Logger: logger}
-		extractor = v2mock.NewFakeImageExtractor(logger)
+		extractor = mocks.NewFakeImageExtractor(logger)
 		// Ensure /tmp exists in the VFS
 		fs, cleanup, _ = vfst.NewTestFS(nil)
 		fs.Mkdir("/tmp", constants.DirPerm)
@@ -200,7 +200,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 			}
 		})
 		It("returns found device", func() {
-			ghwTest := v2mock.GhwMock{}
+			ghwTest := mocks.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",
@@ -222,9 +222,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("GetAllPartitions", Label("lsblk", "partitions"), func() {
-		var ghwTest v2mock.GhwMock
+		var ghwTest mocks.GhwMock
 		BeforeEach(func() {
-			ghwTest = v2mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			disk1 := block.Disk{
 				Name: "sda",
 				Partitions: []*block.Partition{
@@ -264,9 +264,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 	})
 	Describe("GetPartitionFS", Label("lsblk", "partitions"), func() {
-		var ghwTest v2mock.GhwMock
+		var ghwTest mocks.GhwMock
 		BeforeEach(func() {
-			ghwTest = v2mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name: "device1",
@@ -340,7 +340,7 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 		It("returns found types.Partition", func() {
 			var flags []string
-			ghwTest := v2mock.GhwMock{}
+			ghwTest := mocks.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",

@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
@@ -34,7 +34,7 @@ var _ = Describe("Syscall", Label("types", "syscall"), func() {
 	})
 
 	It("Calling chroot on the fake syscall should not fail", func() {
-		r := v2mock.FakeSyscall{}
+		r := mocks.FakeSyscall{}
 		err := r.Chroot("/tmp/")
 		// We need elevated privs to chroot so this should fail
 		Expect(err).To(BeNil())
@@ -47,7 +47,7 @@ var _ = Describe("Syscall", Label("types", "syscall"), func() {
 	})
 
 	It("Calling chroot on the fake syscall should not fail", func() {
-		r := v2mock.FakeSyscall{}
+		r := mocks.FakeSyscall{}
 		err := r.Chdir("/tmp/")
 		// We need elevated privs to chroot so this should fail
 		Expect(err).To(BeNil())

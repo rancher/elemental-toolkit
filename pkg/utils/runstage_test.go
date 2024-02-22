@@ -30,7 +30,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/cloudinit"
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
@@ -51,11 +51,11 @@ func writeCmdline(s string, fs types.FS) error {
 
 var _ = Describe("run stage", Label("RunStage"), func() {
 	var config *types.Config
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var logger types.Logger
-	var syscall *v2mock.FakeSyscall
-	var client *v2mock.FakeHTTPClient
-	var mounter *v2mock.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var mounter *mocks.FakeMounter
 	var fs vfs.FS
 	var memLog *bytes.Buffer
 
@@ -64,7 +64,7 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 
 	BeforeEach(func() {
 		strict = false
-		runner = v2mock.NewFakeRunner()
+		runner = mocks.NewFakeRunner()
 		// Use a different config with a buffer for logger, so we can check the output
 		// We also use the real fs
 		memLog = &bytes.Buffer{}
@@ -152,7 +152,7 @@ var _ = Describe("run stage", Label("RunStage"), func() {
 	})
 
 	It("ignores non existing cloud-init paths", func() {
-		ci := &v2mock.FakeCloudInitRunner{}
+		ci := &mocks.FakeCloudInitRunner{}
 		config.CloudInitRunner = ci
 		Expect(utils.MkdirAll(fs, "/existing", constants.DirPerm)).To(Succeed())
 		// Symlinks to existing directoryes are also valid

@@ -26,7 +26,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
@@ -36,22 +36,22 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var err error
 		var cleanup func()
 		var fs *vfst.TestFS
-		var mounter *v2mock.FakeMounter
-		var runner *v2mock.FakeRunner
-		var client *v2mock.FakeHTTPClient
-		var sysc *v2mock.FakeSyscall
+		var mounter *mocks.FakeMounter
+		var runner *mocks.FakeRunner
+		var client *mocks.FakeHTTPClient
+		var sysc *mocks.FakeSyscall
 		var logger types.Logger
-		var ci *v2mock.FakeCloudInitRunner
+		var ci *mocks.FakeCloudInitRunner
 		var c *types.Config
 		BeforeEach(func() {
 			fs, cleanup, err = vfst.NewTestFS(nil)
 			Expect(err).ToNot(HaveOccurred())
-			mounter = v2mock.NewFakeMounter()
-			runner = v2mock.NewFakeRunner()
-			client = &v2mock.FakeHTTPClient{}
-			sysc = &v2mock.FakeSyscall{}
+			mounter = mocks.NewFakeMounter()
+			runner = mocks.NewFakeRunner()
+			client = &mocks.FakeHTTPClient{}
+			sysc = &mocks.FakeSyscall{}
 			logger = types.NewNullLogger()
-			ci = &v2mock.FakeCloudInitRunner{}
+			ci = &mocks.FakeCloudInitRunner{}
 			c = config.NewConfig(
 				config.WithFs(fs),
 				config.WithMounter(mounter),
@@ -90,8 +90,8 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("ConfigOptions no mounter specified", Label("mount", "mounter"), func() {
 			It("should use the default mounter", Label("systemctl"), func() {
-				runner := v2mock.NewFakeRunner()
-				sysc := &v2mock.FakeSyscall{}
+				runner := mocks.NewFakeRunner()
+				sysc := &mocks.FakeSyscall{}
 				logger := types.NewNullLogger()
 				c := config.NewConfig(
 					config.WithRunner(runner),
@@ -146,7 +146,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("ResetSpec", Label("reset"), func() {
 			Describe("Successful executions", func() {
-				var ghwTest v2mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					mainDisk := block.Disk{
 						Name: "device",
@@ -178,7 +178,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v2mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 
@@ -231,7 +231,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			})
 			Describe("Failures", func() {
 				var bootedFrom string
-				var ghwTest v2mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					bootedFrom = ""
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
@@ -254,7 +254,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v2mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 				})
@@ -277,7 +277,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Name:       "device",
 						Partitions: []*block.Partition{},
 					}
-					ghwTest = v2mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 					defer ghwTest.Clean()
@@ -303,7 +303,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("UpgradeSpec", Label("upgrade"), func() {
 			Describe("Successful executions", func() {
-				var ghwTest v2mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					mainDisk := block.Disk{
 						Name: "device",
@@ -336,7 +336,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v2mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 				})

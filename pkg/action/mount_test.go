@@ -30,15 +30,15 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Mount Action", func() {
 	var cfg *types.RunConfig
-	var mounter *v2mock.FakeMounter
-	var runner *v2mock.FakeRunner
+	var mounter *mocks.FakeMounter
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
 	var logger types.Logger
 	var cleanup func()
@@ -46,10 +46,10 @@ var _ = Describe("Mount Action", func() {
 	var spec *types.MountSpec
 
 	BeforeEach(func() {
-		mounter = v2mock.NewFakeMounter()
+		mounter = mocks.NewFakeMounter()
 		memLog = &bytes.Buffer{}
 		logger = types.NewBufferLogger(memLog)
-		runner = v2mock.NewFakeRunner()
+		runner = mocks.NewFakeRunner()
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewRunConfig(

@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
@@ -36,12 +36,12 @@ import (
 
 var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 	var cfg types.Config
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
 	var logger types.Logger
-	var mounter *v2mock.FakeMounter
+	var mounter *mocks.FakeMounter
 	var cleanup func()
-	var bootloader *v2mock.FakeBootloader
+	var bootloader *mocks.FakeBootloader
 	var memLog *bytes.Buffer
 	var snapCfg types.SnapshotterConfig
 	var rootDir, efiDir string
@@ -55,9 +55,9 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			MountPoint: rootDir,
 		}
 		efiDir = constants.EfiDir
-		runner = v2mock.NewFakeRunner()
-		mounter = v2mock.NewFakeMounter()
-		bootloader = &v2mock.FakeBootloader{}
+		runner = mocks.NewFakeRunner()
+		mounter = mocks.NewFakeMounter()
+		bootloader = &mocks.FakeBootloader{}
 		memLog = bytes.NewBuffer(nil)
 		logger = types.NewBufferLogger(memLog)
 		logger.SetLevel(types.DebugLevel())

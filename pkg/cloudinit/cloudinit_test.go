@@ -32,7 +32,7 @@ import (
 
 	. "github.com/rancher/elemental-toolkit/v2/pkg/cloudinit"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
@@ -168,7 +168,7 @@ stages:
 		})
 	})
 	Describe("layout plugin execution", func() {
-		var runner *v2mock.FakeRunner
+		var runner *mocks.FakeRunner
 		var afs *vfst.TestFS
 		var device, cmdFail string
 		var partNum int
@@ -183,7 +183,7 @@ stages:
 			_, err = afs.Create(device)
 			Expect(err).To(BeNil())
 
-			runner = v2mock.NewFakeRunner()
+			runner = mocks.NewFakeRunner()
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == cmdFail {
@@ -224,7 +224,7 @@ stages:
         pLabel: partLabel
 `, device)), constants.FilePerm)
 			Expect(err).To(BeNil())
-			ghwTest := v2mock.GhwMock{}
+			ghwTest := mocks.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name:            "device1",
@@ -252,7 +252,7 @@ stages:
         size: 0
 `, device)), constants.FilePerm)
 			Expect(err).To(BeNil())
-			ghwTest := v2mock.GhwMock{}
+			ghwTest := mocks.GhwMock{}
 			disk := block.Disk{Name: "device", Partitions: []*block.Partition{
 				{
 					Name: fmt.Sprintf("device%d", partNum),

@@ -37,15 +37,15 @@ import (
 	"github.com/twpayne/go-vfs/v4/vfst"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 var _ = Describe("Config", Label("config"), func() {
-	var mounter *v2mock.FakeMounter
+	var mounter *mocks.FakeMounter
 
 	BeforeEach(func() {
-		mounter = v2mock.NewFakeMounter()
+		mounter = mocks.NewFakeMounter()
 	})
 	AfterEach(func() {
 		viper.Reset()
@@ -133,25 +133,25 @@ var _ = Describe("Config", Label("config"), func() {
 
 	Describe("Read build specs", Label("build"), func() {
 		var cfg *types.BuildConfig
-		var runner *v2mock.FakeRunner
+		var runner *mocks.FakeRunner
 		var fs vfs.FS
 		var logger types.Logger
-		var mounter *v2mock.FakeMounter
-		var syscall *v2mock.FakeSyscall
-		var client *v2mock.FakeHTTPClient
-		var cloudInit *v2mock.FakeCloudInitRunner
+		var mounter *mocks.FakeMounter
+		var syscall *mocks.FakeSyscall
+		var client *mocks.FakeHTTPClient
+		var cloudInit *mocks.FakeCloudInitRunner
 		var cleanup func()
 		var memLog *bytes.Buffer
 		var err error
 
 		BeforeEach(func() {
-			runner = v2mock.NewFakeRunner()
-			syscall = &v2mock.FakeSyscall{}
-			mounter = v2mock.NewFakeMounter()
-			client = &v2mock.FakeHTTPClient{}
+			runner = mocks.NewFakeRunner()
+			syscall = &mocks.FakeSyscall{}
+			mounter = mocks.NewFakeMounter()
+			client = &mocks.FakeHTTPClient{}
 			memLog = &bytes.Buffer{}
 			logger = types.NewBufferLogger(memLog)
-			cloudInit = &v2mock.FakeCloudInitRunner{}
+			cloudInit = &mocks.FakeCloudInitRunner{}
 
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
@@ -275,25 +275,25 @@ var _ = Describe("Config", Label("config"), func() {
 	})
 	Describe("Read runtime specs", Label("spec"), func() {
 		var cfg *types.RunConfig
-		var runner *v2mock.FakeRunner
+		var runner *mocks.FakeRunner
 		var fs vfs.FS
 		var logger types.Logger
-		var mounter *v2mock.FakeMounter
-		var syscall *v2mock.FakeSyscall
-		var client *v2mock.FakeHTTPClient
-		var cloudInit *v2mock.FakeCloudInitRunner
+		var mounter *mocks.FakeMounter
+		var syscall *mocks.FakeSyscall
+		var client *mocks.FakeHTTPClient
+		var cloudInit *mocks.FakeCloudInitRunner
 		var cleanup func()
 		var memLog *bytes.Buffer
 		var err error
 
 		BeforeEach(func() {
-			runner = v2mock.NewFakeRunner()
-			syscall = &v2mock.FakeSyscall{}
-			mounter = v2mock.NewFakeMounter()
-			client = &v2mock.FakeHTTPClient{}
+			runner = mocks.NewFakeRunner()
+			syscall = &mocks.FakeSyscall{}
+			mounter = mocks.NewFakeMounter()
+			client = &mocks.FakeHTTPClient{}
 			memLog = &bytes.Buffer{}
 			logger = types.NewBufferLogger(memLog)
-			cloudInit = &v2mock.FakeCloudInitRunner{}
+			cloudInit = &mocks.FakeCloudInitRunner{}
 
 			fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 			Expect(err).Should(BeNil())
@@ -365,7 +365,7 @@ var _ = Describe("Config", Label("config"), func() {
 		Describe("Read ResetSpec", Label("install"), func() {
 			var flags *pflag.FlagSet
 			var bootedFrom string
-			var ghwTest v2mock.GhwMock
+			var ghwTest mocks.GhwMock
 
 			BeforeEach(func() {
 				bootedFrom = constants.RecoveryImgFile
@@ -398,7 +398,7 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v2mock.GhwMock{}
+				ghwTest = mocks.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 			})
@@ -437,7 +437,7 @@ var _ = Describe("Config", Label("config"), func() {
 		})
 		Describe("Read UpgradeSpec", Label("upgrade", "upgrade-recovery"), func() {
 			var flags *pflag.FlagSet
-			var ghwTest v2mock.GhwMock
+			var ghwTest mocks.GhwMock
 
 			BeforeEach(func() {
 				flags = pflag.NewFlagSet("testflags", 1)
@@ -467,7 +467,7 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v2mock.GhwMock{}
+				ghwTest = mocks.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 				defer ghwTest.Clean()
@@ -489,7 +489,7 @@ var _ = Describe("Config", Label("config"), func() {
 			})
 		})
 		Describe("Read MountSpec", Label("mount"), func() {
-			var ghwTest v2mock.GhwMock
+			var ghwTest mocks.GhwMock
 			BeforeEach(func() {
 				mainDisk := block.Disk{
 					Name: "device",
@@ -508,7 +508,7 @@ var _ = Describe("Config", Label("config"), func() {
 						},
 					},
 				}
-				ghwTest = v2mock.GhwMock{}
+				ghwTest = mocks.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 			})

@@ -30,7 +30,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	eleefi "github.com/rancher/elemental-toolkit/v2/pkg/efi"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
@@ -40,7 +40,7 @@ import (
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 	var logger types.Logger
 	var fs vfs.FS
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var cleanup func()
 	var err error
 	var grub *bootloader.Grub
@@ -54,7 +54,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		logger = types.NewNullLogger()
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
-		runner = v2mock.NewFakeRunner()
+		runner = mocks.NewFakeRunner()
 		grubCfg = []byte("grub configuration")
 		osRelease = []byte("GRUB_ENTRY_NAME=some-name")
 

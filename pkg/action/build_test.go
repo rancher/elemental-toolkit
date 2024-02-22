@@ -34,36 +34,36 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	v2mock "github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Build Actions", func() {
 	var cfg *types.BuildConfig
-	var runner *v2mock.FakeRunner
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
 	var logger types.Logger
-	var mounter *v2mock.FakeMounter
-	var syscall *v2mock.FakeSyscall
-	var client *v2mock.FakeHTTPClient
-	var cloudInit *v2mock.FakeCloudInitRunner
-	var extractor *v2mock.FakeImageExtractor
+	var mounter *mocks.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var cloudInit *mocks.FakeCloudInitRunner
+	var extractor *mocks.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var bootloader *v2mock.FakeBootloader
+	var bootloader *mocks.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v2mock.NewFakeRunner()
-		syscall = &v2mock.FakeSyscall{}
-		mounter = v2mock.NewFakeMounter()
-		client = &v2mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		bootloader = &v2mock.FakeBootloader{}
+		bootloader = &mocks.FakeBootloader{}
 		logger = types.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
-		extractor = v2mock.NewFakeImageExtractor(logger)
-		cloudInit = &v2mock.FakeCloudInitRunner{}
+		extractor = mocks.NewFakeImageExtractor(logger)
+		cloudInit = &mocks.FakeCloudInitRunner{}
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewBuildConfig(
 			config.WithFs(fs),
@@ -111,19 +111,19 @@ var _ = Describe("Build Actions", func() {
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
 				if err != nil {
-					return v2mock.FakeDigest, err
+					return mocks.FakeDigest, err
 				}
 				err = utils.MkdirAll(fs, filepath.Join(destination, "lib/modules/6.4"), constants.DirPerm)
 				if err != nil {
-					return v2mock.FakeDigest, err
+					return mocks.FakeDigest, err
 				}
 				_, err = fs.Create(filepath.Join(bootDir, "vmlinuz-6.4"))
 				if err != nil {
-					return v2mock.FakeDigest, err
+					return mocks.FakeDigest, err
 				}
 
 				_, err = fs.Create(filepath.Join(bootDir, "initrd"))
-				return v2mock.FakeDigest, err
+				return mocks.FakeDigest, err
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
