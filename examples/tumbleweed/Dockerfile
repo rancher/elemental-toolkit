@@ -73,13 +73,6 @@ RUN systemctl enable NetworkManager.service && \
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
-# This is patches are fix upstream dracut, see https://github.com/dracutdevs/dracut/pull/2525
-ADD patches /
-RUN cd /usr/lib/dracut && \
-    patch -p 1 -f -i /0001-fix-dmsquash-live-restore-compatibility-with-earlier.patch && \
-    patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
-    rm /*.patch
-
 # Add default network configuration
 ADD 05_network.yaml /system/oem/05_network.yaml
 
