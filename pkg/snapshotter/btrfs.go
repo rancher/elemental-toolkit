@@ -439,7 +439,7 @@ func (b *Btrfs) SnapshotToImageSource(snap *v1.Snapshot) (*v1.ImageSource, error
 func (b *Btrfs) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "list", "--sort=path", rootDir)
 	if err != nil {
-		b.cfg.Logger.Errorf("falied listing btrfs subvolumes: %s", err.Error())
+		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
 		return nil, err
 	}
 	return b.parseVolumes(strings.TrimSpace(string(out))), nil
@@ -448,7 +448,7 @@ func (b *Btrfs) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 func (b *Btrfs) getActiveSnapshot() (int, error) {
 	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "get-default", b.rootDir)
 	if err != nil {
-		b.cfg.Logger.Errorf("falied listing btrfs subvolumes: %s", err.Error())
+		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
 		return 0, err
 	}
 	re := regexp.MustCompile(snapshotPathRegex)
