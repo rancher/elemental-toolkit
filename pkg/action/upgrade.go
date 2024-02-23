@@ -198,15 +198,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		}
 	}
 
-	// Hack to ensure we are not using / or /.snapshots mountpoints. Btrfs based deployments
-	// mount state partition into multiple locations
-	statePath := filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile)
-	if u.spec.Partitions.State.MountPoint == "/" || u.spec.Partitions.State.MountPoint == "/.snapshots" {
-		statePath = filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-	}
-
 	return u.cfg.WriteInstallState(
-		u.spec.State, statePath,
+		u.spec.State, filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile),
 		filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
 	)
 }
@@ -256,7 +249,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Init snapshotter
-	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State.MountPoint, u.spec.Partitions.EFI.MountPoint)
+	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State, u.spec.Partitions.EFI.MountPoint)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed initializing snapshotter")
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)

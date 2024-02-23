@@ -259,7 +259,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		}
 	} else {
 		// Run a snapshotter transaction for System source in state partition
-		err = b.snapshotter.InitSnapshotter(b.roots[constants.StatePartName], b.roots[constants.EfiPartName])
+		err = b.snapshotter.InitSnapshotter( /*b.roots[constants.StatePartName]*/ nil, b.roots[constants.EfiPartName])
 		if err != nil {
 			b.cfg.Logger.Errorf("failed initializing snapshotter")
 			return elementalError.NewFromError(err, elementalError.SnapshotterInit)
