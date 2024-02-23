@@ -44,10 +44,11 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 	var bootloader *v1mock.FakeBootloader
 	var memLog *bytes.Buffer
 	var snapCfg v1.SnapshotterConfig
-	var rootDir string
+	var rootDir, efiDir string
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
+		efiDir = constants.EfiDir
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
 		bootloader = &v1mock.FakeBootloader{}
@@ -109,7 +110,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "quota", "enable"},
@@ -230,31 +231,31 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 
 			It("fails to find root device", func() {
 				failCmd = "findmnt"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to to list subvolumes", func() {
 				failCmd = "btrfs subvolume list"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to enable btrfs quota", func() {
 				failCmd = "btrfs quota enable"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create subvolume", func() {
 				failCmd = "btrfs subvolume create"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create quota group", func() {
 				failCmd = "btrfs qgroup create"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 		})
@@ -279,7 +280,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},
@@ -428,21 +429,21 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 
 			It("fails to get default subvolume", func() {
 				failCmd = "btrfs subvolume get-default"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to mount root", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnMount = true
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring("mount"))
 			})
 
 			It("fails to umount default subvolume", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnUnmount = true
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(rootDir, efiDir)
 				Expect(err.Error()).To(ContainSubstring("unmount"))
 			})
 		})
@@ -471,7 +472,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},

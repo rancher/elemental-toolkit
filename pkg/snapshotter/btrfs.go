@@ -61,6 +61,7 @@ type Btrfs struct {
 	snapshotterCfg    v1.SnapshotterConfig
 	btrfsCfg          v1.BtrfsConfig
 	rootDir           string
+	efiDir            string
 	currentSnapshotID int
 	activeSnapshotID  int
 	bootloader        v1.Bootloader
@@ -132,11 +133,12 @@ func newBtrfsSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootloader
 	}, nil
 }
 
-func (b *Btrfs) InitSnapshotter(rootDir string) error {
+func (b *Btrfs) InitSnapshotter(rootDir, efiDir string) error {
 	var ok bool
 
 	b.cfg.Logger.Infof("Initiate btrfs snapshotter at %s", rootDir)
 	b.rootDir = rootDir
+	b.efiDir = efiDir
 
 	b.cfg.Logger.Debugf("Find device for '%s' mountpoint", b.rootDir)
 	rootDev, err := findRootDevice(b.cfg, b.rootDir)
@@ -175,7 +177,7 @@ func (b *Btrfs) StartTransaction() (*v1.Snapshot, error) {
 
 	if !b.installing && b.activeSnapshotID == 0 {
 		b.cfg.Logger.Errorf("Snapshotter should have been initalized before starting a transaction")
-		return nil, fmt.Errorf("Uninitialized snapshotter")
+		return nil, fmt.Errorf("uninitialized snapshotter")
 	}
 
 	if !b.installing {
@@ -605,7 +607,7 @@ func (b *Btrfs) setBootloader() error {
 	}
 	snapsList := strings.Join(passives, " ")
 	fallbackList := strings.Join(fallbacks, " ")
-	envFile := filepath.Join(constants.EfiDir, constants.GrubOEMEnv)
+	envFile := filepath.Join(b.efiDir, constants.GrubOEMEnv)
 
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,

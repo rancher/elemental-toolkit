@@ -184,7 +184,7 @@ func (i InstallAction) Run() (err error) {
 		return elemental.UnmountPartitions(i.cfg.Config, i.spec.Partitions.PartitionsByMountPoint(true))
 	})
 
-	err = i.snapshotter.InitSnapshotter(i.spec.Partitions.State.MountPoint)
+	err = i.snapshotter.InitSnapshotter(i.spec.Partitions.State.MountPoint, i.spec.Partitions.EFI.MountPoint)
 	if err != nil {
 		i.cfg.Logger.Errorf("failed initializing snapshotter")
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)

@@ -256,7 +256,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Init snapshotter
-	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State.MountPoint)
+	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State.MountPoint, u.spec.Partitions.EFI.MountPoint)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed initializing snapshotter")
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)

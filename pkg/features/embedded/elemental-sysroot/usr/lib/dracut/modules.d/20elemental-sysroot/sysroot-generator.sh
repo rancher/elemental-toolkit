@@ -70,6 +70,7 @@ if [ "${snapshotter}" == "btrfs" ]; then
         echo "[Unit]"
         echo "Before=initrd-root-fs.target"
         echo "DefaultDependencies=no"
+        echo "RequiresMountsFor=/sysroot"
         echo "PartOf=initrd.target"
         echo "[Mount]"
         echo "Where=${root_part_mnt}"

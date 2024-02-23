@@ -214,7 +214,7 @@ func (r ResetAction) Run() (err error) {
 	})
 
 	// Init snapshotter
-	err = r.snapshotter.InitSnapshotter(r.spec.Partitions.State.MountPoint)
+	err = r.snapshotter.InitSnapshotter(r.spec.Partitions.State.MountPoint, r.spec.Partitions.EFI.MountPoint)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)
 	}

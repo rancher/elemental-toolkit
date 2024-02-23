@@ -42,10 +42,11 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	var bootloader *v1mock.FakeBootloader
 	var memLog *bytes.Buffer
 	var snapCfg v1.SnapshotterConfig
-	var rootDir string
+	var rootDir, efiDir string
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
+		efiDir = constants.EfiDir
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
 		bootloader = &v1mock.FakeBootloader{}
@@ -95,7 +96,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
-		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
 	})
 
@@ -109,7 +110,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
-		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeTrue())
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
 		Expect(fs.ReadFile(filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(Equal([]byte("passive image")))
@@ -121,7 +122,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
-		Expect(lp.InitSnapshotter(rootDir)).NotTo(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).NotTo(Succeed())
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots"))).To(BeFalse())
 	})
 
@@ -129,7 +130,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 
 		snap, err := lp.StartTransaction()
 		Expect(err).NotTo(HaveOccurred())
@@ -148,7 +149,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 		Expect(utils.Exists(fs, filepath.Join(rootDir, ".snapshots/1/snapshot.img"))).To(BeTrue())
 
 		snap, err := lp.StartTransaction()
@@ -175,7 +176,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 		mounter.ErrorOnMount = true
 
-		Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+		Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 		Expect(lp.StartTransaction()).Error().To(HaveOccurred())
 	})
 
@@ -203,7 +204,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 			lp, err = snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(lp.InitSnapshotter(rootDir)).To(Succeed())
+			Expect(lp.InitSnapshotter(rootDir, efiDir)).To(Succeed())
 		})
 
 		It("gets current snapshots", func() {

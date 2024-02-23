@@ -47,6 +47,7 @@ type LoopDevice struct {
 	snapshotterCfg    v1.SnapshotterConfig
 	loopDevCfg        v1.LoopDeviceConfig
 	rootDir           string
+	efiDir            string
 	currentSnapshotID int
 	activeSnapshotID  int
 	bootloader        v1.Bootloader
@@ -77,11 +78,12 @@ func newLoopDeviceSnapshotter(cfg v1.Config, snapCfg v1.SnapshotterConfig, bootl
 
 // InitSnapshotter initiates the snapshotter to the given root directory. More over this method includes logic to migrate
 // from older elemental-toolkit versions.
-func (l *LoopDevice) InitSnapshotter(rootDir string) error {
+func (l *LoopDevice) InitSnapshotter(rootDir, efiDir string) error {
 	var err error
 
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", rootDir)
 	l.rootDir = rootDir
+	l.efiDir = efiDir
 
 	// Check the existence of a legacy deployment
 	if ok, _ := utils.Exists(l.cfg.Fs, filepath.Join(rootDir, constants.LegacyImagesPath)); ok {
@@ -492,7 +494,7 @@ func (l *LoopDevice) setBootloader() error {
 	}
 	snapsList := strings.Join(passives, " ")
 	fallbackList := strings.Join(fallbacks, " ")
-	envFile := filepath.Join(constants.EfiDir, constants.GrubOEMEnv)
+	envFile := filepath.Join(l.efiDir, constants.GrubOEMEnv)
 
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
