@@ -359,7 +359,7 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryOnlyUpgrade bool         `yaml:"recovery-only,omitempty" mapstructure:"recovery"`
+	RecoveryOnlyUpgrade bool         `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
 	RecoveryUpgrade     bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	System              *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
 	RecoverySystem      Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
