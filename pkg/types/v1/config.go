@@ -379,7 +379,7 @@ func (u *UpgradeSpec) Sanitize() error {
 		return fmt.Errorf("undefined upgrade source")
 	}
 
-	if u.RecoveryUpgrade {
+	if u.RecoveryUpgrade || u.RecoveryOnlyUpgrade {
 		if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
 			return fmt.Errorf("undefined recovery partition")
 		}

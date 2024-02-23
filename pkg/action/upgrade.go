@@ -242,6 +242,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	// Only upgrade recovery
 	if u.spec.RecoveryOnlyUpgrade {
+		u.cfg.Logger.Info("Upgrading Recovery only")
 		upgradeRecoveryAction := NewUpgradeRecoveryAction(u.cfg, u.spec)
 		if err := upgradeRecoveryAction.Run(); err != nil {
 			u.Error("Upgrading Recovery: %s", err)
