@@ -359,13 +359,14 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade   bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	System            *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
-	Partitions        ElementalPartitions
-	State             *InstallState
+	RecoveryOnlyUpgrade bool         `yaml:"recovery-only,omitempty" mapstructure:"recovery"`
+	RecoveryUpgrade     bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System              *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem      Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry        string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	BootloaderUpgrade   bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	Partitions          ElementalPartitions
+	State               *InstallState
 }
 
 // Sanitize checks the consistency of the struct, returns error

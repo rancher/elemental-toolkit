@@ -211,19 +211,11 @@ func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 	}
 	cleanup.Push(umount)
 
-	if !elemental.IsRecoveryMode(u.cfg.Config) {
-		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
-		if err != nil {
-			return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
-		}
-		cleanup.Push(umount)
-	} else {
-		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
-		if err != nil {
-			return elementalError.NewFromError(err, elementalError.MountStatePartition)
-		}
-		cleanup.Push(umount)
+	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.MountStatePartition)
 	}
+	cleanup.Push(umount)
 
 	if u.spec.Partitions.Persistent != nil {
 		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Persistent)
@@ -246,6 +238,23 @@ func (u *UpgradeAction) Run() (err error) {
 	err = u.mountRWPartitions(cleanup)
 	if err != nil {
 		return err
+	}
+
+	// Only upgrade recovery
+	if u.spec.RecoveryOnlyUpgrade {
+		upgradeRecoveryAction := NewUpgradeRecoveryAction(u.cfg, u.spec)
+		if err := upgradeRecoveryAction.Run(); err != nil {
+			u.Error("Upgrading Recovery: %s", err)
+			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
+		}
+		// Update state.yaml file on recovery and state partitions
+		err = u.upgradeInstallStateYaml()
+		if err != nil {
+			u.Error("Failed upgrading installation metadata")
+			return err
+		}
+		// Nothing more to do. Exit.
+		return nil
 	}
 
 	// Init snapshotter
@@ -296,7 +305,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	// Upgrade recovery
 	if u.spec.RecoveryUpgrade {
-		recoverySystem := u.spec.RecoverySystem
+		recoverySystem := &u.spec.RecoverySystem
 		u.cfg.Logger.Info("Deploying recovery system")
 		if recoverySystem.Source.String() == u.spec.System.String() {
 			// Reuse already deployed root-tree from active snapshot
@@ -306,24 +315,10 @@ func (u *UpgradeAction) Run() (err error) {
 			}
 			recoverySystem.Source.SetDigest(u.spec.System.GetDigest())
 		}
-		err = elemental.DeployImage(u.cfg.Config, &recoverySystem)
-		if err != nil {
-			u.cfg.Logger.Error("failed deploying recovery image")
-			return elementalError.NewFromError(err, elementalError.DeployImage)
-		}
-		recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
-		transitionFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.TransitionImgFile)
-		if ok, _ := utils.Exists(u.cfg.Fs, recoveryFile); ok {
-			err = u.cfg.Fs.Remove(recoveryFile)
-			if err != nil {
-				u.Error("failed removing old recovery image")
-				return err
-			}
-		}
-		err = u.cfg.Fs.Rename(transitionFile, recoveryFile)
-		if err != nil {
-			u.Error("failed renaming transition recovery image")
-			return err
+		upgradeRecoveryAction := NewUpgradeRecoveryAction(u.cfg, u.spec)
+		if err := upgradeRecoveryAction.Run(); err != nil {
+			u.Error("Upgrading Recovery: %s", err)
+			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
 		}
 	}
 
