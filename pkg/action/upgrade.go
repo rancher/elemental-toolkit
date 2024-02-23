@@ -240,24 +240,6 @@ func (u *UpgradeAction) Run() (err error) {
 		return err
 	}
 
-	// Only upgrade recovery
-	if u.spec.RecoveryOnlyUpgrade {
-		u.cfg.Logger.Info("Upgrading Recovery only")
-		upgradeRecoveryAction := NewUpgradeRecoveryAction(u.cfg, u.spec)
-		if err := upgradeRecoveryAction.Run(); err != nil {
-			u.Error("Upgrading Recovery: %s", err)
-			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
-		}
-		// Update state.yaml file on recovery and state partitions
-		err = u.upgradeInstallStateYaml()
-		if err != nil {
-			u.Error("Failed upgrading installation metadata")
-			return err
-		}
-		// Nothing more to do. Exit.
-		return nil
-	}
-
 	// Init snapshotter
 	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State, u.spec.Partitions.EFI.MountPoint)
 	if err != nil {
@@ -282,18 +264,20 @@ func (u *UpgradeAction) Run() (err error) {
 	cleanup.PushErrorOnly(func() error { return u.snapshotter.CloseTransactionOnError(u.snapshot) })
 
 	// Deploy system image
-	err = elemental.DumpSource(u.cfg.Config, u.snapshot.WorkDir, u.spec.System)
-	if err != nil {
-		u.cfg.Logger.Errorf("failed deploying source: %s", u.spec.System.String())
-		return elementalError.NewFromError(err, elementalError.DumpSource)
-	}
+	if !u.spec.RecoveryOnlyUpgrade {
+		err = elemental.DumpSource(u.cfg.Config, u.snapshot.WorkDir, u.spec.System)
+		if err != nil {
+			u.cfg.Logger.Errorf("failed deploying source: %s", u.spec.System.String())
+			return elementalError.NewFromError(err, elementalError.DumpSource)
+		}
 
-	// Fine tune the dumped tree
-	u.cfg.Logger.Info("Fine tune the dumped root tree")
-	err = u.refineDeployment()
-	if err != nil {
-		u.cfg.Logger.Error("failed refining system root tree")
-		return err
+		// Fine tune the dumped tree
+		u.cfg.Logger.Info("Fine tune the dumped root tree")
+		err = u.refineDeployment()
+		if err != nil {
+			u.cfg.Logger.Error("failed refining system root tree")
+			return err
+		}
 	}
 
 	// Closing snapshotter transaction
@@ -305,7 +289,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Upgrade recovery
-	if u.spec.RecoveryUpgrade {
+	if u.spec.RecoveryUpgrade || u.spec.RecoveryOnlyUpgrade {
 		recoverySystem := &u.spec.RecoverySystem
 		u.cfg.Logger.Info("Deploying recovery system")
 		if recoverySystem.Source.String() == u.spec.System.String() {
