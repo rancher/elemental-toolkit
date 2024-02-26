@@ -264,20 +264,18 @@ func (u *UpgradeAction) Run() (err error) {
 	cleanup.PushErrorOnly(func() error { return u.snapshotter.CloseTransactionOnError(u.snapshot) })
 
 	// Deploy system image
-	if !u.spec.RecoveryOnlyUpgrade {
-		err = elemental.DumpSource(u.cfg.Config, u.snapshot.WorkDir, u.spec.System)
-		if err != nil {
-			u.cfg.Logger.Errorf("failed deploying source: %s", u.spec.System.String())
-			return elementalError.NewFromError(err, elementalError.DumpSource)
-		}
+	err = elemental.DumpSource(u.cfg.Config, u.snapshot.WorkDir, u.spec.System)
+	if err != nil {
+		u.cfg.Logger.Errorf("failed deploying source: %s", u.spec.System.String())
+		return elementalError.NewFromError(err, elementalError.DumpSource)
+	}
 
-		// Fine tune the dumped tree
-		u.cfg.Logger.Info("Fine tune the dumped root tree")
-		err = u.refineDeployment()
-		if err != nil {
-			u.cfg.Logger.Error("failed refining system root tree")
-			return err
-		}
+	// Fine tune the dumped tree
+	u.cfg.Logger.Info("Fine tune the dumped root tree")
+	err = u.refineDeployment()
+	if err != nil {
+		u.cfg.Logger.Error("failed refining system root tree")
+		return err
 	}
 
 	// Closing snapshotter transaction
@@ -289,7 +287,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Upgrade recovery
-	if u.spec.RecoveryUpgrade || u.spec.RecoveryOnlyUpgrade {
+	if u.spec.RecoveryUpgrade {
 		recoverySystem := &u.spec.RecoverySystem
 		u.cfg.Logger.Info("Deploying recovery system")
 		if recoverySystem.Source.String() == u.spec.System.String() {
@@ -300,9 +298,13 @@ func (u *UpgradeAction) Run() (err error) {
 			}
 			recoverySystem.Source.SetDigest(u.spec.System.GetDigest())
 		}
-		upgradeRecoveryAction := NewUpgradeRecoveryAction(u.cfg, u.spec)
+		upgradeRecoveryAction, err := NewUpgradeRecoveryAction(u.cfg, u.spec, WithUpdateInstallState(false))
+		if err != nil {
+			u.Error("Could not initialize Recovery upgrade: %s", err)
+			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
+		}
 		if err := upgradeRecoveryAction.Run(); err != nil {
-			u.Error("Upgrading Recovery: %s", err)
+			u.Error("Could not upgrade Recovery: %s", err)
 			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
 		}
 	}

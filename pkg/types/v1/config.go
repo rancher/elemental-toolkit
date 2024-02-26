@@ -359,14 +359,13 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryOnlyUpgrade bool         `yaml:"recovery-only,omitempty" mapstructure:"recovery-only"`
-	RecoveryUpgrade     bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	System              *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem      Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry        string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	BootloaderUpgrade   bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
-	Partitions          ElementalPartitions
-	State               *InstallState
+	RecoveryUpgrade   bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System            *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	Partitions        ElementalPartitions
+	State             *InstallState
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -379,7 +378,7 @@ func (u *UpgradeSpec) Sanitize() error {
 		return fmt.Errorf("undefined upgrade source")
 	}
 
-	if u.RecoveryUpgrade || u.RecoveryOnlyUpgrade {
+	if u.RecoveryUpgrade {
 		if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
 			return fmt.Errorf("undefined recovery partition")
 		}
@@ -392,6 +391,29 @@ func (u *UpgradeSpec) Sanitize() error {
 		if u.Partitions.EFI == nil || u.Partitions.EFI.MountPoint == "" {
 			return fmt.Errorf("undefined EFI partition")
 		}
+	}
+
+	// Set default label for non squashfs images
+	if u.RecoverySystem.FS != constants.SquashFs && u.RecoverySystem.Label == "" {
+		u.RecoverySystem.Label = constants.SystemLabel
+	} else if u.RecoverySystem.FS == constants.SquashFs {
+		u.RecoverySystem.Label = ""
+	}
+
+	return nil
+}
+
+// SanitizeForRecoveryOnly sanitizes UpgradeSpec when upgrading recovery only.
+func (u *UpgradeSpec) SanitizeForRecoveryOnly() error {
+	if u.Partitions.State == nil || u.Partitions.State.MountPoint == "" {
+		return fmt.Errorf("undefined state partition")
+	}
+
+	if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
+		return fmt.Errorf("undefined recovery partition")
+	}
+	if u.RecoverySystem.Source.IsEmpty() {
+		return fmt.Errorf("undefined upgrade-recovery source")
 	}
 
 	// Set default label for non squashfs images
