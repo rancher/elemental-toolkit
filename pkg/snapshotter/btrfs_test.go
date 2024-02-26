@@ -45,9 +45,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 	var memLog *bytes.Buffer
 	var snapCfg v1.SnapshotterConfig
 	var rootDir, efiDir string
+	var statePart *v1.Partition
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
+		statePart = &v1.Partition{
+			Name:       constants.StatePartName,
+			Path:       "/dev/state-device",
+			MountPoint: rootDir,
+		}
 		efiDir = constants.EfiDir
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
@@ -110,7 +116,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "quota", "enable"},
@@ -229,33 +235,27 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 				}
 			})
 
-			It("fails to find root device", func() {
-				failCmd = "findmnt"
-				err = b.InitSnapshotter(rootDir, efiDir)
-				Expect(err.Error()).To(ContainSubstring(failCmd))
-			})
-
 			It("fails to to list subvolumes", func() {
 				failCmd = "btrfs subvolume list"
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to enable btrfs quota", func() {
 				failCmd = "btrfs quota enable"
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create subvolume", func() {
 				failCmd = "btrfs subvolume create"
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create quota group", func() {
 				failCmd = "btrfs qgroup create"
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 		})
@@ -280,7 +280,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},
@@ -429,21 +429,21 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 
 			It("fails to get default subvolume", func() {
 				failCmd = "btrfs subvolume get-default"
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to mount root", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnMount = true
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring("mount"))
 			})
 
 			It("fails to umount default subvolume", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnUnmount = true
-				err = b.InitSnapshotter(rootDir, efiDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring("unmount"))
 			})
 		})
@@ -466,13 +466,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, "btrfs subvolume get-default"):
 						return []byte(defaultVol), nil
 					case cmd == "findmnt":
-						return []byte("/dev/sda[/@/.snapshots/1/snapshot]"), nil
+						mntLines := "/dev/sda[/@/.snapshots/1/snapshot] /some/root\n"
+						mntLines += "/dev/sda[/@] /some/root/run/initramfs/elemental-state\n"
+						return []byte(mntLines), nil
 					default:
 						return []byte{}, nil
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir, efiDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},

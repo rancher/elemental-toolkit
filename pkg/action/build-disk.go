@@ -84,10 +84,6 @@ func NewBuildDiskAction(cfg *v1.BuildConfig, spec *v1.DiskSpec, opts ...BuildDis
 	}
 
 	if b.cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
-		if !b.spec.Expandable {
-			cfg.Logger.Errorf("Non expandable disk images are not supported for btrfs snapshotter")
-			return nil, fmt.Errorf("Not supported")
-		}
 		if spec.Partitions.State.FS != constants.Btrfs {
 			cfg.Logger.Warning("Btrfs snapshotter type, forcing btrfs filesystem on state partition")
 			spec.Partitions.State.FS = constants.Btrfs
@@ -257,52 +253,6 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 			b.cfg.Logger.Errorf("failed creating expandable cloud-config: %s", err.Error())
 			return err
 		}
-	} else {
-		// Run a snapshotter transaction for System source in state partition
-		err = b.snapshotter.InitSnapshotter( /*b.roots[constants.StatePartName]*/ nil, b.roots[constants.EfiPartName])
-		if err != nil {
-			b.cfg.Logger.Errorf("failed initializing snapshotter")
-			return elementalError.NewFromError(err, elementalError.SnapshotterInit)
-		}
-		// Starting snapshotter transaction
-		b.cfg.Logger.Info("Starting snapshotter transaction")
-		b.snapshot, err = b.snapshotter.StartTransaction()
-		if err != nil {
-			b.cfg.Logger.Errorf("failed to start snapshotter transaction")
-			return elementalError.NewFromError(err, elementalError.SnapshotterStart)
-		}
-		cleanup.PushErrorOnly(func() error { return b.snapshotter.CloseTransactionOnError(b.snapshot) })
-
-		system := b.spec.System
-		if b.spec.RecoverySystem.Source.String() == b.spec.System.String() {
-			// Reuse already deployed root-tree from recovery image
-			system = v1.NewFileSrc(b.spec.RecoverySystem.File)
-			b.spec.System.SetDigest(b.spec.RecoverySystem.Source.GetDigest())
-		}
-
-		// Deploy system image
-		err = elemental.DumpSource(b.cfg.Config, b.snapshot.WorkDir, system)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed deploying source: %s", system.String())
-			return elementalError.NewFromError(err, elementalError.DumpSource)
-		}
-
-		// Closing snapshotter transaction
-		b.cfg.Logger.Info("Closing snapshotter transaction")
-		err = b.snapshotter.CloseTransaction(b.snapshot)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed closing snapshot transaction: %v", err)
-			return err
-		}
-	}
-
-	// Add state.yaml file on state and recovery partitions
-	err = b.createBuildDiskStateYaml(
-		b.roots[constants.StatePartName],
-		b.roots[constants.RecoveryPartName],
-	)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 
 	// Creates RAW disk image
@@ -378,18 +328,139 @@ func (b *BuildDiskAction) CreateRAWDisk(rawImg string) error {
 // CreatePartitionImage creates partition image files and returns a slice of the created images
 func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 	var err error
-	var img *v1.Image
+	var img, stateImg *v1.Image
 	var images []*v1.Image
-	var excludes v1.PartitionList
 
-	excludes = append(excludes, b.spec.Partitions.EFI)
-	if b.spec.Expandable {
-		excludes = append(excludes, b.spec.Partitions.State, b.spec.Partitions.Persistent)
+	// Create state partition first to compute snapshot metadata if any
+	if !b.spec.Expandable {
+		b.cfg.Logger.Infof("Creating State partition image")
+		stateImg, err = b.createStatePartitionImage()
+		if err != nil {
+			b.cfg.Logger.Errorf("failed creating State partition img: %s", err.Error())
+			return nil, err
+		}
+	}
+
+	// Add state.yaml file on recovery partition including snapshot metadata if any
+	err = b.createBuildDiskStateYaml("", b.roots[b.spec.Partitions.Recovery.Name])
+	if err != nil {
+		b.cfg.Logger.Errorf("failed creating state file: %v", err)
+		return nil, elementalError.NewFromError(err, elementalError.CreateFile)
 	}
 
 	b.cfg.Logger.Infof("Creating EFI partition image")
-	img = b.spec.Partitions.EFI.ToImage()
-	err = elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
+	img, err = b.createEFIPartitionImage()
+	if err != nil {
+		b.cfg.Logger.Errorf("failed creating EFI img: %s", err.Error())
+		return nil, err
+	}
+	images = append(images, img)
+
+	for _, part := range []*v1.Partition{b.spec.Partitions.OEM, b.spec.Partitions.Recovery} {
+		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
+		img = part.ToImage()
+		err = elemental.CreateImageFromTree(
+			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
+			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
+		)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed creating %s partition image: %s", part.Name, err.Error())
+			return nil, err
+		}
+		images = append(images, img)
+	}
+
+	if !b.spec.Expandable {
+		images = append(images, stateImg)
+
+		b.cfg.Logger.Infof("Creating Persistent partition image")
+		part := b.spec.Partitions.Persistent
+		img = part.ToImage()
+		err = elemental.CreateImageFromTree(
+			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
+			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
+		)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed creating %s partition image: %s", part.Name, err.Error())
+			return nil, err
+		}
+		images = append(images, img)
+	}
+
+	return images, nil
+}
+
+// createStatePartitionImage creates the State partitions for the configured snapshotter
+func (b *BuildDiskAction) createStatePartitionImage() (*v1.Image, error) {
+	stateImg := b.spec.Partitions.State.ToImage()
+
+	err := elemental.CreateFileSystemImage(b.cfg.Config, stateImg, "", false)
+	if err != nil {
+		b.cfg.Logger.Error("failed creating state filesystem image: %v", err)
+		return nil, err
+	}
+
+	err = elemental.MountFileSystemImage(b.cfg.Config, stateImg, "rw")
+	if err != nil {
+		b.cfg.Logger.Error("failed mounting state filesystem image: %v", err)
+		return nil, err
+	}
+	defer func() {
+		_ = elemental.UnmountFileSystemImage(b.cfg.Config, stateImg)
+	}()
+
+	// Run a snapshotter transaction for System source in state partition
+	err = b.snapshotter.InitSnapshotter(b.spec.Partitions.State, b.roots[constants.EfiPartName])
+	if err != nil {
+		b.cfg.Logger.Errorf("failed initializing snapshotter")
+		return nil, elementalError.NewFromError(err, elementalError.SnapshotterInit)
+	}
+	// Starting snapshotter transaction
+	b.cfg.Logger.Info("Starting snapshotter transaction")
+	b.snapshot, err = b.snapshotter.StartTransaction()
+	if err != nil {
+		b.cfg.Logger.Errorf("failed to start snapshotter transaction")
+		return nil, elementalError.NewFromError(err, elementalError.SnapshotterStart)
+	}
+
+	system := b.spec.System
+	if b.spec.RecoverySystem.Source.String() == b.spec.System.String() {
+		// Reuse already deployed root-tree from recovery image
+		system = v1.NewFileSrc(b.spec.RecoverySystem.File)
+		b.spec.System.SetDigest(b.spec.RecoverySystem.Source.GetDigest())
+	}
+
+	// Deploy system image
+	err = elemental.DumpSource(b.cfg.Config, b.snapshot.WorkDir, system)
+	if err != nil {
+		_ = b.snapshotter.CloseTransactionOnError(b.snapshot)
+		b.cfg.Logger.Errorf("failed deploying source: %s", system.String())
+		return nil, elementalError.NewFromError(err, elementalError.DumpSource)
+	}
+
+	// Closing snapshotter transaction
+	b.cfg.Logger.Info("Closing snapshotter transaction")
+	err = b.snapshotter.CloseTransaction(b.snapshot)
+	if err != nil {
+		_ = b.snapshotter.CloseTransactionOnError(b.snapshot)
+		b.cfg.Logger.Errorf("failed closing snapshot transaction: %v", err)
+		return nil, err
+	}
+
+	// Add state.yaml file on state partition
+	err = b.createBuildDiskStateYaml(stateImg.MountPoint, "")
+	if err != nil {
+		b.cfg.Logger.Errorf("failed creating state file: %v", err)
+		return stateImg, elementalError.NewFromError(err, elementalError.CreateFile)
+	}
+
+	return stateImg, nil
+}
+
+// createEFIPartitionImage creates the EFI partition image
+func (b *BuildDiskAction) createEFIPartitionImage() (*v1.Image, error) {
+	img := b.spec.Partitions.EFI.ToImage()
+	err := elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating EFI image: %s", err.Error())
 		return nil, err
@@ -415,29 +486,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 
 		return nil
 	})
-	if err != nil {
-		b.cfg.Logger.Errorf("failed copying files to EFI img: %s", err.Error())
-		return nil, err
-	}
-
-	images = append(images, img)
-
-	// Create all partitions after EFI
-	for _, part := range b.spec.Partitions.PartitionsByInstallOrder(v1.PartitionList{}, excludes...) {
-		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
-		img = part.ToImage()
-		err = elemental.CreateImageFromTree(
-			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
-			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
-		)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed creating %s partition image: %s", part.Name, err.Error())
-			return nil, err
-		}
-		images = append(images, img)
-	}
-
-	return images, nil
+	return img, err
 }
 
 // CreateDiskImage creates the final image by truncating the image with the proper size and
@@ -662,6 +711,8 @@ func (b *BuildDiskAction) applySelinuxLabels(root string, unprivileged bool) err
 }
 
 func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot string) error {
+	var statePath, recoveryPath string
+
 	if b.spec.Partitions.Recovery == nil {
 		return fmt.Errorf("undefined recovery partition")
 	}
@@ -714,15 +765,15 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 		}
 	}
 
-	statePath := ""
-	if !b.spec.Expandable {
+	if stateRoot != "" {
 		statePath = filepath.Join(stateRoot, constants.InstallStateFile)
 	}
 
-	return b.cfg.WriteInstallState(
-		installState, statePath,
-		filepath.Join(recoveryRoot, constants.InstallStateFile),
-	)
+	if recoveryRoot != "" {
+		recoveryPath = filepath.Join(recoveryRoot, constants.InstallStateFile)
+	}
+
+	return b.cfg.WriteInstallState(installState, statePath, recoveryPath)
 }
 
 func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
