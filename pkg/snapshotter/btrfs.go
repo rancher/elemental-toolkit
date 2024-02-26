@@ -144,8 +144,7 @@ func (b *Btrfs) InitSnapshotter(state *v1.Partition, efiDir string) error {
 	b.cfg.Logger.Debug("Checking if essential subvolumes are already created")
 	if ok, err = b.isInitiated(state.MountPoint); ok {
 		if elemental.IsActiveMode(b.cfg) || elemental.IsPassiveMode(b.cfg) {
-			b.configureSnapperAndRootDir(state)
-			return nil
+			return b.configureSnapperAndRootDir(state)
 		}
 		b.cfg.Logger.Debug("Remount state partition at root subvolume")
 		return b.remountStatePartition(state)
@@ -657,18 +656,6 @@ func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
 		return err
 	}
 	return nil
-}
-
-func findRootDevice(c v1.Config, root string) (string, error) {
-	cmdOut, err := c.Runner.Run("findmnt", "-fno", "SOURCE", root)
-	if err != nil {
-		return "", err
-	}
-	r := regexp.MustCompile(`^(/[^\[\]]+)`)
-	if match := r.FindStringSubmatch(strings.TrimSpace(string(cmdOut))); match != nil {
-		return match[1], nil
-	}
-	return "", fmt.Errorf("failed to parse findmnt output: %s", string(cmdOut))
 }
 
 func (b *Btrfs) remountStatePartition(state *v1.Partition) error {
