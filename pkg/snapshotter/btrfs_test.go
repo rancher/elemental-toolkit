@@ -44,10 +44,17 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 	var bootloader *v1mock.FakeBootloader
 	var memLog *bytes.Buffer
 	var snapCfg v1.SnapshotterConfig
-	var rootDir string
+	var rootDir, efiDir string
+	var statePart *v1.Partition
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
+		statePart = &v1.Partition{
+			Name:       constants.StatePartName,
+			Path:       "/dev/state-device",
+			MountPoint: rootDir,
+		}
+		efiDir = constants.EfiDir
 		runner = v1mock.NewFakeRunner()
 		mounter = v1mock.NewFakeMounter()
 		bootloader = &v1mock.FakeBootloader{}
@@ -109,7 +116,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "quota", "enable"},
@@ -228,33 +235,27 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 				}
 			})
 
-			It("fails to find root device", func() {
-				failCmd = "findmnt"
-				err = b.InitSnapshotter(rootDir)
-				Expect(err.Error()).To(ContainSubstring(failCmd))
-			})
-
 			It("fails to to list subvolumes", func() {
 				failCmd = "btrfs subvolume list"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to enable btrfs quota", func() {
 				failCmd = "btrfs quota enable"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create subvolume", func() {
 				failCmd = "btrfs subvolume create"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to create quota group", func() {
 				failCmd = "btrfs qgroup create"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 		})
@@ -279,7 +280,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},
@@ -428,21 +429,21 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 
 			It("fails to get default subvolume", func() {
 				failCmd = "btrfs subvolume get-default"
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring(failCmd))
 			})
 
 			It("fails to mount root", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnMount = true
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring("mount"))
 			})
 
 			It("fails to umount default subvolume", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnUnmount = true
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, efiDir)
 				Expect(err.Error()).To(ContainSubstring("unmount"))
 			})
 		})
@@ -465,13 +466,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, "btrfs subvolume get-default"):
 						return []byte(defaultVol), nil
 					case cmd == "findmnt":
-						return []byte("/dev/sda[/@/.snapshots/1/snapshot]"), nil
+						mntLines := "/dev/sda[/@/.snapshots/1/snapshot] /some/root\n"
+						mntLines += "/dev/sda[/@] /some/root/run/initramfs/elemental-state\n"
+						return []byte(mntLines), nil
 					default:
 						return []byte{}, nil
 					}
 				}
 
-				Expect(b.InitSnapshotter(rootDir)).To(Succeed())
+				Expect(b.InitSnapshotter(statePart, efiDir)).To(Succeed())
 				Expect(runner.MatchMilestones([][]string{
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},
@@ -483,7 +486,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 				BeforeEach(func() {
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 						fullCmd := strings.Join(append([]string{cmd}, args...), " ")
-						if strings.HasPrefix(fullCmd, "snapper create --from") {
+						if strings.HasPrefix(fullCmd, "snapper --no-dbus --root /some/root create --from") {
 							return []byte("2\n"), nil
 						}
 						return []byte{}, nil
@@ -493,7 +496,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(snap.InProgress).To(BeTrue())
 					Expect(runner.MatchMilestones([][]string{
-						{"snapper", "create", "--from"},
+						{"snapper", "--no-dbus", "--root", "/some/root", "create", "--from"},
 					})).To(Succeed())
 
 					defaultTmpl := filepath.Join(snap.Path, "/etc/snapper/config-templates/default")
@@ -511,7 +514,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 				It("successfully closes a transaction on an active system", func() {
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 						fullCmd := strings.Join(append([]string{cmd}, args...), " ")
-						if strings.HasPrefix(fullCmd, "snapper --csvout list") {
+						if strings.HasPrefix(fullCmd, "snapper --no-dbus --root /some/root --csvout list") {
 							return []byte("1,no,yes\n2,yes,no\n"), nil
 						} else if strings.HasPrefix(fullCmd, "btrfs subvolume list") {
 							return []byte("ID 260 gen 13453 top level 259 path @/.snapshots/2/snapshot\n"), nil
@@ -521,7 +524,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 
 					Expect(b.CloseTransaction(snap)).NotTo(HaveOccurred())
 					Expect(runner.MatchMilestones([][]string{
-						{"snapper", "cleanup"},
+						{"snapper", "--no-dbus", "--root", "/some/root", "cleanup"},
 					})).To(Succeed())
 				})
 
@@ -532,7 +535,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 							fullCmd := strings.Join(append([]string{cmd}, args...), " ")
 							if strings.HasPrefix(fullCmd, failCmd) {
 								return []byte{}, fmt.Errorf("command '%s' failed", failCmd)
-							} else if strings.HasPrefix(fullCmd, "snapper --csvout list") {
+							} else if strings.HasPrefix(fullCmd, "snapper --no-dbus --root /some/root --csvout list") {
 								return []byte("1,no,yes\n2,yes,no\n"), nil
 							} else if strings.HasPrefix(fullCmd, "btrfs subvolume list") {
 								return []byte("ID 260 gen 13453 top level 259 path @/.snapshots/2/snapshot\n"), nil
@@ -545,28 +548,28 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						failCmd = "rsync"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{{"snapper", "delete"}})).To(Succeed())
+						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 
 					It("fails on snapper modify", func() {
-						failCmd = "snapper modify"
+						failCmd = "snapper --no-dbus --root /some/root modify"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{{"snapper", "delete"}})).To(Succeed())
+						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 
 					It("fails setting snapshot read only", func() {
 						failCmd = "btrfs property set"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{{"snapper", "delete"}})).To(Succeed())
+						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 
 					It("fails setting default", func() {
 						failCmd = "btrfs subvolume set-default"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{{"snapper", "delete"}})).To(Succeed())
+						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 				})
 			})
@@ -574,7 +577,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			It("fails to start a transaction on an active system", func() {
 				runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 					fullCmd := strings.Join(append([]string{cmd}, args...), " ")
-					if strings.HasPrefix(fullCmd, "snapper create --from") {
+					if strings.HasPrefix(fullCmd, "snapper --no-dbus --root /some/root create --from") {
 						return []byte{}, fmt.Errorf("failed creating snapshot")
 					}
 					return []byte{}, nil

@@ -221,13 +221,13 @@ var _ = Describe("Build Actions", func() {
 
 			Expect(runner.MatchMilestones([][]string{
 				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mkfs.ext4", "-L", "COS_STATE"},
+				{"losetup", "--show", "-f", "/tmp/test/build/state.part"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"losetup", "--show", "-f", "/tmp/test/build/oem.part"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
 				{"losetup", "--show", "-f", "/tmp/test/build/recovery.part"},
-				{"mkfs.ext4", "-L", "COS_STATE"},
-				{"losetup", "--show", "-f", "/tmp/test/build/state.part"},
 				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
 				{"losetup", "--show", "-f", "/tmp/test/build/persistent.part"},
 				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
