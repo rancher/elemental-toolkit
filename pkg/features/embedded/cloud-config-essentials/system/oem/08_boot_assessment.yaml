@@ -36,7 +36,7 @@ stages:
     after-install:
     # After install, reset, and upgrade, we install additional GRUB configuration for boot assessment into COS_GRUB.
 
-    # Note we mount efi partition in a new location in order workaround potentially different
+    # Note we mount efi partition in a new location in order workaround different
     # mountpoints across install, reset and upgrade commands.
     
     # Here we hook the boot assessment configuration to 'grubcustom'
