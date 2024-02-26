@@ -16,14 +16,22 @@ stages:
     # enable_boot_assessment to 'yes'.
     # This can be then customized easily by having a cloud-config file which always enables boot assessment on 
     # the boot stage.
+    - &remountEFIrw
+      name: "Mounting EFI as RW"
+      if: 'mountpoint -q /run/elemental/efi'
+      commands:
+      - mount -o rw,remount /run/elemental/efi
     - name: "Remove GRUB sentinels"
       if: '[ -f "/run/elemental/active_mode" ]'
       commands:
       - |
-          mount -o rw,remount /run/elemental/efi
           grub2-editenv /run/elemental/efi/boot_assessment set enable_boot_assessment=
           grub2-editenv /run/elemental/efi/boot_assessment set boot_assessment_tentative=
-          mount -o ro,remount /run/elemental/efi
+    - &remountEFIro
+      name: "Mounting EFI as RO"
+      if: 'mountpoint -q /run/elemental/efi'
+      commands:
+      - mount -o ro,remount /run/elemental/efi
     - name: "Create upgrade failure sentinel if necessary"
       if: cat /proc/cmdline | grep -q "upgrade_failure"
       files:
@@ -88,6 +96,7 @@ stages:
     # Here we do enable boot assessment for the next bootup.
     # Similarly, we could trigger boot assessment in other cases
     after-upgrade:
+    - <<: *remountEFIrw
     - name: "Set upgrade sentinel on active"
       if: '[ ! -f "/run/elemental/recovery_mode" ]' 
       commands:
@@ -99,8 +108,10 @@ stages:
     # We do re-install hooks here if needed to track upgrades of boot assessment
     - <<: *customhook
     - <<: *bootgrub
+    - <<: *remountEFIro
 
     after-reset:
+    - <<: *remountEFIrw
     - name: "Remove GRUB sentinels"
       commands:
       - |
@@ -109,3 +120,4 @@ stages:
     # Reset completely restores COS_STATE, so we re-inject ourselves
     - <<: *customhook
     - <<: *bootgrub
+    - <<: *remountEFIro
