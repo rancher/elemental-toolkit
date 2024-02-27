@@ -174,10 +174,12 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Update state.yaml file on recovery and state partitions
-	err = u.upgradeInstallStateYaml()
-	if err != nil {
-		u.Error("failed upgrading installation metadata")
-		return err
+	if u.updateInstallState {
+		err = u.upgradeInstallStateYaml()
+		if err != nil {
+			u.Error("failed upgrading installation metadata")
+			return err
+		}
 	}
 
 	u.Info("Recovery upgrade completed")
