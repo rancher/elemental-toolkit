@@ -286,18 +286,6 @@ func (u *UpgradeAction) Run() (err error) {
 		return err
 	}
 
-	// Manage legacy recovery. This logic should be removed once toolkit v1.1 gets unsupported.
-	legacyImg := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.LegacyImagesPath, constants.RecoveryImgFile)
-	if ok, _ := utils.Exists(u.cfg.Fs, legacyImg); ok {
-		u.cfg.Logger.Debug("Manage legacy recovery image")
-		recoveryImg := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
-		err = u.cfg.Fs.Rename(legacyImg, recoveryImg)
-		if err != nil {
-			u.cfg.Logger.Error("failed renaming recovery image from legacy path")
-			return err
-		}
-	}
-
 	// Closing snapshotter transaction
 	u.cfg.Logger.Info("Closing snapshotter transaction")
 	err = u.snapshotter.CloseTransaction(u.snapshot)
