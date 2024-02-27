@@ -172,7 +172,8 @@ const (
 	Rsync = "rsync"
 
 	// Snapshotters
-	MaxSnaps                  = 2
+	LoopDeviceMaxSnaps        = 2
+	BtrfsMaxSnaps             = 4
 	LoopDeviceSnapshotterType = "loopdevice"
 	BtrfsSnapshotterType      = "btrfs"
 	ActiveSnapshot            = "active"
@@ -279,10 +280,11 @@ func GetDefaultSquashfsCompressionOptions() []string {
 // GetRunKeyEnvMap returns environment variable bindings to RunConfig data
 func GetRunKeyEnvMap() map[string]string {
 	return map[string]string{
-		"poweroff": "POWEROFF",
-		"reboot":   "REBOOT",
-		"strict":   "STRICT",
-		"eject-cd": "EJECT_CD",
+		"poweroff":         "POWEROFF",
+		"reboot":           "REBOOT",
+		"strict":           "STRICT",
+		"eject-cd":         "EJECT_CD",
+		"snapshotter.type": "SNAPSHOTTER_TYPE",
 	}
 }
 

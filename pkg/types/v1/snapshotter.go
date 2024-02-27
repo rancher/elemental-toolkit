@@ -67,6 +67,22 @@ func NewBtrfsConfig() *BtrfsConfig {
 	return &BtrfsConfig{}
 }
 
+func NewLoopDevice() SnapshotterConfig {
+	return SnapshotterConfig{
+		Type:     constants.LoopDeviceSnapshotterType,
+		MaxSnaps: constants.LoopDeviceMaxSnaps,
+		Config:   NewLoopDeviceConfig(),
+	}
+}
+
+func NewBtrfs() SnapshotterConfig {
+	return SnapshotterConfig{
+		Type:     constants.BtrfsSnapshotterType,
+		MaxSnaps: constants.BtrfsMaxSnaps,
+		Config:   NewBtrfsConfig(),
+	}
+}
+
 type snapshotterConfFactory func(defConfig interface{}, data interface{}) (interface{}, error)
 
 var snapshotterConfFactories = map[string]snapshotterConfFactory{}
@@ -129,6 +145,10 @@ func (c *SnapshotterConfig) CustomUnmarshal(data interface{}) (bool, error) {
 				return false, fmt.Errorf("'max-snap' must be of integer type")
 			}
 			c.MaxSnaps = maxSnaps
+		} else if c.Type == constants.BtrfsSnapshotterType {
+			// constants.LoopDeviceMaxSnaps is already the default if nothing is provided
+			// switch to btrfs default in case btrfs is requested and no max-snaps is provided
+			c.MaxSnaps = constants.BtrfsMaxSnaps
 		}
 
 		factory := snapshotterConfFactories[c.Type]

@@ -247,18 +247,30 @@ var _ = Describe("Config", Label("config"), func() {
 			Expect(debug).To(BeTrue())
 			Expect(cfg.Logger.GetLevel()).To(Equal(logrus.DebugLevel))
 		})
-		It("reads the snaphotter configuration", func() {
-			// Default value
+		It("reads the snaphotter configuration and environment variables", func() {
+			err := os.Setenv("ELEMENTAL_REBOOT", "true")
+			Expect(err).ShouldNot(HaveOccurred())
+
 			cfg, err := ReadConfigRun("fixtures/config/", nil, mounter)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			Expect(err).To(BeNil())
+			Expect(cfg.Reboot).To(BeTrue())
 			Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
-			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(7))
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.LoopDeviceMaxSnaps))
 			snapshooterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			Expect(snapshooterCfg.FS).To(Equal("xfs"))
 			Expect(snapshooterCfg.Size).To(Equal(uint(1024)))
+
+			// Reads snapshotter type from env vars
+			err = os.Setenv("ELEMENTAL_SNAPSHOTTER_TYPE", "btrfs")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			Expect(cfg.Snapshotter.Type).To(Equal(constants.BtrfsSnapshotterType))
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.BtrfsMaxSnaps))
 		})
 	})
 	Describe("Read runtime specs", Label("spec"), func() {
