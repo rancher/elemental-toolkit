@@ -66,6 +66,12 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 		u.bootloader = bootloader.NewGrub(&config.Config, bootloader.WithGrubDisableBootEntry(true))
 	}
 
+	// Reuse the snapshotter of the previous setup if there is an inconsistency
+	if spec.State != nil && spec.State.Snapshotter.Type != config.Snapshotter.Type {
+		config.Logger.Warning("can't change snaphsotter type on upgrades, not supported. Using the setup from previous install")
+		config.Snapshotter = spec.State.Snapshotter
+	}
+
 	if u.snapshotter == nil {
 		u.snapshotter, err = snapshotter.NewSnapshotter(config.Config, config.Snapshotter, u.bootloader)
 		if err != nil {
@@ -74,15 +80,9 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 		}
 	}
 
-	// Check the setup of previous snapshotter and requested one is consistent
-	if spec.State != nil && spec.State.Snapshotter.Type != config.Snapshotter.Type {
-		config.Logger.Errorf("can't change snaphsotter type on upgrades, not supported. Please review upgrade configuration")
-		return nil, fmt.Errorf("failed setting snapshotter for the upgrade, unexpected type '%s'", config.Snapshotter.Type)
-	}
-
 	if u.spec.RecoveryUpgrade && elemental.IsRecoveryMode(config.Config) {
 		config.Logger.Errorf("Upgrading recovery image from the recovery system itself is not supported")
-		return nil, fmt.Errorf("Not supported")
+		return nil, fmt.Errorf("not supported")
 	}
 
 	return u, nil
