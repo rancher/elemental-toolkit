@@ -163,11 +163,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 	config := NewConfig(opts...)
 
-	snapshotter := v1.SnapshotterConfig{
-		Type:     constants.LoopDeviceSnapshotterType,
-		MaxSnaps: constants.MaxSnaps,
-		Config:   v1.NewLoopDeviceConfig(),
-	}
+	snapshotter := v1.NewLoopDevice()
 
 	// Load snapshotter setup from state.yaml for reset and upgrade
 	installState, _ := config.LoadInstallState()
@@ -550,13 +546,9 @@ func NewISO() *v1.LiveISO {
 
 func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
 	b := &v1.BuildConfig{
-		Config: *NewConfig(opts...),
-		Name:   constants.BuildImgName,
-		Snapshotter: v1.SnapshotterConfig{
-			Type:     constants.LoopDeviceSnapshotterType,
-			MaxSnaps: constants.MaxSnaps,
-			Config:   v1.NewLoopDeviceConfig(),
-		},
+		Config:      *NewConfig(opts...),
+		Name:        constants.BuildImgName,
+		Snapshotter: v1.NewLoopDevice(),
 	}
 	return b
 }

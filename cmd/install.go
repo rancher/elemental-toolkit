@@ -24,6 +24,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	"github.com/rancher/elemental-toolkit/pkg/action"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 )
@@ -90,6 +91,10 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	firmType := newEnumFlag([]string{v1.EFI}, v1.EFI)
 	pTableType := newEnumFlag([]string{v1.GPT}, v1.GPT)
+	snapshotterType := newEnumFlag(
+		[]string{constants.LoopDeviceSnapshotterType, constants.BtrfsSnapshotterType},
+		constants.LoopDeviceSnapshotterType,
+	)
 
 	root.AddCommand(c)
 	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
@@ -105,6 +110,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("force", false, "Force install")
 	c.Flags().Bool("eject-cd", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
+	c.Flags().Var(snapshotterType, "snapshotter.type", "Sets the snapshotter type to install")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	addPlatformFlags(c)

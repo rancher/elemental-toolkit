@@ -71,11 +71,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			conf.WithMounter(mounter),
 			conf.WithPlatform("linux/amd64"),
 		)
-		snapCfg = v1.SnapshotterConfig{
-			Type:     constants.LoopDeviceSnapshotterType,
-			MaxSnaps: constants.MaxSnaps,
-			Config:   v1.NewLoopDeviceConfig(),
-		}
+		snapCfg = v1.NewLoopDevice()
 
 		Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
 	})

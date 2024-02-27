@@ -94,11 +94,7 @@ func (c Config) WriteInstallState(i *InstallState, statePath, recoveryPath strin
 // LoadInstallState loads the state.yaml file and unmarshals it to an InstallState object
 func (c Config) LoadInstallState() (*InstallState, error) {
 	installState := &InstallState{
-		Snapshotter: SnapshotterConfig{
-			Type:     constants.LoopDeviceSnapshotterType,
-			MaxSnaps: constants.MaxSnaps,
-			Config:   NewLoopDeviceConfig(),
-		},
+		Snapshotter: NewLoopDevice(),
 	}
 	stateFile := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	data, err := c.Fs.ReadFile(stateFile)

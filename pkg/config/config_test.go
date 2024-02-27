@@ -106,7 +106,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(cfg.Mounter).To(Equal(mounter))
 			Expect(cfg.Runner).NotTo(BeNil())
 			It("sets the default snapshot", func() {
-				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.MaxSnaps))
+				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.LoopDeviceMaxSnaps))
 				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
 				snapshotterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
