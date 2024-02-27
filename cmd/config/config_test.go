@@ -326,6 +326,8 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_INSTALL_SYSTEM", "itwillbeignored")
 				Expect(err).ShouldNot(HaveOccurred())
+				err = os.Setenv("ELEMENTAL_INSTALL_REPOVERY_SYSTEM", "recovery/image:from_env_vars")
+				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_INSTALL_CLOUD_INIT", "path/to/file1.yaml,/absolute/path/to/file2.yaml")
 				Expect(err).ShouldNot(HaveOccurred())
 				err = os.Setenv("ELEMENTAL_INSTALL_DISABLE_BOOT_ENTRY", "true")
@@ -333,14 +335,14 @@ var _ = Describe("Config", Label("config"), func() {
 
 				spec, err := ReadInstallSpec(cfg, flags)
 				Expect(err).ShouldNot(HaveOccurred())
-				// Overwrites target from environment variables
+				// Overwrites target and recovery-system from environment variables
 				Expect(spec.Target == "/env/disk")
+				Expect(spec.RecoverySystem.Source.Value() == "recovery/image:from_env_vars")
 				// Overwrites system image, flags have priority over files and env vars
 				Expect(spec.System.Value() == "image/from:flag")
 				// Overwerites default value for DisableBootEntry from an env var
 				Expect(spec.DisableBootEntry).To(BeTrue())
-				// Uses recovery and no-format defined in confing.yaml
-				Expect(spec.RecoverySystem.Source.Value() == "recovery/image:latest")
+				// Uses no-format defined in confing.yaml
 				Expect(spec.NoFormat == true)
 				// Gets multiple cloud-init files from env vars as comma separated values
 				Expect(len(spec.CloudInit)).To(Equal(2))
