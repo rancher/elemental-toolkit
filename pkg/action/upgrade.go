@@ -66,7 +66,7 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 		u.bootloader = bootloader.NewGrub(&config.Config, bootloader.WithGrubDisableBootEntry(true))
 	}
 
-	// Check the setup of previous snapshotter and requested one is consistent
+	// Reuse the snapshotter of the previous setup if there is an inconsistency
 	if spec.State != nil && spec.State.Snapshotter.Type != config.Snapshotter.Type {
 		config.Logger.Warning("can't change snaphsotter type on upgrades, not supported. Using the setup from previous install")
 		config.Snapshotter = spec.State.Snapshotter
