@@ -225,6 +225,12 @@ func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 		cleanup.Push(umount)
 	}
 
+	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
+	if err != nil {
+		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
+	}
+	cleanup.Push(umount)
+
 	return nil
 }
 
