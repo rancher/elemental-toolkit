@@ -134,6 +134,8 @@ var _ = Describe("Runtime Actions", func() {
 		Describe("Booting from active system", func() {
 			var err error
 			BeforeEach(func() {
+				Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
+
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
@@ -158,7 +160,6 @@ var _ = Describe("Runtime Actions", func() {
 
 			})
 			It("Fails if some hook fails and strict is set", func() {
-				Expect(fs.WriteFile(constants.ActiveMode, []byte("1"), constants.FilePerm)).To(Succeed())
 				config.Strict = true
 				cloudInit.Error = true
 				upgrade, err = action.NewUpgradeAction(config, spec, action.WithUpgradeBootloader(bootloader))
@@ -292,60 +293,17 @@ var _ = Describe("Runtime Actions", func() {
 				// Expect poweroff executed
 				Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}})).To(BeNil())
 			})
-		})
-		Describe(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), Label("recovery_label"), func() {
-			var err error
-			var recoveryImg string
-
-			BeforeEach(func() {
-				// Mount recovery partition as it is expected to be mounted when booting from recovery
-				//mounter.Mount("device5", constants.LiveDir, "auto", []string{"ro"})
-				// Create installState with squashed recovery
-				statePath := filepath.Join(constants.LiveDir, constants.InstallStateFile)
-				installState := &v1.InstallState{
-					Partitions: map[string]*v1.PartitionState{
-						constants.RecoveryPartName: {
-							FSLabel: constants.RecoveryLabel,
-							RecoveryImage: &v1.SystemState{
-								Label:  constants.SystemLabel,
-								FS:     constants.SquashFs,
-								Source: v1.NewDirSrc("/some/dir"),
-							},
-						},
-					},
-				}
-				err = config.WriteInstallState(installState, statePath, statePath)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				recoveryImg = filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
-				err = fs.WriteFile(recoveryImg, []byte("recovery"), constants.FilePerm)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				spec, err = conf.NewUpgradeSpec(config.Config)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				spec.System = v1.NewDockerSrc("alpine")
-				spec.RecoveryUpgrade = true
-				spec.RecoverySystem.Source = spec.System
-				spec.RecoverySystem.Size = 16
-
-				runner.SideEffect = func(command string, args ...string) ([]byte, error) {
-					if command == "mksquashfs" && args[1] == spec.RecoverySystem.File {
-						// create the transition img for squash to fake it
-						_, _ = fs.Create(spec.RecoverySystem.File)
-					}
-					return []byte{}, nil
-				}
-				config.Runner = runner
-			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				spec := PrepareTestRecoveryImage(config, recoveryImgPath, fs, runner)
+
 				// This should be the old image
-				info, err := fs.Stat(recoveryImg)
+				info, err := fs.Stat(recoveryImgPath)
 				Expect(err).ToNot(HaveOccurred())
 				// Image size should be empty
 				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.IsDir()).To(BeFalse())
-				f, _ := fs.ReadFile(recoveryImg)
+				f, _ := fs.ReadFile(recoveryImgPath)
 				Expect(f).To(ContainSubstring("recovery"))
 
 				upgrade, err = action.NewUpgradeAction(config, spec)
@@ -354,12 +312,12 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// This should be the new image
-				info, err = fs.Stat(recoveryImg)
+				info, err = fs.Stat(recoveryImgPath)
 				Expect(err).ToNot(HaveOccurred())
 				// Image size should be empty
 				Expect(info.Size()).To(BeNumerically("==", 0))
 				Expect(info.IsDir()).To(BeFalse())
-				f, _ = fs.ReadFile(recoveryImg)
+				f, _ = fs.ReadFile(recoveryImgPath)
 				Expect(f).ToNot(ContainSubstring("recovery"))
 
 				// Transition squash should not exist
@@ -367,5 +325,57 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
+		Describe(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), Label("recovery_label"), func() {
+			It("Fails to upgrade recovery", func() {
+				Expect(fs.WriteFile(constants.RecoveryMode, []byte("1"), constants.FilePerm)).To(Succeed())
+				spec, err := conf.NewUpgradeSpec(config.Config)
+				Expect(err).NotTo(HaveOccurred())
+				spec.RecoveryUpgrade = true
+				_, err = action.NewUpgradeAction(config, spec)
+				Expect(err).Should(Equal(action.ErrUpgradeRecoveryFromRecovery))
+			})
+		})
 	})
 })
+
+func PrepareTestRecoveryImage(config *v1.RunConfig, recoveryImgPath string, fs vfs.FS, runner *v1mock.FakeRunner) *v1.UpgradeSpec {
+	GinkgoHelper()
+	// Mount recovery partition as it is expected to be mounted when booting from recovery
+	//mounter.Mount("device5", constants.LiveDir, "auto", []string{"ro"})
+	// Create installState with squashed recovery
+	statePath := filepath.Join(constants.LiveDir, constants.InstallStateFile)
+	installState := &v1.InstallState{
+		Partitions: map[string]*v1.PartitionState{
+			constants.RecoveryPartName: {
+				FSLabel: constants.RecoveryLabel,
+				RecoveryImage: &v1.SystemState{
+					Label:  constants.SystemLabel,
+					FS:     constants.SquashFs,
+					Source: v1.NewDirSrc("/some/dir"),
+				},
+			},
+		},
+	}
+	Expect(config.WriteInstallState(installState, statePath, statePath)).ShouldNot(HaveOccurred())
+
+	Expect(fs.WriteFile(recoveryImgPath, []byte("recovery"), constants.FilePerm)).ShouldNot(HaveOccurred())
+
+	spec, err := conf.NewUpgradeSpec(config.Config)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	spec.System = v1.NewDockerSrc("alpine")
+	spec.RecoveryUpgrade = true
+	spec.RecoverySystem.Source = spec.System
+	spec.RecoverySystem.Size = 16
+
+	runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+		if command == "mksquashfs" && args[1] == spec.RecoverySystem.File {
+			// create the transition img for squash to fake it
+			_, _ = fs.Create(spec.RecoverySystem.File)
+		}
+		return []byte{}, nil
+	}
+	config.Runner = runner
+
+	return spec
+}

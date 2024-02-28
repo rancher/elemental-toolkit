@@ -17,6 +17,7 @@ limitations under the License.
 package action
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -27,6 +28,8 @@ import (
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
+
+var ErrUpgradeRecoveryFromRecovery = errors.New("Can not upgrade recovery from recovery partition")
 
 // UpgradeRecoveryAction represents the struct that will run the recovery upgrade from start to finish
 type UpgradeRecoveryAction struct {
@@ -79,7 +82,7 @@ func (u UpgradeRecoveryAction) Error(s string, args ...interface{}) {
 
 func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 	if elemental.IsRecoveryMode(u.cfg.Config) {
-		return fmt.Errorf("Can not upgrade recovery from recovery partition")
+		return ErrUpgradeRecoveryFromRecovery
 	}
 
 	if u.updateInstallState {

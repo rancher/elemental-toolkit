@@ -82,7 +82,7 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 
 	if u.spec.RecoveryUpgrade && elemental.IsRecoveryMode(config.Config) {
 		config.Logger.Errorf("Upgrading recovery image from the recovery system itself is not supported")
-		return nil, fmt.Errorf("not supported")
+		return nil, ErrUpgradeRecoveryFromRecovery
 	}
 
 	return u, nil
