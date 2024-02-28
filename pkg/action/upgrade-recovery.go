@@ -62,7 +62,23 @@ func NewUpgradeRecoveryAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts .
 
 	if elemental.IsRecoveryMode(config.Config) {
 		config.Logger.Errorf("Upgrading recovery image from the recovery system itself is not supported")
-		return nil, fmt.Errorf("Not supported")
+		return nil, ErrUpgradeRecoveryFromRecovery
+	}
+
+	if u.spec.Partitions.Recovery == nil {
+		return nil, fmt.Errorf("undefined recovery partition")
+	}
+
+	if u.updateInstallState {
+		if u.spec.Partitions.State == nil {
+			return nil, fmt.Errorf("undefined state partition")
+		}
+		// A nil State should never be the case.
+		// However if it happens we need to abort, we we can't recreate
+		// a correct install state when upgrading recovery only.
+		if u.spec.State == nil {
+			return nil, fmt.Errorf("Could not load current install state")
+		}
 	}
 
 	return u, nil
@@ -81,10 +97,6 @@ func (u UpgradeRecoveryAction) Error(s string, args ...interface{}) {
 }
 
 func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) error {
-	if elemental.IsRecoveryMode(u.cfg.Config) {
-		return ErrUpgradeRecoveryFromRecovery
-	}
-
 	if u.updateInstallState {
 		umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
 		if err != nil {
@@ -103,17 +115,6 @@ func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) err
 }
 
 func (u *UpgradeRecoveryAction) upgradeInstallStateYaml() error {
-	if u.spec.Partitions.Recovery == nil || u.spec.Partitions.State == nil {
-		return fmt.Errorf("undefined state or recovery partition")
-	}
-
-	// A nil State should never be the case.
-	// However if it happens we need to abort, we we can't recreate
-	// a correct install state when upgrading recovery only.
-	if u.spec.State == nil {
-		return fmt.Errorf("Could not load current install state")
-	}
-
 	u.spec.State.Date = time.Now().Format(time.RFC3339)
 
 	recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
