@@ -68,7 +68,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags())
+			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), false)
 			if err != nil {
 				cfg.Logger.Errorf("Invalid upgrade command setup %v", err)
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)

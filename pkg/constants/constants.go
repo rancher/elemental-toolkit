@@ -339,13 +339,6 @@ func GetUpgradeKeyEnvMap() map[string]string {
 	}
 }
 
-// GetUpgradeRecoveryKeyEnvMap returns environment variable bindings to UpgradeSpec data
-func GetUpgradeRecoveryKeyEnvMap() map[string]string {
-	return map[string]string{
-		"recovery-system.uri": "RECOVERY_SYSTEM",
-	}
-}
-
 // GetBuildKeyEnvMap returns environment variable bindings to BuildConfig data
 func GetBuildKeyEnvMap() map[string]string {
 	return map[string]string{

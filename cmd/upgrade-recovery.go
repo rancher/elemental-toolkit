@@ -60,7 +60,7 @@ func NewUpgradeRecoveryCmd(root *cobra.Command, addCheckRoot bool) *cobra.Comman
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			spec, err := config.ReadUpgradeRecoverySpec(cfg, cmd.Flags())
+			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), true)
 			if err != nil {
 				cfg.Logger.Errorf("Invalid upgrade-recovery command setup %v", err)
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
