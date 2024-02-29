@@ -34,7 +34,7 @@ date: true
 
 ## What's next?
 
-- Check out on how to [build an image](build_disk) from the ISO we have just created
+- Check out on how to [build an image](../build_disk) from the ISO we have just created
 
 ## Syntax
 
