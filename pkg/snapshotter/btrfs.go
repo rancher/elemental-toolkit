@@ -299,7 +299,7 @@ func (b *Btrfs) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 	}
 
 	if !b.installing {
-		err = utils.SyncData(b.cfg.Logger, b.cfg.Runner, b.cfg.Fs, snapshot.WorkDir, snapshot.Path)
+		err = utils.MirrorData(b.cfg.Logger, b.cfg.Runner, b.cfg.Fs, snapshot.WorkDir, snapshot.Path)
 		if err != nil {
 			b.cfg.Logger.Errorf("failed syncing working directory with snapshot directory")
 			return err
