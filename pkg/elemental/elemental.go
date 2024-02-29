@@ -498,7 +498,7 @@ func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) error { // n
 		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
 		excludes := cnst.GetDefaultSystemExcludes()
-		err = utils.SyncData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
+		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return err
 		}
@@ -513,7 +513,7 @@ func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) error { // n
 			return err
 		}
 		defer UnmountFileSystemImage(c, img) // nolint:errcheck
-		err = utils.SyncData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target)
+		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target)
 		if err != nil {
 			return err
 		}

@@ -225,17 +225,14 @@ func MountBindPath(cfg *v1.RunConfig, sysroot, overlayDir, path string) error {
 	pathName := strings.ReplaceAll(trimmed, "/", "-") + ".bind"
 	stateDir := fmt.Sprintf("%s/%s", overlayDir, pathName)
 
-	// Only sync data once, otherwise it could modify persistent data from a previous boot
-	if ok, _ := utils.Exists(cfg.Fs, stateDir); !ok {
-		if err := utils.MkdirAll(cfg.Fs, stateDir, constants.DirPerm); err != nil {
-			cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
-			return err
-		}
+	if err := utils.MkdirAll(cfg.Fs, stateDir, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Error creating upperdir %s: %s", stateDir, err.Error())
+		return err
+	}
 
-		if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
-			cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
-			return err
-		}
+	if err := utils.SyncData(cfg.Logger, cfg.Runner, cfg.Fs, base, stateDir); err != nil {
+		cfg.Logger.Errorf("Error shuffling data: %s", err.Error())
+		return err
 	}
 
 	if err := cfg.Mounter.Mount(stateDir, base, "none", []string{"defaults", "bind"}); err != nil {

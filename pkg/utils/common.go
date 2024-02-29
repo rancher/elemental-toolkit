@@ -156,6 +156,26 @@ func CreateDirStructure(fs v1.FS, target string) error {
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
 func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, excludes ...string) error {
+	flags := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls"}
+	for _, e := range excludes {
+		flags = append(flags, fmt.Sprintf("--exclude=%s", e))
+	}
+
+	return rsyncWrapper(log, runner, fs, source, target, flags)
+}
+
+// MirrorData rsync's source folder contents to a target folder content, in contrast, to SyncData this
+// method includes the --delete flag which forces the deletion of files in target that are missing in source.
+func MirrorData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, excludes ...string) error {
+	flags := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--delete"}
+	for _, e := range excludes {
+		flags = append(flags, fmt.Sprintf("--exclude=%s", e))
+	}
+
+	return rsyncWrapper(log, runner, fs, source, target, flags)
+}
+
+func rsyncWrapper(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, flags []string) error {
 	if fs != nil {
 		if s, err := fs.RawPath(source); err == nil {
 			source = s
@@ -175,12 +195,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 	log.Infof("Starting rsync...")
 
-	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--delete"}
-	for _, e := range excludes {
-		args = append(args, fmt.Sprintf("--exclude=%s", e))
-	}
-
-	args = append(args, source, target)
+	args := append(flags, source, target)
 
 	done := displayProgress(log, 5*time.Second, "Syncing data...")
 
