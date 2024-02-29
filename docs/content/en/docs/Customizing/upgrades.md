@@ -35,3 +35,18 @@ upgrade:
 ```
 
 The `system` and `recovery-system` objects define the OS image used for the main active system and the recovery system respectively. They both are fined by a `<image-spec>`.
+
+## Upgrading Recovery only
+
+The `elemental upgrade-recovery` command can be used to upgrade the Recovery system only.  
+The `upgrade` configuration can be used seamlessly between `upgrade` and `upgrade-recovery`, but for the latter only the `recovery-system` field applies:  
+
+```yaml
+# configuration used for the 'ugrade-recovery' command
+upgrade:
+  recovery-system:
+    fs: squashfs
+    uri: oci:recovery/cos
+```
+
+It is also possible to invoke it directly with: `elemental upgrade-recovery --recovery-system.uri oci:recovery/cos`

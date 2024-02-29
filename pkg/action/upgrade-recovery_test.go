@@ -36,7 +36,7 @@ import (
 	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
-var _ = Describe("Runtime Actions", func() {
+var _ = Describe("Upgrade Recovery Actions", func() {
 	var config *v1.RunConfig
 	var runner *v1mock.FakeRunner
 	var fs vfs.FS
@@ -49,7 +49,6 @@ var _ = Describe("Runtime Actions", func() {
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var ghwTest v1mock.GhwMock
-	var bootloader *v1mock.FakeBootloader
 
 	BeforeEach(func() {
 		runner = v1mock.NewFakeRunner()
@@ -58,7 +57,6 @@ var _ = Describe("Runtime Actions", func() {
 		client = &v1mock.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
 		logger = v1.NewBufferLogger(memLog)
-		bootloader = &v1mock.FakeBootloader{}
 		extractor = v1mock.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -80,9 +78,9 @@ var _ = Describe("Runtime Actions", func() {
 
 	AfterEach(func() { cleanup() })
 
-	Describe("Upgrade Action", Label("upgrade"), func() {
+	Describe("UpgradeRecovery Action", Label("upgrade-recovery"), func() {
 		var spec *v1.UpgradeSpec
-		var upgrade *action.UpgradeAction
+		var upgradeRecovery *action.UpgradeRecoveryAction
 		var memLog *bytes.Buffer
 
 		BeforeEach(func() {
@@ -159,139 +157,22 @@ var _ = Describe("Runtime Actions", func() {
 			AfterEach(func() {
 
 			})
-			It("Fails if some hook fails and strict is set", func() {
+			It("Fails if updateInstallState and State partition is not present", func() {
+				spec.Partitions.State = nil
+				upgradeRecovery, err = action.NewUpgradeRecoveryAction(config, spec, action.WithUpdateInstallState(true))
+				Expect(err).To(HaveOccurred())
+			})
+			It("Fails if updateInstallState and current state can not be loaded", func() {
+				spec.State = nil
+				upgradeRecovery, err = action.NewUpgradeRecoveryAction(config, spec, action.WithUpdateInstallState(true))
+				Expect(err).To(HaveOccurred())
+			})
+			It("Fails if Recovery partition is not present", func() {
 				config.Strict = true
 				cloudInit.Error = true
-				upgrade, err = action.NewUpgradeAction(config, spec, action.WithUpgradeBootloader(bootloader))
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
+				spec.Partitions.Recovery = nil
+				upgradeRecovery, err = action.NewUpgradeRecoveryAction(config, spec)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("cloud init"))
-			})
-			It("Fails setting the grub labels", func() {
-				bootloader.ErrorSetPersistentVariables = true
-				upgrade, err = action.NewUpgradeAction(config, spec, action.WithUpgradeBootloader(bootloader))
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("setting persistent variables"))
-			})
-			It("Fails setting the grub default entry", func() {
-				bootloader.ErrorSetDefaultEntry = true
-				upgrade, err = action.NewUpgradeAction(config, spec, action.WithUpgradeBootloader(bootloader))
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("setting default entry"))
-			})
-			It("Successfully upgrades from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 2)).To(Succeed())
-				// Create installState with previous install state
-				statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-				installState := &v1.InstallState{
-					Partitions: map[string]*v1.PartitionState{
-						constants.StatePartName: {
-							FSLabel: "COS_STATE",
-							Snapshots: map[int]*v1.SystemState{
-								2: {
-									Source: v1.NewDockerSrc("some/image:v2"),
-									Digest: "somehash2",
-									Active: true,
-								},
-								1: {
-									Source: v1.NewDockerSrc("some/image:v1"),
-									Digest: "somehash",
-								},
-							},
-						},
-					},
-				}
-				err = config.WriteInstallState(installState, statePath, statePath)
-				Expect(err).ShouldNot(HaveOccurred())
-
-				// Limit maximum snapshots to 2
-				config.Snapshotter.MaxSnaps = 2
-
-				// Create a new spec to load state yaml
-				spec, err = conf.NewUpgradeSpec(config.Config)
-
-				spec.System = v1.NewDockerSrc("alpine")
-				upgrade, err = action.NewUpgradeAction(config, spec)
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
-				Expect(err).ToNot(HaveOccurred())
-
-				// Check that the rebrand worked with our os-release value
-				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
-
-				// Writes filesystem labels to GRUB oem env file
-				grubOEMEnv := filepath.Join(spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv)
-				Expect(runner.IncludesCmds(
-					[][]string{{"grub2-editenv", grubOEMEnv, "set", "passive_snaps=2"}},
-				)).To(Succeed())
-
-				// Expect snapshot 2 and 3 to be there and 1 deleted
-				ok, _ := utils.Exists(fs, filepath.Join(constants.RunningStateDir, ".snapshots/3/snapshot.img"))
-				Expect(ok).To(BeTrue())
-				ok, _ = utils.Exists(fs, filepath.Join(constants.RunningStateDir, ".snapshots/2/snapshot.img"))
-				Expect(ok).To(BeTrue())
-				ok, _ = utils.Exists(fs, filepath.Join(constants.RunningStateDir, ".snapshots/1/snapshot.img"))
-				Expect(ok).To(BeFalse())
-
-				// An upgraded state yaml file should exist
-				state, err := config.LoadInstallState()
-				Expect(err).ShouldNot(HaveOccurred())
-				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Active).
-					To(BeTrue())
-				Expect(state.Partitions[constants.StatePartName].Snapshots[2].Active).
-					To(BeFalse())
-				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Digest).
-					To(Equal(v1mock.FakeDigest))
-				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Source.String()).
-					To(Equal("oci://alpine:latest"))
-				Expect(state.Partitions[constants.StatePartName].Snapshots[2].Source.String()).
-					To(Equal("oci://some/image:v2"))
-				// Snapshot 1 was deleted
-				Expect(state.Partitions[constants.StatePartName].Snapshots[1]).
-					To(BeNil())
-			})
-			It("Successfully reboots after upgrade from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v1.NewDockerSrc("alpine")
-				config.Reboot = true
-				upgrade, err = action.NewUpgradeAction(config, spec)
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
-				Expect(err).ToNot(HaveOccurred())
-
-				// Check that the rebrand worked with our os-release value
-				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
-
-				// Expect snapshot 2 to be there
-				ok, _ := utils.Exists(fs, filepath.Join(constants.RunningStateDir, ".snapshots/2/snapshot.img"))
-				Expect(ok).To(BeTrue())
-
-				// Expect reboot executed
-				Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}})).To(BeNil())
-			})
-			It("Successfully powers off after upgrade from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v1.NewDockerSrc("alpine")
-				config.PowerOff = true
-				upgrade, err = action.NewUpgradeAction(config, spec)
-				Expect(err).NotTo(HaveOccurred())
-				err := upgrade.Run()
-				Expect(err).ToNot(HaveOccurred())
-
-				// Check that the rebrand worked with our os-release value
-				Expect(memLog).To(ContainSubstring("default_menu_entry=TESTOS"))
-
-				// Expect snapshot 2 to be there
-				ok, _ := utils.Exists(fs, filepath.Join(constants.RunningStateDir, ".snapshots/2/snapshot.img"))
-				Expect(ok).To(BeTrue())
-
-				// Expect poweroff executed
-				Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}})).To(BeNil())
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
@@ -306,9 +187,9 @@ var _ = Describe("Runtime Actions", func() {
 				f, _ := fs.ReadFile(recoveryImgPath)
 				Expect(f).To(ContainSubstring("recovery"))
 
-				upgrade, err = action.NewUpgradeAction(config, spec)
+				upgradeRecovery, err = action.NewUpgradeRecoveryAction(config, spec, action.WithUpdateInstallState(true))
 				Expect(err).NotTo(HaveOccurred())
-				err = upgrade.Run()
+				err = upgradeRecovery.Run()
 				Expect(err).ToNot(HaveOccurred())
 
 				// This should be the new image
@@ -323,6 +204,38 @@ var _ = Describe("Runtime Actions", func() {
 				// Transition squash should not exist
 				info, err = fs.Stat(spec.RecoverySystem.File)
 				Expect(err).To(HaveOccurred())
+
+				// Create a new spec to load state yaml
+				spec, err = conf.NewUpgradeSpec(config.Config)
+				Expect(err).NotTo(HaveOccurred())
+				// Just a small test to ensure we touched the state file
+				Expect(spec.State.Date).ToNot(BeEmpty(), "post-upgrade state should contain a date")
+			})
+			It("Successfully skips updateInstallState", Label("docker"), func() {
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				spec := PrepareTestRecoveryImage(config, recoveryImgPath, fs, runner)
+
+				// This should be the old image
+				info, err := fs.Stat(recoveryImgPath)
+				Expect(err).ToNot(HaveOccurred())
+				// Image size should be empty
+				Expect(info.Size()).To(BeNumerically(">", 0))
+				Expect(info.IsDir()).To(BeFalse())
+				f, _ := fs.ReadFile(recoveryImgPath)
+				Expect(f).To(ContainSubstring("recovery"))
+
+				spec.Partitions.State = nil
+				spec.State = nil
+				upgradeRecovery, err = action.NewUpgradeRecoveryAction(config, spec, action.WithUpdateInstallState(false))
+				Expect(err).NotTo(HaveOccurred())
+				err = upgradeRecovery.Run()
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create a new spec to load state yaml
+				spec, err = conf.NewUpgradeSpec(config.Config)
+				Expect(err).NotTo(HaveOccurred())
+				// Just a small test to ensure we touched the state file
+				Expect(spec.State.Date).To(BeEmpty(), "install state files should have not been touched")
 			})
 		})
 		Describe(fmt.Sprintf("Booting from %s", constants.RecoveryLabel), Label("recovery_label"), func() {
@@ -332,10 +245,49 @@ var _ = Describe("Runtime Actions", func() {
 			It("Fails to upgrade recovery", func() {
 				spec, err := conf.NewUpgradeSpec(config.Config)
 				Expect(err).NotTo(HaveOccurred())
-				spec.RecoveryUpgrade = true
-				_, err = action.NewUpgradeAction(config, spec)
+				_, err = action.NewUpgradeRecoveryAction(config, spec)
 				Expect(err).Should(Equal(action.ErrUpgradeRecoveryFromRecovery))
 			})
 		})
 	})
 })
+
+func PrepareTestRecoveryImage(config *v1.RunConfig, recoveryImgPath string, fs vfs.FS, runner *v1mock.FakeRunner) *v1.UpgradeSpec {
+	GinkgoHelper()
+	// Create installState with squashed recovery
+	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
+	installState := &v1.InstallState{
+		Partitions: map[string]*v1.PartitionState{
+			constants.RecoveryPartName: {
+				FSLabel: constants.RecoveryLabel,
+				RecoveryImage: &v1.SystemState{
+					Label:  constants.SystemLabel,
+					FS:     constants.SquashFs,
+					Source: v1.NewDirSrc("/some/dir"),
+				},
+			},
+		},
+	}
+	Expect(config.WriteInstallState(installState, statePath, statePath)).ShouldNot(HaveOccurred())
+
+	Expect(fs.WriteFile(recoveryImgPath, []byte("recovery"), constants.FilePerm)).ShouldNot(HaveOccurred())
+
+	spec, err := conf.NewUpgradeSpec(config.Config)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	spec.System = v1.NewDockerSrc("alpine")
+	spec.RecoveryUpgrade = true
+	spec.RecoverySystem.Source = spec.System
+	spec.RecoverySystem.Size = 16
+
+	runner.SideEffect = func(command string, args ...string) ([]byte, error) {
+		if command == "mksquashfs" && args[1] == spec.RecoverySystem.File {
+			// create the transition img for squash to fake it
+			_, _ = fs.Create(spec.RecoverySystem.File)
+		}
+		return []byte{}, nil
+	}
+	config.Runner = runner
+
+	return spec
+}

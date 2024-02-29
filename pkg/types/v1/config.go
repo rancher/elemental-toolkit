@@ -403,6 +403,29 @@ func (u *UpgradeSpec) Sanitize() error {
 	return nil
 }
 
+// SanitizeForRecoveryOnly sanitizes UpgradeSpec when upgrading recovery only.
+func (u *UpgradeSpec) SanitizeForRecoveryOnly() error {
+	if u.Partitions.State == nil || u.Partitions.State.MountPoint == "" {
+		return fmt.Errorf("undefined state partition")
+	}
+
+	if u.Partitions.Recovery == nil || u.Partitions.Recovery.MountPoint == "" {
+		return fmt.Errorf("undefined recovery partition")
+	}
+	if u.RecoverySystem.Source.IsEmpty() {
+		return fmt.Errorf("undefined upgrade-recovery source")
+	}
+
+	// Set default label for non squashfs images
+	if u.RecoverySystem.FS != constants.SquashFs && u.RecoverySystem.Label == "" {
+		u.RecoverySystem.Label = constants.SystemLabel
+	} else if u.RecoverySystem.FS == constants.SquashFs {
+		u.RecoverySystem.Label = ""
+	}
+
+	return nil
+}
+
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
 	Name            string

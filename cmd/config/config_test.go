@@ -64,7 +64,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 				Expect(cfg.Config.Cosign).To(BeTrue(), litter.Sdump(cfg))
 
-				up, err := ReadUpgradeSpec(cfg, nil)
+				up, err := ReadUpgradeSpec(cfg, nil, false)
 				Expect(err).Should(HaveOccurred(), litter.Sdump(cfg))
 
 				Expect(up.GrubDefEntry).To(Equal("so"))
@@ -423,7 +423,7 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(spec.FormatOEM).To(BeTrue())
 			})
 		})
-		Describe("Read UpgradeSpec", Label("install"), func() {
+		Describe("Read UpgradeSpec", Label("upgrade", "upgrade-recovery"), func() {
 			var flags *pflag.FlagSet
 			var ghwTest v1mock.GhwMock
 
@@ -433,7 +433,7 @@ var _ = Describe("Config", Label("config"), func() {
 				flags.Set("recovery-system.uri", "docker:image/from:flag")
 			})
 			It("can't init upgrade spec if partitions are not found", func() {
-				_, err := ReadUpgradeSpec(cfg, nil)
+				_, err := ReadUpgradeSpec(cfg, nil, false)
 				Expect(err).Should(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("undefined state partition"))
 			})
@@ -461,7 +461,7 @@ var _ = Describe("Config", Label("config"), func() {
 				defer ghwTest.Clean()
 
 				err := os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")
-				spec, err := ReadUpgradeSpec(cfg, nil)
+				spec, err := ReadUpgradeSpec(cfg, nil, false)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars
 				Expect(spec.RecoverySystem.Source.Value() == "image/from:flag")
@@ -469,6 +469,11 @@ var _ = Describe("Config", Label("config"), func() {
 				Expect(spec.System.Value() == "system/cos")
 				// Sets recovery upgrade from environment variables
 				Expect(spec.RecoveryUpgrade).To(BeTrue())
+
+				//Read and test the spec again for recovery only
+				spec, err = ReadUpgradeSpec(cfg, nil, true)
+				Expect(spec.RecoverySystem.Source.Value() == "image/from:flag")
+				Expect(spec.System.Value() == "system/cos")
 			})
 		})
 		Describe("Read MountSpec", Label("mount"), func() {

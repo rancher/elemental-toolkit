@@ -259,5 +259,8 @@ const MountEFIPartition = 86
 // Error mounting Persistent partition
 const MountPersistentPartition = 87
 
+// Error upgrading Recovery partition
+const UpgradeRecovery = 88
+
 // Unknown error
 const Unknown int = 255

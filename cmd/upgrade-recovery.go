@@ -31,10 +31,10 @@ import (
 // NewUpgradeCmd returns a new instance of the upgrade subcommand and appends it to
 // the root command. requireRoot is to initiate it with or without the CheckRoot
 // pre-run check. This method is mostly used for testing purposes.
-func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
+func NewUpgradeRecoveryCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "upgrade",
-		Short: "Upgrade the system",
+		Use:   "upgrade-recovery",
+		Short: "Upgrade the Recovery system",
 		Args:  cobra.ExactArgs(0),
 		PreRunE: func(_ *cobra.Command, _ []string) error {
 			if addCheckRoot {
@@ -56,28 +56,20 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
-			if err := validateInstallUpgradeFlags(cfg.Logger, cmd.Flags()); err != nil {
-				cfg.Logger.Errorf("Error reading install/upgrade flags: %s\n", err)
-				return elementalError.NewFromError(err, elementalError.ReadingInstallUpgradeFlags)
-			}
-
-			// Adapt 'docker-image' and 'directory'  deprecated flags to 'system' syntax
-			adaptDockerImageAndDirectoryFlagsToSystem(cmd.Flags())
-
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
 
-			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), false)
+			spec, err := config.ReadUpgradeSpec(cfg, cmd.Flags(), true)
 			if err != nil {
-				cfg.Logger.Errorf("Invalid upgrade command setup %v", err)
+				cfg.Logger.Errorf("Invalid upgrade-recovery command setup %v", err)
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
-			cfg.Logger.Infof("Upgrade called")
-			upgrade, err := action.NewUpgradeAction(cfg, spec)
+			cfg.Logger.Infof("Upgrade Recovery called")
+			upgrade, err := action.NewUpgradeRecoveryAction(cfg, spec, action.WithUpdateInstallState(true))
 			if err != nil {
-				cfg.Logger.Errorf("failed to initialize upgrade action: %v", err)
+				cfg.Logger.Errorf("failed to initialize upgrade-recovery action: %v", err)
 				return err
 			}
 
@@ -85,12 +77,9 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 		},
 	}
 	root.AddCommand(c)
-	c.Flags().Bool("recovery", false, "Upgrade recovery image too")
-	c.Flags().Bool("bootloader", false, "Reinstall bootloader during the upgrade")
-	addSharedInstallUpgradeFlags(c)
-	addLocalImageFlag(c)
+	addRecoverySystemFlag(c)
 	return c
 }
 
 // register the subcommand into rootCmd
-var _ = NewUpgradeCmd(rootCmd, true)
+var _ = NewUpgradeRecoveryCmd(rootCmd, true)

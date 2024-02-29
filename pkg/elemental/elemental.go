@@ -193,6 +193,7 @@ func IsRWMountPoint(c v1.Config, mountPoint string) (bool, error) {
 func MountRWPartition(c v1.Config, part *v1.Partition) (umount func() error, err error) {
 	if mnt, _ := IsMounted(c, part); mnt {
 		if ok, _ := IsRWMountPoint(c, part.MountPoint); ok {
+			c.Logger.Debugf("Already RW mounted: %s at %s", part.Name, part.MountPoint)
 			return func() error { return nil }, nil
 		}
 		err = MountPartition(c, part, "remount", "rw")

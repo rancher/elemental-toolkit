@@ -82,7 +82,7 @@ func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...Upgrad
 
 	if u.spec.RecoveryUpgrade && elemental.IsRecoveryMode(config.Config) {
 		config.Logger.Errorf("Upgrading recovery image from the recovery system itself is not supported")
-		return nil, fmt.Errorf("not supported")
+		return nil, ErrUpgradeRecoveryFromRecovery
 	}
 
 	return u, nil
@@ -296,7 +296,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	// Upgrade recovery
 	if u.spec.RecoveryUpgrade {
-		recoverySystem := u.spec.RecoverySystem
+		recoverySystem := &u.spec.RecoverySystem
 		u.cfg.Logger.Info("Deploying recovery system")
 		if recoverySystem.Source.String() == u.spec.System.String() {
 			// Reuse already deployed root-tree from active snapshot
@@ -306,24 +306,14 @@ func (u *UpgradeAction) Run() (err error) {
 			}
 			recoverySystem.Source.SetDigest(u.spec.System.GetDigest())
 		}
-		err = elemental.DeployImage(u.cfg.Config, &recoverySystem)
+		upgradeRecoveryAction, err := NewUpgradeRecoveryAction(u.cfg, u.spec, WithUpdateInstallState(false))
 		if err != nil {
-			u.cfg.Logger.Error("failed deploying recovery image")
-			return elementalError.NewFromError(err, elementalError.DeployImage)
+			u.Error("Could not initialize Recovery upgrade: %s", err)
+			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
 		}
-		recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
-		transitionFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.TransitionImgFile)
-		if ok, _ := utils.Exists(u.cfg.Fs, recoveryFile); ok {
-			err = u.cfg.Fs.Remove(recoveryFile)
-			if err != nil {
-				u.Error("failed removing old recovery image")
-				return err
-			}
-		}
-		err = u.cfg.Fs.Rename(transitionFile, recoveryFile)
-		if err != nil {
-			u.Error("failed renaming transition recovery image")
-			return err
+		if err := upgradeRecoveryAction.Run(); err != nil {
+			u.Error("Could not upgrade Recovery: %s", err)
+			return elementalError.NewFromError(err, elementalError.UpgradeRecovery)
 		}
 	}
 

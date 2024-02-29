@@ -429,7 +429,7 @@ func ReadResetSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.ResetSpec, error)
 	return reset, err
 }
 
-func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, error) {
+func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet, recoveryOnly bool) (*v1.UpgradeSpec, error) {
 	upgrade, err := config.NewUpgradeSpec(r.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed initializing upgrade spec: %v", err)
@@ -447,7 +447,12 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, er
 	if err != nil {
 		r.Logger.Warnf("error unmarshalling UpgradeSpec: %s", err)
 	}
-	err = upgrade.Sanitize()
+
+	if recoveryOnly {
+		err = upgrade.SanitizeForRecoveryOnly()
+	} else {
+		err = upgrade.Sanitize()
+	}
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
 }
