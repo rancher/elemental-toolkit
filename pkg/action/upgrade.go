@@ -211,11 +211,19 @@ func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 	}
 	cleanup.Push(umount)
 
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountStatePartition)
+	if !elemental.IsRecoveryMode(u.cfg.Config) {
+		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
+		}
+		cleanup.Push(umount)
+	} else {
+		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
+		if err != nil {
+			return elementalError.NewFromError(err, elementalError.MountStatePartition)
+		}
+		cleanup.Push(umount)
 	}
-	cleanup.Push(umount)
 
 	if u.spec.Partitions.Persistent != nil {
 		umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Persistent)
@@ -224,12 +232,6 @@ func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 		}
 		cleanup.Push(umount)
 	}
-
-	umount, err = elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
-	}
-	cleanup.Push(umount)
 
 	return nil
 }
