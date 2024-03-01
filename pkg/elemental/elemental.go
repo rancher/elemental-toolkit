@@ -388,7 +388,7 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			}()
 
 			c.Logger.Infof("Sync %s to %s", rootDir, img.MountPoint)
-			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint)
+			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint, excludes...)
 			if err != nil {
 				c.Logger.Errorf("failed syncing data to the target loop image: %v", err)
 				return err
