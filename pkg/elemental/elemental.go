@@ -432,11 +432,6 @@ func DeployImage(c v1.Config, img *v1.Image) error {
 	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
 	if img.Source.IsDir() {
 		transientTree = img.Source.Value()
-		err = DumpSource(c, transientTree, img.Source)
-		if err != nil {
-			c.Logger.Errorf("failed dumping image tree: %v", err)
-			return err
-		}
 	} else if img.Source.IsFile() {
 		srcImg := &v1.Image{
 			File:       img.Source.Value(),
