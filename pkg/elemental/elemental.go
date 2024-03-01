@@ -295,7 +295,7 @@ func UnmountFileSystemImage(c v1.Config, img *v1.Image) error {
 // can be used to determine the image size and the preload flag can be used to create an image
 // including the root tree data.
 func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool) error {
-	c.Logger.Infof("Creating image %s", img.File)
+	c.Logger.Infof("Creating image %s from rootDir %s", img.File, rootDir)
 	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
 		c.Logger.Errorf("failed creating directory for %s", img.File)
@@ -432,6 +432,11 @@ func DeployImage(c v1.Config, img *v1.Image) error {
 	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
 	if img.Source.IsDir() {
 		transientTree = img.Source.Value()
+		err = DumpSource(c, transientTree, img.Source)
+		if err != nil {
+			c.Logger.Errorf("failed dumping image tree: %v", err)
+			return err
+		}
 	} else if img.Source.IsFile() {
 		srcImg := &v1.Image{
 			File:       img.Source.Value(),
