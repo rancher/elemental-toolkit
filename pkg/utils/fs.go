@@ -44,9 +44,11 @@ func DirSize(fs v1.FS, path string, excludes ...string) (int64, error) {
 		if err != nil {
 			return err
 		}
-		for _, exclude := range excludes {
-			if strings.HasPrefix(loopPath, exclude) {
-				return nil
+		if info.IsDir() {
+			for _, exclude := range excludes {
+				if strings.HasPrefix(loopPath, exclude) {
+					return filepath.SkipDir
+				}
 			}
 		}
 		if !info.IsDir() {
