@@ -200,7 +200,6 @@ func GetDefaultSystemExcludes() []string {
 		"/run",
 		"/host",
 		"/etc/resolv.conf",
-		"/.snapshots",
 	}
 }
 
