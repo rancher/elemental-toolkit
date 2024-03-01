@@ -393,6 +393,10 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 				c.Logger.Errorf("failed syncing data to the target loop image: %v", err)
 				return err
 			}
+			if err := utils.CreateDirStructure(c.Fs, img.MountPoint); err != nil {
+				c.Logger.Errorf("failed creating dir structure: %v", err)
+				return err
+			}
 		}
 	}
 	return err
