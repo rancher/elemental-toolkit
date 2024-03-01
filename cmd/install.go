@@ -24,8 +24,10 @@ import (
 
 	"github.com/rancher/elemental-toolkit/cmd/config"
 	"github.com/rancher/elemental-toolkit/pkg/action"
+	"github.com/rancher/elemental-toolkit/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/pkg/utils"
 )
 
 // NewInstallCmd returns a new instance of the install subcommand and appends it to
@@ -78,6 +80,9 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if spec.Target == "" {
 				return elementalError.New("at least a target device must be supplied", elementalError.InvalidTarget)
 			}
+
+			// If the device path is a symlink, resolve it (e.g., /dev/disk/by-path/platform-fe340000.mmc-part1)
+			spec.Target, _ = utils.ResolveLink(cfg.Fs, spec.Target, "/", constants.MaxLinkDepth)
 
 			cfg.Logger.Infof("Install called")
 			install, err := action.NewInstallAction(cfg, spec)
