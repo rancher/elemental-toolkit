@@ -240,7 +240,7 @@ func (l *LoopDevice) CloseTransaction(snapshot *v1.Snapshot) (err error) {
 		return err
 	}
 
-	err = elemental.CreateImageFromTree(l.cfg, l.snapshotToImage(snapshot), snapshot.WorkDir, false)
+	err = elemental.CreateImageFromTree(l.cfg, l.snapshotToImage(snapshot), snapshot.WorkDir, false, nil)
 	if err != nil {
 		l.cfg.Logger.Errorf("failed creating image for snapshot %d: %v", snapshot.ID, err)
 		return err

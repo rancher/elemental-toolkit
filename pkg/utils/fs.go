@@ -38,23 +38,28 @@ import (
 )
 
 // DirSize returns the accumulated size of all files in folder. Result in bytes
-func DirSize(fs v1.FS, path string) (int64, error) {
+func DirSize(fs v1.FS, path string, excludes ...string) (int64, error) {
 	var size int64
-	err := vfs.Walk(fs, path, func(_ string, info os.FileInfo, err error) error {
+	err := vfs.Walk(fs, path, func(loopPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		for _, exclude := range excludes {
+			if strings.HasPrefix(loopPath, exclude) {
+				return nil
+			}
 		}
 		if !info.IsDir() {
 			size += info.Size()
 		}
-		return err
+		return nil
 	})
 	return size, err
 }
 
 // DirSizeMB returns the accumulated size of all files in folder. Result in Megabytes
-func DirSizeMB(fs v1.FS, path string) (uint, error) {
-	size, err := DirSize(fs, path)
+func DirSizeMB(fs v1.FS, path string, excludes ...string) (uint, error) {
+	size, err := DirSize(fs, path, excludes...)
 	if err != nil {
 		return 0, err
 	}

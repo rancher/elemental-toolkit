@@ -239,7 +239,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	// Create recovery image and removes recovery root when done
 	err = elemental.CreateImageFromTree(
-		b.cfg.Config, &b.spec.RecoverySystem, recRoot, b.spec.Expandable,
+		b.cfg.Config, &b.spec.RecoverySystem, recRoot, b.spec.Expandable, nil,
 		func() error { return b.cfg.Fs.RemoveAll(recRoot) },
 	)
 	if err != nil {
@@ -360,7 +360,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
 		img = part.ToImage()
 		err = elemental.CreateImageFromTree(
-			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
+			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable, nil,
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
 		)
 		if err != nil {
@@ -377,7 +377,7 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*v1.Image, error) {
 		part := b.spec.Partitions.Persistent
 		img = part.ToImage()
 		err = elemental.CreateImageFromTree(
-			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
+			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable, nil,
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
 		)
 		if err != nil {

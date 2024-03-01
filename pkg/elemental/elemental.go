@@ -294,7 +294,7 @@ func UnmountFileSystemImage(c v1.Config, img *v1.Image) error {
 // CreateFileSystemImage creates the image file for the given image. An root tree path
 // can be used to determine the image size and the preload flag can be used to create an image
 // including the root tree data.
-func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool) error {
+func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool, excludes ...string) error {
 	c.Logger.Infof("Creating image %s from rootDir %s", img.File, rootDir)
 	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
@@ -303,7 +303,7 @@ func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload b
 	}
 
 	if img.Size == 0 && rootDir != "" {
-		size, err := utils.DirSizeMB(c.Fs, rootDir)
+		size, err := utils.DirSizeMB(c.Fs, rootDir, excludes...)
 		if err != nil {
 			return err
 		}
@@ -340,7 +340,7 @@ func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload b
 // CreateImageFromTree creates the given image including the given root tree. If preload flag is true
 // it attempts to preload the root tree at filesystem format time. This allows creating images with the
 // given root tree without the need of mounting them.
-func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload bool, cleaners ...func() error) (err error) {
+func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload bool, excludes []string, cleaners ...func() error) (err error) {
 	defer func() {
 		for _, cleaner := range cleaners {
 			if cleaner == nil {
@@ -369,7 +369,7 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			return err
 		}
 	} else {
-		err = CreateFileSystemImage(c, img, rootDir, preload)
+		err = CreateFileSystemImage(c, img, rootDir, preload, excludes...)
 		if err != nil {
 			c.Logger.Errorf("failed creating filesystem image: %v", err)
 			return err
@@ -427,10 +427,12 @@ func CopyFileImg(c v1.Config, img *v1.Image) error {
 func DeployImage(c v1.Config, img *v1.Image) error {
 	var err error
 	var cleaner func() error
+	var excludes []string
 
 	c.Logger.Infof("Deploying image: %s", img.File)
 	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
 	if img.Source.IsDir() {
+		excludes = cnst.GetDefaultSystemExcludes()
 		transientTree = img.Source.Value()
 	} else if img.Source.IsFile() {
 		srcImg := &v1.Image{
@@ -457,7 +459,7 @@ func DeployImage(c v1.Config, img *v1.Image) error {
 		}
 		cleaner = func() error { return c.Fs.RemoveAll(transientTree) }
 	}
-	err = CreateImageFromTree(c, img, transientTree, false, cleaner)
+	err = CreateImageFromTree(c, img, transientTree, false, excludes, cleaner)
 	if err != nil {
 		c.Logger.Errorf("failed creating image from image tree: %v", err)
 		return err
