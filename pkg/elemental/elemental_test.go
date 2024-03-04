@@ -641,28 +641,28 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				cleaned = true
 				return nil
 			}
-			err := elemental.CreateImageFromTree(*config, img, root, false, nil, cleaner)
+			err := elemental.CreateImageFromTree(*config, img, root, false, cleaner)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
 			Expect(cleaned).To(BeTrue())
 		})
 		It("Creates an squashfs image", func() {
 			img.FS = constants.SquashFs
-			err := elemental.CreateImageFromTree(*config, img, root, false, nil)
+			err := elemental.CreateImageFromTree(*config, img, root, false)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(img.Size).To(Equal(uint(0)))
 			Expect(runner.IncludesCmds([][]string{{"mksquashfs"}}))
 		})
 		It("Creates an image of an specific size including including the root tree contents", func() {
 			img.Size = 64
-			err := elemental.CreateImageFromTree(*config, img, root, false, nil)
+			err := elemental.CreateImageFromTree(*config, img, root, false)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(img.Size).To(Equal(uint(64)))
 			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
 		})
 		It("Fails to mount created filesystem image", func() {
 			mounter.ErrorOnUnmount = true
-			err := elemental.CreateImageFromTree(*config, img, root, false, nil)
+			err := elemental.CreateImageFromTree(*config, img, root, false)
 			Expect(err).Should(HaveOccurred())
 			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
 			Expect(cleaned).To(BeFalse())
