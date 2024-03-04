@@ -369,7 +369,7 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			return err
 		}
 	} else {
-		excludes := cnst.GetDefaultSystemExcludes()
+		excludes := cnst.GetDefaultSystemExcludes(rootDir)
 		err = CreateFileSystemImage(c, img, rootDir, preload, excludes...)
 		if err != nil {
 			c.Logger.Errorf("failed creating filesystem image: %v", err)
@@ -502,7 +502,7 @@ func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) error { // n
 		}
 		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
-		excludes := cnst.GetDefaultSystemExcludes()
+		excludes := cnst.GetDefaultSystemExcludes(imgSrc.Value())
 		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return err
