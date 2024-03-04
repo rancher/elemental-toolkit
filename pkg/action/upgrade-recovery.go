@@ -97,14 +97,6 @@ func (u UpgradeRecoveryAction) Error(s string, args ...interface{}) {
 }
 
 func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) error {
-	if u.updateInstallState {
-		umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.State)
-		if err != nil {
-			return elementalError.NewFromError(err, elementalError.MountStatePartition)
-		}
-		cleanup.Push(umount)
-	}
-
 	umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.MountRecoveryPartition)
