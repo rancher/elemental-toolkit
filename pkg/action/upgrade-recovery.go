@@ -123,8 +123,13 @@ func (u *UpgradeRecoveryAction) upgradeInstallStateYaml() error {
 		u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
 	}
 
+	// State partition is mounted in three different locations.
+	// We can expect the state partition to be always RW mounted, since we are running from an active system, not recovery.
+	// The problem is at partitions and mountpoint detection, it only returns a single mountpoint, not  all available ones.
+	// Hardcoding constants.RunningStateDir should (currently) always work.
+	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	return u.cfg.WriteInstallState(
-		u.spec.State, filepath.Join(u.spec.Partitions.State.MountPoint, constants.InstallStateFile),
+		u.spec.State, statePath,
 		filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.InstallStateFile),
 	)
 }
