@@ -294,8 +294,8 @@ func UnmountFileSystemImage(c v1.Config, img *v1.Image) error {
 // CreateFileSystemImage creates the image file for the given image. An root tree path
 // can be used to determine the image size and the preload flag can be used to create an image
 // including the root tree data.
-func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool) error {
-	c.Logger.Infof("Creating image %s", img.File)
+func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload bool, excludes ...string) error {
+	c.Logger.Infof("Creating image %s from rootDir %s", img.File, rootDir)
 	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
 	if err != nil {
 		c.Logger.Errorf("failed creating directory for %s", img.File)
@@ -303,7 +303,7 @@ func CreateFileSystemImage(c v1.Config, img *v1.Image, rootDir string, preload b
 	}
 
 	if img.Size == 0 && rootDir != "" {
-		size, err := utils.DirSizeMB(c.Fs, rootDir)
+		size, err := utils.DirSizeMB(c.Fs, rootDir, excludes...)
 		if err != nil {
 			return err
 		}
@@ -369,7 +369,8 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			return err
 		}
 	} else {
-		err = CreateFileSystemImage(c, img, rootDir, preload)
+		excludes := cnst.GetDefaultSystemExcludes(rootDir)
+		err = CreateFileSystemImage(c, img, rootDir, preload, excludes...)
 		if err != nil {
 			c.Logger.Errorf("failed creating filesystem image: %v", err)
 			return err
@@ -388,9 +389,13 @@ func CreateImageFromTree(c v1.Config, img *v1.Image, rootDir string, preload boo
 			}()
 
 			c.Logger.Infof("Sync %s to %s", rootDir, img.MountPoint)
-			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint)
+			err = utils.SyncData(c.Logger, c.Runner, c.Fs, rootDir, img.MountPoint, excludes...)
 			if err != nil {
 				c.Logger.Errorf("failed syncing data to the target loop image: %v", err)
+				return err
+			}
+			if err := utils.CreateDirStructure(c.Fs, img.MountPoint); err != nil {
+				c.Logger.Errorf("failed creating dir structure: %v", err)
 				return err
 			}
 		}
@@ -497,7 +502,7 @@ func DumpSource(c v1.Config, target string, imgSrc *v1.ImageSource) error { // n
 		}
 		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
-		excludes := cnst.GetDefaultSystemExcludes()
+		excludes := cnst.GetDefaultSystemExcludes(imgSrc.Value())
 		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return err

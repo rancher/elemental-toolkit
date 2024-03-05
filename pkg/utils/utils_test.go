@@ -696,7 +696,12 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(size).To(Equal(int64(3072)))
 		})
-		It("Returns the expected size of a test folder", func() {
+		It("Returns the size of a test folder when skipping subdirectories", func() {
+			size, err := utils.DirSize(fs, "/folder", "/folder/subfolder")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(size).To(Equal(int64(1024)))
+		})
+		It("Fails with permission denied", func() {
 			err := fs.Chmod("/folder/subfolder", 0600)
 			Expect(err).ShouldNot(HaveOccurred())
 			_, err = utils.DirSize(fs, "/folder")

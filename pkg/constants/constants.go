@@ -190,16 +190,17 @@ const (
 // that are commonly present in an Elemental based running system.
 // Those paths are not needed or wanted in order to replicate the
 // root-tree as they are generated at runtime.
-func GetDefaultSystemExcludes() []string {
+func GetDefaultSystemExcludes(rootDir string) []string {
 	return []string{
-		"/mnt",
-		"/proc",
-		"/sys",
-		"/dev",
-		"/tmp",
-		"/run",
-		"/host",
-		"/etc/resolv.conf",
+		filepath.Join(rootDir, "/.snapshots"),
+		filepath.Join(rootDir, "/mnt"),
+		filepath.Join(rootDir, "/proc"),
+		filepath.Join(rootDir, "/sys"),
+		filepath.Join(rootDir, "/dev"),
+		filepath.Join(rootDir, "/tmp"),
+		filepath.Join(rootDir, "/run"),
+		filepath.Join(rootDir, "/host"),
+		filepath.Join(rootDir, "/etc/resolv.conf"),
 	}
 }
 
