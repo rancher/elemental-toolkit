@@ -24,7 +24,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/cmd/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
-        "github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"

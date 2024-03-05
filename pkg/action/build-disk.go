@@ -426,7 +426,7 @@ func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 	system := b.spec.System
 	if b.spec.RecoverySystem.Source.String() == b.spec.System.String() {
 		// Reuse already deployed root-tree from recovery image
-		system = v1.NewFileSrc(b.spec.RecoverySystem.File)
+		system = types.NewFileSrc(b.spec.RecoverySystem.File)
 		b.spec.System.SetDigest(b.spec.RecoverySystem.Source.GetDigest())
 	}
 

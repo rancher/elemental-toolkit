@@ -133,7 +133,7 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 	}, nil
 }
 
-func (b *Btrfs) InitSnapshotter(state *v1.Partition, efiDir string) error {
+func (b *Btrfs) InitSnapshotter(state *types.Partition, efiDir string) error {
 	var err error
 	var ok bool
 

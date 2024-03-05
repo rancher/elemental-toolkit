@@ -443,7 +443,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			It("fails to umount default subvolume", func() {
 				failCmd = "nofail"
 				mounter.ErrorOnUnmount = true
-				err = b.InitSnapshotter(rootDir)
+				err = b.InitSnapshotter(statePart, rootDir)
 				Expect(err.Error()).To(ContainSubstring("unmount"))
 			})
 		})

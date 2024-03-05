@@ -78,7 +78,7 @@ func newLoopDeviceSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig,
 
 // InitSnapshotter initiates the snapshotter to the given root directory. More over this method includes logic to migrate
 // from older elemental-toolkit versions.
-func (l *LoopDevice) InitSnapshotter(state *v1.Partition, efiDir string) error {
+func (l *LoopDevice) InitSnapshotter(state *types.Partition, efiDir string) error {
 	var err error
 
 	l.cfg.Logger.Infof("Initiating a LoopDevice snapshotter at %s", state.MountPoint)

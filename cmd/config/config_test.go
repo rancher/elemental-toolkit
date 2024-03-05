@@ -473,7 +473,7 @@ var _ = Describe("Config", Label("config"), func() {
 				defer ghwTest.Clean()
 
 				err := os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")
-				spec, err := ReadUpgradeSpec(cfg, nil)
+				spec, err := ReadUpgradeSpec(cfg, nil, false)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars
 				Expect(spec.RecoverySystem.Source.Value() == "image/from:flag")

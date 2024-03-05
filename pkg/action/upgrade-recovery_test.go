@@ -28,41 +28,41 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Upgrade Recovery Actions", func() {
-	var config *v1.RunConfig
-	var runner *v1mock.FakeRunner
+	var config *types.RunConfig
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var cloudInit *v1mock.FakeCloudInitRunner
-	var extractor *v1mock.FakeImageExtractor
+	var logger types.Logger
+	var mounter *mocks.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var cloudInit *mocks.FakeCloudInitRunner
+	var extractor *mocks.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var ghwTest v1mock.GhwMock
+	var ghwTest mocks.GhwMock
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
-		extractor = v1mock.NewFakeImageExtractor(logger)
+		logger = types.NewBufferLogger(memLog)
+		extractor = mocks.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 
-		cloudInit = &v1mock.FakeCloudInitRunner{}
+		cloudInit = &mocks.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
@@ -79,13 +79,13 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("UpgradeRecovery Action", Label("upgrade-recovery"), func() {
-		var spec *v1.UpgradeSpec
+		var spec *types.UpgradeSpec
 		var upgradeRecovery *action.UpgradeRecoveryAction
 		var memLog *bytes.Buffer
 
 		BeforeEach(func() {
 			memLog = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(memLog)
+			logger = types.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
 
@@ -122,7 +122,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 					},
 				},
 			}
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 		})
@@ -137,8 +137,8 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec.System = v1.NewDockerSrc("alpine")
-				loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+				spec.System = types.NewDockerSrc("alpine")
+				loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				loopCfg.Size = 16
 
@@ -252,18 +252,18 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 	})
 })
 
-func PrepareTestRecoveryImage(config *v1.RunConfig, recoveryImgPath string, fs vfs.FS, runner *v1mock.FakeRunner) *v1.UpgradeSpec {
+func PrepareTestRecoveryImage(config *types.RunConfig, recoveryImgPath string, fs vfs.FS, runner *mocks.FakeRunner) *types.UpgradeSpec {
 	GinkgoHelper()
 	// Create installState with squashed recovery
 	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-	installState := &v1.InstallState{
-		Partitions: map[string]*v1.PartitionState{
+	installState := &types.InstallState{
+		Partitions: map[string]*types.PartitionState{
 			constants.RecoveryPartName: {
 				FSLabel: constants.RecoveryLabel,
-				RecoveryImage: &v1.SystemState{
+				RecoveryImage: &types.SystemState{
 					Label:  constants.SystemLabel,
 					FS:     constants.SquashFs,
-					Source: v1.NewDirSrc("/some/dir"),
+					Source: types.NewDirSrc("/some/dir"),
 				},
 			},
 		},
@@ -275,7 +275,7 @@ func PrepareTestRecoveryImage(config *v1.RunConfig, recoveryImgPath string, fs v
 	spec, err := conf.NewUpgradeSpec(config.Config)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	spec.System = v1.NewDockerSrc("alpine")
+	spec.System = types.NewDockerSrc("alpine")
 	spec.RecoveryUpgrade = true
 	spec.RecoverySystem.Source = spec.System
 	spec.RecoverySystem.Size = 16

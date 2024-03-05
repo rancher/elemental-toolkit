@@ -22,19 +22,19 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var ErrUpgradeRecoveryFromRecovery = errors.New("Can not upgrade recovery from recovery partition")
 
 // UpgradeRecoveryAction represents the struct that will run the recovery upgrade from start to finish
 type UpgradeRecoveryAction struct {
-	cfg                *v1.RunConfig
-	spec               *v1.UpgradeSpec
+	cfg                *types.RunConfig
+	spec               *types.UpgradeSpec
 	updateInstallState bool
 }
 
@@ -47,7 +47,7 @@ func WithUpdateInstallState(updateInstallState bool) func(u *UpgradeRecoveryActi
 	}
 }
 
-func NewUpgradeRecoveryAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...UpgradeRecoveryActionOption) (*UpgradeRecoveryAction, error) {
+func NewUpgradeRecoveryAction(config *types.RunConfig, spec *types.UpgradeSpec, opts ...UpgradeRecoveryActionOption) (*UpgradeRecoveryAction, error) {
 	var err error
 
 	u := &UpgradeRecoveryAction{cfg: config, spec: spec}
@@ -111,9 +111,9 @@ func (u *UpgradeRecoveryAction) upgradeInstallStateYaml() error {
 
 	recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
 	if recoveryPart == nil {
-		recoveryPart = &v1.PartitionState{
+		recoveryPart = &types.PartitionState{
 			FSLabel: u.spec.Partitions.Recovery.FilesystemLabel,
-			RecoveryImage: &v1.SystemState{
+			RecoveryImage: &types.SystemState{
 				FS:     u.spec.RecoverySystem.FS,
 				Label:  u.spec.RecoverySystem.Label,
 				Source: u.spec.RecoverySystem.Source,
