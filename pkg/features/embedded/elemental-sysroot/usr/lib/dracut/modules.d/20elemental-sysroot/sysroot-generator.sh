@@ -49,7 +49,7 @@ if [ "${snapshotter}" == "btrfs" ]; then
         *active*)
             opts="ro,noatime,seclabel,compress=lzo,space_cache=v2" ;;
         *passive*)
-            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@/.snapshots/${elemental_img}/snapshot" ;;
+            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2,subvol=${elemental_img}" ;;
         *)
             exit 1 ;;
     esac
@@ -101,9 +101,9 @@ else
         *active*)
             image=".snapshots/active" ;;
         *passive*)
-            image=".snapshots/${elemental_img}/snapshot" ;;
+            image="${elemental_img}" ;;
         *recovery*)
-            image="recovery.img" ;;
+            image="${elemental_img}" ;;
         *)
             exit 1 ;;
     esac
