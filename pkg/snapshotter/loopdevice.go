@@ -543,6 +543,10 @@ func (l *LoopDevice) legacyImageToSnapsot(image string) error {
 			l.cfg.Logger.Errorf("failed setting the snaphsot ID for legacy images: %v", err)
 			return err
 		}
+		if id > 1 {
+			l.cfg.Logger.Debugf("Skipping legacy image migration, some snapshot already found in the system")
+			return nil
+		}
 		l.cfg.Logger.Debugf("Migrating image %s to snapshot %d", image, id)
 
 		snapPath := filepath.Join(l.rootDir, loopDeviceSnapsPath, strconv.FormatInt(int64(id), 10))
