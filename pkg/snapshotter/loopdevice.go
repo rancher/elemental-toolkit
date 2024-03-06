@@ -544,7 +544,7 @@ func (l *LoopDevice) legacyImageToSnapsot(image string) error {
 			return err
 		}
 		if id > 1 {
-			l.cfg.Logger.Debugf("Skipping legacy image migration, there are already snapshots in the system")
+			l.cfg.Logger.Debugf("Skipping legacy image migration, some snapshot already found in the system")
 			return nil
 		}
 		l.cfg.Logger.Debugf("Migrating image %s to snapshot %d", image, id)
