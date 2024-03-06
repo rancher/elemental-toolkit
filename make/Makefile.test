@@ -47,11 +47,11 @@ test-grubfallback: test-active
 
 .PHONY: test-recovery
 test-recovery: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/recovery
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/recovery -- $(UPGRADE_ARGS)
 
 .PHONY: test-fallback
 test-fallback: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/fallback
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/fallback -- $(UPGRADE_ARGS)
 
 .PHONY: test-fsck
 test-fsck: test-active
@@ -59,7 +59,7 @@ test-fsck: test-active
 
 .PHONY: test-downgrade
 test-downgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade -- $(UPGRADE_ARGS)
 
 .PHONY: test-upgrade
 test-upgrade: test-active
