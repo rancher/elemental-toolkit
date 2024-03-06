@@ -84,7 +84,7 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade completed"))
+				Expect(out).Should(ContainSubstring("Recovery upgrade completed"))
 
 				// TODO: Check state.yaml changed
 
