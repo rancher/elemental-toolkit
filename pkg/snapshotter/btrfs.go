@@ -633,6 +633,7 @@ func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
 	}
 	sysconfigData["SNAPPER_CONFIGS"] = "root"
 
+	b.cfg.Logger.Debugf("Creating sysconfig snapper configuration at '%s'", sysconfig)
 	err = utils.WriteEnvFile(b.cfg.Fs, sysconfigData, sysconfig)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed writing snapper global configuration file: %v", err)
@@ -650,7 +651,9 @@ func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
 	snapCfg["NUMBER_LIMIT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
 	snapCfg["NUMBER_LIMIT_IMPORTANT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
 
-	err = utils.WriteEnvFile(b.cfg.Fs, snapCfg, filepath.Join(snapshot.Path, snapperRootConfig))
+	rootCfg := filepath.Join(snapshot.Path, snapperRootConfig)
+	b.cfg.Logger.Debugf("Creating 'root' snapper configuration at '%s'", rootCfg)
+	err = utils.WriteEnvFile(b.cfg.Fs, snapCfg, rootCfg)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed writing snapper root configuration file: %v", err)
 		return err
