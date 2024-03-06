@@ -616,14 +616,14 @@ func (b *Btrfs) setBootloader() error {
 }
 
 func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
-	defaultTmpl, err := utils.FindFile(b.cfg.Fs, snapshot.Path, configTemplatesPaths()...)
+	defaultTmpl, err := utils.FindFile(b.cfg.Fs, snapshot.WorkDir, configTemplatesPaths()...)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed to find default snapper configuration template")
 		return err
 	}
 
 	sysconfigData := map[string]string{}
-	sysconfig := filepath.Join(snapshot.Path, snapperSysconfig)
+	sysconfig := filepath.Join(snapshot.WorkDir, snapperSysconfig)
 	if ok, _ := utils.Exists(b.cfg.Fs, sysconfig); ok {
 		sysconfigData, err = utils.LoadEnvFile(b.cfg.Fs, sysconfig)
 		if err != nil {
@@ -651,7 +651,7 @@ func (b *Btrfs) configureSnapper(snapshot *v1.Snapshot) error {
 	snapCfg["NUMBER_LIMIT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
 	snapCfg["NUMBER_LIMIT_IMPORTANT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
 
-	rootCfg := filepath.Join(snapshot.Path, snapperRootConfig)
+	rootCfg := filepath.Join(snapshot.WorkDir, snapperRootConfig)
 	b.cfg.Logger.Debugf("Creating 'root' snapper configuration at '%s'", rootCfg)
 	err = utils.WriteEnvFile(b.cfg.Fs, snapCfg, rootCfg)
 	if err != nil {
