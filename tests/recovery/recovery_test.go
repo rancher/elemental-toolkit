@@ -79,7 +79,7 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
 				By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
-				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", comm.UpgradeImage())
+				cmd := s.ElementalCmd("upgrade-recovery", "--recovery-system.uri", comm.UpgradeImage())
 				By(fmt.Sprintf("running %s", cmd))
 				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
