@@ -47,9 +47,9 @@ if [ "${snapshotter}" == "btrfs" ]; then
     rootvol_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
     case "${elemental_mode}" in
         *active*)
-            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2" ;;
+            opts="ro" ;;
         *passive*)
-            opts="ro,noatime,seclabel,compress=lzo,space_cache=v2,subvol=${elemental_img}" ;;
+            opts="ro,subvol=${elemental_img}" ;;
         *)
             exit 1 ;;
     esac
@@ -75,7 +75,7 @@ if [ "${snapshotter}" == "btrfs" ]; then
         echo "[Mount]"
         echo "Where=${root_part_mnt}"
         echo "What=${root}"
-        echo "Options=rw,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@"
+        echo "Options=defaults,subvol=@"
     } > "$GENERATOR_DIR/${rootvol_unit}"
 
     {
@@ -87,7 +87,7 @@ if [ "${snapshotter}" == "btrfs" ]; then
         echo "[Mount]"
         echo "Where=/sysroot/.snapshots"
         echo "What=${root}"
-        echo "Options=rw,noatime,seclabel,compress=lzo,space_cache=v2,subvol=@/.snapshots"
+        echo "Options=defaults,subvol=@/.snapshots"
     } > "$GENERATOR_DIR/${snapshots_unit}"
 
     mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
@@ -117,7 +117,7 @@ else
         echo "[Mount]"
         echo "Where=${root_part_mnt}"
         echo "What=${root}"
-        echo "Options=rw,suid,dev,exec,auto,nouser,async"
+        echo "Options=defaults"
     } > "$GENERATOR_DIR/${state_unit}"
 
     {
@@ -128,7 +128,7 @@ else
         echo "[Mount]"
         echo "Where=/sysroot"
         echo "What=${root_part_mnt}/${image}"
-        echo "Options=ro,suid,dev,exec,auto,nouser,async"
+        echo "Options=ro"
     } > "$GENERATOR_DIR"/sysroot.mount
 fi
 
