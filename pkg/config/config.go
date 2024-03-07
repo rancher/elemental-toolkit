@@ -516,7 +516,8 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 
 	recoveryImg.Size = constants.ImgSize
 	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, constants.RecoveryImgFile)
-	recoveryImg.FS = constants.SquashFs
+	recoveryImg.FS = constants.LinuxImgFs
+	recoveryImg.Label = constants.SystemLabel
 	recoveryImg.Source = v1.NewEmptySrc()
 	recoveryImg.MountPoint = filepath.Join(
 		workdir, strings.TrimSuffix(
