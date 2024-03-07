@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: "${{ github.event.pull_request.merge_commit_sha }}"
+          ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Log in to ghcr.io
