@@ -27,8 +27,8 @@ ARG TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go generate ./...
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -ldflags "-w -s \
-    -X github.com/rancher/elemental-toolkit/internal/version.version=${ELEMENTAL_VERSION} \
-    -X github.com/rancher/elemental-toolkit/internal/version.gitCommit=${ELEMENTAL_COMMIT}" \
+    -X github.com/rancher/elemental-toolkit/v2/internal/version.version=${ELEMENTAL_VERSION} \
+    -X github.com/rancher/elemental-toolkit/v2/internal/version.gitCommit=${ELEMENTAL_COMMIT}" \
     -o /usr/bin/elemental
 
 FROM ${BASE_OS_IMAGE}:${BASE_OS_VERSION} AS elemental-toolkit
