@@ -22,8 +22,8 @@ VERSION?=$(GIT_TAG)-g$(GIT_COMMIT_SHORT)
 
 PKG:=./cmd ./pkg/...
 LDFLAGS:=-w -s
-LDFLAGS+=-X "github.com/rancher/elemental-toolkit/internal/version.version=$(GIT_TAG)"
-LDFLAGS+=-X "github.com/rancher/elemental-toolkit/internal/version.gitCommit=$(GIT_COMMIT)"
+LDFLAGS+=-X "github.com/rancher/elemental-toolkit/v2/internal/version.version=$(GIT_TAG)"
+LDFLAGS+=-X "github.com/rancher/elemental-toolkit/v2/internal/version.gitCommit=$(GIT_COMMIT)"
 
 # For RISC-V 64bit support
 ifeq ($(PLATFORM),linux/riscv64)
