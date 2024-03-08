@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/rancher/elemental-toolkit/pkg/features"
+	"github.com/rancher/elemental-toolkit/v2/pkg/features"
 )
 
 func TestTypes(t *testing.T) {

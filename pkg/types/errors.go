@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 SUSE LLC
+Copyright © 2022 - 2024 SUSE LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1_test
+package types
 
-import (
-	"testing"
+// SourceNotFound is the error to raise when we can't find a source for install/upgrade
+type SourceNotFound struct {
+}
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-)
-
-func TestTypes(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "v1 types test suite")
+func (s *SourceNotFound) Error() string {
+	return "could not find source"
 }

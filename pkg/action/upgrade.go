@@ -22,34 +22,34 @@ import (
 	"slices"
 	"time"
 
-	"github.com/rancher/elemental-toolkit/pkg/bootloader"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	"github.com/rancher/elemental-toolkit/pkg/snapshotter"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 // UpgradeAction represents the struct that will run the upgrade from start to finish
 type UpgradeAction struct {
-	cfg         *v1.RunConfig
-	spec        *v1.UpgradeSpec
-	bootloader  v1.Bootloader
-	snapshotter v1.Snapshotter
-	snapshot    *v1.Snapshot
+	cfg         *types.RunConfig
+	spec        *types.UpgradeSpec
+	bootloader  types.Bootloader
+	snapshotter types.Snapshotter
+	snapshot    *types.Snapshot
 }
 
 type UpgradeActionOption func(r *UpgradeAction) error
 
-func WithUpgradeBootloader(bootloader v1.Bootloader) func(u *UpgradeAction) error {
+func WithUpgradeBootloader(bootloader types.Bootloader) func(u *UpgradeAction) error {
 	return func(u *UpgradeAction) error {
 		u.bootloader = bootloader
 		return nil
 	}
 }
 
-func NewUpgradeAction(config *v1.RunConfig, spec *v1.UpgradeSpec, opts ...UpgradeActionOption) (*UpgradeAction, error) {
+func NewUpgradeAction(config *types.RunConfig, spec *types.UpgradeSpec, opts ...UpgradeActionOption) (*UpgradeAction, error) {
 	var err error
 
 	u := &UpgradeAction{cfg: config, spec: spec}
@@ -137,8 +137,8 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 	}
 
 	if u.spec.State == nil {
-		u.spec.State = &v1.InstallState{
-			Partitions: map[string]*v1.PartitionState{},
+		u.spec.State = &types.InstallState{
+			Partitions: map[string]*types.PartitionState{},
 		}
 	}
 
@@ -147,14 +147,14 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 
 	statePart := u.spec.State.Partitions[constants.StatePartName]
 	if statePart == nil {
-		statePart = &v1.PartitionState{
+		statePart = &types.PartitionState{
 			FSLabel:   u.spec.Partitions.State.FilesystemLabel,
-			Snapshots: map[int]*v1.SystemState{},
+			Snapshots: map[int]*types.SystemState{},
 		}
 	}
 
 	if statePart.Snapshots == nil {
-		statePart.Snapshots = map[int]*v1.SystemState{}
+		statePart.Snapshots = map[int]*types.SystemState{}
 	}
 
 	for id, state := range statePart.Snapshots {
@@ -166,7 +166,7 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		}
 	}
 
-	statePart.Snapshots[u.snapshot.ID] = &v1.SystemState{
+	statePart.Snapshots[u.snapshot.ID] = &types.SystemState{
 		Source: u.spec.System,
 		Digest: u.spec.System.GetDigest(),
 		Active: true,
@@ -185,9 +185,9 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 	if u.spec.RecoveryUpgrade {
 		recoveryPart := u.spec.State.Partitions[constants.RecoveryPartName]
 		if recoveryPart == nil {
-			recoveryPart = &v1.PartitionState{
+			recoveryPart = &types.PartitionState{
 				FSLabel: u.spec.Partitions.Recovery.FilesystemLabel,
-				RecoveryImage: &v1.SystemState{
+				RecoveryImage: &types.SystemState{
 					FS:     u.spec.RecoverySystem.FS,
 					Label:  u.spec.RecoverySystem.Label,
 					Source: u.spec.RecoverySystem.Source,

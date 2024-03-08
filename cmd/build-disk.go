@@ -19,15 +19,15 @@ package cmd
 import (
 	"os/exec"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	eleError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	eleError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/rancher/elemental-toolkit/cmd/config"
-	"github.com/rancher/elemental-toolkit/pkg/action"
+	"github.com/rancher/elemental-toolkit/v2/cmd/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 )
 
 // NewBuildDisk returns a new instance of the build-disk subcommand and appends it to
@@ -45,8 +45,8 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
-			var cfg *v1.BuildConfig
-			var spec *v1.DiskSpec
+			var cfg *types.BuildConfig
+			var spec *types.DiskSpec
 
 			defer func() {
 				if cfg != nil && err != nil {
@@ -58,7 +58,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mounter := v1.NewMounter(path)
+			mounter := types.NewMounter(path)
 
 			flags := cmd.Flags()
 			cfg, err = config.ReadConfigBuild(viper.GetString("config-dir"), flags, mounter)

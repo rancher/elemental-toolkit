@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 const efiType = "EF00"
@@ -36,14 +36,14 @@ type gdiskCall struct {
 	wipe      bool
 	parts     []*Partition
 	deletions []int
-	runner    v1.Runner
+	runner    types.Runner
 	expand    bool
 	pretend   bool
 }
 
 var _ Partitioner = (*gdiskCall)(nil)
 
-func newGdiskCall(dev string, runner v1.Runner) *gdiskCall {
+func newGdiskCall(dev string, runner types.Runner) *gdiskCall {
 	return &gdiskCall{
 		dev:       dev,
 		runner:    runner,
@@ -175,7 +175,7 @@ func (gd gdiskCall) GetSectorSize(printOut string) (uint, error) {
 
 // TODO parse printOut from a non gpt disk and return error here
 func (gd gdiskCall) GetPartitionTableLabel(_ string) (string, error) {
-	return v1.GPT, nil
+	return types.GPT, nil
 }
 
 // Parses the output of a gdiskCall.Print call

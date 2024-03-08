@@ -32,13 +32,13 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/twpayne/go-vfs/v4"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 // BootedFrom will check if we are booting from the given label
-func BootedFrom(runner v1.Runner, label string) bool {
+func BootedFrom(runner types.Runner, label string) bool {
 	out, _ := runner.Run("cat", "/proc/cmdline")
 	return strings.Contains(string(out), label)
 }
@@ -46,7 +46,7 @@ func BootedFrom(runner v1.Runner, label string) bool {
 // GetDeviceByLabel will try to return the device that matches the given label.
 // attempts value sets the number of attempts to find the device, it
 // waits a second between attempts.
-func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, error) {
+func GetDeviceByLabel(runner types.Runner, label string, attempts int) (string, error) {
 	part, err := GetFullDeviceByLabel(runner, label, attempts)
 	if err != nil {
 		return "", err
@@ -55,8 +55,8 @@ func GetDeviceByLabel(runner v1.Runner, label string, attempts int) (string, err
 }
 
 // GetFullDeviceByLabel works like GetDeviceByLabel, but it will try to get as much info as possible from the existing
-// partition and return a v1.Partition object
-func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Partition, error) {
+// partition and return a types.Partition object
+func GetFullDeviceByLabel(runner types.Runner, label string, attempts int) (*types.Partition, error) {
 	for tries := 0; tries < attempts; tries++ {
 		_, _ = runner.Run("udevadm", "settle")
 		parts, err := GetAllPartitions()
@@ -75,7 +75,7 @@ func GetFullDeviceByLabel(runner v1.Runner, label string, attempts int) (*v1.Par
 // CopyFile Copies source file to target file using Fs interface. If target
 // is  directory source is copied into that directory using source name file.
 // File mode is preserved
-func CopyFile(fs v1.FS, source string, target string) error {
+func CopyFile(fs types.FS, source string, target string) error {
 	return ConcatFiles(fs, []string{source}, target)
 }
 
@@ -83,7 +83,7 @@ func CopyFile(fs v1.FS, source string, target string) error {
 // Source files are concatenated into target file in the given order.
 // If target is a directory source is copied into that directory using
 // 1st source name file. The result keeps the file mode of the 1st source.
-func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
+func ConcatFiles(fs types.FS, sources []string, target string) (err error) {
 	if len(sources) == 0 {
 		return fmt.Errorf("Empty sources list")
 	}
@@ -128,7 +128,7 @@ func ConcatFiles(fs v1.FS, sources []string, target string) (err error) {
 
 // CreateDirStructure creates essentials directories under the root tree that might not be present
 // within a container image (/dev, /run, etc.)
-func CreateDirStructure(fs v1.FS, target string) error {
+func CreateDirStructure(fs types.FS, target string) error {
 	for _, dir := range []string{"/run", "/dev", "/boot", "/oem", "/system", "/etc/elemental/config.d"} {
 		err := MkdirAll(fs, filepath.Join(target, dir), constants.DirPerm)
 		if err != nil {
@@ -155,7 +155,7 @@ func CreateDirStructure(fs v1.FS, target string) error {
 
 // SyncData rsync's source folder contents to a target folder content,
 // both are expected to exist before hand.
-func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, excludes ...string) error {
+func SyncData(log types.Logger, runner types.Runner, fs types.FS, source string, target string, excludes ...string) error {
 	flags := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls"}
 	for _, e := range excludes {
 		flags = append(flags, fmt.Sprintf("--exclude=%s", e))
@@ -166,7 +166,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 // MirrorData rsync's source folder contents to a target folder content, in contrast, to SyncData this
 // method includes the --delete flag which forces the deletion of files in target that are missing in source.
-func MirrorData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, excludes ...string) error {
+func MirrorData(log types.Logger, runner types.Runner, fs types.FS, source string, target string, excludes ...string) error {
 	flags := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--delete"}
 	for _, e := range excludes {
 		flags = append(flags, fmt.Sprintf("--exclude=%s", e))
@@ -175,7 +175,7 @@ func MirrorData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target
 	return rsyncWrapper(log, runner, fs, source, target, flags)
 }
 
-func rsyncWrapper(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target string, flags []string) error {
+func rsyncWrapper(log types.Logger, runner types.Runner, fs types.FS, source string, target string, flags []string) error {
 	if fs != nil {
 		if s, err := fs.RawPath(source); err == nil {
 			source = s
@@ -212,7 +212,7 @@ func rsyncWrapper(log v1.Logger, runner v1.Runner, fs v1.FS, source string, targ
 	return nil
 }
 
-func displayProgress(log v1.Logger, tick time.Duration, message string) chan bool {
+func displayProgress(log types.Logger, tick time.Duration, message string) chan bool {
 	ticker := time.NewTicker(tick)
 	done := make(chan bool)
 
@@ -232,14 +232,14 @@ func displayProgress(log v1.Logger, tick time.Duration, message string) chan boo
 }
 
 // Reboot reboots the system after the given delay (in seconds) time passed.
-func Reboot(runner v1.Runner, delay time.Duration) error {
+func Reboot(runner types.Runner, delay time.Duration) error {
 	time.Sleep(delay * time.Second)
 	_, err := runner.Run("reboot", "-f")
 	return err
 }
 
 // Shutdown halts the system after the given delay (in seconds) time passed.
-func Shutdown(runner v1.Runner, delay time.Duration) error {
+func Shutdown(runner types.Runner, delay time.Duration) error {
 	time.Sleep(delay * time.Second)
 	_, err := runner.Run("poweroff", "-f")
 	return err
@@ -247,7 +247,7 @@ func Shutdown(runner v1.Runner, delay time.Duration) error {
 
 // CosignVerify runs a cosign validation for the give image and given public key. If no
 // key is provided then it attempts a keyless validation (experimental feature).
-func CosignVerify(fs v1.FS, runner v1.Runner, image string, publicKey string, debug bool) (string, error) {
+func CosignVerify(fs types.FS, runner types.Runner, image string, publicKey string, debug bool) (string, error) {
 	args := []string{}
 
 	if debug {
@@ -267,7 +267,7 @@ func CosignVerify(fs v1.FS, runner v1.Runner, image string, publicKey string, de
 		return "", err
 	}
 	_ = os.Setenv("TUF_ROOT", tmpDir)
-	defer func(fs v1.FS, path string) {
+	defer func(fs types.FS, path string) {
 		_ = fs.RemoveAll(path)
 	}(fs, tmpDir)
 	defer func() {
@@ -280,7 +280,7 @@ func CosignVerify(fs v1.FS, runner v1.Runner, image string, publicKey string, de
 
 // CreateSquashFS creates a squash file at destination from a source, with options
 // TODO: Check validity of source maybe?
-func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destination string, options []string) error {
+func CreateSquashFS(runner types.Runner, logger types.Logger, source string, destination string, options []string) error {
 	// create args
 	args := []string{source, destination}
 	// append options passed to args in order to have the correct order
@@ -300,7 +300,7 @@ func CreateSquashFS(runner v1.Runner, logger v1.Logger, source string, destinati
 }
 
 // LoadEnvFile will try to parse the file given and return a map with the key/values
-func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
+func LoadEnvFile(fs types.FS, file string) (map[string]string, error) {
 	var envMap map[string]string
 	var err error
 
@@ -319,7 +319,7 @@ func LoadEnvFile(fs v1.FS, file string) (map[string]string, error) {
 }
 
 // WriteEnvFile will write the given environment file with the given key/values
-func WriteEnvFile(fs v1.FS, envs map[string]string, filename string) error {
+func WriteEnvFile(fs types.FS, envs map[string]string, filename string) error {
 	var bkFile string
 
 	rawPath, err := fs.RawPath(filename)
@@ -385,7 +385,7 @@ func IsHTTPURI(uri string) (bool, error) {
 
 // GetSource copies given source to destination, if source is a local path it simply
 // copies files, if source is a remote URL it tries to download URL to destination.
-func GetSource(config v1.Config, source string, destination string) error {
+func GetSource(config types.Config, source string, destination string) error {
 	local, err := IsLocalURI(source)
 	if err != nil {
 		config.Logger.Errorf("Not a valid url: %s", source)
@@ -435,7 +435,7 @@ func ValidTaggedContainerReference(ref string) bool {
 
 // FindFile attempts to find a file from a list of patterns on top of a given root path.
 // Returns first match if any and returns error otherwise.
-func FindFile(vfs v1.FS, rootDir string, patterns ...string) (string, error) {
+func FindFile(vfs types.FS, rootDir string, patterns ...string) (string, error) {
 	var err error
 	var found string
 
@@ -455,7 +455,7 @@ func FindFile(vfs v1.FS, rootDir string, patterns ...string) (string, error) {
 
 // findFile attempts to find a file from a given pattern on top of a root path.
 // Returns empty path if no file is found.
-func findFile(vfs v1.FS, rootDir, pattern string) (string, error) {
+func findFile(vfs types.FS, rootDir, pattern string) (string, error) {
 	var foundFile string
 	base := filepath.Join(rootDir, getBaseDir(pattern))
 	if ok, _ := Exists(vfs, base); ok {
@@ -485,7 +485,7 @@ func findFile(vfs v1.FS, rootDir, pattern string) (string, error) {
 
 // FindKernel finds for kernel files inside a given root tree path.
 // Returns kernel file and version. It assumes kernel files match certain patterns
-func FindKernel(fs v1.FS, rootDir string) (string, string, error) {
+func FindKernel(fs types.FS, rootDir string) (string, string, error) {
 	var kernel, version string
 	var err error
 
@@ -511,7 +511,7 @@ func FindKernel(fs v1.FS, rootDir string) (string, string, error) {
 
 // FindInitrd finds for initrd files inside a given root tree path.
 // It assumes initrd files match certain patterns
-func FindInitrd(fs v1.FS, rootDir string) (string, error) {
+func FindInitrd(fs types.FS, rootDir string) (string, error) {
 	initrd, err := FindFile(fs, rootDir, constants.GetInitrdPatterns()...)
 	if err != nil {
 		return "", fmt.Errorf("No initrd file found: %v", err)
@@ -522,7 +522,7 @@ func FindInitrd(fs v1.FS, rootDir string) (string, error) {
 // FindKernelInitrd finds for kernel and intird files inside a given root tree path.
 // It assumes kernel and initrd files match certain patterns.
 // This is a comodity method of a combination of FindKernel and FindInitrd.
-func FindKernelInitrd(fs v1.FS, rootDir string) (kernel string, initrd string, err error) {
+func FindKernelInitrd(fs types.FS, rootDir string) (kernel string, initrd string, err error) {
 	kernel, _, err = FindKernel(fs, rootDir)
 	if err != nil {
 		return "", "", err
@@ -546,7 +546,7 @@ func getBaseDir(path string) string {
 
 // resolveLink attempts to resolve a symlink, if any. Returns the original given path
 // if not a symlink. In case of error returns error and the original given path.
-func resolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth int) (string, error) {
+func resolveLink(vfs types.FS, path string, rootDir string, d fs.DirEntry, depth int) (string, error) {
 	var err error
 	var resolved string
 	var f fs.FileInfo
@@ -579,7 +579,7 @@ func resolveLink(vfs v1.FS, path string, rootDir string, d fs.DirEntry, depth in
 
 // ResolveLink attempts to resolve a symlink, if any. Returns the original given path
 // if not a symlink or if it can't be resolved.
-func ResolveLink(vfs v1.FS, path string, rootDir string, depth int) (string, error) {
+func ResolveLink(vfs types.FS, path string, rootDir string, depth int) (string, error) {
 	f, err := vfs.Lstat(path)
 	if err != nil {
 		return path, err
@@ -589,7 +589,7 @@ func ResolveLink(vfs v1.FS, path string, rootDir string, depth int) (string, err
 }
 
 // CalcFileChecksum opens the given file and returns the sha256 checksum of it.
-func CalcFileChecksum(fs v1.FS, fileName string) (string, error) {
+func CalcFileChecksum(fs types.FS, fileName string) (string, error) {
 	f, err := fs.Open(fileName)
 	if err != nil {
 		return "", err
@@ -605,7 +605,7 @@ func CalcFileChecksum(fs v1.FS, fileName string) (string, error) {
 }
 
 // CreateRAWFile creates raw file of the given size in MB
-func CreateRAWFile(fs v1.FS, filename string, size uint) error {
+func CreateRAWFile(fs types.FS, filename string, size uint) error {
 	f, err := fs.Create(filename)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateFile)

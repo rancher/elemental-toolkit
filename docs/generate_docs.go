@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 
-	"github.com/rancher/elemental-toolkit/cmd"
+	"github.com/rancher/elemental-toolkit/v2/cmd"
 )
 
 func main() {

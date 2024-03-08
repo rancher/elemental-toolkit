@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 type MkfsCall struct {
@@ -29,10 +29,10 @@ type MkfsCall struct {
 	label      string
 	customOpts []string
 	dev        string
-	runner     v1.Runner
+	runner     types.Runner
 }
 
-func NewMkfsCall(dev string, fileSystem string, label string, runner v1.Runner, customOpts ...string) *MkfsCall {
+func NewMkfsCall(dev string, fileSystem string, label string, runner types.Runner, customOpts ...string) *MkfsCall {
 	return &MkfsCall{dev: dev, fileSystem: fileSystem, label: label, runner: runner, customOpts: customOpts}
 }
 

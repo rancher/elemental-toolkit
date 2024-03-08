@@ -22,43 +22,43 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	"github.com/rancher/elemental-toolkit/pkg/snapshotter"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
-	var cfg v1.Config
-	var runner *v1mock.FakeRunner
+	var cfg types.Config
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
+	var logger types.Logger
+	var mounter *mocks.FakeMounter
 	var cleanup func()
-	var bootloader *v1mock.FakeBootloader
+	var bootloader *mocks.FakeBootloader
 	var memLog *bytes.Buffer
-	var snapCfg v1.SnapshotterConfig
+	var snapCfg types.SnapshotterConfig
 	var rootDir, efiDir string
-	var statePart *v1.Partition
+	var statePart *types.Partition
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
-		statePart = &v1.Partition{
+		statePart = &types.Partition{
 			Name:       constants.StatePartName,
 			Path:       "/dev/state-device",
 			MountPoint: rootDir,
 		}
 		efiDir = constants.EfiDir
-		runner = v1mock.NewFakeRunner()
-		mounter = v1mock.NewFakeMounter()
-		bootloader = &v1mock.FakeBootloader{}
+		runner = mocks.NewFakeRunner()
+		mounter = mocks.NewFakeMounter()
+		bootloader = &mocks.FakeBootloader{}
 		memLog = bytes.NewBuffer(nil)
-		logger = v1.NewBufferLogger(memLog)
-		logger.SetLevel(v1.DebugLevel())
+		logger = types.NewBufferLogger(memLog)
+		logger.SetLevel(types.DebugLevel())
 
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
@@ -71,7 +71,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			conf.WithMounter(mounter),
 			conf.WithPlatform("linux/amd64"),
 		)
-		snapCfg = v1.NewLoopDevice()
+		snapCfg = types.NewLoopDevice()
 
 		Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
 	})
@@ -191,11 +191,11 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 
 	Describe("using loopdevice on sixth snapshot", func() {
 		var err error
-		var lp v1.Snapshotter
+		var lp types.Snapshotter
 
 		BeforeEach(func() {
 
-			v1mock.FakeLoopDeviceSnapshotsStatus(fs, rootDir, 5)
+			mocks.FakeLoopDeviceSnapshotsStatus(fs, rootDir, 5)
 
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmd == "losetup" {

@@ -27,8 +27,8 @@ import (
 
 	"github.com/twpayne/go-vfs/v4"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const (
@@ -45,10 +45,10 @@ type Disk struct {
 	lastS       uint
 	parts       []Partition
 	label       string
-	runner      v1.Runner
-	fs          v1.FS
-	logger      v1.Logger
-	mounter     v1.Mounter
+	runner      types.Runner
+	fs          types.FS
+	logger      types.Logger
+	mounter     types.Mounter
 	partBackend string
 }
 
@@ -66,7 +66,7 @@ func NewDisk(device string, opts ...DiskOptions) *Disk {
 	}
 
 	if dev.runner == nil {
-		dev.runner = &v1.RealRunner{}
+		dev.runner = &types.RealRunner{}
 	}
 
 	if dev.fs == nil {
@@ -74,19 +74,19 @@ func NewDisk(device string, opts ...DiskOptions) *Disk {
 	}
 
 	if dev.logger == nil {
-		dev.logger = v1.NewLogger()
+		dev.logger = types.NewLogger()
 	}
 
 	if dev.mounter == nil {
 		path, _ := exec.LookPath("mount")
-		dev.mounter = v1.NewMounter(path)
+		dev.mounter = types.NewMounter(path)
 	}
 
 	return dev
 }
 
 // FormatDevice formats a block device with the given parameters
-func FormatDevice(runner v1.Runner, device string, fileSystem string, label string, opts ...string) error {
+func FormatDevice(runner types.Runner, device string, fileSystem string, label string, opts ...string) error {
 	mkfs := MkfsCall{fileSystem: fileSystem, label: label, customOpts: opts, dev: device, runner: runner}
 	_, err := mkfs.Apply()
 	return err
@@ -413,7 +413,7 @@ func (dev Disk) expandFilesystem(device string) (outStr string, err error) {
 	case "xfs", "btrfs":
 		// to grow an xfs or btrfs fs it needs to be mounted :/
 		tmpDir, err = utils.TempDir(dev.fs, "", "partitioner")
-		defer func(fs v1.FS, path string) {
+		defer func(fs types.FS, path string) {
 			_ = fs.RemoveAll(path)
 		}(dev.fs, tmpDir)
 

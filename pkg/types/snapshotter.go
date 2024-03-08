@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
 import (
 	"fmt"
 
 	mapstructure "github.com/mitchellh/mapstructure"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"gopkg.in/yaml.v3"
 )
 

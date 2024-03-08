@@ -14,23 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
 import (
-	"k8s.io/mount-utils"
+	"syscall"
 )
 
-// This is is just a redefinition of mount.Interface to v1.Mounter types
-type Mounter interface {
-	Mount(source string, target string, fstype string, options []string) error
-	Unmount(target string) error
-	IsLikelyNotMountPoint(file string) (bool, error)
+type SyscallInterface interface {
+	Chroot(string) error
+	Chdir(string) error
 }
 
-func NewMounter(binary string) Mounter {
-	return mount.New(binary)
+type RealSyscall struct{}
+
+func (r *RealSyscall) Chroot(path string) error {
+	return syscall.Chroot(path)
 }
 
-func NewDummyMounter() Mounter {
-	return mount.NewFakeMounter([]mount.MountPoint{})
+func (r *RealSyscall) Chdir(path string) error {
+	return syscall.Chdir(path)
 }

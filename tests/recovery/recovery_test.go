@@ -19,9 +19,9 @@ package elemental_test
 import (
 	"fmt"
 
-	sut "github.com/rancher/elemental-toolkit/tests/vm"
+	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
 
-	comm "github.com/rancher/elemental-toolkit/tests/common"
+	comm "github.com/rancher/elemental-toolkit/v2/tests/common"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

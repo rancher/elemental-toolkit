@@ -24,12 +24,12 @@ import (
 
 	"github.com/twpayne/go-vfs/v4"
 
-	"github.com/rancher/elemental-toolkit/pkg/cloudinit"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/features"
-	"github.com/rancher/elemental-toolkit/pkg/http"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/cloudinit"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/features"
+	"github.com/rancher/elemental-toolkit/v2/pkg/http"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 const (
@@ -37,92 +37,92 @@ const (
 	mountSuffix = ".mount"
 )
 
-type GenericOptions func(a *v1.Config) error
+type GenericOptions func(a *types.Config) error
 
-func WithFs(fs v1.FS) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithFs(fs types.FS) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Fs = fs
 		return nil
 	}
 }
 
-func WithLogger(logger v1.Logger) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithLogger(logger types.Logger) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Logger = logger
 		return nil
 	}
 }
 
-func WithSyscall(syscall v1.SyscallInterface) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithSyscall(syscall types.SyscallInterface) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Syscall = syscall
 		return nil
 	}
 }
 
-func WithMounter(mounter v1.Mounter) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithMounter(mounter types.Mounter) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Mounter = mounter
 		return nil
 	}
 }
 
-func WithRunner(runner v1.Runner) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithRunner(runner types.Runner) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Runner = runner
 		return nil
 	}
 }
 
-func WithClient(client v1.HTTPClient) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithClient(client types.HTTPClient) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.Client = client
 		return nil
 	}
 }
 
-func WithCloudInitRunner(ci v1.CloudInitRunner) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithCloudInitRunner(ci types.CloudInitRunner) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.CloudInitRunner = ci
 		return nil
 	}
 }
 
-func WithPlatform(platform string) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
-		p, err := v1.ParsePlatform(platform)
+func WithPlatform(platform string) func(r *types.Config) error {
+	return func(r *types.Config) error {
+		p, err := types.ParsePlatform(platform)
 		r.Platform = p
 		return err
 	}
 }
 
-func WithOCIImageExtractor() func(r *v1.Config) error {
-	return func(r *v1.Config) error {
-		r.ImageExtractor = v1.OCIImageExtractor{}
+func WithOCIImageExtractor() func(r *types.Config) error {
+	return func(r *types.Config) error {
+		r.ImageExtractor = types.OCIImageExtractor{}
 		return nil
 	}
 }
 
-func WithImageExtractor(extractor v1.ImageExtractor) func(r *v1.Config) error {
-	return func(r *v1.Config) error {
+func WithImageExtractor(extractor types.ImageExtractor) func(r *types.Config) error {
+	return func(r *types.Config) error {
 		r.ImageExtractor = extractor
 		return nil
 	}
 }
 
-func NewConfig(opts ...GenericOptions) *v1.Config {
-	log := v1.NewLogger()
+func NewConfig(opts ...GenericOptions) *types.Config {
+	log := types.NewLogger()
 
-	defaultPlatform, err := v1.NewPlatformFromArch(runtime.GOARCH)
+	defaultPlatform, err := types.NewPlatformFromArch(runtime.GOARCH)
 	if err != nil {
 		log.Errorf("error parsing default platform (%s): %s", runtime.GOARCH, err.Error())
 		return nil
 	}
 
-	c := &v1.Config{
+	c := &types.Config{
 		Fs:                        vfs.OSFS,
 		Logger:                    log,
-		Syscall:                   &v1.RealSyscall{},
+		Syscall:                   &types.RealSyscall{},
 		Client:                    http.NewClient(),
 		Platform:                  defaultPlatform,
 		SquashFsCompressionConfig: constants.GetDefaultSquashfsCompressionOptions(),
@@ -137,7 +137,7 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 
 	// delay runner creation after we have run over the options in case we use WithRunner
 	if c.Runner == nil {
-		c.Runner = &v1.RealRunner{Logger: c.Logger}
+		c.Runner = &types.RealRunner{Logger: c.Logger}
 	}
 
 	// Now check if the runner has a logger inside, otherwise point our logger into it
@@ -154,16 +154,16 @@ func NewConfig(opts ...GenericOptions) *v1.Config {
 	}
 
 	if c.Mounter == nil {
-		c.Mounter = v1.NewMounter(constants.MountBinary)
+		c.Mounter = types.NewMounter(constants.MountBinary)
 	}
 
 	return c
 }
 
-func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
+func NewRunConfig(opts ...GenericOptions) *types.RunConfig {
 	config := NewConfig(opts...)
 
-	snapshotter := v1.NewLoopDevice()
+	snapshotter := types.NewLoopDevice()
 
 	// Load snapshotter setup from state.yaml for reset and upgrade
 	installState, _ := config.LoadInstallState()
@@ -171,7 +171,7 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 		snapshotter = installState.Snapshotter
 	}
 
-	r := &v1.RunConfig{
+	r := &types.RunConfig{
 		Snapshotter: snapshotter,
 		Config:      *config,
 	}
@@ -179,17 +179,17 @@ func NewRunConfig(opts ...GenericOptions) *v1.RunConfig {
 }
 
 // NewInstallSpec returns an InstallSpec struct all based on defaults and basic host checks (e.g. EFI vs BIOS)
-func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
-	var system *v1.ImageSource
-	var recoverySystem v1.Image
+func NewInstallSpec(cfg types.Config) *types.InstallSpec {
+	var system *types.ImageSource
+	var recoverySystem types.Image
 
 	// Check the default ISO installation media is available
 	isoRootExists, _ := utils.Exists(cfg.Fs, constants.ISOBaseTree)
 
 	if isoRootExists {
-		system = v1.NewDirSrc(constants.ISOBaseTree)
+		system = types.NewDirSrc(constants.ISOBaseTree)
 	} else {
-		system = v1.NewEmptySrc()
+		system = types.NewEmptySrc()
 	}
 
 	recoverySystem.Source = system
@@ -198,9 +198,9 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 	recoverySystem.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgFile)
 	recoverySystem.MountPoint = constants.TransitionDir
 
-	return &v1.InstallSpec{
-		Firmware:       v1.EFI,
-		PartTable:      v1.GPT,
+	return &types.InstallSpec{
+		Firmware:       types.EFI,
+		PartTable:      types.GPT,
 		Partitions:     NewInstallElementalPartitions(),
 		System:         system,
 		RecoverySystem: recoverySystem,
@@ -208,19 +208,19 @@ func NewInstallSpec(cfg v1.Config) *v1.InstallSpec {
 }
 
 // NewInitSpec returns an InitSpec struct all based on defaults
-func NewInitSpec() *v1.InitSpec {
-	return &v1.InitSpec{
+func NewInitSpec() *types.InitSpec {
+	return &types.InitSpec{
 		Mkinitrd: true,
 		Force:    false,
 		Features: features.All,
 	}
 }
 
-func NewMountSpec() *v1.MountSpec {
-	return &v1.MountSpec{
+func NewMountSpec() *types.MountSpec {
+	return &types.MountSpec{
 		Sysroot:    "/sysroot",
 		WriteFstab: true,
-		Volumes: []*v1.VolumeMount{
+		Volumes: []*types.VolumeMount{
 			{
 				Mountpoint: constants.OEMPath,
 				Device:     fmt.Sprintf("PARTLABEL=%s", constants.OEMPartName),
@@ -231,15 +231,15 @@ func NewMountSpec() *v1.MountSpec {
 				Options:    []string{"ro", "defaults"},
 			},
 		},
-		Ephemeral: v1.EphemeralMounts{
+		Ephemeral: types.EphemeralMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",
 			Paths: []string{"/var", "/etc", "/srv"},
 		},
-		Persistent: v1.PersistentMounts{
+		Persistent: types.PersistentMounts{
 			Mode:  constants.OverlayMode,
 			Paths: []string{"/etc/systemd", "/etc/ssh", "/home", "/opt", "/root", "/var/log"},
-			Volume: v1.VolumeMount{
+			Volume: types.VolumeMount{
 				Mountpoint: constants.PersistentDir,
 				Device:     fmt.Sprintf("PARTLABEL=%s", constants.PersistentPartName),
 				Options:    []string{"rw", "defaults"},
@@ -248,9 +248,9 @@ func NewMountSpec() *v1.MountSpec {
 	}
 }
 
-func NewInstallElementalPartitions() v1.ElementalPartitions {
-	partitions := v1.ElementalPartitions{}
-	partitions.OEM = &v1.Partition{
+func NewInstallElementalPartitions() types.ElementalPartitions {
+	partitions := types.ElementalPartitions{}
+	partitions.OEM = &types.Partition{
 		FilesystemLabel: constants.OEMLabel,
 		Size:            constants.OEMSize,
 		Name:            constants.OEMPartName,
@@ -259,7 +259,7 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.Recovery = &v1.Partition{
+	partitions.Recovery = &types.Partition{
 		FilesystemLabel: constants.RecoveryLabel,
 		Size:            constants.RecoverySize,
 		Name:            constants.RecoveryPartName,
@@ -268,7 +268,7 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.State = &v1.Partition{
+	partitions.State = &types.Partition{
 		FilesystemLabel: constants.StateLabel,
 		Size:            constants.StateSize,
 		Name:            constants.StatePartName,
@@ -277,7 +277,7 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.Persistent = &v1.Partition{
+	partitions.Persistent = &types.Partition{
 		FilesystemLabel: constants.PersistentLabel,
 		Size:            constants.PersistentSize,
 		Name:            constants.PersistentPartName,
@@ -286,15 +286,15 @@ func NewInstallElementalPartitions() v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+	_ = partitions.SetFirmwarePartitions(types.EFI, types.GPT)
 
 	return partitions
 }
 
 // getRecoveryState returns recovery state from a given install state. It
 // returns default values for any missing field.
-func getRecoveryState(state *v1.InstallState) (recovery *v1.SystemState) {
-	recovery = &v1.SystemState{
+func getRecoveryState(state *types.InstallState) (recovery *types.SystemState) {
+	recovery = &types.SystemState{
 		FS:    constants.SquashFs,
 		Label: constants.SystemLabel,
 	}
@@ -312,9 +312,9 @@ func getRecoveryState(state *v1.InstallState) (recovery *v1.SystemState) {
 }
 
 // NewUpgradeSpec returns an UpgradeSpec struct all based on defaults and current host state
-func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
-	var rState *v1.SystemState
-	var recovery v1.Image
+func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
+	var rState *types.SystemState
+	var recovery types.Image
 
 	installState, err := cfg.LoadInstallState()
 	if err != nil {
@@ -327,20 +327,20 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
 	}
-	ep := v1.NewElementalPartitionsFromList(parts, installState)
+	ep := types.NewElementalPartitionsFromList(parts, installState)
 
 	if ep.Recovery != nil {
 		if ep.Recovery.MountPoint == "" {
 			ep.Recovery.MountPoint = constants.RecoveryDir
 		}
 
-		recovery = v1.Image{
+		recovery = types.Image{
 			File:       filepath.Join(ep.Recovery.MountPoint, constants.TransitionImgFile),
 			Size:       constants.ImgSize,
 			Label:      rState.Label,
 			FS:         rState.FS,
 			MountPoint: constants.TransitionDir,
-			Source:     v1.NewEmptySrc(),
+			Source:     types.NewEmptySrc(),
 		}
 	}
 
@@ -365,8 +365,8 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 		}
 	}
 
-	return &v1.UpgradeSpec{
-		System:         v1.NewEmptySrc(),
+	return &types.UpgradeSpec{
+		System:         types.NewEmptySrc(),
 		RecoverySystem: recovery,
 		Partitions:     ep,
 		State:          installState,
@@ -374,8 +374,8 @@ func NewUpgradeSpec(cfg v1.Config) (*v1.UpgradeSpec, error) {
 }
 
 // NewResetSpec returns a ResetSpec struct all based on defaults and current host state
-func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
-	var imgSource *v1.ImageSource
+func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
+	var imgSource *types.ImageSource
 
 	if !utils.BootedFrom(cfg.Runner, constants.RecoveryImgName) {
 		return nil, fmt.Errorf("reset can only be called from the recovery system")
@@ -392,7 +392,7 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read host partitions")
 	}
-	ep := v1.NewElementalPartitionsFromList(parts, installState)
+	ep := types.NewElementalPartitionsFromList(parts, installState)
 
 	if efiExists {
 		if ep.EFI == nil {
@@ -444,12 +444,12 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgFile)
 
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
-		imgSource = v1.NewFileSrc(recoveryImg)
+		imgSource = types.NewFileSrc(recoveryImg)
 	} else {
-		imgSource = v1.NewEmptySrc()
+		imgSource = types.NewEmptySrc()
 	}
 
-	return &v1.ResetSpec{
+	return &types.ResetSpec{
 		Target:       target,
 		Partitions:   ep,
 		Efi:          efiExists,
@@ -459,14 +459,14 @@ func NewResetSpec(cfg v1.Config) (*v1.ResetSpec, error) {
 	}, nil
 }
 
-func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
-	partitions := v1.ElementalPartitions{}
+func NewDiskElementalPartitions(workdir string) types.ElementalPartitions {
+	partitions := types.ElementalPartitions{}
 
-	// does not return error on v1.EFI use case
-	_ = partitions.SetFirmwarePartitions(v1.EFI, v1.GPT)
+	// does not return error on types.EFI use case
+	_ = partitions.SetFirmwarePartitions(types.EFI, types.GPT)
 	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+partSuffix)
 
-	partitions.OEM = &v1.Partition{
+	partitions.OEM = &types.Partition{
 		FilesystemLabel: constants.OEMLabel,
 		Size:            constants.OEMSize,
 		Name:            constants.OEMPartName,
@@ -476,7 +476,7 @@ func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.Recovery = &v1.Partition{
+	partitions.Recovery = &types.Partition{
 		FilesystemLabel: constants.RecoveryLabel,
 		Size:            constants.RecoverySize,
 		Name:            constants.RecoveryPartName,
@@ -486,7 +486,7 @@ func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.State = &v1.Partition{
+	partitions.State = &types.Partition{
 		FilesystemLabel: constants.StateLabel,
 		Size:            constants.StateSize,
 		Name:            constants.StatePartName,
@@ -496,7 +496,7 @@ func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 		Flags:           []string{},
 	}
 
-	partitions.Persistent = &v1.Partition{
+	partitions.Persistent = &types.Partition{
 		FilesystemLabel: constants.PersistentLabel,
 		Size:            constants.PersistentSize,
 		Name:            constants.PersistentPartName,
@@ -508,9 +508,9 @@ func NewDiskElementalPartitions(workdir string) v1.ElementalPartitions {
 	return partitions
 }
 
-func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
+func NewDisk(cfg *types.BuildConfig) *types.DiskSpec {
 	var workdir string
-	var recoveryImg v1.Image
+	var recoveryImg types.Image
 
 	workdir = filepath.Join(cfg.OutDir, constants.DiskWorkDir)
 
@@ -518,38 +518,38 @@ func NewDisk(cfg *v1.BuildConfig) *v1.DiskSpec {
 	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, constants.RecoveryImgFile)
 	recoveryImg.FS = constants.LinuxImgFs
 	recoveryImg.Label = constants.SystemLabel
-	recoveryImg.Source = v1.NewEmptySrc()
+	recoveryImg.Source = types.NewEmptySrc()
 	recoveryImg.MountPoint = filepath.Join(
 		workdir, strings.TrimSuffix(
 			constants.RecoveryImgFile, filepath.Ext(constants.RecoveryImgFile),
 		)+mountSuffix,
 	)
 
-	return &v1.DiskSpec{
+	return &types.DiskSpec{
 		Partitions:     NewDiskElementalPartitions(workdir),
 		GrubConf:       filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
-		System:         v1.NewEmptySrc(),
+		System:         types.NewEmptySrc(),
 		RecoverySystem: recoveryImg,
 		Type:           constants.RawType,
 		DeployCmd:      []string{"elemental", "--debug", "reset", "--reboot"},
 	}
 }
 
-func NewISO() *v1.LiveISO {
-	return &v1.LiveISO{
+func NewISO() *types.LiveISO {
+	return &types.LiveISO{
 		Label:     constants.ISOLabel,
 		GrubEntry: constants.GrubDefEntry,
-		UEFI:      []*v1.ImageSource{},
-		Image:     []*v1.ImageSource{},
-		Firmware:  v1.EFI,
+		UEFI:      []*types.ImageSource{},
+		Image:     []*types.ImageSource{},
+		Firmware:  types.EFI,
 	}
 }
 
-func NewBuildConfig(opts ...GenericOptions) *v1.BuildConfig {
-	b := &v1.BuildConfig{
+func NewBuildConfig(opts ...GenericOptions) *types.BuildConfig {
+	b := &types.BuildConfig{
 		Config:      *NewConfig(opts...),
 		Name:        constants.BuildImgName,
-		Snapshotter: v1.NewLoopDevice(),
+		Snapshotter: types.NewLoopDevice(),
 	}
 	return b
 }

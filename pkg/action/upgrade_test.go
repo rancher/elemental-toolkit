@@ -28,43 +28,43 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Runtime Actions", func() {
-	var config *v1.RunConfig
-	var runner *v1mock.FakeRunner
+	var config *types.RunConfig
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var cloudInit *v1mock.FakeCloudInitRunner
-	var extractor *v1mock.FakeImageExtractor
+	var logger types.Logger
+	var mounter *mocks.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var cloudInit *mocks.FakeCloudInitRunner
+	var extractor *mocks.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var ghwTest v1mock.GhwMock
-	var bootloader *v1mock.FakeBootloader
+	var ghwTest mocks.GhwMock
+	var bootloader *mocks.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
-		bootloader = &v1mock.FakeBootloader{}
-		extractor = v1mock.NewFakeImageExtractor(logger)
+		logger = types.NewBufferLogger(memLog)
+		bootloader = &mocks.FakeBootloader{}
+		extractor = mocks.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 
-		cloudInit = &v1mock.FakeCloudInitRunner{}
+		cloudInit = &mocks.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
@@ -81,13 +81,13 @@ var _ = Describe("Runtime Actions", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Upgrade Action", Label("upgrade"), func() {
-		var spec *v1.UpgradeSpec
+		var spec *types.UpgradeSpec
 		var upgrade *action.UpgradeAction
 		var memLog *bytes.Buffer
 
 		BeforeEach(func() {
 			memLog = &bytes.Buffer{}
-			logger = v1.NewBufferLogger(memLog)
+			logger = types.NewBufferLogger(memLog)
 			config.Logger = logger
 			logger.SetLevel(logrus.DebugLevel)
 
@@ -124,7 +124,7 @@ var _ = Describe("Runtime Actions", func() {
 					},
 				},
 			}
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 		})
@@ -139,8 +139,8 @@ var _ = Describe("Runtime Actions", func() {
 				spec, err = conf.NewUpgradeSpec(config.Config)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				spec.System = v1.NewDockerSrc("alpine")
-				loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+				spec.System = types.NewDockerSrc("alpine")
+				loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				loopCfg.Size = 16
 
@@ -185,21 +185,21 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(err.Error()).To(ContainSubstring("setting default entry"))
 			})
 			It("Successfully upgrades from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 2)).To(Succeed())
+				Expect(mocks.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 2)).To(Succeed())
 				// Create installState with previous install state
 				statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
-				installState := &v1.InstallState{
-					Partitions: map[string]*v1.PartitionState{
+				installState := &types.InstallState{
+					Partitions: map[string]*types.PartitionState{
 						constants.StatePartName: {
 							FSLabel: "COS_STATE",
-							Snapshots: map[int]*v1.SystemState{
+							Snapshots: map[int]*types.SystemState{
 								2: {
-									Source: v1.NewDockerSrc("some/image:v2"),
+									Source: types.NewDockerSrc("some/image:v2"),
 									Digest: "somehash2",
 									Active: true,
 								},
 								1: {
-									Source: v1.NewDockerSrc("some/image:v1"),
+									Source: types.NewDockerSrc("some/image:v1"),
 									Digest: "somehash",
 								},
 							},
@@ -215,7 +215,7 @@ var _ = Describe("Runtime Actions", func() {
 				// Create a new spec to load state yaml
 				spec, err = conf.NewUpgradeSpec(config.Config)
 
-				spec.System = v1.NewDockerSrc("alpine")
+				spec.System = types.NewDockerSrc("alpine")
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())
 				err := upgrade.Run()
@@ -246,7 +246,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(state.Partitions[constants.StatePartName].Snapshots[2].Active).
 					To(BeFalse())
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Digest).
-					To(Equal(v1mock.FakeDigest))
+					To(Equal(mocks.FakeDigest))
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Source.String()).
 					To(Equal("oci://alpine:latest"))
 				Expect(state.Partitions[constants.StatePartName].Snapshots[2].Source.String()).
@@ -256,8 +256,8 @@ var _ = Describe("Runtime Actions", func() {
 					To(BeNil())
 			})
 			It("Successfully reboots after upgrade from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v1.NewDockerSrc("alpine")
+				Expect(mocks.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
+				spec.System = types.NewDockerSrc("alpine")
 				config.Reboot = true
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())
@@ -275,8 +275,8 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}})).To(BeNil())
 			})
 			It("Successfully powers off after upgrade from docker image", func() {
-				Expect(v1mock.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
-				spec.System = v1.NewDockerSrc("alpine")
+				Expect(mocks.FakeLoopDeviceSnapshotsStatus(fs, constants.RunningStateDir, 1)).To(Succeed())
+				spec.System = types.NewDockerSrc("alpine")
 				config.PowerOff = true
 				upgrade, err = action.NewUpgradeAction(config, spec)
 				Expect(err).NotTo(HaveOccurred())

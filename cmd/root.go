@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	eleError "github.com/rancher/elemental-toolkit/pkg/error"
+	eleError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 )
 
 func NewRootCmd() *cobra.Command {

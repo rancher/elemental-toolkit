@@ -24,11 +24,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Types", Label("types", "config"), func() {
@@ -36,22 +36,22 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		var err error
 		var cleanup func()
 		var fs *vfst.TestFS
-		var mounter *v1mock.FakeMounter
-		var runner *v1mock.FakeRunner
-		var client *v1mock.FakeHTTPClient
-		var sysc *v1mock.FakeSyscall
-		var logger v1.Logger
-		var ci *v1mock.FakeCloudInitRunner
-		var c *v1.Config
+		var mounter *mocks.FakeMounter
+		var runner *mocks.FakeRunner
+		var client *mocks.FakeHTTPClient
+		var sysc *mocks.FakeSyscall
+		var logger types.Logger
+		var ci *mocks.FakeCloudInitRunner
+		var c *types.Config
 		BeforeEach(func() {
 			fs, cleanup, err = vfst.NewTestFS(nil)
 			Expect(err).ToNot(HaveOccurred())
-			mounter = v1mock.NewFakeMounter()
-			runner = v1mock.NewFakeRunner()
-			client = &v1mock.FakeHTTPClient{}
-			sysc = &v1mock.FakeSyscall{}
-			logger = v1.NewNullLogger()
-			ci = &v1mock.FakeCloudInitRunner{}
+			mounter = mocks.NewFakeMounter()
+			runner = mocks.NewFakeRunner()
+			client = &mocks.FakeHTTPClient{}
+			sysc = &mocks.FakeSyscall{}
+			logger = types.NewNullLogger()
+			ci = &mocks.FakeCloudInitRunner{}
 			c = config.NewConfig(
 				config.WithFs(fs),
 				config.WithMounter(mounter),
@@ -90,15 +90,15 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("ConfigOptions no mounter specified", Label("mount", "mounter"), func() {
 			It("should use the default mounter", Label("systemctl"), func() {
-				runner := v1mock.NewFakeRunner()
-				sysc := &v1mock.FakeSyscall{}
-				logger := v1.NewNullLogger()
+				runner := mocks.NewFakeRunner()
+				sysc := &mocks.FakeSyscall{}
+				logger := types.NewNullLogger()
 				c := config.NewConfig(
 					config.WithRunner(runner),
 					config.WithSyscall(sysc),
 					config.WithLogger(logger),
 				)
-				Expect(c.Mounter).To(Equal(v1.NewMounter(constants.MountBinary)))
+				Expect(c.Mounter).To(Equal(types.NewMounter(constants.MountBinary)))
 			})
 		})
 		Describe("RunConfig", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			It("sets the default snapshot", func() {
 				Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.LoopDeviceMaxSnaps))
 				Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
-				snapshotterCfg, ok := cfg.Snapshotter.Config.(*v1.LoopDeviceConfig)
+				snapshotterCfg, ok := cfg.Snapshotter.Config.(*types.LoopDeviceConfig)
 				Expect(ok).To(BeTrue())
 				Expect(snapshotterCfg.FS).To(Equal(constants.LinuxImgFs))
 				Expect(snapshotterCfg.Size).To(Equal(constants.ImgSize))
@@ -129,24 +129,24 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v1.EFI))
+				Expect(spec.Firmware).To(Equal(types.EFI))
 				Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
 				Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
-				Expect(spec.PartTable).To(Equal(v1.GPT))
+				Expect(spec.PartTable).To(Equal(types.GPT))
 
 				Expect(spec.Partitions.EFI).NotTo(BeNil())
 			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {
 				spec := config.NewInstallSpec(*c)
-				Expect(spec.Firmware).To(Equal(v1.EFI))
+				Expect(spec.Firmware).To(Equal(types.EFI))
 				Expect(spec.System.IsEmpty()).To(BeTrue())
 				Expect(spec.RecoverySystem.Source.IsEmpty()).To(BeTrue())
-				Expect(spec.PartTable).To(Equal(v1.GPT))
+				Expect(spec.PartTable).To(Equal(types.GPT))
 			})
 		})
 		Describe("ResetSpec", Label("reset"), func() {
 			Describe("Successful executions", func() {
-				var ghwTest v1mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					mainDisk := block.Disk{
 						Name: "device",
@@ -178,7 +178,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v1mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 
@@ -231,7 +231,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			})
 			Describe("Failures", func() {
 				var bootedFrom string
-				var ghwTest v1mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					bootedFrom = ""
 					runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
@@ -254,7 +254,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v1mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 				})
@@ -277,7 +277,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Name:       "device",
 						Partitions: []*block.Partition{},
 					}
-					ghwTest = v1mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 					defer ghwTest.Clean()
@@ -303,7 +303,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("UpgradeSpec", Label("upgrade"), func() {
 			Describe("Successful executions", func() {
-				var ghwTest v1mock.GhwMock
+				var ghwTest mocks.GhwMock
 				BeforeEach(func() {
 					mainDisk := block.Disk{
 						Name: "device",
@@ -336,7 +336,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 							},
 						},
 					}
-					ghwTest = v1mock.GhwMock{}
+					ghwTest = mocks.GhwMock{}
 					ghwTest.AddDisk(mainDisk)
 					ghwTest.CreateDevices()
 				})

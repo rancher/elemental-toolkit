@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package types
 
-import (
-	"github.com/rancher/yip/pkg/schema"
-)
-
-type CloudInitRunner interface {
-	Run(string, ...string) error
-	SetModifier(schema.Modifier)
-	CloudInitFileRender(target string, config *schema.YipConfig) error
+type Bootloader interface {
+	Install(rootDir, bootDir string) (err error)
+	InstallConfig(rootDir, bootDir string) error
+	DoEFIEntries(shimName, efiDir string) error
+	InstallEFI(rootDir, efiDir string) error
+	InstallEFIBinaries(rootDir, efiDir, efiPath string) error
+	SetPersistentVariables(envFile string, vars map[string]string) error
+	SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry string) error
 }

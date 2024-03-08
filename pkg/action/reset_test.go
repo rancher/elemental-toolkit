@@ -27,42 +27,42 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	conf "github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Reset action tests", func() {
-	var config *v1.RunConfig
-	var runner *v1mock.FakeRunner
+	var config *types.RunConfig
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
-	var mounter *v1mock.FakeMounter
-	var syscall *v1mock.FakeSyscall
-	var client *v1mock.FakeHTTPClient
-	var cloudInit *v1mock.FakeCloudInitRunner
-	var extractor *v1mock.FakeImageExtractor
+	var logger types.Logger
+	var mounter *mocks.FakeMounter
+	var syscall *mocks.FakeSyscall
+	var client *mocks.FakeHTTPClient
+	var cloudInit *mocks.FakeCloudInitRunner
+	var extractor *mocks.FakeImageExtractor
 	var cleanup func()
 	var memLog *bytes.Buffer
-	var ghwTest v1mock.GhwMock
-	var bootloader *v1mock.FakeBootloader
+	var ghwTest mocks.GhwMock
+	var bootloader *mocks.FakeBootloader
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
-		syscall = &v1mock.FakeSyscall{}
-		mounter = v1mock.NewFakeMounter()
-		client = &v1mock.FakeHTTPClient{}
+		runner = mocks.NewFakeRunner()
+		syscall = &mocks.FakeSyscall{}
+		mounter = mocks.NewFakeMounter()
+		client = &mocks.FakeHTTPClient{}
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
-		extractor = v1mock.NewFakeImageExtractor(logger)
+		logger = types.NewBufferLogger(memLog)
+		extractor = mocks.NewFakeImageExtractor(logger)
 		var err error
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 
-		cloudInit = &v1mock.FakeCloudInitRunner{}
+		cloudInit = &mocks.FakeCloudInitRunner{}
 		config = conf.NewRunConfig(
 			conf.WithFs(fs),
 			conf.WithRunner(runner),
@@ -78,7 +78,7 @@ var _ = Describe("Reset action tests", func() {
 	AfterEach(func() { cleanup() })
 
 	Describe("Reset Action", Label("reset"), func() {
-		var spec *v1.ResetSpec
+		var spec *types.ResetSpec
 		var reset *action.ResetAction
 		var cmdFail, bootedFrom string
 		var err error
@@ -90,7 +90,7 @@ var _ = Describe("Reset action tests", func() {
 			_, err = fs.Create(recoveryImg)
 			Expect(err).To(BeNil())
 
-			bootloader = &v1mock.FakeBootloader{}
+			bootloader = &mocks.FakeBootloader{}
 
 			mainDisk := block.Disk{
 				Name: "device",
@@ -122,7 +122,7 @@ var _ = Describe("Reset action tests", func() {
 					},
 				},
 			}
-			ghwTest = v1mock.GhwMock{}
+			ghwTest = mocks.GhwMock{}
 			ghwTest.AddDisk(mainDisk)
 			ghwTest.CreateDevices()
 
@@ -144,7 +144,7 @@ var _ = Describe("Reset action tests", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(spec.System.IsEmpty()).To(BeFalse())
 
-			loopCfg, ok := config.Snapshotter.Config.(*v1.LoopDeviceConfig)
+			loopCfg, ok := config.Snapshotter.Config.(*types.LoopDeviceConfig)
 			Expect(ok).To(BeTrue())
 			loopCfg.Size = 16
 
@@ -177,7 +177,7 @@ var _ = Describe("Reset action tests", func() {
 		It("Successfully resets from a squashfs recovery image", Label("channel"), func() {
 			err := utils.MkdirAll(config.Fs, constants.ISOBaseTree, constants.DirPerm)
 			Expect(err).ShouldNot(HaveOccurred())
-			spec.System = v1.NewDirSrc(constants.ISOBaseTree)
+			spec.System = types.NewDirSrc(constants.ISOBaseTree)
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets despite having errors on hooks", func() {
@@ -185,7 +185,7 @@ var _ = Describe("Reset action tests", func() {
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a docker image", Label("docker"), func() {
-			spec.System = v1.NewDockerSrc("my/image:latest")
+			spec.System = types.NewDockerSrc("my/image:latest")
 			Expect(reset.Run()).To(BeNil())
 		})
 		It("Successfully resets from a channel package", Label("channel"), func() {

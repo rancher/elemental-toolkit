@@ -34,11 +34,11 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 // DirSize returns the accumulated size of all files in folder. Result in bytes
-func DirSize(fs v1.FS, path string, excludes ...string) (int64, error) {
+func DirSize(fs types.FS, path string, excludes ...string) (int64, error) {
 	var size int64
 	err := vfs.Walk(fs, path, func(loopPath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -60,7 +60,7 @@ func DirSize(fs v1.FS, path string, excludes ...string) (int64, error) {
 }
 
 // DirSizeMB returns the accumulated size of all files in folder. Result in Megabytes
-func DirSizeMB(fs v1.FS, path string, excludes ...string) (uint, error) {
+func DirSizeMB(fs types.FS, path string, excludes ...string) (uint, error) {
 	size, err := DirSize(fs, path, excludes...)
 	if err != nil {
 		return 0, err
@@ -76,7 +76,7 @@ func DirSizeMB(fs v1.FS, path string, excludes ...string) (uint, error) {
 
 // Check if a file or directory exists. noFollow flag determines to
 // not follow symlinks to check files existance.
-func Exists(fs v1.FS, path string, noFollow ...bool) (bool, error) {
+func Exists(fs types.FS, path string, noFollow ...bool) (bool, error) {
 	var err error
 	if len(noFollow) > 0 && noFollow[0] {
 		_, err = fs.Lstat(path)
@@ -93,7 +93,7 @@ func Exists(fs v1.FS, path string, noFollow ...bool) (bool, error) {
 }
 
 // IsDir check if the path is a dir
-func IsDir(fs v1.FS, path string) (bool, error) {
+func IsDir(fs types.FS, path string) (bool, error) {
 	fi, err := fs.Stat(path)
 	if err != nil {
 		return false, err
@@ -102,7 +102,7 @@ func IsDir(fs v1.FS, path string) (bool, error) {
 }
 
 // MkdirAll directory and all parents if not existing
-func MkdirAll(fs v1.FS, name string, mode os.FileMode) (err error) {
+func MkdirAll(fs types.FS, name string, mode os.FileMode) (err error) {
 	if _, isReadOnly := fs.(*vfs.ReadOnlyFS); isReadOnly {
 		return permError("mkdir", name)
 	}
@@ -113,7 +113,7 @@ func MkdirAll(fs v1.FS, name string, mode os.FileMode) (err error) {
 }
 
 // readlink calls fs.Readlink but trims temporary prefix on Readlink result
-func readlink(fs v1.FS, name string) (string, error) {
+func readlink(fs types.FS, name string) (string, error) {
 	res, err := fs.Readlink(name)
 	if err != nil {
 		return res, err
@@ -158,7 +158,7 @@ func nextRandom() string {
 
 // TempDir creates a temp file in the virtual fs
 // Took from afero.FS code and adapted
-func TempDir(fs v1.FS, dir, prefix string) (name string, err error) {
+func TempDir(fs types.FS, dir, prefix string) (name string, err error) {
 	if dir == "" {
 		dir = os.TempDir()
 	}
@@ -193,7 +193,7 @@ func TempDir(fs v1.FS, dir, prefix string) (name string, err error) {
 
 // TempFile creates a temp file in the virtual fs
 // Took from afero.FS code and adapted
-func TempFile(fs v1.FS, dir, pattern string) (f *os.File, err error) {
+func TempFile(fs types.FS, dir, pattern string) (f *os.File, err error) {
 	if dir == "" {
 		dir = os.TempDir()
 	}
@@ -232,8 +232,8 @@ func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
 func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
 
-// WalkDirFs is the same as filepath.WalkDir but accepts a v1.Fs so it can be run on any v1.Fs type
-func WalkDirFs(fs v1.FS, root string, fn fs.WalkDirFunc) error {
+// WalkDirFs is the same as filepath.WalkDir but accepts a types.Fs so it can be run on any types.Fs type
+func WalkDirFs(fs types.FS, root string, fn fs.WalkDirFunc) error {
 	info, err := fs.Stat(root)
 	if err != nil {
 		err = fn(root, nil, err)
@@ -246,7 +246,7 @@ func WalkDirFs(fs v1.FS, root string, fn fs.WalkDirFunc) error {
 	return err
 }
 
-func walkDir(fs v1.FS, path string, d fs.DirEntry, walkDirFn fs.WalkDirFunc) error {
+func walkDir(fs types.FS, path string, d fs.DirEntry, walkDirFn fs.WalkDirFunc) error {
 	if err := walkDirFn(path, d, nil); err != nil || !d.IsDir() {
 		if err == filepath.SkipDir && d.IsDir() {
 			// Successfully skipped directory.
@@ -276,7 +276,7 @@ func walkDir(fs v1.FS, path string, d fs.DirEntry, walkDirFn fs.WalkDirFunc) err
 	return nil
 }
 
-func readDir(vfs v1.FS, dirname string) ([]fs.DirEntry, error) {
+func readDir(vfs types.FS, dirname string) ([]fs.DirEntry, error) {
 	dirs, err := vfs.ReadDir(dirname)
 	if err != nil {
 		return nil, err

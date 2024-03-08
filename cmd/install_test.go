@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 )
 
 var _ = Describe("Install", Label("install", "cmd"), func() {

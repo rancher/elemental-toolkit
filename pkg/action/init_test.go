@@ -26,28 +26,28 @@ import (
 	"github.com/twpayne/go-vfs/v4"
 	"github.com/twpayne/go-vfs/v4/vfst"
 
-	"github.com/rancher/elemental-toolkit/pkg/action"
-	"github.com/rancher/elemental-toolkit/pkg/config"
-	"github.com/rancher/elemental-toolkit/pkg/constants"
-	"github.com/rancher/elemental-toolkit/pkg/features"
-	v1mock "github.com/rancher/elemental-toolkit/pkg/mocks"
-	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
-	"github.com/rancher/elemental-toolkit/pkg/utils"
+	"github.com/rancher/elemental-toolkit/v2/pkg/action"
+	"github.com/rancher/elemental-toolkit/v2/pkg/config"
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/features"
+	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Init Action", func() {
-	var cfg *v1.RunConfig
-	var runner *v1mock.FakeRunner
+	var cfg *types.RunConfig
+	var runner *mocks.FakeRunner
 	var fs vfs.FS
-	var logger v1.Logger
+	var logger types.Logger
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var expectedNumUnits int
 
 	BeforeEach(func() {
-		runner = v1mock.NewFakeRunner()
+		runner = mocks.NewFakeRunner()
 		memLog = &bytes.Buffer{}
-		logger = v1.NewBufferLogger(memLog)
+		logger = types.NewBufferLogger(memLog)
 		logger.SetLevel(logrus.DebugLevel)
 		fs, cleanup, _ = vfst.NewTestFS(map[string]interface{}{})
 		cfg = config.NewRunConfig(
@@ -68,7 +68,7 @@ var _ = Describe("Init Action", func() {
 		cleanup()
 	})
 	Describe("Init System", Label("init"), func() {
-		var spec *v1.InitSpec
+		var spec *types.InitSpec
 		var enabledUnits []string
 		var errCmd, initrdFile string
 
