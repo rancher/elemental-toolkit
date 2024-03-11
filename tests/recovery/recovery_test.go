@@ -78,12 +78,12 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 		When("using specific images", func() {
 			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
 				By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
-				cmd := s.ElementalCmd("upgrade", "--recovery", "--recovery-system.uri", comm.UpgradeImage())
+				cmd := s.ElementalCmd("upgrade-recovery", "--recovery-system.uri", comm.UpgradeImage())
 				By(fmt.Sprintf("running %s", cmd))
 				out, err := s.Command(cmd)
 				_, _ = fmt.Fprintln(GinkgoWriter, out)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(out).Should(ContainSubstring("Upgrade completed"))
+				Expect(out).Should(ContainSubstring("Recovery upgrade completed"))
 
 				// TODO: Check state.yaml changed
 
