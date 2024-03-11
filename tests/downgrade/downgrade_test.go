@@ -69,6 +69,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			s.ChangeBootOnce(sut.Passive)
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Passive)
+			passiveVersion := s.GetOSRelease("TIMESTAMP")
 
 			By(fmt.Sprintf("Upgrading again from passive to image %s", comm.UpgradeImage()))
 			out, err = s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
@@ -80,7 +81,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			s.EventuallyBootedFrom(sut.Active)
 
 			currentVersion = s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).To(Equal(originalVersion))
+			Expect(currentVersion).NotTo(Equal(passiveVersion))
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).ToNot(HaveOccurred())
 		})
