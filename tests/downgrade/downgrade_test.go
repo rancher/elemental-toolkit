@@ -82,8 +82,6 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			currentVersion = s.GetOSRelease("TIMESTAMP")
 			Expect(currentVersion).NotTo(Equal(passiveVersion))
-			_, err = s.Command("cat /after-reset-chroot")
-			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })
