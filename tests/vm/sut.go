@@ -163,7 +163,7 @@ func (s *SUT) ChangeBootOnce(b string) error {
 	case Active:
 		bootEntry = "active"
 	case Passive:
-		bootEntry = "passive_1"
+		bootEntry = "1"
 	case Recovery:
 		bootEntry = "recovery"
 	}
@@ -224,7 +224,7 @@ func (s *SUT) EventuallyBootedFrom(image string) {
 	Eventually(func() error {
 		actual := s.BootFrom()
 		if actual != image {
-			return fmt.Errorf("Expected boot from %s, actual %s", image, actual)
+			return fmt.Errorf("expected boot from %s, actual %s", image, actual)
 		}
 
 		return nil
