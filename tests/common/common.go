@@ -16,17 +16,19 @@ limitations under the License.
 
 package common
 
-import "flag"
+import (
+	"flag"
+)
 
-const defaultUpgradeImage = "ghcr.io/rancher/elemental-toolkit/elemental-green:v1.1.4"
-const defaultToolkitImage = "ghcr.io/rancher/elemental-toolkit/elemental-cli:v1.1.4"
+const DefaultUpgradeImage = "ghcr.io/rancher/elemental-toolkit/elemental-green:v2.0.0"
+const DefaultToolkitImage = "ghcr.io/rancher/elemental-toolkit/elemental-cli:v2.0.0"
 
 var upgradeImage string
 var toolkitImage string
 
 func init() {
-	flag.StringVar(&upgradeImage, "upgrade-image", defaultUpgradeImage, "Default image to use in `upgrade` calls")
-	flag.StringVar(&toolkitImage, "toolkit-image", defaultToolkitImage, "Default image to use when calling `upgrade`")
+	flag.StringVar(&upgradeImage, "upgrade-image", DefaultUpgradeImage, "Default image to use in `upgrade` calls")
+	flag.StringVar(&toolkitImage, "toolkit-image", DefaultToolkitImage, "Default image to use when calling `upgrade`")
 }
 
 func UpgradeImage() string {
