@@ -59,7 +59,7 @@ test-fsck: test-active
 
 .PHONY: test-downgrade
 test-downgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade -- $(UPGRADE_ARGS)
 
 .PHONY: test-upgrade
 test-upgrade: test-active
