@@ -42,13 +42,13 @@ var _ = Describe("Elemental Feature tests", func() {
 	})
 
 	Context("After install", func() {
-		It("downgrades to an onlder image including upgrade and reset hooks", func() {
+		It("downgrades to an older image including upgrade and reset hooks", func() {
 			By("setting /oem/chroot_hooks.yaml")
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
-			By(fmt.Sprintf("and upgrading the to %s", comm.DefaultUpgradeImage))
+			By(fmt.Sprintf("and upgrading to %s", comm.DefaultUpgradeImage))
 
 			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.DefaultUpgradeImage))
 			Expect(err).ToNot(HaveOccurred())
@@ -70,8 +70,9 @@ var _ = Describe("Elemental Feature tests", func() {
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Passive)
 			passiveVersion := s.GetOSRelease("TIMESTAMP")
+			Expect(currentVersion).NotTo(Equal(passiveVersion))
 
-			By(fmt.Sprintf("Upgrading again from passive to image %s", comm.UpgradeImage()))
+			By(fmt.Sprintf("Upgrading again from passive to %s", comm.UpgradeImage()))
 			out, err = s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
@@ -81,7 +82,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			s.EventuallyBootedFrom(sut.Active)
 
 			currentVersion = s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).NotTo(Equal(passiveVersion))
+			Expect(currentVersion).NotTo(Equal(originalVersion))
 		})
 	})
 })

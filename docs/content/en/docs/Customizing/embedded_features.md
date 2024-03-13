@@ -22,7 +22,7 @@ The `init`-command should be used inside the Dockerfile as in the following exam
 
 The current features available for the `init`-command is:
 
-- immutable-rootfs: dracut configuration for mounting the immutable root filesystem.
+- elemental-rootfs: dracut configuration for mounting the immutable root filesystem.
 - grub-config: grub configuration for booting the derivative.
 - elemental-setup: services used for booting the system and running cloud-init files at boot/install/upgrade.
 - dracut-config: default dracut configuration for generating an initrd.

@@ -119,11 +119,7 @@ func Get(names []string) ([]*Feature, error) {
 		case FeatureCloudConfigEssentials:
 			features = append(features, New(name, nil))
 		case FeatureImmutableRootfs:
-			if slices.Contains(names, FeatureElementalRootfs) {
-				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureImmutableRootfs, FeatureElementalRootfs)
-			}
-
-			features = append(features, New(name, nil))
+			return features, fmt.Errorf("Feature immutable-rootfs no longer supported, please use 'elemental-rootfs' instead")
 		case FeatureElementalRootfs:
 			if slices.Contains(names, FeatureImmutableRootfs) {
 				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureElementalRootfs, FeatureImmutableRootfs)
