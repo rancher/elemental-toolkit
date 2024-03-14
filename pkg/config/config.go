@@ -193,8 +193,7 @@ func NewInstallSpec(cfg types.Config) *types.InstallSpec {
 	}
 
 	recoverySystem.Source = system
-	recoverySystem.FS = constants.LinuxImgFs
-	recoverySystem.Label = constants.SystemLabel
+	recoverySystem.FS = constants.SquashFs
 	recoverySystem.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgFile)
 	recoverySystem.MountPoint = constants.TransitionDir
 
@@ -516,8 +515,7 @@ func NewDisk(cfg *types.BuildConfig) *types.DiskSpec {
 
 	recoveryImg.Size = constants.ImgSize
 	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, constants.RecoveryImgFile)
-	recoveryImg.FS = constants.LinuxImgFs
-	recoveryImg.Label = constants.SystemLabel
+	recoveryImg.FS = constants.SquashFs
 	recoveryImg.Source = types.NewEmptySrc()
 	recoveryImg.MountPoint = filepath.Join(
 		workdir, strings.TrimSuffix(

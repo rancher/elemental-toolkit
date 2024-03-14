@@ -220,7 +220,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mkfs.ext2", "-L", "COS_SYSTEM", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"losetup", "--show", "-f", "/tmp/test/build/state.part"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
@@ -247,7 +247,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mkfs.ext2", "-L", "COS_SYSTEM", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
@@ -266,7 +266,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mkfs.ext2", "-L", "COS_SYSTEM", "-d", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
 			})).To(Succeed())
 
 			// failed before preparing partitions images
