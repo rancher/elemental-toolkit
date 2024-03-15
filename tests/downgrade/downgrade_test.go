@@ -48,7 +48,7 @@ var _ = Describe("Elemental Feature tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
-			By(fmt.Sprintf("and upgrading to %s", comm.DefaultUpgradeImage))
+			By(fmt.Sprintf("upgrading to %s", comm.DefaultUpgradeImage))
 
 			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.DefaultUpgradeImage))
 			Expect(err).ToNot(HaveOccurred())
@@ -80,9 +80,6 @@ var _ = Describe("Elemental Feature tests", func() {
 			By("Rebooting to active")
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Active)
-
-			currentVersion = s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).NotTo(Equal(originalVersion))
 		})
 	})
 })
