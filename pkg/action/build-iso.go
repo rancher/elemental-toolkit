@@ -161,7 +161,20 @@ func (b *BuildISOAction) ISORun() error {
 		return err
 	}
 
-	err = b.prepareISORoot(isoDir, rootDir)
+	bootDir := filepath.Join(isoDir, constants.ISOLoaderPath(b.cfg.Platform.Arch))
+	err = utils.MkdirAll(b.cfg.Fs, bootDir, constants.DirPerm)
+	if err != nil {
+		b.cfg.Logger.Errorf("Failed creating boot dir: %v", err)
+		return err
+	}
+
+	image := &types.Image{
+		Source: types.NewDirSrc(rootDir),
+		File:   filepath.Join(isoDir, constants.ISORootFile),
+		FS:     constants.SquashFs,
+	}
+
+	err = elemental.DeployRecoverySystem(b.cfg.Config, image, bootDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
 		return err
@@ -210,35 +223,6 @@ func (b *BuildISOAction) renderGrubTemplate(rootDir string) error {
 		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch), b.spec.GrubEntry, b.spec.Label)),
 		constants.FilePerm,
 	)
-}
-
-func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
-	kernel, initrd, err := utils.FindKernelInitrd(b.cfg.Fs, rootDir)
-	if err != nil {
-		b.cfg.Logger.Error("Could not find kernel and/or initrd")
-		return elementalError.NewFromError(err, elementalError.StatFile)
-	}
-	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, constants.ISOLoaderPath(b.cfg.Platform.Arch)), constants.DirPerm)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CreateDir)
-	}
-	//TODO document boot/kernel and boot/initrd expectation in bootloader config
-	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
-	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath(b.cfg.Platform.Arch)))
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
-	}
-
-	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
-	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath(b.cfg.Platform.Arch)))
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
-	}
-
-	b.cfg.Logger.Info("Creating squashfs...")
-	squashOptions := append(constants.GetDefaultSquashfsOptions(), b.cfg.SquashFsCompressionConfig...)
-	err = utils.CreateSquashFS(b.cfg.Runner, b.cfg.Logger, rootDir, filepath.Join(isoDir, constants.ISORootFile), squashOptions)
-	return elementalError.NewFromError(err, elementalError.MKFSCall)
 }
 
 func (b BuildISOAction) createEFI(root string, img string) error {

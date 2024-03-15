@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+
 	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/partitioner"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
@@ -467,6 +468,95 @@ func DeployImage(c types.Config, img *types.Image) error {
 		c.Logger.Errorf("failed creating image from image tree: %v", err)
 		return err
 	}
+	return nil
+}
+
+// DeployRecoverySystem deploys kernel, initrd and image to the specified
+// paths.
+// This can be used for both ISO (all artifacts in same output dir) and raw
+// disks (kernel and initrd in ESP, rootfs squashfs image in recovery
+// partition.
+func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) error {
+	var err error
+	var cleaner func() error
+
+	cfg.Logger.Infof("Deploying recovery image: %s", img.File)
+	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
+	if img.Source.IsDir() {
+		transientTree = img.Source.Value()
+	} else if img.Source.IsFile() {
+		srcImg := &types.Image{
+			File:       img.Source.Value(),
+			MountPoint: transientTree,
+		}
+		err := MountFileSystemImage(cfg, srcImg)
+		if err != nil {
+			cfg.Logger.Errorf("failed mounting image tree: %v", err)
+			return err
+		}
+		cleaner = func() error {
+			err := UnmountFileSystemImage(cfg, srcImg)
+			if err != nil {
+				return err
+			}
+			return cfg.Fs.RemoveAll(transientTree)
+		}
+	} else if img.Source.IsImage() {
+		err = DumpSource(cfg, transientTree, img.Source)
+		if err != nil {
+			cfg.Logger.Errorf("failed dumping image tree: %v", err)
+			return err
+		}
+		cleaner = func() error { return cfg.Fs.RemoveAll(transientTree) }
+	}
+
+	kernel, initrd, err := utils.FindKernelInitrd(cfg.Fs, transientTree)
+	if err != nil {
+		cfg.Logger.Errorf("Could not find kernel and/or initrd: %s", err.Error())
+		return err
+	}
+
+	// Copy boot artifacts
+	for _, file := range []string{
+		kernel,
+		initrd,
+		"/etc/elemental/bootargs.conf",
+	} {
+		if exist, _ := utils.Exists(cfg.Fs, file); exist {
+			cfg.Logger.Debugf("Copying file %s to root tree", file)
+			err = utils.CopyFile(cfg.Fs, file, bootDir)
+			if err != nil {
+				return err
+			}
+		} else {
+			cfg.Logger.Debugf("File %s not found, skipping", file)
+		}
+	}
+
+	// Create boot symlinks
+	for name, target := range map[string]string{
+		"vmlinuz": kernel,
+		"linux":   kernel,
+		"initrd":  initrd,
+	} {
+		source := filepath.Join(bootDir, name)
+		if exist, _ := utils.Exists(cfg.Fs, source); !exist {
+			cfg.Logger.Debugf("Creating boot symlink from %s to %s", source, target)
+			err = cfg.Fs.Symlink(filepath.Base(target), source)
+			if err != nil {
+				return err
+			}
+		} else {
+			cfg.Logger.Debugf("Symlink %s already exists, skipping", target)
+		}
+	}
+
+	err = CreateImageFromTree(cfg, img, transientTree, false, cleaner)
+	if err != nil {
+		cfg.Logger.Errorf("Failed creating image from image tree: %s", err.Error())
+		return err
+	}
+
 	return nil
 }
 
