@@ -82,6 +82,7 @@ const (
 	EfiImgArm64            = "bootaa64.efi"
 	EfiImgRiscv64          = "bootriscv64.efi"
 	GrubCfg                = "grub.cfg"
+	BootargsCfg            = "bootargs.cfg"
 	GrubCfgPath            = "/etc/elemental"
 	GrubOEMEnv             = "grub_oem_env"
 	GrubEnv                = "grubenv"

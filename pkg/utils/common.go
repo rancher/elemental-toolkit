@@ -448,7 +448,7 @@ func FindFile(vfs types.FS, rootDir string, patterns ...string) (string, error) 
 		}
 	}
 	if found == "" {
-		return "", fmt.Errorf("failed to find binary matching %v", patterns)
+		return "", fmt.Errorf("failed to find binary matching %v in %v", patterns, rootDir)
 	}
 	return found, nil
 }

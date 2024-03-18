@@ -229,19 +229,26 @@ func (i InstallAction) Run() (err error) {
 	}
 
 	// Install recovery
+	recoveryBootDir := filepath.Join(i.spec.Partitions.Recovery.MountPoint, "boot")
+	err = utils.MkdirAll(i.cfg.Fs, recoveryBootDir, constants.DirPerm)
+	if err != nil {
+		i.cfg.Logger.Errorf("failed creating recovery boot dir: %v", err)
+		return err
+	}
+
 	recoverySystem := i.spec.RecoverySystem
 	i.cfg.Logger.Info("Deploying recovery system")
 	if recoverySystem.Source.String() == i.spec.System.String() {
-		// Reuse already deployed root-tree from actice snapshot
+		// Reuse already deployed root-tree from active snapshot
 		recoverySystem.Source, err = i.snapshotter.SnapshotToImageSource(i.snapshot)
 		if err != nil {
 			return err
 		}
-		i.spec.RecoverySystem.Source.SetDigest(i.spec.System.GetDigest())
+		recoverySystem.Source.SetDigest(i.spec.System.GetDigest())
 	}
-	err = elemental.DeployImage(i.cfg.Config, &recoverySystem)
+	err = elemental.DeployRecoverySystem(i.cfg.Config, &recoverySystem, recoveryBootDir)
 	if err != nil {
-		i.cfg.Logger.Error("failed deploying recovery image")
+		i.cfg.Logger.Errorf("Failed deploying recovery image: %v", err)
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 

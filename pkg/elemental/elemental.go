@@ -520,7 +520,7 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 	for _, file := range []string{
 		kernel,
 		initrd,
-		"/etc/elemental/bootargs.conf",
+		filepath.Join(transientTree, cnst.GrubCfgPath, cnst.BootargsCfg),
 	} {
 		if exist, _ := utils.Exists(cfg.Fs, file); exist {
 			cfg.Logger.Debugf("Copying file %s to root tree", file)
