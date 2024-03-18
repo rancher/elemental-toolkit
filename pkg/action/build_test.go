@@ -205,13 +205,21 @@ var _ = Describe("Build Actions", func() {
 			tmpDir, err := utils.TempDir(fs, "", "test")
 			Expect(err).ShouldNot(HaveOccurred())
 
+			recDir := filepath.Join(tmpDir, "build/recovery.img.root")
+			Expect(utils.MkdirAll(fs, filepath.Join(recDir, "boot"), constants.DirPerm)).To(Succeed())
+			Expect(utils.MkdirAll(fs, filepath.Join(recDir, "/lib/modules/6.7"), constants.DirPerm)).To(Succeed())
+			_, err = fs.Create(filepath.Join(recDir, "/boot/vmlinuz-6.7"))
+			Expect(err).To(Succeed())
+			_, err = fs.Create(filepath.Join(recDir, "/boot/elemental.initrd-6.7"))
+			Expect(err).To(Succeed())
+
 			cfg.Date = false
 			cfg.OutDir = tmpDir
 			disk = config.NewDisk(cfg)
 			disk.System = types.NewDockerSrc("some/image/ref:tag")
-			disk.RecoverySystem.Source = disk.System
 			disk.Partitions.Recovery.Size = constants.MinPartSize
 			disk.Partitions.State.Size = constants.MinPartSize
+			disk.RecoverySystem.Source = types.NewDirSrc(recDir)
 		})
 		It("Successfully builds a full raw disk", func() {
 			buildDisk, err := action.NewBuildDiskAction(cfg, disk, action.WithDiskBootloader(bootloader))

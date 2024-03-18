@@ -162,7 +162,6 @@ var _ = Describe("Install action tests", func() {
 			Expect(utils.MkdirAll(fs, "/run/elemental/recovery/recovery.imgTree/boot", constants.DirPerm)).To(Succeed())
 			Expect(utils.MkdirAll(fs, "/run/elemental/recovery/recovery.imgTree/lib/modules/6.7", constants.DirPerm)).To(Succeed())
 			_, err = fs.Create("/run/elemental/recovery/recovery.imgTree/boot/vmlinuz-6.7")
-			_, err = fs.Create("/run/elemental/recovery/recovery.imgTree/boot/vmlinuz-6.7")
 			Expect(err).To(Succeed())
 			_, err = fs.Create("/run/elemental/recovery/recovery.imgTree/boot/elemental.initrd-6.7")
 			Expect(err).To(Succeed())
