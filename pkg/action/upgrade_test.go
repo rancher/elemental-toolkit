@@ -295,7 +295,7 @@ var _ = Describe("Runtime Actions", func() {
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
-				spec := PrepareTestRecoveryImage(config, recoveryImgPath, fs, runner)
+				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
 				info, err := fs.Stat(recoveryImgPath)

@@ -522,14 +522,24 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 		initrd,
 		filepath.Join(transientTree, cnst.GrubCfgPath, cnst.BootargsCfg),
 	} {
-		if exist, _ := utils.Exists(cfg.Fs, file); exist {
-			cfg.Logger.Debugf("Copying file %s to root tree", file)
-			err = utils.CopyFile(cfg.Fs, file, bootDir)
+		if exist, _ := utils.Exists(cfg.Fs, file); !exist {
+			cfg.Logger.Debugf("File '%s' not found, skipping", file)
+			continue
+		}
+
+		target := filepath.Join(bootDir, filepath.Base(file))
+		if exist, _ := utils.Exists(cfg.Fs, target); exist {
+			cfg.Logger.Debugf("Removing old file %s", target)
+			err = cfg.Fs.Remove(target)
 			if err != nil {
 				return err
 			}
-		} else {
-			cfg.Logger.Debugf("File %s not found, skipping", file)
+		}
+
+		cfg.Logger.Debugf("Copying file %s to root tree", file)
+		err = utils.CopyFile(cfg.Fs, file, target)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -540,14 +550,18 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 		"initrd":  initrd,
 	} {
 		source := filepath.Join(bootDir, name)
-		if exist, _ := utils.Exists(cfg.Fs, source); !exist {
-			cfg.Logger.Debugf("Creating boot symlink from %s to %s", source, target)
-			err = cfg.Fs.Symlink(filepath.Base(target), source)
+		if exist, _ := utils.Exists(cfg.Fs, source, true); exist {
+			cfg.Logger.Debugf("Removing old symlink %s", source)
+			err = cfg.Fs.Remove(source)
 			if err != nil {
 				return err
 			}
-		} else {
-			cfg.Logger.Debugf("Symlink %s already exists, skipping", target)
+		}
+
+		cfg.Logger.Debugf("Creating boot symlink from %s to %s", source, target)
+		err = cfg.Fs.Symlink(filepath.Base(target), source)
+		if err != nil {
+			return err
 		}
 	}
 
