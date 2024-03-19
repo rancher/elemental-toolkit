@@ -7,6 +7,7 @@ isowork/
 *.img
 *.log
 *.pid
+*.bin
 iso-meta.json
 iso-meta.yaml
 .idea/
