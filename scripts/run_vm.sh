@@ -108,9 +108,13 @@ function clean {
 }
 
 function vmpid {
-    if [ -f "${ELMNTL_PIDFILE}" ]; then
-        cat "${ELMNTL_PIDFILE}"
-    fi
+    local timeout=10
+
+    until [ -f "${ELMNTL_PIDFILE}" -o "$((timeout--))" -eq 0 ]; do
+	sleep 1
+    done
+
+    [ -f "${ELMNTL_PIDFILE}" ] && cat "${ELMNTL_PIDFILE}" 
 }
 
 cmd=$1
