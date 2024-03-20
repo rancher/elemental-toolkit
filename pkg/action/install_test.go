@@ -146,6 +146,7 @@ var _ = Describe("Install action tests", func() {
 					return []byte{}, nil
 				}
 			}
+
 			// Need to create the IsoBaseTree, like if we are booting from iso
 			Expect(utils.MkdirAll(fs, constants.ISOBaseTree, constants.DirPerm)).To(Succeed())
 
@@ -155,9 +156,17 @@ var _ = Describe("Install action tests", func() {
 			loopCfg.Size = 16
 			Expect(spec.System.Value()).To(Equal(constants.ISOBaseTree))
 			Expect(spec.System.IsDir()).To(BeTrue())
-			Expect(spec.RecoverySystem.Source.Value()).To(Equal(constants.ISOBaseTree))
-			//spec.System = types.NewDockerSrc("fake/image:tag")
 
+			// Create minimal recovery system source
+			spec.RecoverySystem.Source = types.NewDirSrc("/run/elemental/recovery/recovery.imgTree")
+			Expect(utils.MkdirAll(fs, "/run/elemental/recovery/recovery.imgTree/boot", constants.DirPerm)).To(Succeed())
+			Expect(utils.MkdirAll(fs, "/run/elemental/recovery/recovery.imgTree/lib/modules/6.7", constants.DirPerm)).To(Succeed())
+			_, err = fs.Create("/run/elemental/recovery/recovery.imgTree/boot/vmlinuz-6.7")
+			Expect(err).To(Succeed())
+			_, err = fs.Create("/run/elemental/recovery/recovery.imgTree/boot/elemental.initrd-6.7")
+			Expect(err).To(Succeed())
+
+			// Write grub config
 			grubCfg := filepath.Join(constants.WorkingImgDir, constants.GrubCfgPath, constants.GrubCfg)
 			Expect(utils.MkdirAll(fs, filepath.Dir(grubCfg), constants.DirPerm)).To(Succeed())
 			_, err = fs.Create(grubCfg)

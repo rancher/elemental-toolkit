@@ -176,7 +176,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
 				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
-				spec := PrepareTestRecoveryImage(config, recoveryImgPath, fs, runner)
+				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
 				info, err := fs.Stat(recoveryImgPath)
@@ -213,7 +213,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 			})
 			It("Successfully skips updateInstallState", Label("docker"), func() {
 				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
-				spec := PrepareTestRecoveryImage(config, recoveryImgPath, fs, runner)
+				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
 				info, err := fs.Stat(recoveryImgPath)
@@ -252,7 +252,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 	})
 })
 
-func PrepareTestRecoveryImage(config *types.RunConfig, recoveryImgPath string, fs vfs.FS, runner *mocks.FakeRunner) *types.UpgradeSpec {
+func PrepareTestRecoveryImage(config *types.RunConfig, recoveryPath string, fs vfs.FS, runner *mocks.FakeRunner) *types.UpgradeSpec {
 	GinkgoHelper()
 	// Create installState with squashed recovery
 	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
@@ -270,7 +270,15 @@ func PrepareTestRecoveryImage(config *types.RunConfig, recoveryImgPath string, f
 	}
 	Expect(config.WriteInstallState(installState, statePath, statePath)).ShouldNot(HaveOccurred())
 
+	recoveryImgPath := filepath.Join(recoveryPath, constants.RecoveryImgFile)
 	Expect(fs.WriteFile(recoveryImgPath, []byte("recovery"), constants.FilePerm)).ShouldNot(HaveOccurred())
+
+	transitionDir := filepath.Join(recoveryPath, "transition.imgTree")
+	Expect(utils.MkdirAll(fs, filepath.Join(transitionDir, "lib/modules/6.6"), constants.DirPerm)).ShouldNot(HaveOccurred())
+	bootDir := filepath.Join(transitionDir, "boot")
+	Expect(utils.MkdirAll(fs, bootDir, constants.DirPerm)).ShouldNot(HaveOccurred())
+	Expect(fs.WriteFile(filepath.Join(bootDir, "vmlinuz-6.6"), []byte("kernel"), constants.FilePerm)).ShouldNot(HaveOccurred())
+	Expect(fs.WriteFile(filepath.Join(bootDir, "elemental.initrd-6.6"), []byte("initrd"), constants.FilePerm)).ShouldNot(HaveOccurred())
 
 	spec, err := conf.NewUpgradeSpec(config.Config)
 	Expect(err).ShouldNot(HaveOccurred())

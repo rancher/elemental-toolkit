@@ -146,10 +146,17 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 		return err
 	}
 
+	// Create recovery /boot dir if not exists
+	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, "boot")
+	if err := utils.MkdirAll(u.cfg.Fs, bootDir, constants.DirPerm); err != nil {
+		u.cfg.Logger.Errorf("failed creating recovery boot dir: %v", err)
+		return elementalError.NewFromError(err, elementalError.CreateDir)
+	}
+
 	// Upgrade recovery
-	err = elemental.DeployImage(u.cfg.Config, &u.spec.RecoverySystem)
+	err = elemental.DeployRecoverySystem(u.cfg.Config, &u.spec.RecoverySystem, bootDir)
 	if err != nil {
-		u.cfg.Logger.Error("failed deploying recovery image")
+		u.cfg.Logger.Errorf("failed deploying recovery image: %v", err)
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
 	recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
@@ -184,5 +191,5 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 		return elementalError.NewFromError(err, elementalError.Cleanup)
 	}
 
-	return nil
+	return PowerAction(u.cfg)
 }
