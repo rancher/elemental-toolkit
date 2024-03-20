@@ -6,159 +6,136 @@ package efi
 
 import (
 	"bytes"
+	"crypto"
+	_ "crypto/sha256"
+	"crypto/x509"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/canonical/go-efilib/internal/ioerr"
 	"github.com/canonical/go-efilib/internal/uefi"
+	"golang.org/x/xerrors"
 )
 
-// VariableAuthentication correspond to the EFI_VARIABLE_AUTHENTICATION type and is provided as a header when updating a variable with
-// the EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS attribute set.
+// VariableAuthentication corresponds to the EFI_VARIABLE_AUTHENTICATION
+// type and is used to authenticate updates to variables with the
+// EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS attribute set.
 type VariableAuthentication struct {
 	MonotonicCount uint64
 	AuthInfo       WinCertificateGUID
 }
 
-func (a *VariableAuthentication) Write(w io.Writer) error {
-	desc := uefi.EFI_VARIABLE_AUTHENTICATION{
-		MonotonicCount: a.MonotonicCount,
-		AuthInfo:       *a.AuthInfo.toUefiType()}
-	return binary.Write(w, binary.LittleEndian, desc)
-}
-
-// ReadVariableAuthentication decodes a header for updating a variable with the EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS attribute
-// set.
+// ReadVariableAuthentication decodes an authentication header for updating
+// a variable with the EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS attribute set.
 func ReadVariableAuthentication(r io.Reader) (*VariableAuthentication, error) {
 	desc, err := uefi.Read_EFI_VARIABLE_AUTHENTICATION(r)
 	if err != nil {
 		return nil, err
 	}
 
+	sig, err := newWinCertificateGUID(&desc.AuthInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	return &VariableAuthentication{
 		MonotonicCount: desc.MonotonicCount,
-		AuthInfo:       *newWinCertificateGUID(&desc.AuthInfo)}, nil
+		AuthInfo:       sig}, nil
 }
 
-// VariableAuthentication2 correspond to the EFI_VARIABLE_AUTHENTICATION_2 type and is provided as a header when updating a variable
-// with the EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute set.
+// VariableAuthentication2 corresponds to the EFI_VARIABLE_AUTHENTICATION_2
+// type and is used to authenticate updates to variables with the
+// EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute set.
 type VariableAuthentication2 struct {
 	TimeStamp time.Time
 	AuthInfo  WinCertificateGUID
 }
 
-func (a *VariableAuthentication2) Write(w io.Writer) error {
-	desc := uefi.EFI_VARIABLE_AUTHENTICATION_2{
-		TimeStamp: *uefi.New_EFI_TIME(a.TimeStamp),
-		AuthInfo:  *a.AuthInfo.toUefiType()}
-	return binary.Write(w, binary.LittleEndian, desc)
-}
-
-// ReadTimeBasedVariableAuthentication decodes the header for updating a variable with the
-// EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute set.
+// ReadTimeBasedVariableAuthentication decodes an authentication header
+// for updating a variable with the EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS
+// attribute set.
 func ReadTimeBasedVariableAuthentication(r io.Reader) (*VariableAuthentication2, error) {
 	desc, err := uefi.Read_EFI_VARIABLE_AUTHENTICATION_2(r)
 	if err != nil {
 		return nil, err
 	}
 
+	sig, err := newWinCertificateGUID(&desc.AuthInfo)
+	if err != nil {
+		return nil, err
+	}
+
 	return &VariableAuthentication2{
 		TimeStamp: desc.TimeStamp.GoTime(),
-		AuthInfo:  *newWinCertificateGUID(&desc.AuthInfo)}, nil
+		AuthInfo:  sig}, nil
 }
 
-// VariableAuthentication3 represents the header for updating a variable with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS
-// attribute set.
-type VariableAuthentication3 interface{}
+// VariableAuthentication3Type describes the type of [VariableAuthentication3].
+type VariableAuthentication3Type int
 
-// VariableAuthentication3Timestamp corresponds to the header for updating a variable with the
-// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE.
+const (
+	// VariableAuthentication3TimestampType indicates that a
+	// VariableAuthentication3 is a timestamp based enhanced authentication
+	// and is implemented by the *VariableAuthentication3Timestamp type.
+	VariableAuthentication3TimestampType VariableAuthentication3Type = uefi.EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE
+
+	// VariableAuthentication3iNonceType indicates that a
+	// VariableAuthentication3 is a nonce based enhanced authentication
+	// and is implemented by the *VariableAuthentication3Nonce type.
+	VariableAuthentication3NonceType VariableAuthentication3Type = uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE
+)
+
+// VariableAuthentication3 is used to authenticate updates to variables
+// with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
+type VariableAuthentication3 interface {
+	Type() VariableAuthentication3Type
+	NewCert() WinCertificateGUID
+	SigningCert() WinCertificateGUID
+}
+
+type variableAuthentication3 struct {
+	newCert     WinCertificateGUID
+	signingCert WinCertificateGUID
+}
+
+func (a *variableAuthentication3) NewCert() WinCertificateGUID {
+	return a.newCert
+}
+
+func (a *variableAuthentication3) SigningCert() WinCertificateGUID {
+	return a.signingCert
+}
+
+// VariableAuthentication3Timestamp is used to authenticate updates to
+// variables with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute
+// set, and a type of EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE.
 type VariableAuthentication3Timestamp struct {
-	TimeStamp   time.Time
-	NewCert     *WinCertificateGUID
-	SigningCert WinCertificateGUID
+	Timestamp time.Time
+	variableAuthentication3
 }
 
-func (a *VariableAuthentication3Timestamp) Write(w io.Writer) error {
-	var buf bytes.Buffer
-
-	t := uefi.New_EFI_TIME(a.TimeStamp)
-	if err := binary.Write(&buf, binary.LittleEndian, &t); err != nil {
-		panic(err)
-	}
-
-	if a.NewCert != nil {
-		if err := binary.Write(&buf, binary.LittleEndian, a.NewCert.toUefiType()); err != nil {
-			panic(err)
-		}
-	}
-
-	if err := binary.Write(&buf, binary.LittleEndian, a.SigningCert.toUefiType()); err != nil {
-		panic(err)
-	}
-
-	hdr := uefi.EFI_VARIABLE_AUTHENTICATION_3{
-		Version: 1,
-		Type:    uefi.EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE}
-	hdr.MetadataSize = uint32(binary.Size(hdr) + buf.Len())
-	if a.NewCert != nil {
-		hdr.Flags = 1
-	}
-	if err := binary.Write(w, binary.LittleEndian, &hdr); err != nil {
-		return err
-	}
-
-	_, err := buf.WriteTo(w)
-	return err
+func (a *VariableAuthentication3Timestamp) Type() VariableAuthentication3Type {
+	return VariableAuthentication3TimestampType
 }
 
-// VariableAuthentication3Nonce corresponds to the header for updating a variable with the
-// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE.
+// VariableAuthentication3Nonce is used to authenticate updates to
+// variables with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute
+// set, and a type of EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE.
 type VariableAuthentication3Nonce struct {
-	Nonce       []byte
-	NewCert     *WinCertificateGUID
-	SigningCert WinCertificateGUID
+	Nonce []byte
+	variableAuthentication3
 }
 
-func (a *VariableAuthentication3Nonce) Write(w io.Writer) error {
-	var buf bytes.Buffer
-
-	n := uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE{
-		NonceSize: uint32(len(a.Nonce)),
-		Nonce:     a.Nonce}
-	if err := binary.Write(&buf, binary.LittleEndian, &n); err != nil {
-		panic(err)
-	}
-
-	if a.NewCert != nil {
-		if err := binary.Write(&buf, binary.LittleEndian, a.NewCert.toUefiType()); err != nil {
-			panic(err)
-		}
-	}
-
-	if err := binary.Write(&buf, binary.LittleEndian, a.SigningCert.toUefiType()); err != nil {
-		panic(err)
-	}
-
-	hdr := uefi.EFI_VARIABLE_AUTHENTICATION_3{
-		Version: 1,
-		Type:    uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE}
-	hdr.MetadataSize = uint32(binary.Size(hdr) + buf.Len())
-	if a.NewCert != nil {
-		hdr.Flags = 1
-	}
-	if err := binary.Write(w, binary.LittleEndian, &hdr); err != nil {
-		return err
-	}
-
-	_, err := buf.WriteTo(w)
-	return err
+func (a *VariableAuthentication3Nonce) Type() VariableAuthentication3Type {
+	return VariableAuthentication3NonceType
 }
 
-// ReadEnhancedVariableAuthentication decodes the header for updating a variable with the
-// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
+// ReadEnhancedVariableAuthentication decodes the authentication header for
+// updating variables with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS
+// attribute set.
 func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, error) {
 	var hdr uefi.EFI_VARIABLE_AUTHENTICATION_3
 	if err := binary.Read(r, binary.LittleEndian, &hdr); err != nil {
@@ -191,11 +168,20 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 			return nil, ioerr.EOFIsUnexpected("cannot read timestamp authentication: %w", err)
 		}
 
+		sig, err := newWinCertificateGUID(signingCert)
+		if err != nil {
+			return nil, xerrors.Errorf("cannot decode signature: %w", err)
+		}
+
 		out := &VariableAuthentication3Timestamp{
-			TimeStamp:   t.GoTime(),
-			SigningCert: *newWinCertificateGUID(signingCert)}
+			Timestamp:               t.GoTime(),
+			variableAuthentication3: variableAuthentication3{signingCert: sig}}
 		if newCert != nil {
-			out.NewCert = newWinCertificateGUID(newCert)
+			sig, err := newWinCertificateGUID(newCert)
+			if err != nil {
+				return nil, xerrors.Errorf("cannot decode new authority signature: %w", err)
+			}
+			out.newCert = sig
 		}
 		return out, nil
 	case uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE:
@@ -218,11 +204,20 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 			return nil, ioerr.EOFIsUnexpected("cannot read nonce authentication: %w", err)
 		}
 
+		sig, err := newWinCertificateGUID(signingCert)
+		if err != nil {
+			return nil, xerrors.Errorf("cannot decode signature: %w", err)
+		}
+
 		out := &VariableAuthentication3Nonce{
-			Nonce:       n.Nonce,
-			SigningCert: *newWinCertificateGUID(signingCert)}
+			Nonce:                   n.Nonce,
+			variableAuthentication3: variableAuthentication3{signingCert: sig}}
 		if newCert != nil {
-			out.NewCert = newWinCertificateGUID(newCert)
+			sig, err := newWinCertificateGUID(newCert)
+			if err != nil {
+				return nil, xerrors.Errorf("cannot decode new authority signature: %w", err)
+			}
+			out.newCert = sig
 		}
 		return out, nil
 	default:
@@ -230,44 +225,87 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 	}
 }
 
-// VariableAuthentication3Descriptor corresponds to the authentication descriptor provided when reading the payload of a variable
-// with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
-type VariableAuthentication3Descriptor interface{}
-
-const (
-	VariableAuthentication3CertIDSHA256 = uefi.EFI_VARIABLE_AUTHENTICATION_3_CERT_ID_SHA256
-)
-
-type VariableAuthentication3CertId struct {
-	Type uint8
-	Id   []byte
+// VariableAuthentication3CertId corresponds to the EFI_VARIABLE_AUTHENTICATION_3_CERT_ID
+// type and represents the identification of an authority certificate
+// associated with a variable that has the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS
+// attribute set.
+type VariableAuthentication3CertId interface {
+	// Matches determines whether the specified certificate matches this ID
+	Matches(cert *x509.Certificate) bool
 }
 
-func newVariableAuthentication3CertId(id *uefi.EFI_VARIABLE_AUTHENTICATION_3_CERT_ID) *VariableAuthentication3CertId {
-	return &VariableAuthentication3CertId{
-		Type: id.Type,
-		Id:   id.Id}
+// VariableAuthentication3Descriptor corresponds to the authentication
+// descriptor provided when reading the payload of a variable with the
+// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
+type VariableAuthentication3Descriptor interface {
+	Type() VariableAuthentication3Type
+	Id() VariableAuthentication3CertId // The ID of the authority associated with the variable
 }
 
-// VariableAuthentication3TimestampDescriptor corresponds to the authentication descriptor provided when reading the payload of a
-// variable with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of
+// VariableAuthentication3CertIdSHA256 corresponds to a EFI_VARIABLE_AUTHENTICATION_3_CERT_ID
+// with a type of EFI_VARIABLE_AUTHENTICATION_3_CERT_ID_SHA256 and is the
+// SHA-256 digest of the TBS content of a X.509 certificate.
+type VariableAuthentication3CertIdSHA256 [32]byte
+
+func (i VariableAuthentication3CertIdSHA256) Matches(cert *x509.Certificate) bool {
+	h := crypto.SHA256.New()
+	h.Write(cert.RawTBSCertificate)
+	return bytes.Equal(h.Sum(nil), i[:])
+}
+
+func newVariableAuthentication3CertId(id *uefi.EFI_VARIABLE_AUTHENTICATION_3_CERT_ID) (VariableAuthentication3CertId, error) {
+	switch id.Type {
+	case uefi.EFI_VARIABLE_AUTHENTICATION_3_CERT_ID_SHA256:
+		if len(id.Id) != 32 {
+			return nil, errors.New("invalid SHA256 length")
+		}
+
+		var out VariableAuthentication3CertIdSHA256
+		copy(out[:], id.Id)
+		return out, nil
+	default:
+		return nil, fmt.Errorf("unrecognized type: %d", id.Type)
+	}
+}
+
+// VariableAuthentication3TimestampDescriptor corresponds to the authentication
+// descriptor provided when reading the payload of a variable with the
+// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of
 // EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE.
 type VariableAuthentication3TimestampDescriptor struct {
 	TimeStamp time.Time
-	VariableAuthentication3CertId
+	id        VariableAuthentication3CertId
 }
 
-// VariableAuthentication3NonceDescriptor corresponds to the authentication descriptor provided when reading the payload of a
-// variable with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of
+func (d *VariableAuthentication3TimestampDescriptor) Type() VariableAuthentication3Type {
+	return VariableAuthentication3TimestampType
+}
+
+func (d *VariableAuthentication3TimestampDescriptor) Id() VariableAuthentication3CertId {
+	return d.id
+}
+
+// VariableAuthentication3NonceDescriptor corresponds to the authentication
+// descriptor provided when reading the payload of a variable with the
+// EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set, and a type of
 // EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE.
 type VariableAuthentication3NonceDescriptor struct {
 	Nonce []byte
-	VariableAuthentication3CertId
+	id    VariableAuthentication3CertId
 }
 
-// ReadEnhancedAuthenticationDescriptor decodes the enhanced authentication descriptor from the supplied io.Reader. The supplied
-// reader will typically read from the payload area of a variable with the EFI_VARIABLE_ENHANCED_AUTHENTICATION_ACCESS attribute
-// set.
+func (d *VariableAuthentication3NonceDescriptor) Type() VariableAuthentication3Type {
+	return VariableAuthentication3NonceType
+}
+
+func (d *VariableAuthentication3NonceDescriptor) Id() VariableAuthentication3CertId {
+	return d.id
+}
+
+// ReadEnhancedAuthenticationDescriptor decodes the enhanced authentication
+// descriptor from the supplied reader. The supplied reader will typically
+// read from the payload area of a variable with the
+// EFI_VARIABLE_ENHANCED_AUTHENTICATION_ACCESS attribute set.
 func ReadEnhancedAuthenticationDescriptor(r io.Reader) (VariableAuthentication3Descriptor, error) {
 	var hdr uefi.EFI_VARIABLE_AUTHENTICATION_3
 	if err := binary.Read(r, binary.LittleEndian, &hdr); err != nil {
@@ -291,9 +329,14 @@ func ReadEnhancedAuthenticationDescriptor(r io.Reader) (VariableAuthentication3D
 			return nil, ioerr.EOFIsUnexpected("cannot read timestamp descriptor: %w", err)
 		}
 
+		id2, err := newVariableAuthentication3CertId(id)
+		if err != nil {
+			return nil, xerrors.Errorf("invalid timestamp descriptor ID: %w", err)
+		}
+
 		return &VariableAuthentication3TimestampDescriptor{
-			TimeStamp:                     t.GoTime(),
-			VariableAuthentication3CertId: *newVariableAuthentication3CertId(id)}, nil
+			TimeStamp: t.GoTime(),
+			id:        id2}, nil
 	case uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE:
 		n, err := uefi.Read_EFI_VARIABLE_AUTHENTICATION_3_NONCE(r)
 		if err != nil {
@@ -305,9 +348,14 @@ func ReadEnhancedAuthenticationDescriptor(r io.Reader) (VariableAuthentication3D
 			return nil, ioerr.EOFIsUnexpected("cannot read nonce descriptor: %w", err)
 		}
 
+		id2, err := newVariableAuthentication3CertId(id)
+		if err != nil {
+			return nil, xerrors.Errorf("invalid nonce descriptor ID: %w", err)
+		}
+
 		return &VariableAuthentication3NonceDescriptor{
-			Nonce:                         n.Nonce,
-			VariableAuthentication3CertId: *newVariableAuthentication3CertId(id)}, nil
+			Nonce: n.Nonce,
+			id:    id2}, nil
 	default:
 		return nil, errors.New("unexpected type")
 	}

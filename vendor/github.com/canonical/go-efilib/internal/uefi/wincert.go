@@ -27,7 +27,7 @@ type WIN_CERTIFICATE struct {
 type WIN_CERTIFICATE_EFI_PKCS1_15 struct {
 	Hdr           WIN_CERTIFICATE
 	HashAlgorithm EFI_GUID
-	Signature     []byte
+	Signature     [256]byte
 }
 
 type WIN_CERTIFICATE_UEFI_GUID struct {

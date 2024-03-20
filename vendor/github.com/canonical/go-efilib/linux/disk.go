@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 	"golang.org/x/xerrors"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 	internal_unix "github.com/canonical/go-efilib/internal/unix"
 )
 

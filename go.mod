@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.2.1
-	github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
+	github.com/canonical/go-efilib v0.9.5
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/containerd/containerd v1.7.12
@@ -23,7 +23,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	golang.org/x/crypto v0.18.0
+	golang.org/x/crypto v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/mount-utils v0.23.0
 )
@@ -130,15 +130,14 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/twpayne/go-vfs/v4 v4.3.0
 	github.com/vbatts/tar-split v0.11.3 // indirect
-	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
+	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

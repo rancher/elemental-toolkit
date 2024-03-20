@@ -20,12 +20,12 @@ import (
 	"github.com/canonical/go-efilib"
 )
 
-// FileDevicePathMode specifies the mode for NewFileDevicePath
-type FileDevicePathMode int
+// FilePathToDevicePathMode specifies the mode for FilePathToDevicePath
+type FilePathToDevicePathMode int
 
 const (
 	// FullPath indicates that only a full device path should be created.
-	FullPath FileDevicePathMode = iota
+	FullPath FilePathToDevicePathMode = iota
 
 	// ShortFormPathHD indicates that a short-form device path beginning
 	// with a HD() node should be created.
@@ -36,7 +36,7 @@ const (
 	ShortFormPathFile
 )
 
-// ErrNoDevicePath is returned from NewFileDevicePath if the device in
+// ErrNoDevicePath is returned from FilePathToDevicePath if the device in
 // which a file is stored cannot be mapped to a device path with the
 // specified mode.
 type ErrNoDevicePath string
@@ -380,7 +380,7 @@ func newFilePath(path string) (*filePath, error) {
 	return out, nil
 }
 
-// NewFileDevicePath creates an EFI device path from the supplied filepath.
+// FilePathToDevicePath creates an EFI device path from the supplied filepath.
 //
 // If mode is FullPath, this will attempt to create a full device path which
 // requires the use of sysfs. If the device in which the file is stored cannot be
@@ -402,7 +402,7 @@ func newFilePath(path string) (*filePath, error) {
 // path consisting only of the file path relative to the device.
 //
 // In all modes, read access to the file's directory is required.
-func NewFileDevicePath(path string, mode FileDevicePathMode) (out efi.DevicePath, err error) {
+func FilePathToDevicePath(path string, mode FilePathToDevicePathMode) (out efi.DevicePath, err error) {
 	fp, err := newFilePath(path)
 	if err != nil {
 		return nil, err
