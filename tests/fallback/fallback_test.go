@@ -17,8 +17,6 @@ limitations under the License.
 package elemental_test
 
 import (
-	"time"
-
 	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
 
 	comm "github.com/rancher/elemental-toolkit/v2/tests/common"
@@ -73,7 +71,7 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			out, _ = s.Command("sudo cat /run/elemental/efi/boot_assessment")
 			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
 
-			s.Reboot(700)
+			s.Reboot()
 
 			v := s.GetOSRelease("TIMESTAMP")
 			Expect(v).To(Equal(currentVersion))
@@ -81,10 +79,8 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			cmdline, _ := s.Command("sudo cat /proc/cmdline")
 			Expect(cmdline).To(And(ContainSubstring("passive"), ContainSubstring("upgrade_failure")), cmdline)
 
-			Eventually(func() string {
-				out, _ := s.Command("sudo ls -liah /run/elemental")
-				return out
-			}, 5*time.Minute, 10*time.Second).Should(ContainSubstring("upgrade_failure"))
+			cmdline, _ = s.Command("sudo ls -liah /run/elemental")
+			Expect(cmdline).To(ContainSubstring("upgrade_failure"))
 		})
 	})
 })
