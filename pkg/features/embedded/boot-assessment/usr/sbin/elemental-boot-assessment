@@ -1,0 +1,38 @@
+#!/bin/bash
+
+declare checkResultsPath="/run/elemental/boot-assessment"
+declare checkersPath="/usr/libexec/elemental-checker"
+declare efiPath="/run/elemental/efi/boot_assessment"
+declare upgradeFailureSentinel="/run/elemental/upgrade_failure"
+
+function doBootAssessment {
+    local script
+    local checker
+    local retCode="0"
+
+    mkdir -p "${checkResultsPath}"
+
+    # Iterate over elemental checkers
+    for script in "${checkersPath}/*.sh"; do
+        checker=$(basename "${script}")
+        [ -e "${checkResultsPath}/${checker}" ] && continue
+        
+        "${script}" check
+        if [ $? -ne 0 ]; then
+            retCode=1
+        else
+            > "${checkResultsPath}/${checker}" 
+        fi
+    done
+
+    return "${retCode}"
+}
+
+doBootAssessment
+if [ $? -ne 0 ]; then
+  echo 1 > "${upgradeFailureSentinel}"
+  exit 1
+fi
+
+grub2-editenv "${efiPath}/boot_assessment" set enable_boot_assessment=
+grub2-editenv "${efiPath}/boot_assessment" set boot_assessment_tentative=

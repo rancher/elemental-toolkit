@@ -52,6 +52,7 @@ const (
 	FeatureDracutConfig          = "dracut-config"
 	FeatureCloudConfigDefaults   = "cloud-config-defaults"
 	FeatureCloudConfigEssentials = "cloud-config-essentials"
+	FeatureBootAssessment        = "boot-assessment"
 )
 
 var (
@@ -64,6 +65,7 @@ var (
 		FeatureDracutConfig,
 		FeatureCloudConfigDefaults,
 		FeatureCloudConfigEssentials,
+		FeatureBootAssessment,
 	}
 )
 
@@ -122,7 +124,7 @@ func Get(names []string) ([]*Feature, error) {
 			return features, fmt.Errorf("Feature immutable-rootfs no longer supported, please use 'elemental-rootfs' instead")
 		case FeatureElementalRootfs:
 			if slices.Contains(names, FeatureImmutableRootfs) {
-				return features, fmt.Errorf("Conflicting features: %s and %s", FeatureElementalRootfs, FeatureImmutableRootfs)
+				return features, fmt.Errorf("conflicting features: %s and %s", FeatureElementalRootfs, FeatureImmutableRootfs)
 			}
 
 			units := []*systemd.Unit{
@@ -149,13 +151,18 @@ func Get(names []string) ([]*Feature, error) {
 				systemd.NewUnit("elemental-setup-rootfs.service"),
 			}
 			features = append(features, New(name, units))
+		case FeatureBootAssessment:
+			units := []*systemd.Unit{
+				systemd.NewUnit("elemental-boot-assessment.service"),
+			}
+			features = append(features, New(name, units))
 		default:
 			notFound = append(notFound, name)
 		}
 	}
 
 	if len(notFound) != 0 {
-		return features, fmt.Errorf("Unknown features: %s", strings.Join(notFound, ", "))
+		return features, fmt.Errorf("unknown features: %s", strings.Join(notFound, ", "))
 	}
 
 	return features, nil
