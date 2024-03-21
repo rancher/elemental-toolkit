@@ -2,7 +2,8 @@
 Description=Elemental system configuration
 After=network-online.target systemd-logind.service
 Wants=network-online.target systemd-logind.service
-ConditionPathExists=/run/elemental/active_mode
+ConditionKernelCommandLine=elemental.health_check
+ConditionPathExists=!/run/elemental/recovery_mode
 
 StartLimitAction=reboot
 StartLimitIntervalSec=300

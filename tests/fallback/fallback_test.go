@@ -17,9 +17,9 @@ limitations under the License.
 package elemental_test
 
 import (
-	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
+	"time"
 
-	comm "github.com/rancher/elemental-toolkit/v2/tests/common"
+	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,15 +28,12 @@ import (
 var _ = Describe("Elemental booting fallback tests", func() {
 	var s *sut.SUT
 	bootAssessmentInstalled := func() {
-		// Auto assessment was installed
-		out, _ := s.Command("sudo cat /run/elemental/efi/grubcustom")
-		Expect(out).To(ContainSubstring("bootfile"))
-
-		out, _ = s.Command("sudo cat /run/elemental/efi/grub_boot_assessment")
-		Expect(out).To(ContainSubstring("boot_assessment_file"))
+		// Boot assessment was installed
+		out, _ := s.Command("sudo cat /usr/sbin/elemental-boot-assessment")
+		Expect(out).To(ContainSubstring("BootAssessment"))
 
 		cmdline, _ := s.Command("sudo cat /proc/cmdline")
-		Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0 panic=5"))
+		Expect(cmdline).To(ContainSubstring("rd.emergency=reboot rd.shell=0"))
 	}
 
 	BeforeEach(func() {
@@ -56,31 +53,77 @@ var _ = Describe("Elemental booting fallback tests", func() {
 
 	Context("image is corrupted", func() {
 		It("boots in fallback when rootfs is damaged, triggered by missing files", func() {
-			currentVersion := s.GetOSRelease("TIMESTAMP")
-
 			// Auto assessment was installed
 			bootAssessmentInstalled()
 
 			err := s.SendFile("../assets/break_upgrade_hook.yaml", "/oem/break_upgrade_hook.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
 
-			out, err := s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
+			By("Upgrading to a broken system")
+			out, err := s.Command(s.ElementalCmd("upgrade", "--system", "dir:/.snapshots/1/snapshot"))
 			Expect(err).ToNot(HaveOccurred(), out)
 			Expect(out).Should(ContainSubstring("Upgrade completed"))
 
-			out, _ = s.Command("sudo cat /run/elemental/efi/boot_assessment")
-			Expect(out).To(ContainSubstring("enable_boot_assessment=yes"))
+			out, _ = s.Command("sudo cat /oem/grubenv")
+			Expect(out).To(ContainSubstring("boot_assessment_check=yes"))
 
+			By("Rebooting after the upgrade completed")
 			s.Reboot()
 
-			v := s.GetOSRelease("TIMESTAMP")
-			Expect(v).To(Equal(currentVersion))
+			By("Checking it rebooted to fallback")
+			cmdline, err := s.Command("sudo cat /run/elemental/passive_mode")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cmdline).To(ContainSubstring("1"))
 
-			cmdline, _ := s.Command("sudo cat /proc/cmdline")
-			Expect(cmdline).To(And(ContainSubstring("passive"), ContainSubstring("upgrade_failure")), cmdline)
+			cmdline, err = s.Command("sudo cat /proc/cmdline")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cmdline).To(ContainSubstring("elemental.health_check"))
 
-			cmdline, _ = s.Command("sudo ls -liah /run/elemental")
-			Expect(cmdline).To(ContainSubstring("upgrade_failure"))
+			_, err = s.Command("sudo rm /oem/break_upgrade_hook.yaml")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			err = s.SendFile("../assets/boot_checker_failure.yaml", "/oem/boot_checker_failure.yaml", "0770")
+			Expect(err).ToNot(HaveOccurred())
+
+			By("Upgrading again including checkers that will always fail")
+			out, err = s.Command(s.ElementalCmd("upgrade", "--system", "dir:/.snapshots/1/snapshot"))
+			Expect(err).ToNot(HaveOccurred(), out)
+			Expect(out).Should(ContainSubstring("Upgrade completed"))
+
+			out, _ = s.Command("sudo cat /oem/grubenv")
+			Expect(out).To(ContainSubstring("boot_assessment_check=yes"))
+
+			By("Rebooting after the upgrade completed")
+			s.Reboot()
+
+			By("Checking it rebooted to active")
+			cmdline, err = s.Command("sudo cat /run/elemental/active_mode")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cmdline).To(ContainSubstring("1"))
+
+			By("Waiting for the failed health checker to trigger a reboot")
+			s.EventuallyDisconnects(300)
+
+			By("Eventually rebooting")
+			// Give some time to make sure reboot close ssh connection
+			time.Sleep(5 * time.Second)
+			s.EventuallyConnects()
+
+			By("Checking it rebooted to fallback")
+			cmdline, err = s.Command("sudo cat /run/elemental/passive_mode")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cmdline).To(ContainSubstring("1"))
+
+			cmdline, err = s.Command("sudo cat /proc/cmdline")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(cmdline).To(ContainSubstring("elemental.health_check"))
+
+			By("Checking boot assessment succeeded")
+			_, err = s.Command("sudo systemctl is-active -q elemental-boot-assessment.service")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			_, err = s.Command("sudo rm /oem/boot_checker_failure.yaml")
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
 })

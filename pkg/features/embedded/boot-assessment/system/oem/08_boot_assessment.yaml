@@ -1,95 +1,74 @@
-# The boot assessment works in this way:
-# - After we upgrade, we set a grub env sentinel variable indicating that we did run an upgrade
-# - At the first boot, if we did an upgrade, we set another sentinel variable, which indicates we are trying to boot
-# - If we boot fine, we remove both sentinels
-# - If we get back again at the GRUB menu, a failure must have occurred and we select the fallback entry, creating also
-#   sentinels files and a specific cmdline option indicating we failed booting after an upgrade
+# Boot assessment works this way:
+# - After upgrade we set the boot_assessment_check=yes variable, this way grub will
+#   include `elemental.health_check` flag in kernel command line.
+# - On reboot grub detects the `boot_assessment_check=yes` and sets `last_boot_attempt`
+#   to store the menu entry that is currently attempting to boot.
+# - On boot failure a reboot is triggered and grub will compute the next boot option from
+#   `last_boot_attempt` variable set in previous boot, update this variable and try again.
+# - If boot succeeds the elemental-boot-assessment.service will always clear
+#   `last_boot_attempt` and clear `boot_assessment_check` only if it booted from the
+#   active system.
 
 name: "Boot assessment"
 stages:
-    rootfs.before:
-    - name: "Create upgrade failure sentinel if necessary"
-      if: cat /proc/cmdline | grep -q "upgrade_failure"
+    after-install-chroot:
+    # The boot assessment logic is added here as part of a bootassessment.cfg file. This file is
+    # sourced in /grubcustom/custom.cfg file, which is only meant to source additional files.
+    # So far there is no regexp module in most grub2 efi signed images, hence it is not possible to
+    # to iterate over the configuration files in /grubcustom folder to load them all. Instead the
+    # pattern is to manually append additional sourced files in /grubcustom/custom.cfg.
+    - &install
+      name: "Add GRUB boot-assessment installed"
       files:
-      - path: /run/elemental/upgrade_failure
-        content: "1"
-        permissions: 0600
+      - path: /run/elemental/efi/grubcustom/bootassessment.cfg
+        content: |
+          set extra_active_cmdline="${extra_active_cmdline} rd.emergency=reboot rd.shell=0 systemd.crash_reboot systemd.crash_shell=0"
+          set extra_passive_cmdline="${extra_passive_cmdline} rd.emergency=reboot rd.shell=0 systemd.crash_reboot systemd.crash_shell=0"
+
+          if [ "${boot_assessment_check}" == "yes" -o "${boot_assessment_always_check}" == "yes" ]; then
+            set extra_active_cmdline="${extra_active_cmdline} elemental.health_check"
+            set extra_passive_cmdline="${extra_passive_cmdline} elemental.health_check"
+
+            if [ -z "${selected_entry}" ]; then
+              if [ -n "${last_boot_attempt}" ]; then
+                for entry in ${fallback}; do
+                  if [ "${break}" == "yes" ]; then
+                    set default="${entry}"
+                    break
+                  fi
+                  if [ "${last_boot_attempt}" == "${entry}" ]; then
+                    set break="yes"
+                  fi
+                done
+              fi
+              if [ -z "${default}" ]; then
+                set default="0"
+              fi
+              set last_boot_attempt="${default}"
+              save_env -f "(${oem_blk})${env_file}" last_boot_attempt
+            fi
+          fi
+        permissions: 0644
         owner: 0
         group: 0
-
-    after-install:
-    # After install, reset, and upgrade, we install additional GRUB configuration for boot assessment into COS_GRUB.
- 
-    # Here we hook the boot assessment configuration to 'grubcustom'
-    # we do that selectively in order to just "append" eventual other configuration provided.
-    - &customhook
-      name: "Hook boot assessment grub configuration"
-      if: '[ ! -f "/run/elemental/efi/grubcustom" ]'
-      files:
-      - path: "/run/elemental/efi/grubcustom"
-        permissions: 0600
-        content: |
-          set bootfile="/grub_boot_assessment"
-          search --no-floppy --file --set=bootfile_loc "${bootfile}"
-          if [ "${bootfile_loc}" ]; then
-            source "(${bootfile_loc})${bootfile}"
-          fi
-
-    # Overrides the active cmdline by adding "rd.emergency=reboot", "rd.shell=0" and "panic=5"
-    # so that any failure in booting initramfs or kernel loading results in a reboot.
-    # It loads then the boot assessment environment and overrides default boot target if
-    # a boot failure is detected.
-    # A boot is considered failed when both sentinel are present ( upgrade triggered, tentative ).
-    # The tentative sentinel is set after an upgrade was triggered.
-    # This configuration is separated so it can be tracked separately from the install hook
-    # 
-    - &bootgrub
-      name: "Add boot assessment grub configuration"
-      if: '[ ! -f "/run/elemental/efi/grub_boot_assessment" ]'
-      files:
-       - path: "/run/elemental/efi/grub_boot_assessment"
-         owner: 0
-         group: 0
-         permissions: 0600
-         content: |
-            set extra_active_cmdline="rd.emergency=reboot rd.shell=0 panic=5 systemd.crash_reboot systemd.crash_shell=0"
-            set boot_assessment_file="/boot_assessment"
-            if [ -f "${boot_assessment_file}" ]; then
-              load_env -f "${boot_assessment_file}"
-            fi
-            if [ "${enable_boot_assessment}" = "yes" -o "${enable_boot_assessment_always}" = "yes" ]; then
-              if [ -z "${selected_entry}" ]; then
-                if [ "${boot_assessment_tentative}" = "yes" ]; then
-                  set default="1"
-                  set extra_passive_cmdline="upgrade_failure"
-                else
-                  set boot_assessment_tentative="yes"
-                  save_env -f "${boot_assessment_file}" boot_assessment_tentative
-                fi
-              fi
-            fi
-
-    # Here we do enable boot assessment for the next bootup.
-    # Similarly, we could trigger boot assessment in other cases
-    after-upgrade:
-    - name: "Set upgrade sentinel on active"
-      if: '[ ! -f "/run/elemental/recovery_mode" ]' 
-      commands:
-      - grub2-editenv /run/elemental/efi/boot_assessment set enable_boot_assessment=yes
-    - name: "Set upgrade sentinel on recovery"
-      if: '[ -f "/run/elemental/recovery_mode" ]' 
-      commands:
-      - grub2-editenv /run/elemental/efi/boot_assessment set enable_boot_assessment=yes
-    # We do re-install hooks here if needed to track upgrades of boot assessment
-    - <<: *customhook
-    - <<: *bootgrub
-
-    after-reset:
-    - name: "Remove GRUB sentinels"
       commands:
       - |
-          grub2-editenv /run/elemental/efi/boot_assessment set enable_boot_assessment=
-          grub2-editenv /run/elemental/efi/boot_assessment set boot_assessment_tentative=
-    # Reset completely restores COS_STATE, so we re-inject ourselves
-    - <<: *customhook
-    - <<: *bootgrub
+        if ! grep bootassessment.cfg /run/elemental/efi/grubcustom/custom.cfg -q; then
+          echo "source /grubcustom/bootassessment.cfg" >> /run/elemental/efi/grubcustom/custom.cfg
+        fi
+    
+    - &resetInstall
+      name: "Clear GRUB sentinels"
+      commands:
+      - grub2-editenv /oem/grubenv unset boot_assessment_check last_boot_attempt
+
+    after-upgrade-chroot:
+    - <<: *install
+    - name: "Set check required on upgrade"
+      commands:
+      - grub2-editenv /oem/grubenv set boot_assessment_check=yes
+      - grub2-editenv /oem/grubenv unset last_boot_attempt
+
+    after-reset-chroot:
+    - <<: *install
+    - <<: *resetInstall

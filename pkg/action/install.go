@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
-	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
@@ -69,10 +68,10 @@ func NewInstallAction(cfg *types.RunConfig, spec *types.InstallSpec, opts ...Ins
 		i.snapshotter, err = snapshotter.NewSnapshotter(cfg.Config, cfg.Snapshotter, i.bootloader)
 	}
 
-	if i.cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
-		if spec.Partitions.State.FS != constants.Btrfs {
+	if i.cfg.Snapshotter.Type == cnst.BtrfsSnapshotterType {
+		if spec.Partitions.State.FS != cnst.Btrfs {
 			cfg.Logger.Warning("Btrfs snapshotter type, forcing btrfs filesystem on state partition")
-			spec.Partitions.State.FS = constants.Btrfs
+			spec.Partitions.State.FS = cnst.Btrfs
 		}
 	}
 
@@ -92,6 +91,10 @@ func (i *InstallAction) installChrootHook(hook string, root string) error {
 	oem := i.spec.Partitions.OEM
 	if oem != nil && oem.MountPoint != "" {
 		extraMounts[oem.MountPoint] = cnst.OEMPath
+	}
+	efi := i.spec.Partitions.EFI
+	if efi != nil && efi.MountPoint != "" {
+		extraMounts[efi.MountPoint] = cnst.EfiDir
 	}
 	return ChrootHook(&i.cfg.Config, hook, i.cfg.Strict, root, extraMounts, i.cfg.CloudInitPaths...)
 }
@@ -230,7 +233,7 @@ func (i InstallAction) Run() (err error) {
 
 	// Install recovery
 	recoveryBootDir := filepath.Join(i.spec.Partitions.Recovery.MountPoint, "boot")
-	err = utils.MkdirAll(i.cfg.Fs, recoveryBootDir, constants.DirPerm)
+	err = utils.MkdirAll(i.cfg.Fs, recoveryBootDir, cnst.DirPerm)
 	if err != nil {
 		i.cfg.Logger.Errorf("failed creating recovery boot dir: %v", err)
 		return err

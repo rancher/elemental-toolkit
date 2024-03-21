@@ -227,7 +227,7 @@ func NewMountSpec() *types.MountSpec {
 			}, {
 				Mountpoint: constants.EfiDir,
 				Device:     fmt.Sprintf("PARTLABEL=%s", constants.EfiPartName),
-				Options:    []string{"rw", "defaults"},
+				Options:    []string{"ro", "defaults"},
 			},
 		},
 		Ephemeral: types.EphemeralMounts{

@@ -260,6 +260,21 @@ func (s *SUT) EventuallyConnects(t ...int) {
 	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(5*time.Second)).Should(Equal("ping"))
 }
 
+func (s *SUT) EventuallyDisconnects(t ...int) {
+	dur := s.Timeout
+	if len(t) > 0 {
+		dur = t[0]
+	}
+	s.EventuallyConnects(10)
+	Eventually(func() (string, error) {
+		if !s.IsVMRunning() {
+			return "", StopTrying("Underlaying VM is no longer running!")
+		}
+		out, _ := s.command("sleep 30 && echo -n ping")
+		return out, nil
+	}, time.Duration(time.Duration(dur)*time.Second), time.Duration(2*time.Second)).ShouldNot(Equal("ping"))
+}
+
 func (s *SUT) IsVMRunning() bool {
 	if s.VMPid <= 0 {
 		// Can't check without a pid, assume it is always running
