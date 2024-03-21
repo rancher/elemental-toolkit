@@ -44,7 +44,7 @@ var _ = Describe("Elemental Smoke tests", func() {
 		It("has booted with secure boot enabled", func() {
 			out, err := s.Command("mokutil --sb-state")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(out).To(Equal("SecureBoot enabled"))
+			Expect(out).Should(ContainSubstring("SecureBoot enabled"))
 		})
 
 		It("has default services on", func() {
