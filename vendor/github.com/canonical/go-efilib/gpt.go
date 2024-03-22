@@ -22,6 +22,13 @@ var (
 	ErrCRCCheck        = errors.New("CRC check failed")
 	ErrNoProtectiveMBR = errors.New("no protective master boot record found")
 
+	// ErrInvalidBackupPartitionTableLocation may be returned from
+	// ReadPartitionTable when called with the BackupPartitionTable
+	// role if the partition table isn't located at the end of the
+	// device. Note that the function will still return a valid table
+	// in this case.
+	ErrInvalidBackupPartitionTableLocation = errors.New("backup partition table not located at end of device")
+
 	// UnusedPartitionType is the type GUID of an unused partition entry.
 	UnusedPartitionType GUID
 )
@@ -44,6 +51,38 @@ type PartitionTableHeader struct {
 	NumberOfPartitionEntries uint32
 	SizeOfPartitionEntry     uint32
 	PartitionEntryArrayCRC32 uint32
+}
+
+// ReadPartitionTableHeader reads a EFI_PARTITION_TABLE_HEADER from the supplied io.Reader.
+// If the header signature or revision is incorrect, an error will be returned. If
+// checkCrc is true and the header has an invalid CRC, an error will be returned.
+// If checkCrc is false, then a CRC check is not performed.
+func ReadPartitionTableHeader(r io.Reader, checkCrc bool) (*PartitionTableHeader, error) {
+	hdr, crc, err := uefi.Read_EFI_PARTITION_TABLE_HEADER(r)
+	if err != nil {
+		return nil, err
+	}
+	if hdr.Hdr.Signature != uefi.EFI_PTAB_HEADER_ID {
+		return nil, InvalidGPTHeaderError("invalid signature")
+	}
+	if hdr.Hdr.Revision != 0x10000 {
+		return nil, InvalidGPTHeaderError("unexpected revision")
+	}
+	if checkCrc && hdr.Hdr.CRC != crc {
+		return nil, ErrCRCCheck
+	}
+
+	return &PartitionTableHeader{
+		HeaderSize:               hdr.Hdr.HeaderSize,
+		MyLBA:                    LBA(hdr.MyLBA),
+		AlternateLBA:             LBA(hdr.AlternateLBA),
+		FirstUsableLBA:           LBA(hdr.FirstUsableLBA),
+		LastUsableLBA:            LBA(hdr.LastUsableLBA),
+		DiskGUID:                 GUID(hdr.DiskGUID),
+		PartitionEntryLBA:        LBA(hdr.PartitionEntryLBA),
+		NumberOfPartitionEntries: hdr.NumberOfPartitionEntries,
+		SizeOfPartitionEntry:     hdr.SizeOfPartitionEntry,
+		PartitionEntryArrayCRC32: hdr.PartitionEntryArrayCRC32}, nil
 }
 
 // Write serializes this PartitionTableHeader to w. The CRC field is
@@ -92,38 +131,6 @@ func (h *PartitionTableHeader) String() string {
 		h.NumberOfPartitionEntries, h.SizeOfPartitionEntry, h.PartitionEntryArrayCRC32)
 }
 
-// ReadPartitionTableHeader reads a EFI_PARTITION_TABLE_HEADER from the supplied io.Reader.
-// If the header signature or revision is incorrect, an error will be returned. If
-// checkCrc is true and the header has an invalid CRC, an error will be returned.
-// If checkCrc is false, then a CRC check is not performed.
-func ReadPartitionTableHeader(r io.Reader, checkCrc bool) (*PartitionTableHeader, error) {
-	hdr, crc, err := uefi.Read_EFI_PARTITION_TABLE_HEADER(r)
-	if err != nil {
-		return nil, err
-	}
-	if hdr.Hdr.Signature != uefi.EFI_PTAB_HEADER_ID {
-		return nil, InvalidGPTHeaderError("invalid signature")
-	}
-	if hdr.Hdr.Revision != 0x10000 {
-		return nil, InvalidGPTHeaderError("unexpected revision")
-	}
-	if checkCrc && hdr.Hdr.CRC != crc {
-		return nil, ErrCRCCheck
-	}
-
-	return &PartitionTableHeader{
-		HeaderSize:               hdr.Hdr.HeaderSize,
-		MyLBA:                    LBA(hdr.MyLBA),
-		AlternateLBA:             LBA(hdr.AlternateLBA),
-		FirstUsableLBA:           LBA(hdr.FirstUsableLBA),
-		LastUsableLBA:            LBA(hdr.LastUsableLBA),
-		DiskGUID:                 GUID(hdr.DiskGUID),
-		PartitionEntryLBA:        LBA(hdr.PartitionEntryLBA),
-		NumberOfPartitionEntries: hdr.NumberOfPartitionEntries,
-		SizeOfPartitionEntry:     hdr.SizeOfPartitionEntry,
-		PartitionEntryArrayCRC32: hdr.PartitionEntryArrayCRC32}, nil
-}
-
 // PartitionEntry corresponds to the EFI_PARTITION_ENTRY type.
 type PartitionEntry struct {
 	PartitionTypeGUID   GUID
@@ -132,6 +139,22 @@ type PartitionEntry struct {
 	EndingLBA           LBA
 	Attributes          uint64
 	PartitionName       string
+}
+
+// ReadPartitionEntry reads a single EFI_PARTITION_ENTRY from r.
+func ReadPartitionEntry(r io.Reader) (*PartitionEntry, error) {
+	var e uefi.EFI_PARTITION_ENTRY
+	if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
+		return nil, err
+	}
+
+	return &PartitionEntry{
+		PartitionTypeGUID:   GUID(e.PartitionTypeGUID),
+		UniquePartitionGUID: GUID(e.UniquePartitionGUID),
+		StartingLBA:         LBA(e.StartingLBA),
+		EndingLBA:           LBA(e.EndingLBA),
+		Attributes:          e.Attributes,
+		PartitionName:       ConvertUTF16ToUTF8(e.PartitionName[:])}, nil
 }
 
 func (e *PartitionEntry) String() string {
@@ -160,22 +183,6 @@ func (e *PartitionEntry) Write(w io.Writer) error {
 	copy(entry.PartitionName[:], partitionName)
 
 	return binary.Write(w, binary.LittleEndian, &entry)
-}
-
-// ReadPartitionEntry reads a single EFI_PARTITION_ENTRY from r.
-func ReadPartitionEntry(r io.Reader) (*PartitionEntry, error) {
-	var e uefi.EFI_PARTITION_ENTRY
-	if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
-		return nil, err
-	}
-
-	return &PartitionEntry{
-		PartitionTypeGUID:   GUID(e.PartitionTypeGUID),
-		UniquePartitionGUID: GUID(e.UniquePartitionGUID),
-		StartingLBA:         LBA(e.StartingLBA),
-		EndingLBA:           LBA(e.EndingLBA),
-		Attributes:          e.Attributes,
-		PartitionName:       ConvertUTF16ToUTF8(e.PartitionName[:])}, nil
 }
 
 func readPartitionEntries(r io.Reader, num, sz, expectedCrc uint32, checkCrc bool) (out []*PartitionEntry, err error) {
@@ -244,6 +251,34 @@ func (t *PartitionTable) String() string {
 	return b.String()
 }
 
+func readPartitionTable(r io.ReadSeeker, blockSz, offset int64, whence int, checkCrc bool) (*PartitionTable, error) {
+	if _, err := r.Seek(offset, whence); err != nil {
+		return nil, err
+	}
+
+	hdr, err := ReadPartitionTableHeader(r, checkCrc)
+	switch {
+	case err == io.EOF:
+		return nil, io.ErrUnexpectedEOF
+	case err != nil:
+		return nil, err
+	}
+
+	if _, err := r.Seek(int64(hdr.PartitionEntryLBA)*blockSz, io.SeekStart); err != nil {
+		return nil, err
+	}
+
+	entries, err := readPartitionEntries(r, hdr.NumberOfPartitionEntries, hdr.SizeOfPartitionEntry, hdr.PartitionEntryArrayCRC32, checkCrc)
+	switch {
+	case err == io.EOF:
+		return nil, io.ErrUnexpectedEOF
+	case err != nil:
+		return nil, err
+	}
+
+	return &PartitionTable{hdr, entries}, nil
+}
+
 // ReadPartitionTable reads a complete GUID partition table from the supplied
 // io.Reader. The total size and logical block size of the device must be
 // supplied - the logical block size is 512 bytes for a file, but must be
@@ -256,8 +291,16 @@ func (t *PartitionTable) String() string {
 // BackupPartitionTable, this will read the backup partition table that is
 // located at the end of the device.
 //
-// If checkCrc is true and either CRC check fails, an error will be returned.
-// Setting checkCrc to false disables the CRC checks.
+// If checkCrc is true and either CRC check fails for the requested table, an
+// error will be returned. Setting checkCrc to false disables the CRC checks.
+//
+// Note that whilst this function checks the integrity of the header and
+// partition table entries, it does not check the contents of the partition
+// table entries.
+//
+// If role is BackupPartitionTable and the backup table is not located at
+// the end of the device, this will return ErrInvalidBackupPartitionTableLocation
+// along with the valid table.
 func ReadPartitionTable(r io.ReaderAt, totalSz, blockSz int64, role PartitionTableRole, checkCrc bool) (*PartitionTable, error) {
 	r2 := io.NewSectionReader(r, 0, totalSz)
 
@@ -277,51 +320,33 @@ func ReadPartitionTable(r io.ReaderAt, totalSz, blockSz int64, role PartitionTab
 		return nil, ErrNoProtectiveMBR
 	}
 
-	var offset int64
-	var whence int
 	switch role {
 	case PrimaryPartitionTable:
-		offset = blockSz
-		whence = io.SeekStart
+		return readPartitionTable(r2, blockSz, blockSz, io.SeekStart, checkCrc)
 	case BackupPartitionTable:
-		if _, err := r2.Seek(blockSz, io.SeekStart); err != nil {
-			return nil, err
-		}
-		hdr, err := ReadPartitionTableHeader(r2, checkCrc)
-		if err != nil {
+		var offset int64
+		var whence int
+
+		primary, primaryErr := readPartitionTable(r2, blockSz, blockSz, io.SeekStart, checkCrc)
+		if primaryErr != nil {
 			offset = -blockSz
 			whence = io.SeekEnd
 		} else {
-			offset = int64(hdr.AlternateLBA) * blockSz
+			offset = int64(primary.Hdr.AlternateLBA) * blockSz
 			whence = io.SeekStart
 		}
+
+		backup, err := readPartitionTable(r2, blockSz, offset, whence, checkCrc)
+		if err != nil {
+			return nil, err
+		}
+
+		if primaryErr == nil && offset != totalSz-blockSz {
+			return backup, ErrInvalidBackupPartitionTableLocation
+		}
+		return backup, nil
+
 	default:
 		panic("invalid role")
 	}
-
-	if _, err := r2.Seek(offset, whence); err != nil {
-		return nil, err
-	}
-
-	hdr, err := ReadPartitionTableHeader(r2, checkCrc)
-	switch {
-	case err == io.EOF:
-		return nil, io.ErrUnexpectedEOF
-	case err != nil:
-		return nil, err
-	}
-
-	if _, err := r2.Seek(int64(hdr.PartitionEntryLBA)*blockSz, io.SeekStart); err != nil {
-		return nil, err
-	}
-
-	entries, err := readPartitionEntries(r2, hdr.NumberOfPartitionEntries, hdr.SizeOfPartitionEntry, hdr.PartitionEntryArrayCRC32, checkCrc)
-	switch {
-	case err == io.EOF:
-		return nil, io.ErrUnexpectedEOF
-	case err != nil:
-		return nil, err
-	}
-
-	return &PartitionTable{hdr, entries}, nil
 }

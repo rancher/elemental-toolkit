@@ -64,11 +64,12 @@ github.com/StackExchange/wmi
 # github.com/bramvdbogaerde/go-scp v1.2.1
 ## explicit; go 1.13
 github.com/bramvdbogaerde/go-scp
-# github.com/canonical/go-efilib v0.3.1-0.20220324150059-04e254148b45
-## explicit; go 1.13
+# github.com/canonical/go-efilib v0.9.5
+## explicit; go 1.18
 github.com/canonical/go-efilib
 github.com/canonical/go-efilib/internal/ioerr
 github.com/canonical/go-efilib/internal/pe1.14
+github.com/canonical/go-efilib/internal/pkcs7
 github.com/canonical/go-efilib/internal/uefi
 github.com/canonical/go-efilib/internal/unix
 github.com/canonical/go-efilib/linux
@@ -617,8 +618,6 @@ github.com/xanzy/ssh-agent
 ## explicit; go 1.17
 github.com/zcalusic/sysinfo
 github.com/zcalusic/sysinfo/cpuid
-# go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
-## explicit; go 1.11
 # go.opencensus.io v0.24.0
 ## explicit; go 1.13
 go.opencensus.io
@@ -626,7 +625,7 @@ go.opencensus.io/internal
 go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.18.0
+# golang.org/x/crypto v0.21.0
 ## explicit; go 1.18
 golang.org/x/crypto/argon2
 golang.org/x/crypto/bcrypt
@@ -634,6 +633,8 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/chacha20
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/hkdf
@@ -652,7 +653,7 @@ golang.org/x/exp/constraints
 # golang.org/x/mod v0.14.0
 ## explicit; go 1.18
 golang.org/x/mod/semver
-# golang.org/x/net v0.20.0
+# golang.org/x/net v0.21.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -663,7 +664,7 @@ golang.org/x/net/proxy
 # golang.org/x/sync v0.6.0
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.16.0
+# golang.org/x/sys v0.18.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -711,8 +712,8 @@ golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
-## explicit; go 1.17
+# golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028
+## explicit; go 1.18
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80

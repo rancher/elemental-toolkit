@@ -55,7 +55,7 @@ const (
 // DevicePathSubType is the sub-type of a device path node.
 type DevicePathSubType uint8
 
-// DevicePathToStringFlags defines flags for DevicePath.ToString and
+// DevicePathToStringFlags defines flags for [DevicePath.ToString] and
 // DevicePathNode.ToString.
 type DevicePathToStringFlags int
 

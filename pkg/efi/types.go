@@ -22,7 +22,7 @@ type Variables interface {
 	ListVariables() ([]efi.VariableDescriptor, error)
 	GetVariable(guid efi.GUID, name string) (data []byte, attrs efi.VariableAttributes, err error)
 	SetVariable(guid efi.GUID, name string, data []byte, attrs efi.VariableAttributes) error
-	NewFileDevicePath(filepath string, mode efi_linux.FileDevicePathMode) (efi.DevicePath, error)
+	NewFileDevicePath(filepath string, mode efi_linux.FilePathToDevicePathMode) (efi.DevicePath, error)
 	DelVariable(guid efi.GUID, name string) error
 }
 
@@ -37,8 +37,8 @@ func (v RealEFIVariables) DelVariable(guid efi.GUID, name string) error {
 	return v.SetVariable(guid, name, nil, attrs)
 }
 
-func (v RealEFIVariables) NewFileDevicePath(filepath string, mode efi_linux.FileDevicePathMode) (efi.DevicePath, error) {
-	return efi_linux.NewFileDevicePath(filepath, mode)
+func (v RealEFIVariables) NewFileDevicePath(filepath string, mode efi_linux.FilePathToDevicePathMode) (efi.DevicePath, error) {
+	return efi_linux.FilePathToDevicePath(filepath, mode)
 }
 
 // ListVariables proxy
@@ -122,7 +122,7 @@ func (m MockEFIVariables) JSON() ([]byte, error) {
 	return json.MarshalIndent(payload, "", "  ")
 }
 
-func (m MockEFIVariables) NewFileDevicePath(fpath string, _ efi_linux.FileDevicePathMode) (efi.DevicePath, error) {
+func (m MockEFIVariables) NewFileDevicePath(fpath string, _ efi_linux.FilePathToDevicePathMode) (efi.DevicePath, error) {
 	file, err := vfs.OSFS.Open(fpath)
 	if err != nil {
 		return nil, err
