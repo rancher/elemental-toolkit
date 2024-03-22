@@ -18,6 +18,7 @@ on:
       - go.mod
       - go.sum
       - examples/**
+      - scripts/**
 
 jobs:
   detect:

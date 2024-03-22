@@ -7,7 +7,7 @@ SCRIPTS_PATH=$(dirname "${SCRIPT}")
 TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 
 : "${ELMNTL_PREFIX:=}" 
-: "${ELMNTL_FIRMWARE:=/usr/share/qemu/ovmf-x86_64-smm-ms-code.bin}"
+: "${ELMNTL_FIRMWARE:=/usr/share/qemu/ovmf-x86_64.bin}"
 : "${ELMNTL_FIRMWARE_ORIG_VARS:=/usr/share/qemu/ovmf-x86_64-smm-ms-vars.bin}"
 : "${ELMNTL_FIRMWARE_VARS:=${TESTS_PATH}/${ELMNTL_PREFIX}/ovmf-x86_64-vars.bin}"
 : "${ELMNTL_FWDIP:=127.0.0.1}"
@@ -24,6 +24,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 : "${ELMNTL_MACHINETYPE:=q35}"
 : "${ELMNTL_CPU:=max}"
 : "${ELMNTL_DEBUG:=no}"
+: "${ELMNTL_SECURE_BOOT:=no}"
 
 function _abort {
     echo "$@" && exit 1
@@ -31,17 +32,21 @@ function _abort {
 
 function start {
   local base_disk=$1
+
+  local smm=""
+  local global_arg
+  [ "yes" == "${ELMNTL_SECURE_BOOT}" ] && smm=",smm=on" && global_arg="-global driver=cfi.pflash01,property=secure,value=on"
+
   local usrnet_arg="-netdev user,id=user0,hostfwd=tcp:${ELMNTL_FWDIP}:${ELMNTL_FWDPORT}-:22 -device virtio-net-pci,romfile=,netdev=user0"
   local accel_arg
   local memory_arg="-m ${ELMNTL_MEMORY}"
-  local global_arg="-global driver=cfi.pflash01,property=secure,value=on"
   local firmware_arg="-drive if=pflash,format=raw,unit=0,readonly=on,file=${ELMNTL_FIRMWARE}"
   local firwmare_vars_arg="-drive if=pflash,format=raw,unit=1,file="${ELMNTL_FIRMWARE_VARS}""
   local disk_arg="-drive file=${ELMNTL_TESTDISK},if=none,id=disk,format=qcow2,media=disk -device virtio-blk-pci,drive=disk,bootindex=1"
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
-  local machine_arg="-machine type=${ELMNTL_MACHINETYPE},smm=on"
+  local machine_arg="-machine type=${ELMNTL_MACHINETYPE}${smm}"
   local cdrom_arg
   local cpu_arg
   local vmpid
@@ -58,9 +63,11 @@ function start {
     fi
   fi
 
-  if [ ! -e "${ELMNTL_FIRMWARE_ARGS}" ]; then
+  if [ ! -e "${ELMNTL_FIRMWARE_ARGS}" ] && [ "${ELMNTL_SECURE_BOOT}" == "yes" ]; then
     echo Copy "${ELMNTL_FIRMWARE_ORIG_VARS}" to "${ELMNTL_FIRMWARE_VARS}"
     cp "${ELMNTL_FIRMWARE_ORIG_VARS}" "${ELMNTL_FIRMWARE_VARS}"
+  else
+    firmware_vars_arg=""
   fi
 
   [ -f "${base_disk}" ] || _abort "Disk not found: ${base_disk}"
