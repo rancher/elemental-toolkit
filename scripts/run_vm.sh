@@ -37,7 +37,7 @@ function start {
   local serial_arg="-serial file:${ELMNTL_LOGFILE}"
   local pidfile_arg="-pidfile ${ELMNTL_PIDFILE}"
   local display_arg="-display ${ELMNTL_DISPLAY}"
-  local machine_arg="-machine type=${ELMNTL_MACHINETYPE},smm=on"
+  local machine_arg="-machine type=${ELMNTL_MACHINETYPE}"
   local cdrom_arg
   local cpu_arg
   local vmpid
