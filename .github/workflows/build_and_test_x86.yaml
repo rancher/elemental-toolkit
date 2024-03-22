@@ -213,7 +213,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Run ${{ matrix.test }}
         run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.ms.fd ELMNTL_FIRMWARE_ORIG_VARS=/usr/share/OVMF/OVMF_VARS_4M.ms.fd ${{ matrix.test }}
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.ms.fd ELMNTL_FIRMWARE_ORIG_VARS=/usr/share/OVMF/OVMF_VARS.ms.fd ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v4
         if: always()
@@ -276,7 +276,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Run installer test
         run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.ms.fd ELMNTL_FIRMWARE_ORIG_VARS=/usr/share/OVMF/OVMF_VARS_4M.ms.fd test-installer
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.ms.fd ELMNTL_FIRMWARE_ORIG_VARS=/usr/share/OVMF/OVMF_VARS.ms.fd test-installer
       - name: Upload serial console for installer tests
         uses: actions/upload-artifact@v4
         if: always()
