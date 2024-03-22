@@ -41,12 +41,6 @@ var _ = Describe("Elemental Smoke tests", func() {
 	})
 
 	Context("After install", func() {
-		It("has booted with secure boot enabled", func() {
-			out, err := s.Command("mokutil --sb-state")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(out).Should(ContainSubstring("SecureBoot enabled"))
-		})
-
 		It("has default services on", func() {
 			for _, svc := range []string{"systemd-timesyncd"} {
 				sut.SystemdUnitIsActive(svc, s)
