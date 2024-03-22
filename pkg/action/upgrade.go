@@ -119,6 +119,11 @@ func (u UpgradeAction) upgradeChrootHook(hook string, root string) error {
 		mountPoints[persistentDevice.MountPoint] = constants.PersistentPath
 	}
 
+	efiDevice := u.spec.Partitions.EFI
+	if efiDevice != nil && efiDevice.MountPoint != "" {
+		mountPoints[efiDevice.MountPoint] = constants.EfiDir
+	}
+
 	return ChrootHook(&u.cfg.Config, hook, u.cfg.Strict, root, mountPoints, u.cfg.CloudInitPaths...)
 }
 

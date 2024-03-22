@@ -1,0 +1,20 @@
+[Unit]
+Description=Elemental system configuration
+After=network-online.target systemd-logind.service
+Wants=network-online.target systemd-logind.service
+ConditionKernelCommandLine=elemental.health_check
+ConditionPathExists=!/run/elemental/recovery_mode
+
+StartLimitAction=reboot
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/elemental-boot-assessment
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

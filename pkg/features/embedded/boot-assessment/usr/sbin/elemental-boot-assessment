@@ -1,0 +1,46 @@
+#!/bin/bash
+
+declare checkResultsPath="/run/elemental/boot-assessment"
+declare checkersPath="/usr/libexec/elemental-checker"
+declare efiPath="/run/elemental/efi/boot_assessment"
+declare activeMode="/run/elemental/active_mode"
+declare passiveMode="/run/elemental/passive_mode"
+
+function doBootAssessment {
+    local script
+    local checker
+    local retCode=0
+
+    mkdir -p "${checkResultsPath}"
+
+    # Iterate over elemental checkers
+    for script in "${checkersPath}"/*; do
+        checker=$(basename "${script}")
+        [ -f "${checkResultsPath}/${checker}" ] && continue
+        [ -x "${script}" ] || continue
+        
+        echo "Running checker: ${checker}"
+
+        "${script}" check
+        if [ $? -ne 0 ]; then
+            >&2 echo "Checker ${checker} failed..."
+            retCode=1
+        else
+            > "${checkResultsPath}/${checker}" 
+        fi
+    done
+
+    return "${retCode}"
+}
+
+echo "Starting boot assessment"
+
+doBootAssessment
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+if [ -f "${activeMode}" ]; then
+  grub2-editenv /oem/grubenv unset boot_assessment_check
+fi
+grub2-editenv /oem/grubenv unset last_boot_attempt

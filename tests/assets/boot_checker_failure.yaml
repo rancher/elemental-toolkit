@@ -1,0 +1,13 @@
+name: "Health checker always failing"
+stages:
+  after-upgrade-chroot:
+  - name: "Failing health checker"
+    files:
+    - path: /usr/libexec/elemental-checker/always-fail.sh
+      content: |
+        #!/bin/bash
+        
+        exit 1
+      permissions: 0755
+      owner: 0
+      group: 0
