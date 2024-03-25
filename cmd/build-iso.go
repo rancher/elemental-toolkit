@@ -125,7 +125,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, spec)
-			return buildISO.ISORun()
+			return buildISO.Run()
 		},
 	}
 

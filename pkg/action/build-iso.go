@@ -41,7 +41,7 @@ func grubCfgTemplate(arch string) string {
 
 	menuentry "%s" --class os --unrestricted {
 		echo Loading kernel...
-		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=/ rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 elemental.disable elemental.setup=` + constants.ISOCloudInitPath + `
+		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=` + constants.ISOLoaderPath(arch) + `  rd.live.squashimg=rootfs.squashfs console=tty1 console=ttyS0 elemental.disable elemental.setup=` + constants.ISOCloudInitPath + `
 		echo Loading initrd...
 		initrd ($root)` + constants.ISOInitrdPath(arch) + `
 	}
@@ -78,8 +78,8 @@ func NewBuildISOAction(cfg *types.BuildConfig, spec *types.LiveISO, opts ...Buil
 	return b
 }
 
-// BuildISORun will install the system from a given configuration
-func (b *BuildISOAction) ISORun() error {
+// Run will install the system from a given configuration
+func (b *BuildISOAction) Run() error {
 	cleanup := utils.NewCleanStack()
 	var err error
 	defer func() { err = cleanup.Cleanup(err) }()
@@ -170,11 +170,11 @@ func (b *BuildISOAction) ISORun() error {
 
 	image := &types.Image{
 		Source: types.NewDirSrc(rootDir),
-		File:   filepath.Join(isoDir, constants.ISORootFile),
+		File:   filepath.Join(bootDir, constants.ISORootFile),
 		FS:     constants.SquashFs,
 	}
 
-	err = elemental.DeployRecoverySystem(b.cfg.Config, image, bootDir)
+	err = elemental.DeployRecoverySystem(b.cfg.Config, image)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed preparing ISO's root tree: %v", err)
 		return err
