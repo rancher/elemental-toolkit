@@ -249,7 +249,7 @@ func (i InstallAction) Run() (err error) {
 		}
 		recoverySystem.Source.SetDigest(i.spec.System.GetDigest())
 	}
-	err = elemental.DeployRecoverySystem(i.cfg.Config, &recoverySystem, recoveryBootDir)
+	err = elemental.DeployRecoverySystem(i.cfg.Config, &recoverySystem)
 	if err != nil {
 		i.cfg.Logger.Errorf("Failed deploying recovery image: %v", err)
 		return elementalError.NewFromError(err, elementalError.DeployImage)

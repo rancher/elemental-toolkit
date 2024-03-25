@@ -237,16 +237,9 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		return elementalError.NewFromError(err, elementalError.HookAfterDisk)
 	}
 
-	// Create recovery image
-	bootDir := filepath.Join(b.roots[constants.RecoveryPartName], "boot")
-	if err = utils.MkdirAll(b.cfg.Fs, bootDir, constants.DirPerm); err != nil {
-		b.cfg.Logger.Errorf("failed creating recovery boot dir: %v", err)
-		return err
-	}
-
 	tmpSrc := b.spec.RecoverySystem.Source
 	b.spec.RecoverySystem.Source = types.NewDirSrc(recRoot)
-	err = elemental.DeployRecoverySystem(b.cfg.Config, &b.spec.RecoverySystem, bootDir)
+	err = elemental.DeployRecoverySystem(b.cfg.Config, &b.spec.RecoverySystem)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed deploying recovery system: %v", err)
 		return err

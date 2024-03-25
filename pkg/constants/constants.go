@@ -119,7 +119,10 @@ const (
 	PassiveImgName    = "passive"
 	RecoveryImgName   = "recovery"
 	RecoveryImgFile   = "recovery.img"
-	TransitionImgFile = "transition.img"
+	TransitionImgFile = BootTransitionDir + "/" + RecoveryImgFile
+	BootTransitionDir = "boot-transition"
+	BootDir           = "boot"
+	OldBootDir        = "boot-old"
 
 	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"
@@ -362,7 +365,7 @@ func GetDiskKeyEnvMap() map[string]string {
 	return map[string]string{}
 }
 
-// GetBootPath returns path use to store the boot files
+// ISOLoaderPath returns path use to store the boot files
 func ISOLoaderPath(arch string) string {
 	return filepath.Join("/boot", arch, "loader")
 }

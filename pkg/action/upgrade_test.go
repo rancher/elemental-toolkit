@@ -294,7 +294,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}})).To(BeNil())
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image

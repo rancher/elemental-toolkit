@@ -471,14 +471,20 @@ func DeployImage(c types.Config, img *types.Image) error {
 	return nil
 }
 
-// DeployRecoverySystem deploys kernel, initrd and image to the specified
-// paths.
+// DeployRecoverySystem deploys the rootfs image from the img parameter and
+// extracts kernel+initrd to the same directory.
 // This can be used for both ISO (all artifacts in same output dir) and raw
 // disks (kernel and initrd in ESP, rootfs squashfs image in recovery
 // partition.
-func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) error {
+func DeployRecoverySystem(cfg types.Config, img *types.Image) error {
 	var err error
 	var cleaner func() error
+
+	outputDir := filepath.Dir(img.File)
+	if err = utils.MkdirAll(cfg.Fs, outputDir, cnst.DirPerm); err != nil {
+		cfg.Logger.Errorf("Error creating output directory '%s': %s", outputDir, err.Error())
+		return err
+	}
 
 	cfg.Logger.Infof("Deploying recovery image: %s", img.File)
 	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
@@ -527,15 +533,7 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 			continue
 		}
 
-		target := filepath.Join(bootDir, filepath.Base(file))
-		if exist, _ := utils.Exists(cfg.Fs, target); exist {
-			cfg.Logger.Debugf("Removing old file %s", target)
-			err = cfg.Fs.Remove(target)
-			if err != nil {
-				return err
-			}
-		}
-
+		target := filepath.Join(outputDir, filepath.Base(file))
 		cfg.Logger.Debugf("Copying file %s to root tree", file)
 		err = utils.CopyFile(cfg.Fs, file, target)
 		if err != nil {
@@ -555,13 +553,10 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 			continue
 		}
 
-		source := filepath.Join(bootDir, name)
+		source := filepath.Join(outputDir, name)
 		if exist, _ := utils.Exists(cfg.Fs, source, true); exist {
-			cfg.Logger.Debugf("Removing old symlink %s", source)
-			err = cfg.Fs.Remove(source)
-			if err != nil {
-				return err
-			}
+			cfg.Logger.Debugf("File already exists, skipping: %s", source)
+			continue
 		}
 
 		cfg.Logger.Debugf("Creating boot symlink from %s to %s", source, target)
