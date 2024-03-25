@@ -1,5 +1,5 @@
 # Boot assessment works this way:
-# - After upgrade we set the boot_assessment_check=yes variable, this way grub will
+# - After upgrade, install or reset we set the boot_assessment_check=yes variable, this way grub will
 #   include `elemental.health_check` flag in kernel command line.
 # - On reboot grub detects the `boot_assessment_check=yes` and sets `last_boot_attempt`
 #   to store the menu entry that is currently attempting to boot.
@@ -30,19 +30,18 @@ stages:
             set extra_passive_cmdline="${extra_passive_cmdline} elemental.health_check"
 
             if [ -z "${selected_entry}" ]; then
-              if [ -n "${last_boot_attempt}" ]; then
-                for entry in ${fallback}; do
-                  if [ "${break}" == "yes" ]; then
-                    set default="${entry}"
+              if [ -z "${last_boot_attempt}" ]; then
+                set default="active"
+              else
+                for entry in ${passive_snaps}; do
+                  set default="passive${entry}"
+                  if [ "${last_boot_attempt}" == "active" -o "${previous_done}" == "yes" ]; then
                     break
                   fi
-                  if [ "${last_boot_attempt}" == "${entry}" ]; then
-                    set break="yes"
+                  if [ "${last_boot_attempt}" == "passive${entry}" ]; then
+                    set previous_done="yes"
                   fi
                 done
-              fi
-              if [ -z "${default}" ]; then
-                set default="0"
               fi
               set last_boot_attempt="${default}"
               save_env -f "(${oem_blk})${env_file}" last_boot_attempt
@@ -57,18 +56,16 @@ stages:
           echo "source /grubcustom/bootassessment.cfg" >> /run/elemental/efi/grubcustom/custom.cfg
         fi
     
-    - &resetInstall
-      name: "Clear GRUB sentinels"
-      commands:
-      - grub2-editenv /oem/grubenv unset boot_assessment_check last_boot_attempt
-
-    after-upgrade-chroot:
-    - <<: *install
-    - name: "Set check required on upgrade"
+    - &setCheck
+      name: "Set check required on upgrade or firstboot"
       commands:
       - grub2-editenv /oem/grubenv set boot_assessment_check=yes
       - grub2-editenv /oem/grubenv unset last_boot_attempt
 
+    after-upgrade-chroot:
+    - <<: *install
+    - <<: *setCheck
+
     after-reset-chroot:
     - <<: *install
-    - <<: *resetInstall
+    - <<: *setCheck
