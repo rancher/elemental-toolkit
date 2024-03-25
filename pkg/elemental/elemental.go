@@ -549,6 +549,11 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 		"linux":   kernel,
 		"initrd":  initrd,
 	} {
+		// if kernel/initrd is actually named "vmlinuz"/"initrd" we just skip the symlink part.
+		if kernel == name || initrd == name {
+			continue
+		}
+
 		source := filepath.Join(bootDir, name)
 		if exist, _ := utils.Exists(cfg.Fs, source, true); exist {
 			cfg.Logger.Debugf("Removing old symlink %s", source)
