@@ -77,9 +77,6 @@ RUN systemctl enable NetworkManager.service && \
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
-# Add default network configuration
-ADD 05_network.yaml /system/oem/05_network.yaml
-
 # SELinux in enforce mode
 RUN sed -i "s|SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
 
