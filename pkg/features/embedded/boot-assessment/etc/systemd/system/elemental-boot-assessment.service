@@ -1,7 +1,7 @@
 [Unit]
 Description=Elemental system configuration
-After=network-online.target systemd-logind.service
-Wants=network-online.target systemd-logind.service
+After=network-online.target systemd-logind.service elemental-setup-network.service elemental-setup-boot.service
+Wants=network-online.target systemd-logind.service elemental-setup-network.service elemental-setup-boot.service
 ConditionKernelCommandLine=elemental.health_check
 ConditionPathExists=!/run/elemental/recovery_mode
 
