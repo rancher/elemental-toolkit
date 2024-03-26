@@ -73,9 +73,6 @@ RUN systemctl enable NetworkManager.service && \
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
-# Add default network configuration
-ADD 05_network.yaml /system/oem/05_network.yaml
-
 # Generate initrd with required elemental services
 RUN elemental --debug init --force
 
