@@ -550,7 +550,8 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image, bootDir string) er
 		"initrd":  initrd,
 	} {
 		// if kernel/initrd is actually named "vmlinuz"/"initrd" we just skip the symlink part.
-		if kernel == name || initrd == name {
+		if filepath.Base(kernel) == name || filepath.Base(initrd) == name {
+			cfg.Logger.Debugf("File already exists, skipping: %s", name)
 			continue
 		}
 

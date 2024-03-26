@@ -19,6 +19,7 @@ package elemental_test
 import (
 	"errors"
 	"fmt"
+	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -1025,6 +1026,49 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				"blkdeactivate", "--lvmoptions", "retry,wholevg",
 				"--dmoptions", "force,retry", "--errors",
 			}})).To(BeNil())
+		})
+	})
+	Describe("DeployRecoverySystem", Label("recovery"), func() {
+		BeforeEach(func() {
+			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
+				Expect(destination).To(Equal("/recovery/recovery.imgTree"))
+
+				bootDir := filepath.Join(destination, "boot")
+				logger.Debugf("Creating %s", bootDir)
+				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				libDir := "/lib/modules/6.4"
+				err = utils.MkdirAll(fs, filepath.Join(destination, libDir), constants.DirPerm)
+				Expect(err).ShouldNot(HaveOccurred())
+
+				kernelPath := filepath.Join(libDir, "vmlinuz")
+				_, err = fs.Create(filepath.Join(destination, kernelPath))
+				Expect(err).ShouldNot(HaveOccurred())
+
+				err = fs.Symlink(filepath.Join(libDir, "vmlinuz"), filepath.Join(bootDir, "vmlinuz-6.4"))
+				Expect(err).ShouldNot(HaveOccurred())
+
+				_, err = fs.Create(filepath.Join(bootDir, "initrd"))
+				Expect(err).ShouldNot(HaveOccurred())
+				return mocks.FakeDigest, err
+			}
+		})
+		It("deploys a recovery system", func() {
+			Expect(fs.Mkdir("/recovery", constants.DirPerm)).To(Succeed())
+			Expect(fs.Mkdir("/recovery/boot", constants.DirPerm)).To(Succeed())
+
+			img := &types.Image{
+				File:   filepath.Join("/recovery", constants.RecoveryImgFile),
+				Source: types.NewDockerSrc("elemental:latest"),
+				FS:     constants.SquashFs,
+			}
+			err := elemental.DeployRecoverySystem(*config, img, "/recovery/boot")
+			Expect(err).ShouldNot(HaveOccurred())
+
+			info, err := fs.Stat("/recovery/boot/vmlinuz")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(info.Mode() & iofs.ModeSymlink).To(BeZero())
 		})
 	})
 })
