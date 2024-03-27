@@ -119,7 +119,6 @@ const (
 	PassiveImgName    = "passive"
 	RecoveryImgName   = "recovery"
 	RecoveryImgFile   = "recovery.img"
-	TransitionImgFile = BootTransitionDir + "/" + RecoveryImgFile
 	BootTransitionDir = "boot-transition"
 	BootDir           = "boot"
 	OldBootDir        = "boot-old"

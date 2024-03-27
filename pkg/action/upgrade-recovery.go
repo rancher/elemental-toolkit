@@ -96,6 +96,10 @@ func (u UpgradeRecoveryAction) Errorf(s string, args ...interface{}) {
 	u.cfg.Logger.Errorf(s, args...)
 }
 
+func (u UpgradeRecoveryAction) Warnf(s string, args ...interface{}) {
+	u.cfg.Logger.Warnf(s, args...)
+}
+
 func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) error {
 	umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Recovery)
 	if err != nil {
@@ -148,13 +152,11 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 
 	// Remove any traces of previously errored upgrades
 	transitionDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootTransitionDir)
-	if ok, _ := utils.Exists(u.cfg.Fs, transitionDir); ok {
-		u.Debugf("removing orphaned recovery system %s", transitionDir)
-		err = u.cfg.Fs.RemoveAll(transitionDir)
-		if err != nil {
-			u.Errorf("failed removing old recovery image: %s", err.Error())
-			return err
-		}
+	u.Debugf("removing any orphaned recovery system %s", transitionDir)
+	err = utils.RemoveAll(u.cfg.Fs, transitionDir)
+	if err != nil {
+		u.Errorf("failed removing orphaned recovery image: %s", err.Error())
+		return err
 	}
 
 	// Deploy recovery system to transition dir
@@ -165,22 +167,33 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Switch places on /boot and transition-dir
-	existingDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootDir)
+	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootDir)
 	oldBootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.OldBootDir)
-	if ok, _ := utils.Exists(u.cfg.Fs, existingDir); ok {
-		err = u.cfg.Fs.Rename(existingDir, oldBootDir)
+
+	// If a previous upgrade failed, remove old boot-dir
+	err = utils.RemoveAll(u.cfg.Fs, oldBootDir)
+	if err != nil {
+		u.Errorf("failed removing orphaned recovery image: %s", err.Error())
+		return err
+	}
+
+	// Rename current boot-dir in case we need to use it again
+	if ok, _ := utils.Exists(u.cfg.Fs, bootDir); ok {
+		err = u.cfg.Fs.Rename(bootDir, oldBootDir)
 		if err != nil {
 			u.Errorf("failed removing old recovery image: %s", err.Error())
 			return err
 		}
 	}
-	err = u.cfg.Fs.Rename(transitionDir, existingDir)
+
+	// Move new boot-dir to /boot
+	err = u.cfg.Fs.Rename(transitionDir, bootDir)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed renaming transition recovery image: %s", err.Error())
 
 		// Try to salvage old recovery system
 		if ok, _ := utils.Exists(u.cfg.Fs, oldBootDir); ok {
-			err = u.cfg.Fs.Rename(existingDir, oldBootDir)
+			err = u.cfg.Fs.Rename(oldBootDir, bootDir)
 			if err != nil {
 				u.cfg.Logger.Errorf("failed salvaging old recovery system: %s", err.Error())
 			}
@@ -190,12 +203,9 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Remove old boot-dir when new recovery system is in place
-	if ok, _ := utils.Exists(u.cfg.Fs, oldBootDir); ok {
-		err = u.cfg.Fs.RemoveAll(oldBootDir)
-		if err != nil {
-			u.Errorf("failed removing old recovery image: %s", err.Error())
-			return err
-		}
+	err = utils.RemoveAll(u.cfg.Fs, oldBootDir)
+	if err != nil {
+		u.Warnf("failed removing old recovery image: %s", err.Error())
 	}
 
 	// Update state.yaml file on recovery and state partitions
