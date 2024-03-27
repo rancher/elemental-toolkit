@@ -334,7 +334,7 @@ func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
 		}
 
 		recovery = types.Image{
-			File:       filepath.Join(ep.Recovery.MountPoint, constants.BootDir, constants.TransitionImgFile),
+			File:       filepath.Join(ep.Recovery.MountPoint, constants.BootTransitionDir, constants.RecoveryImgFile),
 			Size:       constants.ImgSize,
 			Label:      rState.Label,
 			FS:         rState.FS,

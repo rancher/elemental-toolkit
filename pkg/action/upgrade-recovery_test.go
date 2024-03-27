@@ -253,7 +253,6 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 })
 
 func PrepareTestRecoveryImage(config *types.RunConfig, recoveryPath string, fs vfs.FS, runner *mocks.FakeRunner) *types.UpgradeSpec {
-	GinkgoHelper()
 	// Create installState with squashed recovery
 	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	installState := &types.InstallState{
@@ -292,7 +291,8 @@ func PrepareTestRecoveryImage(config *types.RunConfig, recoveryPath string, fs v
 	runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 		if command == "mksquashfs" && args[1] == spec.RecoverySystem.File {
 			// create the transition img for squash to fake it
-			_, _ = fs.Create(spec.RecoverySystem.File)
+			_, err = fs.Create(spec.RecoverySystem.File)
+			Expect(err).To(Succeed())
 		}
 		return []byte{}, nil
 	}
