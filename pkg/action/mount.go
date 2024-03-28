@@ -25,21 +25,24 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
-const overlaySuffix = ".overlay"
-const labelPref = "LABEL="
-const partLabelPref = "PARTLABEL="
-const uuidPref = "UUID="
-const devPref = "/dev/"
-const diskBy = "/dev/disk/by-"
-const diskByLabel = diskBy + "label"
-const diskByPartLabel = diskBy + "partlabel"
-const diskByUUID = diskBy + "uuid"
-const runPath = "/run"
+const (
+	overlaySuffix   = ".overlay"
+	labelPref       = "LABEL="
+	partLabelPref   = "PARTLABEL="
+	uuidPref        = "UUID="
+	devPref         = "/dev/"
+	diskBy          = "/dev/disk/by-"
+	diskByLabel     = diskBy + "label"
+	diskByPartLabel = diskBy + "partlabel"
+	diskByUUID      = diskBy + "uuid"
+	runPath         = "/run"
+)
 
 func RunMount(cfg *types.RunConfig, spec *types.MountSpec) error {
 	var fstabData string

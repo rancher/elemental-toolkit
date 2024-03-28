@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 
@@ -300,6 +301,11 @@ func (spec *MountSpec) Sanitize() error {
 	const separator = string(os.PathSeparator)
 
 	if spec.Persistent.Paths != nil {
+		// Remove empty paths
+		spec.Persistent.Paths = slices.DeleteFunc(spec.Persistent.Paths, func(s string) bool {
+			return s == ""
+		})
+
 		sort.Slice(spec.Persistent.Paths, func(i, j int) bool {
 			return strings.Count(spec.Persistent.Paths[i], separator) < strings.Count(spec.Persistent.Paths[j], separator)
 		})
@@ -313,6 +319,11 @@ func (spec *MountSpec) Sanitize() error {
 	}
 
 	if spec.Ephemeral.Paths != nil {
+		// Remove empty paths
+		spec.Ephemeral.Paths = slices.DeleteFunc(spec.Ephemeral.Paths, func(s string) bool {
+			return s == ""
+		})
+
 		sort.Slice(spec.Ephemeral.Paths, func(i, j int) bool {
 			return strings.Count(spec.Ephemeral.Paths[i], separator) < strings.Count(spec.Ephemeral.Paths[j], separator)
 		})

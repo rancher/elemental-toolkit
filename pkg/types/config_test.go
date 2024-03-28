@@ -532,4 +532,23 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(spec.Sanitize()).Should(HaveOccurred())
 		})
 	})
+	Describe("MountSpec", func() {
+		It("sanitizes empty paths", func() {
+			spec := types.MountSpec{
+				Ephemeral: types.EphemeralMounts{
+					Type:  constants.Tmpfs,
+					Paths: []string{"/var", "", "/etc"},
+				},
+				Persistent: types.PersistentMounts{
+					Mode:  constants.OverlayMode,
+					Paths: []string{"/etc/rancher", "", "/root"},
+				},
+			}
+
+			Expect(spec.Sanitize()).To(Succeed())
+
+			Expect(spec.Ephemeral.Paths).To(Equal([]string{"/var", "/etc"}))
+			Expect(spec.Persistent.Paths).To(Equal([]string{"/root", "/etc/rancher"}))
+		})
+	})
 })
