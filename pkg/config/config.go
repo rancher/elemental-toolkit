@@ -194,7 +194,7 @@ func NewInstallSpec(cfg types.Config) *types.InstallSpec {
 
 	recoverySystem.Source = system
 	recoverySystem.FS = constants.SquashFs
-	recoverySystem.File = filepath.Join(constants.RecoveryDir, constants.RecoveryImgFile)
+	recoverySystem.File = filepath.Join(constants.RecoveryDir, constants.BootDir, constants.RecoveryImgFile)
 	recoverySystem.MountPoint = constants.TransitionDir
 
 	return &types.InstallSpec{
@@ -334,7 +334,7 @@ func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
 		}
 
 		recovery = types.Image{
-			File:       filepath.Join(ep.Recovery.MountPoint, constants.TransitionImgFile),
+			File:       filepath.Join(ep.Recovery.MountPoint, constants.BootTransitionDir, constants.RecoveryImgFile),
 			Size:       constants.ImgSize,
 			Label:      rState.Label,
 			FS:         rState.FS,
@@ -440,10 +440,13 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 		cfg.Logger.Warnf("no Persistent partition found")
 	}
 
-	recoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgFile)
+	recoveryImg := filepath.Join(constants.RunningStateDir, constants.BootDir, constants.RecoveryImgFile)
+	oldRecoveryImg := filepath.Join(constants.RunningStateDir, constants.RecoveryImgFile)
 
 	if exists, _ := utils.Exists(cfg.Fs, recoveryImg); exists {
 		imgSource = types.NewFileSrc(recoveryImg)
+	} else if exists, _ := utils.Exists(cfg.Fs, oldRecoveryImg); exists {
+		imgSource = types.NewFileSrc(oldRecoveryImg)
 	} else {
 		imgSource = types.NewEmptySrc()
 	}
@@ -514,7 +517,7 @@ func NewDisk(cfg *types.BuildConfig) *types.DiskSpec {
 	workdir = filepath.Join(cfg.OutDir, constants.DiskWorkDir)
 
 	recoveryImg.Size = constants.ImgSize
-	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, constants.RecoveryImgFile)
+	recoveryImg.File = filepath.Join(workdir, constants.RecoveryPartName, constants.BootDir, constants.RecoveryImgFile)
 	recoveryImg.FS = constants.SquashFs
 	recoveryImg.Source = types.NewEmptySrc()
 	recoveryImg.MountPoint = filepath.Join(

@@ -294,14 +294,12 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(runner.IncludesCmds([][]string{{"poweroff", "-f"}})).To(BeNil())
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
 				info, err := fs.Stat(recoveryImgPath)
 				Expect(err).ToNot(HaveOccurred())
-				// Image size should be empty
-				Expect(info.Size()).To(BeNumerically(">", 0))
 				Expect(info.IsDir()).To(BeFalse())
 				f, _ := fs.ReadFile(recoveryImgPath)
 				Expect(f).To(ContainSubstring("recovery"))
@@ -314,11 +312,9 @@ var _ = Describe("Runtime Actions", func() {
 				// This should be the new image
 				info, err = fs.Stat(recoveryImgPath)
 				Expect(err).ToNot(HaveOccurred())
-				// Image size should be empty
-				Expect(info.Size()).To(BeNumerically("==", 0))
 				Expect(info.IsDir()).To(BeFalse())
 				f, _ = fs.ReadFile(recoveryImgPath)
-				Expect(f).ToNot(ContainSubstring("recovery"))
+				Expect(f).To(BeEmpty())
 
 				// Transition squash should not exist
 				info, err = fs.Stat(spec.RecoverySystem.File)

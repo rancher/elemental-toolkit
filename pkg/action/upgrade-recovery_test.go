@@ -175,7 +175,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
@@ -212,7 +212,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				Expect(spec.State.Date).ToNot(BeEmpty(), "post-upgrade state should contain a date")
 			})
 			It("Successfully skips updateInstallState", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
@@ -253,7 +253,6 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 })
 
 func PrepareTestRecoveryImage(config *types.RunConfig, recoveryPath string, fs vfs.FS, runner *mocks.FakeRunner) *types.UpgradeSpec {
-	GinkgoHelper()
 	// Create installState with squashed recovery
 	statePath := filepath.Join(constants.RunningStateDir, constants.InstallStateFile)
 	installState := &types.InstallState{
@@ -270,28 +269,30 @@ func PrepareTestRecoveryImage(config *types.RunConfig, recoveryPath string, fs v
 	}
 	Expect(config.WriteInstallState(installState, statePath, statePath)).ShouldNot(HaveOccurred())
 
-	recoveryImgPath := filepath.Join(recoveryPath, constants.RecoveryImgFile)
-	Expect(fs.WriteFile(recoveryImgPath, []byte("recovery"), constants.FilePerm)).ShouldNot(HaveOccurred())
-
-	transitionDir := filepath.Join(recoveryPath, "transition.imgTree")
-	Expect(utils.MkdirAll(fs, filepath.Join(transitionDir, "lib/modules/6.6"), constants.DirPerm)).ShouldNot(HaveOccurred())
-	bootDir := filepath.Join(transitionDir, "boot")
-	Expect(utils.MkdirAll(fs, bootDir, constants.DirPerm)).ShouldNot(HaveOccurred())
-	Expect(fs.WriteFile(filepath.Join(bootDir, "vmlinuz-6.6"), []byte("kernel"), constants.FilePerm)).ShouldNot(HaveOccurred())
-	Expect(fs.WriteFile(filepath.Join(bootDir, "elemental.initrd-6.6"), []byte("initrd"), constants.FilePerm)).ShouldNot(HaveOccurred())
+	for _, rootDir := range []string{"/some/dir", recoveryPath} {
+		bootDir := filepath.Join(rootDir, "boot")
+		Expect(utils.MkdirAll(fs, bootDir, constants.DirPerm)).ShouldNot(HaveOccurred())
+		recoveryImgPath := filepath.Join(bootDir, constants.RecoveryImgFile)
+		Expect(fs.WriteFile(recoveryImgPath, []byte("recovery"), constants.FilePerm)).ShouldNot(HaveOccurred())
+		Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "lib/modules/6.6"), constants.DirPerm)).ShouldNot(HaveOccurred())
+		Expect(utils.MkdirAll(fs, bootDir, constants.DirPerm)).ShouldNot(HaveOccurred())
+		Expect(fs.WriteFile(filepath.Join(bootDir, "vmlinuz-6.6"), []byte("kernel"), constants.FilePerm)).ShouldNot(HaveOccurred())
+		Expect(fs.WriteFile(filepath.Join(bootDir, "elemental.initrd-6.6"), []byte("initrd"), constants.FilePerm)).ShouldNot(HaveOccurred())
+	}
 
 	spec, err := conf.NewUpgradeSpec(config.Config)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	spec.System = types.NewDockerSrc("alpine")
 	spec.RecoveryUpgrade = true
-	spec.RecoverySystem.Source = spec.System
+	spec.RecoverySystem.Source = types.NewDirSrc("/some/dir")
 	spec.RecoverySystem.Size = 16
 
 	runner.SideEffect = func(command string, args ...string) ([]byte, error) {
 		if command == "mksquashfs" && args[1] == spec.RecoverySystem.File {
 			// create the transition img for squash to fake it
-			_, _ = fs.Create(spec.RecoverySystem.File)
+			_, err = fs.Create(spec.RecoverySystem.File)
+			Expect(err).To(Succeed())
 		}
 		return []byte{}, nil
 	}

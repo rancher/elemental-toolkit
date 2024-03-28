@@ -1031,8 +1031,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	Describe("DeployRecoverySystem", Label("recovery"), func() {
 		BeforeEach(func() {
 			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
-				Expect(destination).To(Equal("/recovery/recovery.imgTree"))
-
 				bootDir := filepath.Join(destination, "boot")
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)
@@ -1059,11 +1057,11 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(fs.Mkdir("/recovery/boot", constants.DirPerm)).To(Succeed())
 
 			img := &types.Image{
-				File:   filepath.Join("/recovery", constants.RecoveryImgFile),
+				File:   filepath.Join("/recovery", constants.BootDir, constants.RecoveryImgFile),
 				Source: types.NewDockerSrc("elemental:latest"),
 				FS:     constants.SquashFs,
 			}
-			err := elemental.DeployRecoverySystem(*config, img, "/recovery/boot")
+			err := elemental.DeployRecoverySystem(*config, img)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			info, err := fs.Stat("/recovery/boot/vmlinuz")
