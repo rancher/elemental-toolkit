@@ -1,5 +1,5 @@
 [Unit]
-Description=Elemental system configuration
+Description=Elemental health check
 After=network-online.target systemd-logind.service elemental-setup-network.service elemental-setup-boot.service
 Wants=network-online.target systemd-logind.service elemental-setup-network.service elemental-setup-boot.service
 ConditionKernelCommandLine=elemental.health_check
