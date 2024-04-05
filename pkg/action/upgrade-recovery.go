@@ -84,16 +84,20 @@ func NewUpgradeRecoveryAction(config *types.RunConfig, spec *types.UpgradeSpec, 
 	return u, nil
 }
 
-func (u UpgradeRecoveryAction) Info(s string, args ...interface{}) {
+func (u UpgradeRecoveryAction) Infof(s string, args ...interface{}) {
 	u.cfg.Logger.Infof(s, args...)
 }
 
-func (u UpgradeRecoveryAction) Debug(s string, args ...interface{}) {
+func (u UpgradeRecoveryAction) Debugf(s string, args ...interface{}) {
 	u.cfg.Logger.Debugf(s, args...)
 }
 
-func (u UpgradeRecoveryAction) Error(s string, args ...interface{}) {
+func (u UpgradeRecoveryAction) Errorf(s string, args ...interface{}) {
 	u.cfg.Logger.Errorf(s, args...)
+}
+
+func (u UpgradeRecoveryAction) Warnf(s string, args ...interface{}) {
+	u.cfg.Logger.Warnf(s, args...)
 }
 
 func (u *UpgradeRecoveryAction) mountRWPartitions(cleanup *utils.CleanStack) error {
@@ -146,48 +150,79 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 		return err
 	}
 
-	// Create recovery /boot dir if not exists
-	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, "boot")
-	if err := utils.MkdirAll(u.cfg.Fs, bootDir, constants.DirPerm); err != nil {
-		u.cfg.Logger.Errorf("failed creating recovery boot dir: %v", err)
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+	// Remove any traces of previously errored upgrades
+	transitionDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootTransitionDir)
+	u.Debugf("removing any orphaned recovery system %s", transitionDir)
+	err = utils.RemoveAll(u.cfg.Fs, transitionDir)
+	if err != nil {
+		u.Errorf("failed removing orphaned recovery image: %s", err.Error())
+		return err
 	}
 
-	// Upgrade recovery
-	err = elemental.DeployRecoverySystem(u.cfg.Config, &u.spec.RecoverySystem, bootDir)
+	// Deploy recovery system to transition dir
+	err = elemental.DeployRecoverySystem(u.cfg.Config, &u.spec.RecoverySystem)
 	if err != nil {
-		u.cfg.Logger.Errorf("failed deploying recovery image: %v", err)
+		u.cfg.Logger.Errorf("failed deploying recovery image: %s", err.Error())
 		return elementalError.NewFromError(err, elementalError.DeployImage)
 	}
-	recoveryFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.RecoveryImgFile)
-	transitionFile := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.TransitionImgFile)
-	if ok, _ := utils.Exists(u.cfg.Fs, recoveryFile); ok {
-		err = u.cfg.Fs.Remove(recoveryFile)
+
+	// Switch places on /boot and transition-dir
+	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootDir)
+	oldBootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.OldBootDir)
+
+	// If a previous upgrade failed, remove old boot-dir
+	err = utils.RemoveAll(u.cfg.Fs, oldBootDir)
+	if err != nil {
+		u.Errorf("failed removing orphaned recovery image: %s", err.Error())
+		return err
+	}
+
+	// Rename current boot-dir in case we need to use it again
+	if ok, _ := utils.Exists(u.cfg.Fs, bootDir); ok {
+		err = u.cfg.Fs.Rename(bootDir, oldBootDir)
 		if err != nil {
-			u.Error("failed removing old recovery image")
+			u.Errorf("failed removing old recovery image: %s", err.Error())
 			return err
 		}
 	}
-	err = u.cfg.Fs.Rename(transitionFile, recoveryFile)
+
+	// Move new boot-dir to /boot
+	err = u.cfg.Fs.Rename(transitionDir, bootDir)
 	if err != nil {
-		u.Error("failed renaming transition recovery image")
+		u.cfg.Logger.Errorf("failed renaming transition recovery image: %s", err.Error())
+
+		// Try to salvage old recovery system
+		if ok, _ := utils.Exists(u.cfg.Fs, oldBootDir); ok {
+			err = u.cfg.Fs.Rename(oldBootDir, bootDir)
+			if err != nil {
+				u.cfg.Logger.Errorf("failed salvaging old recovery system: %s", err.Error())
+			}
+		}
+
 		return err
+	}
+
+	// Remove old boot-dir when new recovery system is in place
+	err = utils.RemoveAll(u.cfg.Fs, oldBootDir)
+	if err != nil {
+		u.Warnf("failed removing old recovery image: %s", err.Error())
 	}
 
 	// Update state.yaml file on recovery and state partitions
 	if u.updateInstallState {
 		err = u.upgradeInstallStateYaml()
 		if err != nil {
-			u.Error("failed upgrading installation metadata")
+			u.Errorf("failed upgrading installation metadata: %s", err.Error())
 			return err
 		}
 	}
 
-	u.Info("Recovery upgrade completed")
+	u.Infof("Recovery upgrade completed")
 
 	// Do not reboot/poweroff on cleanup errors
 	err = cleanup.Cleanup(err)
 	if err != nil {
+		u.Errorf("failed cleanup: %s", err.Error())
 		return elementalError.NewFromError(err, elementalError.Cleanup)
 	}
 

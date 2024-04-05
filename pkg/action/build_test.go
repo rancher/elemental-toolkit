@@ -127,7 +127,7 @@ var _ = Describe("Build Actions", func() {
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err := buildISO.ISORun()
+			err := buildISO.Run()
 
 			Expect(err).ShouldNot(HaveOccurred())
 		})
@@ -138,7 +138,7 @@ var _ = Describe("Build Actions", func() {
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err := buildISO.ISORun()
+			err := buildISO.Run()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on prepare ISO", func() {
@@ -148,7 +148,7 @@ var _ = Describe("Build Actions", func() {
 			iso.RootFS = append(iso.RootFS, rootSrc)
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err := buildISO.ISORun()
+			err := buildISO.Run()
 
 			Expect(err).Should(HaveOccurred())
 		})
@@ -161,14 +161,14 @@ var _ = Describe("Build Actions", func() {
 
 			By("fails without kernel")
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err = buildISO.ISORun()
+			err = buildISO.Run()
 			Expect(err).Should(HaveOccurred())
 
 			By("fails without initrd")
 			_, err = fs.Create("/local/dir/boot/vmlinuz")
 			Expect(err).ShouldNot(HaveOccurred())
 			buildISO = action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err = buildISO.ISORun()
+			err = buildISO.Run()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails installing uefi sources", func() {
@@ -178,7 +178,7 @@ var _ = Describe("Build Actions", func() {
 			iso.UEFI = []*types.ImageSource{uefiSrc}
 
 			buildISO := action.NewBuildISOAction(cfg, iso)
-			err := buildISO.ISORun()
+			err := buildISO.Run()
 			Expect(err).Should(HaveOccurred())
 		})
 		It("Fails on ISO filesystem creation", func() {
@@ -193,7 +193,7 @@ var _ = Describe("Build Actions", func() {
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, iso, action.WithLiveBootloader(bootloader))
-			err := buildISO.ISORun()
+			err := buildISO.Run()
 
 			Expect(err).Should(HaveOccurred())
 		})
@@ -228,7 +228,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/boot/recovery.img"},
 				{"mkfs.ext4", "-L", "COS_STATE"},
 				{"losetup", "--show", "-f", "/tmp/test/build/state.part"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
@@ -255,7 +255,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).To(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/boot/recovery.img"},
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
@@ -274,7 +274,7 @@ var _ = Describe("Build Actions", func() {
 			Expect(buildDisk.BuildDiskRun()).NotTo(Succeed())
 
 			Expect(runner.MatchMilestones([][]string{
-				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/recovery.img"},
+				{"mksquashfs", "/tmp/test/build/recovery.img.root", "/tmp/test/build/recovery/boot/recovery.img"},
 			})).To(Succeed())
 
 			// failed before preparing partitions images

@@ -92,6 +92,17 @@ func Exists(fs types.FS, path string, noFollow ...bool) (bool, error) {
 	return false, err
 }
 
+// RemoveAll removes the specified path.
+// It silently drop NotExists errors.
+func RemoveAll(fs types.FS, path string) error {
+	err := fs.RemoveAll(path)
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
+
 // IsDir check if the path is a dir
 func IsDir(fs types.FS, path string) (bool, error) {
 	fi, err := fs.Stat(path)
