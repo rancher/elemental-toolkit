@@ -363,8 +363,7 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 			return err
 		}
 
-		squashOptions := append(cnst.GetDefaultSquashfsOptions(), c.SquashFsCompressionConfig...)
-		err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, img.File, squashOptions)
+		err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, img.File, c.SquashFsCompressionConfig)
 		if err != nil {
 			c.Logger.Errorf("failed creating squashfs image for %s: %v", img.File, err)
 			return err

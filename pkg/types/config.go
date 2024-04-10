@@ -147,7 +147,7 @@ func (c *Config) Sanitize() error {
 	// By default on NewConfig the SquashFsCompressionConfig is set to the default values, and then override
 	// on config unmarshall.
 	if c.SquashFsNoCompression {
-		c.SquashFsCompressionConfig = []string{}
+		c.SquashFsCompressionConfig = constants.GetSquashfsNoCompressionOptions()
 	}
 
 	if c.Arch != "" {
