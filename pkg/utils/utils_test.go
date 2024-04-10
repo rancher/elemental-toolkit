@@ -911,9 +911,9 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("runs with options if given", func() {
-			err := utils.CreateSquashFS(runner, logger, "source", "dest", constants.GetDefaultSquashfsOptions())
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", constants.GetDefaultSquashfsCompressionOptions())
 			cmd := []string{"mksquashfs", "source", "dest"}
-			cmd = append(cmd, constants.GetDefaultSquashfsOptions()...)
+			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
 			Expect(runner.IncludesCmds([][]string{
 				cmd,
 			})).To(BeNil())

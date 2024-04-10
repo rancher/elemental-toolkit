@@ -19,7 +19,6 @@ package constants
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 const (
@@ -265,20 +264,12 @@ func GetCloudInitPaths() []string {
 	return []string{"/system/oem", "/oem/", "/usr/local/cloud-config/"}
 }
 
-// GetDefaultSquashfsOptions returns the default options to use when creating a squashfs
-func GetDefaultSquashfsOptions() []string {
-	return []string{"-b", "1024k"}
+func GetSquashfsNoCompressionOptions() []string {
+	return []string{"-no-compression"}
 }
 
 func GetDefaultSquashfsCompressionOptions() []string {
-	options := []string{"-comp", "xz", "-Xbcj"}
-	// Set the filter based on arch for best compression results
-	if runtime.GOARCH == "arm64" {
-		options = append(options, "arm")
-	} else {
-		options = append(options, "x86")
-	}
-	return options
+	return []string{"-b", "1024k"}
 }
 
 // GetRunKeyEnvMap returns environment variable bindings to RunConfig data
