@@ -29,20 +29,16 @@ The Type Enforcement file was created by booting an Elemental OS on permissive m
 
 ```bash
 # Create the type enforcement file
-cat /var/log/audit/audit.log | audit2allow -m elemental > elemental.te
-
-# Create the policy module
-checkmodule -M -m -o elemental.mod elemental.te
-
-# Create the policy package out of the module
-semodule_package -o elemental.pp -m elemental.mod
+audit2allow -d -M elemental -R
 ```
+
+In case of the error "could not open interface info [/var/lib/sepolgen/interface_info]", run the command 'sepolgen-ifgen' first.
 
 To make effective the policy package it has to be loaded or installed within the selinux policy, this can be easily done with the `semodule -i /usr/share/elemental/selinux/elemental.pp` command. So from a derivative perspective and following the example from [Creating bootable image](../../creating-derivatives/creating_bootable_images/#example) section adding the following lines to the Dockerfile should be enough to enable SELinux in enforcing mode:
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN elemental init --force --features=cloud-config-defaults
+RUN elemental init --force --features=selinux
 
 # Load the policy package
 RUN semodule -i /usr/share/elemental/selinux/elemental.pp
@@ -57,7 +53,7 @@ Notes when using a SELinux version prior to v3.4. If `libsemanage` version is lo
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN elemental init --force --features=cloud-config-defaults
+RUN elemental init --force --features=selinux
 
 # Artificially modify selinux files to copy them in within the overlyfs and then load the policy package
 RUN mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous &&\

@@ -1,0 +1,18 @@
+
+module elemental 1.0;
+
+require {
+        type root_t;
+        type kernel_t;
+        type shell_exec_t;
+        type setfiles_exec_t;
+        type container_ro_file_t;
+        class file { entrypoint getattr };
+}
+
+#============= kernel_t ==============
+allow kernel_t root_t:file entrypoint;
+allow kernel_t setfiles_exec_t:file entrypoint;
+allow kernel_t shell_exec_t:file entrypoint;
+# for ISO boot, incomplete
+allow kernel_t container_ro_file_t:file entrypoint;

@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 		Long: "Init a container image with elemental configuration\n\n" +
 			"FEATURES - should be provided as a comma-separated list of features to install.\n" +
 			"    Available features: " + strings.Join(features.All, ",") + "\n" +
-			"    Defaults to all",
+			"    Defaults to " + strings.Join(features.Default, ","),
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), types.NewDummyMounter())
@@ -52,11 +53,16 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingSpecConfig)
 			}
 
-			if len(args) == 0 || args[0] == "all" {
-				spec.Features = features.All
+			if len(args) == 0 {
+				spec.Features = features.Default
 			} else {
 				spec.Features = strings.Split(args[0], ",")
 			}
+
+			// Remove empty features
+			spec.Features = slices.DeleteFunc(spec.Features, func(s string) bool {
+				return s == ""
+			})
 
 			cfg.Logger.Infof("Initializing system...")
 			return action.RunInit(cfg, spec)

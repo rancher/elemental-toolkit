@@ -144,6 +144,7 @@ const (
 	SELinuxTargetedPath        = "/etc/selinux/targeted"
 	SELinuxTargetedContextFile = SELinuxTargetedPath + "/contexts/files/file_contexts"
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
+	SELinuxAutorelabelFile     = "/.autorelabel"
 
 	ISORootFile      = "rootfs.squashfs"
 	ISOEFIImg        = "uefi.img"

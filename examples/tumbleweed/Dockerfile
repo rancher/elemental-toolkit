@@ -59,6 +59,14 @@ RUN ARCH=$(uname -m); \
       sed \
       patch \
       iproute2 \
+      selinux-policy-targeted \
+      restorecond \
+      selinux-policy-devel \
+      policycoreutils \
+      policycoreutils-python-utils \
+      setools-console \
+      policycoreutils-devel \
+      audit \
       podman \
       ${ADD_PKGS} && \
     zypper clean --all
@@ -77,7 +85,10 @@ RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 ADD 05_network.yaml /system/oem/05_network.yaml
 
 # Generate initrd with required elemental services
-RUN elemental --debug init --force
+RUN elemental --debug init --force elemental-rootfs,elemental-sysroot,grub-config,elemental-setup,dracut-config,cloud-config-essentials,boot-assessment,cloud-config-defaults,selinux,selinux-example
+
+# Load selinux module
+RUN semodule -i /usr/share/elemental/selinux/elemental.pp
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

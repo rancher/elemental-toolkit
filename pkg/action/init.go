@@ -82,7 +82,7 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 		cfg.Config.Logger.Errorf("dracut failed with output: %s", output)
 	}
 
-	cfg.Config.Logger.Debugf("darcut output: %s", output)
+	cfg.Config.Logger.Debugf("dracut output: %s", output)
 
 	initrd, err := utils.FindInitrd(cfg.Fs, "/")
 	if err != nil || !strings.HasPrefix(initrd, constants.ElementalInitrd) {
@@ -96,6 +96,11 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 	if err != nil {
 		cfg.Config.Logger.Errorf("failed creating initrd symlink")
 	}
+
+	// Remove selinux .autorelabel file if it exists, we handle the relabeling
+	// since the autorelabel service will get stuck in a boot-loop if this
+	// exists.
+	_ = cfg.Fs.Remove(constants.SELinuxAutorelabelFile)
 
 	return err
 }
