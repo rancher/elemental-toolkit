@@ -29,7 +29,7 @@ func NewVersionCmd(root *cobra.Command) *cobra.Command {
 		Use:   "version",
 		Args:  cobra.ExactArgs(0),
 		Short: "Print the version",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			v := version.Get()
 			commit := v.GitCommit
 			if len(commit) > 7 {
