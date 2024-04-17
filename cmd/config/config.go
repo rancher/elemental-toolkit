@@ -184,7 +184,7 @@ func ReadConfigRun(configDir string, flags *pflag.FlagSet, mounter mount.Interfa
 	cfgExtra := filepath.Join(configDir, "config.d")
 	if exists, _ := utils.Exists(cfg.Fs, cfgExtra); exists {
 		viper.AddConfigPath(cfgExtra)
-		err := filepath.WalkDir(cfgExtra, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(cfgExtra, func(_ string, d fs.DirEntry, _ error) error {
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
 				viper.SetConfigType("yaml")
 				viper.SetConfigName(strings.TrimSuffix(d.Name(), ".yaml"))

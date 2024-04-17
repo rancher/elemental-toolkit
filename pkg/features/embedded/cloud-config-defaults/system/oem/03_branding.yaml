@@ -26,4 +26,8 @@ stages:
           permissions: 0644
           owner: 0
           group: 0
+   boot:
+    - name: "Recovery"
+      if: '[ -f "/run/cos/recovery_mode" ]'
+      hostname: "recovery"
 
