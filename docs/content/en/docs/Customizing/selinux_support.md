@@ -42,7 +42,7 @@ To make effective the policy package it has to be loaded or installed within the
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN elemental init --force --features=cloud-config
+RUN elemental init --force --features=cloud-config-defaults
 
 # Load the policy package
 RUN semodule -i /usr/share/elemental/selinux/elemental.pp
@@ -57,7 +57,7 @@ Notes when using a SELinux version prior to v3.4. If `libsemanage` version is lo
 
 ```Dockerfile
 # Install the custom policy package if any and the restore context stage in cloud-init config
-RUN elemental init --force --features=cloud-config
+RUN elemental init --force --features=cloud-config-defaults
 
 # Artificially modify selinux files to copy them in within the overlyfs and then load the policy package
 RUN mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous &&\
