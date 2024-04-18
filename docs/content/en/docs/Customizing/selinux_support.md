@@ -44,14 +44,14 @@ To make effective the policy package it has to be loaded or installed within the
 # Install the custom policy package if any and the restore context stage in cloud-init config
 RUN elemental init --force --features=cloud-config-defaults
 
+# Relabeling is managed by the cloud-config-defaults feature
+RUN rm -f /.autorelabel
+
 # Load the policy package
 RUN semodule -i /usr/share/elemental/selinux/elemental.pp
-
-# Enable selinux in enforcing mode
-RUN sed -i "s|^SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
 ```
 
-The above assumes the base image already includes the SELinux packages and utilities provided by the underlaying distro. It is suggested to set the enforcing mode via the config file rather than setting grub with the selinux kernel parameter (`enforcing=1`), this way it is easier, at any time, to temporarily add `enforcing=0` at runtime within the grub2 shell and temporarily set SELinux in permissive mode.
+The above assumes the base image already includes the SELinux packages and utilities provided by the underlaying distro.  
 
 Notes when using a SELinux version prior to v3.4. If `libsemanage` version is lower than v3.4, it is likely that the `semodule -i *.pp` command fails with a cross-device linking issue, this is a known [issue](https://github.com/SELinuxProject/selinux/issues/343) upstream and already fixed since v3.4. Command `selinux -i <file>` mutates files under `/var/lib/selinux/targeted` and used to rename some files, this can be tricky when executed inside a container as hardlinks across filesystems are not permitted and this is actually what happens if the overlayfs driver is used. This can be worked around if all the originally mutated files are already modified within the execution layer (so they are part of the upper layer of the overlayfs). So the above specific example could be rewritten as:
 
@@ -59,11 +59,30 @@ Notes when using a SELinux version prior to v3.4. If `libsemanage` version is lo
 # Install the custom policy package if any and the restore context stage in cloud-init config
 RUN elemental init --force --features=cloud-config-defaults
 
+# Relabeling is managed by the cloud-config-defaults feature
+RUN rm -f /.autorelabel
+
 # Artificially modify selinux files to copy them in within the overlyfs and then load the policy package
 RUN mv /var/lib/selinux/targeted/active /var/lib/selinux/targeted/previous &&\
     cp --link --recursive /var/lib/selinux/targeted/previous /var/lib/selinux/targeted/active &&\
     semodule -i /usr/share/elemental/selinux/elemental.pp
+```
 
-# Enable selinux in enforcing mode
-RUN sed -i "s|^SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
+## Enforcing SELinux
+
+It is suggested to set the enforcing mode via this config file rather than setting grub with the selinux kernel parameter.  
+The `enforcing=0` kernel parameter is required to successfully setup the system in `initramfs` stage.  
+Enforcing can be done at `boot` stage, for example including the following config in `/system/oem`:  
+
+```yaml
+name: "SELinux"
+stages:
+  boot:
+    - name: "Enforce SELinux"
+      commands:
+      - | 
+        if [ ! -f /run/elemental/live_mode ] && [ ! -f /run/elemental/recovery_mode ]; then
+          setenforce 1
+          setsebool secure_mode_policyload on
+        fi
 ```
