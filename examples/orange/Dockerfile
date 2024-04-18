@@ -52,6 +52,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   podman \
   xz-utils
 
+# Symlink grub2-editenv
+RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
+
 # Create non FHS paths
 RUN mkdir -p /oem /system
 
