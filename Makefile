@@ -11,8 +11,8 @@ IMAGE_SIZE?=20G
 REPO?=local/elemental-$(FLAVOR)
 TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
-BASE_OS_IMAGE?=registry.opensuse.org/opensuse/leap
-BASE_OS_VERSION?=15.5
+BASE_OS_IMAGE?=registry.opensuse.org/opensuse/tumbleweed
+BASE_OS_VERSION?=latest
 DOCKER_SOCK?=/var/run/docker.sock
 
 GIT_COMMIT?=$(shell git rev-parse HEAD)

@@ -10,7 +10,7 @@ jobs:
   build-matrix:
     strategy:
       matrix:
-        flavor: ['green', 'tumbleweed']
+        flavor: ['green']
     uses: ./.github/workflows/build_and_test_arm.yaml
     with:
       flavor: ${{ matrix.flavor }}
