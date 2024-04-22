@@ -1,5 +1,4 @@
-ARG BASE_OS_IMAGE=registry.opensuse.org/opensuse/leap
-ARG BASE_OS_VERSION=15.5
+ARG BASE_OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
 ARG GO_VERSION=1.22
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as elemental-bin
@@ -31,7 +30,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -X github.com/rancher/elemental-toolkit/v2/internal/version.gitCommit=${ELEMENTAL_COMMIT}" \
     -o /usr/bin/elemental
 
-FROM ${BASE_OS_IMAGE}:${BASE_OS_VERSION} AS elemental-toolkit
+FROM ${BASE_OS_IMAGE} AS elemental-toolkit
 # This helps invalidate the cache on each build so the following steps are really run again getting the latest packages
 # versions, as long as the elemental commit has changed
 ARG ELEMENTAL_COMMIT=""
