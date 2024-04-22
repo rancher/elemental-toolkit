@@ -8,10 +8,16 @@
 name: "SELinux"
 stages:
    initramfs:
-     - name: "Relabelling"
+     - name: "SELinux labels for targeted policy"
        commands:
        - | 
-         if grep -q "selinux=1" /proc/cmdline; then
-           load_policy -i
-           restorecon -R -i -v /etc /root /opt /srv /var /home /usr/local /oem
+         if grep -qw selinux /sys/kernel/security/lsm; then
+           # Some extended attributes are lost on copy-up bsc#1210690. Workaround visit children first, then parents
+           mkdir -p /run/systemd/relabel-extra.d/
+           for path in /etc /srv /var /oem /home /root /opt; do
+             if [ -d "${path}" ]; then
+               find ${path} -depth -exec /sbin/setfiles -F -v "/etc/selinux/targeted/contexts/files/file_contexts" \{\} +
+               echo "${path}" >> /run/systemd/relabel-extra.d/layout.relabel
+             fi
+           done
          fi

@@ -55,6 +55,9 @@ RUN ARCH=$(uname -m); \
         xorriso \
         cosign \
         gptfdisk \
+        patterns-microos-selinux \
+        k3s-selinux \
+        btrfsprogs \
         lvm2 && \
     zypper cc -a
 
