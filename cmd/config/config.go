@@ -351,6 +351,19 @@ func applyKernelCmdline(r *types.RunConfig, mount *types.MountSpec) error {
 					Options:    []string{"rw", "defaults"},
 				})
 			}
+		case "elemental.encrypted_volumes":
+			vols := strings.Split(split[1], ",")
+
+			for _, vol := range vols {
+				switch vol {
+				case "persistent":
+					mount.Persistent.Encrypted = true
+					mount.Persistent.Volume.Device = constants.PersistentDeviceMapperPath
+				default:
+					r.Logger.Warnf("Unknown encrypted volume '%s', skipping", vol)
+				}
+			}
+
 		}
 	}
 

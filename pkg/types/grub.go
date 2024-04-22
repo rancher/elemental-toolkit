@@ -29,6 +29,10 @@ func (i InstallSpec) GetGrubLabels() map[string]string {
 
 	if i.Partitions.Persistent != nil {
 		grubEnv["persistent_label"] = i.Partitions.Persistent.FilesystemLabel
+
+		if i.Partitions.Persistent.Encryption != nil {
+			grubEnv["encrypted_volumes"] = "persistent"
+		}
 	}
 
 	return grubEnv

@@ -123,6 +123,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	addPlatformFlags(c)
+	addEncryptionFlags(c)
 	return c
 }
 
