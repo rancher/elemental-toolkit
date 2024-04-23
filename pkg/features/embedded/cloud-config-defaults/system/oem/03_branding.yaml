@@ -22,7 +22,7 @@ stages:
 
             Welcome to \S !
             IP address \4
-            Login with user: root, password: cos
+            Login with user: root, password: elemental
             Start the installer with "elemental install <device>" to install it in the local system
           permissions: 0644
           owner: 0
@@ -41,7 +41,7 @@ stages:
 
             Welcome to \S (passive)!
             IP address \4
-            Login with user: root, password: cos
+            Login with user: root, password: elemental
             There might be an issue with the active partition, booted in passive.
           permissions: 0644
           owner: 0
@@ -60,7 +60,7 @@ stages:
 
             Welcome to \S recovery!
             IP address \4
-            Login with user: root, password: cos
+            Login with user: root, password: elemental
             Reset the active system with "elemental reset".
           permissions: 0644
           owner: 0

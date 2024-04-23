@@ -45,10 +45,10 @@ const (
 
 	TimeoutRawDiskTest = 600 // Timeout to connect for recovery_raw_disk_test
 
-	Ext2 = "ext2"
-	Ext3 = "ext3"
-	Ext4 = "ext4"
-	Cos  = "cos"
+	Ext2      = "ext2"
+	Ext3      = "ext3"
+	Ext4      = "ext4"
+	Elemental = "elemental"
 )
 
 // DiskLayout is the struct that contains the disk output from lsblk
@@ -91,7 +91,7 @@ func NewSUT() *SUT {
 	}
 	pass := os.Getenv("COS_PASS")
 	if pass == "" {
-		pass = Cos
+		pass = Elemental
 	}
 
 	host := os.Getenv("COS_HOST")
@@ -137,9 +137,9 @@ func (s *SUT) ChangeBoot(b string) error {
 
 	switch b {
 	case Active:
-		bootEntry = Cos
+		bootEntry = "active"
 	case Passive:
-		bootEntry = "fallback"
+		bootEntry = "1"
 	case Recovery:
 		bootEntry = "recovery"
 	}
