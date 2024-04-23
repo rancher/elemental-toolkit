@@ -53,10 +53,23 @@ const (
 	FeatureCloudConfigDefaults   = "cloud-config-defaults"
 	FeatureCloudConfigEssentials = "cloud-config-essentials"
 	FeatureBootAssessment        = "boot-assessment"
+	FeatureAutologin             = "autologin"
 )
 
 var (
 	All = []string{
+		FeatureElementalRootfs,
+		FeatureElementalSysroot,
+		FeatureGrubConfig,
+		FeatureGrubDefaultBootargs,
+		FeatureElementalSetup,
+		FeatureDracutConfig,
+		FeatureCloudConfigDefaults,
+		FeatureCloudConfigEssentials,
+		FeatureBootAssessment,
+	}
+
+	Default = []string{
 		FeatureElementalRootfs,
 		FeatureElementalSysroot,
 		FeatureGrubConfig,
@@ -156,6 +169,8 @@ func Get(names []string) ([]*Feature, error) {
 				systemd.NewUnit("elemental-boot-assessment.service"),
 			}
 			features = append(features, New(name, units))
+		case FeatureAutologin:
+			features = append(features, New(name, nil))
 		default:
 			notFound = append(notFound, name)
 		}
