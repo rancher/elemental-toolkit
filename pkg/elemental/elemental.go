@@ -659,7 +659,7 @@ func CopyCloudConfig(c types.Config, path string, cloudInit []string) (err error
 }
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
-func SelinuxRelabel(c types.Config, rootDir string, raiseError bool) error {
+func SelinuxRelabel(c types.Config, rootDir string) error {
 	policyFile, err := utils.FindFile(c.Fs, rootDir, filepath.Join(cnst.SELinuxTargetedPolicyPath, "policy.*"))
 	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(c.Fs, contextFile)
@@ -673,13 +673,10 @@ func SelinuxRelabel(c types.Config, rootDir string, raiseError bool) error {
 			out, err = c.Runner.Run("setfiles", "-c", policyFile, "-F", "-r", rootDir, contextFile, rootDir)
 		}
 		c.Logger.Debugf("SELinux setfiles output: %s", string(out))
-		if err != nil && raiseError {
-			return err
-		}
-	} else {
-		c.Logger.Debugf("No files relabelling as SELinux utilities are not found")
+		return err
 	}
 
+	c.Logger.Debugf("No files relabelling as SELinux utilities are not found")
 	return nil
 }
 
@@ -693,7 +690,7 @@ func ApplySelinuxLabels(cfg types.Config, parts types.ElementalPartitions) error
 		binds[parts.OEM.MountPoint] = cnst.OEMPath
 	}
 	return utils.ChrootedCallback(
-		&cfg, cnst.WorkingImgDir, binds, func() error { return SelinuxRelabel(cfg, "/", true) },
+		&cfg, cnst.WorkingImgDir, binds, func() error { return SelinuxRelabel(cfg, "/") },
 	)
 }
 

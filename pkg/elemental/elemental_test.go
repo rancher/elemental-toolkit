@@ -893,32 +893,27 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			err := fs.Remove(constants.SELinuxTargetedContextFile)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			Expect(elemental.SelinuxRelabel(*config, "/", true)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "/")).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{{}}))
 		})
 		It("does nothing if the policy file is not found", func() {
 			err := fs.Remove(policyFile)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			Expect(elemental.SelinuxRelabel(*config, "/", true)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "/")).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{{}}))
 		})
 		It("relabels the current root", func() {
-			Expect(elemental.SelinuxRelabel(*config, "", true)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "")).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{relabelCmd})).To(BeNil())
 
 			runner.ClearCmds()
-			Expect(elemental.SelinuxRelabel(*config, "/", true)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "/")).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{relabelCmd})).To(BeNil())
 		})
 		It("fails to relabel the current root", func() {
 			runner.ReturnError = errors.New("setfiles failure")
-			Expect(elemental.SelinuxRelabel(*config, "", true)).NotTo(BeNil())
-			Expect(runner.CmdsMatch([][]string{relabelCmd})).To(BeNil())
-		})
-		It("ignores relabel failures", func() {
-			runner.ReturnError = errors.New("setfiles failure")
-			Expect(elemental.SelinuxRelabel(*config, "", false)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "")).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{relabelCmd})).To(BeNil())
 		})
 		It("relabels the given root-tree path", func() {
@@ -937,7 +932,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 				"setfiles", "-c", policyFile, "-F", "-r", "/root", contextFile, "/root",
 			}
 
-			Expect(elemental.SelinuxRelabel(*config, "/root", true)).To(BeNil())
+			Expect(elemental.SelinuxRelabel(*config, "/root")).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{relabelCmd})).To(BeNil())
 		})
 	})

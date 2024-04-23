@@ -703,11 +703,12 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 func (b *BuildDiskAction) applySelinuxLabels(root string, unprivileged bool) error {
 	if unprivileged {
 		// Swallow errors, label on a best effort when not chrooting
-		return elemental.SelinuxRelabel(b.cfg.Config, root, false)
+		_ = elemental.SelinuxRelabel(b.cfg.Config, root)
+		return nil
 	}
 	binds := map[string]string{}
 	return utils.ChrootedCallback(
-		&b.cfg.Config, root, binds, func() error { return elemental.SelinuxRelabel(b.cfg.Config, "/", true) },
+		&b.cfg.Config, root, binds, func() error { return elemental.SelinuxRelabel(b.cfg.Config, "/") },
 	)
 }
 
