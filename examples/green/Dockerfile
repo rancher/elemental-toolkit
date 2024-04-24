@@ -61,7 +61,6 @@ RUN ARCH=$(uname -m); \
       podman \
       audit \
       patterns-microos-selinux \
-      k3s-selinux \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
