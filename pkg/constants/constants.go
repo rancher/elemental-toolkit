@@ -63,6 +63,7 @@ const (
 	Tmpfs              = "tmpfs"
 	Autofs             = "auto"
 	Block              = "block"
+	EfivarsMountPath   = "/sys/firmware/efi/efivars"
 
 	// Maxium number of nested symlinks to resolve
 	MaxLinkDepth = 4

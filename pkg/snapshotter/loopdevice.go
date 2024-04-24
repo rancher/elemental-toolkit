@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 
@@ -91,7 +92,7 @@ func (l *LoopDevice) InitSnapshotter(state *types.Partition, efiDir string) erro
 		l.legacyClean = true
 
 		// Legacy deployments might not include RW mounts for state partitions
-		if ok, _ := elemental.IsRWMountPoint(l.cfg, l.rootDir); !ok {
+		if ok, _ := elemental.IsRWMountPoint(l.cfg.Runner, l.rootDir); !ok {
 			err = l.cfg.Mounter.Mount("", l.rootDir, "auto", []string{"remount", "rw"})
 			if err != nil {
 				l.cfg.Logger.Errorf("Failed remounting root as RW: %v", err)
