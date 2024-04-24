@@ -177,8 +177,8 @@ func IsMounted(c types.Config, part *types.Partition) (bool, error) {
 	return !notMnt, nil
 }
 
-func IsRWMountPoint(c types.Config, mountPoint string) (bool, error) {
-	cmdOut, err := c.Runner.Run("findmnt", "-fno", "OPTIONS", mountPoint)
+func IsRWMountPoint(r types.Runner, mountPoint string) (bool, error) {
+	cmdOut, err := r.Run("findmnt", "-fno", "OPTIONS", mountPoint)
 	if err != nil {
 		return false, err
 	}
@@ -193,7 +193,7 @@ func IsRWMountPoint(c types.Config, mountPoint string) (bool, error) {
 // MountRWPartition mounts, or remounts if needed, a partition with RW permissions
 func MountRWPartition(c types.Config, part *types.Partition) (umount func() error, err error) {
 	if mnt, _ := IsMounted(c, part); mnt {
-		if ok, _ := IsRWMountPoint(c, part.MountPoint); ok {
+		if ok, _ := IsRWMountPoint(c.Runner, part.MountPoint); ok {
 			c.Logger.Debugf("Already RW mounted: %s at %s", part.Name, part.MountPoint)
 			return func() error { return nil }, nil
 		}

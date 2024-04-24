@@ -23,6 +23,7 @@ import (
 	"regexp"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 
@@ -117,6 +118,28 @@ func WithGrubPrefixes(prefixes ...string) func(g *Grub) error {
 func WithGrubDisableBootEntry(disableBootEntry bool) func(g *Grub) error {
 	return func(g *Grub) error {
 		g.disableBootEntry = disableBootEntry
+		return nil
+	}
+}
+
+func WithGrubAutoDisableBootEntry() func(g *Grub) error {
+	return func(g *Grub) error {
+		if g.disableBootEntry {
+			// already disabled manually, doing nothing
+			return nil
+		}
+
+		rw, err := elemental.IsRWMountPoint(g.runner, constants.EfivarsMountPath)
+		if err != nil {
+			g.logger.Errorf("error finding efivar mounts: %s", err.Error())
+			return err
+		}
+
+		// If efivars is not RW, disable writing boot entries.
+		if !rw {
+			g.disableBootEntry = true
+		}
+
 		return nil
 	}
 }

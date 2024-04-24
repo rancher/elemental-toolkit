@@ -84,7 +84,9 @@ func NewResetAction(cfg *types.RunConfig, spec *types.ResetSpec, opts ...ResetAc
 
 	if r.bootloader == nil {
 		r.bootloader = bootloader.NewGrub(
-			&cfg.Config, bootloader.WithGrubDisableBootEntry(r.spec.DisableBootEntry),
+			&cfg.Config,
+			bootloader.WithGrubDisableBootEntry(r.spec.DisableBootEntry),
+			bootloader.WithGrubAutoDisableBootEntry(),
 			bootloader.WithGrubClearBootEntry(false),
 		)
 	}

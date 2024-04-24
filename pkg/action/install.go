@@ -61,7 +61,10 @@ func NewInstallAction(cfg *types.RunConfig, spec *types.InstallSpec, opts ...Ins
 	}
 
 	if i.bootloader == nil {
-		i.bootloader = bootloader.NewGrub(&cfg.Config, bootloader.WithGrubDisableBootEntry(i.spec.DisableBootEntry))
+		i.bootloader = bootloader.NewGrub(&cfg.Config,
+			bootloader.WithGrubDisableBootEntry(i.spec.DisableBootEntry),
+			bootloader.WithGrubAutoDisableBootEntry(),
+		)
 	}
 
 	if i.snapshotter == nil {
