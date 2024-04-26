@@ -363,6 +363,11 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 			return err
 		}
 
+		err = SelinuxRelabel(c, rootDir)
+		if err != nil {
+			c.Logger.Warnf("failed SELinux labelling at %s: %v", rootDir, err)
+		}
+
 		err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, img.File, c.SquashFsCompressionConfig)
 		if err != nil {
 			c.Logger.Errorf("failed creating squashfs image for %s: %v", img.File, err)
@@ -398,6 +403,12 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 				c.Logger.Errorf("failed creating dir structure: %v", err)
 				return err
 			}
+
+			err = ApplySELinuxLabels(c, img.MountPoint, nil)
+			if err != nil {
+				c.Logger.Errorf("failed SELinux labelling at %s: %v", img.MountPoint, err)
+				return err
+			}
 		}
 	}
 	return err
@@ -406,7 +417,7 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 // CopyFileImg copies the files target as the source of this image. It also applies the img label over the copied image.
 func CopyFileImg(c types.Config, img *types.Image) error {
 	if !img.Source.IsFile() {
-		return fmt.Errorf("Copying a file image requires an image source of file type")
+		return fmt.Errorf("copying a file image requires an image source of file type")
 	}
 
 	err := utils.MkdirAll(c.Fs, filepath.Dir(img.File), cnst.DirPerm)
@@ -659,19 +670,20 @@ func CopyCloudConfig(c types.Config, path string, cloudInit []string) (err error
 }
 
 // SelinuxRelabel will relabel the system if it finds the binary and the context
-func SelinuxRelabel(c types.Config, rootDir string) error {
-	policyFile, err := utils.FindFile(c.Fs, rootDir, filepath.Join(cnst.SELinuxTargetedPolicyPath, "policy.*"))
+func SelinuxRelabel(c types.Config, rootDir string, extraPaths ...string) error {
 	contextFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	contextExists, _ := utils.Exists(c.Fs, contextFile)
 
-	if err == nil && contextExists && c.Runner.CommandExists("setfiles") {
+	if contextExists && c.Runner.CommandExists("setfiles") {
 		var out []byte
 		var err error
+		var args []string
 		if rootDir == "/" || rootDir == "" {
-			out, err = c.Runner.Run("setfiles", "-c", policyFile, "-e", "/dev", "-e", "/proc", "-e", "/sys", "-F", contextFile, "/")
+			args = append([]string{"-e", "/dev", "-e", "/proc", "-e", "/sys", "-i", "-F", contextFile, "/"}, extraPaths...)
 		} else {
-			out, err = c.Runner.Run("setfiles", "-c", policyFile, "-F", "-r", rootDir, contextFile, rootDir)
+			args = append([]string{"-i", "-F", "-r", rootDir, contextFile, rootDir}, extraPaths...)
 		}
+		out, err = c.Runner.Run("setfiles", args...)
 		c.Logger.Debugf("SELinux setfiles output: %s", string(out))
 		return err
 	}
@@ -680,18 +692,34 @@ func SelinuxRelabel(c types.Config, rootDir string) error {
 	return nil
 }
 
-// ApplySelinuxLabels sets SELinux extended attributes to the root-tree being installed
-func ApplySelinuxLabels(cfg types.Config, parts types.ElementalPartitions) error {
-	binds := map[string]string{}
-	if mnt, _ := IsMounted(cfg, parts.Persistent); mnt {
-		binds[parts.Persistent.MountPoint] = cnst.PersistentPath
+// ApplySELinuxLabels relables with setfiles the given root in a chroot env. Additionaly after the first
+// chrooted call it runs a non chrooted call to relabel any mountpoint used within the chroot.
+func ApplySELinuxLabels(c types.Config, rootDir string, bind map[string]string) (err error) {
+	var out []byte
+	extraPaths := []string{}
+
+	for _, v := range bind {
+		extraPaths = append(extraPaths, v)
 	}
-	if mnt, _ := IsMounted(cfg, parts.OEM); mnt {
-		binds[parts.OEM.MountPoint] = cnst.OEMPath
+
+	err = utils.ChrootedCallback(&c, rootDir, bind, func() error { return SelinuxRelabel(c, "/", extraPaths...) })
+	if err != nil {
+		return err
 	}
-	return utils.ChrootedCallback(
-		&cfg, cnst.WorkingImgDir, binds, func() error { return SelinuxRelabel(cfg, "/") },
-	)
+
+	contextsFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
+	existsCon, _ := utils.Exists(c.Fs, contextsFile)
+
+	if existsCon && c.Runner.CommandExists("setfiles") {
+		args := []string{"-r", rootDir, "-i", "-F", contextsFile}
+		for _, path := range append([]string{"/dev", "/proc", "/sys"}, extraPaths...) {
+			args = append(args, filepath.Join(rootDir, path))
+		}
+		out, err = c.Runner.Run("setfiles", args...)
+		c.Logger.Debugf("SELinux setfiles output: %s", string(out))
+	}
+
+	return err
 }
 
 // CheckActiveDeployment returns true if at least one of the mode sentinel files is found

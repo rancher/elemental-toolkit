@@ -50,6 +50,9 @@ func NewChroot(path string, config *types.Config) *Chroot {
 // ChrootedCallback runs the given callback in a chroot environment
 func ChrootedCallback(cfg *types.Config, path string, bindMounts map[string]string, callback func() error) error {
 	chroot := NewChroot(path, cfg)
+	if bindMounts == nil {
+		bindMounts = map[string]string{}
+	}
 	chroot.SetExtraMounts(bindMounts)
 	return chroot.RunCallback(callback)
 }

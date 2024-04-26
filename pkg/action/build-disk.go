@@ -105,8 +105,7 @@ func (b *BuildDiskAction) buildDiskHook(hook string) error {
 }
 
 func (b *BuildDiskAction) buildDiskChrootHook(hook string, root string) error {
-	extraMounts := map[string]string{}
-	return ChrootHook(&b.cfg.Config, hook, b.cfg.Strict, root, extraMounts, b.cfg.CloudInitPaths...)
+	return ChrootHook(&b.cfg.Config, hook, b.cfg.Strict, root, nil, b.cfg.CloudInitPaths...)
 }
 
 func (b *BuildDiskAction) preparePartitionsRoot() error {
@@ -217,12 +216,6 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], recRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
-	}
-
-	// Relabel SELinux
-	err = b.applySelinuxLabels(recRoot, b.spec.Expandable)
-	if err != nil {
-		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
 	}
 
 	// After disk hook happens after deploying the OS tree into a temporary folder
@@ -697,19 +690,6 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 		return err
 	}
 	return nil
-}
-
-// applySelinuxLabels sets SELinux extended attributes to the root-tree being installed. Swallows errors, label on a best effort
-func (b *BuildDiskAction) applySelinuxLabels(root string, unprivileged bool) error {
-	if unprivileged {
-		// Swallow errors, label on a best effort when not chrooting
-		_ = elemental.SelinuxRelabel(b.cfg.Config, root)
-		return nil
-	}
-	binds := map[string]string{}
-	return utils.ChrootedCallback(
-		&b.cfg.Config, root, binds, func() error { return elemental.SelinuxRelabel(b.cfg.Config, "/") },
-	)
 }
 
 func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot string) error {

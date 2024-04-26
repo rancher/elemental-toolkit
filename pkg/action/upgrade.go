@@ -361,13 +361,6 @@ func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
 		}
 	}
 
-	// Relabel SELinux
-	err = elemental.ApplySelinuxLabels(u.cfg.Config, u.spec.Partitions)
-	if err != nil {
-		u.cfg.Logger.Errorf("failed setting SELinux labels: %v", err)
-		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
-	}
-
 	err = u.upgradeChrootHook(constants.AfterUpgradeChrootHook, constants.WorkingImgDir)
 	if err != nil {
 		u.Error("Error running hook after-upgrade-chroot: %s", err)

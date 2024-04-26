@@ -320,6 +320,13 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 		}
 	}
 
+	extraBind := map[string]string{filepath.Join(b.rootDir, snapshotsPath): filepath.Join("/", snapshotsPath)}
+	err = elemental.ApplySELinuxLabels(b.cfg, snapshot.Path, extraBind)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed relabelling snapshot path: %s", snapshot.Path)
+		return err
+	}
+
 	cmdOut, err = b.cfg.Runner.Run("btrfs", "property", "set", snapshot.Path, "ro", "true")
 	if err != nil {
 		b.cfg.Logger.Errorf("failed setting read only property to snapshot %d: %s", snapshot.ID, string(cmdOut))
@@ -676,20 +683,24 @@ func (b *Btrfs) remountStatePartition(state *types.Partition) error {
 		return err
 	}
 
-	b.cfg.Logger.Debugf("Mount snapshots subvolume in active snapshot")
 	if b.activeSnapshotID > 0 {
-		snapperRoot := filepath.Join(state.MountPoint, fmt.Sprintf(snapshotPathTmpl, b.activeSnapshotID))
-		mountpoint := filepath.Join(snapperRoot, snapshotsPath)
-		subvol := fmt.Sprintf("subvol=%s", filepath.Join(rootSubvol, snapshotsPath))
-		err = b.cfg.Mounter.Mount(state.Path, mountpoint, "btrfs", []string{"rw", subvol})
-		if err != nil {
-			b.cfg.Logger.Errorf("failed mounting subvolume %s at %s", subvol, mountpoint)
-			return err
-		}
-		b.snapshotsUmount = func() error { return b.cfg.Mounter.Unmount(mountpoint) }
-		b.snapperArgs = []string{"--no-dbus", "--root", snapperRoot}
+		err = b.mountSnapshotsSubvolumeInSnapshot(state.MountPoint, state.Path, b.activeSnapshotID)
+		b.snapperArgs = []string{"--no-dbus", "--root", filepath.Join(state.MountPoint, fmt.Sprintf(snapshotPathTmpl, b.activeSnapshotID))}
 	}
 	b.rootDir = state.MountPoint
+	return err
+}
+
+func (b *Btrfs) mountSnapshotsSubvolumeInSnapshot(root, device string, snapshotID int) error {
+	b.cfg.Logger.Debugf("Mount snapshots subvolume in active snapshot %d", snapshotID)
+	mountpoint := filepath.Join(filepath.Join(root, fmt.Sprintf(snapshotPathTmpl, snapshotID)), snapshotsPath)
+	subvol := fmt.Sprintf("subvol=%s", filepath.Join(rootSubvol, snapshotsPath))
+	err := b.cfg.Mounter.Mount(device, mountpoint, "btrfs", []string{"rw", subvol})
+	if err != nil {
+		b.cfg.Logger.Errorf("failed mounting subvolume %s at %s", subvol, mountpoint)
+		return err
+	}
+	b.snapshotsUmount = func() error { return b.cfg.Mounter.Unmount(mountpoint) }
 	return nil
 }
 

@@ -324,13 +324,6 @@ func (i *InstallAction) refineDeployment() error { //nolint:dupl
 		return elementalError.NewFromError(err, elementalError.InstallGrub)
 	}
 
-	// Relabel SELinux
-	err = elemental.ApplySelinuxLabels(i.cfg.Config, i.spec.Partitions)
-	if err != nil {
-		i.cfg.Logger.Errorf("failed setting SELinux labels: %v", err)
-		return elementalError.NewFromError(err, elementalError.SelinuxRelabel)
-	}
-
 	err = i.installChrootHook(cnst.AfterInstallChrootHook, cnst.WorkingImgDir)
 	if err != nil {
 		i.cfg.Logger.Errorf("failed after-install-chroot hook: %v", err)
