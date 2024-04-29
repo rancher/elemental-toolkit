@@ -89,17 +89,18 @@ build-iso:
 	@echo Building $(ARCH) ISO
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
-		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs -n elemental-$(FLAVOR).$(ARCH) \
+		-v $(ROOT_DIR)/tests/assets/remote_login.yaml:/overlay-iso/iso-config/remote_login.yaml \
+		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs \
+		-n elemental-$(FLAVOR).$(ARCH) --overlay-iso /overlay-iso \
 		--local --platform $(PLATFORM) -o /build $(REPO):$(VERSION)
 
 .PHONY: build-disk
 build-disk:
 	@echo Building $(ARCH) disk
 	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
-		--entrypoint /usr/bin/elemental \
-		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --expandable -n elemental-$(FLAVOR).$(ARCH) --local \
-		-o /build --system $(REPO):$(VERSION)
+	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build -v $(ROOT_DIR)/tests/assets:/assets \
+		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) \
+		--expandable -n elemental-$(FLAVOR).$(ARCH) --local --cloud-init /assets/remote_login.yaml -o /build --system $(REPO):$(VERSION)
 	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
