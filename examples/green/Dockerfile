@@ -57,9 +57,10 @@ RUN ARCH=$(uname -m); \
       sudo \
       curl \
       sed \
-      patch \
       iproute2 \
       podman \
+      audit \
+      patterns-microos-selinux \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
@@ -78,6 +79,9 @@ RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
 # Add default network configuration
 ADD 05_network.yaml /system/oem/05_network.yaml
+
+# SELinux in enforce mode
+RUN sed -i "s|SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
 
 # Add default snapshotter setup
 ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
