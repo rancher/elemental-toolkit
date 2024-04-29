@@ -19,6 +19,8 @@ package vm
 import (
 	"fmt"
 	"strings"
+
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
 )
 
 type PodmanRunCommand struct {
@@ -62,6 +64,6 @@ func (p *PodmanRunCommand) Run() (string, error) {
 	}
 
 	cmd := fmt.Sprintf("podman run %s %s %s %s %s", priv, strings.Join(mounts, " "), entrypoint, p.image, p.command)
-	fmt.Printf("Running podman command: '%s'", cmd)
+	By(fmt.Sprintf("Running podman command: '%s'", cmd))
 	return p.sut.Command(cmd)
 }
