@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -76,6 +77,7 @@ type SUT struct {
 	Host          string
 	Username      string
 	Password      string
+	SSHKey        []byte
 	Timeout       int
 	artifactsRepo string
 	TestVersion   string
@@ -85,10 +87,24 @@ type SUT struct {
 }
 
 func NewSUT() *SUT {
+	var sshKey []byte
+	var err error
+
 	user := os.Getenv("COS_USER")
 	if user == "" {
 		user = "root"
 	}
+
+	sshKeyFile := os.Getenv("COS_SSHKEY")
+	if sshKeyFile == "" {
+		sshKeyFile = "../assets/testkey"
+	}
+
+	sshKey, err = os.ReadFile(sshKeyFile)
+	if err != nil {
+		fmt.Printf("failed reading ssh key file: %s\n", sshKeyFile)
+	}
+
 	pass := os.Getenv("COS_PASS")
 	if pass == "" {
 		pass = Elemental
@@ -123,6 +139,7 @@ func NewSUT() *SUT {
 		Host:          host,
 		Username:      user,
 		Password:      pass,
+		SSHKey:        sshKey,
 		MachineID:     "test",
 		Timeout:       timeout,
 		artifactsRepo: "",
@@ -347,12 +364,24 @@ func (s *SUT) Reboot(t ...int) {
 }
 
 func (s *SUT) clientConfig() *ssh.ClientConfig {
-	sshConfig := &ssh.ClientConfig{
-		User:    s.Username,
-		Auth:    []ssh.AuthMethod{ssh.Password(s.Password)},
-		Timeout: 30 * time.Second, // max time to establish connection
+	var signer ssh.Signer
+	var err error
+	auths := []ssh.AuthMethod{}
+
+	if s.SSHKey != nil {
+		signer, err = ssh.ParsePrivateKey(s.SSHKey)
+		if err != nil {
+			log.Fatalf("unable to parse private key: %v", err)
+		}
+		auths = append(auths, ssh.PublicKeys(signer))
 	}
-	sshConfig.HostKeyCallback = ssh.InsecureIgnoreHostKey()
+
+	sshConfig := &ssh.ClientConfig{
+		User:            s.Username,
+		Auth:            append(auths, ssh.Password(s.Password)),
+		Timeout:         15 * time.Second, // max time to establish connection
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
 
 	return sshConfig
 }
@@ -382,7 +411,7 @@ func (s *SUT) SendFile(src, dst, permission string) error {
 func (s *SUT) connectToHost() (*ssh.Client, error) {
 	sshConfig := s.clientConfig()
 
-	client, err := SSHDialTimeout("tcp", s.Host, sshConfig, s.clientConfig().Timeout)
+	client, err := SSHDialTimeout("tcp", s.Host, sshConfig, sshConfig.Timeout)
 	if err != nil {
 		return nil, err
 	}
