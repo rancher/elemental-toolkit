@@ -44,6 +44,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 	var snapCfg types.SnapshotterConfig
 	var rootDir, efiDir string
 	var statePart *types.Partition
+	var syscall *mocks.FakeSyscall
 
 	BeforeEach(func() {
 		rootDir = "/some/root"
@@ -55,6 +56,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		efiDir = constants.EfiDir
 		runner = mocks.NewFakeRunner()
 		mounter = mocks.NewFakeMounter()
+		syscall = &mocks.FakeSyscall{}
 		bootloader = &mocks.FakeBootloader{}
 		memLog = bytes.NewBuffer(nil)
 		logger = types.NewBufferLogger(memLog)
@@ -69,6 +71,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			conf.WithRunner(runner),
 			conf.WithLogger(logger),
 			conf.WithMounter(mounter),
+			conf.WithSyscall(syscall),
 			conf.WithPlatform("linux/amd64"),
 		)
 		snapCfg = types.NewLoopDevice()

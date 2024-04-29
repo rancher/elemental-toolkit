@@ -885,8 +885,8 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			relabelCmd = []string{
-				"setfiles", "-c", policyFile, "-e", "/dev", "-e", "/proc", "-e", "/sys",
-				"-F", constants.SELinuxTargetedContextFile, "/",
+				"setfiles", "-e", "/dev", "-e", "/proc", "-e", "/sys",
+				"-i", "-F", constants.SELinuxTargetedContextFile, "/",
 			}
 		})
 		It("does nothing if the context file is not found", func() {
@@ -929,7 +929,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			relabelCmd = []string{
-				"setfiles", "-c", policyFile, "-F", "-r", "/root", contextFile, "/root",
+				"setfiles", "-i", "-F", "-r", "/root", contextFile, "/root",
 			}
 
 			Expect(elemental.SelinuxRelabel(*config, "/root")).To(BeNil())
