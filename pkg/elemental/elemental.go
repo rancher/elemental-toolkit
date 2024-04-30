@@ -542,15 +542,19 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image) error {
 	return nil
 }
 
-// DumpSource dumps the imgSrc data to target. Mirror arguments sets the perfectly mirror source to target regardless if
-// some data is already present in target
-func DumpSource(c types.Config, target string, imgSrc *types.ImageSource, mirror bool) error { // nolint:gocyclo
+// DumpSource dumps the imgSrc data to target. SyncFunc argument is the function used to synchronize file or directory
+// sources (unused for contaier images), defaults to utils.SyncData if nil provided.
+func DumpSource(
+	c types.Config, target string, imgSrc *types.ImageSource,
+	syncFunc func(
+		l types.Logger, r types.Runner, f types.FS, src string, dst string, excl ...string,
+	) error,
+) error { // nolint:gocyclo
 	var err error
 	var digest string
 
-	syncFunc := utils.SyncData
-	if mirror {
-		syncFunc = utils.MirrorData
+	if syncFunc == nil {
+		syncFunc = utils.SyncData
 	}
 
 	c.Logger.Infof("Copying %s source...", imgSrc.Value())
@@ -611,15 +615,11 @@ func DumpSource(c types.Config, target string, imgSrc *types.ImageSource, mirror
 // MirrorRoot mirrors image source contents to target. Any preexisting data in target is going to be overwritten or
 // deleted to perfectly match image source contents.
 func MirrorRoot(c types.Config, target string, imgSrc *types.ImageSource) error {
-	err := DumpSource(c, target, imgSrc, true)
+	err := DumpSource(c, target, imgSrc, utils.MirrorData)
 	if err != nil {
 		return nil
 	}
-	err = utils.CreateDirStructure(c.Fs, target)
-	if err != nil {
-		return err
-	}
-	return nil
+	return utils.CreateDirStructure(c.Fs, target)
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target

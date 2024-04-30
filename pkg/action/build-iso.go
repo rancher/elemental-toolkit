@@ -315,7 +315,7 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 
 func (b BuildISOAction) applySources(target string, sources ...*types.ImageSource) error {
 	for _, src := range sources {
-		err := elemental.DumpSource(b.cfg.Config, target, src, false)
+		err := elemental.DumpSource(b.cfg.Config, target, src, utils.SyncData)
 		if err != nil {
 			return elementalError.NewFromError(err, elementalError.DumpSource)
 		}
