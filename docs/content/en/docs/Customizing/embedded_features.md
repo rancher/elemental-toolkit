@@ -24,9 +24,12 @@ The current features available for the `init`-command is:
 
 - elemental-rootfs: dracut configuration for mounting the immutable root filesystem.
 - grub-config: grub configuration for booting the derivative.
+- grub-default-bootargs: default boot arguments used for booting the derivative.
 - elemental-setup: services used for booting the system and running cloud-init files at boot/install/upgrade.
 - dracut-config: default dracut configuration for generating an initrd.
 - cloud-config-defaults: optional default settings for a derivative.
 - cloud-config-essentials: essential cloud-init files.
+- boot-assessment: add boot assessment logic during install and upgrades.
+- autologin: automatically login to the booted system as root.
 
 
