@@ -240,7 +240,7 @@ func (r ResetAction) Run() (err error) {
 	cleanup.PushErrorOnly(func() error { return r.snapshotter.CloseTransactionOnError(r.snapshot) })
 
 	// Deploy system image
-	err = elemental.DumpSource(r.cfg.Config, r.snapshot.WorkDir, r.spec.System)
+	err = elemental.MirrorRoot(r.cfg.Config, r.snapshot.WorkDir, r.spec.System)
 	if err != nil {
 		r.cfg.Logger.Errorf("failed deploying source: %s", r.spec.System.String())
 		return elementalError.NewFromError(err, elementalError.DumpSource)

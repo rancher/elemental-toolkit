@@ -167,7 +167,7 @@ func SyncData(log types.Logger, runner types.Runner, fs types.FS, source string,
 // MirrorData rsync's source folder contents to a target folder content, in contrast, to SyncData this
 // method includes the --delete flag which forces the deletion of files in target that are missing in source.
 func MirrorData(log types.Logger, runner types.Runner, fs types.FS, source string, target string, excludes ...string) error {
-	flags := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--delete", "--filter=-x security.selinux"}
+	flags := []string{"--delete", "--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--filter=-x security.selinux"}
 	for _, e := range excludes {
 		flags = append(flags, fmt.Sprintf("--exclude=%s", e))
 	}

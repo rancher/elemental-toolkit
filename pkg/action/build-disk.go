@@ -162,7 +162,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	recRoot := filepath.Join(workdir, filepath.Base(b.spec.RecoverySystem.File)+rootSuffix)
 
 	// Create recovery root
-	err = elemental.DumpSource(b.cfg.Config, recRoot, b.spec.RecoverySystem.Source)
+	err = elemental.MirrorRoot(b.cfg.Config, recRoot, b.spec.RecoverySystem.Source)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed loading recovery image source tree: %s", err.Error())
 		return err
@@ -425,7 +425,7 @@ func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 	}
 
 	// Deploy system image
-	err = elemental.DumpSource(b.cfg.Config, b.snapshot.WorkDir, system)
+	err = elemental.MirrorRoot(b.cfg.Config, b.snapshot.WorkDir, system)
 	if err != nil {
 		_ = b.snapshotter.CloseTransactionOnError(b.snapshot)
 		b.cfg.Logger.Errorf("failed deploying source: %s", system.String())
