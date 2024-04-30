@@ -606,7 +606,7 @@ func DumpSource(
 func MirrorRoot(c types.Config, target string, imgSrc *types.ImageSource) error {
 	err := DumpSource(c, target, imgSrc, utils.MirrorData)
 	if err != nil {
-		return nil
+		return err
 	}
 	return utils.CreateDirStructure(c.Fs, target)
 }
