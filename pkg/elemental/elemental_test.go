@@ -537,78 +537,94 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			})
 		})
 	})
-	Describe("DumpSource", Label("dump"), func() {
+	Describe("MirrorRoot", func() {
 		var destDir string
+		var syncFunc func(l types.Logger, r types.Runner, f types.FS, src string, dst string, excl ...string) error
+		var fErr error
 		BeforeEach(func() {
 			var err error
 			destDir, err = utils.TempDir(fs, "", "elemental")
 			Expect(err).ShouldNot(HaveOccurred())
-		})
-		It("Copies files from a directory source", func() {
-			rsyncCount := 0
-			src := ""
-			dest := ""
-
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == "rsync" {
-					rsyncCount += 1
-					src = args[len(args)-2]
-					dest = args[len(args)-1]
-				}
-
-				return []byte{}, nil
+			syncFunc = func(_ types.Logger, _ types.Runner, _ types.FS, src string, dst string, _ ...string) error {
+				return fErr
 			}
-
-			err := elemental.DumpSource(*config, "/dest", types.NewDirSrc("/source"))
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(rsyncCount).To(Equal(1))
-			Expect(src).To(HaveSuffix("/source/"))
-			Expect(dest).To(HaveSuffix("/dest/"))
 		})
 		It("Unpacks a docker image to target", Label("docker"), func() {
 			dockerSrc := types.NewDockerSrc("docker/image:latest")
-			err := elemental.DumpSource(*config, destDir, dockerSrc)
+			err := elemental.DumpSource(*config, destDir, dockerSrc, syncFunc)
 			Expect(dockerSrc.GetDigest()).To(Equal("fakeDigest"))
 			Expect(err).To(BeNil())
 		})
+		It("Fails to mirror data", func() {
+			fErr = errors.New("fake synching failure")
+			err := elemental.DumpSource(*config, destDir, types.NewDirSrc("/source"), syncFunc)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("fake synching failure"))
+		})
+	})
+	Describe("DumpSource", Label("dump"), func() {
+		var destDir string
+		var syncFunc func(l types.Logger, r types.Runner, f types.FS, src string, dst string, excl ...string) error
+		var fErr error
+		var src, dst string
+		BeforeEach(func() {
+			var err error
+			src = ""
+			dst = ""
+			destDir, err = utils.TempDir(fs, "", "elemental")
+			Expect(err).ShouldNot(HaveOccurred())
+			syncFunc = func(_ types.Logger, _ types.Runner, _ types.FS, s string, d string, _ ...string) error {
+				src = s
+				dst = d
+				return fErr
+			}
+		})
+		It("Copies files from a directory source", func() {
+			Expect(elemental.DumpSource(*config, "/dest", types.NewDirSrc("/source"), syncFunc)).To(Succeed())
+			Expect(src).To(Equal("/source"))
+			Expect(dst).To(Equal("/dest"))
+		})
+		It("Unpacks a docker image to target", Label("docker"), func() {
+			dockerSrc := types.NewDockerSrc("docker/image:latest")
+			err := elemental.DumpSource(*config, destDir, dockerSrc, syncFunc)
+			Expect(dockerSrc.GetDigest()).To(Equal("fakeDigest"))
+			Expect(err).To(BeNil())
+
+			// SyncFunc is not used
+			Expect(src).To(BeEmpty())
+			Expect(dst).To(BeEmpty())
+		})
 		It("Unpacks a docker image to target with cosign validation", Label("docker", "cosign"), func() {
 			config.Cosign = true
-			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"))
+			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"), nil)
 			Expect(err).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails cosign validation", Label("cosign"), func() {
 			runner.ReturnError = errors.New("cosign error")
 			config.Cosign = true
-			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"))
+			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"), nil)
 			Expect(err).NotTo(BeNil())
 			Expect(runner.CmdsMatch([][]string{{"cosign", "verify", "docker/image:latest"}}))
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			unpackErr := errors.New("failed to unpack")
 			extractor.SideEffect = func(_, _, _ string, _ bool) (string, error) { return "", unpackErr }
-			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"))
+			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"), nil)
 			Expect(err).To(Equal(unpackErr))
 		})
 		It("Copies image file to target", func() {
 			sourceImg := "/source.img"
 			destFile := filepath.Join(destDir, "active.img")
 
-			err := elemental.DumpSource(*config, destFile, types.NewFileSrc(sourceImg))
+			err := elemental.DumpSource(*config, destFile, types.NewFileSrc(sourceImg), syncFunc)
 			Expect(err).To(BeNil())
-			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
+			Expect(dst).To(Equal(destFile))
+			Expect(src).To(Equal(constants.ImgSrcDir))
 		})
 		It("Fails to copy, source can't be mounted", func() {
 			mounter.ErrorOnMount = true
-			err := elemental.DumpSource(*config, "whatever", types.NewFileSrc("/source.img"))
-			Expect(err).To(HaveOccurred())
-		})
-		It("Fails to copy, no write permissions", func() {
-			sourceImg := "/source.img"
-			_, err := fs.Create(sourceImg)
-			Expect(err).To(BeNil())
-			config.Fs = vfs.NewReadOnlyFS(fs)
-			err = elemental.DumpSource(*config, "whatever", types.NewFileSrc("/source.img"))
+			err := elemental.DumpSource(*config, "whatever", types.NewFileSrc("/source.img"), nil)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -668,111 +684,6 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(img.Size).To(Equal(32 + constants.ImgOverhead + 1))
 			Expect(cleaned).To(BeFalse())
 			Expect(runner.IncludesCmds([][]string{{"rsync"}}))
-		})
-	})
-	Describe("DeployImage", Label("deployImg"), func() {
-		var imgFile, srcDir string
-		var img *types.Image
-
-		BeforeEach(func() {
-			destDir, err := utils.TempDir(fs, "", "test")
-			Expect(err).ShouldNot(HaveOccurred())
-			srcDir, err = utils.TempDir(fs, "", "test")
-			Expect(err).ShouldNot(HaveOccurred())
-
-			imgFile = filepath.Join(destDir, "dst.img")
-
-			sf, err := fs.Create(filepath.Join(srcDir, "somefile"))
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(sf.Truncate(32 * 1024 * 1024)).To(Succeed())
-			Expect(sf.Close()).To(Succeed())
-
-			Expect(err).ShouldNot(HaveOccurred())
-			img = &types.Image{
-				FS:         constants.LinuxImgFs,
-				File:       imgFile,
-				MountPoint: "/some/mountpoint",
-				Source:     types.NewDirSrc(srcDir),
-			}
-		})
-		It("Deploys a directory image source into a filesystem image", func() {
-			err := elemental.DeployImage(*config, img)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
-		})
-		It("Deploys a file image source into a filesystem image", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == "losetup" {
-					return []byte("/dev/loop0"), nil
-				}
-				return []byte{}, nil
-			}
-			img.Source = types.NewFileSrc("/some/file/path")
-			err := elemental.DeployImage(*config, img)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"losetup"}, {"mkfs.ext2"}, {"rsync"}, {"losetup"}})).To(Succeed())
-		})
-		It("Deploys a container image source into a filesystem image", func() {
-			img.Source = types.NewDockerSrc("image:tag")
-			err := elemental.DeployImage(*config, img)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}, {"rsync"}})).To(Succeed())
-		})
-		It("Fails to extract a docker image", func() {
-			extractor.SideEffect = func(_, _, _ string, _ bool) (string, error) {
-				return "", fmt.Errorf("failed extracting image")
-			}
-			img.Source = types.NewDockerSrc("image:tag")
-			err := elemental.DeployImage(*config, img)
-			Expect(err).Should(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("extracting image"))
-		})
-		It("Fails to create a loop device", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == "losetup" {
-					return []byte{}, fmt.Errorf("Failed calling losetup")
-				}
-				return []byte{}, nil
-			}
-			img.Source = types.NewFileSrc("/some/file/path")
-			err := elemental.DeployImage(*config, img)
-			Expect(err).Should(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("calling losetup"))
-			Expect(runner.IncludesCmds([][]string{{"losetup"}})).To(Succeed())
-		})
-		It("Fails to delete a loop device", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == "losetup" {
-					if args[0] == "-d" {
-						return []byte{}, fmt.Errorf("Failed deleting loop")
-					}
-					return []byte("/dev/loop0"), nil
-				}
-				return []byte{}, nil
-			}
-			img.Source = types.NewFileSrc("/some/file/path")
-			err := elemental.DeployImage(*config, img)
-			Expect(err).Should(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("deleting loop"))
-			Expect(runner.IncludesCmds([][]string{{"losetup"}, {"mkfs.ext2"}, {"rsync"}, {"losetup"}})).To(Succeed())
-		})
-		It("Fails to dump source without write permissions", func() {
-			config.Fs = vfs.NewReadOnlyFS(fs)
-			err := elemental.DeployImage(*config, img)
-			Expect(err).Should(HaveOccurred())
-			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).NotTo(Succeed())
-		})
-		It("Fails to create filesystem", func() {
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == "mkfs.ext2" {
-					return []byte{}, fmt.Errorf("Failed calling mkfs.ext2")
-				}
-				return []byte{}, nil
-			}
-			err := elemental.DeployImage(*config, img)
-			Expect(err).Should(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("calling mkfs.ext2"))
-			Expect(runner.IncludesCmds([][]string{{"mkfs.ext2"}})).To(Succeed())
 		})
 	})
 	Describe("CopyImgFile", Label("copyimg"), func() {

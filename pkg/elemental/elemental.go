@@ -427,49 +427,6 @@ func CopyFileImg(c types.Config, img *types.Image) error {
 	return err
 }
 
-// DeployImage will deploy the given image into the target. This method
-// creates the filesystem image file and fills it with the correspondant data
-func DeployImage(c types.Config, img *types.Image) error {
-	var err error
-	var cleaner func() error
-
-	c.Logger.Infof("Deploying image: %s", img.File)
-	transientTree := strings.TrimSuffix(img.File, filepath.Ext(img.File)) + ".imgTree"
-	if img.Source.IsDir() {
-		transientTree = img.Source.Value()
-	} else if img.Source.IsFile() {
-		srcImg := &types.Image{
-			File:       img.Source.Value(),
-			MountPoint: transientTree,
-		}
-		err := MountFileSystemImage(c, srcImg)
-		if err != nil {
-			c.Logger.Errorf("failed mounting image tree: %v", err)
-			return err
-		}
-		cleaner = func() error {
-			err := UnmountFileSystemImage(c, srcImg)
-			if err != nil {
-				return err
-			}
-			return c.Fs.RemoveAll(transientTree)
-		}
-	} else if img.Source.IsImage() {
-		err = DumpSource(c, transientTree, img.Source)
-		if err != nil {
-			c.Logger.Errorf("failed dumping image tree: %v", err)
-			return err
-		}
-		cleaner = func() error { return c.Fs.RemoveAll(transientTree) }
-	}
-	err = CreateImageFromTree(c, img, transientTree, false, cleaner)
-	if err != nil {
-		c.Logger.Errorf("failed creating image from image tree: %v", err)
-		return err
-	}
-	return nil
-}
-
 // DeployRecoverySystem deploys the rootfs image from the img parameter and
 // extracts kernel+initrd to the same directory.
 // This can be used for both ISO (all artifacts in same output dir) and raw
@@ -507,7 +464,7 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image) error {
 			return cfg.Fs.RemoveAll(transientTree)
 		}
 	} else if img.Source.IsImage() {
-		err = DumpSource(cfg, transientTree, img.Source)
+		err = MirrorRoot(cfg, transientTree, img.Source)
 		if err != nil {
 			cfg.Logger.Errorf("failed dumping image tree: %v", err)
 			return err
@@ -574,10 +531,20 @@ func DeployRecoverySystem(cfg types.Config, img *types.Image) error {
 	return nil
 }
 
-// DumpSource sets the image data according to the image source type
-func DumpSource(c types.Config, target string, imgSrc *types.ImageSource) error { // nolint:gocyclo
+// DumpSource dumps the imgSrc data to target. SyncFunc argument is the function used to synchronize file or directory
+// sources (unused for contaier images), defaults to utils.SyncData if nil provided.
+func DumpSource(
+	c types.Config, target string, imgSrc *types.ImageSource,
+	syncFunc func(
+		l types.Logger, r types.Runner, f types.FS, src string, dst string, excl ...string,
+	) error,
+) error { // nolint:gocyclo
 	var err error
 	var digest string
+
+	if syncFunc == nil {
+		syncFunc = utils.SyncData
+	}
 
 	c.Logger.Infof("Copying %s source...", imgSrc.Value())
 
@@ -607,7 +574,7 @@ func DumpSource(c types.Config, target string, imgSrc *types.ImageSource) error 
 		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
 		excludes := cnst.GetDefaultSystemExcludes(imgSrc.Value())
-		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
+		err = syncFunc(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return err
 		}
@@ -622,20 +589,26 @@ func DumpSource(c types.Config, target string, imgSrc *types.ImageSource) error 
 			return err
 		}
 		defer UnmountFileSystemImage(c, img) // nolint:errcheck
-		err = utils.MirrorData(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target)
+		err = syncFunc(c.Logger, c.Runner, c.Fs, cnst.ImgSrcDir, target)
 		if err != nil {
 			return err
 		}
 	} else {
 		return fmt.Errorf("unknown image source type")
 	}
-	// Create essential directories such as /tmp, /dev, etc.
-	err = utils.CreateDirStructure(c.Fs, target)
-	if err != nil {
-		return err
-	}
+
 	c.Logger.Infof("Finished copying %s into %s", imgSrc.Value(), target)
 	return nil
+}
+
+// MirrorRoot mirrors image source contents to target. Any preexisting data in target is going to be overwritten or
+// deleted to perfectly match image source contents.
+func MirrorRoot(c types.Config, target string, imgSrc *types.ImageSource) error {
+	err := DumpSource(c, target, imgSrc, utils.MirrorData)
+	if err != nil {
+		return nil
+	}
+	return utils.CreateDirStructure(c.Fs, target)
 }
 
 // CopyCloudConfig will check if there is a cloud init in the config and store it on the target
