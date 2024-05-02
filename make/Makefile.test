@@ -13,7 +13,7 @@ endif
 
 .PHONY: test-active
 test-active: prepare-test
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/wait-active
+	VM_PID=$$(scripts/run_vm.sh vmpid) COS_PASS=cos go run $(GINKGO) $(GINKGO_ARGS) ./tests/wait-active
 
 .PHONY: prepare-installer-test
 prepare-installer-test:
@@ -63,7 +63,7 @@ test-downgrade: test-active
 
 .PHONY: test-upgrade
 test-upgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade -- $(UPGRADE_ARGS)
+	VM_PID=$$(scripts/run_vm.sh vmpid) COS_PASS=cos go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade -- $(UPGRADE_ARGS)
 
 .PHONY: test-deps
 test-deps:
