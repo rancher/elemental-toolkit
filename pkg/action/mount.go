@@ -84,6 +84,12 @@ func RunMount(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return err
 	}
 
+	cfg.Logger.Debugf("Writing selinux relabel file")
+	if err = WriteSelinuxRelabelFile(cfg, spec); err != nil {
+		cfg.Logger.Errorf("Error writing relabel file: %s", err.Error())
+		return err
+	}
+
 	cfg.Logger.Info("Mount command finished successfully")
 	return nil
 }
@@ -399,4 +405,29 @@ func overlayLine(path, upperPath, requriedMount string) string {
 	options = append(options, fmt.Sprintf("workdir=%s", work))
 	options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", requriedMount))
 	return fstab("overlay", path, "overlay", options)
+}
+
+func WriteSelinuxRelabelFile(cfg *types.RunConfig, spec *types.MountSpec) error {
+	if !spec.SelinuxRelabel {
+		cfg.Logger.Debug("SELinux relabeling disabled, skipping")
+		return nil
+	}
+
+	if err := utils.MkdirAll(cfg.Fs, constants.SELinuxRelabelDir, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Failed creating relabel dir: %s", err.Error())
+		return nil
+	}
+
+	paths := []string{}
+	paths = append(paths, spec.Ephemeral.Paths...)
+	paths = append(paths, spec.Persistent.Paths...)
+
+	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
+	err := cfg.Config.Fs.WriteFile(filepath.Join(constants.SELinuxRelabelDir, constants.SELinuxRelabelFile), []byte(strings.Join(paths, "\n")), constants.FilePerm)
+	if err != nil {
+		cfg.Logger.Errorf("Failed writing relabel file: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
