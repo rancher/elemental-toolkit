@@ -43,6 +43,9 @@ var _ = Describe("Init Action", func() {
 	var cleanup func()
 	var memLog *bytes.Buffer
 	var expectedNumUnits int
+	var spec *types.InitSpec
+	var enabledUnits []string
+	var errCmd, initrdFile string
 
 	BeforeEach(func() {
 		runner = mocks.NewFakeRunner()
@@ -63,48 +66,44 @@ var _ = Describe("Init Action", func() {
 		for _, feat := range feats {
 			expectedNumUnits += len(feat.Units)
 		}
+
+		spec = config.NewInitSpec()
+		enabledUnits = []string{}
+		initrdFile = "/boot/elemental.initrd-6.4"
+
+		// Emulate running in a dockerenv
+		Expect(fs.WriteFile("/.dockerenv", []byte{}, 0644)).To(Succeed())
+
+		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+			if cmd == errCmd {
+				return []byte{}, fmt.Errorf("failed calling %s", cmd)
+			}
+			switch cmd {
+			case "systemctl":
+				if args[0] == "enable" {
+					enabledUnits = append(enabledUnits, args[1])
+				}
+				return []byte{}, nil
+			case "dracut":
+				_, err := fs.Create(initrdFile)
+				Expect(err).To(Succeed())
+				return []byte{}, nil
+			default:
+				return []byte{}, nil
+			}
+		}
+
+		// Create a kernel file and modules folder
+		Expect(utils.MkdirAll(fs, "/lib/modules/6.4", constants.DirPerm)).To(Succeed())
+		Expect(utils.MkdirAll(fs, "/boot", constants.DirPerm)).To(Succeed())
+		_, err = fs.Create("/boot/vmlinuz-6.4")
+		Expect(err).To(Succeed())
 	})
 	AfterEach(func() {
 		cleanup()
 	})
-	Describe("Init System", Label("init"), func() {
-		var spec *types.InitSpec
-		var enabledUnits []string
-		var errCmd, initrdFile string
 
-		BeforeEach(func() {
-			spec = config.NewInitSpec()
-			enabledUnits = []string{}
-			initrdFile = "/boot/elemental.initrd-6.4"
-
-			// Emulate running in a dockerenv
-			Expect(fs.WriteFile("/.dockerenv", []byte{}, 0644)).To(Succeed())
-
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				if cmd == errCmd {
-					return []byte{}, fmt.Errorf("failed calling %s", cmd)
-				}
-				switch cmd {
-				case "systemctl":
-					if args[0] == "enable" {
-						enabledUnits = append(enabledUnits, args[1])
-					}
-					return []byte{}, nil
-				case "dracut":
-					_, err := fs.Create(initrdFile)
-					Expect(err).To(Succeed())
-					return []byte{}, nil
-				default:
-					return []byte{}, nil
-				}
-			}
-
-			// Create a kernel file and modules folder
-			Expect(utils.MkdirAll(fs, "/lib/modules/6.4", constants.DirPerm)).To(Succeed())
-			Expect(utils.MkdirAll(fs, "/boot", constants.DirPerm)).To(Succeed())
-			_, err := fs.Create("/boot/vmlinuz-6.4")
-			Expect(err).To(Succeed())
-		})
+	Describe("Init action", Label("init"), func() {
 		It("Shows an error if /.dockerenv does not exist", func() {
 			Expect(fs.Remove("/.dockerenv")).To(Succeed())
 			Expect(action.RunInit(cfg, spec)).ToNot(Succeed())

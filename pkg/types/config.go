@@ -255,13 +255,14 @@ type InitSpec struct {
 
 // MountSpec struct represents all the mount action details
 type MountSpec struct {
-	WriteFstab bool             `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
-	Disable    bool             `yaml:"disable,omitempty" mapstructure:"disable"`
-	Sysroot    string           `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
-	Mode       string           `yaml:"mode,omitempty" mapstructure:"mode"`
-	Volumes    []*VolumeMount   `yaml:"extra-volumes,omitempty" mapstructure:"extra-volumes"`
-	Ephemeral  EphemeralMounts  `yaml:"ephemeral,omitempty" mapstructure:"ephemeral"`
-	Persistent PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
+	WriteFstab     bool             `yaml:"write-fstab,omitempty" mapstructure:"write-fstab"`
+	Disable        bool             `yaml:"disable,omitempty" mapstructure:"disable"`
+	Sysroot        string           `yaml:"sysroot,omitempty" mapstructure:"sysroot"`
+	Mode           string           `yaml:"mode,omitempty" mapstructure:"mode"`
+	SelinuxRelabel bool             `yaml:"selinux-relabel,omitempty" mapstructure:"selinux-relabel"`
+	Volumes        []*VolumeMount   `yaml:"extra-volumes,omitempty" mapstructure:"extra-volumes"`
+	Ephemeral      EphemeralMounts  `yaml:"ephemeral,omitempty" mapstructure:"ephemeral"`
+	Persistent     PersistentMounts `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
 type VolumeMount struct {

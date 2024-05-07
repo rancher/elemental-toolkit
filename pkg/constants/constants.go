@@ -145,11 +145,15 @@ const (
 	SELinuxTargetedPath        = "/etc/selinux/targeted"
 	SELinuxTargetedContextFile = SELinuxTargetedPath + "/contexts/files/file_contexts"
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
+	SELinuxRelabelDir          = "/run/systemd/relabel-extra.d"
+	SELinuxRelabelFile         = "elemental.relabel"
 
 	ISORootFile      = "rootfs.squashfs"
 	ISOEFIImg        = "uefi.img"
 	ISOLabel         = "COS_LIVE"
 	ISOCloudInitPath = LiveDir + "/iso-config"
+
+	MountLayoutPath = "/run/elemental/mount-layout.env"
 
 	// Constants related to disk builds
 	DiskWorkDir = "build"
