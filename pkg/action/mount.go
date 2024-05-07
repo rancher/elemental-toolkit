@@ -400,3 +400,60 @@ func overlayLine(path, upperPath, requriedMount string) string {
 	options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", requriedMount))
 	return fstab("overlay", path, "overlay", options)
 }
+
+func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
+	if !spec.SelinuxRelabel {
+		cfg.Logger.Debug("SELinux relabeling disabled, skipping")
+		return nil
+	}
+
+	if exists, _ := utils.Exists(cfg.Fs, constants.SELinuxTargetedContextFile); !exists {
+		cfg.Logger.Debug("Could not find selinux policy context file")
+		return nil
+	}
+
+	if !cfg.Runner.CommandExists("setfiles") {
+		cfg.Logger.Debug("Could not find selinux setfiles utility")
+		return nil
+	}
+
+	if err := utils.MkdirAll(cfg.Fs, constants.SELinuxRelabelDir, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Failed creating relabel dir: %s", err.Error())
+		return nil
+	}
+
+	out, _ := cfg.Config.Runner.Run("setfiles", "-h")
+	cfg.Logger.Debugf("setfiles -h: ", string(out))
+
+	out, _ = cfg.Config.Runner.Run("find", "--help")
+	cfg.Logger.Debugf("find --help: ", string(out))
+
+	paths := []string{}
+	for _, p := range spec.Ephemeral.Paths {
+		paths = append(paths, p)
+	}
+	for _, p := range spec.Persistent.Paths {
+		paths = append(paths, p)
+	}
+
+	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
+	err := cfg.Config.Fs.WriteFile(filepath.Join(constants.SELinuxRelabelDir, constants.SELinuxRelabelFile), []byte(strings.Join(paths, "\n")), constants.FilePerm)
+	if err != nil {
+		cfg.Logger.Errorf("Failed writing relabel file: %s", err.Error())
+		return err
+	}
+
+	// Some extended attributes are lost on copy-up bsc#1210690.
+	// Workaround visit children first, then parents
+	cfg.Logger.Debugf("Running setfiles on depth-sorted files in %s chroot", spec.Sysroot)
+	for _, path := range paths {
+		out, err := cfg.Config.Runner.Run(fmt.Sprintf("find %s -depth -exec setfiles -i -F -v %s {} +", path, constants.SELinuxTargetedContextFile))
+		cfg.Logger.Debugf("setfiles output: %s", string(out))
+		if err != nil {
+			cfg.Logger.Errorf("Error running setfiles in %s: %s", path, err.Error())
+			return err
+		}
+	}
+
+	return nil
+}

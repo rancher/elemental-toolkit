@@ -54,6 +54,7 @@ const (
 	FeatureCloudConfigEssentials = "cloud-config-essentials"
 	FeatureBootAssessment        = "boot-assessment"
 	FeatureAutologin             = "autologin"
+	FeatureSelinux               = "selinux"
 )
 
 var (
@@ -67,6 +68,7 @@ var (
 		FeatureCloudConfigDefaults,
 		FeatureCloudConfigEssentials,
 		FeatureBootAssessment,
+		FeatureSelinux,
 	}
 
 	Default = []string{
@@ -79,6 +81,7 @@ var (
 		FeatureCloudConfigDefaults,
 		FeatureCloudConfigEssentials,
 		FeatureBootAssessment,
+		FeatureSelinux,
 	}
 )
 
@@ -170,6 +173,8 @@ func Get(names []string) ([]*Feature, error) {
 			}
 			features = append(features, New(name, units))
 		case FeatureAutologin:
+			features = append(features, New(name, nil))
+		case FeatureSelinux:
 			features = append(features, New(name, nil))
 		default:
 			notFound = append(notFound, name)
