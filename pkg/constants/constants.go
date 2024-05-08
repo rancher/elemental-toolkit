@@ -148,10 +148,11 @@ const (
 	SELinuxRelabelDir          = "/run/systemd/relabel-extra.d"
 	SELinuxRelabelFile         = "elemental.relabel"
 
-	ISORootFile      = "rootfs.squashfs"
-	ISOEFIImg        = "uefi.img"
-	ISOLabel         = "COS_LIVE"
-	ISOCloudInitPath = LiveDir + "/iso-config"
+	ISORootFile            = "rootfs.squashfs"
+	ISOEFIImg              = "uefi.img"
+	ISOLabel               = "COS_LIVE"
+	ISOCloudInitPath       = LiveDir + "/iso-config"
+	ISODefaultExtraCmdline = "security=selinux enforcing=0 console=tty1 console=ttyS0"
 
 	MountLayoutPath = "/run/elemental/mount-layout.env"
 
