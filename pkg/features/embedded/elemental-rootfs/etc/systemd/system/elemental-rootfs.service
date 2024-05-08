@@ -13,7 +13,7 @@ Type=oneshot
 RemainAfterExit=yes
 EnvironmentFile=-/run/cos/cos-layout.env
 EnvironmentFile=-/run/elemental/mount-layout.env
-ExecStart=/usr/bin/elemental mount --debug
+ExecStart=/usr/bin/elemental --config-dir /run/elemental mount --debug
 
 [Install]
 WantedBy=initrd-fs.target
