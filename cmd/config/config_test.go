@@ -39,6 +39,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
+	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
 var _ = Describe("Config", Label("config"), func() {
@@ -511,6 +512,9 @@ var _ = Describe("Config", Label("config"), func() {
 				ghwTest = mocks.GhwMock{}
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
+
+				Expect(utils.MkdirAll(fs, "/sys/kernel/security", constants.DirPerm)).To(Succeed())
+				Expect(fs.WriteFile("/sys/kernel/security/lsm", []byte("selinux"), constants.FilePerm)).To(Succeed())
 			})
 
 			AfterEach(func() {
