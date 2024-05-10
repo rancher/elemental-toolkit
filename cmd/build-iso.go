@@ -141,7 +141,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().String("overlay-iso", "", "Path of the overlayed iso data")
 	c.Flags().String("label", "", "Label of the ISO volume")
 	c.Flags().String("extra-cmdline", "", fmt.Sprintf("Extra kernel cmdline (defaults to '%s')", constants.ISODefaultExtraCmdline))
-	c.Flags().Bool("bootloader-in-rootfs", true, "Fetch ISO bootloader binaries from the rootfs")
+	c.Flags().Bool("bootloader-in-rootfs", false, "Fetch ISO bootloader binaries from the rootfs")
 	c.Flags().Var(firmType, "firmware", "Firmware to install, only 'efi' is currently supported")
 	_ = c.Flags().MarkDeprecated("firmware", "'firmware' is deprecated. only efi firmware is supported.")
 	addPlatformFlags(c)

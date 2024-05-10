@@ -538,12 +538,13 @@ func NewDisk(cfg *types.BuildConfig) *types.DiskSpec {
 
 func NewISO() *types.LiveISO {
 	return &types.LiveISO{
-		Label:        constants.ISOLabel,
-		GrubEntry:    constants.GrubDefEntry,
-		UEFI:         []*types.ImageSource{},
-		Image:        []*types.ImageSource{},
-		Firmware:     types.EFI,
-		ExtraCmdline: constants.ISODefaultExtraCmdline,
+		Label:              constants.ISOLabel,
+		GrubEntry:          constants.GrubDefEntry,
+		UEFI:               []*types.ImageSource{},
+		Image:              []*types.ImageSource{},
+		BootloaderInRootFs: true,
+		Firmware:           types.EFI,
+		ExtraCmdline:       constants.ISODefaultExtraCmdline,
 	}
 }
 
