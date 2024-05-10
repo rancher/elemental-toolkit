@@ -33,7 +33,7 @@ const (
 	isoBootCatalog = "/boot/boot.catalog"
 )
 
-func grubCfgTemplate(arch string) string {
+func grubCfgTemplate(arch, cmdline string) string {
 	return `search --no-floppy --file --set=root ` + constants.ISOKernelPath(arch) + `
 	set default=0
 	set timeout=5
@@ -42,7 +42,7 @@ func grubCfgTemplate(arch string) string {
 	menuentry "%s" --class os --unrestricted {
 		echo Loading kernel...
 		linux ($root)` + constants.ISOKernelPath(arch) + ` cdroot root=live:CDLABEL=%s rd.live.dir=` + constants.ISOLoaderPath(arch) +
-		`  rd.live.squashimg=rootfs.squashfs security=selinux enforcing=0 console=tty1 console=ttyS0 elemental.disable elemental.setup=` +
+		`  rd.live.squashimg=rootfs.squashfs ` + cmdline + ` elemental.disable elemental.setup=` +
 		constants.ISOCloudInitPath + `
 		echo Loading initrd...
 		initrd ($root)` + constants.ISOInitrdPath(arch) + `
@@ -222,7 +222,7 @@ func (b *BuildISOAction) renderGrubTemplate(rootDir string) error {
 	// Write grub.cfg file
 	return b.cfg.Fs.WriteFile(
 		filepath.Join(rootDir, constants.FallbackEFIPath, constants.GrubCfg),
-		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch), b.spec.GrubEntry, b.spec.Label)),
+		[]byte(fmt.Sprintf(grubCfgTemplate(b.cfg.Platform.Arch, b.spec.ExtraCmdline), b.spec.GrubEntry, b.spec.Label)),
 		constants.FilePerm,
 	)
 }
