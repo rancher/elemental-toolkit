@@ -84,6 +84,12 @@ func RunMount(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return err
 	}
 
+	cfg.Logger.Debugf("Writing selinux relabel file")
+	if err = SelinuxRelabel(cfg, spec); err != nil {
+		cfg.Logger.Errorf("Error writing relabel file: %s", err.Error())
+		return err
+	}
+
 	cfg.Logger.Info("Mount command finished successfully")
 	return nil
 }
@@ -399,4 +405,62 @@ func overlayLine(path, upperPath, requriedMount string) string {
 	options = append(options, fmt.Sprintf("workdir=%s", work))
 	options = append(options, fmt.Sprintf("x-systemd.requires-mounts-for=%s", requriedMount))
 	return fstab("overlay", path, "overlay", options)
+}
+
+func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
+	if !spec.SelinuxRelabel {
+		cfg.Logger.Debug("SELinux relabeling disabled, skipping")
+		return nil
+	}
+
+	if err := utils.MkdirAll(cfg.Fs, constants.SELinuxRelabelDir, constants.DirPerm); err != nil {
+		cfg.Logger.Errorf("Failed creating relabel dir: %s", err.Error())
+		return err
+	}
+
+	paths := []string{}
+	paths = append(paths, spec.Ephemeral.Paths...)
+	paths = append(paths, spec.Persistent.Paths...)
+
+	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
+	err := cfg.Config.Fs.WriteFile(filepath.Join(constants.SELinuxRelabelDir, constants.SELinuxRelabelFile), []byte(strings.Join(paths, "\n")), constants.FilePerm)
+	if err != nil {
+		cfg.Logger.Errorf("Failed writing relabel file: %s", err.Error())
+		return err
+	}
+
+	if exists, _ := utils.Exists(cfg.Config.Fs, spec.Sysroot); !exists {
+		cfg.Logger.Debug("Could not find new sysroot for relabeling, exiting.")
+		return nil
+	}
+
+	extraMounts := map[string]string{
+		"/run":  "/run",
+		"/proc": "/proc",
+	}
+
+	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, extraMounts, func() error {
+		if exists, _ := utils.Exists(cfg.Fs, constants.SELinuxTargetedContextFile); !exists {
+			cfg.Logger.Debug("Could not find selinux policy context file")
+			return nil
+		}
+
+		if !cfg.Runner.CommandExists("setfiles") {
+			cfg.Logger.Debug("Could not find selinux setfiles utility")
+			return nil
+		}
+
+		// Some extended attributes are lost on copy-up bsc#1210690.
+		// Workaround visit children first, then parents
+		cfg.Logger.Debugf("Running setfiles on depth-sorted files in %s chroot", spec.Sysroot)
+		for _, path := range paths {
+			out, err := cfg.Runner.Run("find", path, "-depth", "-exec", "setfiles", "-i", "-F", "-v", constants.SELinuxTargetedContextFile, "{}", "+")
+			cfg.Logger.Debugf("setfiles output: %s", string(out))
+			if err != nil {
+				cfg.Logger.Errorf("Error running setfiles in %s: %s", path, err.Error())
+				return err
+			}
+		}
+		return nil
+	})
 }

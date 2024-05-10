@@ -336,6 +336,10 @@ func applyKernelCmdline(r *types.RunConfig, mount *types.MountSpec) error {
 					Options:    []string{"rw", "defaults"},
 				})
 			}
+		case "security":
+			if val == "selinux" {
+				mount.SelinuxRelabel = true
+			}
 		}
 	}
 
