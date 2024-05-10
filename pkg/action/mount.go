@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -420,6 +421,13 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 
 	paths := []string{}
 	paths = append(paths, spec.Ephemeral.Paths...)
+	for _, vol := range append(spec.Volumes, &spec.Persistent.Volume) {
+		// Omit any read-only filesystem or mountpoint under /run as those are considered transient
+		if strings.HasPrefix(vol.Mountpoint, "/run") || slices.Contains(vol.Options, "ro") {
+			continue
+		}
+		paths = append(paths, vol.Mountpoint)
+	}
 	paths = append(paths, spec.Persistent.Paths...)
 
 	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
@@ -434,12 +442,7 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return nil
 	}
 
-	extraMounts := map[string]string{
-		"/run":  "/run",
-		"/proc": "/proc",
-	}
-
-	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, extraMounts, func() error {
+	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, nil, func() error {
 		if exists, _ := utils.Exists(cfg.Fs, constants.SELinuxTargetedContextFile); !exists {
 			cfg.Logger.Debug("Could not find selinux policy context file")
 			return nil

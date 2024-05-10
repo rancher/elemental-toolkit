@@ -286,6 +286,15 @@ func ReadMountSpec(r *types.RunConfig, flags *pflag.FlagSet) (*types.MountSpec, 
 }
 
 func applyKernelCmdline(r *types.RunConfig, mount *types.MountSpec) error {
+	lsm, err := r.Config.Fs.ReadFile("/sys/kernel/security/lsm")
+	if err != nil {
+		r.Logger.Errorf("Error reading /sys/kernel/security/lsm: %s", err.Error())
+		return err
+	}
+	if strings.Contains(string(lsm), "selinux") {
+		mount.SelinuxRelabel = true
+	}
+
 	cmdline, err := r.Config.Fs.ReadFile("/proc/cmdline")
 	if err != nil {
 		r.Logger.Errorf("Error reading /proc/cmdline: %s", err.Error())
@@ -335,10 +344,6 @@ func applyKernelCmdline(r *types.RunConfig, mount *types.MountSpec) error {
 					Device:     oemdev,
 					Options:    []string{"rw", "defaults"},
 				})
-			}
-		case "security":
-			if val == "selinux" {
-				mount.SelinuxRelabel = true
 			}
 		}
 	}
