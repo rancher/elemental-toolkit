@@ -513,6 +513,7 @@ var _ = Describe("Config", Label("config"), func() {
 				ghwTest.AddDisk(mainDisk)
 				ghwTest.CreateDevices()
 
+				// This will enable SELinux relabelling unless stated the contrary in config file
 				Expect(utils.MkdirAll(fs, "/sys/kernel/security", constants.DirPerm)).To(Succeed())
 				Expect(fs.WriteFile("/sys/kernel/security/lsm", []byte("selinux"), constants.FilePerm)).To(Succeed())
 			})
@@ -520,27 +521,42 @@ var _ = Describe("Config", Label("config"), func() {
 			AfterEach(func() {
 				ghwTest.Clean()
 			})
-
 			It("inits a mount spec according to given configs", func() {
-				err := os.Setenv("ELEMENTAL_MOUNT_SYSROOT", "/newroot")
+				viper.Reset()
+				// Read a config disabling SELinuxRelabel
+				cfg, err = ReadConfigRun("fixtures/simple", nil, mounter)
+				Expect(err).Should(BeNil())
+
+				cfg.Fs = fs
+				cfg.Runner = runner
+				cfg.Logger = logger
+				cfg.Mounter = mounter
+				cfg.Syscall = syscall
+				cfg.Client = client
+				cfg.CloudInitRunner = cloudInit
+
+				_ = os.Setenv("ELEMENTAL_MOUNT_SYSROOT", "/newroot")
 				spec, err := ReadMountSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Mode).To(Equal("active"))
 				Expect(spec.Sysroot).To(Equal("/newroot"))
+				Expect(spec.SelinuxRelabel).To(BeFalse())
 			})
 			It("picks kernel cmdline first then env-vars", func() {
-				err := os.Setenv("ELEMENTAL_MOUNT_IMAGE", "passive")
+				_ = os.Setenv("ELEMENTAL_MOUNT_IMAGE", "passive")
 				spec, err := ReadMountSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Set by kernel cmdline
 				Expect(spec.Mode).To(Equal("active"))
+				Expect(spec.SelinuxRelabel).To(BeTrue())
 			})
 			It("picks kernel cmdline first then env-vars", func() {
-				err := os.Setenv("OVERLAY", "UUID=1234")
+				_ = os.Setenv("OVERLAY", "UUID=1234")
 				spec, err := ReadMountSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(spec.Ephemeral.Type).To(Equal("tmpfs"))
 				Expect(spec.Ephemeral.Size).To(Equal("30%"))
+				Expect(spec.SelinuxRelabel).To(BeTrue())
 			})
 		})
 	})

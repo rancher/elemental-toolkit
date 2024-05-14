@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	partSuffix  = ".part"
-	mountSuffix = ".mount"
+	partSuffix     = ".part"
+	mountSuffix    = ".mount"
+	kernelSecurity = "/sys/kernel/security/lsm"
 )
 
 type GenericOptions func(a *types.Config) error
@@ -215,10 +216,21 @@ func NewInitSpec() *types.InitSpec {
 	}
 }
 
-func NewMountSpec() *types.MountSpec {
+func NewMountSpec(cfg types.Config) *types.MountSpec {
+	var selinuxRelabel bool
+
+	lsm, err := cfg.Fs.ReadFile(kernelSecurity)
+	if err != nil {
+		cfg.Logger.Warnf("error reading %s: %s", kernelSecurity, err.Error())
+	}
+	if strings.Contains(string(lsm), "selinux") {
+		selinuxRelabel = true
+	}
+
 	return &types.MountSpec{
-		Sysroot:    "/sysroot",
-		WriteFstab: true,
+		Sysroot:        "/sysroot",
+		WriteFstab:     true,
+		SelinuxRelabel: selinuxRelabel,
 		Volumes: []*types.VolumeMount{
 			{
 				Mountpoint: constants.OEMPath,
