@@ -147,6 +147,7 @@ const (
 	SELinuxTargetedPolicyPath  = SELinuxTargetedPath + "/policy"
 	SELinuxRelabelDir          = "/run/systemd/relabel-extra.d"
 	SELinuxRelabelFile         = "elemental.relabel"
+	SELinuxRelabelledFlag      = ".relabelled"
 
 	ISORootFile            = "rootfs.squashfs"
 	ISOEFIImg              = "uefi.img"
