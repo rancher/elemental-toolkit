@@ -18,3 +18,6 @@ snapshotter:
   config:
     fs: xfs
     size: 2000
+
+mount:
+  selinux-relabel: false
