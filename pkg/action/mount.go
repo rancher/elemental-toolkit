@@ -419,6 +419,11 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return err
 	}
 
+	if exists, _ := utils.Exists(cfg.Config.Fs, spec.Sysroot); !exists {
+		cfg.Logger.Debug("Could not find new sysroot for relabeling, exiting.")
+		return nil
+	}
+
 	paths := getRelabelPaths(cfg, spec)
 
 	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
@@ -426,11 +431,6 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 	if err != nil {
 		cfg.Logger.Errorf("Failed writing relabel file: %s", err.Error())
 		return err
-	}
-
-	if exists, _ := utils.Exists(cfg.Config.Fs, spec.Sysroot); !exists {
-		cfg.Logger.Debug("Could not find new sysroot for relabeling, exiting.")
-		return nil
 	}
 
 	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, nil, func() error {
