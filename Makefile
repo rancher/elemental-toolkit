@@ -93,7 +93,7 @@ build-iso:
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build \
 		-v $(ROOT_DIR)/tests/assets/remote_login.yaml:/overlay-iso/iso-config/remote_login.yaml \
-		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-iso --bootloader-in-rootfs \
+		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-iso \
 		-n elemental-$(FLAVOR).$(ARCH) --overlay-iso /overlay-iso \
 		--local --platform $(PLATFORM) -o /build $(REPO):$(VERSION)
 
