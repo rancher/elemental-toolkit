@@ -125,7 +125,7 @@ func MountVolumes(cfg *types.RunConfig, spec *types.MountSpec) error {
 			dev = volumes[k].Device
 		default:
 			cfg.Logger.Errorf("Unknown device reference, it should be LABEL, PARTLABEL, UUID or a /dev/* path")
-			errs = multierror.Append(errs, fmt.Errorf("Unkown device reference: %s", volumes[k].Device))
+			errs = multierror.Append(errs, fmt.Errorf("unkown device reference: %s", volumes[k].Device))
 			continue
 		}
 		mountpoint := volumes[k].Mountpoint
@@ -320,7 +320,7 @@ func WriteFstab(cfg *types.RunConfig, spec *types.MountSpec, data string) error 
 				data = data + fstab(stateDir, path, "none", []string{"defaults", "bind"})
 				continue
 			}
-			errs = multierror.Append(errs, fmt.Errorf("Unknown persistent mode '%s'", spec.Persistent.Mode))
+			errs = multierror.Append(errs, fmt.Errorf("unknown persistent mode '%s'", spec.Persistent.Mode))
 		}
 	}
 

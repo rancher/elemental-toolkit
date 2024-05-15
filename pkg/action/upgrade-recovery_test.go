@@ -202,7 +202,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				Expect(f).ToNot(ContainSubstring("recovery"))
 
 				// Transition squash should not exist
-				info, err = fs.Stat(spec.RecoverySystem.File)
+				_, err = fs.Stat(spec.RecoverySystem.File)
 				Expect(err).To(HaveOccurred())
 
 				// Create a new spec to load state yaml
