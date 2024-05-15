@@ -419,27 +419,18 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return err
 	}
 
-	paths := []string{}
-	paths = append(paths, spec.Ephemeral.Paths...)
-	for _, vol := range append(spec.Volumes, &spec.Persistent.Volume) {
-		// Omit any read-only filesystem or mountpoint under /run as those are considered transient
-		if strings.HasPrefix(vol.Mountpoint, "/run") || slices.Contains(vol.Options, "ro") {
-			continue
-		}
-		paths = append(paths, vol.Mountpoint)
+	if exists, _ := utils.Exists(cfg.Config.Fs, spec.Sysroot); !exists {
+		cfg.Logger.Debug("Could not find new sysroot for relabeling, exiting.")
+		return nil
 	}
-	paths = append(paths, spec.Persistent.Paths...)
+
+	paths := getRelabelPaths(cfg, spec)
 
 	cfg.Logger.Debugf("Writing paths to %s file: %s", constants.SELinuxRelabelFile, strings.Join(paths, ","))
 	err := cfg.Config.Fs.WriteFile(filepath.Join(constants.SELinuxRelabelDir, constants.SELinuxRelabelFile), []byte(strings.Join(paths, "\n")), constants.FilePerm)
 	if err != nil {
 		cfg.Logger.Errorf("Failed writing relabel file: %s", err.Error())
 		return err
-	}
-
-	if exists, _ := utils.Exists(cfg.Config.Fs, spec.Sysroot); !exists {
-		cfg.Logger.Debug("Could not find new sysroot for relabeling, exiting.")
-		return nil
 	}
 
 	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, nil, func() error {
@@ -466,4 +457,30 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 		}
 		return nil
 	})
+}
+
+func getRelabelPaths(cfg *types.RunConfig, spec *types.MountSpec) []string {
+	paths := append([]string{}, spec.Ephemeral.Paths...)
+	for _, vol := range append(spec.Volumes, &spec.Persistent.Volume) {
+		// Omit any read-only filesystem or mountpoint under /run as those are considered transient
+		if strings.HasPrefix(vol.Mountpoint, "/run") || slices.Contains(vol.Options, "ro") {
+			continue
+		}
+		paths = append(paths, vol.Mountpoint)
+	}
+	paths = append(paths, spec.Persistent.Paths...)
+	filteredPaths := []string{}
+
+	for _, path := range paths {
+		relabelledFile := filepath.Join(spec.Sysroot, path, constants.SELinuxRelabelledFlag)
+		if ok, _ := utils.Exists(cfg.Fs, filepath.Join(relabelledFile)); ok {
+			continue
+		}
+		filteredPaths = append(filteredPaths, path)
+		err := cfg.Fs.WriteFile(relabelledFile, []byte("1"), constants.FilePerm)
+		if err != nil {
+			cfg.Logger.Warnf("failed writing the relabelled flag file at %s", path)
+		}
+	}
+	return filteredPaths
 }

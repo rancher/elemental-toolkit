@@ -100,13 +100,13 @@ var _ = Describe("Mount Action", func() {
 			},
 		}
 
+		Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
 	})
 	AfterEach(func() {
 		cleanup()
 	})
 	Describe("Write fstab", Label("mount", "fstab"), func() {
 		It("Writes a simple fstab", func() {
-			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
 			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
 			Expect(err).To(BeNil())
 			err = action.WriteFstab(cfg, spec, fstabData)
@@ -128,7 +128,6 @@ var _ = Describe("Mount Action", func() {
 
 		It("Writes a simple fstab with overlay mode", func() {
 			spec.Persistent.Mode = constants.OverlayMode
-			Expect(utils.MkdirAll(fs, filepath.Join(spec.Sysroot, "/etc"), constants.DirPerm)).To(Succeed())
 			fstabData, err := action.InitialFstabData(runner, spec.Sysroot)
 			Expect(err).To(BeNil())
 			err = action.WriteFstab(cfg, spec, fstabData)
@@ -279,6 +278,7 @@ var _ = Describe("Mount Action", func() {
 		})
 		It("writes persistent and ephemeral dirs to /run/systemd/extra-relabel.d/elemental.layout", func() {
 			spec.SelinuxRelabel = true
+			Expect(utils.MkdirAll(cfg.Fs, filepath.Join(spec.Sysroot, "/some/path"), constants.DirPerm)).To(Succeed())
 
 			err := action.SelinuxRelabel(cfg, spec)
 			Expect(err).To(Succeed())
@@ -289,11 +289,13 @@ var _ = Describe("Mount Action", func() {
 			data, err := fs.ReadFile(filepath.Join(constants.SELinuxRelabelDir, constants.SELinuxRelabelFile))
 			Expect(err).To(Succeed())
 			Expect(string(data)).To(Equal("/some/path"))
+
+			ok, _ := utils.Exists(cfg.Fs, filepath.Join(spec.Sysroot, "/some/path/", constants.SELinuxRelabelledFlag))
+			Expect(ok).To(BeTrue())
 		})
 		It("runs find with -exec setfiles in the new sysroot", func() {
 			spec.SelinuxRelabel = true
 
-			Expect(utils.MkdirAll(fs, spec.Sysroot, constants.DirPerm)).To(Succeed())
 			Expect(utils.MkdirAll(fs, "/sbin", constants.DirPerm)).To(Succeed())
 			Expect(utils.MkdirAll(fs, filepath.Dir(constants.SELinuxTargetedContextFile), constants.DirPerm)).To(Succeed())
 			Expect(fs.WriteFile(constants.SELinuxTargetedContextFile, []byte("/.*"), constants.FilePerm)).To(Succeed())
