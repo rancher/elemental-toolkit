@@ -317,7 +317,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(f).To(BeEmpty())
 
 				// Transition squash should not exist
-				info, err = fs.Stat(spec.RecoverySystem.File)
+				_, err = fs.Stat(spec.RecoverySystem.File)
 				Expect(err).To(HaveOccurred())
 			})
 		})

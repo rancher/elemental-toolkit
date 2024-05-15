@@ -29,7 +29,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
-var ErrUpgradeRecoveryFromRecovery = errors.New("Can not upgrade recovery from recovery partition")
+var ErrUpgradeRecoveryFromRecovery = errors.New("can not upgrade recovery from recovery partition")
 
 // UpgradeRecoveryAction represents the struct that will run the recovery upgrade from start to finish
 type UpgradeRecoveryAction struct {
@@ -77,7 +77,7 @@ func NewUpgradeRecoveryAction(config *types.RunConfig, spec *types.UpgradeSpec, 
 		// However if it happens we need to abort, we we can't recreate
 		// a correct install state when upgrading recovery only.
 		if u.spec.State == nil {
-			return nil, fmt.Errorf("Could not load current install state")
+			return nil, fmt.Errorf("could not load current install state")
 		}
 	}
 

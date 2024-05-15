@@ -18,7 +18,6 @@ package action_test
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -109,7 +108,7 @@ var _ = Describe("Install action tests", func() {
 			cmdFail = ""
 			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 				if cmdFail == cmd {
-					return []byte{}, errors.New(fmt.Sprintf("failed on %s", cmd))
+					return []byte{}, fmt.Errorf("failed on %s", cmd)
 				}
 				switch cmd {
 				case "parted":
