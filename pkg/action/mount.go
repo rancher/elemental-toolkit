@@ -433,30 +433,7 @@ func SelinuxRelabel(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return err
 	}
 
-	return utils.ChrootedCallback(&cfg.Config, spec.Sysroot, nil, func() error {
-		if exists, _ := utils.Exists(cfg.Fs, constants.SELinuxTargetedContextFile); !exists {
-			cfg.Logger.Debug("Could not find selinux policy context file")
-			return nil
-		}
-
-		if !cfg.Runner.CommandExists("setfiles") {
-			cfg.Logger.Debug("Could not find selinux setfiles utility")
-			return nil
-		}
-
-		// Some extended attributes are lost on copy-up bsc#1210690.
-		// Workaround visit children first, then parents
-		cfg.Logger.Debugf("Running setfiles on depth-sorted files in %s chroot", spec.Sysroot)
-		for _, path := range paths {
-			out, err := cfg.Runner.Run("find", path, "-depth", "-exec", "setfiles", "-i", "-F", "-v", constants.SELinuxTargetedContextFile, "{}", "+")
-			cfg.Logger.Debugf("setfiles output: %s", string(out))
-			if err != nil {
-				cfg.Logger.Errorf("Error running setfiles in %s: %s", path, err.Error())
-				return err
-			}
-		}
-		return nil
-	})
+	return nil
 }
 
 func getRelabelPaths(cfg *types.RunConfig, spec *types.MountSpec) []string {

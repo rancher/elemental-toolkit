@@ -276,7 +276,7 @@ var _ = Describe("Mount Action", func() {
 			exists, _ := utils.Exists(fs, constants.SELinuxRelabelDir)
 			Expect(exists).To(BeFalse())
 		})
-		It("writes persistent and ephemeral dirs to /run/systemd/extra-relabel.d/elemental.layout", func() {
+		It("writes persistent and ephemeral dirs to /run/systemd/extra-relabel.d/elemental.relabel", func() {
 			spec.SelinuxRelabel = true
 			Expect(utils.MkdirAll(cfg.Fs, filepath.Join(spec.Sysroot, "/some/path"), constants.DirPerm)).To(Succeed())
 
@@ -292,35 +292,6 @@ var _ = Describe("Mount Action", func() {
 
 			ok, _ := utils.Exists(cfg.Fs, filepath.Join(spec.Sysroot, "/some/path/", constants.SELinuxRelabelledFlag))
 			Expect(ok).To(BeTrue())
-		})
-		It("runs find with -exec setfiles in the new sysroot", func() {
-			spec.SelinuxRelabel = true
-
-			Expect(utils.MkdirAll(fs, "/sbin", constants.DirPerm)).To(Succeed())
-			Expect(utils.MkdirAll(fs, filepath.Dir(constants.SELinuxTargetedContextFile), constants.DirPerm)).To(Succeed())
-			Expect(fs.WriteFile(constants.SELinuxTargetedContextFile, []byte("/.*"), constants.FilePerm)).To(Succeed())
-			Expect(fs.WriteFile("/sbin/setfiles", []byte("#!/bin/bash"), 0755)).To(Succeed())
-
-			findCnt := 0
-			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
-				switch cmd {
-				case "find":
-					findCnt += 1
-					Expect(args).To(ContainElement("/some/path"))
-					Expect(args).To(ContainElement("-depth"))
-					Expect(args).To(ContainElement("-exec"))
-					Expect(args).To(ContainElement("setfiles"))
-					return []byte{}, nil
-				default:
-					return []byte{}, nil
-				}
-			}
-
-			err := action.SelinuxRelabel(cfg, spec)
-			Expect(err).To(Succeed())
-
-			Expect(findCnt).To(Equal(1))
-			Expect(syscall.WasChrootCalledWith(spec.Sysroot)).To(BeTrue())
 		})
 	})
 })
