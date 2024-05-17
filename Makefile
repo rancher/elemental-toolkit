@@ -117,8 +117,8 @@ endif
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
-		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/$(FLAVOR) --unprivileged --expandable -n elemental-$(FLAVOR).aarch64 --local \
-		--squash-no-compression --deploy-command elemental,--debug,reset,--reboot,--disable-boot-entry -o /build $(REPO):$(VERSION)
+		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/$(FLAVOR) --expandable -n elemental-$(FLAVOR).aarch64 --local \
+		--squash-no-compression --deploy-command elemental,--debug,reset,--reboot,--disable-boot-entry -o /build --system $(REPO):$(VERSION)
 
 PHONY: build-vf2-disk
 build-vf2-disk:
