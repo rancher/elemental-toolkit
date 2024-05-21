@@ -402,8 +402,11 @@ func (b *Btrfs) loadSnapshots() ([]int, error) {
 	args = append(b.snapperArgs, args...)
 	cmdOut, err := b.cfg.Runner.Run("snapper", args...)
 	if err != nil {
-		b.cfg.Logger.Errorf("failed collecting current snapshots: %s", string(cmdOut))
-		return nil, err
+		// snapper tries to relabel even when listing subvolumes, skip this error.
+		if !strings.HasPrefix(string(cmdOut), "fsetfilecon on") {
+			b.cfg.Logger.Errorf("failed collecting current snapshots: %s", string(cmdOut))
+			return nil, err
+		}
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(cmdOut))))
