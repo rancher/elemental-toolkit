@@ -339,7 +339,7 @@ func (g *Grub) clearEntry() error {
 // createBootEntry will create an entry in the efi vars for our shim and set it to boot first in the bootorder
 func (g *Grub) CreateEntry(shimName string, relativeTo string, efiVariables eleefi.Variables) error {
 	g.logger.Debugf("Creating boot entry for elemental pointing to shim %s/%s", constants.EntryEFIPath, shimName)
-	bm, err := eleefi.NewBootManagerForVariables(efiVariables)
+	bm, err := eleefi.NewBootManagerForVariables(g.logger, efiVariables)
 	if err != nil {
 		return err
 	}
