@@ -53,14 +53,13 @@ func NewBootManagerForVariables(logger types.Logger, efivars Variables) (BootMan
 	for _, name := range names {
 		var entry BootEntryVariable
 		if parsed, err := fmt.Sscanf(name, "Boot%04X", &entry.BootNumber); len(name) != 8 || parsed != 1 || err != nil {
-			logger.Warnf("Failed reading efi load option for '%s': %s", name, err.Error())
 			continue
 		}
 		entry.Data, entry.Attributes, err = bm.efivars.GetVariable(efi.GlobalVariable, name)
 		if err != nil {
 			return BootManager{}, fmt.Errorf("cannot read %s: %v", name, err)
 		}
-		entry.LoadOption, err = efi.ReadLoadOption(bytes.NewReader(entry.Data))
+		entry.LoadOption, err = bm.efivars.ReadLoadOption(bytes.NewReader(entry.Data))
 		if err != nil {
 			logger.Warnf("Error reading efi load option for '%s': %s", name, err.Error())
 			continue

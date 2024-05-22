@@ -7,14 +7,10 @@
 package efi
 
 import (
-	"encoding/base64"
-	"encoding/binary"
-	"encoding/json"
-	"strings"
+	"io"
 
 	efi "github.com/canonical/go-efilib"
 	efi_linux "github.com/canonical/go-efilib/linux"
-	"github.com/twpayne/go-vfs/v4"
 )
 
 // Variables abstracts away the host-specific bits of the efivars module
@@ -24,6 +20,7 @@ type Variables interface {
 	SetVariable(guid efi.GUID, name string, data []byte, attrs efi.VariableAttributes) error
 	NewFileDevicePath(filepath string, mode efi_linux.FilePathToDevicePathMode) (efi.DevicePath, error)
 	DelVariable(guid efi.GUID, name string) error
+	ReadLoadOption(r io.Reader) (out *efi.LoadOption, err error)
 }
 
 // RealEFIVariables provides the real implementation of efivars
@@ -56,85 +53,9 @@ func (RealEFIVariables) SetVariable(guid efi.GUID, name string, data []byte, att
 	return efi.WriteVariable(name, guid, attrs, data)
 }
 
-type mockEFIVariable struct {
-	data  []byte
-	attrs efi.VariableAttributes
-}
-
-// MockEFIVariables implements an in-memory variable store.
-type MockEFIVariables struct {
-	store map[efi.VariableDescriptor]mockEFIVariable
-}
-
-func (m MockEFIVariables) DelVariable(_ efi.GUID, _ string) error {
-	return nil
-}
-
-// ListVariables implements EFIVariables
-func (m MockEFIVariables) ListVariables() (out []efi.VariableDescriptor, err error) {
-	for k := range m.store {
-		out = append(out, k)
-	}
-	return out, nil
-}
-
-// GetVariable implements EFIVariables
-func (m MockEFIVariables) GetVariable(guid efi.GUID, name string) (data []byte, attrs efi.VariableAttributes, err error) {
-	out, ok := m.store[efi.VariableDescriptor{Name: name, GUID: guid}]
-	if !ok {
-		return nil, 0, efi.ErrVarNotExist
-	}
-	return out.data, out.attrs, nil
-}
-
-// SetVariable implements EFIVariables
-func (m *MockEFIVariables) SetVariable(guid efi.GUID, name string, data []byte, attrs efi.VariableAttributes) error {
-	if m.store == nil {
-		m.store = make(map[efi.VariableDescriptor]mockEFIVariable)
-	}
-	if len(data) == 0 {
-		delete(m.store, efi.VariableDescriptor{Name: name, GUID: guid})
-	} else {
-		m.store[efi.VariableDescriptor{Name: name, GUID: guid}] = mockEFIVariable{data, attrs}
-	}
-	return nil
-}
-
-// JSON renders the MockEFIVariables as an Azure JSON config
-func (m MockEFIVariables) JSON() ([]byte, error) {
-	payload := make(map[string]map[string]string)
-
-	var numBytes [2]byte
-	for key, entry := range m.store {
-		entryID := key.Name
-		entryBase64 := base64.StdEncoding.EncodeToString(entry.data)
-		guidBase64 := base64.StdEncoding.EncodeToString(key.GUID[0:])
-		binary.LittleEndian.PutUint16(numBytes[0:], uint16(entry.attrs))
-		entryAttrBase64 := base64.StdEncoding.EncodeToString(numBytes[0:])
-
-		payload[entryID] = map[string]string{
-			"guid":       guidBase64,
-			"attributes": entryAttrBase64,
-			"value":      entryBase64,
-		}
-	}
-
-	return json.MarshalIndent(payload, "", "  ")
-}
-
-func (m MockEFIVariables) NewFileDevicePath(fpath string, _ efi_linux.FilePathToDevicePathMode) (efi.DevicePath, error) {
-	file, err := vfs.OSFS.Open(fpath)
-	if err != nil {
-		return nil, err
-	}
-	file.Close()
-
-	const espLocation = "/boot/efi/"
-	fpath = strings.TrimPrefix(fpath, espLocation)
-
-	return efi.DevicePath{
-		efi.NewFilePathDevicePathNode(fpath),
-	}, nil
+// ReadLoadOptions proxy
+func (RealEFIVariables) ReadLoadOption(r io.Reader) (out *efi.LoadOption, err error) {
+	return efi.ReadLoadOption(r)
 }
 
 // BootManager manages the boot device selection menu entries (Boot0000...BootFFFF).
