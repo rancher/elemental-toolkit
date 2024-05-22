@@ -15,6 +15,8 @@ import (
 
 	efi "github.com/canonical/go-efilib"
 	efilinux "github.com/canonical/go-efilib/linux"
+
+	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
 const (
@@ -22,7 +24,7 @@ const (
 )
 
 // NewBootManagerForVariables returns a boot manager for the given EFIVariables manager
-func NewBootManagerForVariables(efivars Variables) (BootManager, error) {
+func NewBootManagerForVariables(logger types.Logger, efivars Variables) (BootManager, error) {
 	var err error
 	bm := BootManager{}
 	bm.efivars = efivars
@@ -51,6 +53,7 @@ func NewBootManagerForVariables(efivars Variables) (BootManager, error) {
 	for _, name := range names {
 		var entry BootEntryVariable
 		if parsed, err := fmt.Sscanf(name, "Boot%04X", &entry.BootNumber); len(name) != 8 || parsed != 1 || err != nil {
+			logger.Warnf("Failed reading efi load option for '%s': %s", name, err.Error())
 			continue
 		}
 		entry.Data, entry.Attributes, err = bm.efivars.GetVariable(efi.GlobalVariable, name)
@@ -59,7 +62,8 @@ func NewBootManagerForVariables(efivars Variables) (BootManager, error) {
 		}
 		entry.LoadOption, err = efi.ReadLoadOption(bytes.NewReader(entry.Data))
 		if err != nil {
-			return bm, err
+			logger.Warnf("Error reading efi load option for '%s': %s", name, err.Error())
+			continue
 		}
 
 		bm.entries[entry.BootNumber] = entry
