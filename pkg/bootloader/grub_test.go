@@ -25,6 +25,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
+
 	"github.com/rancher/elemental-toolkit/v2/cmd"
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/v2/pkg/config"
@@ -33,8 +36,6 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
-	"github.com/twpayne/go-vfs/v4"
-	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
@@ -90,7 +91,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(fs.WriteFile(filepath.Join(rootDir, constants.GrubCfgPath, constants.GrubCfg), grubCfg, constants.FilePerm)).To(Succeed())
 
 		// EFI vars to test bootmanager
-		efivars = &eleefi.MockEFIVariables{}
+		efivars = mocks.NewMockEFIVariables()
 		err := fs.Mkdir("/EFI", constants.DirPerm)
 		Expect(err).ToNot(HaveOccurred())
 		err = fs.WriteFile("/EFI/test.efi", []byte(""), constants.FilePerm)
