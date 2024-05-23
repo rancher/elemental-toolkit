@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM registry.opensuse.org/opensuse/leap:15.5 as OS
+FROM registry.opensuse.org/opensuse/tumbleweed:latest as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -53,9 +53,6 @@ COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
 # Enable essential services
 RUN systemctl enable NetworkManager.service
-
-# Enable /tmp to be on tmpfs
-RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 
 # Generate initrd with required elemental services
 RUN elemental init -f && \
