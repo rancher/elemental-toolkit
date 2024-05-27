@@ -59,7 +59,7 @@ func NewBootManagerForVariables(efivars Variables) (BootManager, error) {
 		}
 		entry.LoadOption, err = efi.ReadLoadOption(bytes.NewReader(entry.Data))
 		if err != nil {
-			return bm, err
+			continue
 		}
 
 		bm.entries[entry.BootNumber] = entry
