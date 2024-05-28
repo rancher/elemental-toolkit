@@ -15,30 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # detect step checks what machines the later steps should run on
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      build-runs-on: ${{ steps.detect.outputs.buildon }}
-      tests-runs-on: ${{ steps.detect.outputs.testson }}
-      tests: ${{ steps.detect.outputs.tests }}
-    steps:
-      - id: detect
-        run: |
-          case "${{inputs.arch}}" in
-          x86_64)
-            echo "buildon='ubuntu-latest'" >> $GITHUB_OUTPUT
-            echo "testson='macos-latest'" >> $GITHUB_OUTPUT
-            echo "tests=['test-smoke', 'test-upgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT ;;
-          aarch64)
-            echo "buildon=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "testson=['self-hosted', 'arm64']" >> $GITHUB_OUTPUT
-            echo "tests=['test-smoke']" >> $GITHUB_OUTPUT ;;
-          esac
-
   build-iso:
-    needs: detect
-    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
+    runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -77,8 +55,7 @@ jobs:
           enableCrossOsArchive: true
   
   build-disk:
-    needs: detect
-    runs-on: ${{ fromJson(needs.detect.outputs.build-runs-on) }}
+    runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
@@ -123,15 +100,14 @@ jobs:
   tests-matrix:
     needs: 
       - build-disk
-      - detect
-    runs-on: ${{ fromJson(needs.detect.outputs.tests-runs-on) }}
+    runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: ${{ inputs.arch }}
       COS_TIMEOUT: 1600
     strategy:
       matrix:
-        test: ${{ fromJson(needs.detect.outputs.tests) }}
+        test: ['test-smoke', 'test-recovery', 'test-grubfallback', 'test-fallback', 'test-fsck', 'test-upgrade']
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -154,22 +130,16 @@ jobs:
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
           fail-on-cache-miss: true
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Run VM script dependencies
+      - name: Enable KVM group perms
         run: |
-          brew update;
-          brew install qemu bash coreutils
-      - if: ${{ env.ARCH == 'x86_64' }} 
-        name: Prepare test (x86_64)
-        run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=hvf ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=$(find /usr/local/Cellar/qemu -name edk2-${{ env.ARCH }}-code.fd -print -quit) prepare-test
-      - if: ${{ env.ARCH == 'aarch64' }} 
-        name: Prepare test (aarch64)
-        run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd prepare-test
+          sudo apt-get update
+          sudo apt-get install qemu qemu-utils ovmf qemu-system-x86
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Run ${{ matrix.test }}
         run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ${{ matrix.test }}
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd ${{ matrix.test }}
       # TODO include other logs SUT collects on failure
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v3
