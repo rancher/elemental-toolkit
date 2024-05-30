@@ -207,10 +207,13 @@ func MountPersistent(cfg *types.RunConfig, spec *types.MountSpec) error {
 		return nil
 	}
 
+	target := filepath.Join(spec.Persistent.Volume.Mountpoint, constants.PersistentStateDir)
+	if !strings.HasPrefix(target, runPath) {
+		target = filepath.Join(spec.Sysroot, target)
+	}
+
 	for _, path := range spec.Persistent.Paths {
 		cfg.Logger.Debugf("Mounting path %s into %s", path, spec.Sysroot)
-
-		target := filepath.Join(spec.Persistent.Volume.Mountpoint, constants.PersistentStateDir)
 		if err := mountFunc(cfg, spec.Sysroot, target, path); err != nil {
 			cfg.Logger.Errorf("Error mounting path %s: %s", path, err.Error())
 			return err
