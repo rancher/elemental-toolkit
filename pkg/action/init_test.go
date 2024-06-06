@@ -111,6 +111,10 @@ var _ = Describe("Init Action", func() {
 			Expect(len(enabledUnits)).To(Equal(0))
 		})
 		It("Successfully runs init and install files", func() {
+			preExistingInitrd := "/boot/elemental.initrd-6.2"
+			_, err := fs.Create(preExistingInitrd)
+			Expect(err).NotTo(HaveOccurred())
+
 			Expect(action.RunInit(cfg, spec)).To(Succeed())
 
 			Expect(len(enabledUnits)).To(Equal(expectedNumUnits))
@@ -123,6 +127,9 @@ var _ = Describe("Init Action", func() {
 
 			exists, _ := utils.Exists(fs, "/boot/elemental.initrd-6.4")
 			Expect(exists).To(BeTrue())
+
+			exists, _ = utils.Exists(fs, preExistingInitrd)
+			Expect(exists).To(BeFalse())
 
 			// Check expected initrd and kernel files are created
 			exists, _ = utils.Exists(fs, "/boot/vmlinuz")
