@@ -808,11 +808,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(f).To(Equal(filepath.Join(rootDir, file2)))
 		})
-		It("finds a matching file, first match wins file2", func() {
-			f, err := utils.FindFile(fs, rootDir, "/path/with/*aarch64/find*", "/path/with/*dle*/*me.*")
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(f).To(Equal(filepath.Join(rootDir, file2)))
-		})
 		It("finds a matching file and resolves the link", func() {
 			f, err := utils.FindFile(fs, rootDir, "/path/*/symlink/pointing-to-*", "/path/with/*aarch64/find*")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -827,6 +822,40 @@ var _ = Describe("Utils", Label("utils"), func() {
 			_, err := utils.FindFile(fs, rootDir, "/path/*/symlink/badformat[]")
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("syntax error"))
+		})
+	})
+	Describe("FindFiles", func() {
+		var rootDir, file1, file2, file3, relSymlink string
+		BeforeEach(func() {
+			// The root directory
+			rootDir = "/some/root"
+			Expect(utils.MkdirAll(fs, rootDir, constants.DirPerm)).To(Succeed())
+
+			// Files to find
+			file1 = "/path/with/needle/findme.extension1"
+			file2 = "/path/with/needle/findme.extension2"
+			file3 = "/path/with/needle/hardtofindme"
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, filepath.Dir(file1)), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file1), []byte("file1"), constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file2), []byte("file2"), constants.FilePerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, file3), []byte("file3"), constants.FilePerm)).To(Succeed())
+
+			// A symlink pointing to a relative path
+			relSymlink = "/path/with/needle/findme.symlink"
+			Expect(fs.Symlink("hardtofindme", filepath.Join(rootDir, relSymlink))).To(Succeed())
+		})
+		It("finds all matching files", func() {
+			f, err := utils.FindFiles(fs, rootDir, "/path/with/*dle*/find*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(len(f)).To(Equal(3))
+			Expect(f).Should(ContainElement(filepath.Join(rootDir, file1)))
+			Expect(f).Should(ContainElement(filepath.Join(rootDir, file2)))
+			Expect(f).Should(ContainElement(filepath.Join(rootDir, file3)))
+		})
+		It("Returns empty list if there is no match", func() {
+			f, err := utils.FindFiles(fs, rootDir, "/path/with/needle/notthere*")
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(len(f)).Should(Equal(0))
 		})
 	})
 	Describe("FindKernel", Label("find"), func() {
