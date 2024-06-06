@@ -453,10 +453,15 @@ func FindFile(vfs types.FS, rootDir string, patterns ...string) (string, error) 
 	return found, nil
 }
 
-// findFile attempts to find a file from a given pattern on top of a root path.
-// Returns empty path if no file is found.
-func findFile(vfs types.FS, rootDir, pattern string) (string, error) {
-	var foundFile string
+// FindFiles attempts to find files from a given pattern on top of a root path.
+// Returns empty list if no files are found.
+func FindFiles(vfs types.FS, rootDir string, pattern string) ([]string, error) {
+	return findFiles(vfs, rootDir, pattern, false)
+}
+
+func findFiles(vfs types.FS, rootDir, pattern string, fristMatchReturn bool) ([]string, error) {
+	foundFiles := []string{}
+
 	base := filepath.Join(rootDir, getBaseDir(pattern))
 	if ok, _ := Exists(vfs, base); ok {
 		err := WalkDirFs(vfs, base, func(path string, d fs.DirEntry, err error) error {
@@ -468,19 +473,37 @@ func findFile(vfs types.FS, rootDir, pattern string) (string, error) {
 				return err
 			}
 			if match {
-				foundFile, err = resolveLink(vfs, path, rootDir, d, constants.MaxLinkDepth)
+				foundFile, err := resolveLink(vfs, path, rootDir, d, constants.MaxLinkDepth)
 				if err != nil {
 					return err
 				}
-				return io.EOF
+				foundFiles = append(foundFiles, foundFile)
+				if fristMatchReturn {
+					return io.EOF
+				}
+				return nil
 			}
 			return nil
 		})
 		if err != nil && err != io.EOF {
-			return "", err
+			return []string{}, err
 		}
 	}
-	return foundFile, nil
+	return foundFiles, nil
+}
+
+// findFile attempts to find a file from a given pattern on top of a root path.
+// Returns empty path if no file is found.
+func findFile(vfs types.FS, rootDir, pattern string) (string, error) {
+	files, err := findFiles(vfs, rootDir, pattern, true)
+	if err != nil {
+		return "", err
+	}
+
+	if len(files) > 0 {
+		return files[0], nil
+	}
+	return "", nil
 }
 
 // FindKernel finds for kernel files inside a given root tree path.
@@ -491,7 +514,7 @@ func FindKernel(fs types.FS, rootDir string) (string, string, error) {
 
 	kernel, err = FindFile(fs, rootDir, constants.GetKernelPatterns()...)
 	if err != nil {
-		return "", "", fmt.Errorf("No Kernel file found: %v", err)
+		return "", "", fmt.Errorf("no Kernel file found: %v", err)
 	}
 	files, err := fs.ReadDir(filepath.Join(rootDir, constants.KernelModulesDir))
 	if err != nil {

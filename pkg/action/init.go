@@ -76,6 +76,13 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 		}
 	}
 
+	cfg.Config.Logger.Info("Remove any pre-existing initrd")
+	err = removeElementalInitrds(cfg)
+	if err != nil {
+		cfg.Config.Logger.Errorf("failed removing any pre-existing Elemental initrd: %s", err.Error())
+		return err
+	}
+
 	cfg.Config.Logger.Infof("Generate initrd.")
 	output, err := cfg.Runner.Run("dracut", "-f", fmt.Sprintf("%s-%s", constants.ElementalInitrd, version), version)
 	if err != nil {
@@ -98,4 +105,19 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 	}
 
 	return err
+}
+
+func removeElementalInitrds(cfg *types.RunConfig) error {
+	initImgs, err := utils.FindFiles(cfg.Fs, "/", fmt.Sprintf("%s-*", constants.ElementalInitrd))
+	if err != nil {
+		return err
+	}
+	for _, img := range initImgs {
+		cfg.Config.Logger.Debugf("Removing pre-existing elemental initrd file: %s", img)
+		err = cfg.Fs.Remove(img)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
