@@ -49,8 +49,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   patch \
   netplan.io \
   locales \
+  kbd \
   podman \
   xz-utils
+
+# Hack to prevent systemd-firstboot failures while setting keymap, this is known
+# Debian issue (T_T) https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790955
+ARG KBD=2.6.4
+RUN curl -L https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-${KBD}.tar.xz --output kbd-${KBD}.tar.xz && \
+    tar xaf kbd-${KBD}.tar.xz && mkdir -p /usr/share/keymaps && cp -Rp kbd-${KBD}/data/keymaps/* /usr/share/keymaps/
 
 # Symlink grub2-editenv
 RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
