@@ -19,6 +19,7 @@ package elemental_test
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -100,10 +101,21 @@ var _ = Describe("Elemental Smoke tests", func() {
 		})
 
 		It("has default localectl configuration from cloud-init", func() {
-			out, err := s.Command("localectl status")
+			var isUbuntu bool
+
+			out, err := s.Command("source /etc/os-release && echo $NAME")
+			Expect(err).ToNot(HaveOccurred())
+			if strings.Contains(out, "Ubuntu") {
+				isUbuntu = true
+			}
+
+			out, err = s.Command("localectl status")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(out).Should(ContainSubstring("LANG=en_US.UTF-8"))
-			Expect(out).Should(ContainSubstring("VC Keymap: us"))
+			if !isUbuntu {
+				// Setting keymap is not supported in Debian via systemd (localectl)
+				Expect(out).Should(ContainSubstring("VC Keymap: us"))
+			}
 		})
 	})
 })
