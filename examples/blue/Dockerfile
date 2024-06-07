@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM fedora:39 as OS
+FROM fedora:40 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -52,14 +52,6 @@ RUN mkdir -p /oem /system
 
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
-
-# This is patches are fix upstream dracut, see https://github.com/dracutdevs/dracut/pull/2525
-ADD patches /
-
-RUN cd /usr/lib/dracut && \
-    patch -p 1 -f -i /0001-fix-dmsquash-live-restore-compatibility-with-earlier.patch && \
-    patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
-    rm /*.patch
 
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf

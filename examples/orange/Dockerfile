@@ -4,7 +4,7 @@ ARG VERSION
 FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
 
 # OS base image of our choice
-FROM ubuntu:23.04 as OS
+FROM ubuntu:24.04 as OS
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -61,14 +61,6 @@ RUN mkdir -p /oem /system
 # Just add the elemental cli
 COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 
-# This is patches are fix upstream dracut, see https://github.com/dracutdevs/dracut/pull/2525
-ADD patches /
-
-RUN cd /usr/lib/dracut && \
-    patch -p 1 -f -i /0001-fix-dmsquash-live-restore-compatibility-with-earlier.patch && \
-    patch -p 1 -f -i /0001-fix-overlayfs-split-overlayfs-mount-in-two-steps.patch && \
-    rm /*.patch
-
 # Enable essential services
 RUN systemctl enable systemd-networkd.service
 
@@ -95,7 +87,7 @@ ADD 05_network.yaml /system/oem/05_network.yaml
 # Arrange bootloader binaries into /usr/lib/elemental/bootloader
 # this way elemental installer can easily fetch them
 RUN mkdir -p /usr/lib/elemental/bootloader && \
-    cp /usr/lib/grub/x86_64-efi-signed/gcdx64.efi.signed /usr/lib/elemental/bootloader/grubx64.efi && \
+    cp /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed /usr/lib/elemental/bootloader/grubx64.efi && \
     cp /usr/lib/shim/shimx64.efi.signed.latest /usr/lib/elemental/bootloader/shimx64.efi && \
     cp /usr/lib/shim/mmx64.efi /usr/lib/elemental/bootloader/mmx64.efi
 
