@@ -60,6 +60,10 @@ RUN ARCH=$(uname -m); \
         lvm2 && \
     zypper cc -a
 
+# This a temporary workaround, glibc package got restructured into subpackages and now mtools is not
+# requiring the apropriate package as a dependency (boo#1225982)
+RUN zypper install -y --no-recommends glibc-gconv-modules-extra && zypper cc -a 
+
 # Copy the built CLI
 COPY --from=elemental-bin /usr/bin/elemental /usr/bin/elemental
 
