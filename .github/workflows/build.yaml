@@ -28,11 +28,7 @@ jobs:
     steps:
     - id: set-matrix
       run: |
-        if [ "${{ contains(github.event.pull_request.labels.*.name, 'all-distros') }}" == "true" ]; then
-          echo "flavor=['green', 'blue', 'orange']" >> $GITHUB_OUTPUT
-        else
-          echo "flavor=['green']" >> $GITHUB_OUTPUT
-        fi
+        echo "flavor=['green', 'blue', 'orange']" >> $GITHUB_OUTPUT
     - id: set-platform
       run: |
         if [ "${{ startsWith(github.event.ref, 'refs/tags/v') }}" == "true" ]; then
