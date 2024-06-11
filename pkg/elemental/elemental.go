@@ -49,6 +49,7 @@ func PartitionAndFormatDevice(c types.Config, i *types.InstallSpec) error {
 		partitioner.WithRunner(c.Runner),
 		partitioner.WithFS(c.Fs),
 		partitioner.WithLogger(c.Logger),
+		partitioner.WithMounter(c.Mounter),
 	)
 
 	if !disk.Exists() {

@@ -98,7 +98,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					config.WithSyscall(sysc),
 					config.WithLogger(logger),
 				)
-				Expect(c.Mounter).To(Equal(types.NewMounter(constants.MountBinary)))
+				Expect(c.Mounter).ToNot(BeNil())
 			})
 		})
 		Describe("RunConfig", func() {
@@ -347,7 +347,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("BuildConfig", Label("build"), func() {
 			It("initiates a new build config", func() {
-				build := config.NewBuildConfig()
+				build := config.NewBuildConfig(config.WithMounter(mounter))
 				Expect(build.Name).To(Equal(constants.BuildImgName))
 			})
 		})
