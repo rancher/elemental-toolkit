@@ -46,8 +46,10 @@ var _ = Describe("Init Action", func() {
 	var spec *types.InitSpec
 	var enabledUnits []string
 	var errCmd, initrdFile string
+	var mounter *mocks.FakeMounter
 
 	BeforeEach(func() {
+		mounter = mocks.NewFakeMounter()
 		runner = mocks.NewFakeRunner()
 		memLog = &bytes.Buffer{}
 		logger = types.NewBufferLogger(memLog)
@@ -56,6 +58,7 @@ var _ = Describe("Init Action", func() {
 		cfg = config.NewRunConfig(
 			config.WithFs(fs),
 			config.WithRunner(runner),
+			config.WithMounter(mounter),
 			config.WithLogger(logger),
 		)
 

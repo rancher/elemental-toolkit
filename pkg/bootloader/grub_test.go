@@ -50,9 +50,11 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 	var grubCfg, osRelease []byte
 	var efivars eleefi.Variables
 	var relativeTo string
+	var mounter *mocks.FakeMounter
 
 	BeforeEach(func() {
 		logger = types.NewNullLogger()
+		mounter = mocks.NewFakeMounter()
 		fs, cleanup, err = vfst.NewTestFS(map[string]interface{}{})
 		Expect(err).Should(BeNil())
 		runner = mocks.NewFakeRunner()
@@ -101,6 +103,7 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		cfg = config.NewConfig(
 			config.WithLogger(logger),
 			config.WithRunner(runner),
+			config.WithMounter(mounter),
 			config.WithFs(fs),
 			config.WithPlatform("linux/amd64"),
 		)

@@ -378,7 +378,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 		})
 		AfterEach(func() { cleanup() })
 		It("Creates a default disk", func() {
-			dev = part.NewDisk("/dev/device")
+			dev = part.NewDisk("/dev/device", part.WithMounter(mounter))
 		})
 		Describe("Load data without changes", func() {
 			BeforeEach(func() {
@@ -471,7 +471,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				Expect(runner.CmdsMatch(cmds)).To(BeNil())
 			})
 			It("Does not find device for a given partition number", func() {
-				dev := part.NewDisk("/dev/lp0")
+				dev := part.NewDisk("/dev/lp0", part.WithMounter(mounter))
 				_, err := dev.FindPartitionDevice(4)
 				Expect(err).NotTo(BeNil())
 			})
