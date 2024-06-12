@@ -31,7 +31,7 @@ jobs:
   build-matrix:
     strategy:
       matrix:
-        flavor: ['green']
+        flavor: ['green', 'blue', 'orange']
     uses: ./.github/workflows/build_and_test_x86.yaml
     with:
       flavor: ${{ matrix.flavor }}
