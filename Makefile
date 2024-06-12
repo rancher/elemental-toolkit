@@ -63,7 +63,7 @@ push-toolkit:
 pull-toolkit:
 	for retry in 1 2 3 4 5 ; do \
 		$(DOCKER) pull $(TOOLKIT_REPO):$(VERSION) && exit 0; \
-		sleep 5; \
+		sleep 30; \
 	done
 
 .PHONY: build-cli
