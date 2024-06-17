@@ -35,7 +35,7 @@ const (
 	BIOS  = "bios"
 	MSDOS = "msdos"
 	EFI   = "efi"
-	esp   = "esp"
+	ESP   = "esp"
 	bios  = "bios_grub"
 	boot  = "boot"
 )
@@ -502,7 +502,7 @@ func (pl PartitionList) GetByNameOrLabel(name, label string) *Partition {
 
 type ElementalPartitions struct {
 	BIOS       *Partition
-	EFI        *Partition
+	EFI        *Partition `yaml:"efi,omitempty" mapstructure:"efi"`
 	OEM        *Partition `yaml:"oem,omitempty" mapstructure:"oem"`
 	Recovery   *Partition `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	State      *Partition `yaml:"state,omitempty" mapstructure:"state"`
@@ -520,13 +520,8 @@ func (ep ElementalPartitions) GetConfigStorage() string {
 // SetFirmwarePartitions sets firmware partitions for a given firmware and partition table type
 func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable string) error {
 	if firmware == EFI && partTable == GPT {
-		ep.EFI = &Partition{
-			FilesystemLabel: constants.EfiLabel,
-			Size:            constants.EfiSize,
-			Name:            constants.EfiPartName,
-			FS:              constants.EfiFs,
-			MountPoint:      constants.EfiDir,
-			Flags:           []string{esp},
+		if ep.EFI == nil {
+			return fmt.Errorf("nil efi partition")
 		}
 		ep.BIOS = nil
 	} else if firmware == BIOS && partTable == GPT {

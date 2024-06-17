@@ -261,6 +261,16 @@ func NewMountSpec(cfg types.Config) *types.MountSpec {
 
 func NewInstallElementalPartitions() types.ElementalPartitions {
 	partitions := types.ElementalPartitions{}
+
+	partitions.EFI = &types.Partition{
+		FilesystemLabel: constants.EfiLabel,
+		Size:            constants.EfiSize,
+		Name:            constants.EfiPartName,
+		FS:              constants.EfiFs,
+		MountPoint:      constants.EfiDir,
+		Flags:           []string{types.ESP},
+	}
+
 	partitions.OEM = &types.Partition{
 		FilesystemLabel: constants.OEMLabel,
 		Size:            constants.OEMSize,
@@ -476,9 +486,15 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 func NewDiskElementalPartitions(workdir string) types.ElementalPartitions {
 	partitions := types.ElementalPartitions{}
 
-	// does not return error on types.EFI use case
-	_ = partitions.SetFirmwarePartitions(types.EFI, types.GPT)
-	partitions.EFI.Path = filepath.Join(workdir, constants.EfiPartName+partSuffix)
+	partitions.EFI = &types.Partition{
+		FilesystemLabel: constants.EfiLabel,
+		Size:            constants.EfiSize,
+		Name:            constants.EfiPartName,
+		FS:              constants.EfiFs,
+		MountPoint:      constants.EfiDir,
+		Path:            filepath.Join(workdir, constants.EfiPartName+partSuffix),
+		Flags:           []string{types.ESP},
+	}
 
 	partitions.OEM = &types.Partition{
 		FilesystemLabel: constants.OEMLabel,

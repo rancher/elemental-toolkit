@@ -191,8 +191,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		It("sets firmware partitions on efi", func() {
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
 			err := ep.SetFirmwarePartitions(types.EFI, types.GPT)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ep.EFI != nil && ep.BIOS == nil).To(BeTrue())
+			Expect(err).Should(HaveOccurred())
 		})
 		It("sets firmware partitions on bios", func() {
 			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
