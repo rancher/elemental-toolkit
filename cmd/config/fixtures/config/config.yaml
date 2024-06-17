@@ -5,7 +5,7 @@ cloud-init-paths:
 
 install:
   partitions:
-    efi:
+    bootloader:
       size: 512
   target: "someDisk"
 

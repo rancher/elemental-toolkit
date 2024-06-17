@@ -502,7 +502,7 @@ func (pl PartitionList) GetByNameOrLabel(name, label string) *Partition {
 
 type ElementalPartitions struct {
 	BIOS       *Partition
-	EFI        *Partition `yaml:"efi,omitempty" mapstructure:"efi"`
+	EFI        *Partition `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
 	OEM        *Partition `yaml:"oem,omitempty" mapstructure:"oem"`
 	Recovery   *Partition `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	State      *Partition `yaml:"state,omitempty" mapstructure:"state"`

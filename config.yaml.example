@@ -19,7 +19,7 @@ install:
   #     size: 300
 
   # default partitions
-  # only 'efi', 'oem', 'recovery', 'state' and 'persistent' objects allowed
+  # only 'bootloader', 'oem', 'recovery', 'state' and 'persistent' objects allowed
   # size in MiB
   partitions:
     oem:
