@@ -4,6 +4,9 @@ cloud-init-paths:
 - "some/alternate/path"
 
 install:
+  partitions:
+    efi:
+      size: 512
   target: "someDisk"
 
   no-format: true
