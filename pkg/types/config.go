@@ -396,8 +396,8 @@ func (u *UpgradeSpec) Sanitize() error {
 	}
 
 	if u.BootloaderUpgrade {
-		if u.Partitions.EFI == nil || u.Partitions.EFI.MountPoint == "" {
-			return fmt.Errorf("undefined EFI partition")
+		if u.Partitions.Boot == nil || u.Partitions.Boot.MountPoint == "" {
+			return fmt.Errorf("undefined Bootloader partition")
 		}
 	}
 
@@ -502,7 +502,7 @@ func (pl PartitionList) GetByNameOrLabel(name, label string) *Partition {
 
 type ElementalPartitions struct {
 	BIOS       *Partition
-	EFI        *Partition `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	Boot       *Partition `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
 	OEM        *Partition `yaml:"oem,omitempty" mapstructure:"oem"`
 	Recovery   *Partition `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	State      *Partition `yaml:"state,omitempty" mapstructure:"state"`
@@ -520,7 +520,7 @@ func (ep ElementalPartitions) GetConfigStorage() string {
 // SetFirmwarePartitions sets firmware partitions for a given firmware and partition table type
 func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable string) error {
 	if firmware == EFI && partTable == GPT {
-		if ep.EFI == nil {
+		if ep.Boot == nil {
 			return fmt.Errorf("nil efi partition")
 		}
 		ep.BIOS = nil
@@ -533,13 +533,13 @@ func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable 
 			MountPoint:      "",
 			Flags:           []string{bios},
 		}
-		ep.EFI = nil
+		ep.Boot = nil
 	} else {
 		if ep.State == nil {
 			return fmt.Errorf("nil state partition")
 		}
 		ep.State.Flags = []string{boot}
-		ep.EFI = nil
+		ep.Boot = nil
 		ep.BIOS = nil
 	}
 	return nil
@@ -567,7 +567,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	}
 
 	ep.BIOS = pl.GetByName(constants.BiosPartName)
-	ep.EFI = pl.GetByNameOrLabel(constants.EfiPartName, lm[constants.EfiPartName])
+	ep.Boot = pl.GetByNameOrLabel(constants.EfiPartName, lm[constants.EfiPartName])
 	ep.OEM = pl.GetByNameOrLabel(constants.OEMPartName, lm[constants.OEMPartName])
 	ep.Recovery = pl.GetByNameOrLabel(constants.RecoveryPartName, lm[constants.RecoveryPartName])
 	ep.State = pl.GetByNameOrLabel(constants.StatePartName, lm[constants.StatePartName])
@@ -595,8 +595,8 @@ func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions Partition
 	if ep.BIOS != nil && !inExcludes(ep.BIOS, excludes...) {
 		partitions = append(partitions, ep.BIOS)
 	}
-	if ep.EFI != nil && !inExcludes(ep.EFI, excludes...) {
-		partitions = append(partitions, ep.EFI)
+	if ep.Boot != nil && !inExcludes(ep.Boot, excludes...) {
+		partitions = append(partitions, ep.Boot)
 	}
 	if ep.OEM != nil && !inExcludes(ep.OEM, excludes...) {
 		partitions = append(partitions, ep.OEM)

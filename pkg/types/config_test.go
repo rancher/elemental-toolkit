@@ -188,27 +188,27 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				},
 			}
 		})
-		It("sets firmware partitions on efi", func() {
-			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
+		It("sets firmware partitions on Boot", func() {
+			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			err := ep.SetFirmwarePartitions(types.EFI, types.GPT)
 			Expect(err).Should(HaveOccurred())
 		})
 		It("sets firmware partitions on bios", func() {
-			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
+			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			err := ep.SetFirmwarePartitions(types.BIOS, types.GPT)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ep.EFI == nil && ep.BIOS != nil).To(BeTrue())
+			Expect(ep.Boot == nil && ep.BIOS != nil).To(BeTrue())
 		})
 		It("sets firmware partitions on msdos", func() {
 			ep.State = &types.Partition{}
-			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
+			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			err := ep.SetFirmwarePartitions(types.BIOS, types.MSDOS)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
+			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			Expect(ep.State.Flags != nil && ep.State.Flags[0] == "boot").To(BeTrue())
 		})
 		It("fails to set firmware partitions of state is not defined on msdos", func() {
-			Expect(ep.EFI == nil && ep.BIOS == nil).To(BeTrue())
+			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			err := ep.SetFirmwarePartitions(types.BIOS, types.MSDOS)
 			Expect(err).Should(HaveOccurred())
 		})
@@ -224,7 +224,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(ep.Persistent != nil).To(BeTrue())
 			Expect(ep.OEM != nil).To(BeTrue())
 			Expect(ep.BIOS == nil).To(BeTrue())
-			Expect(ep.EFI == nil).To(BeTrue())
+			Expect(ep.Boot == nil).To(BeTrue())
 			Expect(ep.State == nil).To(BeTrue())
 			Expect(ep.Recovery != nil).To(BeTrue())
 		})
@@ -373,7 +373,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		Describe("sanitize", func() {
 			It("runs method", func() {
-				Expect(spec.Partitions.EFI).ToNot(BeNil())
+				Expect(spec.Partitions.Boot).ToNot(BeNil())
 				Expect(spec.System.IsEmpty()).To(BeTrue())
 
 				// Creates firmware partitions
@@ -381,7 +381,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				spec.Firmware = types.EFI
 				err := spec.Sanitize()
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(spec.Partitions.EFI).NotTo(BeNil())
+				Expect(spec.Partitions.Boot).NotTo(BeNil())
 
 				// Sets image labels to empty string on squashfs
 				spec.RecoverySystem.FS = constants.SquashFs

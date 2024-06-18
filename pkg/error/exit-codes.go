@@ -254,7 +254,7 @@ const SnapshotterInit = 84
 const SnapshotterStart = 85
 
 // Error mounting EFI partition
-const MountEFIPartition = 86
+const MountBootPartition = 86
 
 // Error mounting Persistent partition
 const MountPersistentPartition = 87

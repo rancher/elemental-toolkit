@@ -453,7 +453,7 @@ func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 
 // createEFIPartitionImage creates the EFI partition image
 func (b *BuildDiskAction) createEFIPartitionImage() (*types.Image, error) {
-	img := b.spec.Partitions.EFI.ToImage()
+	img := b.spec.Partitions.Boot.ToImage()
 	err := elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating EFI image: %s", err.Error())
@@ -741,9 +741,9 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 			FSLabel: b.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
-	if b.spec.Partitions.EFI != nil {
+	if b.spec.Partitions.Boot != nil {
 		installState.Partitions[constants.EfiPartName] = &types.PartitionState{
-			FSLabel: b.spec.Partitions.EFI.FilesystemLabel,
+			FSLabel: b.spec.Partitions.Boot.FilesystemLabel,
 		}
 	}
 

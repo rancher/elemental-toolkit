@@ -119,7 +119,7 @@ func (u UpgradeAction) upgradeChrootHook(hook string, root string) error {
 		mountPoints[persistentDevice.MountPoint] = constants.PersistentPath
 	}
 
-	efiDevice := u.spec.Partitions.EFI
+	efiDevice := u.spec.Partitions.Boot
 	if efiDevice != nil && efiDevice.MountPoint != "" {
 		mountPoints[efiDevice.MountPoint] = constants.EfiDir
 	}
@@ -210,9 +210,9 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 }
 
 func (u *UpgradeAction) mountRWPartitions(cleanup *utils.CleanStack) error {
-	umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.EFI)
+	umount, err := elemental.MountRWPartition(u.cfg.Config, u.spec.Partitions.Boot)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.MountEFIPartition)
+		return elementalError.NewFromError(err, elementalError.MountBootPartition)
 	}
 	cleanup.Push(umount)
 
@@ -254,7 +254,7 @@ func (u *UpgradeAction) Run() (err error) {
 	}
 
 	// Init snapshotter
-	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State, u.spec.Partitions.EFI.MountPoint)
+	err = u.snapshotter.InitSnapshotter(u.spec.Partitions.State, u.spec.Partitions.Boot.MountPoint)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed initializing snapshotter")
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)
@@ -353,7 +353,7 @@ func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
 	if u.spec.BootloaderUpgrade {
 		err = u.bootloader.Install(
 			u.snapshot.WorkDir,
-			u.spec.Partitions.EFI.MountPoint,
+			u.spec.Partitions.Boot.MountPoint,
 		)
 		if err != nil {
 			u.cfg.Logger.Errorf("failed installing grub: %v", err)
@@ -374,7 +374,7 @@ func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
 
 	grubVars := u.spec.GetGrubLabels()
 	err = u.bootloader.SetPersistentVariables(
-		filepath.Join(u.spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv),
+		filepath.Join(u.spec.Partitions.Boot.MountPoint, constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -382,7 +382,7 @@ func (u *UpgradeAction) refineDeployment() error { //nolint:dupl
 		return elementalError.NewFromError(err, elementalError.SetGrubVariables)
 	}
 
-	err = u.bootloader.SetDefaultEntry(u.spec.Partitions.EFI.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
+	err = u.bootloader.SetDefaultEntry(u.spec.Partitions.Boot.MountPoint, constants.WorkingImgDir, u.spec.GrubDefEntry)
 	if err != nil {
 		u.Error("failed setting default entry")
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)

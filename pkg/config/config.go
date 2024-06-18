@@ -262,7 +262,7 @@ func NewMountSpec(cfg types.Config) *types.MountSpec {
 func NewInstallElementalPartitions() types.ElementalPartitions {
 	partitions := types.ElementalPartitions{}
 
-	partitions.EFI = &types.Partition{
+	partitions.Boot = &types.Partition{
 		FilesystemLabel: constants.EfiLabel,
 		Size:            constants.EfiSize,
 		Name:            constants.EfiPartName,
@@ -371,9 +371,9 @@ func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
 		}
 	}
 
-	if ep.EFI != nil {
-		if ep.EFI.MountPoint == "" {
-			ep.EFI.MountPoint = constants.EfiDir
+	if ep.Boot != nil {
+		if ep.Boot.MountPoint == "" {
+			ep.Boot.MountPoint = constants.EfiDir
 		}
 	}
 
@@ -416,13 +416,13 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 	ep := types.NewElementalPartitionsFromList(parts, installState)
 
 	if efiExists {
-		if ep.EFI == nil {
-			return nil, fmt.Errorf("EFI partition not found")
+		if ep.Boot == nil {
+			return nil, fmt.Errorf("Bootloader partition not found")
 		}
-		if ep.EFI.MountPoint == "" {
-			ep.EFI.MountPoint = constants.EfiDir
+		if ep.Boot.MountPoint == "" {
+			ep.Boot.MountPoint = constants.EfiDir
 		}
-		ep.EFI.Name = constants.EfiPartName
+		ep.Boot.Name = constants.EfiPartName
 	}
 
 	if ep.State == nil {
@@ -486,7 +486,7 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 func NewDiskElementalPartitions(workdir string) types.ElementalPartitions {
 	partitions := types.ElementalPartitions{}
 
-	partitions.EFI = &types.Partition{
+	partitions.Boot = &types.Partition{
 		FilesystemLabel: constants.EfiLabel,
 		Size:            constants.EfiSize,
 		Name:            constants.EfiPartName,
