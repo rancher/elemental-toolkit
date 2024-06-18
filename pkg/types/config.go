@@ -114,8 +114,8 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 	}
 
 	// Set default filesystem labels if missing, see rancher/elemental-toolkit#1827
-	if installState.Partitions[constants.EfiPartName] != nil && installState.Partitions[constants.EfiPartName].FSLabel == "" {
-		installState.Partitions[constants.EfiPartName].FSLabel = constants.EfiLabel
+	if installState.Partitions[constants.BootPartName] != nil && installState.Partitions[constants.BootPartName].FSLabel == "" {
+		installState.Partitions[constants.BootPartName].FSLabel = constants.BootLabel
 	}
 	if installState.Partitions[constants.OEMPartName] != nil && installState.Partitions[constants.OEMPartName].FSLabel == "" {
 		installState.Partitions[constants.OEMPartName].FSLabel = constants.OEMLabel
@@ -552,7 +552,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	ep := ElementalPartitions{}
 
 	lm := map[string]string{
-		constants.EfiPartName:        constants.EfiLabel,
+		constants.BootPartName:       constants.BootLabel,
 		constants.OEMPartName:        constants.OEMLabel,
 		constants.RecoveryPartName:   constants.RecoveryLabel,
 		constants.StatePartName:      constants.StateLabel,
@@ -567,7 +567,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	}
 
 	ep.BIOS = pl.GetByName(constants.BiosPartName)
-	ep.Boot = pl.GetByNameOrLabel(constants.EfiPartName, lm[constants.EfiPartName])
+	ep.Boot = pl.GetByNameOrLabel(constants.BootPartName, lm[constants.BootPartName])
 	ep.OEM = pl.GetByNameOrLabel(constants.OEMPartName, lm[constants.OEMPartName])
 	ep.Recovery = pl.GetByNameOrLabel(constants.RecoveryPartName, lm[constants.RecoveryPartName])
 	ep.State = pl.GetByNameOrLabel(constants.StatePartName, lm[constants.StatePartName])

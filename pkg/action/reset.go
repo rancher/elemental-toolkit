@@ -47,7 +47,7 @@ func (r *ResetAction) resetChrootHook(hook string, root string) error {
 	}
 	efi := r.spec.Partitions.Boot
 	if efi != nil && efi.MountPoint != "" {
-		extraMounts[efi.MountPoint] = constants.EfiDir
+		extraMounts[efi.MountPoint] = constants.BootDir
 	}
 	return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, root, extraMounts, r.cfg.CloudInitPaths...)
 }

@@ -397,7 +397,7 @@ var _ = Describe("Install action tests", func() {
 			bootloader.ErrorSetDefaultEntry = true
 			err = installer.Run()
 			Expect(err).NotTo(BeNil())
-			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.EfiDir, constants.GrubOEMEnv)}}))
+			Expect(runner.MatchMilestones([][]string{{"grub2-editenv", filepath.Join(constants.BootDir, constants.GrubOEMEnv)}}))
 		})
 
 		// Start transaction

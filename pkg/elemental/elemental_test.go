@@ -963,7 +963,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(fs.Mkdir("/recovery/boot", constants.DirPerm)).To(Succeed())
 
 			img := &types.Image{
-				File:   filepath.Join("/recovery", constants.BootDir, constants.RecoveryImgFile),
+				File:   filepath.Join("/recovery", constants.BootPath, constants.RecoveryImgFile),
 				Source: types.NewDockerSrc("elemental:latest"),
 				FS:     constants.SquashFs,
 			}

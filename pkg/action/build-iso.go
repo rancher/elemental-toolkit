@@ -240,8 +240,8 @@ func (b BuildISOAction) createEFI(root string, img string) error {
 	err = elemental.CreateFileSystemImage(b.cfg.Config, &types.Image{
 		File:  img,
 		Size:  uint(efiSizeMB),
-		FS:    constants.EfiFs,
-		Label: constants.EfiLabel,
+		FS:    constants.BootFs,
+		Label: constants.BootLabel,
 	}, "", false)
 	if err != nil {
 		return err

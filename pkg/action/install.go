@@ -97,7 +97,7 @@ func (i *InstallAction) installChrootHook(hook string, root string) error {
 	}
 	efi := i.spec.Partitions.Boot
 	if efi != nil && efi.MountPoint != "" {
-		extraMounts[efi.MountPoint] = cnst.EfiDir
+		extraMounts[efi.MountPoint] = cnst.BootDir
 	}
 	return ChrootHook(&i.cfg.Config, hook, i.cfg.Strict, root, extraMounts, i.cfg.CloudInitPaths...)
 }
@@ -148,7 +148,7 @@ func (i *InstallAction) createInstallStateYaml() error {
 		}
 	}
 	if i.spec.Partitions.Boot != nil {
-		installState.Partitions[cnst.EfiPartName] = &types.PartitionState{
+		installState.Partitions[cnst.BootPartName] = &types.PartitionState{
 			FSLabel: i.spec.Partitions.Boot.FilesystemLabel,
 		}
 	}

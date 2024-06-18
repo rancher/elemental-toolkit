@@ -153,7 +153,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Partitions: []*block.Partition{
 							{
 								Name:            "device1",
-								FilesystemLabel: constants.EfiLabel,
+								FilesystemLabel: constants.BootLabel,
 								Type:            "vfat",
 							},
 							{
@@ -209,7 +209,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Partitions.Boot.MountPoint).To(Equal(constants.EfiDir))
+					Expect(spec.Partitions.Boot.MountPoint).To(Equal(constants.BootDir))
 				})
 				It("sets reset defaults to recovery image", func() {
 					// Set non-squashfs recovery image detection
@@ -310,7 +310,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Partitions: []*block.Partition{
 							{
 								Name:            "device1",
-								FilesystemLabel: constants.EfiLabel,
+								FilesystemLabel: constants.BootLabel,
 								Type:            "vfat",
 							},
 							{
