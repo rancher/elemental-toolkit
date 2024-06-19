@@ -45,9 +45,9 @@ func (r *ResetAction) resetChrootHook(hook string, root string) error {
 	if oem != nil && oem.MountPoint != "" {
 		extraMounts[oem.MountPoint] = constants.OEMPath
 	}
-	efi := r.spec.Partitions.EFI
+	efi := r.spec.Partitions.Boot
 	if efi != nil && efi.MountPoint != "" {
-		extraMounts[efi.MountPoint] = constants.EfiDir
+		extraMounts[efi.MountPoint] = constants.BootDir
 	}
 	return ChrootHook(&r.cfg.Config, hook, r.cfg.Strict, root, extraMounts, r.cfg.CloudInitPaths...)
 }
@@ -219,7 +219,7 @@ func (r ResetAction) Run() (err error) {
 	})
 
 	// Init snapshotter
-	err = r.snapshotter.InitSnapshotter(r.spec.Partitions.State, r.spec.Partitions.EFI.MountPoint)
+	err = r.snapshotter.InitSnapshotter(r.spec.Partitions.State, r.spec.Partitions.Boot.MountPoint)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)
 	}
@@ -290,7 +290,7 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 	// Install grub
 	err = r.bootloader.Install(
 		r.snapshot.WorkDir,
-		r.spec.Partitions.EFI.MountPoint,
+		r.spec.Partitions.Boot.MountPoint,
 	)
 	if err != nil {
 		r.cfg.Logger.Errorf("failed installing grub: %v", err)
@@ -310,7 +310,7 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 
 	grubVars := r.spec.GetGrubLabels()
 	err = r.bootloader.SetPersistentVariables(
-		filepath.Join(r.spec.Partitions.EFI.MountPoint, constants.GrubOEMEnv),
+		filepath.Join(r.spec.Partitions.Boot.MountPoint, constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -320,7 +320,7 @@ func (r *ResetAction) refineDeployment() error { //nolint:dupl
 
 	// Installation rebrand (only grub for now)
 	err = r.bootloader.SetDefaultEntry(
-		r.spec.Partitions.EFI.MountPoint,
+		r.spec.Partitions.Boot.MountPoint,
 		constants.WorkingImgDir,
 		r.spec.GrubDefEntry,
 	)

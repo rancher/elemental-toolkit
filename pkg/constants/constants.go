@@ -23,8 +23,8 @@ import (
 
 const (
 	BiosPartName       = "bios"
-	EfiLabel           = "COS_GRUB"
-	EfiPartName        = "efi"
+	BootLabel          = "COS_GRUB"
+	BootPartName       = "efi"
 	SystemLabel        = "COS_SYSTEM"
 	RecoveryLabel      = "COS_RECOVERY"
 	RecoveryPartName   = "recovery"
@@ -40,11 +40,11 @@ const (
 	LinuxFs            = "ext4"
 	LinuxImgFs         = "ext2"
 	SquashFs           = "squashfs"
-	EfiFs              = "vfat"
+	BootFs             = "vfat"
 	Btrfs              = "btrfs"
 	BiosFs             = ""
 	MinPartSize        = uint(64)
-	EfiSize            = MinPartSize
+	BootSize           = MinPartSize
 	OEMSize            = MinPartSize
 	StateSize          = uint(8192)
 	RecoverySize       = uint(4096)
@@ -98,7 +98,7 @@ const (
 	OEMDir             = "/run/elemental/oem"
 	PersistentDir      = "/run/elemental/persistent"
 	TransitionDir      = "/run/elemental/transition"
-	EfiDir             = "/run/elemental/efi"
+	BootDir            = "/run/elemental/efi"
 	ImgSrcDir          = "/run/elemental/imgsrc"
 	WorkingImgDir      = "/run/elemental/workingtree"
 	OverlayDir         = "/run/elemental/overlay"
@@ -115,13 +115,13 @@ const (
 	LiveDir     = "/run/initramfs/live"
 
 	// Image constants
-	ActiveImgName     = "active"
-	PassiveImgName    = "passive"
-	RecoveryImgName   = "recovery"
-	RecoveryImgFile   = "recovery.img"
-	BootTransitionDir = "boot-transition"
-	BootDir           = "boot"
-	OldBootDir        = "boot-old"
+	ActiveImgName      = "active"
+	PassiveImgName     = "passive"
+	RecoveryImgName    = "recovery"
+	RecoveryImgFile    = "recovery.img"
+	BootTransitionPath = "boot-transition"
+	BootPath           = "boot"
+	OldBootPath        = "boot-old"
 
 	// Yip stages evaluated on reset/upgrade/install/build-disk actions
 	AfterInstallChrootHook = "after-install-chroot"

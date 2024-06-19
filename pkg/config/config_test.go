@@ -134,7 +134,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 				Expect(spec.RecoverySystem.Source.Value()).To(Equal(spec.System.Value()))
 				Expect(spec.PartTable).To(Equal(types.GPT))
 
-				Expect(spec.Partitions.EFI).NotTo(BeNil())
+				Expect(spec.Partitions.Boot).NotTo(BeNil())
 			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {
 				spec := config.NewInstallSpec(*c)
@@ -153,7 +153,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Partitions: []*block.Partition{
 							{
 								Name:            "device1",
-								FilesystemLabel: constants.EfiLabel,
+								FilesystemLabel: constants.BootLabel,
 								Type:            "vfat",
 							},
 							{
@@ -209,7 +209,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 					spec, err := config.NewResetSpec(*c)
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(spec.Partitions.EFI.MountPoint).To(Equal(constants.EfiDir))
+					Expect(spec.Partitions.Boot.MountPoint).To(Equal(constants.BootDir))
 				})
 				It("sets reset defaults to recovery image", func() {
 					// Set non-squashfs recovery image detection
@@ -297,7 +297,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					bootedFrom = constants.RecoveryImgFile
 					_, err := config.NewResetSpec(*c)
 					Expect(err).Should(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("EFI partition not found"))
+					Expect(err.Error()).To(ContainSubstring("Bootloader partition not found"))
 				})
 			})
 		})
@@ -310,7 +310,7 @@ var _ = Describe("Types", Label("types", "config"), func() {
 						Partitions: []*block.Partition{
 							{
 								Name:            "device1",
-								FilesystemLabel: constants.EfiLabel,
+								FilesystemLabel: constants.BootLabel,
 								Type:            "vfat",
 							},
 							{

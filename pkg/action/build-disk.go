@@ -175,7 +175,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Install grub
-	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.EfiPartName])
+	err = b.bootloader.InstallConfig(recRoot, b.roots[constants.BootPartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub configuration: %s", err.Error())
 		return err
@@ -196,7 +196,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 
 	grubVars := b.spec.GetGrubLabels()
 	err = b.bootloader.SetPersistentVariables(
-		filepath.Join(b.roots[constants.EfiPartName], constants.GrubOEMEnv),
+		filepath.Join(b.roots[constants.BootPartName], constants.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -205,7 +205,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	err = b.bootloader.InstallEFI(
-		recRoot, b.roots[constants.EfiPartName],
+		recRoot, b.roots[constants.BootPartName],
 	)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed installing grub efi binaries: %s", err.Error())
@@ -213,7 +213,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	}
 
 	// Rebrand
-	err = b.bootloader.SetDefaultEntry(b.roots[constants.EfiPartName], recRoot, b.spec.GrubDefEntry)
+	err = b.bootloader.SetDefaultEntry(b.roots[constants.BootPartName], recRoot, b.spec.GrubDefEntry)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.SetDefaultGrubEntry)
 	}
@@ -404,7 +404,7 @@ func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 	}()
 
 	// Run a snapshotter transaction for System source in state partition
-	err = b.snapshotter.InitSnapshotter(b.spec.Partitions.State, b.roots[constants.EfiPartName])
+	err = b.snapshotter.InitSnapshotter(b.spec.Partitions.State, b.roots[constants.BootPartName])
 	if err != nil {
 		b.cfg.Logger.Errorf("failed initializing snapshotter")
 		return nil, elementalError.NewFromError(err, elementalError.SnapshotterInit)
@@ -453,20 +453,20 @@ func (b *BuildDiskAction) createStatePartitionImage() (*types.Image, error) {
 
 // createEFIPartitionImage creates the EFI partition image
 func (b *BuildDiskAction) createEFIPartitionImage() (*types.Image, error) {
-	img := b.spec.Partitions.EFI.ToImage()
+	img := b.spec.Partitions.Boot.ToImage()
 	err := elemental.CreateFileSystemImage(b.cfg.Config, img, "", false)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating EFI image: %s", err.Error())
 		return nil, err
 	}
 
-	err = utils.WalkDirFs(b.cfg.Fs, b.roots[constants.EfiPartName], func(path string, _ fs.DirEntry, err error) error {
+	err = utils.WalkDirFs(b.cfg.Fs, b.roots[constants.BootPartName], func(path string, _ fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if path != b.roots[constants.EfiPartName] {
-			rel, err := filepath.Rel(b.roots[constants.EfiPartName], path)
+		if path != b.roots[constants.BootPartName] {
+			rel, err := filepath.Rel(b.roots[constants.BootPartName], path)
 			if err != nil {
 				return err
 			}
@@ -741,9 +741,9 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 			FSLabel: b.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
-	if b.spec.Partitions.EFI != nil {
-		installState.Partitions[constants.EfiPartName] = &types.PartitionState{
-			FSLabel: b.spec.Partitions.EFI.FilesystemLabel,
+	if b.spec.Partitions.Boot != nil {
+		installState.Partitions[constants.BootPartName] = &types.PartitionState{
+			FSLabel: b.spec.Partitions.Boot.FilesystemLabel,
 		}
 	}
 

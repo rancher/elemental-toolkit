@@ -101,7 +101,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 						Name:            "device1",
 						FilesystemLabel: "COS_GRUB",
 						Type:            "vfat",
-						MountPoint:      constants.EfiDir,
+						MountPoint:      constants.BootDir,
 					},
 					{
 						Name:            "device2",
@@ -175,7 +175,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				Expect(err).To(HaveOccurred())
 			})
 			It("Successfully upgrades recovery from docker image", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootPath, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image
@@ -212,7 +212,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				Expect(spec.State.Date).ToNot(BeEmpty(), "post-upgrade state should contain a date")
 			})
 			It("Successfully skips updateInstallState", Label("docker"), func() {
-				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootDir, constants.RecoveryImgFile)
+				recoveryImgPath := filepath.Join(constants.LiveDir, constants.BootPath, constants.RecoveryImgFile)
 				spec := PrepareTestRecoveryImage(config, constants.LiveDir, fs, runner)
 
 				// This should be the old image

@@ -35,7 +35,7 @@ const (
 	BIOS  = "bios"
 	MSDOS = "msdos"
 	EFI   = "efi"
-	esp   = "esp"
+	ESP   = "esp"
 	bios  = "bios_grub"
 	boot  = "boot"
 )
@@ -114,8 +114,8 @@ func (c Config) LoadInstallState() (*InstallState, error) {
 	}
 
 	// Set default filesystem labels if missing, see rancher/elemental-toolkit#1827
-	if installState.Partitions[constants.EfiPartName] != nil && installState.Partitions[constants.EfiPartName].FSLabel == "" {
-		installState.Partitions[constants.EfiPartName].FSLabel = constants.EfiLabel
+	if installState.Partitions[constants.BootPartName] != nil && installState.Partitions[constants.BootPartName].FSLabel == "" {
+		installState.Partitions[constants.BootPartName].FSLabel = constants.BootLabel
 	}
 	if installState.Partitions[constants.OEMPartName] != nil && installState.Partitions[constants.OEMPartName].FSLabel == "" {
 		installState.Partitions[constants.OEMPartName].FSLabel = constants.OEMLabel
@@ -396,8 +396,8 @@ func (u *UpgradeSpec) Sanitize() error {
 	}
 
 	if u.BootloaderUpgrade {
-		if u.Partitions.EFI == nil || u.Partitions.EFI.MountPoint == "" {
-			return fmt.Errorf("undefined EFI partition")
+		if u.Partitions.Boot == nil || u.Partitions.Boot.MountPoint == "" {
+			return fmt.Errorf("undefined Bootloader partition")
 		}
 	}
 
@@ -502,7 +502,7 @@ func (pl PartitionList) GetByNameOrLabel(name, label string) *Partition {
 
 type ElementalPartitions struct {
 	BIOS       *Partition
-	EFI        *Partition
+	Boot       *Partition `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
 	OEM        *Partition `yaml:"oem,omitempty" mapstructure:"oem"`
 	Recovery   *Partition `yaml:"recovery,omitempty" mapstructure:"recovery"`
 	State      *Partition `yaml:"state,omitempty" mapstructure:"state"`
@@ -520,13 +520,8 @@ func (ep ElementalPartitions) GetConfigStorage() string {
 // SetFirmwarePartitions sets firmware partitions for a given firmware and partition table type
 func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable string) error {
 	if firmware == EFI && partTable == GPT {
-		ep.EFI = &Partition{
-			FilesystemLabel: constants.EfiLabel,
-			Size:            constants.EfiSize,
-			Name:            constants.EfiPartName,
-			FS:              constants.EfiFs,
-			MountPoint:      constants.EfiDir,
-			Flags:           []string{esp},
+		if ep.Boot == nil {
+			return fmt.Errorf("nil efi partition")
 		}
 		ep.BIOS = nil
 	} else if firmware == BIOS && partTable == GPT {
@@ -538,13 +533,13 @@ func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable 
 			MountPoint:      "",
 			Flags:           []string{bios},
 		}
-		ep.EFI = nil
+		ep.Boot = nil
 	} else {
 		if ep.State == nil {
 			return fmt.Errorf("nil state partition")
 		}
 		ep.State.Flags = []string{boot}
-		ep.EFI = nil
+		ep.Boot = nil
 		ep.BIOS = nil
 	}
 	return nil
@@ -557,7 +552,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	ep := ElementalPartitions{}
 
 	lm := map[string]string{
-		constants.EfiPartName:        constants.EfiLabel,
+		constants.BootPartName:       constants.BootLabel,
 		constants.OEMPartName:        constants.OEMLabel,
 		constants.RecoveryPartName:   constants.RecoveryLabel,
 		constants.StatePartName:      constants.StateLabel,
@@ -572,7 +567,7 @@ func NewElementalPartitionsFromList(pl PartitionList, state *InstallState) Eleme
 	}
 
 	ep.BIOS = pl.GetByName(constants.BiosPartName)
-	ep.EFI = pl.GetByNameOrLabel(constants.EfiPartName, lm[constants.EfiPartName])
+	ep.Boot = pl.GetByNameOrLabel(constants.BootPartName, lm[constants.BootPartName])
 	ep.OEM = pl.GetByNameOrLabel(constants.OEMPartName, lm[constants.OEMPartName])
 	ep.Recovery = pl.GetByNameOrLabel(constants.RecoveryPartName, lm[constants.RecoveryPartName])
 	ep.State = pl.GetByNameOrLabel(constants.StatePartName, lm[constants.StatePartName])
@@ -600,8 +595,8 @@ func (ep ElementalPartitions) PartitionsByInstallOrder(extraPartitions Partition
 	if ep.BIOS != nil && !inExcludes(ep.BIOS, excludes...) {
 		partitions = append(partitions, ep.BIOS)
 	}
-	if ep.EFI != nil && !inExcludes(ep.EFI, excludes...) {
-		partitions = append(partitions, ep.EFI)
+	if ep.Boot != nil && !inExcludes(ep.Boot, excludes...) {
+		partitions = append(partitions, ep.Boot)
 	}
 	if ep.OEM != nil && !inExcludes(ep.OEM, excludes...) {
 		partitions = append(partitions, ep.OEM)

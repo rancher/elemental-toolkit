@@ -53,7 +53,7 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 			Path:       "/dev/state-device",
 			MountPoint: rootDir,
 		}
-		efiDir = constants.EfiDir
+		efiDir = constants.BootDir
 		runner = mocks.NewFakeRunner()
 		mounter = mocks.NewFakeMounter()
 		syscall = &mocks.FakeSyscall{}

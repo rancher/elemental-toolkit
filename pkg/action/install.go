@@ -95,9 +95,9 @@ func (i *InstallAction) installChrootHook(hook string, root string) error {
 	if oem != nil && oem.MountPoint != "" {
 		extraMounts[oem.MountPoint] = cnst.OEMPath
 	}
-	efi := i.spec.Partitions.EFI
+	efi := i.spec.Partitions.Boot
 	if efi != nil && efi.MountPoint != "" {
-		extraMounts[efi.MountPoint] = cnst.EfiDir
+		extraMounts[efi.MountPoint] = cnst.BootDir
 	}
 	return ChrootHook(&i.cfg.Config, hook, i.cfg.Strict, root, extraMounts, i.cfg.CloudInitPaths...)
 }
@@ -147,9 +147,9 @@ func (i *InstallAction) createInstallStateYaml() error {
 			FSLabel: i.spec.Partitions.Persistent.FilesystemLabel,
 		}
 	}
-	if i.spec.Partitions.EFI != nil {
-		installState.Partitions[cnst.EfiPartName] = &types.PartitionState{
-			FSLabel: i.spec.Partitions.EFI.FilesystemLabel,
+	if i.spec.Partitions.Boot != nil {
+		installState.Partitions[cnst.BootPartName] = &types.PartitionState{
+			FSLabel: i.spec.Partitions.Boot.FilesystemLabel,
 		}
 	}
 
@@ -190,7 +190,7 @@ func (i InstallAction) Run() (err error) {
 		return elemental.UnmountPartitions(i.cfg.Config, i.spec.Partitions.PartitionsByMountPoint(true))
 	})
 
-	err = i.snapshotter.InitSnapshotter(i.spec.Partitions.State, i.spec.Partitions.EFI.MountPoint)
+	err = i.snapshotter.InitSnapshotter(i.spec.Partitions.State, i.spec.Partitions.Boot.MountPoint)
 	if err != nil {
 		i.cfg.Logger.Errorf("failed initializing snapshotter")
 		return elementalError.NewFromError(err, elementalError.SnapshotterInit)
@@ -317,7 +317,7 @@ func (i *InstallAction) refineDeployment() error { //nolint:dupl
 	// Install grub
 	err = i.bootloader.Install(
 		i.snapshot.WorkDir,
-		i.spec.Partitions.EFI.MountPoint,
+		i.spec.Partitions.Boot.MountPoint,
 	)
 	if err != nil {
 		i.cfg.Logger.Errorf("failed installing grub: %v", err)
@@ -337,7 +337,7 @@ func (i *InstallAction) refineDeployment() error { //nolint:dupl
 
 	grubVars := i.spec.GetGrubLabels()
 	err = i.bootloader.SetPersistentVariables(
-		filepath.Join(i.spec.Partitions.EFI.MountPoint, cnst.GrubOEMEnv),
+		filepath.Join(i.spec.Partitions.Boot.MountPoint, cnst.GrubOEMEnv),
 		grubVars,
 	)
 	if err != nil {
@@ -347,7 +347,7 @@ func (i *InstallAction) refineDeployment() error { //nolint:dupl
 
 	// Installation rebrand (only grub for now)
 	err = i.bootloader.SetDefaultEntry(
-		i.spec.Partitions.EFI.MountPoint,
+		i.spec.Partitions.Boot.MountPoint,
 		cnst.WorkingImgDir,
 		i.spec.GrubDefEntry,
 	)

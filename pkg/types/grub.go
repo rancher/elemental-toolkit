@@ -71,7 +71,7 @@ func (r ResetSpec) GetGrubLabels() map[string]string {
 
 func (d DiskSpec) GetGrubLabels() map[string]string {
 	return map[string]string{
-		"efi_label":        d.Partitions.EFI.FilesystemLabel,
+		"efi_label":        d.Partitions.Boot.FilesystemLabel,
 		"oem_label":        d.Partitions.OEM.FilesystemLabel,
 		"recovery_label":   d.Partitions.Recovery.FilesystemLabel,
 		"state_label":      d.Partitions.State.FilesystemLabel,

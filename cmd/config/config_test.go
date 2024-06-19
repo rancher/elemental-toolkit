@@ -348,6 +348,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 				spec, err := ReadInstallSpec(cfg, flags)
 				Expect(err).ShouldNot(HaveOccurred())
+				Expect(spec.Partitions.Boot.Size).To(Equal(uint(512)))
 				// Overwrites target and recovery-system from environment variables
 				Expect(spec.Target == "/env/disk")
 				Expect(spec.RecoverySystem.Source.Value() == "recovery/image:from_env_vars")

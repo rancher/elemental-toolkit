@@ -151,7 +151,7 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Remove any traces of previously errored upgrades
-	transitionDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootTransitionDir)
+	transitionDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootTransitionPath)
 	u.Debugf("removing any orphaned recovery system %s", transitionDir)
 	err = utils.RemoveAll(u.cfg.Fs, transitionDir)
 	if err != nil {
@@ -167,8 +167,8 @@ func (u *UpgradeRecoveryAction) Run() (err error) {
 	}
 
 	// Switch places on /boot and transition-dir
-	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootDir)
-	oldBootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.OldBootDir)
+	bootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.BootPath)
+	oldBootDir := filepath.Join(u.spec.Partitions.Recovery.MountPoint, constants.OldBootPath)
 
 	// If a previous upgrade failed, remove old boot-dir
 	err = utils.RemoveAll(u.cfg.Fs, oldBootDir)

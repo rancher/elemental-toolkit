@@ -55,7 +55,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 			Path:       "/dev/state-device",
 			MountPoint: rootDir,
 		}
-		efiDir = constants.EfiDir
+		efiDir = constants.BootDir
 		runner = mocks.NewFakeRunner()
 		mounter = mocks.NewFakeMounter()
 		syscall = &mocks.FakeSyscall{}

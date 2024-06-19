@@ -177,7 +177,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
 
-			parts.EFI.Path = "/dev/device1"
+			parts.Boot.Path = "/dev/device1"
 			parts.OEM.Path = "/dev/device2"
 			parts.Recovery.Path = "/dev/device3"
 			parts.State.Path = "/dev/device4"
@@ -197,7 +197,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Ignores partitions with undefiend mountpoints", func() {
-			parts.EFI.MountPoint = ""
+			parts.Boot.MountPoint = ""
 
 			err := elemental.MountPartitions(*config, parts.PartitionsByMountPoint(false))
 			Expect(err).To(BeNil())
@@ -251,7 +251,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			_, err = fs.Create("/some/device")
 			Expect(err).ToNot(HaveOccurred())
 
-			parts.EFI.Path = "/dev/device1"
+			parts.Boot.Path = "/dev/device1"
 			parts.OEM.Path = "/dev/device2"
 			parts.Recovery.Path = "/dev/device3"
 			parts.State.Path = "/dev/device4"
@@ -275,7 +275,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 
 		It("Ignores partitions with undefiend mountpoints", func() {
-			parts.EFI.MountPoint = ""
+			parts.Boot.MountPoint = ""
 
 			err := elemental.UnmountPartitions(*config, parts.PartitionsByMountPoint(true))
 			Expect(err).To(BeNil())
@@ -963,7 +963,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 			Expect(fs.Mkdir("/recovery/boot", constants.DirPerm)).To(Succeed())
 
 			img := &types.Image{
-				File:   filepath.Join("/recovery", constants.BootDir, constants.RecoveryImgFile),
+				File:   filepath.Join("/recovery", constants.BootPath, constants.RecoveryImgFile),
 				Source: types.NewDockerSrc("elemental:latest"),
 				FS:     constants.SquashFs,
 			}

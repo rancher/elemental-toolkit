@@ -423,7 +423,7 @@ func (g *Grub) Install(rootDir, bootDir string) (err error) {
 		if g.secureBoot {
 			image = g.shimImg
 		}
-		err = g.DoEFIEntries(filepath.Base(image), constants.EfiDir)
+		err = g.DoEFIEntries(filepath.Base(image), constants.BootDir)
 		if err != nil {
 			return err
 		}
