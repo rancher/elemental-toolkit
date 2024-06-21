@@ -28,7 +28,7 @@ type Mounter interface {
 }
 
 func NewMounter(binary string) Mounter {
-	return mount.New(binary)
+	return mount.NewWithoutSystemd(binary)
 }
 
 func NewDummyMounter() Mounter {
