@@ -22,7 +22,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+        uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: '0.111.0'
           extended: true
