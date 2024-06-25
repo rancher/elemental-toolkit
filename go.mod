@@ -10,7 +10,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/containerd/containerd v1.7.12
 	github.com/distribution/distribution v2.8.1+incompatible
-	github.com/google/go-containerregistry v0.19.0
+	github.com/google/go-containerregistry v0.19.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jaypipes/ghw v0.9.1-0.20220511134554-dac2f19e1c76
 	github.com/joho/godotenv v1.5.1
