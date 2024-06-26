@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build toolkit
         run: |
-          make DOCKER_ARGS=--push build
+          make DOCKER_ARGS=--push VERSION=nightly build
 
   build-matrix:
     strategy:
