@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 Bram Vandenbogaerde And Contributors
+/* Copyright (c) 2024 Bram Vandenbogaerde And Contributors
  * You may use, distribute or modify this code under the
  * terms of the Mozilla Public License 2.0, which is distributed
  * along with the source code.
@@ -21,6 +21,27 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// Callback for freeing managed resources
+type ICloseHandler interface {
+	Close()
+}
+
+// Close handler equivalent to a no-op. Used by default
+// when no resources have to be cleaned.
+type EmptyHandler struct{}
+
+func (EmptyHandler) Close() {}
+
+// Close handler to close an SSH client
+type CloseSSHCLient struct {
+	// Reference to the used SSH client
+	sshClient *ssh.Client
+}
+
+func (scp CloseSSHCLient) Close() {
+	scp.sshClient.Close()
+}
+
 type PassThru func(r io.Reader, total int64) io.Reader
 
 type Client struct {
@@ -30,11 +51,8 @@ type Client struct {
 	// ClientConfig the client config to use.
 	ClientConfig *ssh.ClientConfig
 
-	// Session stores the SSH session while the connection is running.
-	Session *ssh.Session
-
-	// Conn stores the SSH connection itself in order to close it after transfer.
-	Conn ssh.Conn
+	// Keep the ssh client around for generating new sessions
+	sshClient *ssh.Client
 
 	// Timeout the maximal amount of time to wait for a file transfer to complete.
 	// Deprecated: use context.Context for each function instead.
@@ -42,25 +60,28 @@ type Client struct {
 
 	// RemoteBinary the absolute path to the remote SCP binary.
 	RemoteBinary string
+
+	// Handler called when calling `Close` to clean up any remaining
+	// resources managed by `Client`.
+	closeHandler ICloseHandler
 }
 
 // Connect connects to the remote SSH server, returns error if it couldn't establish a session to the SSH server.
 func (a *Client) Connect() error {
-	if a.Session != nil {
-		return nil
-	}
-
 	client, err := ssh.Dial("tcp", a.Host, a.ClientConfig)
 	if err != nil {
 		return err
 	}
 
-	a.Conn = client.Conn
-	a.Session, err = client.NewSession()
-	if err != nil {
-		return err
-	}
+	a.sshClient = client
+	a.closeHandler = CloseSSHCLient{sshClient: client}
 	return nil
+}
+
+// Returns the underlying SSH client, this should be used carefully as
+// it will be closed by `client.Close`.
+func (a *Client) SSHClient() *ssh.Client {
+	return a.sshClient
 }
 
 // CopyFromFile copies the contents of an os.File to a remote location, it will get the length of the file by looking it up from the filesystem.
@@ -139,11 +160,17 @@ func (a *Client) Copy(ctx context.Context, r io.Reader, remotePath string, permi
 // CopyPassThru copies the contents of an io.Reader to a remote location.
 // Access copied bytes by providing a PassThru reader factory
 func (a *Client) CopyPassThru(ctx context.Context, r io.Reader, remotePath string, permissions string, size int64, passThru PassThru) error {
-	stdout, err := a.Session.StdoutPipe()
+	session, err := a.sshClient.NewSession()
+	if err != nil {
+		return fmt.Errorf("Error creating ssh session in copy to remote: %v", err)
+	}
+	defer session.Close()
+
+	stdout, err := session.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	w, err := a.Session.StdinPipe()
+	w, err := session.StdinPipe()
 	if err != nil {
 		return err
 	}
@@ -155,11 +182,19 @@ func (a *Client) CopyPassThru(ctx context.Context, r io.Reader, remotePath strin
 
 	filename := path.Base(remotePath)
 
+	// Start the command first and get confirmation that it has been started
+	// before sending anything through the pipes.
+	err = session.Start(fmt.Sprintf("%s -qt %q", a.RemoteBinary, remotePath))
+	if err != nil {
+		return err
+	}
+
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
 	errCh := make(chan error, 2)
 
+	// SCP protocol and file sending
 	go func() {
 		defer wg.Done()
 		defer w.Close()
@@ -193,31 +228,37 @@ func (a *Client) CopyPassThru(ctx context.Context, r io.Reader, remotePath strin
 		}
 	}()
 
+	// Wait for the process to exit
 	go func() {
 		defer wg.Done()
-		err := a.Session.Run(fmt.Sprintf("%s -qt %q", a.RemoteBinary, remotePath))
+		err := session.Wait()
 		if err != nil {
 			errCh <- err
 			return
 		}
 	}()
 
+	// If there is a timeout, stop the transfer if it has been exceeded
 	if a.Timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, a.Timeout)
 		defer cancel()
 	}
 
+	// Wait for one of the conditions (error/timeout/completion) to occur
 	if err := wait(&wg, ctx); err != nil {
 		return err
 	}
 
 	close(errCh)
+
+	// Collect any errors from the error channel
 	for err := range errCh {
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -232,6 +273,12 @@ func (a *Client) CopyFromRemote(ctx context.Context, file *os.File, remotePath s
 // to keep track of progress and how many bytes that were download from the remote.
 // `passThru` can be set to nil to disable this behaviour.
 func (a *Client) CopyFromRemotePassThru(ctx context.Context, w io.Writer, remotePath string, passThru PassThru) error {
+	session, err := a.sshClient.NewSession()
+	if err != nil {
+		return fmt.Errorf("Error creating ssh session in copy from remote: %v", err)
+	}
+	defer session.Close()
+
 	wg := sync.WaitGroup{}
 	errCh := make(chan error, 4)
 
@@ -247,20 +294,20 @@ func (a *Client) CopyFromRemotePassThru(ctx context.Context, w io.Writer, remote
 
 		}()
 
-		r, err := a.Session.StdoutPipe()
+		r, err := session.StdoutPipe()
 		if err != nil {
 			errCh <- err
 			return
 		}
 
-		in, err := a.Session.StdinPipe()
+		in, err := session.StdinPipe()
 		if err != nil {
 			errCh <- err
 			return
 		}
 		defer in.Close()
 
-		err = a.Session.Start(fmt.Sprintf("%s -f %q", a.RemoteBinary, remotePath))
+		err = session.Start(fmt.Sprintf("%s -f %q", a.RemoteBinary, remotePath))
 		if err != nil {
 			errCh <- err
 			return
@@ -310,7 +357,7 @@ func (a *Client) CopyFromRemotePassThru(ctx context.Context, w io.Writer, remote
 			return
 		}
 
-		err = a.Session.Wait()
+		err = session.Wait()
 		if err != nil {
 			errCh <- err
 			return
@@ -332,10 +379,5 @@ func (a *Client) CopyFromRemotePassThru(ctx context.Context, w io.Writer, remote
 }
 
 func (a *Client) Close() {
-	if a.Session != nil {
-		a.Session.Close()
-	}
-	if a.Conn != nil {
-		a.Conn.Close()
-	}
+	a.closeHandler.Close()
 }
