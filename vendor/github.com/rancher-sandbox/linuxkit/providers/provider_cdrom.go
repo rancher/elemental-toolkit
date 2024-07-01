@@ -28,7 +28,7 @@ import (
 // ListCDROMs lists all the cdroms in the system
 func ListCDROMs() []Provider {
 	// UserdataFiles is where to find the user data
-	var userdataFiles = []string{"user-data", "config"}
+	var userdataFiles = []string{"user-data", "meta-data", "config"}
 	cdroms, err := filepath.Glob(cdromDevs)
 	if err != nil {
 		// Glob can only error on invalid pattern
