@@ -58,8 +58,8 @@ github.com/ProtonMail/go-crypto/openpgp/s2k
 # github.com/StackExchange/wmi v1.2.1
 ## explicit; go 1.13
 github.com/StackExchange/wmi
-# github.com/bramvdbogaerde/go-scp v1.2.1
-## explicit; go 1.13
+# github.com/bramvdbogaerde/go-scp v1.4.0
+## explicit; go 1.21
 github.com/bramvdbogaerde/go-scp
 # github.com/canonical/go-efilib v0.9.5
 ## explicit; go 1.18
