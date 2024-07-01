@@ -7,7 +7,7 @@ require (
 	github.com/bramvdbogaerde/go-scp v1.2.1
 	github.com/canonical/go-efilib v0.9.5
 	github.com/cavaliergopher/grab/v3 v3.0.1
-	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/containerd/containerd v1.7.18
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.19.2
