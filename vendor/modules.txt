@@ -75,7 +75,7 @@ github.com/canonical/go-efilib/mbr
 ## explicit; go 1.14
 github.com/cavaliergopher/grab/v3
 github.com/cavaliergopher/grab/v3/pkg/bps
-# github.com/cenkalti/backoff/v4 v4.2.1
+# github.com/cenkalti/backoff/v4 v4.3.0
 ## explicit; go 1.18
 github.com/cenkalti/backoff/v4
 # github.com/cloudflare/circl v1.3.7
