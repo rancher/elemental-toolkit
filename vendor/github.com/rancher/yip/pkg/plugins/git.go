@@ -15,6 +15,7 @@
 package plugins
 
 import (
+	"fmt"
 	"path/filepath"
 
 	git "github.com/go-git/go-git/v5"
@@ -22,7 +23,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	gith "github.com/go-git/go-git/v5/plumbing/transport/http"
 	ssh2 "github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/pkg/errors"
 	"github.com/twpayne/go-vfs/v4"
 	"golang.org/x/crypto/ssh"
 
@@ -93,7 +93,7 @@ func Git(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) error {
 
 	_, err = git.PlainClone(path, false, opts)
 	if err != nil {
-		return errors.Wrap(err, "failed cloning repo")
+		return fmt.Errorf("Failed cloning repo: %s", err.Error())
 	}
 	return nil
 }

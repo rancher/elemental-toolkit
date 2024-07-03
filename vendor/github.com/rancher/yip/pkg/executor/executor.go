@@ -16,12 +16,11 @@ package executor
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/spectrocloud-labs/herd"
 	"github.com/twpayne/go-vfs/v4"
 
+	"github.com/rancher/yip/pkg/dag"
 	"github.com/rancher/yip/pkg/logger"
 	"github.com/rancher/yip/pkg/plugins"
-
 	"github.com/rancher/yip/pkg/schema"
 )
 
@@ -33,7 +32,7 @@ type Executor interface {
 	Conditionals([]Plugin)
 	Modifier(m schema.Modifier)
 	Analyze(string, vfs.FS, plugins.Console, ...string)
-	Graph(string, vfs.FS, plugins.Console, string) ([][]herd.GraphEntry, error)
+	Graph(string, vfs.FS, plugins.Console, string) ([][]dag.GraphEntry, error)
 }
 
 type Plugin func(logger.Interface, schema.Stage, vfs.FS, plugins.Console) error
@@ -85,7 +84,6 @@ func NewExecutor(opts ...Options) Executor {
 			plugins.Sysctl,
 			plugins.User,
 			plugins.SSH,
-			plugins.LoadModules,
 			plugins.Timesyncd,
 			plugins.Systemctl,
 			plugins.Environment,

@@ -3,8 +3,6 @@ package plugins
 import (
 	"encoding/base64"
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 type base64Decoder struct{}
@@ -23,7 +21,7 @@ func (base64GZip) Decode(content string) ([]byte, error) {
 	b := base64Decoder{}
 	c, err := b.Decode(content)
 	if err != nil {
-		return []byte{}, errors.Wrap(err, "while reading base64 data")
+		return []byte{}, fmt.Errorf("Error while reading base64 data: %s", err.Error())
 	}
 
 	g := gzipDecoder{}

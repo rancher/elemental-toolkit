@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
 	prv "github.com/rancher-sandbox/linuxkit/providers"
 	"github.com/twpayne/go-vfs/v4"
 
@@ -201,7 +200,7 @@ func processSSHFile(l logger.Interface, fs vfs.FS, console Console) error {
 	var line string
 	usr, err := user.Current()
 	if err != nil {
-		return errors.Wrap(err, "could not get current user info")
+		return fmt.Errorf("could not get current user info: %s", err.Error())
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(auth_keys)))
@@ -287,7 +286,7 @@ func writeToFile(l logger.Interface, filename string, content string, perm uint3
 		},
 	}, fs, console)
 	if err != nil {
-		return errors.Wrap(err, "could not write file")
+		return fmt.Errorf("could not write file '%s': %s", filename, err.Error())
 	}
 	return nil
 }
