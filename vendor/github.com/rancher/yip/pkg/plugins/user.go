@@ -1,13 +1,12 @@
 package plugins
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	osuser "os/user"
 	"sort"
 	"strconv"
-
-	"github.com/pkg/errors"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
@@ -33,22 +32,22 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 
 	etcgroup, err := fs.RawPath("/etc/group")
 	if err != nil {
-		return errors.Wrap(err, "getting rawpath for /etc/group")
+		return fmt.Errorf("error getting rawpath for /etc/group: %s", err.Error())
 	}
 
 	etcshadow, err := fs.RawPath("/etc/shadow")
 	if err != nil {
-		return errors.Wrap(err, "getting rawpath for /etc/shadow")
+		return fmt.Errorf("error getting rawpath for /etc/shadow: %s", err.Error())
 	}
 
 	etcpasswd, err := fs.RawPath("/etc/passwd")
 	if err != nil {
-		return errors.Wrap(err, "getting rawpath for /etc/passwd")
+		return fmt.Errorf("error getting rawpath for /etc/passwd: %s", err.Error())
 	}
 
 	useradd, err := fs.RawPath("/etc/default/useradd")
 	if err != nil {
-		return errors.Wrap(err, "getting rawpath for /etc/default/useradd")
+		return fmt.Errorf("error getting rawpath for /etc/default/useradd: %s", err.Error())
 	}
 
 	usrDefaults := map[string]string{}
@@ -57,7 +56,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 	if _, err = os.Stat(useradd); err == nil {
 		usrDefaults, err = godotenv.Read(useradd)
 		if err != nil {
-			return errors.Wrapf(err, "could not parse '%s'", useradd)
+			return fmt.Errorf("failed parsing '%s'", useradd)
 		}
 	}
 
@@ -75,7 +74,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 	if u.PrimaryGroup != "" {
 		gr, err := osuser.LookupGroup(u.PrimaryGroup)
 		if err != nil {
-			return errors.Wrap(err, "could not resolve primary group of user")
+			return fmt.Errorf("could not resolve primary group of user: %s", err.Error())
 		}
 		gid, _ = strconv.Atoi(gr.Gid)
 		primaryGroup = u.PrimaryGroup
@@ -89,12 +88,11 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 			}
 			sort.Ints(usedGids)
 			if len(usedGids) == 0 {
-				return errors.New("no new guid found")
+				return fmt.Errorf("no new guid found for group: %s", etcgroup)
 			}
 			gid = usedGids[len(usedGids)-1]
 			gid++
 		}
-
 	}
 
 	updateGroup := entities.Group{
@@ -110,23 +108,37 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		// User defined-uid
 		uid, err = strconv.Atoi(u.UID)
 		if err != nil {
-			return errors.Wrap(err, "invalid uid defined")
+			return fmt.Errorf("failed parsing uid: %s", err.Error())
 		}
 	} else {
-		// find an available uid if there are others already
 		all, _ := passwd.ParseFile(etcpasswd)
 		if len(all) != 0 {
-			usedUids := []int{}
-			for _, entry := range all {
-				uid, _ := strconv.Atoi(entry.Uid)
-				usedUids = append(usedUids, uid)
+			// Check if user is already in there to reuse the same UID as to not break existing permissions
+			existing := false
+			for name, values := range all {
+				if name == u.Name {
+					uid, err = strconv.Atoi(values.Uid)
+					if err != nil {
+						return fmt.Errorf("could not parse existing user id: %v", err)
+					}
+					existing = true
+					break
+				}
 			}
-			sort.Ints(usedUids)
-			if len(usedUids) == 0 {
-				return errors.New("no new UID found")
+			// If it's not there, get a new UID
+			if !existing {
+				usedUids := []int{}
+				for _, entry := range all {
+					uid, _ := strconv.Atoi(entry.Uid)
+					usedUids = append(usedUids, uid)
+				}
+				sort.Ints(usedUids)
+				if len(usedUids) == 0 {
+					return errors.New("no new UID found")
+				}
+				uid = usedUids[len(usedUids)-1]
+				uid++
 			}
-			uid = usedUids[len(usedUids)-1]
-			uid++
 		}
 	}
 
@@ -159,7 +171,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 	if !u.NoCreateHome {
 		homedir, err := fs.RawPath(u.Homedir)
 		if err != nil {
-			return errors.Wrap(err, "getting rawpath for homedir")
+			return fmt.Errorf("error getting rawpath for homedir: %s", err.Error())
 		}
 		os.MkdirAll(homedir, 0755)
 		os.Chown(homedir, uid, gid)
@@ -181,7 +193,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 func setUserPass(fs vfs.FS, username, password string) error {
 	etcshadow, err := fs.RawPath("/etc/shadow")
 	if err != nil {
-		return errors.Wrap(err, "getting rawpath for /etc/shadow")
+		return fmt.Errorf("error getting rawpath for /etc/shadow: %s", err.Error())
 	}
 	userShadow := &entities.Shadow{
 		Username:    username,

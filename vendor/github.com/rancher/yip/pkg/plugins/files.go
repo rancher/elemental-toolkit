@@ -1,11 +1,12 @@
 package plugins
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/twpayne/go-vfs/v4"
 
 	"github.com/rancher/yip/pkg/logger"
@@ -59,7 +60,7 @@ func writeFile(l logger.Interface, file schema.File, fs vfs.FS, console Console)
 	d := newDecoder(file.Encoding)
 	c, err := d.Decode(file.Content)
 	if err != nil {
-		return errors.Wrapf(err, "failed decoding content with encoding %s", file.Encoding)
+		return fmt.Errorf("failed decoding content with encoding %s: %s", file.Encoding, err.Error())
 	}
 
 	_, err = fsfile.WriteString(templateSysData(l, string(c)))
@@ -77,7 +78,7 @@ func writeFile(l logger.Interface, file schema.File, fs vfs.FS, console Console)
 		// FIXUP: Doesn't support fs. It reads real /etc/passwd files
 		uid, gid, err := utils.GetUserDataFromString(file.OwnerString)
 		if err != nil {
-			return errors.Wrap(err, "Failed getting gid")
+			return errors.New("Failed getting gid")
 		}
 		return fs.Chown(file.Path, uid, gid)
 	}

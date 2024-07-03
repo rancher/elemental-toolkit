@@ -63,7 +63,6 @@ func NewYipCloudInitRunner(l types.Logger, r types.Runner, fs vfs.FS) *YipCloudI
 			plugins.Sysctl,
 			plugins.User,
 			plugins.SSH,
-			plugins.LoadModules,
 			plugins.Timesyncd,
 			plugins.Systemctl,
 			plugins.Environment,

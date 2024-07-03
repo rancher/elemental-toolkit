@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/spectrocloud-labs/herd"
 	"github.com/twpayne/go-vfs/v4"
 
+	"github.com/rancher/yip/pkg/dag"
 	"github.com/rancher/yip/pkg/logger"
 	"github.com/rancher/yip/pkg/plugins"
 	"github.com/rancher/yip/pkg/schema"
@@ -56,7 +56,7 @@ type op struct {
 	fn      func(context.Context) error
 	deps    []string
 	after   []string
-	options []herd.OpOption
+	options []dag.OpOption
 	name    string
 }
 
@@ -103,14 +103,30 @@ func (e *DefaultExecutor) applyStage(stage schema.Stage, fs vfs.FS, console plug
 	return errs
 }
 
+func checkDuplicates(stages []schema.Stage) bool {
+	stageNames := map[string]bool{}
+	for _, st := range stages {
+		if _, ok := stageNames[st.Name]; ok {
+			return true
+		}
+		stageNames[st.Name] = true
+	}
+	return false
+}
+
 func (e *DefaultExecutor) genOpFromSchema(file, stage string, config schema.YipConfig, fs vfs.FS, console plugins.Console) []*op {
 	results := []*op{}
-
 	currentStages := config.Stages[stage]
+
+	duplicatedNames := checkDuplicates(currentStages)
 
 	prev := ""
 	for i, st := range currentStages {
 		name := st.Name
+		if duplicatedNames {
+			name = fmt.Sprintf("%s.%d", st.Name, i)
+		}
+
 		if name == "" {
 			name = fmt.Sprint(i)
 		}
@@ -132,7 +148,7 @@ func (e *DefaultExecutor) genOpFromSchema(file, stage string, config schema.YipC
 				return e.applyStage(stageLocal, fs, console)
 			},
 			name:    opName,
-			options: []herd.OpOption{herd.WeakDeps},
+			options: []dag.OpOption{dag.WeakDeps},
 		}
 
 		for _, d := range st.After {
@@ -196,7 +212,7 @@ func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.C
 	return results, err
 }
 
-func writeDAG(dag [][]herd.GraphEntry) {
+func writeDAG(dag [][]dag.GraphEntry) {
 	for i, layer := range dag {
 		fmt.Printf("%d.\n", (i + 1))
 		for _, op := range layer {
@@ -210,7 +226,7 @@ func writeDAG(dag [][]herd.GraphEntry) {
 	return
 }
 
-func (e *DefaultExecutor) Graph(stage string, fs vfs.FS, console plugins.Console, source string) ([][]herd.GraphEntry, error) {
+func (e *DefaultExecutor) Graph(stage string, fs vfs.FS, console plugins.Console, source string) ([][]dag.GraphEntry, error) {
 	g, err := e.prepareDAG(stage, source, fs, console)
 	if err != nil {
 		return nil, err
@@ -239,10 +255,10 @@ func (e *DefaultExecutor) Analyze(stage string, fs vfs.FS, console plugins.Conso
 	}
 }
 
-func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (*herd.Graph, error) {
+func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (*dag.Graph, error) {
 	f, err := fs.Stat(uri)
 
-	g := herd.DAG(herd.EnableInit)
+	g := dag.DAG(dag.EnableInit)
 	var ops opList
 	switch {
 	case err == nil && f.IsDir():
@@ -276,7 +292,7 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 	// Ensure all names are unique
 	ops.uniqueNames()
 	for _, o := range ops {
-		g.Add(o.name, append(o.options, herd.WithCallback(o.fn), herd.WithDeps(append(o.after, o.deps...)...))...)
+		g.Add(o.name, append(o.options, dag.WithCallback(o.fn), dag.WithDeps(append(o.after, o.deps...)...))...)
 	}
 
 	return g, nil

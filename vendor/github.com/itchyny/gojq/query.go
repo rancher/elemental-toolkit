@@ -5,6 +5,20 @@ import (
 	"strings"
 )
 
+// Parse a query string, and returns the query struct.
+//
+// If parsing failed, it returns an error of type [*ParseError], which has
+// the byte offset and the invalid token. The byte offset is the scanned bytes
+// when the error occurred. The token is empty if the error occurred after
+// scanning the entire query string.
+func Parse(src string) (*Query, error) {
+	l := newLexer(src)
+	if yyParse(l) > 0 {
+		return nil, l.err
+	}
+	return l.result, nil
+}
+
 // Query represents the abstract syntax tree of a jq query.
 type Query struct {
 	Meta     *ConstObject
@@ -1075,6 +1089,14 @@ func (e *ConstTerm) toValue() any {
 	}
 }
 
+func (e *ConstTerm) toString() (string, bool) {
+	if e.Object != nil || e.Array != nil ||
+		e.Number != "" || e.Null || e.True || e.False {
+		return "", false
+	}
+	return e.Str, true
+}
+
 // ConstObject ...
 type ConstObject struct {
 	KeyVals []*ConstObjectKeyVal
@@ -1134,7 +1156,7 @@ func (e *ConstObjectKeyVal) writeTo(s *strings.Builder) {
 	if e.Key != "" {
 		s.WriteString(e.Key)
 	} else {
-		s.WriteString(e.KeyString)
+		jsonEncodeString(s, e.KeyString)
 	}
 	s.WriteString(": ")
 	e.Val.writeTo(s)
