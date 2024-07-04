@@ -15,9 +15,9 @@ on:
     branches:
       - main
 jobs:
+  permissions:
+    content: read
   build:
-    permissions:
-      content: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
