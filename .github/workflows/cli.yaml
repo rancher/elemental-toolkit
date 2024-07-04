@@ -16,6 +16,8 @@ on:
       - main
 jobs:
   build:
+    permissions:
+      content: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

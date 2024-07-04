@@ -10,6 +10,8 @@ on:
    - cron: 0 20 * * *
 jobs:
   build-deploy:
+    permissions:
+      content: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
