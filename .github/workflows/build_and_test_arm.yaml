@@ -16,9 +16,9 @@ concurrency:
 
 jobs:
 
+  permissions:
+    content: read
   build-iso:
-    permissions:
-      content: read
     needs: detect
     runs-on: [self-hosted, arm64]
     env:
@@ -59,8 +59,6 @@ jobs:
           enableCrossOsArchive: true
   
   build-disk:
-    permissions:
-      content: read
     needs: detect
     runs-on: [self-hosted, arm64]
     env:
@@ -105,8 +103,6 @@ jobs:
           enableCrossOsArchive: true
 
   tests-matrix:
-    permissions:
-      content: read
     needs: 
       - build-disk
       - detect
@@ -166,8 +162,6 @@ jobs:
           make test-clean
 
   test-installer:
-    permissions:
-      content: read
     needs: 
       - build-iso
       - detect

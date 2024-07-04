@@ -9,9 +9,9 @@ on:
   schedule:
    - cron: 0 20 * * *
 jobs:
+  permissions:
+    content: read
   build-deploy:
-    permissions:
-      content: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo

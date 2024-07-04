@@ -20,9 +20,9 @@ on:
       - examples/**
 
 jobs:
+  permissions:
+    content: read
   detect:
-    permissions:
-      content: read
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.set-matrix.outputs.flavor }}
@@ -43,7 +43,6 @@ jobs:
     needs:
       - detect
     permissions:
-      content: read
       packages: write
     runs-on: ubuntu-latest
     env:
@@ -66,8 +65,6 @@ jobs:
           make DOCKER_ARGS=--push build
 
   build-matrix:
-    permissions:
-      content: read
     needs:
       - detect
       - build-toolkit
