@@ -8,6 +8,10 @@ on:
       - main
   schedule:
    - cron: 0 20 * * *
+
+permissions:
+  contents: read
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest

@@ -15,6 +15,7 @@ jobs:
   build-os:
     permissions:
       packages: write
+      contents: read
     runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
@@ -42,6 +43,8 @@ jobs:
           make ARCH=${{ env.ARCH }} DOCKER_ARGS=--push build-os
 
   build-iso:
+    permissions:
+      contents: read
     needs: 
       - build-os
     runs-on: ubuntu-latest
@@ -84,6 +87,8 @@ jobs:
           enableCrossOsArchive: true
 
   build-disk:
+    permissions:
+      contents: read
     needs:
       - build-os
     runs-on: ubuntu-latest
@@ -133,6 +138,8 @@ jobs:
           enableCrossOsArchive: true
 
   detect:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
@@ -163,6 +170,8 @@ jobs:
           echo "toolkit=ghcr.io/rancher/elemental-toolkit/elemental-cli:${VERSION}" >> $GITHUB_OUTPUT
 
   tests-matrix:
+    permissions:
+      contents: read
     needs:
       - build-disk
       - detect
@@ -236,6 +245,8 @@ jobs:
           make test-clean
 
   test-installer:
+    permissions:
+      contents: read
     needs:
       - build-iso
       - detect
