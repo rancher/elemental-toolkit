@@ -11,13 +11,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
+	"fmt"
 	"os"
-	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -26,6 +26,13 @@ const (
 	ENTITY_ENV_DEF_SHADOW        = "ENTITY_DEFAULT_SHADOW"
 	ENTITY_ENV_DEF_GSHADOW       = "ENTITY_DEFAULT_GSHADOW"
 	ENTITY_ENV_DEF_DYNAMIC_RANGE = "ENTITY_DYNAMIC_RANGE"
+	ENTITY_ENV_DEF_DELAY         = "ENTITY_DEFAULT_DELAY"
+	ENTITY_ENV_DEF_INTERVAL      = "ENTITY_DEFAULT_INTERVAL"
+
+	// https://systemd.io/UIDS-GIDS/#summary
+	// https://systemd.io/UIDS-GIDS/#special-distribution-uid-ranges
+	HumanIDMin = 1000
+	HumanIDMax = 60000
 )
 
 // Entity represent something that needs to be applied to a file
@@ -47,34 +54,22 @@ func entityIdentifier(s string) string {
 	return fs[0]
 }
 
-func DynamicRange() (int, int) {
-	// Follow Gentoo way
-	uid_start := 999
-	uid_end := 500
-
-	// Environment variable must be in the format: <minUid> + '-' + <maxUid>
-	env := os.Getenv(ENTITY_ENV_DEF_DYNAMIC_RANGE)
-	if env != "" {
-		ranges := strings.Split(env, "-")
-		if len(ranges) == 2 {
-			minUid, err := strconv.Atoi(ranges[0])
-			if err != nil {
-				// Ignore error
-				goto end
-			}
-			maxUid, err := strconv.Atoi(ranges[1])
-			if err != nil {
-				// ignore error
-				goto end
-			}
-
-			if minUid < maxUid && minUid >= 0 && minUid < 65534 && maxUid > 0 && maxUid < 65534 {
-				uid_start = maxUid
-				uid_end = minUid
-			}
-		}
+func RetryForDuration() (time.Duration, error) {
+	s := os.Getenv(ENTITY_ENV_DEF_DELAY)
+	if s != "" {
+		// convert string to int64
+		return time.ParseDuration(fmt.Sprintf("%s", s))
 	}
-end:
 
-	return uid_start, uid_end
+	return time.ParseDuration("5s")
+}
+
+func RetryIntervalDuration() (time.Duration, error) {
+	s := os.Getenv(ENTITY_ENV_DEF_INTERVAL)
+	if s != "" {
+		// convert string to int64
+		return time.ParseDuration(fmt.Sprintf("%s", s))
+	}
+
+	return time.ParseDuration("300ms")
 }
