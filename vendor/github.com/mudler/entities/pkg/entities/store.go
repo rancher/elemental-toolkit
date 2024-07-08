@@ -13,12 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 )
@@ -42,7 +41,7 @@ func NewEntitiesStore() *EntitiesStore {
 func (s *EntitiesStore) Load(dir string) error {
 	var regexConfs = regexp.MustCompile(`.yml$|.yaml$`)
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}

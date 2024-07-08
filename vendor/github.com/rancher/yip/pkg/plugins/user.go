@@ -1,18 +1,18 @@
 package plugins
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	osuser "os/user"
 	"sort"
 	"strconv"
 
+	"github.com/mauromorales/xpasswd/pkg/users"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	entities "github.com/mudler/entities/pkg/entities"
 	"github.com/twpayne/go-vfs/v4"
-	passwd "github.com/willdonnelly/passwd"
 
 	"github.com/rancher/yip/pkg/logger"
 	"github.com/rancher/yip/pkg/schema"
@@ -69,8 +69,8 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 	}
 
 	primaryGroup := u.Name
-	gid := 1000
 
+	gid := -1 // -1 instructs entities to find the next free id and assign it
 	if u.PrimaryGroup != "" {
 		gr, err := osuser.LookupGroup(u.PrimaryGroup)
 		if err != nil {
@@ -78,21 +78,6 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		}
 		gid, _ = strconv.Atoi(gr.Gid)
 		primaryGroup = u.PrimaryGroup
-	} else {
-		// Create a new group after the user name
-		all, _ := entities.ParseGroup(etcgroup)
-		if len(all) != 0 {
-			usedGids := []int{}
-			for _, entry := range all {
-				usedGids = append(usedGids, *entry.Gid)
-			}
-			sort.Ints(usedGids)
-			if len(usedGids) == 0 {
-				return fmt.Errorf("no new guid found for group: %s", etcgroup)
-			}
-			gid = usedGids[len(usedGids)-1]
-			gid++
-		}
 	}
 
 	updateGroup := entities.Group{
@@ -101,9 +86,22 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		Gid:      &gid,
 		Users:    u.Name,
 	}
-	updateGroup.Apply(etcgroup, false)
+	err = updateGroup.Apply(etcgroup, false)
+	if err != nil {
+		return fmt.Errorf("creating the user's group: %v", err)
+	}
 
-	uid := 1000
+	// reload the group to get the generated GID
+	groups, _ := entities.ParseGroup(etcgroup)
+	for name, group := range groups {
+		if name == updateGroup.Name {
+			updateGroup = group
+			gid = *group.Gid
+			break
+		}
+	}
+
+	uid := -1
 	if u.UID != "" {
 		// User defined-uid
 		uid, err = strconv.Atoi(u.UID)
@@ -111,35 +109,27 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 			return fmt.Errorf("failed parsing uid: %s", err.Error())
 		}
 	} else {
-		all, _ := passwd.ParseFile(etcpasswd)
-		if len(all) != 0 {
-			// Check if user is already in there to reuse the same UID as to not break existing permissions
-			existing := false
-			for name, values := range all {
-				if name == u.Name {
-					uid, err = strconv.Atoi(values.Uid)
-					if err != nil {
-						return fmt.Errorf("could not parse existing user id: %v", err)
-					}
-					existing = true
-					break
-				}
+		list := users.NewUserList()
+		list.SetPath(etcpasswd)
+		list.Load()
+
+		user := list.Get(u.Name)
+
+		if user != nil {
+			uid, err = user.UID()
+			if err != nil {
+				return fmt.Errorf("could not get user id: %v", err)
 			}
-			// If it's not there, get a new UID
-			if !existing {
-				usedUids := []int{}
-				for _, entry := range all {
-					uid, _ := strconv.Atoi(entry.Uid)
-					usedUids = append(usedUids, uid)
-				}
-				sort.Ints(usedUids)
-				if len(usedUids) == 0 {
-					return errors.New("no new UID found")
-				}
-				uid = usedUids[len(usedUids)-1]
-				uid++
+		} else {
+			// https://systemd.io/UIDS-GIDS/#special-distribution-uid-ranges
+			uid, err = list.GenerateUIDInRange(entities.HumanIDMin, entities.HumanIDMax)
+			if err != nil {
+				return fmt.Errorf("no available uid: %v", err)
 			}
 		}
+	}
+	if uid == -1 {
+		return fmt.Errorf("could not set uid for user")
 	}
 
 	if u.Homedir == "" {
@@ -177,7 +167,7 @@ func createUser(fs vfs.FS, u schema.User, console Console) error {
 		os.Chown(homedir, uid, gid)
 	}
 
-	groups, _ := entities.ParseGroup(etcgroup)
+	groups, _ = entities.ParseGroup(etcgroup)
 	for name, group := range groups {
 		for _, w := range u.Groups {
 			if w == name {
@@ -220,11 +210,11 @@ func User(l logger.Interface, s schema.Stage, fs vfs.FS, console Console) error 
 	for _, k := range users {
 		r := s.Users[k]
 		r.Name = k
-		if !s.Users[k].Exists() {
+		if !r.Exists() {
 			if err := createUser(fs, r, console); err != nil {
 				errs = multierror.Append(errs, err)
 			}
-		} else if s.Users[k].PasswordHash != "" {
+		} else if r.PasswordHash != "" {
 			if err := setUserPass(fs, r.Name, r.PasswordHash); err != nil {
 				return err
 			}
