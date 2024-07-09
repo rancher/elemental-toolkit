@@ -81,7 +81,7 @@ func addLocalImageFlag(cmd *cobra.Command) {
 
 // addVerifyRegistryFlag add local image flag shared between install, pull-image, upgrade
 func addTLSVerifyFlag(cmd *cobra.Command) {
-	cmd.Flags().Bool("tls-verify", false, "Require HTTPS and verify certificates of registries (default: true)")
+	cmd.Flags().Bool("tls-verify", true, "Require HTTPS and verify certificates of registries (default: true)")
 }
 
 func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {
