@@ -1,6 +1,5 @@
 GINKGO       ?= "github.com/onsi/ginkgo/v2/ginkgo"
 GINKGO_ARGS  ?= -v --fail-fast -r --timeout=3h
-UPGRADE_ARGS ?= 
 
 .PHONY: prepare-test
 prepare-test:
@@ -10,6 +9,17 @@ ifeq ("$(DISK)","")
 endif
 	@scripts/run_vm.sh start $(DISK)
 	@echo "VM started from $(DISK)"
+
+.PHONY: prepare-upgrade-test
+prepare-upgrade-test: 
+ifeq ("$(UPGRADE_DISK_CHECK)","")
+	@echo "Downloading disk from $(UPGRADE_DISK_URL) ..."
+	@wget -q --tries=3 $(UPGRADE_DISK_URL) -O $(ROOT_DIR)/build/$(UPGRADE_DISK)
+endif
+	@scripts/run_registry.sh start
+	@scripts/run_vm.sh start $(ROOT_DIR)/build/$(UPGRADE_DISK)
+	@scripts/run_registry.sh push "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
+	@echo "VM started from $(ROOT_DIR)/build/$(UPGRADE_DISK)"
 
 .PHONY: test-active
 test-active: prepare-test
@@ -21,11 +31,13 @@ ifeq ("$(ISO)","")
 	@echo "No ISO image found, run 'make build-iso' first"
 	@exit 1
 endif
+	@scripts/run_registry.sh start
 	@scripts/run_vm.sh start $(ISO)
 	@echo "VM started from $(ISO)"
 
 .PHONY: test-clean
 test-clean: test-stop
+	@scripts/run_registry.sh stop
 	@scripts/run_vm.sh clean
 
 .PHONY: test-stop
@@ -62,8 +74,8 @@ test-downgrade: test-active
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade -- $(UPGRADE_ARGS)
 
 .PHONY: test-upgrade
-test-upgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) COS_PASS=cos go run $(GINKGO) $(GINKGO_ARGS) ./tests/upgrade -- $(UPGRADE_ARGS)
+test-upgrade: prepare-upgrade-test
+	@scripts/run_upgradetest.sh start $(GINKGO) "$(GINKGO_ARGS)" "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
 
 .PHONY: test-deps
 test-deps:
@@ -84,5 +96,3 @@ ifneq ($(shell id -u), 0)
 else
 	go run $(GINKGO) run --label-filter root --fail-fast --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-toolkit/... -procs=1 -r ${PKG}
 endif
-
-

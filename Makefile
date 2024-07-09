@@ -1,11 +1,14 @@
 # Directory of Makefile
 export ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-DISK?=$(shell ls $(ROOT_DIR)/build/*.qcow2 2> /dev/null)
+DISK?=$(shell ls $(ROOT_DIR)/build/elemental*.qcow2 2> /dev/null)
 DISKSIZE?=20G
-ISO?=$(shell ls $(ROOT_DIR)/build/*.iso 2> /dev/null)
+ISO?=$(shell ls $(ROOT_DIR)/build/elemental*.iso 2> /dev/null)
 FLAVOR?=green
 ARCH?=$(shell uname -m)
+UPGRADE_DISK_URL?=https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-$(FLAVOR)-v1.1.4.$(ARCH).qcow2
+UPGRADE_DISK?=upgrade-test-elemental-disk.qcow2
+UPGRADE_DISK_CHECK?=$(shell ls $(ROOT_DIR)/build/$(UPGRADE_DISK) 2> /dev/null)
 PLATFORM?=linux/$(ARCH)
 IMAGE_SIZE?=20G
 REPO?=local/elemental-$(FLAVOR)
