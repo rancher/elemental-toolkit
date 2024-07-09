@@ -14,9 +14,12 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  content: read
+  pull-requests: read
+
 jobs:
-  permissions:
-    content: read
   build:
     runs-on: ubuntu-latest
     steps:

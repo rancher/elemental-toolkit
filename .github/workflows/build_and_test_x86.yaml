@@ -11,9 +11,11 @@ concurrency:
   group: ci-${{ inputs.flavor }}-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
+permissions:
+  content: read
+  pull-requests: read
+
 jobs:
-  permissions:
-      content: read
   build-os:
     permissions:
       packages: write

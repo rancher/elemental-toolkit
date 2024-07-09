@@ -14,10 +14,11 @@ concurrency:
   group: ci-${{ inputs.flavor }}-aarch64-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
-jobs:
+permissions:
+  content: read
+  pull-requests: read
 
-  permissions:
-    content: read
+jobs:
   build-iso:
     needs: detect
     runs-on: [self-hosted, arm64]

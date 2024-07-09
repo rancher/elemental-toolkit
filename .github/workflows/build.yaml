@@ -19,6 +19,10 @@ on:
       - go.sum
       - examples/**
 
+permissions:
+  content: read
+  pull-requests: read
+
 jobs:
   permissions:
     content: read
