@@ -106,7 +106,7 @@ var _ = Describe("Build Actions", func() {
 			rootSrc, _ := types.NewSrcFromURI("oci:elementalos:latest")
 			iso.RootFS = []*types.ImageSource{rootSrc}
 
-			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
+			extractor.SideEffect = func(_, destination, platform string, _, _ bool) (string, error) {
 				bootDir := filepath.Join(destination, "boot")
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)

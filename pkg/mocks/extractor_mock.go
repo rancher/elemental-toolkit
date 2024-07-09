@@ -22,7 +22,7 @@ const FakeDigest = "fakeDigest"
 
 type FakeImageExtractor struct {
 	Logger     types.Logger
-	SideEffect func(imageRef, destination, platformRef string, local bool) (string, error)
+	SideEffect func(imageRef, destination, platformRef string, local bool, verify bool) (string, error)
 }
 
 var _ types.ImageExtractor = FakeImageExtractor{}
@@ -37,7 +37,7 @@ func (f FakeImageExtractor) ExtractImage(imageRef, destination, platformRef stri
 	f.Logger.Debugf("extracting %s to %s in platform %s", imageRef, destination, platformRef)
 	if f.SideEffect != nil {
 		f.Logger.Debugf("running sideeffect")
-		return f.SideEffect(imageRef, destination, platformRef, local)
+		return f.SideEffect(imageRef, destination, platformRef, local, verify)
 	}
 
 	return FakeDigest, nil

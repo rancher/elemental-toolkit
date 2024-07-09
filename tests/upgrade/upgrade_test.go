@@ -49,10 +49,9 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			By(fmt.Sprintf("and upgrading to %s", comm.UpgradeImage()))
 
-			upgradeCmd := s.ElementalCmd("upgrade", "--tls-verify=false", "--bootloader", "--system", comm.UpgradeImage())
+			upgradeCmd := s.ElementalCmd("upgrade", "--bootloader", "--system", comm.UpgradeImage())
 			out, err := s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeCmd)).
 				Privileged().
-				NoTLSVerify().
 				WithMount("/", "/host").
 				Run()
 
