@@ -19,12 +19,10 @@ on:
       - go.sum
       - examples/**
 
-permissions:
-  content: read
-  pull-requests: read
-
 jobs:
   detect:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.set-matrix.outputs.flavor }}
@@ -42,10 +40,11 @@ jobs:
         fi
 
   build-toolkit:
-    needs:
-      - detect
     permissions:
       packages: write
+      contents: read
+    needs:
+      - detect
     runs-on: ubuntu-latest
     env:
       PLATFORM: ${{ needs.detect.outputs.platform }}

@@ -15,8 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  content: read
-  pull-requests: read
+  contents: read
 
 jobs:
   build-iso:
