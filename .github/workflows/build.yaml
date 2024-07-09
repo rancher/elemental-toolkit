@@ -24,8 +24,6 @@ permissions:
   pull-requests: read
 
 jobs:
-  permissions:
-    content: read
   detect:
     runs-on: ubuntu-latest
     outputs:
