@@ -279,7 +279,7 @@ func (u *UpgradeAction) Run() (err error) {
 	// Deploy system image
 	err = elemental.MirrorRoot(u.cfg.Config, u.snapshot.WorkDir, u.spec.System)
 	if err != nil {
-		u.cfg.Logger.Errorf("failed deploying source: %s", u.spec.System.String())
+		u.cfg.Logger.Errorf("failed deploying source '%s': %v", u.spec.System.String(), err)
 		return elementalError.NewFromError(err, elementalError.DumpSource)
 	}
 

@@ -58,6 +58,12 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingBuildConfig)
 			}
 
+			verify, err := cmd.Flags().GetBool("tls-verify")
+			if err != nil {
+				cfg.Logger.Errorf("Invalid tls-verify-flag %s", err.Error())
+				return elementalError.NewFromError(err, elementalError.ReadingBuildConfig)
+			}
+
 			// Set this after parsing of the flags, so it fails on parsing and prints usage properly
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true // Do not propagate errors down the line, we control them
@@ -66,7 +72,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 
 			var digest string
 			e := types.OCIImageExtractor{}
-			if digest, err = e.ExtractImage(image, destination, cfg.Platform.String(), local); err != nil {
+			if digest, err = e.ExtractImage(image, destination, cfg.Platform.String(), local, verify); err != nil {
 				cfg.Logger.Error(err.Error())
 				return elementalError.NewFromError(err, elementalError.UnpackImage)
 			}
@@ -79,6 +85,7 @@ func NewPullImageCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	root.AddCommand(c)
 	addPlatformFlags(c)
 	addLocalImageFlag(c)
+	addTLSVerifyFlag(c)
 	return c
 }
 

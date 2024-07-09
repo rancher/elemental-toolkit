@@ -33,7 +33,7 @@ func NewFakeImageExtractor(logger types.Logger) *FakeImageExtractor {
 	}
 }
 
-func (f FakeImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) (string, error) {
+func (f FakeImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool, verify bool) (string, error) {
 	f.Logger.Debugf("extracting %s to %s in platform %s", imageRef, destination, platformRef)
 	if f.SideEffect != nil {
 		f.Logger.Debugf("running sideeffect")
