@@ -73,7 +73,12 @@ func NewUpgradeRecoveryCmd(root *cobra.Command, addCheckRoot bool) *cobra.Comman
 				return err
 			}
 
-			return upgrade.Run()
+			err = upgrade.Run()
+			if err != nil {
+				cfg.Logger.Errorf("upgrade-recovery command failed: %v", err)
+			}
+
+			return err
 		},
 	}
 	root.AddCommand(c)

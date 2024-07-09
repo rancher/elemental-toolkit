@@ -86,7 +86,12 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				cfg.Logger.Errorf("failed to initialize build disk action: %v", err)
 				return err
 			}
-			return builder.BuildDiskRun()
+
+			err = builder.BuildDiskRun()
+			if err != nil {
+				cfg.Logger.Errorf("build-disk command failed: %v", err)
+			}
+			return err
 		},
 	}
 	root.AddCommand(c)

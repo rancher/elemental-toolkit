@@ -90,7 +90,11 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				cfg.Logger.Errorf("failed to initialize install action: %v", err)
 				return err
 			}
-			return install.Run()
+			err = install.Run()
+			if err != nil {
+				cfg.Logger.Errorf("install command failed: %v", err)
+			}
+			return err
 		},
 	}
 	firmType := newEnumFlag([]string{types.EFI}, types.EFI)

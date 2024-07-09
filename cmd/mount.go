@@ -53,7 +53,12 @@ func NewMountCmd(root *cobra.Command) *cobra.Command {
 			}
 
 			cfg.Logger.Info("Mounting system...")
-			return action.RunMount(cfg, spec)
+			err = action.RunMount(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("mount command failed: %v", err)
+			}
+
+			return err
 		},
 	}
 	root.AddCommand(c)
