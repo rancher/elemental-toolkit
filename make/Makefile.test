@@ -13,6 +13,7 @@ endif
 .PHONY: prepare-upgrade-test
 prepare-upgrade-test: 
 ifeq ("$(UPGRADE_DISK_CHECK)","")
+	mkdir -p $(ROOT_DIR)/build
 	@echo "Downloading disk from $(UPGRADE_DISK_URL) ..."
 	@wget -q --tries=3 $(UPGRADE_DISK_URL) -O $(ROOT_DIR)/build/$(UPGRADE_DISK)
 endif

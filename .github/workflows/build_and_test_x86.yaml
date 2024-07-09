@@ -6,6 +6,9 @@ on:
       flavor:
         required: true
         type: string
+      version:
+        required: true
+        type: string
 
 concurrency:
   group: ci-${{ inputs.flavor }}-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
@@ -14,31 +17,52 @@ concurrency:
 jobs:
   build-os:
     permissions:
-      packages: write
       contents: read
     runs-on: ubuntu-latest
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
-      TOOLKIT_REPO: ghcr.io/${{ github.repository }}/elemental-cli 
-      REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
+      VERSION: ${{ inputs.version }} 
     steps:
       - uses: actions/checkout@v4
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - name: Check cache for OS image
+        id: cache-os
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+          lookup-only: true
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build OS
+          path: /tmp/os.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+      - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
+        name: Fetch toolkit image
+        id: cache-toolkit
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-toolkit-build-x86_64
+        with:
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
+        name: Build OS
         run: |
-          make pull-toolkit
-          make ARCH=${{ env.ARCH }} DOCKER_ARGS=--load build-os
-          make ARCH=${{ env.ARCH }} DOCKER_ARGS=--push build-os
+          docker load -i /tmp/toolkit.tar
+          make ARCH=${{ env.ARCH }} build-os-save
+          mv build/elemental-${{ inputs.flavor }}*.tar /tmp/os.tar 
+      - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
+        name: Save OS image in cache
+        id: save-os
+        uses: actions/cache/save@v4
+        env:
+          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        with:
+          path: /tmp/os.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
 
   build-iso:
     permissions:
@@ -49,8 +73,7 @@ jobs:
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
-      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
-      REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,15 +85,35 @@ jobs:
         uses: actions/cache/restore@v4
         env:
           cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
-          enableCrossOsArchive: true
           lookup-only: true
         with:
           path: /tmp/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+        name: Fetch toolkit image
+        id: cache-toolkit
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-toolkit-build-x86_64
+        with:
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
+        name: Fetch OS image
+        id: cache-os
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        with:
+          path: /tmp/os.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build ISO
         run: |
-          make pull-toolkit pull-os
+          docker load -i /tmp/toolkit.tar
+          docker load -i /tmp/os.tar
           make build-iso
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
@@ -81,8 +124,7 @@ jobs:
           cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-          enableCrossOsArchive: true
+          key: ${{ env.cache-name }}-${{ inputs.version }}
 
   build-disk:
     permissions:
@@ -93,47 +135,64 @@ jobs:
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
-      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
-      REPO: ghcr.io/${{ github.repository }}/elemental-${{ inputs.flavor }}
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
-      - name: Checks cached Disk
-        uses: actions/cache/restore@v4
-        id: cache-check
-        env:
-          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
-        with:
-          path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-          enableCrossOsArchive: true
-          lookup-only: true
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
-        name: Cleanup worker
+      - name: Cleanup worker
         run: |
           sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
           sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
           sudo df -h
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+      - name: Checks cached Disk
+        uses: actions/cache/restore@v4
+        id: cache-disk
+        env:
+          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
+        with:
+          path: /tmp/*.qcow2
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          lookup-only: true
+      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
+        name: Fetch toolkit image
+        id: cache-toolkit
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-toolkit-build-x86_64
+        with:
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
+        name: Fetch OS image
+        id: cache-os
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        with:
+          path: /tmp/os.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
-          make pull-toolkit pull-os
+          docker load -i /tmp/toolkit.tar
+          docker load -i /tmp/os.tar
           sudo -E make ARCH=${{ env.ARCH }} build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
-      - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Save cached disk
-        id: cache-disk
+        id: save-disk
         uses: actions/cache/save@v4
         env:
           cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-          enableCrossOsArchive: true
+          key: ${{ env.cache-name }}-${{ inputs.version }}
 
   detect:
     permissions:
@@ -141,8 +200,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
-      upgrade: ${{ steps.image.outputs.upgrade }}
-      toolkit: ${{ steps.image.outputs.toolkit }}
     steps:
       - id: detect
         env:
@@ -153,19 +210,6 @@ jobs:
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
           fi
-      - uses: actions/checkout@v4
-        with:
-          ref: "${{ github.event.pull_request.head.sha }}"
-      - id: image
-        env:
-          FLAVOR: ${{ inputs.flavor }}
-        run: |
-          git fetch --prune --unshallow
-          export TAG=$(git describe --tags --candidates=50 --abbrev=0)
-          export COMMIT=$(git rev-parse --short HEAD)
-          export VERSION=${TAG}-g${COMMIT}
-          echo "upgrade=ghcr.io/rancher/elemental-toolkit/elemental-${FLAVOR}:${VERSION}" >> $GITHUB_OUTPUT
-          echo "toolkit=ghcr.io/rancher/elemental-toolkit/elemental-cli:${VERSION}" >> $GITHUB_OUTPUT
 
   tests-matrix:
     permissions:
@@ -178,7 +222,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
       COS_TIMEOUT: 1600
-      UPGRADE_ARGS: --toolkit-image=${{ needs.detect.outputs.toolkit }} --upgrade-image=${{ needs.detect.outputs.upgrade }}
+      VERSION: ${{ inputs.version }}
     strategy:
       matrix:
         test: ${{ fromJson(needs.detect.outputs.tests) }}
@@ -197,9 +241,30 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - if: ${{ matrix.test == 'test-upgrade' }}
-        name: Download specific disk
+        name: Fetch toolkit image
+        id: cache-toolkit
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-toolkit-build-x86_64
+        with:
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ matrix.test == 'test-upgrade' }}
+        name: Fetch OS image
+        id: cache-os
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        with:
+          path: /tmp/os.tar
+          key: ${{ env.cache-name }}-${{ inputs.version }}
+          fail-on-cache-miss: true
+      - if: ${{ matrix.test == 'test-upgrade' }}
+        name: Load toolkit and OS cached images
         run: |
-          wget -q --tries=3 https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-${{ inputs.flavor }}-v1.1.4.${{ env.ARCH }}.qcow2 -O /tmp/elemental-${{ inputs.flavor }}.${{ env.ARCH }}.qcow2
+          docker load -i /tmp/toolkit.tar
+          docker load -i /tmp/os.tar
       - if: ${{ matrix.test != 'test-upgrade' }}
         name: Cached Disk
         id: cache-disk
@@ -208,8 +273,7 @@ jobs:
           cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.qcow2
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-          enableCrossOsArchive: true
+          key: ${{ env.cache-name }}-${{ inputs.version }}
           fail-on-cache-miss: true
       - name: Enable KVM group perms
         run: |
@@ -253,6 +317,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
       COS_TIMEOUT: 1600
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -273,8 +338,7 @@ jobs:
           cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
         with:
           path: /tmp/*.iso
-          key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-          enableCrossOsArchive: true
+          key: ${{ env.cache-name }}-${{ inputs.version }}
           fail-on-cache-miss: true
       - name: Enable KVM group perms
         run: |

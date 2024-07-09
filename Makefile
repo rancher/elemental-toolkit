@@ -58,16 +58,11 @@ build:
 			--build-arg BASE_OS_VERSION=$(BASE_OS_VERSION) \
 			--target elemental-toolkit -t $(TOOLKIT_REPO):$(VERSION) .
 
-.PHONY: push-toolkit
-push-toolkit:
-	$(DOCKER) push $(TOOLKIT_REPO):$(VERSION)
-
-.PHONY: pull-toolkit
-pull-toolkit:
-	for retry in 1 2 3 4 5 ; do \
-		$(DOCKER) pull $(TOOLKIT_REPO):$(VERSION) && exit 0; \
-		sleep 5; \
-	done
+.PHONY: build-save
+build-save: build
+	mkdir -p $(ROOT_DIR)/build
+	$(DOCKER) save --output build/elemental-toolkit-image-$(VERSION).tar \
+			$(TOOLKIT_REPO):$(VERSION)
 
 .PHONY: build-cli
 build-cli:
@@ -81,14 +76,11 @@ build-os:
 			--build-arg VERSION=$(VERSION) \
 			--build-arg REPO=$(REPO) -t $(REPO):$(VERSION) \
 			$(BUILD_OPTS) examples/$(FLAVOR)
-
-.PHONY: push-os
-push-os:
-	$(DOCKER) push $(REPO):$(VERSION)
-
-.PHONY: pull-os
-pull-os:
-	$(DOCKER) pull $(REPO):$(VERSION)
+.PHONY: build-os-save
+build-os-save: build-os
+	mkdir -p $(ROOT_DIR)/build
+	$(DOCKER) save --output build/elemental-$(FLAVOR)-image-$(VERSION).tar \
+			$(REPO):$(VERSION)
 
 .PHONY: build-iso
 build-iso:
