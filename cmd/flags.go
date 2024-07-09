@@ -58,6 +58,7 @@ func addResetFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("verify", false, "Enable mtree checksum verification (requires images manifests generated with mtree separately)")
 	cmd.Flags().Bool("strict", false, "Enable strict check of hooks (They need to exit with 0)")
 
+	addTLSVerifyFlag(cmd)
 	addSystemFlag(cmd)
 	addCosignFlags(cmd)
 	addPowerFlags(cmd)
@@ -76,6 +77,11 @@ func addRecoverySystemFlag(cmd *cobra.Command) {
 // addLocalImageFlag add local image flag shared between install, pull-image, upgrade
 func addLocalImageFlag(cmd *cobra.Command) {
 	cmd.Flags().Bool("local", false, "Use an image from local cache")
+}
+
+// addVerifyRegistryFlag add local image flag shared between install, pull-image, upgrade
+func addTLSVerifyFlag(cmd *cobra.Command) {
+	cmd.Flags().Bool("tls-verify", false, "Require HTTPS and verify certificates of registries (default: true)")
 }
 
 func adaptDockerImageAndDirectoryFlagsToSystem(flags *pflag.FlagSet) {

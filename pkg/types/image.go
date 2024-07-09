@@ -32,20 +32,25 @@ import (
 )
 
 type ImageExtractor interface {
-	ExtractImage(imageRef, destination, platformRef string, local bool) (string, error)
+	ExtractImage(imageRef, destination, platformRef string, local bool, verify bool) (string, error)
 }
 
 type OCIImageExtractor struct{}
 
 var _ ImageExtractor = OCIImageExtractor{}
 
-func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool) (string, error) {
+func (e OCIImageExtractor) ExtractImage(imageRef, destination, platformRef string, local bool, verify bool) (string, error) {
 	platform, err := containerregistry.ParsePlatform(platformRef)
 	if err != nil {
 		return "", err
 	}
 
-	ref, err := name.ParseReference(imageRef)
+	opts := []name.Option{}
+	if !verify {
+		opts = append(opts, name.Insecure)
+	}
+
+	ref, err := name.ParseReference(imageRef, opts...)
 	if err != nil {
 		return "", err
 	}

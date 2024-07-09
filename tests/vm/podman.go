@@ -26,6 +26,7 @@ import (
 type PodmanRunCommand struct {
 	sut        *SUT
 	privileged bool
+	tlsVerify  bool
 	image      string
 	mounts     []VolumeMount
 	entrypoint string
@@ -42,6 +43,11 @@ func (p *PodmanRunCommand) Privileged() *PodmanRunCommand {
 	return p
 }
 
+func (p *PodmanRunCommand) NoTLSVerify() *PodmanRunCommand {
+	p.tlsVerify = false
+	return p
+}
+
 func (p *PodmanRunCommand) WithMount(from, to string) *PodmanRunCommand {
 	p.mounts = append(p.mounts, VolumeMount{from: from, to: to})
 	return p
@@ -51,6 +57,11 @@ func (p *PodmanRunCommand) Run() (string, error) {
 	priv := ""
 	if p.privileged {
 		priv = "--privileged"
+	}
+
+	tlsVerify := ""
+	if !p.tlsVerify {
+		tlsVerify = "--tls-verify=false"
 	}
 
 	mounts := []string{}
@@ -63,7 +74,7 @@ func (p *PodmanRunCommand) Run() (string, error) {
 		entrypoint = fmt.Sprintf("--entrypoint=%s", p.entrypoint)
 	}
 
-	cmd := fmt.Sprintf("podman run %s %s %s %s %s", priv, strings.Join(mounts, " "), entrypoint, p.image, p.command)
+	cmd := fmt.Sprintf("podman run %s %s %s %s %s %s", tlsVerify, priv, strings.Join(mounts, " "), entrypoint, p.image, p.command)
 	By(fmt.Sprintf("Running podman command: '%s'", cmd))
 	return p.sut.Command(cmd)
 }

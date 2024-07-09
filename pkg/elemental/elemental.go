@@ -579,7 +579,7 @@ func DumpSource(
 			}
 		}
 
-		digest, err = c.ImageExtractor.ExtractImage(imgSrc.Value(), target, c.Platform.String(), c.LocalImage)
+		digest, err = c.ImageExtractor.ExtractImage(imgSrc.Value(), target, c.Platform.String(), c.LocalImage, c.Verify)
 		if err != nil {
 			return err
 		}
