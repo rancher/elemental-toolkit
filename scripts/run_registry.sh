@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash  
 
 set -e
 
@@ -38,8 +38,14 @@ function push {
     reg_img="${ELMNTL_IPADDR}.sslip.io:${ELMNTL_REGPORT}/${img}"
     echo "Pushing '${img}' to '${reg_img}'"
 
-    docker tag "${img}" "${reg_img}"
-    docker push "${reg_img}"
+    # Ugly hack around podman to circumvent the need of adding insecure registries
+    # at /etc/docker/daemon.json when using the docker client 
+    docker save "${img}" | podman load
+    tag=${img##*:}
+    imgID=$(podman images -n | grep "${tag}" | awk '{print $3}' | head -n1)
+    podman tag "${imgID}" "${reg_img}"
+    podman push --tls-verify=false "${reg_img}"
+    podman rmi -f "${imgID}"
   done
 }
 
