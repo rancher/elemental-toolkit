@@ -72,7 +72,13 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				cfg.Logger.Errorf("failed to initialize reset action: %v", err)
 				return err
 			}
-			return reset.Run()
+
+			err = reset.Run()
+			if err != nil {
+				cfg.Logger.Errorf("reset command failed: %v", err)
+			}
+
+			return err
 		},
 	}
 	root.AddCommand(c)
