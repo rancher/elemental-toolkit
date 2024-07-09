@@ -10,8 +10,7 @@ on:
    - cron: 0 20 * * *
 
 permissions:
-  content: read
-  pull-requests: read
+  contents: read
 
 jobs:
   build-deploy:

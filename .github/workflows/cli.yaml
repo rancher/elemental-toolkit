@@ -16,8 +16,7 @@ on:
       - main
 
 permissions:
-  content: read
-  pull-requests: read
+  contents: read
 
 jobs:
   build:
