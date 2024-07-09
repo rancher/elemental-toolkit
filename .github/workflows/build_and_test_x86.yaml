@@ -39,19 +39,14 @@ jobs:
           path: /tmp/os.tar
           key: ${{ env.cache-name }}-${{ inputs.version }}
       - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
-        name: Fetch toolkit image
-        id: cache-toolkit
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-toolkit-build-x86_64
+        name: Pull images
+        uses: ./.github/actions/fetchimages
         with:
-          path: /tmp/toolkit.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
+          os: 'false'
+          version: ${{ inputs.version }}
       - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
         name: Build OS
         run: |
-          docker load -i /tmp/toolkit.tar
           make ARCH=${{ env.ARCH }} build-os-save
           mv build/elemental-${{ inputs.flavor }}*.tar /tmp/os.tar 
       - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
@@ -90,30 +85,14 @@ jobs:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ inputs.version }}
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
-        name: Fetch toolkit image
-        id: cache-toolkit
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-toolkit-build-x86_64
+        name: Pull images
+        uses: ./.github/actions/fetchimages
         with:
-          path: /tmp/toolkit.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
-      - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
-        name: Fetch OS image
-        id: cache-os
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
-        with:
-          path: /tmp/os.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
+          flavor: ${{ inputs.flavor }}
+          version: ${{ inputs.version }}
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Build ISO
         run: |
-          docker load -i /tmp/toolkit.tar
-          docker load -i /tmp/os.tar
           make build-iso
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso /tmp/
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
@@ -142,11 +121,6 @@ jobs:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
-      - name: Cleanup worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-          sudo df -h
       - name: Checks cached Disk
         uses: actions/cache/restore@v4
         id: cache-disk
@@ -157,31 +131,21 @@ jobs:
           key: ${{ env.cache-name }}-${{ inputs.version }}
           lookup-only: true
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
-        name: Fetch toolkit image
-        id: cache-toolkit
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-toolkit-build-x86_64
-        with:
-          path: /tmp/toolkit.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
+        name: Cleanup worker
+        run: |
+          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+          sudo df -h
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
-        name: Fetch OS image
-        id: cache-os
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        name: Pull images
+        uses: ./.github/actions/fetchimages
         with:
-          path: /tmp/os.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
+          flavor: ${{ inputs.flavor }}
+          version: ${{ inputs.version }}
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Install to disk
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-utils coreutils
-          docker load -i /tmp/toolkit.tar
-          docker load -i /tmp/os.tar
           sudo -E make ARCH=${{ env.ARCH }} build-disk
           sudo mv build/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 /tmp/
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
@@ -241,30 +205,11 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - if: ${{ matrix.test == 'test-upgrade' }}
-        name: Fetch toolkit image
-        id: cache-toolkit
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-toolkit-build-x86_64
+        name: Pull images
+        uses: ./.github/actions/fetchimages
         with:
-          path: /tmp/toolkit.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
-      - if: ${{ matrix.test == 'test-upgrade' }}
-        name: Fetch OS image
-        id: cache-os
-        uses: actions/cache/restore@v4
-        env:
-          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
-        with:
-          path: /tmp/os.tar
-          key: ${{ env.cache-name }}-${{ inputs.version }}
-          fail-on-cache-miss: true
-      - if: ${{ matrix.test == 'test-upgrade' }}
-        name: Load toolkit and OS cached images
-        run: |
-          docker load -i /tmp/toolkit.tar
-          docker load -i /tmp/os.tar
+          flavor: ${{ inputs.flavor }}
+          version: ${{ inputs.version }}
       - if: ${{ matrix.test != 'test-upgrade' }}
         name: Cached Disk
         id: cache-disk

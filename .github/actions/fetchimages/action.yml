@@ -1,0 +1,58 @@
+name: Pull images
+descriptions: Fetches and loads images from the cache
+
+inputs:
+  version:
+    description: key of the cache and tag of the images
+    required: true
+    type: string
+  flavor:
+    description: flavor of the OS image
+    required: false
+    type: string
+  toolkit:
+    description: fetch toolkit image
+    required: false
+    default: 'true'
+    type: 'boolean'
+  os:
+    description: fetch OS image
+    required: false
+    default: 'true'
+    type: 'boolean'
+
+runs:
+  using: composite
+  steps:
+    - if: ${{ inputs.toolkit == 'true' }}
+      name: Fetch toolkit image
+      id: cache-toolkit
+      uses: actions/cache/restore@v4
+      env:
+        cache-name: pr-toolkit-build-x86_64
+      with:
+        path: /tmp/toolkit.tar
+        key: ${{ env.cache-name }}-${{ inputs.version }}
+        fail-on-cache-miss: true
+    - if: ${{ inputs.toolkit == 'true' }}
+      name: Load toolkit image
+      id: load-toolkit
+      shell: bash
+      run: |
+        docker load -i /tmp/toolkit.tar
+    - if: ${{ inputs.os == 'true' }}
+      name: Fetch OS image
+      id: cache-os
+      uses: actions/cache/restore@v4
+      env:
+        cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+      with:
+        path: /tmp/os.tar
+        key: ${{ env.cache-name }}-${{ inputs.version }}
+        fail-on-cache-miss: true
+    - if: ${{ inputs.os == 'true' }}
+      name: Load OS image
+      id: load-os
+      shell: bash
+      run: |
+          docker load -i /tmp/os.tar
