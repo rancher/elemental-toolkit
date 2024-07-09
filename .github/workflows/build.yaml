@@ -1,23 +1,9 @@
 name: Build
 on:
-  push:
-    tags:
-      - v**
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-    paths:
-      - tests/**
-      - make/**
-      - Makefile
-      - .github/**
-      - pkg/**
-      - cmd/**
-      - go.mod
-      - go.sum
-      - examples/**
+  push:
+    branches:
+      - main
 
 jobs:
   detect:
