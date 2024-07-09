@@ -59,7 +59,11 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 			}
 
 			cfg.Logger.Infof("Initializing system...")
-			return action.RunInit(cfg, spec)
+			err = action.RunInit(cfg, spec)
+			if err != nil {
+				cfg.Logger.Errorf("init command failed: %v", err)
+			}
+			return err
 		},
 	}
 	root.AddCommand(c)

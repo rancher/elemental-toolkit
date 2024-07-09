@@ -54,6 +54,7 @@ type Config struct {
 	Platform                  *Platform `yaml:"platform,omitempty" mapstructure:"platform"`
 	Cosign                    bool      `yaml:"cosign,omitempty" mapstructure:"cosign"`
 	Verify                    bool      `yaml:"verify,omitempty" mapstructure:"verify"`
+	TLSVerify                 bool      `yaml:"tls-verify,omitempty" mapstructure:"tls-verify"`
 	CosignPubKey              string    `yaml:"cosign-key,omitempty" mapstructure:"cosign-key"`
 	LocalImage                bool      `yaml:"local,omitempty" mapstructure:"local"`
 	Arch                      string    `yaml:"arch,omitempty" mapstructure:"arch"`
