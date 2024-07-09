@@ -609,7 +609,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 		})
 		It("Fails to unpack a docker image to target", Label("docker"), func() {
 			unpackErr := errors.New("failed to unpack")
-			extractor.SideEffect = func(_, _, _ string, _ bool) (string, error) { return "", unpackErr }
+			extractor.SideEffect = func(_, _, _ string, _, _ bool) (string, error) { return "", unpackErr }
 			err := elemental.DumpSource(*config, destDir, types.NewDockerSrc("docker/image:latest"), nil)
 			Expect(err).To(Equal(unpackErr))
 		})
@@ -936,7 +936,7 @@ var _ = Describe("Elemental", Label("elemental"), func() {
 	})
 	Describe("DeployRecoverySystem", Label("recovery"), func() {
 		BeforeEach(func() {
-			extractor.SideEffect = func(_, destination, platform string, _ bool) (string, error) {
+			extractor.SideEffect = func(_, destination, platform string, _, _ bool) (string, error) {
 				bootDir := filepath.Join(destination, "boot")
 				logger.Debugf("Creating %s", bootDir)
 				err := utils.MkdirAll(fs, bootDir, constants.DirPerm)

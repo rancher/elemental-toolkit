@@ -309,6 +309,7 @@ func (s *SUT) IsVMRunning() bool {
 
 func (s *SUT) NewPodmanRunCommand(image, command string) *PodmanRunCommand {
 	return &PodmanRunCommand{
+		tlsVerify:  true,
 		sut:        s,
 		image:      image,
 		entrypoint: "/bin/bash",

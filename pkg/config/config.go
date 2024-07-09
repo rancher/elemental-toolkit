@@ -127,6 +127,7 @@ func NewConfig(opts ...GenericOptions) *types.Config {
 		Client:                    http.NewClient(),
 		Platform:                  defaultPlatform,
 		SquashFsCompressionConfig: constants.GetDefaultSquashfsCompressionOptions(),
+		TLSVerify:                 true,
 	}
 	for _, o := range opts {
 		err := o(c)
