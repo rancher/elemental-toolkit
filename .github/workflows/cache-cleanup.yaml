@@ -5,6 +5,7 @@ name: Cleanup caches by a branch
 on:
   pull_request_target:
     types:
+      - synchronize
       - closed
 
 permissions:
@@ -16,7 +17,15 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    steps:      
+    steps:
+      - name: Define version
+        id: version
+        env:
+          hash: ${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
+        run: |
+          version="${{ env.hash }}"
+          version=${version::16}
+          echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Cleanup
         run: |
           gh extension install actions/gh-actions-cache
@@ -27,10 +36,19 @@ jobs:
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
           do
-              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+            case $cacheKey in
+              *$VERSION*)
+                echo "Not deleting $cacheKey as this is from the current workflow"
+                ;;
+              *)
+                echo "Deleting $cacheKey as this is a leftover from antoher run"
+                gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+                ;;
+            esac
           done
           echo "Done"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
+          VERSION: ${{ steps.version.outputs.version }}
