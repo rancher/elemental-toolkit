@@ -1,0 +1,20 @@
+name: Version hash
+descriptions: Computes the version hash from the current context
+
+outputs:
+  version:
+    description: computed hash from current context
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Define version
+      id: version
+      shell: bash
+      env:
+        hash: ${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
+      run: |
+        version="${{ env.hash }}"
+        version=${version::16}
+        echo "version=${version}" >> $GITHUB_OUTPUT
