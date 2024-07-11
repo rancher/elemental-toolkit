@@ -8,7 +8,7 @@ TESTS_PATH=$(realpath -s "${SCRIPTS_PATH}/../tests")
 
 : "${ELMNTL_PREFIX:=}"
 : "${ELMNTL_REGCONF:=${TESTS_PATH}/${ELMNTL_PREFIX}test-registry.yaml}"
-: "${ELMNTL_IPADDR=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')}"
+: "${ELMNTL_IPADDR=$(ip -4 addr show $(ip route | awk '/default/ { print $5 }') | grep -oP '(?<=inet\s)\d+(\.\d+){3}')}"
 : "${ELMNTL_REGPORT=5000}"
 
 function _abort {
