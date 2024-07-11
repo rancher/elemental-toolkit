@@ -1,16 +1,6 @@
 name: Build CLI
 on:
   pull_request:
-    paths:
-      - cmd/**
-      - pkg/**
-      - main.go
-      - make/**
-      - .github/**
-      - Makefile
-      - tests/**
-      - go.mod
-      - go.sum
   push:
     branches:
       - main
