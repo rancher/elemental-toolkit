@@ -29,7 +29,7 @@ runs:
       id: cache-toolkit
       uses: actions/cache/restore@v4
       env:
-        cache-name: pr-toolkit-build-x86_64
+        cache-name: toolkit-build-x86_64-${{ github.event_name }}
       with:
         path: /tmp/toolkit.tar
         key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -45,7 +45,7 @@ runs:
       id: cache-os
       uses: actions/cache/restore@v4
       env:
-        cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+        cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
       with:
         path: /tmp/os.tar
         key: ${{ env.cache-name }}-${{ inputs.version }}

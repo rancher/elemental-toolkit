@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   detect:
     permissions:
@@ -47,17 +51,12 @@ jobs:
           git fetch --prune --unshallow
       - name: Define version
         id: version
-        env:
-          hash: ${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
-        run: |
-          version="${{ env.hash }}"
-          version=${version::16}
-          echo "version=${version}" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/version
       - name: Check cache for Toolkit image
         id: cache-toolkit
         uses: actions/cache/restore@v4
         env:
-          cache-name: pr-toolkit-build-x86_64
+          cache-name: toolkit-build-x86_64-${{ github.event_name }}
           lookup-only: true
         with:
           path: /tmp/toolkit.tar
@@ -74,7 +73,7 @@ jobs:
         id: save-toolkit
         uses: actions/cache/save@v4
         env:
-          cache-name: pr-toolkit-build-x86_64
+          cache-name: toolkit-build-x86_64-${{ github.event_name }}
         with:
           path: /tmp/toolkit.tar
           key: ${{ env.cache-name }}-${{ steps.version.outputs.version }}

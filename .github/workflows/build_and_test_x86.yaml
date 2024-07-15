@@ -11,7 +11,7 @@ on:
         type: string
 
 concurrency:
-  group: ci-${{ inputs.flavor }}-x86_64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ inputs.flavor }}-x86_64
   cancel-in-progress: true
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
         id: cache-os
         uses: actions/cache/restore@v4
         env:
-          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+          cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
         with:
           path: /tmp/os.tar
@@ -54,7 +54,7 @@ jobs:
         id: save-os
         uses: actions/cache/save@v4
         env:
-          cache-name: pr-os-build-x86_64-${{ inputs.flavor }}
+          cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/os.tar
           key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -79,7 +79,7 @@ jobs:
         id: cache-iso
         uses: actions/cache/restore@v4
         env:
-          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
+          cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
         with:
           path: /tmp/*.iso
@@ -100,7 +100,7 @@ jobs:
         id: save-iso
         uses: actions/cache/save@v4
         env:
-          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
+          cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -125,7 +125,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: cache-disk
         env:
-          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
+          cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -153,7 +153,7 @@ jobs:
         id: save-disk
         uses: actions/cache/save@v4
         env:
-          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
+          cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -215,7 +215,7 @@ jobs:
         id: cache-disk
         uses: actions/cache/restore@v4
         env:
-          cache-name: pr-disk-build-x86_64-${{ inputs.flavor }}
+          cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ inputs.version }}
@@ -280,7 +280,7 @@ jobs:
         id: cache-iso
         uses: actions/cache/restore@v4
         env:
-          cache-name: pr-iso-build-x86_64-${{ inputs.flavor }}
+          cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ inputs.version }}

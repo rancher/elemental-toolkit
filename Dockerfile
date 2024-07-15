@@ -17,7 +17,7 @@ ADD internal internal
 ADD pkg pkg
 ADD main.go .
 
-# Set arg/env after go mod download, otherwise we invalidate the cached layers due to commit hash changing
+# Set arg/env after go mod download, otherwise we invalidate the cached layers due commit hash changes
 ARG ELEMENTAL_VERSION=0.0.1
 ARG ELEMENTAL_COMMIT=""
 ENV ELEMENTAL_VERSION=${ELEMENTAL_VERSION}
