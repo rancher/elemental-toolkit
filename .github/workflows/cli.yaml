@@ -24,8 +24,6 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           args: -v
-      - name: Deps
-        run: make test-deps
       - name: Run tests
         run: |
           make test-cli
