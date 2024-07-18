@@ -105,8 +105,15 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		)
 	})
 
-	It("installs without errors", func() {
-		grub = bootloader.NewGrub(cfg, bootloader.WithGrubDisableBootEntry(true))
+	It("installs without errors and auto detects there is no writable efivars", func() {
+		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+			if cmd == "findmnt" && len(args) > 0 && args[0] == "-fno" {
+				return []byte("ro"), nil
+			}
+			return []byte{}, nil
+		}
+
+		grub = bootloader.NewGrub(cfg, bootloader.WithGrubAutoDisableBootEntry())
 		Expect(grub.Install(rootDir, efiDir)).To(Succeed())
 
 		// Check grub config in EFI directory
