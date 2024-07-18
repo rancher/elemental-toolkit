@@ -11,7 +11,11 @@ WORKDIR /src/
 ADD go.mod .
 ADD go.sum .
 ADD vendor vendor
-RUN go mod download
+
+# Do not download neither verify vendored folder, yip should be bumped to a recent version as
+# some of its dependencies are no longer available upstream. Relay entirely on vendored folder
+# RUN go mod download
+
 ADD cmd cmd
 ADD internal internal
 ADD pkg pkg
