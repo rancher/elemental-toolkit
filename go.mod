@@ -9,7 +9,7 @@ require (
 	github.com/canonical/go-efilib v0.9.5
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/containerd/containerd v1.7.19
+	github.com/containerd/containerd v1.7.20
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.20.0
 	github.com/hashicorp/go-multierror v1.1.1

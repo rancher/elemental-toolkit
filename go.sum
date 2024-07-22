@@ -44,8 +44,8 @@ github.com/cloudflare/circl v1.3.8/go.mod h1:PDRU+oXvdD7KCtgKxW95M5Z8BpSCJXQORiZ
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/containerd/cgroups v1.1.0 h1:v8rEWFl6EoqHB+swVNjVoCJE8o3jX7e8nqBGPLaDFBM=
 github.com/containerd/cgroups v1.1.0/go.mod h1:6ppBcbh/NOOUU+dMKrykgaBnK9lCIBxHqJDGwsa1mIw=
-github.com/containerd/containerd v1.7.19 h1:/xQ4XRJ0tamDkdzrrBAUy/LE5nCcxFKdBm4EcPrSMEE=
-github.com/containerd/containerd v1.7.19/go.mod h1:h4FtNYUUMB4Phr6v+xG89RYKj9XccvbNSCKjdufCrkc=
+github.com/containerd/containerd v1.7.20 h1:Sl6jQYk3TRavaU83h66QMbI2Nqg9Jm6qzwX57Vsn1SQ=
+github.com/containerd/containerd v1.7.20/go.mod h1:52GsS5CwquuqPuLncsXwG0t2CiUce+KsNHJZQJvAgR0=
 github.com/containerd/continuity v0.4.3 h1:6HVkalIp+2u1ZLH1J/pYX2oBVXlJZvh1X1A7bEZ9Su8=
 github.com/containerd/continuity v0.4.3/go.mod h1:F6PTNCKepoxEaXLQp3wDAjygEnImnZ/7o4JzpodfroQ=
 github.com/containerd/errdefs v0.1.0 h1:m0wCRBiu1WJT/Fr+iOoQHMQS/eP5myQ8lCv4Dz5ZURM=
