@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.4
 
 require (
-	github.com/bramvdbogaerde/go-scp v1.4.0
+	github.com/bramvdbogaerde/go-scp v1.5.0
 	github.com/canonical/go-efilib v0.9.5
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
