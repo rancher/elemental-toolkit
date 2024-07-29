@@ -81,7 +81,12 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				return err
 			}
 
-			return upgrade.Run()
+			err = upgrade.Run()
+			if err != nil {
+				cfg.Logger.Errorf("upgrade command failed: %v", err)
+			}
+
+			return err
 		},
 	}
 	root.AddCommand(c)

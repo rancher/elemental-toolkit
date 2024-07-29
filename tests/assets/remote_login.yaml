@@ -1,0 +1,11 @@
+stages:
+  fs:
+  - name: "Adding authorized SSH key"
+    authorized_keys:
+      root:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGIU1yprgpMg8Z82mBshjJGS8s5iK1RLu2jR6QEUcLDRa+At0/5zLLS0UMHlnqzRDSSgKMMjURB73TCVUiQ2hyCUNfuY3Pr9nQXQsPSPjd6FuBzhsUPPxW8QUkQLwQkyNELTDRYjucpPrYa2rpfdoE3mmG8QJ+CW7g699iuCpTltF265uyGltqQKBFrsyxfqqzp+I6L0A04BMuvDop2K79yArJD671uAlsIDHv4hhKTnBo7cS+EUi66XxjnHUsQ59v6B7SkdYfjtyoEDX5aGU0ijy+t3lhFrB2iEtKg9R12ZjK50fWdVeGPTFVjzQfcIuIgZEo00d0dxp438JTHyv4ZMC1wRcT/ZMxm8CivQD9HNWX/qadISrxgbYQnM9tjO3b6QprHiY5eMWrNI/SAzlFZbcu8muV6zJ/3RcwkILgUVmlA3RyOZKngsC6imRtzyhEsnyIo1+mvgWhXbYfqunMgI+4K9a4HVMoVOk7+CwPyb5GuuVWXUE3q+AUNPQQBFJqkylzl9E13GOHNzm3sDNZSm8bkNjZtinJD0nCyLrP5tOrLm7sXblQ28N+yHEcbh7VOMsK1O0Ed+hM651bxveU0/ZnZkQYhe/asf7RyVxkTPwPIXBqCGF/c4EsfcCRy8EjTyUk3mNfPScgfenQFxwqsYF6p3hViw6p9n4kSk3gAw== (none)" 
+  install-after:
+  - if: '[ -e "/run/initramfs/live/iso-config/remote_login.yaml" ]'
+    name: "Adding authorized SSH key on install"
+    commands:
+    - cp /run/initramfs/live/iso-config/remote_login.yaml /run/elemental/oem

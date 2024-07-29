@@ -62,6 +62,10 @@ func NewCloudInitCmd(root *cobra.Command) *cobra.Command {
 			}
 
 			err = cfg.CloudInitRunner.Run(stage, args...)
+			if err != nil {
+				cfg.Logger.Errorf("cloud-init command failed: %v", err)
+			}
+
 			return elementalError.NewFromError(err, elementalError.CloudInitRunStage)
 		},
 	}

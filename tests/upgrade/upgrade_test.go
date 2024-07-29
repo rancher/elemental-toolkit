@@ -40,13 +40,19 @@ var _ = Describe("Elemental Feature tests", func() {
 			By("setting /oem/chroot_hooks.yaml")
 			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
 			Expect(err).ToNot(HaveOccurred())
+
+			// Upgrade tests might not include it as it booted from an older disk image.
+			err = s.SendFile("../assets/remote_login.yaml", "/oem/remote_login.yaml", "0770")
+			Expect(err).ToNot(HaveOccurred())
+
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
 			By(fmt.Sprintf("and upgrading to %s", comm.UpgradeImage()))
 
-			upgradeCmd := s.ElementalCmd("upgrade", "--bootloader", "--system", comm.UpgradeImage())
+			upgradeCmd := s.ElementalCmd("upgrade", "--tls-verify=false", "--bootloader", "--system", comm.UpgradeImage())
 			out, err := s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeCmd)).
 				Privileged().
+				NoTLSVerify().
 				WithMount("/", "/host").
 				Run()
 

@@ -5,32 +5,62 @@ name: Cleanup caches by a branch
 on:
   pull_request_target:
     types:
+      - synchronize
       - closed
 
-permissions:
-  # `actions:write` permission is required to delete caches
-  #   See also: https://docs.github.com/en/rest/actions/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
-  actions: write
-  contents: read
+  # After running tests in the main branch pushes we want to clean the cache
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
+    branches: [main]
 
 jobs:
-  cleanup:
+  version:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
-    steps:      
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.pull_request.head.sha }}"
+      - run: |
+          git fetch --prune --unshallow
+      - name: Define version
+        id: version
+        uses: ./.github/actions/version
+
+  cleanup:
+    permissions:
+      # `actions:write` permission is required to delete caches. See:
+      #  https://docs.github.com/en/rest/actions/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
+      actions: write
+      contents: read
+    needs:
+      - version
+    runs-on: ubuntu-latest
+    steps:
       - name: Cleanup
         run: |
           gh extension install actions/gh-actions-cache
           
           echo "Fetching list of cache key"
-          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
-
+          cacheKeysForPR=$(gh actions-cache list -R "${REPO}" -B "${BRANCH}" -L 100 | cut -f 1 )
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
           do
-              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+            if [[ "${DELETE_ALL}" == "yes" ]] || [[ ! "${cacheKey}" =~ "${VERSION}" ]]; then
+                echo "Deleting $cacheKey as this is a leftover from a previous run"
+                gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+            else
+                echo "Not deleting $cacheKey as this does not match the criteria"
+            fi
           done
           echo "Done"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
+          BRANCH: ${{ github.event_name == 'workflow_run' && github.ref_name || format('refs/pull/{0}/merge', github.event.pull_request.number) }} 
+          VERSION: ${{ needs.version.outputs.version }}
+          DELETE_ALL: ${{ github.event_name == 'workflow_run' && 'yes' || github.event_name == 'pull_request_target' && github.event.action == 'closed' && 'yes' || 'no' }}

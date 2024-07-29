@@ -1,26 +1,18 @@
 name: Build
 on:
+  pull_request:
   push:
-    tags:
-      - v**
-  pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-    paths:
-      - tests/**
-      - make/**
-      - Makefile
-      - .github/**
-      - pkg/**
-      - cmd/**
-      - go.mod
-      - go.sum
-      - examples/**
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   detect:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.set-matrix.outputs.flavor }}
@@ -42,29 +34,49 @@ jobs:
         fi
 
   build-toolkit:
+    permissions:
+      contents: read
     needs:
       - detect
-    permissions:
-      packages: write
     runs-on: ubuntu-latest
     env:
       PLATFORM: ${{ needs.detect.outputs.platform }}
-      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
-      - name: Log in to ghcr.io
-        uses: docker/login-action@v3
+      - name: Define version
+        id: version
+        uses: ./.github/actions/version
+      - name: Check cache for Toolkit image
+        id: cache-toolkit
+        uses: actions/cache/restore@v4
+        env:
+          cache-name: toolkit-build-x86_64-${{ github.event_name }}
+          lookup-only: true
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build toolkit
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ steps.version.outputs.version }}
+      - if: ${{ steps.cache-toolkit.outputs.cache-hit != 'true' }} 
+        name: Build toolkit
+        env:
+          VERSION: ${{ steps.version.outputs.version }} 
         run: |
-          make DOCKER_ARGS=--push build
+          make build-save
+          mv build/elemental-toolkit*.tar /tmp/toolkit.tar
+      - if: ${{ steps.cache-toolkit.outputs.cache-hit != 'true' }}
+        name: Save toolkit image in cache
+        id: save-toolkit
+        uses: actions/cache/save@v4
+        env:
+          cache-name: toolkit-build-x86_64-${{ github.event_name }}
+        with:
+          path: /tmp/toolkit.tar
+          key: ${{ env.cache-name }}-${{ steps.version.outputs.version }}
 
   build-matrix:
     needs:
@@ -77,3 +89,4 @@ jobs:
     uses: ./.github/workflows/build_and_test_x86.yaml
     with:
       flavor: ${{ matrix.flavor }}
+      version: ${{ needs.build-toolkit.outputs.version }}

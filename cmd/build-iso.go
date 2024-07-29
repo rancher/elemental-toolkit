@@ -125,7 +125,12 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			}
 
 			buildISO := action.NewBuildISOAction(cfg, spec)
-			return buildISO.Run()
+			err = buildISO.Run()
+			if err != nil {
+				cfg.Logger.Errorf("build-iso command failed: %v", err)
+			}
+
+			return err
 		},
 	}
 

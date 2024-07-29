@@ -11,11 +11,13 @@ on:
         type: string
 
 concurrency:
-  group: ci-${{ inputs.flavor }}-aarch64-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ inputs.flavor }}-aarch64
   cancel-in-progress: true
 
-jobs:
+permissions:
+  contents: read
 
+jobs:
   build-iso:
     needs: detect
     runs-on: [self-hosted, arm64]
@@ -120,9 +122,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Install deps
-        run: |
-          make test-deps
       - run: |
           git fetch --prune --unshallow
       - name: Cached Disk
@@ -174,9 +173,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Install deps
-        run: |
-          make test-deps
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO

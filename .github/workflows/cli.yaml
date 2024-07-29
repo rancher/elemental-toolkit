@@ -1,19 +1,13 @@
 name: Build CLI
 on:
   pull_request:
-    paths:
-      - cmd/**
-      - pkg/**
-      - main.go
-      - make/**
-      - .github/**
-      - Makefile
-      - tests/**
-      - go.mod
-      - go.sum
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,8 +24,6 @@ jobs:
         uses: golangci/golangci-lint-action@v4
         with:
           args: -v
-      - name: Deps
-        run: make test-deps
       - name: Run tests
         run: |
           make test-cli
