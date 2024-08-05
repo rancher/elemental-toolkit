@@ -6,12 +6,12 @@ package linux
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"syscall"
 
 	"golang.org/x/sys/unix"
-	"golang.org/x/xerrors"
 
 	efi "github.com/canonical/go-efilib"
 	internal_unix "github.com/canonical/go-efilib/internal/unix"
@@ -83,12 +83,12 @@ func NewHardDriveDevicePathNodeFromDevice(dev string, part int) (*efi.HardDriveD
 
 	sz, err := getDeviceSize(f)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot determine device size: %w", err)
+		return nil, fmt.Errorf("cannot determine device size: %w", err)
 	}
 
 	ssz, err := getSectorSize(f)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot determine logical sector size: %w", err)
+		return nil, fmt.Errorf("cannot determine logical sector size: %w", err)
 	}
 
 	return efi.NewHardDriveDevicePathNodeFromDevice(f, sz, ssz, part)

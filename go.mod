@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.5.0
-	github.com/canonical/go-efilib v0.9.5
+	github.com/canonical/go-efilib v1.2.0
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/containerd/containerd v1.7.20
@@ -139,7 +139,6 @@ require (
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

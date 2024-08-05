@@ -10,15 +10,17 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
 
-func handleSATADevicePathNode(builder devicePathBuilder) error {
-	if builder.numRemaining() < 6 {
+func handleSATADevicePathNode(state *devicePathBuilderState) error {
+	if state.SysfsComponentsRemaining() < 6 {
 		return errors.New("invalid path: insufficient components")
 	}
 
-	params, err := handleATAPath(builder.absPath(builder.next(6)))
+	state.AdvanceSysfsPath(6)
+
+	params, err := handleATAPath(state.SysfsPath())
 	if err != nil {
 		return err
 	}
@@ -48,7 +50,7 @@ func handleSATADevicePathNode(builder devicePathBuilder) error {
 	// if there is a port multiplier attached (see
 	// drivers/ata/libata-pmp.c:sata_pmp_init_links and
 	// drivers/ata/libata-transport.c:ata_tlink_add).
-	_, err = os.Stat(filepath.Join(builder.next(1), fmt.Sprintf("link%d.%d", params.printId, pmp)))
+	_, err = os.Stat(filepath.Join(state.SysfsPath(), "../../../../..", fmt.Sprintf("link%d.%d", params.printId, pmp)))
 	switch {
 	case os.IsNotExist(err):
 		// No port multiplier is connected.
@@ -59,15 +61,10 @@ func handleSATADevicePathNode(builder devicePathBuilder) error {
 		// A port multiplier is connected.
 	}
 
-	builder.advance(6)
-	builder.append(&efi.SATADevicePathNode{
+	state.Path = append(state.Path, &efi.SATADevicePathNode{
 		// The kernel provides a one-indexed number and the firmware is zero-indexed.
 		HBAPortNumber:            uint16(params.port) - 1,
 		PortMultiplierPortNumber: uint16(pmp),
 		LUN:                      uint16(params.lun)})
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("sata", handleSATADevicePathNode, 0, interfaceTypeSATA)
 }

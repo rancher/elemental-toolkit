@@ -5,9 +5,8 @@
 package linux
 
 import (
+	"fmt"
 	"os"
-
-	"golang.org/x/xerrors"
 
 	efi "github.com/canonical/go-efilib"
 )
@@ -41,12 +40,12 @@ func ReadPartitionTable(path string, role efi.PartitionTableRole, checkCrc bool)
 
 	sz, err := getDeviceSize(f)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot determine device size: %w", err)
+		return nil, fmt.Errorf("cannot determine device size: %w", err)
 	}
 
 	ssz, err := getSectorSize(f)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot determine logical sector size: %w", err)
+		return nil, fmt.Errorf("cannot determine logical sector size: %w", err)
 	}
 
 	return efi.ReadPartitionTable(f, sz, ssz, role, checkCrc)

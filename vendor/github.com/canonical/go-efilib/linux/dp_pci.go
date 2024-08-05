@@ -8,14 +8,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 
-	"golang.org/x/xerrors"
-
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
 
 var classRE = regexp.MustCompile(`^0x([[:xdigit:]]+)$`)
@@ -25,8 +23,8 @@ var classRE = regexp.MustCompile(`^0x([[:xdigit:]]+)$`)
 // function.
 var pciRE = regexp.MustCompile(`^[[:xdigit:]]{4}:[[:xdigit:]]{2}:([[:xdigit:]]{2})\.([[:digit:]]{1})$`)
 
-func handlePCIDevicePathNode(builder devicePathBuilder) error {
-	component := builder.next(1)
+func handlePCIDevicePathNode(state *devicePathBuilderState) error {
+	component := state.PeekUnhandledSysfsComponents(1)
 
 	m := pciRE.FindStringSubmatch(component)
 	if len(m) == 0 {
@@ -36,39 +34,55 @@ func handlePCIDevicePathNode(builder devicePathBuilder) error {
 	devNum, _ := strconv.ParseUint(m[1], 16, 8)
 	fun, _ := strconv.ParseUint(m[2], 10, 8)
 
-	classBytes, err := ioutil.ReadFile(filepath.Join(builder.absPath(component), "class"))
+	state.AdvanceSysfsPath(1)
+
+	classBytes, err := os.ReadFile(filepath.Join(state.SysfsPath(), "class"))
 	if err != nil {
-		return xerrors.Errorf("cannot read device class: %w", err)
+		return fmt.Errorf("cannot read device class: %w", err)
 	}
 
 	var class []byte
-	if n, err := fmt.Sscanf(string(classBytes), "0x%x", &class); err != nil || n != 1 {
-		return errors.New("cannot decode device class")
+	n, err := fmt.Sscanf(string(classBytes), "0x%x", &class)
+	if err != nil {
+		return fmt.Errorf("cannot decode device class: %w", err)
+	}
+	if n != 1 {
+		return errors.New("invalid device class")
 	}
 
-	builder.advance(1)
+	vendorBytes, err := os.ReadFile(filepath.Join(state.SysfsPath(), "vendor"))
+	if err != nil {
+		return fmt.Errorf("cannot read device vendor: %w", err)
+	}
+
+	var vendor uint16
+	n, err = fmt.Sscanf(string(vendorBytes), "0x%04x", &vendor)
+	if err != nil {
+		return fmt.Errorf("cannot decode device vendor: %w", err)
+	}
+	if n != 1 {
+		return errors.New("invalid device vendor")
+	}
 
 	switch {
+	case vendor == 0x1af4:
+		state.Interface = interfaceTypeVirtio
 	case bytes.HasPrefix(class, []byte{0x01, 0x00}):
-		builder.setInterfaceType(interfaceTypeSCSI)
+		state.Interface = interfaceTypeSCSI
 	case bytes.HasPrefix(class, []byte{0x01, 0x01}):
-		builder.setInterfaceType(interfaceTypeIDE)
+		state.Interface = interfaceTypeIDE
 	case bytes.HasPrefix(class, []byte{0x01, 0x06}):
-		builder.setInterfaceType(interfaceTypeSATA)
+		state.Interface = interfaceTypeSATA
 	case bytes.HasPrefix(class, []byte{0x01, 0x08}):
-		builder.setInterfaceType(interfaceTypeNVME)
+		state.Interface = interfaceTypeNVME
 	case bytes.HasPrefix(class, []byte{0x06, 0x04}):
-		builder.setInterfaceType(interfaceTypePCI)
+		state.Interface = interfaceTypePCI
 	default:
 		return errUnsupportedDevice("unhandled device class: " + string(classBytes))
 	}
 
-	builder.append(&efi.PCIDevicePathNode{
+	state.Path = append(state.Path, &efi.PCIDevicePathNode{
 		Function: uint8(fun),
 		Device:   uint8(devNum)})
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("pci", handlePCIDevicePathNode, 0, interfaceTypePCI)
 }

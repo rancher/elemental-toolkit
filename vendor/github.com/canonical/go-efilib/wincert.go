@@ -17,7 +17,6 @@ import (
 
 	"golang.org/x/crypto/cryptobyte"
 	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
-	"golang.org/x/xerrors"
 
 	"github.com/canonical/go-efilib/internal/ioerr"
 	"github.com/canonical/go-efilib/internal/pkcs7"
@@ -367,7 +366,7 @@ func newWinCertificateGUID(cert *uefi.WIN_CERTIFICATE_UEFI_GUID) (WinCertificate
 	case uefi.EFI_CERT_TYPE_PKCS7_GUID:
 		p7, err := pkcs7.UnmarshalSignedData(cert.CertData)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot decode payload for WIN_CERTIFICATE_UEFI_GUID with EFI_CERT_TYPE_PKCS7_GUID type: %w", err)
+			return nil, fmt.Errorf("cannot decode payload for WIN_CERTIFICATE_UEFI_GUID with EFI_CERT_TYPE_PKCS7_GUID type: %w", err)
 		}
 		return &WinCertificatePKCS7{p7: p7}, nil
 	default:
@@ -540,7 +539,7 @@ func ReadWinCertificate(r io.Reader) (WinCertificate, error) {
 
 		p7, err := pkcs7.UnmarshalSignedData(cert.CertData)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot decode WIN_CERTIFICATE_EFI_PKCS payload: %w", err)
+			return nil, fmt.Errorf("cannot decode WIN_CERTIFICATE_EFI_PKCS payload: %w", err)
 		}
 		if len(p7.GetSigners()) != 1 {
 			return nil, errors.New("WIN_CERTIFICATE_EFI_PKCS has invalid number of signers")
@@ -551,7 +550,7 @@ func ReadWinCertificate(r io.Reader) (WinCertificate, error) {
 		}
 		auth, err := unmarshalAuthenticodeContent(p7.Content())
 		if err != nil {
-			return nil, xerrors.Errorf("cannot decode authenticode content for WIN_CERTIFICATE_EFI_PKCS: %w", err)
+			return nil, fmt.Errorf("cannot decode authenticode content for WIN_CERTIFICATE_EFI_PKCS: %w", err)
 		}
 		return &WinCertificateAuthenticode{p7: p7, authenticode: auth}, nil
 	case uefi.WIN_CERT_TYPE_EFI_PKCS115:
@@ -569,7 +568,7 @@ func ReadWinCertificate(r io.Reader) (WinCertificate, error) {
 
 		digest, err := digestAlgorithmIdToCryptoHash(GUID(cert.HashAlgorithm))
 		if err != nil {
-			return nil, xerrors.Errorf("cannot determine digest algorithm for WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
+			return nil, fmt.Errorf("cannot determine digest algorithm for WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
 		}
 
 		return &WinCertificatePKCS1v15{HashAlgorithm: digest, Signature: cert.Signature}, nil

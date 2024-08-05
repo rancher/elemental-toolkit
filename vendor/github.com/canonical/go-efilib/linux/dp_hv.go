@@ -5,10 +5,10 @@
 package linux
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
 
 var (
@@ -17,20 +17,20 @@ var (
 	hvSCSIGuid = efi.MakeGUID(0xba6163d9, 0x04a1, 0x4d29, 0xb605, [...]uint8{0x72, 0xe2, 0xff, 0xb1, 0xdc, 0x7f})
 )
 
-func handleHVDevicePathNode(builder devicePathBuilder) error {
-	component := builder.next(1)
-
+func handleHVDevicePathNode(state *devicePathBuilderState) error {
+	component := state.PeekUnhandledSysfsComponents(1)
 	deviceId, err := efi.DecodeGUIDString(component)
 	if err != nil {
 		return err
 	}
 
-	classIdStr, err := ioutil.ReadFile(filepath.Join(builder.absPath(component), "class_id"))
+	state.AdvanceSysfsPath(1)
+	path := state.SysfsPath()
+
+	classIdStr, err := os.ReadFile(filepath.Join(path, "class_id"))
 	if err != nil {
 		return err
 	}
-
-	builder.advance(1)
 
 	classId, err := efi.DecodeGUIDString(string(classIdStr))
 	if err != nil {
@@ -39,7 +39,7 @@ func handleHVDevicePathNode(builder devicePathBuilder) error {
 
 	switch classId {
 	case hvSCSIGuid:
-		builder.setInterfaceType(interfaceTypeSCSI)
+		state.Interface = interfaceTypeSCSI
 	default:
 		return errUnsupportedDevice("unhandled device class: " + classId.String())
 	}
@@ -48,13 +48,9 @@ func handleHVDevicePathNode(builder devicePathBuilder) error {
 	copy(data, classId[:])
 	copy(data[len(classId):], deviceId[:])
 
-	builder.append(&efi.VendorDevicePathNode{
+	state.Path = append(state.Path, &efi.VendorDevicePathNode{
 		Type: efi.HardwareDevicePath,
 		GUID: hvVendorGuid,
 		Data: data})
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("hv", handleHVDevicePathNode, 0, interfaceTypeVMBus)
 }
