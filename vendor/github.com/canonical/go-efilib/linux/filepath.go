@@ -8,17 +8,37 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"golang.org/x/sys/unix"
-	"golang.org/x/xerrors"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
+
+func init() {
+	registerDevicePathNodeHandler("pci-root", handlePCIRootDevicePathNode)
+	registerDevicePathNodeHandler("vmbus-root", handleVMBusRootDevicePathNode)
+	registerDevicePathNodeHandler("virtual", handleVirtualDevicePathNode)
+	registerDevicePathNodeHandler("acpi", handleACPIDevicePathNode)
+
+	registerDevicePathNodeHandler("pci", handlePCIDevicePathNode, interfaceTypePCI)
+
+	registerDevicePathNodeHandler("scsi", handleSCSIDevicePathNode, interfaceTypeSCSI)
+
+	registerDevicePathNodeHandler("ide", handleIDEDevicePathNode, interfaceTypeIDE)
+
+	registerDevicePathNodeHandler("sata", handleSATADevicePathNode, interfaceTypeSATA)
+
+	registerDevicePathNodeHandler("nvme", handleNVMEDevicePathNode, interfaceTypeNVME)
+
+	registerDevicePathNodeHandler("hv", handleHVDevicePathNode, interfaceTypeVMBus)
+
+	registerDevicePathNodeHandler("virtio", handleVirtioDevicePathNode, interfaceTypeVirtio)
+
+}
 
 // FilePathToDevicePathMode specifies the mode for FilePathToDevicePath
 type FilePathToDevicePathMode int
@@ -56,13 +76,7 @@ const (
 	interfaceTypeSATA
 	interfaceTypeNVME
 	interfaceTypeVMBus
-)
-
-const (
-	// prependHandler indicates that a handler wants to be tried
-	// before handlers registered without this flag. These handlers
-	// should use errSkipDevicePathNodeHandler on unhandled nodes.
-	prependHandler = 1 << 0
+	interfaceTypeVirtio
 )
 
 var (
@@ -79,7 +93,7 @@ func (e errUnsupportedDevice) Error() string {
 	return "unsupported device: " + string(e)
 }
 
-type devicePathNodeHandler func(devicePathBuilder) error
+type devicePathNodeHandler func(*devicePathBuilderState) error
 
 type registeredDpHandler struct {
 	name string
@@ -88,121 +102,88 @@ type registeredDpHandler struct {
 
 var devicePathNodeHandlers = make(map[interfaceType][]registeredDpHandler)
 
-func registerDevicePathNodeHandler(name string, fn devicePathNodeHandler, flags int, interfaces ...interfaceType) {
+func registerDevicePathNodeHandler(name string, fn devicePathNodeHandler, interfaces ...interfaceType) {
 	if len(interfaces) == 0 {
 		interfaces = []interfaceType{interfaceTypeUnknown}
 	}
 	for _, i := range interfaces {
-		if flags&prependHandler > 0 {
-			devicePathNodeHandlers[i] = append([]registeredDpHandler{{name, fn}}, devicePathNodeHandlers[i]...)
-		} else {
-			devicePathNodeHandlers[i] = append(devicePathNodeHandlers[i], registeredDpHandler{name, fn})
-		}
+		devicePathNodeHandlers[i] = append(devicePathNodeHandlers[i], registeredDpHandler{name, fn})
 	}
 }
 
-type devicePathBuilder interface {
-	// numRemaining returns the number of remaining sysfs components
-	// to process.
-	numRemaining() int
-
-	// next returns the next n sysfs components to process. -1 returns
-	// all remaining components.
-	next(n int) string
-
-	// absPath turns the supplied sysfs path components into an
-	// absolute path.
-	absPath(path string) string
-
-	// advance marks the specified number of sysfs components
-	// as handled and advances to the next ones.
-	advance(n int)
-
-	// interfaceType returns the type of the interface detected
-	// by the last handler.
-	interfaceType() interfaceType
-
-	// setInterfaceType allows a handler to set the detected interface
-	// type.
-	setInterfaceType(iface interfaceType)
-
-	// append allows a handler to append device path nodes to the current
-	// path.
-	append(nodes ...efi.DevicePathNode)
-}
-
-type devicePathBuilderImpl struct {
-	iface   interfaceType
-	devPath efi.DevicePath
+type devicePathBuilderState struct {
+	Interface interfaceType
+	Path      efi.DevicePath
 
 	processed []string
 	remaining []string
 }
 
-func (b *devicePathBuilderImpl) numRemaining() int {
-	return len(b.remaining)
+func (s *devicePathBuilderState) SysfsPath() string {
+	return filepath.Join(append([]string{sysfsPath, "devices"}, s.processed...)...)
 }
 
-func (b *devicePathBuilderImpl) next(n int) string {
+func (s *devicePathBuilderState) SysfsComponentsRemaining() int {
+	return len(s.remaining)
+}
+
+func (s *devicePathBuilderState) PeekUnhandledSysfsComponents(n int) string {
 	if n < 0 {
-		return filepath.Join(b.remaining...)
+		n = len(s.remaining)
 	}
-	return filepath.Join(b.remaining[:n]...)
+	if n > len(s.remaining) {
+		n = len(s.remaining)
+	}
+	return filepath.Join(s.remaining[:n]...)
 }
 
-func (b *devicePathBuilderImpl) absPath(path string) string {
-	return filepath.Join(sysfsPath, "devices", filepath.Join(b.processed...), path)
+func (s *devicePathBuilderState) AdvanceSysfsPath(n int) {
+	if n < 0 {
+		n = len(s.remaining)
+	}
+	if n > len(s.remaining) {
+		n = len(s.remaining)
+	}
+	s.processed = append(s.processed, s.remaining[:n]...)
+	s.remaining = s.remaining[n:]
 }
 
-func (b *devicePathBuilderImpl) advance(n int) {
-	b.processed = append(b.processed, b.remaining[:n]...)
-	b.remaining = b.remaining[n:]
+type devicePathBuilder struct {
+	devicePathBuilderState
 }
 
-func (b *devicePathBuilderImpl) interfaceType() interfaceType {
-	return b.iface
+func (s *devicePathBuilder) done() bool {
+	return len(s.remaining) == 0
 }
 
-func (b *devicePathBuilderImpl) setInterfaceType(iface interfaceType) {
-	b.iface = iface
-}
-
-func (b *devicePathBuilderImpl) append(nodes ...efi.DevicePathNode) {
-	b.devPath = append(b.devPath, nodes...)
-}
-
-func (b *devicePathBuilderImpl) done() bool {
-	return len(b.remaining) == 0
-}
-
-func (b *devicePathBuilderImpl) processNextComponent() error {
+func (b *devicePathBuilder) ProcessNextComponent() error {
 	nProcessed := len(b.processed)
 	remaining := b.remaining
-	iface := b.iface
+	iface := b.Interface
 
-	handlers := devicePathNodeHandlers[b.iface]
+	handlers := devicePathNodeHandlers[b.Interface]
 	if len(handlers) == 0 {
 		// There should always be at least one handler registered for an interface.
-		panic(fmt.Sprintf("no handlers registered for interface type %v", b.iface))
+		panic(fmt.Sprintf("no handlers registered for interface type %v", b.Interface))
 	}
 
 	for _, handler := range handlers {
-		err := handler.fn(b)
+		err := handler.fn(&b.devicePathBuilderState)
 		if err != nil {
 			// Roll back changes
 			b.processed = b.processed[:nProcessed]
 			b.remaining = remaining
-			b.iface = iface
+			b.Interface = iface
 		}
 		if err == errSkipDevicePathNodeHandler {
 			// Try the next handler.
 			continue
 		}
 		if err != nil {
-			return xerrors.Errorf("[handler %s]: %w", handler.name, err)
+			return fmt.Errorf("[handler %s]: %w", handler.name, err)
 		}
 
-		if iface != interfaceTypeUnknown && b.iface == interfaceTypeUnknown {
+		if iface != interfaceTypeUnknown && b.Interface == interfaceTypeUnknown {
 			// The handler set the interface type back to unknown. Turn this
 			// in to a errUnsupportedDevice error.
 			return errUnsupportedDevice("[handler " + handler.name + "]: unrecognized interface")
@@ -212,22 +193,24 @@ func (b *devicePathBuilderImpl) processNextComponent() error {
 
 	// If we get here, then all handlers returned errSkipDevicePathNodeHandler.
 
-	if b.iface != interfaceTypeUnknown {
+	if b.Interface != interfaceTypeUnknown {
 		// If the interface has already been determined, require at least one
 		// handler to handle this node or return an error.
-		panic(fmt.Sprintf("all handlers skipped handling interface type %v", b.iface))
+		panic(fmt.Sprintf("all handlers skipped handling interface type %v", b.Interface))
 	}
 
 	return errUnsupportedDevice("unhandled root node")
 }
 
-func newDevicePathBuilder(dev *dev) (*devicePathBuilderImpl, error) {
+func newDevicePathBuilder(dev *dev) (*devicePathBuilder, error) {
 	path, err := filepath.Rel(filepath.Join(sysfsPath, "devices"), dev.sysfsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &devicePathBuilderImpl{remaining: strings.Split(path, string(os.PathSeparator))}, nil
+	return &devicePathBuilder{
+		devicePathBuilderState: devicePathBuilderState{
+			remaining: strings.Split(path, string(os.PathSeparator))}}, nil
 }
 
 type mountPoint struct {
@@ -257,11 +240,11 @@ func scanBlockDeviceMounts() (mounts []*mountPoint, err error) {
 		}
 		devMajor, err := strconv.ParseUint(devStr[0], 10, 32)
 		if err != nil {
-			return nil, xerrors.Errorf("invalid mount info: invalid device number: %w", err)
+			return nil, fmt.Errorf("invalid mount info: invalid device number: %w", err)
 		}
 		devMinor, err := strconv.ParseUint(devStr[1], 10, 32)
 		if err != nil {
-			return nil, xerrors.Errorf("invalid mount info: invalid device number: %w", err)
+			return nil, fmt.Errorf("invalid mount info: invalid device number: %w", err)
 		}
 
 		var mountSource string
@@ -281,25 +264,34 @@ func scanBlockDeviceMounts() (mounts []*mountPoint, err error) {
 			mountSource: mountSource})
 	}
 	if scanner.Err() != nil {
-		return nil, xerrors.Errorf("cannot parse mount info: %w", err)
+		return nil, fmt.Errorf("cannot parse mount info: %w", err)
 	}
 
 	return mounts, nil
 }
 
 func getFileMountPoint(path string) (*mountPoint, error) {
+	var st unix.Stat_t
+	if err := unixStat(path, &st); err != nil {
+		return nil, fmt.Errorf("cannot stat %s: %w", path, err)
+	}
+
 	mounts, err := scanBlockDeviceMounts()
 	if err != nil {
-		return nil, xerrors.Errorf("cannot obtain list of block device mounts: %w", err)
+		return nil, fmt.Errorf("cannot obtain list of block device mounts: %w", err)
 	}
 
 	var candidate *mountPoint
 
 	for _, mount := range mounts {
-		if !strings.HasPrefix(path, mount.mountDir) {
+		if mount.dev != st.Dev {
 			continue
 		}
 
+		rel, err := filepath.Rel(mount.mountDir, path)
+		if err != nil || strings.HasPrefix(rel, "..") {
+			continue
+		}
 		if candidate == nil {
 			candidate = mount
 		}
@@ -329,12 +321,12 @@ type filePath struct {
 func newFilePath(path string) (*filePath, error) {
 	path, err := filepathEvalSymlinks(path)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot evaluate symbolic links: %w", err)
+		return nil, fmt.Errorf("cannot evaluate symbolic links: %w", err)
 	}
 
 	mount, err := getFileMountPoint(path)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot obtain mount information for path: %w", err)
+		return nil, fmt.Errorf("cannot obtain mount information for path: %w", err)
 	}
 
 	rel, err := filepath.Rel(mount.mountDir, path)
@@ -366,13 +358,13 @@ func newFilePath(path string) (*filePath, error) {
 		// device.
 		out.dev.sysfsPath = parentDev
 		out.dev.devPath = filepath.Join("/dev", filepath.Base(parentDev))
-		b, err := ioutil.ReadFile(filepath.Join(childDev, "partition"))
+		b, err := os.ReadFile(filepath.Join(childDev, "partition"))
 		if err != nil {
-			return nil, xerrors.Errorf("cannot obtain partition number for %s: %w", mount.dev, err)
+			return nil, fmt.Errorf("cannot obtain partition number for %d: %w", mount.dev, err)
 		}
 		part, err := strconv.Atoi(strings.TrimSpace(string(b)))
 		if err != nil {
-			return nil, xerrors.Errorf("cannot determine partition number for %s: %w", mount.dev, err)
+			return nil, fmt.Errorf("cannot determine partition number for %d: %w", mount.dev, err)
 		}
 		out.dev.part = part
 	}
@@ -421,25 +413,25 @@ func FilePathToDevicePath(path string, mode FilePathToDevicePathMode) (out efi.D
 		for !builder.done() {
 			var e errUnsupportedDevice
 
-			err := builder.processNextComponent()
+			err := builder.ProcessNextComponent()
 			switch {
-			case xerrors.As(err, &e):
+			case errors.As(err, &e):
 				return nil, ErrNoDevicePath("encountered an error when handling components " +
-					builder.next(-1) + " from device path " +
-					builder.absPath(builder.next(-1)) + ": " + err.Error())
+					builder.PeekUnhandledSysfsComponents(-1) + " from device path " +
+					builder.SysfsPath() + ": " + err.Error())
 			case err != nil:
-				return nil, xerrors.Errorf("cannot process components %s from device path %s: %w",
-					builder.next(-1), builder.absPath(builder.next(-1)), err)
+				return nil, fmt.Errorf("cannot process components %s from device path %s: %w",
+					builder.PeekUnhandledSysfsComponents(-1), builder.SysfsPath(), err)
 			}
 		}
 	}
 
-	out = builder.devPath
+	out = builder.Path
 
 	if mode != ShortFormPathFile && fp.part > 0 {
 		node, err := NewHardDriveDevicePathNodeFromDevice(fp.devPath, fp.part)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot construct hard drive device path node: %w", err)
+			return nil, fmt.Errorf("cannot construct hard drive device path node: %w", err)
 		}
 		out = append(out, node)
 	}

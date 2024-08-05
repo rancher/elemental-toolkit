@@ -4,13 +4,9 @@
 
 package linux
 
-func handleVirtualDevicePathNode(builder devicePathBuilder) error {
-	if builder.next(1) == "virtual" {
+func handleVirtualDevicePathNode(state *devicePathBuilderState) error {
+	if state.PeekUnhandledSysfsComponents(1) == "virtual" {
 		return errUnsupportedDevice("virtual devices are not supported")
 	}
 	return errSkipDevicePathNodeHandler
-}
-
-func init() {
-	registerDevicePathNodeHandler("virtual", handleVirtualDevicePathNode, 0)
 }

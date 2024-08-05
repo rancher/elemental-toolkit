@@ -13,8 +13,6 @@ import (
 	"io"
 
 	"github.com/canonical/go-efilib/internal/uefi"
-
-	"golang.org/x/xerrors"
 )
 
 // SignatureData corresponds to the EFI_SIGNATURE_DATA type.
@@ -149,7 +147,7 @@ func (db SignatureDatabase) Bytes() ([]byte, error) {
 func (db SignatureDatabase) Write(w io.Writer) error {
 	for i, l := range db {
 		if err := l.Write(w); err != nil {
-			return xerrors.Errorf("cannot encode signature list %d: %w", i, err)
+			return fmt.Errorf("cannot encode signature list %d: %w", i, err)
 		}
 	}
 	return nil
@@ -164,7 +162,7 @@ func ReadSignatureDatabase(r io.Reader) (SignatureDatabase, error) {
 			if err == io.EOF {
 				break
 			}
-			return nil, xerrors.Errorf("cannot read EFI_SIGNATURE_LIST %d: %w", i, err)
+			return nil, fmt.Errorf("cannot read EFI_SIGNATURE_LIST %d: %w", i, err)
 		}
 		db = append(db, l)
 	}

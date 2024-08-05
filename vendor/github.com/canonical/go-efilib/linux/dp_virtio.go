@@ -5,20 +5,57 @@
 package linux
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 )
 
-var virtioRE = regexp.MustCompile(`^virtio[[:digit:]]`)
+const (
+	virtioBlockDevice uint32 = 2
+	virtioSCSIHost    uint32 = 8
+)
 
-func handleVirtioDevicePathNode(builder devicePathBuilder) error {
-	if !virtioRE.MatchString(builder.next(1)) {
-		return errSkipDevicePathNodeHandler
+var (
+	blkRE    = regexp.MustCompile(`^block\/vd[[:alpha:]]$`)
+	virtioRE = regexp.MustCompile(`^virtio[[:digit:]]`)
+)
+
+func handleVirtioDevicePathNode(state *devicePathBuilderState) error {
+	if !virtioRE.MatchString(state.PeekUnhandledSysfsComponents(1)) {
+		return errors.New("invalid path")
 	}
 
-	builder.advance(1)
-	return nil
-}
+	state.AdvanceSysfsPath(1)
 
-func init() {
-	registerDevicePathNodeHandler("virtio", handleVirtioDevicePathNode, prependHandler, interfaceTypeSCSI)
+	data, err := os.ReadFile(filepath.Join(state.SysfsPath(), "modalias"))
+	if err != nil {
+		return err
+	}
+
+	var device uint32
+	var vendor uint32
+	n, err := fmt.Sscanf(strings.TrimSpace(string(data)), "virtio:d%08xv%08x", &device, &vendor)
+	if err != nil {
+		return fmt.Errorf("cannot scan modalias: %w", err)
+	}
+	if n != 2 {
+		return errors.New("invalid modalias format")
+	}
+
+	switch device {
+	case virtioBlockDevice:
+		if !blkRE.MatchString(state.PeekUnhandledSysfsComponents(2)) {
+			return errors.New("invalid path for block device")
+		}
+		state.AdvanceSysfsPath(2)
+	case virtioSCSIHost:
+		state.Interface = interfaceTypeSCSI
+	default:
+		return fmt.Errorf("unrecognized virtio device type %#08x", device)
+	}
+
+	return nil
 }

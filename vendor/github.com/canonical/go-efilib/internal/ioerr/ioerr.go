@@ -5,11 +5,11 @@
 package ioerr
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"unicode"
 	"unicode/utf8"
-
-	"golang.org/x/xerrors"
 )
 
 // Return the index of the first %w in format, or -1 if none.
@@ -60,7 +60,7 @@ func parsePrintfVerb(s string) (int, bool) {
 // It can be called in one of 2 ways - either with a single argument which
 // must be an error, or with a format string and an arbitrary number of
 // arguments. In this second mode, the function is a wrapper around
-// xerrors.Errorf.
+// fmt.Errorf.
 //
 // This only works on raw io.EOF errors - ie, it won't work on errors that
 // have been wrapped.
@@ -74,7 +74,7 @@ func EOFIsUnexpected(args ...interface{}) error {
 				args[idx+1] = io.ErrUnexpectedEOF
 			}
 		}
-		return xerrors.Errorf(format, args[1:]...)
+		return fmt.Errorf(format, args[1:]...)
 	case len(args) == 1:
 		switch err := args[0].(type) {
 		case error:
@@ -92,11 +92,11 @@ func EOFIsUnexpected(args ...interface{}) error {
 	}
 }
 
-// PassRawEOF is a wrapper around xerrors.Errorf that will return a raw
+// PassRawEOF is a wrapper around fmt.Errorf that will return a raw
 // io.EOF if this is the error.
 func PassRawEOF(format string, args ...interface{}) error {
-	err := xerrors.Errorf(format, args...)
-	if xerrors.Is(err, io.EOF) {
+	err := fmt.Errorf(format, args...)
+	if errors.Is(err, io.EOF) {
 		return io.EOF
 	}
 	return err

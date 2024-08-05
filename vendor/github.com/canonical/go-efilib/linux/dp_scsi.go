@@ -14,9 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/canonical/go-efilib"
-
-	"golang.org/x/xerrors"
+	efi "github.com/canonical/go-efilib"
 )
 
 // scsiRE matches a SCSI path, capturing the channel, target and LUN.
@@ -42,15 +40,15 @@ func handleSCSIPath(path string) (*scsiParams, error) {
 
 	channel, err := strconv.ParseUint(m[1], 10, 32)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid channel: %w", err)
+		return nil, fmt.Errorf("invalid channel: %w", err)
 	}
 	target, err := strconv.ParseUint(m[2], 10, 32)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid target: %w", err)
+		return nil, fmt.Errorf("invalid target: %w", err)
 	}
 	lun, err := strconv.ParseUint(m[3], 10, 64)
 	if err != nil {
-		return nil, xerrors.Errorf("invalid lun: %w", err)
+		return nil, fmt.Errorf("invalid lun: %w", err)
 	}
 
 	return &scsiParams{
@@ -59,17 +57,17 @@ func handleSCSIPath(path string) (*scsiParams, error) {
 		lun:     lun}, nil
 }
 
-func handleSCSIDevicePathNode(builder devicePathBuilder) error {
-	if builder.numRemaining() < 5 {
+func handleSCSIDevicePathNode(state *devicePathBuilderState) error {
+	if state.SysfsComponentsRemaining() < 5 {
 		return errors.New("invalid path: insufficient components")
 	}
 
-	params, err := handleSCSIPath(builder.absPath(builder.next(5)))
+	state.AdvanceSysfsPath(5)
+
+	params, err := handleSCSIPath(state.SysfsPath())
 	if err != nil {
 		return err
 	}
-
-	builder.advance(5)
 
 	if params.channel != 0 {
 		return errors.New("invalid channel")
@@ -81,12 +79,8 @@ func handleSCSIDevicePathNode(builder devicePathBuilder) error {
 		return errors.New("invalid LUN")
 	}
 
-	builder.append(&efi.SCSIDevicePathNode{
+	state.Path = append(state.Path, &efi.SCSIDevicePathNode{
 		PUN: uint16(params.target),
 		LUN: uint16(params.lun)})
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("scsi", handleSCSIDevicePathNode, 0, interfaceTypeSCSI)
 }

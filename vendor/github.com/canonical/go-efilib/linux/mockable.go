@@ -7,6 +7,8 @@ package linux
 import (
 	"os"
 	"path/filepath"
+
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -15,4 +17,5 @@ var (
 
 	filepathEvalSymlinks = filepath.EvalSymlinks
 	osOpen               = os.Open
+	unixStat             = unix.Stat
 )

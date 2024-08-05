@@ -6,6 +6,7 @@ package efi
 
 import (
 	"crypto"
+	"debug/pe"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -13,10 +14,7 @@ import (
 	"io"
 	"sort"
 
-	"golang.org/x/xerrors"
-
 	"github.com/canonical/go-efilib/internal/ioerr"
-	"github.com/canonical/go-efilib/internal/pe1.14"
 )
 
 const (
@@ -56,7 +54,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 
 	p, err := pe.NewFile(r)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot decode PE binary: %w", err)
+		return nil, fmt.Errorf("cannot decode PE binary: %w", err)
 	}
 
 	var isPe32Plus bool
@@ -84,7 +82,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 	// This includes the DOS header, 4-byte PE signature, COFF header, and the first 64 bytes of the optional header.
 	b := make([]byte, int(coffHeaderOffset)+binary.Size(p.FileHeader)+64)
 	if _, err := io.ReadFull(hr, b); err != nil {
-		return nil, xerrors.Errorf("cannot read from image to start to checksum: %w", err)
+		return nil, fmt.Errorf("cannot read from image to start to checksum: %w", err)
 	}
 	h.Write(b)
 
@@ -103,7 +101,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 		}
 		b = make([]byte, sz)
 		if _, err := io.ReadFull(hr, b); err != nil {
-			return nil, xerrors.Errorf("cannot read from checksum to certificate table data directory entry: %w", err)
+			return nil, fmt.Errorf("cannot read from checksum to certificate table data directory entry: %w", err)
 		}
 		h.Write(b)
 
@@ -133,7 +131,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 	}
 
 	if err := chunkedHashAll(hr, h); err != nil {
-		return nil, xerrors.Errorf("cannot hash remainder of headers and section table: %w", err)
+		return nil, fmt.Errorf("cannot hash remainder of headers and section table: %w", err)
 	}
 
 	// 8) Create a counter called sumOfBytesHashed, which is not part of the signature. Set this counter to the SizeOfHeaders field.
@@ -158,7 +156,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 		// Size field in the SectionHeader structure to determine the amount of data to hash.
 		sr := io.NewSectionReader(&eofIsUnexpectedReaderAt{r}, int64(section.Offset), int64(section.Size))
 		if err := chunkedHashAll(sr, h); err != nil {
-			return nil, xerrors.Errorf("cannot hash section %s: %w", section.Name, err)
+			return nil, fmt.Errorf("cannot hash section %s: %w", section.Name, err)
 		}
 
 		// 12) Add the section’s Size value to sumOfBytesHashed.
@@ -185,7 +183,7 @@ func ComputePeImageDigest(alg crypto.Hash, r io.ReaderAt, sz int64) ([]byte, err
 
 		sr := io.NewSectionReader(&eofIsUnexpectedReaderAt{r}, sumOfBytesHashed, fileSize-sumOfBytesHashed-certSize)
 		if err := chunkedHashAll(sr, h); err != nil {
-			return nil, xerrors.Errorf("cannot hash extra data: %w", err)
+			return nil, fmt.Errorf("cannot hash extra data: %w", err)
 		}
 	}
 

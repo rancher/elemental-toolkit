@@ -10,18 +10,35 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/canonical/go-efilib/internal/ioerr"
 	"github.com/canonical/go-efilib/internal/uefi"
 	"github.com/canonical/go-efilib/mbr"
+)
 
-	"golang.org/x/xerrors"
+// DevicePathMatch indicates how a device path matched
+type DevicePathMatch int
+
+const (
+	// DevicePathNoMatch indicates that a pair of device paths did not match.
+	DevicePathNoMatch DevicePathMatch = iota
+
+	// DevicePathFullMatch indicates that a pair of device paths fully matched.
+	DevicePathFullMatch
+
+	// DevicePathShortFormHDMatch indicates that one device path begins with a
+	// *[HardDriveDevicePathNode] and matches the end of the longer device path.
+	DevicePathShortFormHDMatch
+
+	// DevicePathShortFormFileMatch indicates that one device path begins with a
+	// [FilePathDevicePathNode] and matches the end of the longer device path.
+	DevicePathShortFormFileMatch
 )
 
 // DevicePathType is the type of a device path node.
@@ -52,7 +69,8 @@ const (
 	BBSDevicePath       DevicePathType = uefi.BBS_DEVICE_PATH
 )
 
-// DevicePathSubType is the sub-type of a device path node.
+// DevicePathSubType is the sub-type of a device path node. The meaning of
+// this depends on the [DevicePathType].
 type DevicePathSubType uint8
 
 // DevicePathToStringFlags defines flags for [DevicePath.ToString] and
@@ -107,7 +125,7 @@ func (p DevicePath) Bytes() ([]byte, error) {
 func (p DevicePath) Write(w io.Writer) error {
 	for i, node := range p {
 		if err := node.Write(w); err != nil {
-			return xerrors.Errorf("cannot write node %d: %w", i, err)
+			return fmt.Errorf("cannot write node %d: %w", i, err)
 		}
 	}
 
@@ -118,11 +136,71 @@ func (p DevicePath) Write(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, &end)
 }
 
-// GenericDevicePathNode corresponds to a device path nodes with an unhandled type.
+func devicePathFindFirst[T DevicePathNode](p DevicePath) DevicePath {
+	for i, n := range p {
+		if _, ok := n.(T); ok {
+			return p[i:]
+		}
+	}
+	return nil
+}
+
+func (p DevicePath) matchesInternal(other DevicePath, onlyFull bool) DevicePathMatch {
+	pBytes := new(bytes.Buffer)
+	if err := p.Write(pBytes); err != nil {
+		return DevicePathNoMatch
+	}
+	otherBytes := new(bytes.Buffer)
+	if err := other.Write(otherBytes); err != nil {
+		return DevicePathNoMatch
+	}
+	if bytes.Equal(pBytes.Bytes(), otherBytes.Bytes()) {
+		return DevicePathFullMatch
+	}
+
+	if onlyFull {
+		return DevicePathNoMatch
+	}
+	if len(other) == 0 {
+		return DevicePathNoMatch
+	}
+
+	switch n := other[0].(type) {
+	case *HardDriveDevicePathNode:
+		_ = n
+		p = devicePathFindFirst[*HardDriveDevicePathNode](p)
+		if res := p.matchesInternal(other, true); res == DevicePathFullMatch && len(p) == 2 {
+			return DevicePathShortFormHDMatch
+		}
+	case FilePathDevicePathNode:
+		_ = n
+		p = devicePathFindFirst[FilePathDevicePathNode](p)
+		if res := p.matchesInternal(other, true); res == DevicePathFullMatch && len(p) == 1 {
+			return DevicePathShortFormFileMatch
+		}
+	default:
+		// TODO: handle short form USB WWID, USB Class and URI device paths
+	}
+
+	return DevicePathNoMatch
+}
+
+// Matches indicates whether other matches this path in some way, and returns
+// the type of match. If other begins with *[HardDriveDevicePathNode] and is 2
+// nodes long, this may return DevicePathShortFormHDMatch. If other begins with
+// [FilePathDevicePathNode] and is a single node long, this may return
+// DevicePathShortFormFileMatch. This returns DevicePathFullMatch if the supplied
+// path fully matches, and DevicePathNoMatch if there is no match.
+func (p DevicePath) Matches(other DevicePath) DevicePathMatch {
+	return p.matchesInternal(other, false)
+}
+
+// GenericDevicePathNode corresponds to a device path nodes with a type that is
+// not handled by this package
 type GenericDevicePathNode struct {
 	Type    DevicePathType
-	SubType DevicePathSubType
-	Data    []byte
+	SubType DevicePathSubType // the meaning of the sub-type depends on the Type field.
+	Data    []byte            // An opaque blob of data associated with this node
 }
 
 func (d *GenericDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -166,8 +244,8 @@ func (d *GenericDevicePathNode) Write(w io.Writer) error {
 
 // PCIDevicePathNode corresponds to a PCI device path node.
 type PCIDevicePathNode struct {
-	Function uint8
-	Device   uint8
+	Function uint8 // Function of device
+	Device   uint8 // Device number of PCI bus
 }
 
 func (d *PCIDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -190,10 +268,11 @@ func (d *PCIDevicePathNode) Write(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, &data)
 }
 
+// VendorDevicePathNode corresponds to a vendor specific node.
 type VendorDevicePathNode struct {
-	Type DevicePathType
-	GUID GUID
-	Data []byte
+	Type DevicePathType // The type of this node
+	GUID GUID           // The vendor specific GUID
+	Data []byte         // Vendor specific data
 }
 
 func (d *VendorDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -263,7 +342,7 @@ func readVendorDevicePathNode(r io.Reader) (out *VendorDevicePathNode, err error
 	out = &VendorDevicePathNode{
 		Type: DevicePathType(n.Header.Type),
 		GUID: GUID(n.Guid)}
-	data, _ := ioutil.ReadAll(r)
+	data, _ := io.ReadAll(r)
 	out.Data = data
 
 	return out, nil
@@ -308,8 +387,8 @@ func NewEISAID(vendor string, product uint16) (EISAID, error) {
 
 // ACPIDevicePathNode corresponds to an ACPI device path node.
 type ACPIDevicePathNode struct {
-	HID EISAID
-	UID uint32
+	HID EISAID // Compressed hardware ID
+	UID uint32 // Unique ID
 }
 
 func (d *ACPIDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -348,6 +427,9 @@ func (d *ACPIDevicePathNode) Write(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, &data)
 }
 
+// ACPIExtendedDevicePathNode corresponds to an ACPI device path node
+// and is used where a CID field is required or a string field is
+// required for HID or UID.
 type ACPIExtendedDevicePathNode struct {
 	HID    EISAID
 	UID    uint32
@@ -445,6 +527,7 @@ func (d *ACPIExtendedDevicePathNode) Write(w io.Writer) error {
 	return nil
 }
 
+// ATAPIControllerRole describes the port that an IDE device is connected to.
 type ATAPIControllerRole uint8
 
 func (r ATAPIControllerRole) String() string {
@@ -463,6 +546,7 @@ const (
 	ATAPIControllerSecondary ATAPIControllerRole = 1
 )
 
+// ATAPIDriveRole describes the role of a device on a specific IDE port.
 type ATAPIDriveRole uint8
 
 func (r ATAPIDriveRole) String() string {
@@ -485,7 +569,7 @@ const (
 type ATAPIDevicePathNode struct {
 	Controller ATAPIControllerRole
 	Drive      ATAPIDriveRole
-	LUN        uint16
+	LUN        uint16 // Logical unit number
 }
 
 func (d *ATAPIDevicePathNode) ToString(flags DevicePathToStringFlags) string {
@@ -514,8 +598,8 @@ func (d *ATAPIDevicePathNode) Write(w io.Writer) error {
 
 // SCSIDevicePathNode corresponds to a SCSI device path node.
 type SCSIDevicePathNode struct {
-	PUN uint16
-	LUN uint16
+	PUN uint16 // Target ID on the SCSI bus
+	LUN uint16 // Logical unit number
 }
 
 func (d *SCSIDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -704,9 +788,9 @@ func (d *DeviceLogicalUnitDevicePathNode) Write(w io.Writer) error {
 
 // SATADevicePathNode corresponds to a SATA device path node.
 type SATADevicePathNode struct {
-	HBAPortNumber            uint16
-	PortMultiplierPortNumber uint16
-	LUN                      uint16
+	HBAPortNumber            uint16 // The zero indexed port number on the HBA
+	PortMultiplierPortNumber uint16 // The port multiplier (or 0xFFFF if the device is connected directly to the HBA)
+	LUN                      uint16 // Logical unit number
 }
 
 func (d *SATADevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -732,8 +816,8 @@ func (d *SATADevicePathNode) Write(w io.Writer) error {
 
 // NVMENamespaceDevicePathNode corresponds to a NVME namespace device path node.
 type NVMENamespaceDevicePathNode struct {
-	NamespaceID   uint32
-	NamespaceUUID uint64
+	NamespaceID   uint32 // Namespace identifier
+	NamespaceUUID uint64 // EUI-64 (extended unique identifier). This is set to 0 where not supported
 }
 
 func (d *NVMENamespaceDevicePathNode) ToString(_ DevicePathToStringFlags) string {
@@ -759,6 +843,7 @@ func (d *NVMENamespaceDevicePathNode) Write(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, &data)
 }
 
+// MBRType describes a disk header type
 type MBRType uint8
 
 func (t MBRType) String() string {
@@ -790,38 +875,45 @@ func (t HardDriveSignatureType) String() string {
 	}
 }
 
+// HardDriveSignature is an abstraction for a unique hard drive identifier
 type HardDriveSignature interface {
 	fmt.Stringer
-	Data() [16]uint8
-	Type() HardDriveSignatureType
+	Data() [16]uint8              // the raw signature data
+	Type() HardDriveSignatureType // Signature type
 }
 
+// GUIDHardDriveSignature is a [HardDriveSignature] for GPT drives.
 type GUIDHardDriveSignature GUID
 
 func (s GUIDHardDriveSignature) String() string {
 	return GUID(s).String()
 }
 
+// Data implements [HardDriveSignature.Data].
 func (s GUIDHardDriveSignature) Data() (out [16]uint8) {
 	copy(out[:], s[:])
 	return out
 }
 
+// Type implements [HardDriveSignature.Type].
 func (GUIDHardDriveSignature) Type() HardDriveSignatureType {
 	return HardDriveSignatureType(uefi.SIGNATURE_TYPE_GUID)
 }
 
+// MBRHardDriveSignature is a [HardDriveSignature] for legacy MBR drives.
 type MBRHardDriveSignature uint32
 
 func (s MBRHardDriveSignature) String() string {
 	return fmt.Sprintf("0x%08x", uint32(s))
 }
 
+// Data implements [HardDriveSignature.Data].
 func (s MBRHardDriveSignature) Data() (out [16]uint8) {
 	binary.LittleEndian.PutUint32(out[:], uint32(s))
 	return out
 }
 
+// Type implements [HardDriveSignature.Type].
 func (s MBRHardDriveSignature) Type() HardDriveSignatureType {
 	return HardDriveSignatureType(uefi.SIGNATURE_TYPE_MBR)
 }
@@ -845,11 +937,11 @@ func (s *genericHardDriveSignature) Type() HardDriveSignatureType {
 
 // HardDriveDevicePathNode corresponds to a hard drive device path node.
 type HardDriveDevicePathNode struct {
-	PartitionNumber uint32
-	PartitionStart  uint64
-	PartitionSize   uint64
-	Signature       HardDriveSignature
-	MBRType         MBRType
+	PartitionNumber uint32             // 1-indexed partition number
+	PartitionStart  uint64             // Starting LBA
+	PartitionSize   uint64             // Size in number of LBAs
+	Signature       HardDriveSignature // Signature,the type of which is implementation specific (GPT vs MBR)
+	MBRType         MBRType            // Legacy MBR or GPT
 }
 
 func (d *HardDriveDevicePathNode) ToString(flags DevicePathToStringFlags) string {
@@ -1021,7 +1113,18 @@ func NewFilePathDevicePathNode(path string) (out FilePathDevicePathNode) {
 // MediaFvFileDevicePathNode corresponds to a firmware volume file device path node.
 type MediaFvFileDevicePathNode GUID
 
-func (d MediaFvFileDevicePathNode) ToString(_ DevicePathToStringFlags) string {
+func (d MediaFvFileDevicePathNode) ToString(flags DevicePathToStringFlags) string {
+	if flags.DisplayOnly() {
+		fvFileNameLookupMu.Lock()
+		defer fvFileNameLookupMu.Unlock()
+
+		if fvFileNameLookup != nil {
+			name, known := fvFileNameLookup(GUID(d))
+			if known {
+				return fmt.Sprintf("FvFile(%s)", name)
+			}
+		}
+	}
 	return fmt.Sprintf("FvFile(%s)", GUID(d))
 }
 
@@ -1040,10 +1143,44 @@ func (d MediaFvFileDevicePathNode) Write(w io.Writer) error {
 	return binary.Write(w, binary.LittleEndian, &data)
 }
 
+var (
+	fvFileNameLookupMu sync.Mutex
+	fvFileNameLookup   func(GUID) (string, bool)
+)
+
+// RegisterMediaFvFileNameLookup registers a function that can map guids to
+// strings for well known names, and these will be displayed by
+// [MediaFvFileDevicePathNode.String] and [MediaFvFileDevicePathNode.ToString]
+// if the flags argument is marked as display only. Note that this does make the
+// string representation of the path unparseable, if the string is being used
+// in such a way (this package doesn't yet have any ways of parsing device paths
+// that are in string form).
+//
+// Just importing [github.com/canonical/go-efilib/guids] is sufficient to register
+// a function that does this. It's included in a separate and optional package for
+// systems that are concerned about binary size.
+func RegisterMediaFvFileNameLookup(fn func(GUID) (string, bool)) {
+	fvFileNameLookupMu.Lock()
+	defer fvFileNameLookupMu.Unlock()
+
+	fvFileNameLookup = fn
+}
+
 // MediaFvDevicePathNode corresponds to a firmware volume device path node.
 type MediaFvDevicePathNode GUID
 
-func (d MediaFvDevicePathNode) ToString(_ DevicePathToStringFlags) string {
+func (d MediaFvDevicePathNode) ToString(flags DevicePathToStringFlags) string {
+	if flags.DisplayOnly() {
+		fvNameLookupMu.Lock()
+		defer fvNameLookupMu.Unlock()
+
+		if fvNameLookup != nil {
+			name, known := fvNameLookup(GUID(d))
+			if known {
+				return fmt.Sprintf("Fv(%s)", name)
+			}
+		}
+	}
 	return fmt.Sprintf("Fv(%s)", GUID(d))
 }
 
@@ -1060,6 +1197,29 @@ func (d MediaFvDevicePathNode) Write(w io.Writer) error {
 	data.Header.Length = uint16(binary.Size(data))
 
 	return binary.Write(w, binary.LittleEndian, &data)
+}
+
+var (
+	fvNameLookupMu sync.Mutex
+	fvNameLookup   func(GUID) (string, bool)
+)
+
+// RegisterMediaFvNameLookup registers a function that can map guids to
+// strings for well known names, and these will be displayed by
+// [MediaFvDevicePathNode.String] and [MediaFvDevicePathNode.ToString]
+// if the flags argument is marked as display only. Note that this does make the
+// string representation of the path unparseable, if the string is being used
+// in such a way (this package doesn't yet have any ways of parsing device paths
+// that are in string form).
+//
+// Just importing [github.com/canonical/go-efilib/guids] is sufficient to register
+// a function that does this. It's included in a separate and optional package for
+// systems that are concerned about binary size.
+func RegisterMediaFvNameLookup(fn func(GUID) (string, bool)) {
+	fvNameLookupMu.Lock()
+	defer fvNameLookupMu.Unlock()
+
+	fvNameLookup = fn
 }
 
 type MediaRelOffsetRangeDevicePathNode struct {
@@ -1108,7 +1268,7 @@ func decodeDevicePathNode(r io.Reader) (out DevicePathNode, err error) {
 		switch {
 		case err == io.EOF:
 			fallthrough
-		case xerrors.Is(err, io.ErrUnexpectedEOF):
+		case errors.Is(err, io.ErrUnexpectedEOF):
 			err = fmt.Errorf("invalid length %d bytes (too small)", h.Length)
 		case err != nil:
 		case buf.Len() > 0:
@@ -1292,11 +1452,12 @@ func decodeDevicePathNode(r io.Reader) (out DevicePathNode, err error) {
 	if err := binary.Read(buf, binary.LittleEndian, &n); err != nil {
 		return nil, err
 	}
-	data, _ := ioutil.ReadAll(buf)
+	data, _ := io.ReadAll(buf)
 	return &GenericDevicePathNode{Type: DevicePathType(n.Type), SubType: DevicePathSubType(n.SubType), Data: data}, nil
 }
 
-// ReadDevicePath decodes a device path from the supplied io.Reader.
+// ReadDevicePath decodes a device path from the supplied io.Reader. It will read
+// until it finds a termination node or an error occurs.
 func ReadDevicePath(r io.Reader) (out DevicePath, err error) {
 	for i := 0; ; i++ {
 		node, err := decodeDevicePathNode(r)

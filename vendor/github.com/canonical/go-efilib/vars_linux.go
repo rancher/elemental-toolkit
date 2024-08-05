@@ -6,17 +6,16 @@ package efi
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"syscall"
 
 	"golang.org/x/sys/unix"
-	"golang.org/x/xerrors"
 
 	internal_unix "github.com/canonical/go-efilib/internal/unix"
 )
@@ -111,7 +110,7 @@ func maybeRetry(n int, fn func() (bool, error)) error {
 func processEfivarfsFileAccessError(err error) (retry bool, errOut error) {
 	if os.IsPermission(err) {
 		var se syscall.Errno
-		if !xerrors.As(err, &se) {
+		if !errors.As(err, &se) {
 			// This shouldn't happen, but just return ErrVarPermission
 			// in this case and don't retry.
 			return false, ErrVarPermission
@@ -165,7 +164,14 @@ func writeEfivarfsFile(path string, attrs VariableAttributes, data []byte) (retr
 	}
 
 	if len(data) == 0 {
-		return processEfivarfsFileAccessError(removeVarFile(path))
+		// short-cut for unauthenticated variable delete - efivarfs will perform a
+		// zero-byte write to delete the variable if we unlink the entry here.
+		err := removeVarFile(path)
+		if os.IsNotExist(err) {
+			// it shouldn't be an error if the variable already doesn't exist.
+			return false, nil
+		}
+		return processEfivarfsFileAccessError(err)
 	}
 
 	flags := os.O_WRONLY | os.O_CREATE
@@ -210,7 +216,7 @@ func (v efivarfsVarsBackend) Get(name string, guid GUID) (VariableAttributes, []
 		return 0, nil, err
 	}
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -271,15 +277,12 @@ func (v efivarfsVarsBackend) List() ([]VariableDescriptor, error) {
 		entries = append(entries, VariableDescriptor{Name: name, GUID: guid})
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		return fmt.Sprintf("%s-%v", entries[i].Name, entries[i].GUID) < fmt.Sprintf("%s-%v", entries[j].Name, entries[j].GUID)
-	})
 	return entries, nil
 }
 
-func init() {
+func addDefaultVarsBackend(ctx context.Context) context.Context {
 	if !probeEfivarfs() {
-		return
+		return withVarsBackend(ctx, nullVarsBackend{})
 	}
-	vars = efivarfsVarsBackend{}
+	return withVarsBackend(ctx, efivarfsVarsBackend{})
 }

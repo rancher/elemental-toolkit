@@ -13,14 +13,15 @@ import (
 // pcirootRE matches a pcixxxx.xx path component.
 var pcirootRE = regexp.MustCompile(`^pci[[:xdigit:]]{4}:[[:xdigit:]]{2}$`)
 
-func handlePCIRootDevicePathNode(builder devicePathBuilder) error {
-	component := builder.next(1)
-
+func handlePCIRootDevicePathNode(state *devicePathBuilderState) error {
+	component := state.PeekUnhandledSysfsComponents(1)
 	if !pcirootRE.MatchString(component) {
 		return errSkipDevicePathNodeHandler
 	}
 
-	node, err := newACPIExtendedDevicePathNode(filepath.Join(builder.absPath(component), "firmware_node"))
+	state.AdvanceSysfsPath(1)
+
+	node, err := newACPIExtendedDevicePathNode(filepath.Join(state.SysfsPath(), "firmware_node"))
 	if err != nil {
 		return err
 	}
@@ -33,14 +34,8 @@ func handlePCIRootDevicePathNode(builder devicePathBuilder) error {
 		return fmt.Errorf("unexpected cid: %v", node.CID)
 	}
 
-	builder.advance(1)
-
-	builder.setInterfaceType(interfaceTypePCI)
-	builder.append(maybeUseSimpleACPIDevicePathNode(node))
+	state.Interface = interfaceTypePCI
+	state.Path = append(state.Path, maybeUseSimpleACPIDevicePathNode(node))
 
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("pci-root", handlePCIRootDevicePathNode, prependHandler)
 }
