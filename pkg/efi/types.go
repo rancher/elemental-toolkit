@@ -40,17 +40,17 @@ func (v RealEFIVariables) NewFileDevicePath(filepath string, mode efi_linux.File
 
 // ListVariables proxy
 func (RealEFIVariables) ListVariables() ([]efi.VariableDescriptor, error) {
-	return efi.ListVariables()
+	return efi.ListVariables(efi.DefaultVarContext)
 }
 
 // GetVariable proxy
 func (RealEFIVariables) GetVariable(guid efi.GUID, name string) (data []byte, attrs efi.VariableAttributes, err error) {
-	return efi.ReadVariable(name, guid)
+	return efi.ReadVariable(efi.DefaultVarContext, name, guid)
 }
 
 // SetVariable proxy
 func (RealEFIVariables) SetVariable(guid efi.GUID, name string, data []byte, attrs efi.VariableAttributes) error {
-	return efi.WriteVariable(name, guid, attrs, data)
+	return efi.WriteVariable(efi.DefaultVarContext, name, guid, attrs, data)
 }
 
 // ReadLoadOptions proxy

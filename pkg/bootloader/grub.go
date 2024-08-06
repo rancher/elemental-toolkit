@@ -297,7 +297,7 @@ func (g *Grub) InstallEFIBinaries(rootDir, efiDir, prefix string) error {
 func (g *Grub) DoEFIEntries(shimName, efiDir string) error {
 	efivars := eleefi.RealEFIVariables{}
 	if g.clearBootEntry {
-		err := g.clearEntry()
+		err := g.clearEntry(efivars)
 		if err != nil {
 			return err
 		}
@@ -308,11 +308,11 @@ func (g *Grub) DoEFIEntries(shimName, efiDir string) error {
 // clearEntry will go over the BootXXXX efi vars and remove any that matches our name
 // Used in install as we re-create the partitions, so the UUID of those partitions is no longer valid for the old entry
 // And we don't want to leave a broken entry around
-func (g *Grub) clearEntry() error {
-	variables, _ := efilib.ListVariables()
+func (g *Grub) clearEntry(efivars eleefi.Variables) error {
+	variables, _ := efivars.ListVariables()
 	for _, v := range variables {
 		if regexp.MustCompile(`Boot[0-9a-fA-F]{4}`).MatchString(v.Name) {
-			variable, _, _ := efilib.ReadVariable(v.Name, v.GUID)
+			variable, _, _ := efivars.GetVariable(v.GUID, v.Name)
 			option, err := efilib.ReadLoadOption(bytes.NewReader(variable))
 			if err != nil {
 				continue
@@ -320,12 +320,12 @@ func (g *Grub) clearEntry() error {
 			// TODO: Find a way to identify the old VS new partition UUID and compare them before removing?
 			if option.Description == constants.BootEntryName {
 				g.logger.Debugf("Entry for %s already exists, removing it: %s", constants.BootEntryName, option.String())
-				_, attrs, err := efilib.ReadVariable(v.Name, v.GUID)
+				_, attrs, err := efivars.GetVariable(v.GUID, v.Name)
 				if err != nil {
 					g.logger.Errorf("failed to remove efi entry %s: %s", v.Name, err.Error())
 					return err
 				}
-				err = efilib.WriteVariable(v.Name, v.GUID, attrs, nil)
+				err = efivars.SetVariable(v.GUID, v.Name, nil, attrs)
 				if err != nil {
 					g.logger.Errorf("failed to remove efi entry %s: %s", v.Name, err.Error())
 					return err
