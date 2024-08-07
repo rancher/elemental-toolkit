@@ -124,7 +124,7 @@ func (gd *gdiskCall) WriteChanges() (string, error) {
 
 func (gd *gdiskCall) SetPartitionTableLabel(label string) error {
 	if label != "gpt" {
-		return fmt.Errorf("Invalid partition table type (%s), only GPT is supported by sgdisk", label)
+		return fmt.Errorf("invalid partition table type (%s), only GPT is supported by sgdisk", label)
 	}
 	return nil
 }
@@ -147,7 +147,7 @@ func (gd *gdiskCall) WipeTable(wipe bool) {
 }
 
 func (gd gdiskCall) Print() (string, error) {
-	out, err := gd.runner.Run("sgdisk", "-p", gd.dev)
+	out, err := gd.runner.Run("sgdisk", "-p", "-v", gd.dev)
 	return string(out), err
 }
 
@@ -159,7 +159,7 @@ func (gd gdiskCall) GetLastSector(printOut string) (uint, error) {
 		endS, err := strconv.ParseUint(match[1], 10, 0)
 		return uint(endS), err
 	}
-	return 0, errors.New("Could not determine last usable sector")
+	return 0, errors.New("could not determine last usable sector")
 }
 
 // Parses the output of a gdiskCall.Print call
@@ -170,7 +170,7 @@ func (gd gdiskCall) GetSectorSize(printOut string) (uint, error) {
 		size, err := strconv.ParseUint(match[1], 10, 0)
 		return uint(size), err
 	}
-	return 0, errors.New("Could not determine sector size")
+	return 0, errors.New("could not determine sector size")
 }
 
 // TODO parse printOut from a non gpt disk and return error here

@@ -34,10 +34,11 @@ import (
 const (
 	partitionTries = 10
 	// Parted warning substring for expanded disks without fixing GPT headers
-	partedWarn = "Not all of the space available"
+	partedWarn    = "Not all of the space available"
+	sgdiskProblem = "Problem: The secondary header"
 )
 
-var unallocatedRegexp = regexp.MustCompile(partedWarn)
+var unallocatedRegexp = regexp.MustCompile(fmt.Sprintf("(%s|%s)", partedWarn, sgdiskProblem))
 
 type Disk struct {
 	device      string

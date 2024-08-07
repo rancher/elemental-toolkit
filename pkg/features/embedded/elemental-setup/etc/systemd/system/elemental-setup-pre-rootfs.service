@@ -1,0 +1,17 @@
+[Unit]
+Description=Elemental system pre-rootfs setup
+DefaultDependencies=no
+After=basic.target
+Requires=basic.target
+Before=initrd-root-device.target
+After=oem.mount
+Wants=oem.mount
+Conflicts=initrd-switch-root.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/elemental run-stage pre-rootfs
+
+[Install]
+WantedBy=initrd-root-device.target

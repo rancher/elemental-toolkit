@@ -3,8 +3,6 @@ Description=Elemental system early rootfs setup
 DefaultDependencies=no
 After=sysroot.mount
 Requires=sysroot.mount
-After=oem.mount
-Wants=oem.mount
 Before=initrd-root-fs.target
 Conflicts=initrd-switch-root.target
 

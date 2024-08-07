@@ -44,6 +44,7 @@ const (
 	GB             = 1024 * MB
 	rootSuffix     = ".root"
 	layoutSetStage = "rootfs.before"
+	expandStage    = "pre-rootfs.before"
 	deployStage    = "network"
 	postResetHook  = "post-reset"
 	cloudinitFile  = "00_disk_layout_setup.yaml"
@@ -353,6 +354,9 @@ func (b *BuildDiskAction) CreatePartitionImages() ([]*types.Image, error) {
 	for _, part := range []*types.Partition{b.spec.Partitions.OEM, b.spec.Partitions.Recovery} {
 		b.cfg.Logger.Infof("Creating %s partition image", part.Name)
 		img = part.ToImage()
+		if part.Name == constants.RecoveryPartName && b.spec.Expandable {
+			img.Size = 0
+		}
 		err = elemental.CreateImageFromTree(
 			b.cfg.Config, img, b.roots[part.Name], b.spec.Expandable,
 			func() error { return b.cfg.Fs.RemoveAll(b.roots[part.Name]) },
@@ -674,7 +678,11 @@ func (b *BuildDiskAction) CreateDiskPartitionTable(disk string) error {
 			// reuse startS and SizeS from previous partition
 			startS = startS + sizeS
 		}
-		sizeS = partitioner.MiBToSectors(part.Size, secSize)
+		if part.Name == constants.RecoveryPartName && b.spec.Expandable {
+			sizeS = 0
+		} else {
+			sizeS = partitioner.MiBToSectors(part.Size, secSize)
+		}
 		var gdPart = partitioner.Partition{
 			Number:     i + 1,
 			StartS:     startS,
@@ -769,7 +777,19 @@ func (b *BuildDiskAction) SetExpandableCloudInitStage() error {
 	conf := &schema.YipConfig{
 		Name: "Expand disk layout",
 		Stages: map[string][]schema.Stage{
-			layoutSetStage: {
+			expandStage: {
+				schema.Stage{
+					Name: "Expand recovery",
+					Layout: schema.Layout{
+						Device: &schema.Device{
+							Label: b.spec.Partitions.Recovery.FilesystemLabel,
+						},
+						Expand: &schema.Expand{
+							Size: b.spec.Partitions.Recovery.Size,
+						},
+					},
+				},
+			}, layoutSetStage: {
 				schema.Stage{
 					Name: "Add state partition",
 					Layout: schema.Layout{
