@@ -9,14 +9,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
 
 // acpiIdRE matches a ACPI or PNP ID, capturing the vendor and product.
@@ -56,7 +55,7 @@ func decodeACPIOrPNPId(str string) (efi.EISAID, string) {
 func newACPIExtendedDevicePathNode(path string) (*efi.ACPIExtendedDevicePathNode, error) {
 	node := new(efi.ACPIExtendedDevicePathNode)
 
-	hidBytes, err := ioutil.ReadFile(filepath.Join(path, "hid"))
+	hidBytes, err := os.ReadFile(filepath.Join(path, "hid"))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +64,7 @@ func newACPIExtendedDevicePathNode(path string) (*efi.ACPIExtendedDevicePathNode
 	node.HID = hid
 	node.HIDStr = hidStr
 
-	modalias, err := ioutil.ReadFile(filepath.Join(path, "modalias"))
+	modalias, err := os.ReadFile(filepath.Join(path, "modalias"))
 	switch {
 	case os.IsNotExist(err):
 	case err != nil:
@@ -82,7 +81,7 @@ func newACPIExtendedDevicePathNode(path string) (*efi.ACPIExtendedDevicePathNode
 		}
 	}
 
-	uidBytes, err := ioutil.ReadFile(filepath.Join(path, "uid"))
+	uidBytes, err := os.ReadFile(filepath.Join(path, "uid"))
 	switch {
 	case os.IsNotExist(err):
 	case err != nil:
@@ -100,10 +99,10 @@ func newACPIExtendedDevicePathNode(path string) (*efi.ACPIExtendedDevicePathNode
 	return node, nil
 }
 
-func handleACPIDevicePathNode(builder devicePathBuilder) error {
-	component := builder.next(1)
+func handleACPIDevicePathNode(state *devicePathBuilderState) error {
+	state.AdvanceSysfsPath(1)
 
-	subsystem, err := filepath.EvalSymlinks(filepath.Join(builder.absPath(component), "subsystem"))
+	subsystem, err := filepath.EvalSymlinks(filepath.Join(state.SysfsPath(), "subsystem"))
 	switch {
 	case os.IsNotExist(err):
 		return errSkipDevicePathNodeHandler
@@ -115,10 +114,5 @@ func handleACPIDevicePathNode(builder devicePathBuilder) error {
 		return errSkipDevicePathNodeHandler
 	}
 
-	builder.advance(1)
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("acpi", handleACPIDevicePathNode, 0)
 }

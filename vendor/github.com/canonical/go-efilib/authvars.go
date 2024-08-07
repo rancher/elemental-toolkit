@@ -17,7 +17,6 @@ import (
 
 	"github.com/canonical/go-efilib/internal/ioerr"
 	"github.com/canonical/go-efilib/internal/uefi"
-	"golang.org/x/xerrors"
 )
 
 // VariableAuthentication corresponds to the EFI_VARIABLE_AUTHENTICATION
@@ -170,7 +169,7 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 
 		sig, err := newWinCertificateGUID(signingCert)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot decode signature: %w", err)
+			return nil, fmt.Errorf("cannot decode signature: %w", err)
 		}
 
 		out := &VariableAuthentication3Timestamp{
@@ -179,7 +178,7 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 		if newCert != nil {
 			sig, err := newWinCertificateGUID(newCert)
 			if err != nil {
-				return nil, xerrors.Errorf("cannot decode new authority signature: %w", err)
+				return nil, fmt.Errorf("cannot decode new authority signature: %w", err)
 			}
 			out.newCert = sig
 		}
@@ -206,7 +205,7 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 
 		sig, err := newWinCertificateGUID(signingCert)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot decode signature: %w", err)
+			return nil, fmt.Errorf("cannot decode signature: %w", err)
 		}
 
 		out := &VariableAuthentication3Nonce{
@@ -215,7 +214,7 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 		if newCert != nil {
 			sig, err := newWinCertificateGUID(newCert)
 			if err != nil {
-				return nil, xerrors.Errorf("cannot decode new authority signature: %w", err)
+				return nil, fmt.Errorf("cannot decode new authority signature: %w", err)
 			}
 			out.newCert = sig
 		}
@@ -331,7 +330,7 @@ func ReadEnhancedAuthenticationDescriptor(r io.Reader) (VariableAuthentication3D
 
 		id2, err := newVariableAuthentication3CertId(id)
 		if err != nil {
-			return nil, xerrors.Errorf("invalid timestamp descriptor ID: %w", err)
+			return nil, fmt.Errorf("invalid timestamp descriptor ID: %w", err)
 		}
 
 		return &VariableAuthentication3TimestampDescriptor{
@@ -350,7 +349,7 @@ func ReadEnhancedAuthenticationDescriptor(r io.Reader) (VariableAuthentication3D
 
 		id2, err := newVariableAuthentication3CertId(id)
 		if err != nil {
-			return nil, xerrors.Errorf("invalid nonce descriptor ID: %w", err)
+			return nil, fmt.Errorf("invalid nonce descriptor ID: %w", err)
 		}
 
 		return &VariableAuthentication3NonceDescriptor{

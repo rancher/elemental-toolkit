@@ -7,7 +7,6 @@ package uefi
 import (
 	"encoding/binary"
 	"io"
-	"io/ioutil"
 
 	"github.com/canonical/go-efilib/internal/ioerr"
 )
@@ -72,7 +71,7 @@ func Read_EFI_LOAD_OPTION(r io.Reader) (out *EFI_LOAD_OPTION, err error) {
 		return nil, ioerr.EOFIsUnexpected(err)
 	}
 
-	optionalData, err := ioutil.ReadAll(r)
+	optionalData, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

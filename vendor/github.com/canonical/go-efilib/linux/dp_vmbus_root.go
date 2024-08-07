@@ -12,14 +12,14 @@ import (
 // vmbusrootRE matches a VMBUS:XX component.
 var vmbusrootRE = regexp.MustCompile(`^VMBUS:[[:xdigit:]]{2}$`)
 
-func handleVMBusRootDevicePathNode(builder devicePathBuilder) error {
-	component := builder.next(1)
-
-	if !vmbusrootRE.MatchString(component) {
+func handleVMBusRootDevicePathNode(state *devicePathBuilderState) error {
+	if !vmbusrootRE.MatchString(state.PeekUnhandledSysfsComponents(1)) {
 		return errSkipDevicePathNodeHandler
 	}
 
-	node, err := newACPIExtendedDevicePathNode(builder.absPath(component))
+	state.AdvanceSysfsPath(1)
+
+	node, err := newACPIExtendedDevicePathNode(state.SysfsPath())
 	if err != nil {
 		return err
 	}
@@ -34,13 +34,7 @@ func handleVMBusRootDevicePathNode(builder devicePathBuilder) error {
 	// essentially just does a memcmp.
 	node.HIDStr = "VMBus"
 
-	builder.advance(1)
-
-	builder.setInterfaceType(interfaceTypeVMBus)
-	builder.append(maybeUseSimpleACPIDevicePathNode(node))
+	state.Interface = interfaceTypeVMBus
+	state.Path = append(state.Path, maybeUseSimpleACPIDevicePathNode(node))
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("vmbus-root", handleVMBusRootDevicePathNode, prependHandler)
 }

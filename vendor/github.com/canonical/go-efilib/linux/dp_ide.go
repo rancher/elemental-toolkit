@@ -9,20 +9,20 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/canonical/go-efilib"
+	efi "github.com/canonical/go-efilib"
 )
 
-func handleIDEDevicePathNode(builder devicePathBuilder) error {
-	if builder.numRemaining() < 6 {
+func handleIDEDevicePathNode(state *devicePathBuilderState) error {
+	if state.SysfsComponentsRemaining() < 6 {
 		return errors.New("invalid path: insufficient components")
 	}
 
-	params, err := handleATAPath(builder.absPath(builder.next(6)))
+	state.AdvanceSysfsPath(6)
+
+	params, err := handleATAPath(state.SysfsPath())
 	if err != nil {
 		return err
 	}
-
-	builder.advance(6)
 
 	// PATA has a maximum of 2 ports.
 	if params.port < 1 || params.port > 2 {
@@ -44,13 +44,9 @@ func handleIDEDevicePathNode(builder devicePathBuilder) error {
 		return errors.New("invalid LUN")
 	}
 
-	builder.append(&efi.ATAPIDevicePathNode{
+	state.Path = append(state.Path, &efi.ATAPIDevicePathNode{
 		Controller: efi.ATAPIControllerRole(params.port - 1),
 		Drive:      efi.ATAPIDriveRole(params.target),
 		LUN:        uint16(params.lun)})
 	return nil
-}
-
-func init() {
-	registerDevicePathNodeHandler("ide", handleIDEDevicePathNode, 0, interfaceTypeIDE)
 }

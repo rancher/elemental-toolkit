@@ -12,8 +12,6 @@ import (
 	"hash/crc32"
 	"io"
 
-	"golang.org/x/xerrors"
-
 	"github.com/canonical/go-efilib/internal/uefi"
 	"github.com/canonical/go-efilib/mbr"
 )
@@ -200,7 +198,7 @@ func readPartitionEntries(r io.Reader, num, sz, expectedCrc uint32, checkCrc boo
 			case err == io.EOF:
 				err = io.ErrUnexpectedEOF
 			}
-			return nil, xerrors.Errorf("cannot read entry %d: %w", i, err)
+			return nil, fmt.Errorf("cannot read entry %d: %w", i, err)
 		}
 
 		e, err := ReadPartitionEntry(b)
