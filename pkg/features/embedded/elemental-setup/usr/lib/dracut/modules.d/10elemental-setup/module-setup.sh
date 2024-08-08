@@ -24,6 +24,12 @@ install() {
     inst_script "${moddir}/oem-generator.sh" \
         "${systemdutildir}/system-generators/dracut-elemental-oem-generator"
 
+    inst_simple "/etc/systemd/system/elemental-setup-pre-rootfs.service" \
+        "${systemdsystemunitdir}/elemental-setup-pre-rootfs.service"
+    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-root-device.target.wants"
+    ln_r "../elemental-setup-pre-rootfs.service" \
+        "${systemdsystemunitdir}/initrd-root-device.target.wants/elemental-setup-pre-rootfs.service"
+
     inst_simple "/etc/systemd/system/elemental-setup-rootfs.service" \
         "${systemdsystemunitdir}/elemental-setup-rootfs.service"
     mkdir -p "${initdir}/${systemdsystemunitdir}/initrd-root-fs.target.wants"

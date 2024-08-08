@@ -160,7 +160,7 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 			Expect(runner.CmdsMatch(cmds)).To(BeNil())
 		})
 		It("Prints partition table info", func() {
-			cmd := []string{"sgdisk", "-p", "/dev/device"}
+			cmd := []string{"sgdisk", "-p", "-v", "/dev/device"}
 			_, err := gc.Print()
 			Expect(err).To(BeNil())
 			Expect(runner.CmdsMatch([][]string{cmd})).To(BeNil())
@@ -408,12 +408,23 @@ var _ = Describe("Partitioner", Label("disk", "partition", "partitioner"), func(
 				Expect(dev.GetLabel()).To(Equal("msdos"))
 			})
 			It("It fixes GPT headers if the disk was expanded", func() {
+				// for parted regex
 				runner.ReturnValue = []byte("Warning: Not all of the space available to /dev/loop0...\n" + partedPrint)
 				Expect(dev.Reload()).To(BeNil())
 				Expect(runner.MatchMilestones([][]string{
 					{"parted", "--script", "--machine", "--", "/dev/device", "unit", "s", "print"},
 					{"sgdisk", "-e", "/dev/device"},
 					{"parted", "--script", "--machine", "--", "/dev/device", "unit", "s", "print"},
+				})).To(BeNil())
+				// for sgdisk regex
+				dev = part.NewDisk("/dev/device", part.WithRunner(runner), part.WithFS(fs), part.WithMounter(mounter), part.WithGdisk())
+				runner.ReturnValue = []byte(sgdiskPrint + "\nProblem: The secondary header's self-pointer indicates that...\n")
+				runner.ClearCmds()
+				Expect(dev.Reload()).To(BeNil())
+				Expect(runner.MatchMilestones([][]string{
+					{"sgdisk", "-p", "-v", "/dev/device"},
+					{"sgdisk", "-e", "/dev/device"},
+					{"sgdisk", "-p", "-v", "/dev/device"},
 				})).To(BeNil())
 			})
 		})

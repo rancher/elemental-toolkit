@@ -238,7 +238,7 @@ var _ = Describe("Build Actions", func() {
 				{"losetup", "--show", "-f", "/tmp/test/build/recovery.part"},
 				{"mkfs.ext4", "-L", "COS_PERSISTENT"},
 				{"losetup", "--show", "-f", "/tmp/test/build/persistent.part"},
-				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"sgdisk", "-p", "-v", "/tmp/test/elemental.raw"},
 				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
@@ -259,7 +259,7 @@ var _ = Describe("Build Actions", func() {
 				{"mkfs.vfat", "-n", "COS_GRUB"},
 				{"mkfs.ext4", "-L", "COS_OEM"},
 				{"mkfs.ext4", "-L", "COS_RECOVERY"},
-				{"sgdisk", "-p", "/tmp/test/elemental.raw"},
+				{"sgdisk", "-p", "-v", "/tmp/test/elemental.raw"},
 				{"partx", "-u", "/tmp/test/elemental.raw"},
 			})).To(Succeed())
 		})
