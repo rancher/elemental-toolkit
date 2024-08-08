@@ -141,10 +141,13 @@ github.com/diskfs/go-diskfs/partition/gpt
 github.com/diskfs/go-diskfs/partition/mbr
 github.com/diskfs/go-diskfs/partition/part
 github.com/diskfs/go-diskfs/util
-# github.com/distribution/distribution v2.8.1+incompatible
+# github.com/distribution/distribution v2.8.3+incompatible
 ## explicit
 github.com/distribution/distribution/reference
 github.com/distribution/distribution/uuid
+# github.com/distribution/reference v0.6.0
+## explicit; go 1.20
+github.com/distribution/reference
 # github.com/docker/cli v24.0.0+incompatible
 ## explicit
 github.com/docker/cli/cli/config
@@ -479,6 +482,7 @@ github.com/onsi/gomega/types
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
+github.com/opencontainers/go-digest/digestset
 # github.com/opencontainers/image-spec v1.1.0
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
