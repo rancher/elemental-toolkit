@@ -287,6 +287,7 @@ func GetRunKeyEnvMap() map[string]string {
 		"strict":           "STRICT",
 		"eject-cd":         "EJECT_CD",
 		"snapshotter.type": "SNAPSHOTTER_TYPE",
+		"cloud-init-paths": "CLOUD_INIT_PATHS",
 	}
 }
 
