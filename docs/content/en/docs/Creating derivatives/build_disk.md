@@ -4,7 +4,7 @@ linkTitle: "Build disk images with Elemental"
 weight: 4
 date: 2024-08-20
 description: >
-  This section documents the procedure to build disk images using elemental
+  This section documents the procedure to build disk images using Elemental
 ---
 
 In order to build a RAW disk image we rely on `elemental build-disk` command. It accepts a YAML file denoting the sources to bundle in the RAW image. In addition it can also overlay custom files or use container images from a registry as packages.
