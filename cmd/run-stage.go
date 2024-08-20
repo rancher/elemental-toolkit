@@ -44,6 +44,7 @@ func NewRunStage(root *cobra.Command) *cobra.Command {
 	}
 	root.AddCommand(c)
 	c.Flags().Bool("strict", false, "Set strict checking for errors, i.e. fail if errors were found")
+	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run")
 	return c
 }
 

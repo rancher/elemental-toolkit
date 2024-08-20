@@ -92,6 +92,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	root.AddCommand(c)
 	c.Flags().Bool("recovery", false, "Upgrade recovery image too")
 	c.Flags().Bool("bootloader", false, "Reinstall bootloader during the upgrade")
+	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run during upgrade")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	return c

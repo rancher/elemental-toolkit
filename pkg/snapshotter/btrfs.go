@@ -125,7 +125,7 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 		if !ok {
 			msg := "failed casting BtrfsConfig type"
 			cfg.Logger.Errorf(msg)
-			return nil, fmt.Errorf(msg)
+			return nil, fmt.Errorf("%s", msg)
 		}
 	}
 	return &Btrfs{
@@ -458,7 +458,7 @@ func (b *Btrfs) SnapshotToImageSource(snap *types.Snapshot) (*types.ImageSource,
 		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
 		b.cfg.Logger.Errorf(msg)
 		if err == nil {
-			err = fmt.Errorf(msg)
+			err = fmt.Errorf("%s", msg)
 		}
 		return nil, err
 	}

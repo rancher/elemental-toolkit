@@ -86,7 +86,7 @@ func NewResetCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().BoolP("reset-persistent", "", false, "Clear persistent partitions")
 	c.Flags().BoolP("reset-oem", "", false, "Clear OEM partitions")
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
-
+	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run during reset")
 	addResetFlags(c)
 	return c
 }
