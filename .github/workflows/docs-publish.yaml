@@ -10,7 +10,7 @@ on:
    - cron: 0 20 * * *
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-deploy:
@@ -39,9 +39,8 @@ jobs:
           make BASE_URL=https://rancher.github.io/elemental-toolkit build-docs
       - name: Deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: public
+          branch: gh-pages
+          folder: public
 
