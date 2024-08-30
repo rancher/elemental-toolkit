@@ -293,6 +293,7 @@ func (u *UpgradeAction) Run() (err error) {
 
 	// Closing snapshotter transaction
 	u.cfg.Logger.Info("Closing snapshotter transaction")
+	u.snapshot.CorrelationID = u.spec.CorrelationID
 	err = u.snapshotter.CloseTransaction(u.snapshot)
 	if err != nil {
 		u.cfg.Logger.Errorf("failed closing snapshot transaction: %v", err)

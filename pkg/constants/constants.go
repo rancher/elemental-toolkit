@@ -89,6 +89,7 @@ const (
 	GrubDefEntry           = "Elemental"
 	GrubFallback           = "default_fallback"
 	GrubPassiveSnapshots   = "passive_snaps"
+	CorrelationID          = "correlation_id"
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints of images and partitions
@@ -341,6 +342,7 @@ func GetUpgradeKeyEnvMap() map[string]string {
 		"recovery":            "RECOVERY",
 		"system":              "SYSTEM",
 		"recovery-system.uri": "RECOVERY_SYSTEM",
+		"correlation-id":      "CORRELATION_ID",
 	}
 }
 

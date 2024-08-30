@@ -269,7 +269,7 @@ func (l *LoopDevice) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	// From now on we do not error out as the transaction is already done, cleanup steps are only logged
 	// Active system does not require specific bootloader setup, only old snapshots
 	_ = l.cleanOldSnapshots()
-	_ = l.setBootloader()
+	_ = l.setBootloader(snapshot.CorrelationID)
 	_ = l.cleanLegacyImages()
 
 	snapshot.InProgress = false
@@ -476,7 +476,7 @@ func (l *LoopDevice) cleanOldSnapshots() error {
 }
 
 // setBootloader sets the bootloader variables to update new passives
-func (l *LoopDevice) setBootloader() error {
+func (l *LoopDevice) setBootloader(correlationID string) error {
 	var passives, fallbacks []string
 
 	l.cfg.Logger.Infof("Setting bootloader with current passive snapshots")
@@ -500,6 +500,11 @@ func (l *LoopDevice) setBootloader() error {
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
 		constants.GrubPassiveSnapshots: snapsList,
+	}
+
+	// Add correlation ID to the grub entry if needed
+	if len(correlationID) > 0 {
+		envs[constants.CorrelationID] = correlationID
 	}
 
 	err = l.bootloader.SetPersistentVariables(envFile, envs)

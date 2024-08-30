@@ -347,7 +347,7 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 		return err
 	}
 
-	_ = b.setBootloader()
+	_ = b.setBootloader(snapshot.CorrelationID)
 	if !b.installing {
 		args := []string{"cleanup", "--path", filepath.Join(b.rootDir, snapshotsPath), "number"}
 		args = append(b.snapperArgs, args...)
@@ -607,7 +607,7 @@ func (b *Btrfs) getPassiveSnapshots() ([]int, error) {
 }
 
 // setBootloader sets the bootloader variables to update new passives
-func (b *Btrfs) setBootloader() error {
+func (b *Btrfs) setBootloader(correlationID string) error {
 	var passives, fallbacks []string
 
 	b.cfg.Logger.Infof("Setting bootloader with current passive snapshots")
@@ -633,6 +633,11 @@ func (b *Btrfs) setBootloader() error {
 		constants.GrubFallback:         fallbackList,
 		constants.GrubPassiveSnapshots: snapsList,
 		"snapshotter":                  constants.BtrfsSnapshotterType,
+	}
+
+	// Add correlation ID to the grub entry if needed
+	if len(correlationID) > 0 {
+		envs[constants.CorrelationID] = correlationID
 	}
 
 	err = b.bootloader.SetPersistentVariables(envFile, envs)

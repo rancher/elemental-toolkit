@@ -41,12 +41,13 @@ type SnapshotterConfig struct {
 }
 
 type Snapshot struct {
-	ID         int
-	MountPoint string
-	Path       string
-	WorkDir    string
-	Label      string
-	InProgress bool
+	ID            int
+	MountPoint    string
+	Path          string
+	WorkDir       string
+	Label         string
+	InProgress    bool
+	CorrelationID string
 }
 
 type LoopDeviceConfig struct {

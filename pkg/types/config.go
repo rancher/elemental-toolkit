@@ -373,6 +373,7 @@ type UpgradeSpec struct {
 	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
 	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	CorrelationID     string       `yaml:"correlation-id,omitempty" mapstructure:"correlation-id"`
 	Partitions        ElementalPartitions
 	State             *InstallState
 }

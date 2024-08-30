@@ -93,6 +93,7 @@ func NewUpgradeCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("recovery", false, "Upgrade recovery image too")
 	c.Flags().Bool("bootloader", false, "Reinstall bootloader during the upgrade")
 	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run during upgrade")
+	c.Flags().String("correlation-id", "", "A correlation ID that will be applied to the upgraded system")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	return c
