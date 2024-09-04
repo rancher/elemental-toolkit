@@ -70,14 +70,17 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 
 			upgradedVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(upgradedVersion).ToNot(Equal(currentVersion))
+			s.Reset()
+			s.EventuallyBootedFrom(sut.Active)
 		})
 	})
 
 	// After this test, the VM is no longer in its initial state!!
 	Context("upgrading recovery", func() {
 		When("using specific images", func() {
-			It("upgrades to a specific image and reset back to the installed version", Label("third-test"), func() {
-				By(fmt.Sprintf("upgrading to %s", comm.UpgradeImage()))
+			It("upgrades to a specific image", func() {
+				Expect(s.BootFrom()).To(Equal(sut.Active))
+				By(fmt.Sprintf("upgrading recovery to %s", comm.UpgradeImage()))
 				cmd := s.ElementalCmd("upgrade-recovery", "--recovery-system.uri", comm.UpgradeImage())
 				By(fmt.Sprintf("running %s", cmd))
 				out, err := s.Command(cmd)
