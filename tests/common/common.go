@@ -20,8 +20,8 @@ import (
 	"flag"
 )
 
-const DefaultUpgradeImage = "ghcr.io/rancher/elemental-toolkit/elemental-green:v2.0.0"
-const DefaultToolkitImage = "ghcr.io/rancher/elemental-toolkit/elemental-cli:v2.0.0"
+const DefaultUpgradeImage = "ghcr.io/rancher/elemental-toolkit/elemental-green:v2.1.1"
+const DefaultToolkitImage = "ghcr.io/rancher/elemental-toolkit/elemental-cli:v2.1.1"
 
 var upgradeImage string
 var toolkitImage string
