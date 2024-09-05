@@ -64,11 +64,43 @@ var _ = Describe("Elemental Feature tests", func() {
 			currentVersion := s.GetOSRelease("TIMESTAMP")
 			Expect(currentVersion).NotTo(Equal(originalVersion))
 
+			By("checking upgrade hooks were applied")
 			_, err = s.Command("cat /after-upgrade-chroot")
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).To(HaveOccurred())
+
+			By("booting into recovery to check it is still functional")
+			Expect(s.ChangeBootOnce(sut.Recovery)).To(Succeed())
+
+			s.Reboot()
+			s.EventuallyBootedFrom(sut.Recovery)
+
+			Expect(originalVersion).To(Equal(s.GetOSRelease("TIMESTAMP")))
+
+			By("reboot back to active to upgrade recovery now")
+			s.Reboot()
+			s.EventuallyBootedFrom(sut.Active)
+
+			upgradeRecCmd := s.ElementalCmd("upgrade-recovery", "--recovery-system.uri", comm.UpgradeImage())
+			_, err = s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeRecCmd)).
+				Privileged().
+				NoTLSVerify().
+				WithMount("/", "/host").
+				Run()
+			Expect(err).ToNot(HaveOccurred())
+
+			By("booting into recovery to check it is still functional")
+			Expect(s.ChangeBootOnce(sut.Recovery)).To(Succeed())
+
+			s.Reboot()
+			s.EventuallyBootedFrom(sut.Recovery)
+
+			Expect(currentVersion).To(Equal(s.GetOSRelease("TIMESTAMP")))
+
+			By("all done, back to active")
+			s.Reboot()
 		})
 	})
 })
