@@ -141,6 +141,11 @@ func (u Shadow) prepare() Shadow {
 		// POST: Set in last_changed the current days from 1970
 		now := time.Now()
 		days := now.Unix() / 24 / 60 / 60
+		// LastChanged field with value 0 has a special meaning, which is to change password on next login. We should never set it to zero.
+		// This avoids breaking ssh for example in systems that have no RTC clock or a broken one
+		if days == 0 {
+			days = 1
+		}
 		u.LastChanged = fmt.Sprintf("%d", days)
 	}
 	/*

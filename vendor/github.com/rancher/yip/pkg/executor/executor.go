@@ -74,7 +74,6 @@ func NewExecutor(opts ...Options) Executor {
 		plugins: []Plugin{
 			plugins.DNS,
 			plugins.Download,
-			plugins.Git,
 			plugins.Entities,
 			plugins.EnsureDirectories,
 			plugins.EnsureFiles,
