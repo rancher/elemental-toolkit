@@ -24,6 +24,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
@@ -128,17 +129,22 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 		}
 	}
 
+	date := time.Now().Format(time.RFC3339)
+
 	installState := &types.InstallState{
-		Date:        time.Now().Format(time.RFC3339),
+		Date:        date,
 		Snapshotter: r.cfg.Snapshotter,
 		Partitions: map[string]*types.PartitionState{
 			constants.StatePartName: {
 				FSLabel: r.spec.Partitions.State.FilesystemLabel,
 				Snapshots: map[int]*types.SystemState{
 					r.snapshot.ID: {
-						Source: src,
-						Digest: src.GetDigest(),
-						Active: true,
+						Source:     src,
+						Digest:     src.GetDigest(),
+						Active:     true,
+						Labels:     r.spec.SnapshotLabels,
+						Date:       date,
+						FromAction: cnst.ActionReset,
 					},
 				},
 			},

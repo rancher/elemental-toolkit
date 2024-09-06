@@ -204,6 +204,7 @@ type InstallSpec struct {
 	System           *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
 	RecoverySystem   Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	DisableBootEntry bool                `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	SnapshotLabels   map[string]string   `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -351,7 +352,8 @@ type ResetSpec struct {
 	Target           string
 	Efi              bool
 	State            *InstallState
-	DisableBootEntry bool `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	DisableBootEntry bool              `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	SnapshotLabels   map[string]string `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -368,11 +370,12 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade   bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	System            *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	RecoveryUpgrade   bool              `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System            *ImageSource      `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem    Image             `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry      string            `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	BootloaderUpgrade bool              `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	SnapshotLabels    map[string]string `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 	Partitions        ElementalPartitions
 	State             *InstallState
 }
@@ -813,9 +816,12 @@ type PartitionState struct {
 
 // SystemState represents data of a deployed OS image
 type SystemState struct {
-	Source *ImageSource `yaml:"source,omitempty"`
-	Digest string       `yaml:"digest,omitempty"`
-	Active bool         `yaml:"active,omitempty"`
-	Label  string       `yaml:"label,omitempty"` // Only meaningful for the recovery image
-	FS     string       `yaml:"fs,omitempty"`    // Only meaningful for the recovery image
+	Source     *ImageSource      `yaml:"source,omitempty"`
+	Digest     string            `yaml:"digest,omitempty"`
+	Active     bool              `yaml:"active,omitempty"`
+	Label      string            `yaml:"label,omitempty"` // Only meaningful for the recovery image
+	FS         string            `yaml:"fs,omitempty"`    // Only meaningful for the recovery image
+	Labels     map[string]string `yaml:"labels,omitempty"`
+	Date       string            `yaml:"date,omitempty"`
+	FromAction string            `yaml:"fromAction,omitempty"`
 }

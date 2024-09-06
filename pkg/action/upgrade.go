@@ -24,6 +24,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
@@ -172,9 +173,12 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 	}
 
 	statePart.Snapshots[u.snapshot.ID] = &types.SystemState{
-		Source: u.spec.System,
-		Digest: u.spec.System.GetDigest(),
-		Active: true,
+		Source:     u.spec.System,
+		Digest:     u.spec.System.GetDigest(),
+		Active:     true,
+		Labels:     u.spec.SnapshotLabels,
+		Date:       u.spec.State.Date,
+		FromAction: cnst.ActionUpgrade,
 	}
 
 	if statePart.Snapshots[oldActiveID] != nil {
@@ -193,13 +197,20 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 			recoveryPart = &types.PartitionState{
 				FSLabel: u.spec.Partitions.Recovery.FilesystemLabel,
 				RecoveryImage: &types.SystemState{
-					FS:     u.spec.RecoverySystem.FS,
-					Label:  u.spec.RecoverySystem.Label,
-					Source: u.spec.RecoverySystem.Source,
-					Digest: u.spec.RecoverySystem.Source.GetDigest(),
+					FS:         u.spec.RecoverySystem.FS,
+					Label:      u.spec.RecoverySystem.Label,
+					Source:     u.spec.RecoverySystem.Source,
+					Digest:     u.spec.RecoverySystem.Source.GetDigest(),
+					Labels:     u.spec.SnapshotLabels,
+					Date:       u.spec.State.Date,
+					FromAction: cnst.ActionUpgrade,
 				},
 			}
 			u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
+		} else if recoveryPart.RecoveryImage != nil {
+			recoveryPart.RecoveryImage.Date = u.spec.State.Date
+			recoveryPart.RecoveryImage.Labels = u.spec.SnapshotLabels
+			recoveryPart.RecoveryImage.FromAction = cnst.ActionUpgrade
 		}
 	}
 

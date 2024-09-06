@@ -111,27 +111,35 @@ func (i *InstallAction) createInstallStateYaml() error {
 		return fmt.Errorf("undefined installed snapshot")
 	}
 
+	date := time.Now().Format(time.RFC3339)
+
 	installState := &types.InstallState{
-		Date:        time.Now().Format(time.RFC3339),
+		Date:        date,
 		Snapshotter: i.cfg.Snapshotter,
 		Partitions: map[string]*types.PartitionState{
 			cnst.StatePartName: {
 				FSLabel: i.spec.Partitions.State.FilesystemLabel,
 				Snapshots: map[int]*types.SystemState{
 					i.snapshot.ID: {
-						Source: i.spec.System,
-						Digest: i.spec.System.GetDigest(),
-						Active: true,
+						Source:     i.spec.System,
+						Digest:     i.spec.System.GetDigest(),
+						Active:     true,
+						Labels:     i.spec.SnapshotLabels,
+						Date:       date,
+						FromAction: cnst.ActionInstall,
 					},
 				},
 			},
 			cnst.RecoveryPartName: {
 				FSLabel: i.spec.Partitions.Recovery.FilesystemLabel,
 				RecoveryImage: &types.SystemState{
-					Source: i.spec.RecoverySystem.Source,
-					Digest: i.spec.RecoverySystem.Source.GetDigest(),
-					Label:  i.spec.RecoverySystem.Label,
-					FS:     i.spec.RecoverySystem.FS,
+					Source:     i.spec.RecoverySystem.Source,
+					Digest:     i.spec.RecoverySystem.Source.GetDigest(),
+					Label:      i.spec.RecoverySystem.Label,
+					FS:         i.spec.RecoverySystem.FS,
+					Labels:     i.spec.SnapshotLabels,
+					Date:       date,
+					FromAction: cnst.ActionInstall,
 				},
 			},
 		},

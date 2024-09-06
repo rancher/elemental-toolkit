@@ -58,6 +58,7 @@ func addResetFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("verify", false, "Enable mtree checksum verification (requires images manifests generated with mtree separately)")
 	cmd.Flags().Bool("strict", false, "Enable strict check of hooks (They need to exit with 0)")
 
+	addSnapshotLabelsFlag(cmd)
 	addTLSVerifyFlag(cmd)
 	addSystemFlag(cmd)
 	addCosignFlags(cmd)
@@ -72,6 +73,11 @@ func addSystemFlag(cmd *cobra.Command) {
 // addRecoverySystemFlag adds the recovery-system.uri flag to define recovery source OS
 func addRecoverySystemFlag(cmd *cobra.Command) {
 	cmd.Flags().String("recovery-system.uri", "", "Sets the recovery image source and its type (e.g. 'docker:registry.org/image:tag')")
+}
+
+// addSnapshotLabelsFlag adds labels to be applied to any newly created snapshot, applies to install, reset, upgrade, and upgrade-recovery actions.
+func addSnapshotLabelsFlag(cmd *cobra.Command) {
+	cmd.Flags().StringToString("snapshot-labels", map[string]string{}, "Add labels to the to the system (ex. --labels my-label=foo,my-other-label=bar)")
 }
 
 // addLocalImageFlag add local image flag shared between install, pull-image, upgrade

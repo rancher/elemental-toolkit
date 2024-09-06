@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
@@ -118,13 +119,20 @@ func (u *UpgradeRecoveryAction) upgradeInstallStateYaml() error {
 		recoveryPart = &types.PartitionState{
 			FSLabel: u.spec.Partitions.Recovery.FilesystemLabel,
 			RecoveryImage: &types.SystemState{
-				FS:     u.spec.RecoverySystem.FS,
-				Label:  u.spec.RecoverySystem.Label,
-				Source: u.spec.RecoverySystem.Source,
-				Digest: u.spec.RecoverySystem.Source.GetDigest(),
+				FS:         u.spec.RecoverySystem.FS,
+				Label:      u.spec.RecoverySystem.Label,
+				Source:     u.spec.RecoverySystem.Source,
+				Digest:     u.spec.RecoverySystem.Source.GetDigest(),
+				Labels:     u.spec.SnapshotLabels,
+				Date:       u.spec.State.Date,
+				FromAction: cnst.ActionUpgradeRecovery,
 			},
 		}
 		u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
+	} else if recoveryPart.RecoveryImage != nil {
+		recoveryPart.RecoveryImage.Date = u.spec.State.Date
+		recoveryPart.RecoveryImage.Labels = u.spec.SnapshotLabels
+		recoveryPart.RecoveryImage.FromAction = cnst.ActionUpgradeRecovery
 	}
 
 	// State partition is mounted in three different locations.

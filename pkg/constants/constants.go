@@ -193,6 +193,12 @@ const (
 	LegacyActivePath  = LegacyImagesPath + "/active.img"
 	LegacyStateDir    = "/run/initramfs/cos-state"
 	LegacyGrubCfgPath = "/etc/cos"
+
+	// FromActions
+	ActionInstall         = "install"
+	ActionUpgrade         = "upgrade"
+	ActionUpgradeRecovery = "upgrade-recovery"
+	ActionReset           = "reset"
 )
 
 // GetDefaultSystemEcludes returns a list of transient paths
@@ -320,6 +326,7 @@ func GetInstallKeyEnvMap() map[string]string {
 		"no-format":           "NO_FORMAT",
 		"grub-entry-name":     "GRUB_ENTRY_NAME",
 		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
+		"snapshot-labels":     "SNAPSHOT_LABELS",
 	}
 }
 
@@ -332,6 +339,7 @@ func GetResetKeyEnvMap() map[string]string {
 		"reset-persistent":   "PERSISTENT",
 		"reset-oem":          "OEM",
 		"disable-boot-entry": "DISABLE_BOOT_ENTRY",
+		"snapshot-labels":    "SNAPSHOT_LABELS",
 	}
 }
 
@@ -341,6 +349,7 @@ func GetUpgradeKeyEnvMap() map[string]string {
 		"recovery":            "RECOVERY",
 		"system":              "SYSTEM",
 		"recovery-system.uri": "RECOVERY_SYSTEM",
+		"snapshot-labels":     "SNAPSHOT_LABELS",
 	}
 }
 
