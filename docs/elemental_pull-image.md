@@ -12,6 +12,7 @@ elemental pull-image IMAGE DESTINATION [flags]
   -h, --help              help for pull-image
       --local             Use an image from local cache
       --platform string   Platform to build the image for (default "linux/amd64")
+      --tls-verify        Require HTTPS and verify certificates of registries (default: true) (default true)
 ```
 
 ### Options inherited from parent commands

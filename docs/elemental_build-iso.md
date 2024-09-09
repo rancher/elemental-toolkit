@@ -21,6 +21,7 @@ elemental build-iso SOURCE [flags]
       --cosign                           Enable cosign verification (requires images with signatures)
       --cosign-key string                Sets the URL of the public key to be used by cosign validation
       --date                             Adds a date suffix into the generated ISO file
+      --extra-cmdline string             Extra kernel cmdline (defaults to 'security=selinux enforcing=0 console=tty1 console=ttyS0')
   -h, --help                             help for build-iso
       --label string                     Label of the ISO volume
       --local                            Use an image from local cache
