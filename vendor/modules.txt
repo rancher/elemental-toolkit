@@ -168,9 +168,6 @@ github.com/felixge/httpsnoop
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
-# github.com/ghodss/yaml v1.0.0
-## explicit
-github.com/ghodss/yaml
 # github.com/go-logr/logr v1.4.2
 ## explicit; go 1.18
 github.com/go-logr/logr
@@ -271,8 +268,8 @@ github.com/itchyny/gojq
 # github.com/itchyny/timefmt-go v0.1.6
 ## explicit; go 1.20
 github.com/itchyny/timefmt-go
-# github.com/jaypipes/ghw v0.12.0
-## explicit; go 1.18
+# github.com/jaypipes/ghw v0.13.0
+## explicit; go 1.21
 github.com/jaypipes/ghw
 github.com/jaypipes/ghw/pkg/baseboard
 github.com/jaypipes/ghw/pkg/bios
@@ -294,8 +291,8 @@ github.com/jaypipes/ghw/pkg/snapshot
 github.com/jaypipes/ghw/pkg/topology
 github.com/jaypipes/ghw/pkg/unitutil
 github.com/jaypipes/ghw/pkg/util
-# github.com/jaypipes/pcidb v1.0.0
-## explicit; go 1.17
+# github.com/jaypipes/pcidb v1.0.1
+## explicit; go 1.21
 github.com/jaypipes/pcidb
 # github.com/joho/godotenv v1.5.1
 ## explicit; go 1.12
