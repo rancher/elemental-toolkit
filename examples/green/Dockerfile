@@ -78,7 +78,7 @@ RUN systemctl enable NetworkManager.service && \
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
 # SELinux in enforce mode
-#RUN sed -i "s|SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
+RUN sed -i "s|SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
 
 # Add default snapshotter setup
 ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
