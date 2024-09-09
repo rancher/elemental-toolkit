@@ -10,7 +10,7 @@ description: >
 
 Elemental and every derivative can upgrade, rollback or just switch to different versions in runtime by using the toolkit installed inside the image.
 
-To upgrade an installed system, just run `elemental upgrade` and reboot. 
+To upgrade an installed system, just run `elemental upgrade` and reboot.
 
 This will perform an upgrade based on the default derivative configuration for the image. See [general configuration](../../customizing/general_configuration) on how to configure defaults when building a derivative.
 
@@ -18,9 +18,14 @@ This will perform an upgrade based on the default derivative configuration for t
 
 ## Upgrade to a specific container image
 
-To specify a specific container image to upgrade to instead of the regular upgrade channels, run `elemental upgrade --system.uri image-uri`.
+To specify a specific container image to upgrade to instead of the regular upgrade channels, run `elemental upgrade --system image-uri`.
 
-_Note_ by default `elemental upgrade --system.uri` runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run `elemental upgrade --verify --system.uri`.
+_Note_ by default `elemental upgrade --system` runs an mtree checksum verificatiom (requires images manifests generated with mtree separately). To disable image checksum verification, run `elemental upgrade --verify --system`.
+
+## Upgrading the Recovery partition
+
+It is possible to upgrade the Recovery partition together with the system: `elemental upgrade --system image-uri --recovery`.
+To upgrade the Recovery partition only, the `upgrade-recovery` command can be used: `elemental upgrade-recovery --recovery-system.uri image-uri`.  
 
 ## Integration with System Upgrade Controller
 
