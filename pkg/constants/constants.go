@@ -326,8 +326,7 @@ func GetInstallKeyEnvMap() map[string]string {
 		"no-format":           "NO_FORMAT",
 		"grub-entry-name":     "GRUB_ENTRY_NAME",
 		"disable-boot-entry":  "DISABLE_BOOT_ENTRY",
-		// Not supported. See: https://github.com/spf13/viper/issues/1671
-		// "snapshot-labels":  "SNAPSHOT_LABELS",
+		"snapshot-labels":     "SNAPSHOT_LABELS",
 	}
 }
 
@@ -340,8 +339,7 @@ func GetResetKeyEnvMap() map[string]string {
 		"reset-persistent":   "PERSISTENT",
 		"reset-oem":          "OEM",
 		"disable-boot-entry": "DISABLE_BOOT_ENTRY",
-		// Not supported. See: https://github.com/spf13/viper/issues/1671
-		// "snapshot-labels": "SNAPSHOT_LABELS",
+		"snapshot-labels":    "SNAPSHOT_LABELS",
 	}
 }
 
@@ -351,8 +349,7 @@ func GetUpgradeKeyEnvMap() map[string]string {
 		"recovery":            "RECOVERY",
 		"system":              "SYSTEM",
 		"recovery-system.uri": "RECOVERY_SYSTEM",
-		// Not supported. See: https://github.com/spf13/viper/issues/1671
-		// "snapshot-labels":  "SNAPSHOT_LABELS",
+		"snapshot-labels":     "SNAPSHOT_LABELS",
 	}
 }
 

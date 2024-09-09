@@ -189,6 +189,30 @@ func (r *RunConfig) Sanitize() error {
 	return r.Config.Sanitize()
 }
 
+type KeyValuePair map[string]string
+
+// KeyValuePairFromData decoded a KeyValuePair object from comma separated strings.
+// The expected format is 'myLabel1=foo,myLabel2=bar'.
+func KeyValuePairFromData(data interface{}) (KeyValuePair, error) {
+	result := map[string]string{}
+
+	str, ok := data.(string)
+	if !ok {
+		return nil, fmt.Errorf("can't unmarshal %+v to a KeyValuePair type", data)
+	}
+
+	labels := strings.Split(str, ",")
+	for _, label := range labels {
+		keyValuePair := strings.Split(label, "=")
+		if len(keyValuePair) != 2 {
+			return nil, fmt.Errorf("can't unmarshal key/value pair '%s'", label)
+		}
+		result[keyValuePair[0]] = keyValuePair[1]
+	}
+
+	return result, nil
+}
+
 // InstallSpec struct represents all the installation action details
 type InstallSpec struct {
 	Target           string `yaml:"target,omitempty" mapstructure:"target"`
@@ -204,7 +228,7 @@ type InstallSpec struct {
 	System           *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
 	RecoverySystem   Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
 	DisableBootEntry bool                `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
-	SnapshotLabels   map[string]string   `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
+	SnapshotLabels   KeyValuePair        `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -352,8 +376,8 @@ type ResetSpec struct {
 	Target           string
 	Efi              bool
 	State            *InstallState
-	DisableBootEntry bool              `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
-	SnapshotLabels   map[string]string `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
+	DisableBootEntry bool         `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	SnapshotLabels   KeyValuePair `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -370,12 +394,12 @@ func (r *ResetSpec) Sanitize() error {
 }
 
 type UpgradeSpec struct {
-	RecoveryUpgrade   bool              `yaml:"recovery,omitempty" mapstructure:"recovery"`
-	System            *ImageSource      `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem    Image             `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	GrubDefEntry      string            `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	BootloaderUpgrade bool              `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
-	SnapshotLabels    map[string]string `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
+	RecoveryUpgrade   bool         `yaml:"recovery,omitempty" mapstructure:"recovery"`
+	System            *ImageSource `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem    Image        `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	GrubDefEntry      string       `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	BootloaderUpgrade bool         `yaml:"bootloader,omitempty" mapstructure:"bootloader"`
+	SnapshotLabels    KeyValuePair `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
 	Partitions        ElementalPartitions
 	State             *InstallState
 }

@@ -550,4 +550,11 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			Expect(spec.Persistent.Paths).To(Equal([]string{"/root", "/etc/rancher"}))
 		})
 	})
+	Describe("KeyValuePair", func() {
+		It("should decode from comma separated string", func() {
+			input := "myFirstLabel=foo,mySecondLabel=bar"
+			wantLabels := types.KeyValuePair{"myFirstLabel": "foo", "mySecondLabel": "bar"}
+			Expect(types.KeyValuePairFromData(input)).Should(Equal(wantLabels))
+		})
+	})
 })
