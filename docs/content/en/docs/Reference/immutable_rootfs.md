@@ -1,7 +1,7 @@
 ---
 title: "Immutable Root Filesystem"
 linkTitle: "Immutable Rootfs"
-weight: 4
+weight: 2
 date: 2023-05-11
 description: >
   Immutable root filesystem configuration parameters

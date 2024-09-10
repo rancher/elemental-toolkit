@@ -1,7 +1,7 @@
 ---
 title: "Runtime layout"
 linkTitle: "Runtime layout"
-weight: 4
+weight: 3
 date: 2021-10-11
 description: >
   Runtime layout of a booted Elemental derivative

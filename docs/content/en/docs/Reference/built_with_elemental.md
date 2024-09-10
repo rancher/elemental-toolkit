@@ -1,7 +1,7 @@
 ---
 title: "Built with Elemental"
 linkTitle: "Built with Elemental"
-weight: 6
+weight: 5
 date: 2021-09-08
 description: >
   Linux derivatives built with Elemental

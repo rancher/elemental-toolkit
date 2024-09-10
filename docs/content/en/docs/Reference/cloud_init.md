@@ -2,7 +2,7 @@
 ---
 title: "Cloud-init support"
 linkTitle: "Cloud-init support"
-weight: 3
+weight: 1
 date: 2023-08-31
 description: >
   Features inherited by Elemental derivatives that are also available in the Elemental vanilla images
