@@ -262,5 +262,8 @@ const MountPersistentPartition = 87
 // Error upgrading Recovery partition
 const UpgradeRecovery = 88
 
+// Error displaying installation state
+const DisplayingInstallationState = 89
+
 // Unknown error
 const Unknown int = 255
