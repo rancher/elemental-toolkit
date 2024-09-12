@@ -77,7 +77,7 @@ func addRecoverySystemFlag(cmd *cobra.Command) {
 
 // addSnapshotLabelsFlag adds labels to be applied to any newly created snapshot, applies to install, reset, upgrade, and upgrade-recovery actions.
 func addSnapshotLabelsFlag(cmd *cobra.Command) {
-	cmd.Flags().StringToString("snapshot-labels", map[string]string{}, "Add labels to the to the system (ex. --labels my-label=foo,my-other-label=bar)")
+	cmd.Flags().StringToString("snapshot-labels", map[string]string{}, "Add labels to the to the system (ex. --snapshot-labels my-label=foo,my-other-label=bar)")
 }
 
 // addLocalImageFlag add local image flag shared between install, pull-image, upgrade
