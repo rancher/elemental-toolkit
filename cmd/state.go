@@ -33,6 +33,7 @@ func NewStateCmd(root *cobra.Command) *cobra.Command {
 		Args:  cobra.ExactArgs(0),
 		Short: "Shows the install state",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			viper.SetDefault("quiet", true) // Prevents any other writes to stdout
 			path, err := exec.LookPath("mount")
 			if err != nil {
 				return err
@@ -64,7 +65,6 @@ func NewStateCmd(root *cobra.Command) *cobra.Command {
 			return nil
 		},
 	}
-	viper.SetDefault("quiet", true) // Prevents any other writes to stdout
 	root.AddCommand(c)
 	return c
 }
