@@ -81,8 +81,5 @@
 | 86 | Error mounting EFI partition|
 | 87 | Error mounting Persistent partition|
 | 88 | Error upgrading Recovery partition|
-<<<<<<< HEAD
-=======
 | 89 | Error displaying installation state|
->>>>>>> f6afb5508 (Update generated docs)
 | 255 | Unknown error|
