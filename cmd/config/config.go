@@ -41,6 +41,7 @@ import (
 var decodeHook = viper.DecodeHook(
 	mapstructure.ComposeDecodeHookFunc(
 		UnmarshalerHook(),
+		KeyValuePairHook(),
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
 	),
@@ -48,6 +49,20 @@ var decodeHook = viper.DecodeHook(
 
 type Unmarshaler interface {
 	CustomUnmarshal(interface{}) (bool, error)
+}
+
+func KeyValuePairHook() mapstructure.DecodeHookFuncType {
+	return func(from reflect.Type, to reflect.Type, data interface{}) (interface{}, error) {
+		if from.Kind() != reflect.String {
+			return data, nil
+		}
+
+		if to != reflect.TypeOf(types.KeyValuePair{}) {
+			return data, nil
+		}
+
+		return types.KeyValuePairFromData(data)
+	}
 }
 
 func UnmarshalerHook() mapstructure.DecodeHookFunc {

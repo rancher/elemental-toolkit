@@ -80,4 +80,5 @@
 | 85 | Error occured starting an snapshotter transaction|
 | 86 | Error mounting EFI partition|
 | 87 | Error mounting Persistent partition|
+| 88 | Error upgrading Recovery partition|
 | 255 | Unknown error|

@@ -82,6 +82,7 @@ func NewUpgradeRecoveryCmd(root *cobra.Command, addCheckRoot bool) *cobra.Comman
 		},
 	}
 	root.AddCommand(c)
+	addSnapshotLabelsFlag(c)
 	addRecoverySystemFlag(c)
 	addPowerFlags(c)
 	addSquashFsCompressionFlags(c)

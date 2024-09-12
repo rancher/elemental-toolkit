@@ -21,5 +21,6 @@ Elemental
 * [elemental reset](elemental_reset.md)	 - Reset OS
 * [elemental run-stage](elemental_run-stage.md)	 - Run stage from cloud-init
 * [elemental upgrade](elemental_upgrade.md)	 - Upgrade the system
+* [elemental upgrade-recovery](elemental_upgrade-recovery.md)	 - Upgrade the Recovery system
 * [elemental version](elemental_version.md)	 - Print the version
 

@@ -9,8 +9,9 @@ elemental run-stage STAGE [flags]
 ### Options
 
 ```
-  -h, --help     help for run-stage
-      --strict   Set strict checking for errors, i.e. fail if errors were found
+      --cloud-init-paths strings   Cloud-init config files to run
+  -h, --help                       help for run-stage
+      --strict                     Set strict checking for errors, i.e. fail if errors were found
 ```
 
 ### Options inherited from parent commands
