@@ -19,7 +19,7 @@ elemental reset [flags]
       --reboot                           Reboot the system after install
       --reset-oem                        Clear OEM partitions
       --reset-persistent                 Clear persistent partitions
-      --snapshot-labels stringToString   Add labels to the to the system (ex. --labels my-label=foo,my-other-label=bar) (default [])
+      --snapshot-labels stringToString   Add labels to the to the system (ex. --snapshot-labels my-label=foo,my-other-label=bar) (default [])
       --strict                           Enable strict check of hooks (They need to exit with 0)
       --system string                    Sets the system image source and its type (e.g. 'docker:registry.org/image:tag')
       --tls-verify                       Require HTTPS and verify certificates of registries (default: true) (default true)

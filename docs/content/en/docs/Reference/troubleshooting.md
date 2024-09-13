@@ -1,7 +1,7 @@
 ---
 title: "Troubleshooting"
 linkTitle: "Troubleshooting"
-weight: 5
+weight: 4
 date: 2021-09-08
 description: >
   Stuff can go wrong. This document tries to make them right with some useful tips

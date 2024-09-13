@@ -81,4 +81,5 @@
 | 86 | Error mounting EFI partition|
 | 87 | Error mounting Persistent partition|
 | 88 | Error upgrading Recovery partition|
+| 89 | Error displaying installation state|
 | 255 | Unknown error|
