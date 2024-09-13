@@ -1,10 +1,10 @@
 # run `make build` to build local/elemental-toolkit image
-ARG TOOLKIT_REPO
-ARG VERSION
-FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
+ARG TOOLKIT_REPO=local/elemental-toolkit
+ARG VERSION=latest
+FROM ${TOOLKIT_REPO}:${VERSION} AS toolkit
 
 # OS base image of our choice
-FROM ubuntu:24.04 as OS
+FROM ubuntu:24.04 AS os
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -62,11 +62,8 @@ RUN curl -L https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-${KBD}.tar.x
 # Symlink grub2-editenv
 RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
 
-# Create non FHS paths
-RUN mkdir -p /oem /system
-
 # Just add the elemental cli
-COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
+COPY --from=toolkit /usr/bin/elemental /usr/bin/elemental
 
 # Enable essential services
 RUN systemctl enable systemd-networkd.service
@@ -99,4 +96,4 @@ RUN mkdir -p /usr/lib/elemental/bootloader && \
     cp /usr/lib/shim/mmx64.efi /usr/lib/elemental/bootloader/mmx64.efi
 
 # Good for validation after the build
-CMD /bin/bash
+CMD ["/bin/bash"]

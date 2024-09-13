@@ -1,13 +1,13 @@
 # run `make build` to build local/elemental-toolkit image
-ARG TOOLKIT_REPO
-ARG VERSION
+ARG TOOLKIT_REPO=local/elemental-toolkit
+ARG VERSION=latest
 ARG OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
 ARG OS_VERSION=latest
 
-FROM ${TOOLKIT_REPO}:${VERSION} AS TOOLKIT
+FROM ${TOOLKIT_REPO}:${VERSION} AS toolkit
 
 # OS base image of our choice
-FROM ${OS_IMAGE}:${OS_VERSION} AS OS
+FROM ${OS_IMAGE}:${OS_VERSION} AS os
 ARG REPO
 ARG VERSION
 ENV REPO=${REPO}
@@ -68,7 +68,7 @@ RUN ARCH=$(uname -m); \
     zypper clean --all
 
 # Just add the elemental cli
-COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
+COPY --from=toolkit /usr/bin/elemental /usr/bin/elemental
 
 # Enable essential services
 RUN systemctl enable NetworkManager.service && \
@@ -94,4 +94,4 @@ RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
     echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
 
 # Good for validation after the build
-CMD /bin/bash
+CMD ["/bin/bash"]

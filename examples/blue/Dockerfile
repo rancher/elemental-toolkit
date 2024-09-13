@@ -1,10 +1,10 @@
 # run `make build` to build local/elemental-toolkit image
-ARG TOOLKIT_REPO
-ARG VERSION
-FROM ${TOOLKIT_REPO}:${VERSION} as TOOLKIT
+ARG TOOLKIT_REPO=local/elemental-toolkit
+ARG VERSION=latest
+FROM ${TOOLKIT_REPO}:${VERSION} AS toolkit
 
 # OS base image of our choice
-FROM fedora:40 as OS
+FROM fedora:40 AS os
 ARG REPO
 ARG VERSION
 ENV VERSION=${VERSION}
@@ -51,7 +51,7 @@ RUN dnf install -y \
 RUN mkdir -p /oem /system
 
 # Just add the elemental cli
-COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
+COPY --from=toolkit /usr/bin/elemental /usr/bin/elemental
 
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
@@ -70,4 +70,4 @@ RUN echo IMAGE_REPO=\"${REPO}\"             >> /etc/os-release && \
     echo GRUB_ENTRY_NAME=\"Elemental\"      >> /etc/os-release
 
 # Good for validation after the build
-CMD /bin/bash
+CMD ["/bin/bash"]
