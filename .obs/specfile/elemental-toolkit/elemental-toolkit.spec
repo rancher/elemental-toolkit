@@ -15,6 +15,9 @@
 # Please submit bugfixes or comments via https://bugs.opensuse.org/
 #
 
+# These variables are coupled to builder scripts
+%define commit _replaceme_
+%define c_date _replaceme_
 
 Name:           elemental-toolkit
 Version:        0
@@ -23,8 +26,7 @@ Summary:        The command line client for Elemental
 License:        Apache-2.0
 Group:          System/Management
 Url:            https://github.com/rancher/elemental-toolkit
-Source:         %{name}-%{version}.tar
-Source1:        %{name}.obsinfo
+Source:         %{name}.tar.xz
 
 Requires:       dosfstools
 Requires:       e2fsprogs
@@ -65,15 +67,25 @@ This package provides a universal command line client to access
 Elemental functionality
 
 %prep
-%setup -q
-cp %{S:1} .
+%setup -q -n %{name}
 
 %build
-export GIT_TAG=`echo "%{version}" | cut -d "+" -f 1`
-GIT_COMMIT=$(cat %{name}.obsinfo | grep commit: | cut -d" " -f 2)
+
+if [ "%{commit}" = "_replaceme_" ]; then
+  echo "No commit hash provided"
+  exit 1
+fi
+
+if [ "%{c_date}" = "_replaceme_" ]; then
+  echo "No commit date provided"
+  exit 1
+fi
+
+export GIT_TAG=$(echo "%{version}" | cut -d "+" -f 1)
+GIT_COMMIT=$(echo "%{commit}")
 export GIT_COMMIT=${GIT_COMMIT:0:8}
-MTIME=$(cat %{name}.obsinfo | grep mtime: | cut -d" " -f 2)
-export COMMITDATE=$(date -d @${MTIME} +%Y%m%d)
+export COMMITDATE="%{c_date}"
+
 make build-cli
 
 
