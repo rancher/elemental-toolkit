@@ -60,13 +60,12 @@ github.com/cenkalti/backoff/v4
 # github.com/containerd/cgroups v1.1.0
 ## explicit; go 1.17
 github.com/containerd/cgroups/stats/v1
-# github.com/containerd/containerd v1.7.20
+# github.com/containerd/containerd v1.7.22
 ## explicit; go 1.21
 github.com/containerd/containerd/archive
 github.com/containerd/containerd/archive/tarheader
 github.com/containerd/containerd/errdefs
 github.com/containerd/containerd/pkg/epoch
-github.com/containerd/containerd/pkg/userns
 # github.com/containerd/continuity v0.4.3
 ## explicit; go 1.19
 github.com/containerd/continuity/fs
@@ -339,6 +338,9 @@ github.com/moby/sys/mountinfo
 # github.com/moby/sys/sequential v0.5.0
 ## explicit; go 1.17
 github.com/moby/sys/sequential
+# github.com/moby/sys/userns v0.1.0
+## explicit; go 1.21
+github.com/moby/sys/userns
 # github.com/mudler/entities v0.8.1
 ## explicit; go 1.21
 github.com/mudler/entities/pkg/entities
