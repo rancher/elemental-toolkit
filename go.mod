@@ -10,7 +10,7 @@ require (
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/containerd/containerd v1.7.22
-	github.com/distribution/distribution v2.8.1+incompatible
+	github.com/distribution/distribution v2.8.3+incompatible
 	github.com/google/go-containerregistry v0.20.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jaypipes/ghw v0.13.0
