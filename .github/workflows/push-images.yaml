@@ -1,0 +1,42 @@
+name: Build and push images
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      platforms:
+        type: string
+        default: linux/x86_64,linux/arm64
+
+jobs:
+  build-toolkit:
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    env:
+      TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
+      REPO: ghcr.io/${{github.repository}}/elemental-${{ github.event.inputs.flavor }} 
+    steps:
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - run: |
+          git fetch --prune --unshallow
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build toolkit
+        if: ${{ github.event.inputs.build-toolkit }}
+        run: |
+          make PLATFORM=${{ github.event.inputs.platforms }} DOCKER_ARGS=--push VERSION=${{ github.ref_name }} build
