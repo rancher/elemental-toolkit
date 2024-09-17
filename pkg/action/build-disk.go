@@ -713,9 +713,10 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 	snapshots := map[int]*types.SystemState{}
 	if !b.spec.Expandable {
 		snapshots[b.snapshot.ID] = &types.SystemState{
-			Source: b.spec.System,
-			Digest: b.spec.System.GetDigest(),
-			Active: true,
+			Source:     b.spec.System,
+			Digest:     b.spec.System.GetDigest(),
+			Active:     true,
+			FromAction: constants.ActionBuildDisk,
 		}
 	}
 
@@ -730,10 +731,11 @@ func (b *BuildDiskAction) createBuildDiskStateYaml(stateRoot, recoveryRoot strin
 			constants.RecoveryPartName: {
 				FSLabel: b.spec.Partitions.Recovery.FilesystemLabel,
 				RecoveryImage: &types.SystemState{
-					Source: b.spec.RecoverySystem.Source,
-					Digest: b.spec.RecoverySystem.Source.GetDigest(),
-					Label:  b.spec.RecoverySystem.Label,
-					FS:     b.spec.RecoverySystem.FS,
+					Source:     b.spec.RecoverySystem.Source,
+					Digest:     b.spec.RecoverySystem.Source.GetDigest(),
+					Label:      b.spec.RecoverySystem.Label,
+					FS:         b.spec.RecoverySystem.FS,
+					FromAction: constants.ActionBuildDisk,
 				},
 			},
 		},

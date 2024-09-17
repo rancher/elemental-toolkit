@@ -199,6 +199,7 @@ const (
 	ActionUpgrade         = "upgrade"
 	ActionUpgradeRecovery = "upgrade-recovery"
 	ActionReset           = "reset"
+	ActionBuildDisk       = "build-disk"
 )
 
 // GetDefaultSystemEcludes returns a list of transient paths
