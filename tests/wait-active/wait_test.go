@@ -17,7 +17,10 @@ limitations under the License.
 package elemental_test
 
 import (
+	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
 
@@ -25,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Elemental booting fallback tests", func() {
+var _ = Describe("Elemental booting an expandable disk image", func() {
 	var s *sut.SUT
 
 	BeforeEach(func() {
@@ -38,6 +41,25 @@ var _ = Describe("Elemental booting fallback tests", func() {
 				out, _ := s.Command("cat /run/cos/active_mode")
 				return out
 			}, 15*time.Minute, 10*time.Second).Should(ContainSubstring("1"))
+
+			// Check the current elemental has 'state' command, upgrade test runs this code
+			// against and old image disk image
+			helpStr, err := s.Command(s.ElementalCmd("help"))
+			Expect(err).NotTo(HaveOccurred())
+			if strings.Contains(helpStr, "Shows the install state") {
+
+				By("check state file includes expected actions for the first snapshot and recovery image")
+				stateStr, err := s.Command(s.ElementalCmd("state"))
+				Expect(err).NotTo(HaveOccurred())
+
+				state := map[string]interface{}{}
+				Expect(yaml.Unmarshal([]byte(stateStr), state)).
+					To(Succeed())
+				Expect(state["state"].(map[string]interface{})["snapshots"].(map[interface{}]interface{})[1].(map[string]interface{})["fromAction"]).
+					To(Equal("reset"))
+				Expect(state["recovery"].(map[string]interface{})["recovery"].(map[string]interface{})["fromAction"]).
+					To(Equal("build-disk"))
+			}
 		})
 	})
 })

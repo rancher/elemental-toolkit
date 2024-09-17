@@ -19,6 +19,8 @@ package elemental_test
 import (
 	"fmt"
 
+	"gopkg.in/yaml.v3"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -71,6 +73,16 @@ var _ = Describe("Elemental Feature tests", func() {
 			_, err = s.Command("cat /after-reset-chroot")
 			Expect(err).To(HaveOccurred())
 
+			By("check state file includes expected actions for the upgraded snapshot")
+			stateStr, err := s.Command(s.ElementalCmd("state"))
+			Expect(err).NotTo(HaveOccurred())
+
+			state := map[string]interface{}{}
+			Expect(yaml.Unmarshal([]byte(stateStr), state)).
+				To(Succeed())
+			Expect(state["state"].(map[string]interface{})["snapshots"].(map[interface{}]interface{})[2].(map[string]interface{})["fromAction"]).
+				To(Equal("upgrade"))
+
 			By("booting into recovery to check it is still functional")
 			Expect(s.ChangeBootOnce(sut.Recovery)).To(Succeed())
 
@@ -96,6 +108,16 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Recovery)
+
+			By("check state file incluldes the 'upgrade-recovery' action on the recovery image")
+			stateStr, err = s.Command(s.ElementalCmd("state"))
+			Expect(err).NotTo(HaveOccurred())
+
+			state = map[string]interface{}{}
+			Expect(yaml.Unmarshal([]byte(stateStr), state)).
+				To(Succeed())
+			Expect(state["recovery"].(map[string]interface{})["recovery"].(map[string]interface{})["fromAction"]).
+				To(Equal("upgrade-recovery"))
 
 			Expect(currentVersion).To(Equal(s.GetOSRelease("TIMESTAMP")))
 

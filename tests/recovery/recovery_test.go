@@ -19,6 +19,8 @@ package elemental_test
 import (
 	"fmt"
 
+	"gopkg.in/yaml.v3"
+
 	sut "github.com/rancher/elemental-toolkit/v2/tests/vm"
 
 	comm "github.com/rancher/elemental-toolkit/v2/tests/common"
@@ -88,13 +90,19 @@ var _ = Describe("Elemental Recovery upgrade tests", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(out).Should(ContainSubstring("Recovery upgrade completed"))
 
-				// TODO: Check state.yaml changed
+				By("check state file incluldes the 'upgrade-recovery' action on the recovery image")
+				stateStr, err := s.Command(s.ElementalCmd("state"))
+				Expect(err).NotTo(HaveOccurred())
+
+				state := map[string]interface{}{}
+				Expect(yaml.Unmarshal([]byte(stateStr), state)).
+					To(Succeed())
+				Expect(state["recovery"].(map[string]interface{})["recovery"].(map[string]interface{})["fromAction"]).
+					To(Equal("upgrade-recovery"))
 
 				By("booting into recovery to check the OS version")
 				err = s.ChangeBootOnce(sut.Recovery)
 				Expect(err).ToNot(HaveOccurred())
-
-				// TODO: verify state.yaml matches expectations
 
 				s.Reboot()
 				s.EventuallyBootedFrom(sut.Recovery)
