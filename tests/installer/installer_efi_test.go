@@ -1,7 +1,7 @@
 package cos_test
 
 import (
-	"fmt"
+	"gopkg.in/yaml.v3"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,7 +38,6 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					By("Running the elemental install with a layout file")
 					Expect(err).To(BeNil())
 					out, err := s.Command(s.ElementalCmd("install", "--squash-no-compression", "/dev/vda"))
-					fmt.Printf(out)
 					Expect(err).To(BeNil())
 					Expect(out).To(ContainSubstring("Mounting disk partitions"))
 					Expect(out).To(ContainSubstring("Partitioning device..."))
@@ -76,6 +75,15 @@ var _ = Describe("Elemental Installer EFI tests", func() {
 					} {
 						CheckPartitionValues(disk, part)
 					}
+					By("check state file includes expected actions for the first snapshot and recovery image")
+					stateStr, err := s.Command(s.ElementalCmd("state"))
+					Expect(err).NotTo(HaveOccurred())
+
+					state := map[string]interface{}{}
+					Expect(yaml.Unmarshal([]byte(stateStr), state)).
+						To(Succeed())
+					Expect(state["state"].(map[string]interface{})["snapshots"].(map[interface{}]interface{})[1].(map[string]interface{})["fromAction"]).
+						To(Equal("install"))
 				})
 			})
 		})
