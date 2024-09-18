@@ -1,11 +1,11 @@
 name: Build and push images
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
+      ref:
+        type: string
+        required: true
       platforms:
         type: string
         default: linux/x86_64,linux/arm64
@@ -27,7 +27,7 @@ jobs:
           install: true
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event.inputs.ref }}
       - run: |
           git fetch --prune --unshallow
       - name: Log in to ghcr.io
@@ -37,6 +37,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build toolkit
-        if: ${{ github.event.inputs.build-toolkit }}
         run: |
-          make PLATFORM=${{ github.event.inputs.platforms }} DOCKER_ARGS=--push VERSION=${{ github.ref_name }} build
+          make PLATFORM=${{ github.event.inputs.platforms }} DOCKER_ARGS=--push VERSION=${{ github.event.inputs.ref }} build
