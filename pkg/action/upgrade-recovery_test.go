@@ -31,7 +31,6 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
@@ -212,7 +211,7 @@ var _ = Describe("Upgrade Recovery Actions", func() {
 				// Just a small test to ensure we touched the state file
 				Expect(spec.State.Date).ToNot(BeEmpty(), "post-upgrade state should contain a date")
 				Expect(spec.State.Date).To(Equal(spec.State.Partitions["recovery"].RecoveryImage.Date))
-				Expect(spec.State.Partitions["recovery"].RecoveryImage.FromAction).To(Equal(cnst.ActionUpgradeRecovery))
+				Expect(spec.State.Partitions["recovery"].RecoveryImage.FromAction).To(Equal(constants.ActionUpgradeRecovery))
 				Expect(spec.State.Partitions["recovery"].RecoveryImage.Labels["foo"]).To(Equal("bar"))
 			})
 			It("Successfully skips updateInstallState", Label("docker"), func() {

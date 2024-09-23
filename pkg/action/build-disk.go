@@ -101,8 +101,35 @@ func WithDiskBootloader(bootloader types.Bootloader) BuildDiskActionOption {
 	}
 }
 
+func (b *BuildDiskAction) createHookSymlinks(root string) error {
+	err := b.cfg.Fs.Symlink(root, constants.RunElementalBuildLink)
+	if err != nil {
+		return err
+	}
+	return b.cfg.Fs.Symlink(filepath.Base(b.spec.RecoverySystem.File)+rootSuffix, constants.WorkingImgBuildLink)
+}
+
 func (b *BuildDiskAction) buildDiskHook(hook string) error {
 	return Hook(&b.cfg.Config, hook, b.cfg.Strict, b.cfg.CloudInitPaths...)
+}
+
+// buildAfterDiskHook runs the 'after-disk' hook adding the to the cloud-init path
+// the configured init paths rooted to the just deployed root. Moreover it also
+// creates a symlink to the build-disk working directory to ensure deployed root
+// can be found in an static path, so it can be referenced in after-disk hooks
+func (b *BuildDiskAction) buildAfterDiskHook(root string) error {
+	cIPaths := b.cfg.CloudInitPaths
+	cIPaths = append(cIPaths, utils.PreAppendRoot(constants.WorkingImgBuildLink, b.cfg.CloudInitPaths...)...)
+	err := b.createHookSymlinks(root)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = b.cfg.Fs.Remove(constants.WorkingImgBuildLink)
+		_ = b.cfg.Fs.Remove(constants.RunElementalBuildLink)
+	}()
+
+	return Hook(&b.cfg.Config, constants.AfterDiskHook, b.cfg.Strict, cIPaths...)
 }
 
 func (b *BuildDiskAction) buildDiskChrootHook(hook string, root string) error {
@@ -147,6 +174,11 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 		rawImg = fmt.Sprintf("%s.raw", b.cfg.Name)
 	}
 	rawImg = filepath.Join(b.cfg.OutDir, rawImg)
+
+	err = utils.MkdirAll(b.cfg.Fs, workdir, constants.DirPerm)
+	if err != nil {
+		return err
+	}
 
 	// Before disk hook happens before doing anything
 	err = b.buildDiskHook(constants.BeforeDiskHook)
@@ -226,7 +258,7 @@ func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 			return elementalError.NewFromError(err, elementalError.HookAfterDiskChroot)
 		}
 	}
-	err = b.buildDiskHook(constants.AfterDiskHook)
+	err = b.buildAfterDiskHook(workdir)
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.HookAfterDisk)
 	}

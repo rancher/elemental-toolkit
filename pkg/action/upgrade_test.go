@@ -31,7 +31,6 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/action"
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
@@ -246,7 +245,7 @@ var _ = Describe("Runtime Actions", func() {
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Active).
 					To(BeTrue())
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].FromAction).
-					To(Equal(cnst.ActionUpgrade))
+					To(Equal(constants.ActionUpgrade))
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Date).
 					To(Equal(state.Date))
 				Expect(state.Partitions[constants.StatePartName].Snapshots[3].Labels["foo"]).
