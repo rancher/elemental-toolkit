@@ -81,7 +81,6 @@ var (
 		FeatureCloudConfigDefaults,
 		FeatureCloudConfigEssentials,
 		FeatureBootAssessment,
-		FeatureArmFirmware,
 	}
 )
 
