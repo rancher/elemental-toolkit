@@ -151,7 +151,7 @@ func (c *SnapshotterConfig) CustomUnmarshal(data interface{}) (bool, error) {
 				}
 				maxSnapsConverted, err := strconv.Atoi(maxSnapsFromEnv)
 				if err != nil {
-					return false, fmt.Errorf("could not convert 'max-snap' from string input to integer type")
+					return false, fmt.Errorf("converting 'max-snap' from string input to integer type: %w", err)
 				}
 				maxSnaps = maxSnapsConverted
 			}
