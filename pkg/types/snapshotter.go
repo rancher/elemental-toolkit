@@ -18,6 +18,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	mapstructure "github.com/mitchellh/mapstructure"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
@@ -142,7 +143,17 @@ func (c *SnapshotterConfig) CustomUnmarshal(data interface{}) (bool, error) {
 		if mData["max-snaps"] != nil {
 			maxSnaps, ok := mData["max-snaps"].(int)
 			if !ok {
-				return false, fmt.Errorf("'max-snap' must be of integer type")
+				// If not integer value, try to convert from string.
+				// This will be the case when passed as env variable ELEMENTAL_SNAPSHOTTER_MAX_SNAPS
+				maxSnapsFromEnv, ok := mData["max-snaps"].(string)
+				if !ok {
+					return false, fmt.Errorf("'max-snap' must be of integer type")
+				}
+				maxSnapsConverted, err := strconv.Atoi(maxSnapsFromEnv)
+				if err != nil {
+					return false, fmt.Errorf("could not convert 'max-snap' from string input to integer type")
+				}
+				maxSnaps = maxSnapsConverted
 			}
 			c.MaxSnaps = maxSnaps
 		} else if c.Type == constants.BtrfsSnapshotterType {
