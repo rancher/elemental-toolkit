@@ -289,12 +289,13 @@ func GetDefaultSquashfsCompressionOptions() []string {
 // GetRunKeyEnvMap returns environment variable bindings to RunConfig data
 func GetRunKeyEnvMap() map[string]string {
 	return map[string]string{
-		"poweroff":         "POWEROFF",
-		"reboot":           "REBOOT",
-		"strict":           "STRICT",
-		"eject-cd":         "EJECT_CD",
-		"snapshotter.type": "SNAPSHOTTER_TYPE",
-		"cloud-init-paths": "CLOUD_INIT_PATHS",
+		"poweroff":              "POWEROFF",
+		"reboot":                "REBOOT",
+		"strict":                "STRICT",
+		"eject-cd":              "EJECT_CD",
+		"snapshotter.type":      "SNAPSHOTTER_TYPE",
+		"snapshotter.max-snaps": "SNAPSHOTTER_MAX_SNAPS",
+		"cloud-init-paths":      "CLOUD_INIT_PATHS",
 	}
 }
 
