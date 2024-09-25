@@ -64,6 +64,7 @@ RUN ARCH=$(uname -m); \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
+      xterm-resize \
       ${ADD_PKGS} && \
     zypper clean --all
 
