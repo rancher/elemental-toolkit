@@ -24,7 +24,6 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
@@ -32,8 +31,15 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
+// resetHook runs the given hook without chroot. Moreover if the hook is 'after-reset'
+// it appends defined cloud init paths rooted to the deployed root. This way any
+// 'after-reset' hook provided by the deployed system image is also taken into account.
 func (r *ResetAction) resetHook(hook string) error {
-	return Hook(&r.cfg.Config, hook, r.cfg.Strict, r.cfg.CloudInitPaths...)
+	cIPaths := r.cfg.CloudInitPaths
+	if hook == constants.AfterResetHook {
+		cIPaths = append(cIPaths, utils.PreAppendRoot(constants.WorkingImgDir, r.cfg.CloudInitPaths...)...)
+	}
+	return Hook(&r.cfg.Config, hook, r.cfg.Strict, cIPaths...)
 }
 
 func (r *ResetAction) resetChrootHook(hook string, root string) error {
@@ -144,7 +150,7 @@ func (r *ResetAction) updateInstallState(cleanup *utils.CleanStack) error {
 						Active:     true,
 						Labels:     r.spec.SnapshotLabels,
 						Date:       date,
-						FromAction: cnst.ActionReset,
+						FromAction: constants.ActionReset,
 					},
 				},
 			},

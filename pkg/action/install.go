@@ -81,8 +81,15 @@ func NewInstallAction(cfg *types.RunConfig, spec *types.InstallSpec, opts ...Ins
 	return i, err
 }
 
+// installHook runs the given hook without chroot. Moreover if the hook is 'after-install'
+// it appends defiled cloud init paths rooted to the deployed root. This way any
+// 'after-install' hook provided by the deployed system image is also taken into account.
 func (i *InstallAction) installHook(hook string) error {
-	return Hook(&i.cfg.Config, hook, i.cfg.Strict, i.cfg.CloudInitPaths...)
+	cIPaths := i.cfg.CloudInitPaths
+	if hook == cnst.AfterInstallHook {
+		cIPaths = append(cIPaths, utils.PreAppendRoot(cnst.WorkingImgDir, i.cfg.CloudInitPaths...)...)
+	}
+	return Hook(&i.cfg.Config, hook, i.cfg.Strict, cIPaths...)
 }
 
 func (i *InstallAction) installChrootHook(hook string, root string) error {

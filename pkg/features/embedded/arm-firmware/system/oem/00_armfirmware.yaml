@@ -1,0 +1,20 @@
+name: "Set ARM Firmware"
+stages:
+    after-install-chroot:
+    - &pifirmware
+      name: Raspberry PI post hook
+      if: '[ -d "/boot/vc" ]'
+      commands:
+      - cp -rf /boot/vc/* /run/elemental/efi/
+
+    after-upgrade-chroot:
+    - <<: *pifirmware
+
+    after-reset-chroot:
+    - <<: *pifirmware
+
+    after-disk:
+    - name: Raspberry PI post hook
+      if: '[ -d "/run/elemental-build/workingtree/boot/vc" ]'
+      commands:
+      - cp -rf /run/elemental-build/workingtree/boot/vc/* /run/elemental-build/efi/
