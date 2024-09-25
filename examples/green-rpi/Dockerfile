@@ -55,12 +55,17 @@ COPY --from=TOOLKIT /usr/bin/elemental /usr/bin/elemental
 RUN systemctl enable NetworkManager.service
 
 # Generate initrd with required elemental services
-RUN elemental init -f && \
-    kernel=$(ls /boot/Image-* | head -n1) && \
-    if [ -e "$kernel" ]; then ln -sf "${kernel#/boot/}" /boot/vmlinuz; fi && \
-    rm -rf /var/log/update* && \
-    >/var/log/lastlog && \
-    rm -rf /boot/vmlinux*
+RUN elemental --debug init --force \
+      elemental-rootfs \
+      elemental-sysroot \
+      grub-config \
+      grub-default-bootargs \
+      elemental-setup \
+      dracut-config \
+      cloud-config-defaults \
+      cloud-config-essentials \
+      boot-assessment \
+      arm-firmware
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

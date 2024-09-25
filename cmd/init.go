@@ -34,10 +34,18 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 		Use:   "init FEATURES",
 		Short: "Initialize container image for booting",
 		Long: "Init a container image with elemental configuration\n\n" +
-			"FEATURES - should be provided as a comma-separated list of features to install.\n" +
-			"    Available features: " + strings.Join(features.All, ",") + "\n" +
-			"    Defaults to " + strings.Join(features.Default, ","),
-		Args: cobra.MaximumNArgs(1),
+			"FEATURES - provided as an argument list of features to install.\n" +
+			"  Available features:\n\t" + strings.Join(features.All, "\n\t") + "\n\n" +
+			"  Defaults to:\n\t" + strings.Join(features.Default, "\n\t"),
+		ValidArgs: features.All,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 1 {
+				// This is logic is just to keep backward compatibility with
+				// comma separated values
+				return cobra.OnlyValidArgs(cmd, strings.Split(args[0], ","))
+			}
+			return cobra.OnlyValidArgs(cmd, args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.ReadConfigRun(viper.GetString("config-dir"), cmd.Flags(), types.NewDummyMounter())
 			if err != nil {
@@ -54,8 +62,11 @@ func InitCmd(root *cobra.Command) *cobra.Command {
 
 			if len(args) == 0 {
 				spec.Features = features.Default
-			} else {
+			} else if len(args) == 1 {
+				// The old behavior is kept to keep backward compatibiliy
 				spec.Features = strings.Split(args[0], ",")
+			} else {
+				spec.Features = args
 			}
 
 			cfg.Logger.Infof("Initializing system...")

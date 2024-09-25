@@ -646,3 +646,12 @@ func CreateRAWFile(fs types.FS, filename string, size uint) error {
 	}
 	return nil
 }
+
+// PreAppendRoot simply adds the given root as a prefix to the given paths
+func PreAppendRoot(root string, paths ...string) []string {
+	var newPaths []string
+	for _, path := range paths {
+		newPaths = append(newPaths, filepath.Join(root, path))
+	}
+	return newPaths
+}

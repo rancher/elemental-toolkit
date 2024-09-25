@@ -76,6 +76,8 @@ var _ = Describe("Build Actions", func() {
 			config.WithImageExtractor(extractor),
 			config.WithPlatform("linux/amd64"),
 		)
+		// build-disk will create `/run/elemental-build` and assumes /run to exist
+		Expect(utils.MkdirAll(fs, "/run", constants.DirPerm)).To(Succeed())
 
 	})
 	AfterEach(func() {
