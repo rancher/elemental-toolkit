@@ -91,19 +91,21 @@ const (
 	GrubPassiveSnapshots   = "passive_snaps"
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
-	// Mountpoints of images and partitions
-	RunElementalDir    = "/run/elemental"
-	RecoveryDir        = "/run/elemental/recovery"
-	StateDir           = "/run/elemental/state"
-	OEMDir             = "/run/elemental/oem"
-	PersistentDir      = "/run/elemental/persistent"
-	TransitionDir      = "/run/elemental/transition"
-	BootDir            = "/run/elemental/efi"
-	ImgSrcDir          = "/run/elemental/imgsrc"
-	WorkingImgDir      = "/run/elemental/workingtree"
-	OverlayDir         = "/run/elemental/overlay"
-	PersistentStateDir = ".state"
-	RunningStateDir    = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
+	// Mountpoints or links to images and partitions
+	RunElementalBuildLink = "/run/elemental-build"
+	RunElementalDir       = "/run/elemental"
+	RecoveryDir           = "/run/elemental/recovery"
+	StateDir              = "/run/elemental/state"
+	OEMDir                = "/run/elemental/oem"
+	PersistentDir         = "/run/elemental/persistent"
+	TransitionDir         = "/run/elemental/transition"
+	BootDir               = "/run/elemental/efi"
+	ImgSrcDir             = "/run/elemental/imgsrc"
+	WorkingImgDir         = "/run/elemental/workingtree"
+	WorkingImgBuildLink   = RunElementalBuildLink + "/workingtree"
+	OverlayDir            = "/run/elemental/overlay"
+	PersistentStateDir    = ".state"
+	RunningStateDir       = "/run/initramfs/elemental-state" // TODO: converge this constant with StateDir/RecoveryDir when moving to elemental-rootfs as default rootfs feature.
 
 	// Running mode sentinel files
 	ActiveMode   = "/run/elemental/active_mode"

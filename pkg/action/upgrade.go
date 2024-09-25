@@ -24,7 +24,6 @@ import (
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/bootloader"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	cnst "github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	elementalError "github.com/rancher/elemental-toolkit/v2/pkg/error"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
@@ -101,13 +100,18 @@ func (u UpgradeAction) Error(s string, args ...interface{}) {
 	u.cfg.Logger.Errorf(s, args...)
 }
 
+// upgradeHook runs the given hook without chroot. Moreover if the hook is 'after-upgrade'
+// it appends defined cloud init paths rooted to the deployed root. This way any
+// 'after-upgrade' hook provided by the deployed system image is also taken into account.
 func (u UpgradeAction) upgradeHook(hook string) error {
-	u.Info("Applying '%s' hook", hook)
-	return Hook(&u.cfg.Config, hook, u.cfg.Strict, u.cfg.CloudInitPaths...)
+	cIPaths := u.cfg.CloudInitPaths
+	if hook == constants.AfterUpgradeHook {
+		cIPaths = append(cIPaths, utils.PreAppendRoot(constants.WorkingImgDir, u.cfg.CloudInitPaths...)...)
+	}
+	return Hook(&u.cfg.Config, hook, u.cfg.Strict, cIPaths...)
 }
 
 func (u UpgradeAction) upgradeChrootHook(hook string, root string) error {
-	u.Info("Applying '%s' hook", hook)
 	mountPoints := map[string]string{}
 
 	oemDevice := u.spec.Partitions.OEM
@@ -178,7 +182,7 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 		Active:     true,
 		Labels:     u.spec.SnapshotLabels,
 		Date:       u.spec.State.Date,
-		FromAction: cnst.ActionUpgrade,
+		FromAction: constants.ActionUpgrade,
 	}
 
 	if statePart.Snapshots[oldActiveID] != nil {
@@ -203,14 +207,14 @@ func (u *UpgradeAction) upgradeInstallStateYaml() error {
 					Digest:     u.spec.RecoverySystem.Source.GetDigest(),
 					Labels:     u.spec.SnapshotLabels,
 					Date:       u.spec.State.Date,
-					FromAction: cnst.ActionUpgrade,
+					FromAction: constants.ActionUpgrade,
 				},
 			}
 			u.spec.State.Partitions[constants.RecoveryPartName] = recoveryPart
 		} else if recoveryPart.RecoveryImage != nil {
 			recoveryPart.RecoveryImage.Date = u.spec.State.Date
 			recoveryPart.RecoveryImage.Labels = u.spec.SnapshotLabels
-			recoveryPart.RecoveryImage.FromAction = cnst.ActionUpgrade
+			recoveryPart.RecoveryImage.FromAction = constants.ActionUpgrade
 		}
 	}
 
