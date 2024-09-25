@@ -272,6 +272,25 @@ var _ = Describe("Config", Label("config"), func() {
 
 			Expect(cfg.Snapshotter.Type).To(Equal(constants.BtrfsSnapshotterType))
 			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(constants.BtrfsMaxSnaps))
+
+			// Test MAX_SNAPS string conversion from env
+			Expect(os.Setenv("ELEMENTAL_SNAPSHOTTER_TYPE", "btrfs")).Should(Succeed())
+			Expect(os.Setenv("ELEMENTAL_SNAPSHOTTER_MAX_SNAPS", "42")).Should(Succeed())
+
+			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			Expect(cfg.Snapshotter.Type).To(Equal(constants.BtrfsSnapshotterType))
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(42))
+
+			Expect(os.Setenv("ELEMENTAL_SNAPSHOTTER_TYPE", "loopdevice")).Should(Succeed())
+			Expect(os.Setenv("ELEMENTAL_SNAPSHOTTER_MAX_SNAPS", "42")).Should(Succeed())
+
+			cfg, err = ReadConfigRun("fixtures/config/", nil, mounter)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			Expect(cfg.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
+			Expect(cfg.Snapshotter.MaxSnaps).To(Equal(42))
 		})
 	})
 	Describe("Read runtime specs", Label("spec"), func() {
