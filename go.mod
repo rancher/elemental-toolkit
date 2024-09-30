@@ -19,7 +19,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/errors v0.9.1
-	github.com/rancher/yip v1.9.3
+	github.com/rancher/yip v1.9.5
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af
 	github.com/spf13/cobra v1.8.1
@@ -31,11 +31,7 @@ require (
 )
 
 require (
-	dario.cat/mergo v1.0.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
-	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
@@ -52,13 +48,10 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/itchyny/gojq v0.12.16 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767 // indirect
 	github.com/mauromorales/xpasswd v0.4.0 // indirect
-	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/sys/mountinfo v0.7.1 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/mudler/entities v0.8.1 // indirect
@@ -72,14 +65,13 @@ require (
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/tredoe/osutil v1.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	github.com/vishvananda/netlink v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3 // indirect
-	github.com/zcalusic/sysinfo v1.1.0 // indirect
+	github.com/zcalusic/sysinfo v1.1.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
@@ -130,11 +122,11 @@ require (
 	github.com/twpayne/go-vfs/v4 v4.3.0
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
