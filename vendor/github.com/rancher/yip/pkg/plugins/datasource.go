@@ -152,7 +152,8 @@ func DataSources(l logger.Interface, s schema.Stage, fs vfs.FS, console Console)
 	}
 
 	if userdata == nil {
-		return fmt.Errorf("no metadata/userdata found")
+		l.Warn("No metadata/userdata found")
+		return nil
 	}
 
 	basePath := prv.ConfigPath
@@ -160,10 +161,8 @@ func DataSources(l logger.Interface, s schema.Stage, fs vfs.FS, console Console)
 		basePath = s.DataSources.Path
 	}
 
-	if userdata != nil {
-		if err := processUserData(l, basePath, userdata, fs, console); err != nil {
-			return err
-		}
+	if err := processUserData(l, basePath, userdata, fs, console); err != nil {
+		return err
 	}
 
 	//Apply the hostname if the provider extracted a hostname file
