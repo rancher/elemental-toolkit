@@ -75,6 +75,20 @@ func (l opList) uniqueNames() {
 	}
 }
 
+type loaderError struct {
+	path string
+}
+
+func (e loaderError) Error() string {
+	return fmt.Sprintf("error loading path '%s'", e.path)
+}
+
+func newLoaderError(path string) loaderError {
+	return loaderError{
+		path,
+	}
+}
+
 func (e *DefaultExecutor) applyStage(stage schema.Stage, fs vfs.FS, console plugins.Console) error {
 	var errs error
 	for _, p := range e.conditionals {
@@ -167,10 +181,10 @@ func (e *DefaultExecutor) genOpFromSchema(file, stage string, config schema.YipC
 	return results
 }
 
-func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.Console) ([]*op, error) {
-	results := []*op{}
+func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.Console) (results []*op, loaderError error, err error) {
+	results = []*op{}
 	prev := []*op{}
-	err := vfs.Walk(fs, dir,
+	err = vfs.Walk(fs, dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -189,9 +203,11 @@ func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.C
 
 			config, err := schema.Load(path, fs, schema.FromFile, e.modifier)
 			if err != nil {
-				return err
-
+				e.logger.Warnf("failed to load file '%s': %s", path, err.Error())
+				loaderError = multierror.Append(loaderError, newLoaderError(path))
+				return nil
 			}
+
 			ops := e.genOpFromSchema(path, stage, *config, fs, console)
 			// mark lexicographic order dependency from previous blocks
 			if len(prev) > 0 && len(ops) > 0 {
@@ -209,7 +225,8 @@ func (e *DefaultExecutor) dirOps(stage, dir string, fs vfs.FS, console plugins.C
 			results = append(results, ops...)
 			return nil
 		})
-	return results, err
+
+	return results, loaderError, err
 }
 
 func writeDAG(dag [][]dag.GraphEntry) {
@@ -227,17 +244,17 @@ func writeDAG(dag [][]dag.GraphEntry) {
 }
 
 func (e *DefaultExecutor) Graph(stage string, fs vfs.FS, console plugins.Console, source string) ([][]dag.GraphEntry, error) {
-	g, err := e.prepareDAG(stage, source, fs, console)
+	g, loaderError, err := e.prepareDAG(stage, source, fs, console)
 	if err != nil {
 		return nil, err
 	}
-	return g.Analyze(), err
+	return g.Analyze(), loaderError
 }
 
 func (e *DefaultExecutor) Analyze(stage string, fs vfs.FS, console plugins.Console, args ...string) {
 	var errs error
 	for _, source := range args {
-		g, err := e.prepareDAG(stage, source, fs, console)
+		g, _, err := e.prepareDAG(stage, source, fs, console)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
@@ -255,35 +272,35 @@ func (e *DefaultExecutor) Analyze(stage string, fs vfs.FS, console plugins.Conso
 	}
 }
 
-func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (*dag.Graph, error) {
+func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (g *dag.Graph, loaderError error, err error) {
 	f, err := fs.Stat(uri)
 
-	g := dag.DAG(dag.EnableInit)
+	g = dag.DAG(dag.EnableInit)
 	var ops opList
 	switch {
 	case err == nil && f.IsDir():
-		ops, err = e.dirOps(stage, uri, fs, console)
+		ops, loaderError, err = e.dirOps(stage, uri, fs, console)
 		if err != nil {
-			return nil, err
+			return nil, loaderError, err
 		}
 	case err == nil:
 		config, err := schema.Load(uri, fs, schema.FromFile, e.modifier)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
 	case utils.IsUrl(uri):
 		config, err := schema.Load(uri, fs, schema.FromUrl, e.modifier)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
 	default:
 		config, err := schema.Load(uri, fs, nil, e.modifier)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		ops = e.genOpFromSchema("<STDIN>", stage, *config, fs, console)
@@ -295,11 +312,11 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 		g.Add(o.name, append(o.options, dag.WithCallback(o.fn), dag.WithDeps(append(o.after, o.deps...)...))...)
 	}
 
-	return g, nil
+	return g, loaderError, nil
 }
 
 func (e *DefaultExecutor) runStage(stage, uri string, fs vfs.FS, console plugins.Console) (err error) {
-	g, err := e.prepareDAG(stage, uri, fs, console)
+	g, loaderError, err := e.prepareDAG(stage, uri, fs, console)
 	if err != nil {
 		return err
 	}
@@ -319,6 +336,10 @@ func (e *DefaultExecutor) runStage(stage, uri string, fs vfs.FS, console plugins
 				err = multierror.Append(err, gg.Error)
 			}
 		}
+	}
+
+	if loaderError != nil {
+		err = multierror.Append(err, loaderError)
 	}
 
 	return err
