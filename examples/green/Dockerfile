@@ -75,6 +75,8 @@ COPY --from=toolkit /usr/bin/elemental /usr/bin/elemental
 RUN systemctl enable NetworkManager.service && \
     systemctl enable sshd.service
 
+RUN useradd --system systemd-timesync
+
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
