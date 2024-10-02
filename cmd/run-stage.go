@@ -38,6 +38,8 @@ func NewRunStage(root *cobra.Command) *cobra.Command {
 				return elementalError.NewFromError(err, elementalError.ReadingRunConfig)
 			}
 
+			cmd.SilenceUsage = true
+
 			err = utils.RunStage(&cfg.Config, args[0], cfg.Strict, cfg.CloudInitPaths...)
 			return elementalError.NewFromError(err, elementalError.CloudInitRunStage)
 		},
