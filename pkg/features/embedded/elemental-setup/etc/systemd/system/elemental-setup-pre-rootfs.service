@@ -11,7 +11,7 @@ Conflicts=initrd-switch-root.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/elemental run-stage pre-rootfs
+ExecStart=/usr/bin/elemental run-stage --strict pre-rootfs
 
 [Install]
 WantedBy=initrd-root-device.target
