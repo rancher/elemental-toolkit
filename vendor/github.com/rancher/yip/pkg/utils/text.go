@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"math/rand"
 	"text/template"
-
-	"github.com/Masterminds/sprig/v3"
 )
 
 // UUIDTemplatedString accepts a template, and renders it with a
@@ -13,7 +11,7 @@ import (
 // E.g. input "foo-{{.}}"
 func TemplatedString(t string, i interface{}) (string, error) {
 	b := bytes.NewBuffer([]byte{})
-	tmpl, err := template.New("template").Funcs(sprig.TxtFuncMap()).Parse(t)
+	tmpl, err := template.New("template").Parse(t)
 	if err != nil {
 		return "", err
 	}
