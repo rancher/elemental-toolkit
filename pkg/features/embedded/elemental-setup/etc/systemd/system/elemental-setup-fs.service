@@ -8,7 +8,7 @@ Before=sysinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/elemental run-stage fs
+ExecStart=/usr/bin/elemental run-stage --strict fs
 
 [Install]
 WantedBy=sysinit.target

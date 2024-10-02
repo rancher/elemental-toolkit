@@ -5,7 +5,7 @@ Before=getty.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/elemental run-stage boot
+ExecStart=/usr/bin/elemental run-stage --strict boot
 
 [Install]
 WantedBy=multi-user.target
