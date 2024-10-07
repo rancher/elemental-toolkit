@@ -38,6 +38,7 @@ const (
 	MSG_DEVICE_LOGICAL_UNIT_DP = 0x11
 	MSG_SATA_DP                = 0x12
 	MSG_NVME_NAMESPACE_DP      = 0x17
+	MSG_URI_DP                 = 0x18
 
 	MEDIA_HARDDRIVE_DP             = 0x01
 	MEDIA_CDROM_DP                 = 0x02
