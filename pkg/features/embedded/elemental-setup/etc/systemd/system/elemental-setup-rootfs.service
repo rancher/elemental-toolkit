@@ -10,7 +10,7 @@ Conflicts=initrd-switch-root.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=/usr/bin/ln -sf -t / /sysroot/system
-ExecStart=/usr/bin/elemental run-stage rootfs
+ExecStart=/usr/bin/elemental run-stage --strict rootfs
 
 [Install]
 WantedBy=initrd-root-fs.target
