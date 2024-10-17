@@ -35,8 +35,6 @@ import (
 
 const (
 	rootSubvol        = "@"
-	rootSubvolID      = 257
-	snapshotsSubvolID = 258
 	snapshotsPath     = ".snapshots"
 	snapshotPathTmpl  = ".snapshots/%d/snapshot"
 	snapshotPathRegex = `.snapshots/(\d+)/snapshot`
@@ -60,6 +58,7 @@ type Btrfs struct {
 	cfg               types.Config
 	snapshotterCfg    types.SnapshotterConfig
 	btrfsCfg          types.BtrfsConfig
+	device            string
 	rootDir           string
 	efiDir            string
 	currentSnapshotID int
@@ -140,6 +139,7 @@ func (b *Btrfs) InitSnapshotter(state *types.Partition, efiDir string) error {
 	var ok bool
 
 	b.cfg.Logger.Infof("Initiate btrfs snapshotter at %s", state.MountPoint)
+	b.device = state.Path
 	b.rootDir = state.MountPoint
 	b.efiDir = efiDir
 
@@ -262,7 +262,6 @@ func (b *Btrfs) CloseTransactionOnError(snapshot *types.Snapshot) (err error) {
 
 func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	var cmdOut []byte
-	var subvolID int
 
 	if !snapshot.InProgress {
 		b.cfg.Logger.Debugf("No transaction to close for snapshot %d workdir", snapshot.ID)
@@ -335,15 +334,25 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 		return err
 	}
 
-	subvolID, err = b.findSubvolumeByPath(fmt.Sprintf(snapshotPathTmpl, snapshot.ID))
+	// locate mounted state directory
+	stateDir, err := findStatePath(b.cfg.Runner, b.device)
 	if err != nil {
-		b.cfg.Logger.Error("failed finding subvolume")
+		b.cfg.Logger.Errorf("unable to locate state directory: %s", err.Error())
 		return err
 	}
 
-	cmdOut, err = b.cfg.Runner.Run("btrfs", "subvolume", "set-default", strconv.Itoa(subvolID), snapshot.Path)
+	// Remove old symlink and create a new one
+	activeSnap := filepath.Join(stateDir, constants.ActiveSnapshot)
+	linkDst := fmt.Sprintf(snapshotPathTmpl, snapshot.ID)
+	b.cfg.Logger.Debugf("creating symlink %s to %s", activeSnap, linkDst)
+	_ = b.cfg.Fs.Remove(activeSnap)
+	err = b.cfg.Fs.Symlink(linkDst, activeSnap)
 	if err != nil {
-		b.cfg.Logger.Errorf("failed setting read only property to snapshot %d: %s", snapshot.ID, string(cmdOut))
+		b.cfg.Logger.Errorf("failed default snapshot image for snapshot %d: %v", snapshot.ID, err)
+		sErr := b.cfg.Fs.Symlink(fmt.Sprintf(snapshotPathTmpl, b.activeSnapshotID), activeSnap)
+		if sErr != nil {
+			b.cfg.Logger.Warnf("could not restore previous active link")
+		}
 		return err
 	}
 
@@ -475,19 +484,25 @@ func (b *Btrfs) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 }
 
 func (b *Btrfs) getActiveSnapshot() (int, error) {
-	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "get-default", b.rootDir)
+	stateDir, err := findStatePath(b.cfg.Runner, b.device)
 	if err != nil {
-		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
+		b.cfg.Logger.Errorf("unable to locate state directory: %s", err.Error())
 		return 0, err
 	}
+
+	activeSnap := filepath.Join(stateDir, constants.ActiveSnapshot)
+	activePath, err := b.cfg.Fs.Readlink(activeSnap)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed reading active symlink %s: %s", activeSnap, err.Error())
+		return 0, err
+	}
+	b.cfg.Logger.Debugf("active snapshot path is %s", activePath)
+
 	re := regexp.MustCompile(snapshotPathRegex)
-	list := b.parseVolumes(strings.TrimSpace(string(out)))
-	for _, v := range list {
-		match := re.FindStringSubmatch(v.path)
-		if match != nil {
-			id, _ := strconv.Atoi(match[1])
-			return id, nil
-		}
+	match := re.FindStringSubmatch(activePath)
+	if match != nil {
+		id, _ := strconv.Atoi(match[1])
+		return id, nil
 	}
 	return 0, nil
 }
@@ -508,9 +523,30 @@ func (b *Btrfs) parseVolumes(rawBtrfsList string) btrfsSubvolList {
 	return list
 }
 
-func (b *Btrfs) isInitiated(rootDir string) (bool, error) {
-	var rootVolume, snapshotsVolume bool
+func (b *Btrfs) getStateSubvolumes(rootDir string) (rootVolume *btrfsSubvol, snapshotsVolume *btrfsSubvol, err error) {
+	volumes, err := b.getSubvolumes(rootDir)
+	if err != nil {
+		return nil, nil, err
+	}
 
+	snapshots := filepath.Join(rootSubvol, snapshotsPath)
+
+	b.cfg.Logger.Debugf(
+		"Looking for subvolumes %s and %s in subvolume list: %v",
+		rootSubvol, snapshots, volumes,
+	)
+	for _, vol := range volumes {
+		if vol.path == rootSubvol {
+			rootVolume = &vol
+		} else if vol.path == snapshots {
+			snapshotsVolume = &vol
+		}
+	}
+
+	return rootVolume, snapshotsVolume, err
+}
+
+func (b *Btrfs) isInitiated(rootDir string) (bool, error) {
 	if b.activeSnapshotID > 0 {
 		return true, nil
 	}
@@ -518,24 +554,12 @@ func (b *Btrfs) isInitiated(rootDir string) (bool, error) {
 		return false, nil
 	}
 
-	volumes, err := b.getSubvolumes(rootDir)
+	rootVolume, snapshotsVolume, err := b.getStateSubvolumes(rootDir)
 	if err != nil {
 		return false, err
 	}
 
-	b.cfg.Logger.Debugf(
-		"Looking for subvolume ids %d and %d in subvolume list: %v",
-		rootSubvolID, snapshotsSubvolID, volumes,
-	)
-	for _, vol := range volumes {
-		if vol.id == rootSubvolID {
-			rootVolume = true
-		} else if vol.id == snapshotsSubvolID {
-			snapshotsVolume = true
-		}
-	}
-
-	if rootVolume && snapshotsVolume {
+	if (rootVolume != nil) && (snapshotsVolume != nil) {
 		id, err := b.getActiveSnapshot()
 		if err != nil {
 			return false, err
@@ -573,32 +597,21 @@ func (b *Btrfs) writeSnapperSnapshotXML(filepath string, snapshot SnapperSnapsho
 	return nil
 }
 
-func (b *Btrfs) findSubvolumeByPath(path string) (int, error) {
-	subvolumes, err := b.getSubvolumes(b.rootDir)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed loading subvolumes: %v", err)
-		return 0, err
-	}
-
-	for _, subvol := range subvolumes {
-		if strings.Contains(subvol.path, path) {
-			return subvol.id, nil
-		}
-	}
-
-	b.cfg.Logger.Errorf("could not find subvolume with path '%s' in subvolumes list '%v'", path, subvolumes)
-	return 0, fmt.Errorf("can't find subvolume '%s'", path)
-}
-
 func (b *Btrfs) getPassiveSnapshots() ([]int, error) {
 	passives := []int{}
+
+	active, err := b.getActiveSnapshot()
+	if err != nil {
+		b.cfg.Logger.Warnf("failed getting current active snapshot: %v", err)
+		return nil, err
+	}
 
 	snapshots, err := b.GetSnapshots()
 	if err != nil {
 		return nil, err
 	}
 	for _, snapshot := range snapshots {
-		if snapshot != b.activeSnapshotID {
+		if snapshot != active {
 			passives = append(passives, snapshot)
 		}
 	}
@@ -611,6 +624,13 @@ func (b *Btrfs) setBootloader() error {
 	var passives, fallbacks []string
 
 	b.cfg.Logger.Infof("Setting bootloader with current passive snapshots")
+
+	active, err := b.getActiveSnapshot()
+	if err != nil {
+		b.cfg.Logger.Warnf("failed getting current active snapshot: %v", err)
+		return err
+	}
+
 	ids, err := b.getPassiveSnapshots()
 	if err != nil {
 		b.cfg.Logger.Warnf("failed getting current passive snapshots: %v", err)
@@ -632,6 +652,7 @@ func (b *Btrfs) setBootloader() error {
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
 		constants.GrubPassiveSnapshots: snapsList,
+		constants.GrubActiveSnapshot:   strconv.Itoa(active),
 		"snapshotter":                  constants.BtrfsSnapshotterType,
 	}
 
@@ -759,7 +780,7 @@ func (b *Btrfs) setBtrfsForFirstTime(state *types.Partition) error {
 }
 
 func (b *Btrfs) configureSnapperAndRootDir(state *types.Partition) error {
-	rootDir, stateMount, err := findStateMount(b.cfg.Runner, state.Path)
+	rootDir, stateMount, err := findSnapperStateAndRootMount(b.cfg.Runner, b.device)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed setting snapper root and state partition mountpoint: %v", err)
 		return err
@@ -774,24 +795,42 @@ func (b *Btrfs) configureSnapperAndRootDir(state *types.Partition) error {
 	return nil
 }
 
-func findStateMount(runner types.Runner, device string) (rootDir string, stateMount string, err error) {
-	output, err := runner.Run("findmnt", "-lno", "SOURCE,TARGET", device)
+func findSnapperStateAndRootMount(runner types.Runner, device string) (rootDir string, stateMount string, err error) {
+	output, err := runner.Run("findmnt", "-lno", "SOURCE,TARGET,OPTIONS", device)
 	if err != nil {
 		return "", "", err
 	}
-	r := regexp.MustCompile(`@/.snapshots/\d+/snapshot`)
+	rsnap := regexp.MustCompile(`@/.snapshots/\d+/snapshot`)
+	rvol := regexp.MustCompile(`subvol=/([^,]*)`)
+
+	var rootMount string
 
 	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(output))))
 	for scanner.Scan() {
 		lineFields := strings.Fields(scanner.Text())
-		if len(lineFields) != 2 {
+		if len(lineFields) != 3 {
 			continue
 		}
-		if strings.Contains(lineFields[1], constants.RunningStateDir) {
-			stateMount = lineFields[1]
-		} else if r.MatchString(lineFields[0]) {
+
+		if rsnap.MatchString(lineFields[0]) {
 			rootDir = lineFields[1]
+		} else {
+			volumeMatch := rvol.FindStringSubmatch(lineFields[2])
+
+			if len(volumeMatch) > 1 {
+				subvol := volumeMatch[1]
+
+				if subvol == "" {
+					rootMount = lineFields[1]
+				} else if subvol == rootSubvol {
+					stateMount = lineFields[1]
+				}
+			}
 		}
+	}
+
+	if stateMount == "" && rootMount != "" {
+		stateMount = filepath.Join(rootMount, rootSubvol)
 	}
 
 	if stateMount == "" || rootDir == "" {
@@ -799,4 +838,45 @@ func findStateMount(runner types.Runner, device string) (rootDir string, stateMo
 	}
 
 	return rootDir, stateMount, err
+}
+
+func findStatePath(runner types.Runner, device string) (statePath string, err error) {
+	output, err := runner.Run("findmnt", "-lno", "SOURCE,TARGET,OPTIONS", device)
+	if err != nil {
+		return "", err
+	}
+
+	rvol := regexp.MustCompile(`subvol=/([^,]*)`)
+
+	var rootMount string
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(output))))
+	for scanner.Scan() {
+		lineFields := strings.Fields(scanner.Text())
+		if len(lineFields) != 3 {
+			continue
+		}
+
+		volumeMatch := rvol.FindStringSubmatch(lineFields[2])
+
+		if len(volumeMatch) > 1 {
+			subvol := volumeMatch[1]
+
+			if subvol == "" {
+				rootMount = lineFields[1]
+			} else if subvol == rootSubvol {
+				statePath = lineFields[1]
+			}
+		}
+	}
+
+	if statePath == "" && rootMount != "" {
+		statePath = filepath.Join(rootMount, rootSubvol)
+	}
+
+	if statePath == "" {
+		err = fmt.Errorf("could not find state mountpoint, findmnt output: %s", string(output))
+	}
+
+	return statePath, err
 }

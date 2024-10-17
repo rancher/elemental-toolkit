@@ -47,7 +47,12 @@ if [ "${snapshotter}" == "btrfs" ]; then
     rootvol_unit=$(systemd-escape -p --suffix=mount ${root_part_mnt})
     case "${elemental_mode}" in
         *active*)
-            opts="ro" ;;
+            if [ -z "${elemental_img}" ]; then
+                opts="ro"
+            else
+                opts="ro,subvol=${elemental_img}"
+            fi
+            ;;
         *passive*)
             opts="ro,subvol=${elemental_img}" ;;
         *)

@@ -89,6 +89,7 @@ const (
 	GrubDefEntry           = "Elemental"
 	GrubFallback           = "default_fallback"
 	GrubPassiveSnapshots   = "passive_snaps"
+	GrubActiveSnapshot     = "active_snap"
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints or links to images and partitions
@@ -270,6 +271,7 @@ func GetDefaultGrubModules() []string {
 
 func GetDefaultGrubModulesPatterns() []string {
 	return []string{
+		filepath.Join(ElementalBootloaderBin, "*-efi"),
 		"/boot/grub2/*-efi",
 		"/usr/share/grub*/*-efi",
 		"/usr/lib/grub*/*-efi",

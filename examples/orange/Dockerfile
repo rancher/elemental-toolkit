@@ -51,6 +51,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   locales \
   kbd \
   podman \
+  btrfs-progs \
+  btrfsmaintenance \
+  snapper \
   xz-utils
 
 # Hack to prevent systemd-firstboot failures while setting keymap, this is known
@@ -59,8 +62,10 @@ ARG KBD=2.6.4
 RUN curl -L https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-${KBD}.tar.xz --output kbd-${KBD}.tar.xz && \
     tar xaf kbd-${KBD}.tar.xz && mkdir -p /usr/share/keymaps && cp -Rp kbd-${KBD}/data/keymaps/* /usr/share/keymaps/
 
-# Symlink grub2-editenv
-RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
+# Symlink grub2-editenv and snapper global config
+RUN mkdir -p /etc/sysconfig && \
+    ln -sf //etc/default/snapper /etc/sysconfig/snapper && \
+    ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
 
 # Just add the elemental cli
 COPY --from=toolkit /usr/bin/elemental /usr/bin/elemental
@@ -75,8 +80,11 @@ RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 # the default cloud-init
 RUN locale-gen --lang en_US.UTF-8
 
+# Add default snapshotter setup
+ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
+
 # Generate initrd with required elemental services
-RUN elemental --debug init -f
+RUN elemental --debug init --force
 
 # Update os-release file with some metadata
 RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \

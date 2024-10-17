@@ -243,6 +243,60 @@ func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
 func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
 
+// resolveSymlink takes a file path, resolves symlinks recursively,
+// and relativizes the target against the link directory.
+func RelativizeLink(fs types.FS, path string) error {
+	// Check if the file is a symbolic link
+	fileInfo, err := fs.Lstat(path)
+	if err != nil {
+		return fmt.Errorf("error reading file info: %v", err)
+	}
+
+	if fileInfo.Mode()&os.ModeSymlink != 0 {
+		// File is a symbolic link, read target path
+		target, err := fs.Readlink(path)
+		if err != nil {
+			return fmt.Errorf("error reading symlink: %v", err)
+		}
+
+		// retrieve parent directory
+		parent := filepath.Dir(path)
+
+		if filepath.IsAbs(target) {
+			// if link target is absolute, relativize it
+			target, err = filepath.Rel(parent, target)
+
+			if err != nil {
+				return fmt.Errorf("unable to compute relative path: %v", err)
+			}
+		}
+
+		// remove symlink (this is also used to avoid infinite recursive calls)
+		err = fs.Remove(path)
+
+		if err != nil {
+			return fmt.Errorf("unable to remove link: %v", err)
+		}
+
+		// apply relative target against parent directory
+		absolute := filepath.Join(parent, target)
+
+		// recursively relativize target (if applicable)
+		rerr := RelativizeLink(fs, absolute)
+
+		// and create the symlink as relative
+		err = fs.Symlink(target, path)
+
+		if err != nil {
+			return fmt.Errorf("unable to create symbolic link: %v", err)
+		}
+
+		return rerr
+	}
+
+	return nil
+}
+
 // WalkDirFs is the same as filepath.WalkDir but accepts a types.Fs so it can be run on any types.Fs type
 func WalkDirFs(fs types.FS, root string, fn fs.WalkDirFunc) error {
 	info, err := fs.Stat(root)
