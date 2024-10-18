@@ -248,6 +248,9 @@ func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
 func RelativizeLink(fs types.FS, path string) error {
 	// Check if the file is a symbolic link
 	fileInfo, err := fs.Lstat(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("error reading file info: %v", err)
 	}
@@ -262,10 +265,15 @@ func RelativizeLink(fs types.FS, path string) error {
 		// retrieve parent directory
 		parent := filepath.Dir(path)
 
+		// if link target is absolute, relativize it
 		if filepath.IsAbs(target) {
-			// if link target is absolute, relativize it
-			target, err = filepath.Rel(parent, target)
+			// vfs implementation readlink return raw path for absolute targets
+			raw, err := fs.RawPath(parent)
+			if err != nil {
+				return fmt.Errorf("unable to compute raw parent path: %v", err)
+			}
 
+			target, err = filepath.Rel(raw, target)
 			if err != nil {
 				return fmt.Errorf("unable to compute relative path: %v", err)
 			}
@@ -273,18 +281,15 @@ func RelativizeLink(fs types.FS, path string) error {
 
 		// remove symlink (this is also used to avoid infinite recursive calls)
 		err = fs.Remove(path)
-
 		if err != nil {
 			return fmt.Errorf("unable to remove link: %v", err)
 		}
 
 		// apply relative target against parent directory
 		absolute := filepath.Join(parent, target)
-
-		// recursively relativize target (if applicable)
 		rerr := RelativizeLink(fs, absolute)
 
-		// and create the symlink as relative
+		// finally create back the symlink as relative
 		err = fs.Symlink(target, path)
 
 		if err != nil {
