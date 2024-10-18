@@ -74,12 +74,13 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 			cfg.Config.Logger.Errorf("failed creating kernel symlink")
 			return err
 		}
+	}
 
-		err = utils.RelativizeLink(cfg.Fs, constants.KernelPath)
-		if err != nil {
-			cfg.Config.Logger.Errorf("failed relativizing kernel symlink")
-			return err
-		}
+	// ensure kernel link is relativized if applicable
+	err = utils.RelativizeLink(cfg.Fs, constants.KernelPath)
+	if err != nil {
+		cfg.Config.Logger.Errorf("failed relativizing kernel symlink")
+		return err
 	}
 
 	cfg.Config.Logger.Info("Remove any pre-existing initrd")
