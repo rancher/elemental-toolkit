@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.5.0
-	github.com/canonical/go-efilib v1.3.1
+	github.com/canonical/go-efilib v1.4.1
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/containerd/containerd v1.7.22
