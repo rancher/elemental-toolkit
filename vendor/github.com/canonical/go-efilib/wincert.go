@@ -206,21 +206,66 @@ func unmarshalAuthenticodeContent(data []byte) (*authenticodeContent, error) {
 		digest:          idc.messageDigest.digest}, nil
 }
 
-func certLikelyIssued(issuer, subject *x509.Certificate) bool {
-	if !bytes.Equal(issuer.RawSubject, subject.RawIssuer) {
+// type X509CertID represents the identity of a X.509 certificate.
+type X509CertID interface {
+	RawSubject() []byte                          // The encoded subject
+	SubjectKeyId() []byte                        // The subject key ID
+	PublicKeyAlgorithm() x509.PublicKeyAlgorithm // The certificate's public key algorithm
+
+	RawIssuer() []byte                           // The encoded issuer
+	AuthorityKeyId() []byte                      // The authority key ID
+	SignatureAlgorithm() x509.SignatureAlgorithm // The algorithm the issuer used to sign the certificate
+}
+
+type x509CertId struct {
+	cert *x509.Certificate
+}
+
+// NewX509CertIDFromCertificate returns a new X509CertID from the
+// supplied certificate.
+func NewX509CertIDFromCertificate(cert *x509.Certificate) X509CertID {
+	return &x509CertId{cert: cert}
+}
+
+func (id *x509CertId) RawSubject() []byte {
+	return id.cert.RawSubject
+}
+
+func (id *x509CertId) SubjectKeyId() []byte {
+	return id.cert.SubjectKeyId
+}
+
+func (id *x509CertId) PublicKeyAlgorithm() x509.PublicKeyAlgorithm {
+	return id.cert.PublicKeyAlgorithm
+}
+
+func (id *x509CertId) RawIssuer() []byte {
+	return id.cert.RawIssuer
+}
+
+func (id *x509CertId) AuthorityKeyId() []byte {
+	return id.cert.AuthorityKeyId
+}
+
+func (id *x509CertId) SignatureAlgorithm() x509.SignatureAlgorithm {
+	return id.cert.SignatureAlgorithm
+}
+
+func certLikelyIssued(issuer, subject X509CertID) bool {
+	if !bytes.Equal(issuer.RawSubject(), subject.RawIssuer()) {
 		return false
 	}
 
-	if !bytes.Equal(issuer.SubjectKeyId, subject.AuthorityKeyId) {
+	if !bytes.Equal(issuer.SubjectKeyId(), subject.AuthorityKeyId()) {
 		// XXX: this ignores the issuer and serial number fields
 		// of the akid extension, although crypto/x509 doesn't
 		// expose this - we'd have to parse it ourselves.
 		return false
 	}
 
-	switch issuer.PublicKeyAlgorithm {
+	switch issuer.PublicKeyAlgorithm() {
 	case x509.RSA:
-		switch subject.SignatureAlgorithm {
+		switch subject.SignatureAlgorithm() {
 		case x509.SHA1WithRSA, x509.SHA256WithRSA, x509.SHA384WithRSA, x509.SHA512WithRSA:
 			return true
 		case x509.SHA256WithRSAPSS, x509.SHA384WithRSAPSS, x509.SHA512WithRSAPSS:
@@ -229,14 +274,14 @@ func certLikelyIssued(issuer, subject *x509.Certificate) bool {
 			return false
 		}
 	case x509.ECDSA:
-		switch subject.SignatureAlgorithm {
+		switch subject.SignatureAlgorithm() {
 		case x509.ECDSAWithSHA1, x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
 			return true
 		default:
 			return false
 		}
 	case x509.Ed25519:
-		switch subject.SignatureAlgorithm {
+		switch subject.SignatureAlgorithm() {
 		case x509.PureEd25519:
 			return true
 		default:
@@ -247,20 +292,20 @@ func certLikelyIssued(issuer, subject *x509.Certificate) bool {
 	}
 }
 
-func isSelfSignedCert(cert *x509.Certificate) bool {
+func isSelfSignedCert(cert X509CertID) bool {
 	return certLikelyIssued(cert, cert)
 }
 
-func certsMatch(x, y *x509.Certificate) bool {
-	return bytes.Equal(x.RawSubject, y.RawSubject) &&
-		bytes.Equal(x.SubjectKeyId, y.SubjectKeyId) &&
-		x.SignatureAlgorithm == y.SignatureAlgorithm &&
-		bytes.Equal(x.RawIssuer, y.RawIssuer) &&
-		bytes.Equal(x.AuthorityKeyId, y.AuthorityKeyId) &&
-		x.PublicKeyAlgorithm == y.PublicKeyAlgorithm
+func certsMatch(x, y X509CertID) bool {
+	return bytes.Equal(x.RawSubject(), y.RawSubject()) &&
+		bytes.Equal(x.SubjectKeyId(), y.SubjectKeyId()) &&
+		x.SignatureAlgorithm() == y.SignatureAlgorithm() &&
+		bytes.Equal(x.RawIssuer(), y.RawIssuer()) &&
+		bytes.Equal(x.AuthorityKeyId(), y.AuthorityKeyId()) &&
+		x.PublicKeyAlgorithm() == y.PublicKeyAlgorithm()
 }
 
-func buildCertChains(trusted *x509.Certificate, untrusted []*x509.Certificate, chain []*x509.Certificate, depth *int) (chains [][]*x509.Certificate) {
+func buildCertChains(trusted X509CertID, untrusted []*x509.Certificate, chain []X509CertID, depth *int) (chains [][]X509CertID) {
 	removeCert := func(certs []*x509.Certificate, x *x509.Certificate) []*x509.Certificate {
 		var newCerts []*x509.Certificate
 		for _, cert := range certs {
@@ -286,11 +331,12 @@ func buildCertChains(trusted *x509.Certificate, untrusted []*x509.Certificate, c
 		// for certificates that aren't self-signed:
 		// check the list of untrusted certs first
 		for _, x := range untrusted {
-			if !certLikelyIssued(x, current) {
+			xid := NewX509CertIDFromCertificate(x)
+			if !certLikelyIssued(xid, current) {
 				continue
 			}
 			// try to build chains with this untrusted cert
-			chains = append(chains, buildCertChains(trusted, removeCert(untrusted, x), append(chain, x), depth)...)
+			chains = append(chains, buildCertChains(trusted, removeCert(untrusted, x), append(chain, xid), depth)...)
 		}
 
 		// check the trust anchor
@@ -425,6 +471,29 @@ func (c *WinCertificatePKCS7) GetSigners() []*x509.Certificate {
 	return c.p7.GetSigners()
 }
 
+// CertWithIDLikelyTrustAnchor determines if the specified certificate is likely to
+// be a trust anchor for this signature. This is "likely" because it only checks if
+// there are candidate certificate chains rooted to the specified certificate.
+// When attempting to build candidate certificate chains, it considers a certificate
+// to be likely issued by another certificate if:
+//   - The certificate's issuer matches the issuer's subject.
+//   - The certificate's Authority Key Identifier keyIdentifier field matches the
+//     issuer's Subject Key Identifier.
+//   - The certificate's signature algorithm is compatible with the issuer's public
+//     key algorithm.
+//
+// It performs no verification of any candidate certificate chains and no verification
+// of the signature.
+func (c *WinCertificatePKCS7) CertWithIDLikelyTrustAnchor(cert X509CertID) bool {
+	for _, s := range c.GetSigners() {
+		if len(buildCertChains(cert, c.p7.Certificates, []X509CertID{NewX509CertIDFromCertificate(s)}, nil)) == 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // CertLikelyTrustAnchor determines if the specified certificate is likely to be
 // a trust anchor for this signature. This is "likely" because it only checks if
 // there are candidate certificate chains rooted to the specified certificate.
@@ -438,14 +507,10 @@ func (c *WinCertificatePKCS7) GetSigners() []*x509.Certificate {
 //
 // It performs no verification of any candidate certificate chains and no verification
 // of the signature.
+//
+// Deprecate: use [CertWithIDLikelyTrustAnchor].
 func (c *WinCertificatePKCS7) CertLikelyTrustAnchor(cert *x509.Certificate) bool {
-	for _, s := range c.GetSigners() {
-		if len(buildCertChains(cert, c.p7.Certificates, []*x509.Certificate{s}, nil)) == 0 {
-			return false
-		}
-	}
-
-	return true
+	return c.CertWithIDLikelyTrustAnchor(NewX509CertIDFromCertificate(cert))
 }
 
 // WinCertificateAuthenticode corresponds to a WIN_CERTIFICATE_EFI_PKCS and
@@ -464,6 +529,23 @@ func (c *WinCertificateAuthenticode) GetSigner() *x509.Certificate {
 	return c.p7.GetSigners()[0]
 }
 
+// CertWithIDLikelyTrustAnchor determines if the specified certificate is likely to
+// be a trust anchor for this signature. This is "likely" because it only checks if
+// there are candidate certificate chains rooted to the specified certificate.
+// When attempting to build candidate certificate chains, it considers a certificate
+// to be likely issued by another certificate if:
+//   - The certificate's issuer matches the issuer's subject.
+//   - The certificate's Authority Key Identifier keyIdentifier field matches the
+//     issuer's Subject Key Identifier.
+//   - The certificate's signature algorithm is compatible with the issuer's public
+//     key algorithm.
+//
+// It performs no verification of any candidate certificate chains and no verification
+// of the signature.
+func (c *WinCertificateAuthenticode) CertWithIDLikelyTrustAnchor(cert X509CertID) bool {
+	return len(buildCertChains(cert, c.p7.Certificates, []X509CertID{NewX509CertIDFromCertificate(c.GetSigner())}, nil)) > 0
+}
+
 // CertLikelyTrustAnchor determines if the specified certificate is likely to be
 // a trust anchor for this signature. This is "likely" because it only checks if
 // there are candidate certificate chains rooted to the specified certificate.
@@ -477,8 +559,10 @@ func (c *WinCertificateAuthenticode) GetSigner() *x509.Certificate {
 //
 // It performs no verification of any candidate certificate chains and no verification
 // of the signature.
+//
+// Deprecated: use [CertWithIDLikelyTrustAnchor].
 func (c *WinCertificateAuthenticode) CertLikelyTrustAnchor(cert *x509.Certificate) bool {
-	return len(buildCertChains(cert, c.p7.Certificates, []*x509.Certificate{c.GetSigner()}, nil)) > 0
+	return c.CertWithIDLikelyTrustAnchor(NewX509CertIDFromCertificate(cert))
 }
 
 func (c *WinCertificateAuthenticode) DigestAlgorithm() crypto.Hash {

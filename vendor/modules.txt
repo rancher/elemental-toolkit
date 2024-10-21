@@ -29,7 +29,7 @@ github.com/StackExchange/wmi
 # github.com/bramvdbogaerde/go-scp v1.5.0
 ## explicit; go 1.21
 github.com/bramvdbogaerde/go-scp
-# github.com/canonical/go-efilib v1.3.1
+# github.com/canonical/go-efilib v1.4.1
 ## explicit; go 1.18
 github.com/canonical/go-efilib
 github.com/canonical/go-efilib/internal/ioerr
