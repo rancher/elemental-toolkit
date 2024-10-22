@@ -53,8 +53,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   podman \
   btrfs-progs \
   btrfsmaintenance \
-  snapper \
-  xz-utils
+  xz-utils && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Hack to prevent systemd-firstboot failures while setting keymap, this is known
 # Debian issue (T_T) https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790955

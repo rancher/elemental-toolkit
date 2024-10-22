@@ -113,7 +113,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 				runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 					switch cmd {
 					case "findmnt":
-						return []byte("/dev/sda"), nil
+						return []byte("/dev/sda /some/root btrfs"), nil
 					default:
 						return []byte{}, nil
 					}
@@ -231,7 +231,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, failCmd):
 						return []byte{}, fmt.Errorf("command '%s' failed", failCmd)
 					case cmd == "findmnt":
-						return []byte("/dev/sda"), nil
+						return []byte("/dev/sda /some/root btrfs"), nil
 					default:
 						return []byte{}, nil
 					}
@@ -277,7 +277,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, "btrfs subvolume get-default"):
 						return []byte(defaultVol), nil
 					case cmd == "findmnt":
-						return []byte("/dev/sda[/@/.snapshots/1/snapshot]"), nil
+						return []byte("/dev/sda[/@/.snapshots/1/snapshot] /some/root btrfs"), nil
 					default:
 						return []byte{}, nil
 					}
@@ -423,7 +423,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, "btrfs subvolume get-default"):
 						return []byte(defaultVol), nil
 					case cmd == "findmnt":
-						return []byte("/dev/sda[/@/.snapshots/1/snapshot]"), nil
+						return []byte("/dev/sda[/@/.snapshots/1/snapshot] /some/root btrfs"), nil
 					default:
 						return []byte{}, nil
 					}
@@ -469,8 +469,8 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					case strings.HasPrefix(fullCmd, "btrfs subvolume get-default"):
 						return []byte(defaultVol), nil
 					case cmd == "findmnt":
-						mntLines := "/dev/sda[/@/.snapshots/1/snapshot] /some/root\n"
-						mntLines += "/dev/sda[/@] /some/root/run/initramfs/elemental-state\n"
+						mntLines := "/dev/sda[/@/.snapshots/1/snapshot] /some/root btrfs\n"
+						mntLines += "/dev/sda[/@] /some/root/run/initramfs/elemental-state btrfs\n"
 						return []byte(mntLines), nil
 					default:
 						return []byte{}, nil

@@ -1,3 +1,6 @@
 snapshotter:
   type: btrfs
   max-snaps: 4
+  config:
+    disable-snapper: true
+    disable-default-subvolume: true

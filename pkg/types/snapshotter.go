@@ -55,7 +55,10 @@ type LoopDeviceConfig struct {
 	FS   string `yaml:"fs,omitempty" mapstructure:"fs"`
 }
 
-type BtrfsConfig struct{}
+type BtrfsConfig struct {
+	DisableSnapper          bool `yaml:"disable-snapper,omitempty" mapstructure:"disable-snapper"`
+	DisableDefaultSubVolume bool `yaml:"disable-default-subvolume,omitempty" mapstructure:"disable-default-subvolume"`
+}
 
 func NewLoopDeviceConfig() *LoopDeviceConfig {
 	return &LoopDeviceConfig{
@@ -65,7 +68,10 @@ func NewLoopDeviceConfig() *LoopDeviceConfig {
 }
 
 func NewBtrfsConfig() *BtrfsConfig {
-	return &BtrfsConfig{}
+	return &BtrfsConfig{
+		DisableSnapper:          false,
+		DisableDefaultSubVolume: false,
+	}
 }
 
 func NewLoopDevice() SnapshotterConfig {

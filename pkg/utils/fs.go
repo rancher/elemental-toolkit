@@ -243,7 +243,7 @@ func (d *statDirEntry) IsDir() bool                { return d.info.IsDir() }
 func (d *statDirEntry) Type() fs.FileMode          { return d.info.Mode().Type() }
 func (d *statDirEntry) Info() (fs.FileInfo, error) { return d.info, nil }
 
-// resolveSymlink takes a file path, resolves symlinks recursively,
+// RelativizeLink takes a file path, resolves symlinks recursively,
 // and relativizes the target against the link directory.
 func RelativizeLink(fs types.FS, path string) error {
 	// Check if the file is a symbolic link
