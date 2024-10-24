@@ -459,7 +459,7 @@ func FindFiles(vfs types.FS, rootDir string, pattern string) ([]string, error) {
 	return findFiles(vfs, rootDir, pattern, false)
 }
 
-func findFiles(vfs types.FS, rootDir, pattern string, fristMatchReturn bool) ([]string, error) {
+func findFiles(vfs types.FS, rootDir, pattern string, firstMatchReturn bool) ([]string, error) {
 	foundFiles := []string{}
 
 	base := filepath.Join(rootDir, getBaseDir(pattern))
@@ -478,7 +478,7 @@ func findFiles(vfs types.FS, rootDir, pattern string, fristMatchReturn bool) ([]
 					return err
 				}
 				foundFiles = append(foundFiles, foundFile)
-				if fristMatchReturn {
+				if firstMatchReturn {
 					return io.EOF
 				}
 				return nil
