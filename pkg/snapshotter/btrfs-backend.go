@@ -87,13 +87,14 @@ func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 }
 
 type btrfsBackend struct {
-	cfg      *types.Config
-	activeID int
-	device   string
+	cfg          *types.Config
+	activeID     int
+	device       string
+	maxSnapshots int
 }
 
-func newBtrfsBackend(cfg *types.Config) *btrfsBackend {
-	return &btrfsBackend{cfg: cfg}
+func newBtrfsBackend(cfg *types.Config, maxSnapshots int) *btrfsBackend {
+	return &btrfsBackend{cfg: cfg, maxSnapshots: maxSnapshots}
 }
 
 func (b *btrfsBackend) InitBackend(device string, activeID int) {

@@ -119,7 +119,7 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 		btrfsCfg: *btrfsCfg, bootloader: bootloader,
 		snapshotsUmount: func() error { return nil },
 		snapshotsMount:  func() error { return nil },
-		backend:         newSnapperBackend(&cfg),
+		backend:         newSnapperBackend(&cfg, snapCfg.MaxSnaps),
 	}, nil
 }
 
@@ -224,14 +224,6 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(snapshot.WorkDir, snapshotsPath), constants.DirPerm)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed creating snapshots folder: %v", err)
-		return err
-	}
-
-	// Configure snapper
-	// TODO this should be part of CommitSnapshot of snapper-backend
-	err = b.configureSnapper(snapshot)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed configuring snapper: %v", err)
 		return err
 	}
 
@@ -475,52 +467,6 @@ func (b *Btrfs) setBootloader() error {
 	}
 
 	return err
-}
-
-func (b *Btrfs) configureSnapper(snapshot *types.Snapshot) error {
-	defaultTmpl, err := utils.FindFile(b.cfg.Fs, snapshot.WorkDir, configTemplatesPaths()...)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed to find default snapper configuration template")
-		return err
-	}
-
-	sysconfigData := map[string]string{}
-	sysconfig := filepath.Join(snapshot.WorkDir, snapperSysconfig)
-	if ok, _ := utils.Exists(b.cfg.Fs, sysconfig); ok {
-		sysconfigData, err = utils.LoadEnvFile(b.cfg.Fs, sysconfig)
-		if err != nil {
-			b.cfg.Logger.Errorf("failed to load global snapper sysconfig")
-			return err
-		}
-	}
-	sysconfigData["SNAPPER_CONFIGS"] = "root"
-
-	b.cfg.Logger.Debugf("Creating sysconfig snapper configuration at '%s'", sysconfig)
-	err = utils.WriteEnvFile(b.cfg.Fs, sysconfigData, sysconfig)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed writing snapper global configuration file: %v", err)
-		return err
-	}
-
-	snapCfg, err := utils.LoadEnvFile(b.cfg.Fs, defaultTmpl)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed to load default snapper templage configuration")
-		return err
-	}
-
-	snapCfg["TIMELINE_CREATE"] = "no"
-	snapCfg["QGROUP"] = "1/0"
-	snapCfg["NUMBER_LIMIT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
-	snapCfg["NUMBER_LIMIT_IMPORTANT"] = strconv.Itoa(b.snapshotterCfg.MaxSnaps)
-
-	rootCfg := filepath.Join(snapshot.WorkDir, snapperRootConfig)
-	b.cfg.Logger.Debugf("Creating 'root' snapper configuration at '%s'", rootCfg)
-	err = utils.WriteEnvFile(b.cfg.Fs, snapCfg, rootCfg)
-	if err != nil {
-		b.cfg.Logger.Errorf("failed writing snapper root configuration file: %v", err)
-		return err
-	}
-	return nil
 }
 
 func (b *Btrfs) remountStatePartition(state *types.Partition) error {

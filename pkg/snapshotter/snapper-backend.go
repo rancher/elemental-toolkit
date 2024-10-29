@@ -32,14 +32,15 @@ import (
 var _ subvolumeBackend = (*snapperBackend)(nil)
 
 type snapperBackend struct {
-	cfg      *types.Config
-	activeID int
-	device   string
-	btrfs    *btrfsBackend
+	cfg          *types.Config
+	activeID     int
+	device       string
+	btrfs        *btrfsBackend
+	maxSnapshots int
 }
 
-func newSnapperBackend(cfg *types.Config) *snapperBackend {
-	return &snapperBackend{cfg: cfg, btrfs: newBtrfsBackend(cfg)}
+func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
+	return &snapperBackend{cfg: cfg, maxSnapshots: maxSnapshots, btrfs: newBtrfsBackend(cfg, maxSnapshots)}
 }
 
 func (s *snapperBackend) InitBackend(device string, activeID int) {
@@ -95,6 +96,12 @@ func (s snapperBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Sn
 }
 
 func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) error {
+	err := s.configureSnapper(snapshot.Path)
+	if err != nil {
+		s.cfg.Logger.Errorf("failed setting snapper configuration for snapshot %d: %v", snapshot.ID, err)
+		return err
+	}
+
 	if s.activeID == 0 {
 		// Snapper does not support modifying a snapshot from a host not having a configured snapper
 		// and this is the case for the installation media
@@ -183,4 +190,50 @@ func (s snapperBackend) rootArgs(rootDir string) []string {
 		args = []string{"--no-dbus", "--root", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, s.activeID))}
 	}
 	return args
+}
+
+func (s snapperBackend) configureSnapper(snapshotPath string) error {
+	defaultTmpl, err := utils.FindFile(s.cfg.Fs, snapshotPath, configTemplatesPaths()...)
+	if err != nil {
+		s.cfg.Logger.Errorf("failed to find default snapper configuration template")
+		return err
+	}
+
+	sysconfigData := map[string]string{}
+	sysconfig := filepath.Join(snapshotPath, snapperSysconfig)
+	if ok, _ := utils.Exists(s.cfg.Fs, sysconfig); ok {
+		sysconfigData, err = utils.LoadEnvFile(s.cfg.Fs, sysconfig)
+		if err != nil {
+			s.cfg.Logger.Errorf("failed to load global snapper sysconfig")
+			return err
+		}
+	}
+	sysconfigData["SNAPPER_CONFIGS"] = "root"
+
+	s.cfg.Logger.Debugf("Creating sysconfig snapper configuration at '%s'", sysconfig)
+	err = utils.WriteEnvFile(s.cfg.Fs, sysconfigData, sysconfig)
+	if err != nil {
+		s.cfg.Logger.Errorf("failed writing snapper global configuration file: %v", err)
+		return err
+	}
+
+	snapCfg, err := utils.LoadEnvFile(s.cfg.Fs, defaultTmpl)
+	if err != nil {
+		s.cfg.Logger.Errorf("failed to load default snapper templage configuration")
+		return err
+	}
+
+	snapCfg["TIMELINE_CREATE"] = "no"
+	snapCfg["QGROUP"] = "1/0"
+	snapCfg["NUMBER_LIMIT"] = strconv.Itoa(s.maxSnapshots)
+	snapCfg["NUMBER_LIMIT_IMPORTANT"] = strconv.Itoa(s.maxSnapshots)
+
+	rootCfg := filepath.Join(snapshotPath, snapperRootConfig)
+	s.cfg.Logger.Debugf("Creating 'root' snapper configuration at '%s'", rootCfg)
+	err = utils.WriteEnvFile(s.cfg.Fs, snapCfg, rootCfg)
+	if err != nil {
+		s.cfg.Logger.Errorf("failed writing snapper root configuration file: %v", err)
+		return err
+	}
+	return nil
 }

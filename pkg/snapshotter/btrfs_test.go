@@ -308,15 +308,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						{"snapper", "--no-dbus", "--root", "/some/root/.snapshots/1/snapshot", "create"},
 					})).To(Succeed())
 
-					defaultTmpl := filepath.Join(snap.WorkDir, "/etc/snapper/config-templates/default")
+					defaultTmpl := filepath.Join(snap.Path, "/etc/snapper/config-templates/default")
 					Expect(utils.MkdirAll(fs, filepath.Dir(defaultTmpl), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(defaultTmpl, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperSysconfig := filepath.Join(snap.WorkDir, "/etc/sysconfig/snapper")
+					snapperSysconfig := filepath.Join(snap.Path, "/etc/sysconfig/snapper")
 					Expect(utils.MkdirAll(fs, filepath.Dir(snapperSysconfig), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(snapperSysconfig, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperCfg := filepath.Join(snap.WorkDir, "/etc/snapper/configs")
+					snapperCfg := filepath.Join(snap.Path, "/etc/snapper/configs")
 					Expect(utils.MkdirAll(fs, snapperCfg, constants.DirPerm)).To(Succeed())
 				})
 
@@ -502,15 +502,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						{"snapper", "create", "--from"},
 					})).To(Succeed())
 
-					defaultTmpl := filepath.Join(snap.WorkDir, "/etc/snapper/config-templates/default")
+					defaultTmpl := filepath.Join(snap.Path, "/etc/snapper/config-templates/default")
 					Expect(utils.MkdirAll(fs, filepath.Dir(defaultTmpl), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(defaultTmpl, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperSysconfig := filepath.Join(snap.WorkDir, "/etc/sysconfig/snapper")
+					snapperSysconfig := filepath.Join(snap.Path, "/etc/sysconfig/snapper")
 					Expect(utils.MkdirAll(fs, filepath.Dir(snapperSysconfig), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(snapperSysconfig, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperCfg := filepath.Join(snap.WorkDir, "/etc/snapper/configs")
+					snapperCfg := filepath.Join(snap.Path, "/etc/snapper/configs")
 					Expect(utils.MkdirAll(fs, snapperCfg, constants.DirPerm)).To(Succeed())
 				})
 
