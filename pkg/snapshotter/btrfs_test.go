@@ -372,7 +372,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					})
 
 					It("fails setting snapshot read only", func() {
-						failCmd = "btrfs property set"
+						failCmd = "snapper --no-dbus --root /some/root/.snapshots/1/snapshot modify"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{
@@ -381,7 +381,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					})
 
 					It("fails setting default", func() {
-						failCmd = "btrfs subvolume set-default"
+						failCmd = "snapper --no-dbus --root /some/root/.snapshots/1/snapshot modify"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{
@@ -562,14 +562,14 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					})
 
 					It("fails setting snapshot read only", func() {
-						failCmd = "btrfs property set"
+						failCmd = "snapper --no-dbus --root /some/root modify"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 
 					It("fails setting default", func() {
-						failCmd = "btrfs subvolume set-default"
+						failCmd = "snapper --no-dbus --root /some/root modify"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
