@@ -33,6 +33,8 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
+const dateFormat = "2006-01-02 15:04:05"
+
 var _ subvolumeBackend = (*btrfsBackend)(nil)
 
 type SnapperSnapshotXML struct {

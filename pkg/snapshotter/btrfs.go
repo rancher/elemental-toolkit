@@ -39,9 +39,6 @@ const (
 	snapshotPathRegex = `.snapshots/(\d+)/snapshot`
 	snapshotInfoPath  = ".snapshots/%d/info.xml"
 	snapshotWorkDir   = "snapshot.workDir"
-	dateFormat        = "2006-01-02 15:04:05"
-	snapperRootConfig = "/etc/snapper/configs/root"
-	snapperSysconfig  = "/etc/sysconfig/snapper"
 	installProgress   = "install-in-progress"
 	updateProgress    = "update-in-progress"
 )
@@ -111,12 +108,18 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 			return nil, fmt.Errorf("%s", msg)
 		}
 	}
+	var backend subvolumeBackend
+	if btrfsCfg.Snapper {
+		backend = newSnapperBackend(&cfg, snapCfg.MaxSnaps)
+	} else {
+		backend = newBtrfsBackend(&cfg, snapCfg.MaxSnaps)
+	}
 	return &Btrfs{
 		cfg: cfg, snapshotterCfg: snapCfg,
 		btrfsCfg: *btrfsCfg, bootloader: bootloader,
 		snapshotsUmount: func() error { return nil },
 		snapshotsMount:  func() error { return nil },
-		backend:         newSnapperBackend(&cfg, snapCfg.MaxSnaps),
+		backend:         backend,
 	}, nil
 }
 

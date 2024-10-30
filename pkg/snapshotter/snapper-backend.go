@@ -29,6 +29,11 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
 
+const (
+	snapperRootConfig = "/etc/snapper/configs/root"
+	snapperSysconfig  = "/etc/sysconfig/snapper"
+)
+
 var _ subvolumeBackend = (*snapperBackend)(nil)
 
 type snapperBackend struct {
