@@ -43,10 +43,14 @@ type snapperBackend struct {
 	maxSnapshots int
 }
 
+// newSnapperBackend creates a new instance for of the snapper backend
 func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
+	// snapper backend embeds an instance of a btrfs backend to handle fill the gap for the
+	// operatons that snapper can't entirely handle.
 	return &snapperBackend{cfg: cfg, maxSnapshots: maxSnapshots, btrfs: newBtrfsBackend(cfg, maxSnapshots)}
 }
 
+// Probe tests the given device and returns the found state as a backendStat struct
 func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
 	stat, err := s.btrfs.Probe(device, mountpoint)
 	if err != nil {
@@ -56,11 +60,14 @@ func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
 	return stat, nil
 }
 
+// InitBrfsPartition is the method required to create snapshots structure on just formated partition
 func (s *snapperBackend) InitBrfsPartition(rootDir string) error {
 	// Snapper does not support initiating a just formated btrfs partition
 	return s.btrfs.InitBrfsPartition(rootDir)
 }
 
+// CreateNewSnapshot creates a new snapshot based on the given baseID. In case basedID == 0, this method
+// assumes it will be creating the first snapshot.
 func (s snapperBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Snapshot, error) {
 	if baseID == 0 {
 		// Snapper does not support creating the very first empty snapshot yet
@@ -101,6 +108,7 @@ func (s snapperBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Sn
 	}, nil
 }
 
+// CommitSnapshot set the given snapshot as default and readonly
 func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) error {
 	err := s.configureSnapper(snapshot.Path)
 	if err != nil {
@@ -126,6 +134,7 @@ func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot)
 	return nil
 }
 
+// ListSnapshots list the available snapshots in the state filesystem
 func (s snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	var sl snapshotsList
 	ids := []int{}
@@ -162,6 +171,7 @@ func (s snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	return sl, nil
 }
 
+// DeleteSnapshot deletes the given snapshot
 func (s snapperBackend) DeleteSnapshot(rootDir string, id int) error {
 	if s.stat.activeID == 0 && s.stat.currentID == 0 {
 		// With snapper is not possible to delete any snapshot without an active one
@@ -177,6 +187,7 @@ func (s snapperBackend) DeleteSnapshot(rootDir string, id int) error {
 	return nil
 }
 
+// SnapshotsCleanup removes old snapshost to match the maximum criteria
 func (s snapperBackend) SnapshotsCleanup(rootDir string) error {
 	args := []string{"cleanup", "--path", filepath.Join(rootDir, snapshotsPath), "number"}
 	args = append(s.rootArgs(rootDir), args...)
@@ -187,6 +198,8 @@ func (s snapperBackend) SnapshotsCleanup(rootDir string) error {
 	return err
 }
 
+// rootArgs returns the addition extra arguments to include in snapper when it is no operating
+// over the actual "/" root
 func (s snapperBackend) rootArgs(rootDir string) []string {
 	args := []string{}
 	if rootDir != "/" && s.stat.currentID == 0 {
@@ -197,6 +210,7 @@ func (s snapperBackend) rootArgs(rootDir string) []string {
 	return args
 }
 
+// configureSnapper sets the 'root' configuration for snapper
 func (s snapperBackend) configureSnapper(snapshotPath string) error {
 	defaultTmpl, err := utils.FindFile(s.cfg.Fs, snapshotPath, configTemplatesPaths()...)
 	if err != nil {

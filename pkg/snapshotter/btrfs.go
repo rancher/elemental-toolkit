@@ -22,7 +22,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
@@ -55,8 +54,8 @@ var _ types.Snapshotter = (*Btrfs)(nil)
 type subvolumeBackend interface {
 	Probe(device string, mountpoint string) (stat backendStat, err error)
 	InitBrfsPartition(rootDir string) error
-	CreateNewSnapshot(rootDir string, baseID int) (*types.Snapshot, error) // baseID = 0 means first snapshot
-	CommitSnapshot(rootDir string, snapshot *types.Snapshot) error         // snapshot.ID = 1 means first snapshot
+	CreateNewSnapshot(rootDir string, baseID int) (*types.Snapshot, error)
+	CommitSnapshot(rootDir string, snapshot *types.Snapshot) error
 	ListSnapshots(rootDir string) (snapshotsList, error)
 	DeleteSnapshot(rootDir string, id int) error
 	SnapshotsCleanup(rootDir string) error
@@ -87,9 +86,7 @@ type Btrfs struct {
 	snapshotsMount   func() error
 }
 
-type Date time.Time
-
-// NewLoopDeviceSnapshotter creates a new loop device snapshotter vased on the given configuration and the given bootloader
+// newBtrfsSnapshotter creates a new btrfs snapshotter vased on the given configuration and the given bootloader
 func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, bootloader types.Bootloader) (types.Snapshotter, error) {
 	if snapCfg.Type != constants.BtrfsSnapshotterType {
 		msg := "invalid snapshotter type ('%s'), must be of '%s' type"
@@ -123,6 +120,8 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 	}, nil
 }
 
+// InitSnapshotter initiates the snapshotter to the given root directory. This method includes the logic to create
+// required subvolmes to handle snapshots as snapper does.
 func (b *Btrfs) InitSnapshotter(state *types.Partition, efiDir string) error {
 	var err error
 	var ok bool
@@ -151,6 +150,7 @@ func (b *Btrfs) InitSnapshotter(state *types.Partition, efiDir string) error {
 	return b.remountStatePartition(state)
 }
 
+// StartTransaction starts a transaction for this snapshotter instance and returns the work in progress snapshot object.
 func (b *Btrfs) StartTransaction() (*types.Snapshot, error) {
 	var newID int
 	var err error
@@ -186,6 +186,8 @@ func (b *Btrfs) StartTransaction() (*types.Snapshot, error) {
 	return snapshot, err
 }
 
+// CloseTransactionOnError is a destructor method to clean the given initated snapshot. Useful in case of an error once
+// the transaction has already started.
 func (b *Btrfs) CloseTransactionOnError(snapshot *types.Snapshot) (err error) {
 	if snapshot.InProgress {
 		err = b.cfg.Mounter.Unmount(snapshot.MountPoint)
@@ -200,6 +202,8 @@ func (b *Btrfs) CloseTransactionOnError(snapshot *types.Snapshot) (err error) {
 	return err
 }
 
+// CloseTransaction closes the transaction for the given snapshot. This is the responsible to set
+// the active btrfs subvolume
 func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	if !snapshot.InProgress {
 		b.cfg.Logger.Debugf("No transaction to close for snapshot %d workdir", snapshot.ID)
@@ -231,7 +235,8 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	}
 
 	if snapshot.ID > 1 {
-		// These steps are not required for the first snapshot (snapshot.ID = 1)
+		// These steps are not required for the first snapshot (snapshot.ID = 1), in that
+		// case snapshot.Path and snapshot.Workdir have the same value.
 		err = utils.MirrorData(b.cfg.Logger, b.cfg.Runner, b.cfg.Fs, snapshot.WorkDir, snapshot.Path)
 		if err != nil {
 			b.cfg.Logger.Errorf("failed syncing working directory with snapshot directory")
@@ -263,6 +268,7 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 	return nil
 }
 
+// DeleteSnapshot deletes the snapshot of the given ID. It cannot delete the current snapshot, if any.
 func (b *Btrfs) DeleteSnapshot(id int) error {
 	b.cfg.Logger.Infof("Deleting snapshot %d", id)
 
@@ -279,6 +285,8 @@ func (b *Btrfs) DeleteSnapshot(id int) error {
 	return b.backend.DeleteSnapshot(b.rootDir, id)
 }
 
+// GetSnapshots returns a list of the available snapshots IDs. It does not return any value if
+// this Btrfs instance has not previously called InitSnapshotter.
 func (b *Btrfs) GetSnapshots() (snapshots []int, err error) {
 	var snapList snapshotsList
 
@@ -328,6 +336,9 @@ func (b *Btrfs) SnapshotToImageSource(snap *types.Snapshot) (*types.ImageSource,
 	return types.NewDirSrc(snap.Path), nil
 }
 
+// isInitiated checks if the given state partition has already the default
+// subvolumes structure. It also parses and updates some additional parameters
+// such as the state partition mountpoint and the active snapshot if any
 func (b *Btrfs) isInitiated(state *types.Partition) (bool, error) {
 	if b.activeSnapshotID > 0 {
 		return true, nil
@@ -347,6 +358,8 @@ func (b *Btrfs) isInitiated(state *types.Partition) (bool, error) {
 	return bStat.activeID > 0, nil
 }
 
+// getPassiveSnapshots returns a list of the available snapshots
+// excluding the acitve snapshot.
 func (b *Btrfs) getPassiveSnapshots() ([]int, error) {
 	passives := []int{}
 
@@ -401,6 +414,8 @@ func (b *Btrfs) setBootloader() error {
 	return err
 }
 
+// remountStatePartition umounts and mounts again the state partition with RW rights and
+// it also mounts the snapshots subvolume under the active snapshot root tree.
 func (b *Btrfs) remountStatePartition(state *types.Partition) error {
 	b.cfg.Logger.Debugf("Umount %s", state.MountPoint)
 	err := b.cfg.Mounter.Unmount(state.MountPoint)
@@ -422,6 +437,7 @@ func (b *Btrfs) remountStatePartition(state *types.Partition) error {
 	return err
 }
 
+// mountSnapshotsSubvolumeInSnapshot mounts the snapshots subvolume inside the active snapshot tree
 func (b *Btrfs) mountSnapshotsSubvolumeInSnapshot(root, device string, snapshotID int) error {
 	var mountpoint, subvol string
 

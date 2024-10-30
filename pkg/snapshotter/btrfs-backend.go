@@ -53,6 +53,8 @@ type UserData struct {
 	Value   string   `xml:"value"`
 }
 
+type Date time.Time
+
 type btrfsSubvol struct {
 	path string
 	id   int
@@ -60,6 +62,8 @@ type btrfsSubvol struct {
 
 type btrfsSubvolList []btrfsSubvol
 
+// newSnapperSnapshotXML returns a new instance of the struct to marshal and unmarshal
+// snapper's info XML files.
 func newSnapperSnapshotXML(id int, desc string) SnapperSnapshotXML {
 	var usrData UserData
 	if id == 1 {
@@ -77,12 +81,16 @@ func newSnapperSnapshotXML(id int, desc string) SnapperSnapshotXML {
 	}
 }
 
+// MarshalXML is the encoder handler for time.Time types according to the
+// snapper format.
 func (d Date) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	t := time.Time(d)
 	v := t.Format(dateFormat)
 	return e.EncodeElement(v, start)
 }
 
+// UnmarshalXML is the decoder handler for time.Time types according to the
+// snapper format.
 func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	var s string
 	err := dec.DecodeElement(&s, &start)
@@ -103,10 +111,12 @@ type btrfsBackend struct {
 	maxSnapshots int
 }
 
+// newBtrfsBackend returns a new instance of the btrfs backend
 func newBtrfsBackend(cfg *types.Config, maxSnapshots int) *btrfsBackend {
 	return &btrfsBackend{cfg: cfg, maxSnapshots: maxSnapshots}
 }
 
+// Probe tests the given device and returns the found state as a backendStat struct
 func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, error) {
 	var rootVolume, snapshotsVolume bool
 
@@ -160,6 +170,7 @@ func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, err
 	return b.stat, nil
 }
 
+// InitBrfsPartition is the method required to create snapshots structure on just formated partition
 func (b *btrfsBackend) InitBrfsPartition(rootDir string) error {
 	b.cfg.Logger.Debug("Enabling btrfs quota")
 	cmdOut, err := b.cfg.Runner.Run("btrfs", "quota", "enable", rootDir)
@@ -188,6 +199,8 @@ func (b *btrfsBackend) InitBrfsPartition(rootDir string) error {
 	return nil
 }
 
+// CreateNewSnapshot creates a new snapshot based on the given baseID. In case basedID == 0, this method
+// assumes it will be creating the first snapshot.
 func (b btrfsBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Snapshot, error) {
 	var workingDir string
 
@@ -247,6 +260,7 @@ func (b btrfsBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Snap
 	}, nil
 }
 
+// CommitSnapshot set the given snapshot as default and readonly
 func (b btrfsBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) error {
 	err := b.clearInProgressMetadata(rootDir, snapshot.ID)
 	if err != nil {
@@ -274,6 +288,7 @@ func (b btrfsBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) e
 	return nil
 }
 
+// ListSnapshots list the available snapshots in the state filesystem.
 func (b btrfsBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	var snaps snapshotsList
 
@@ -295,6 +310,7 @@ func (b btrfsBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	return snaps, nil
 }
 
+// DeleteSnapshot deletes the given snapshot
 func (b btrfsBackend) DeleteSnapshot(rootDir string, id int) error {
 	if id <= 0 {
 		return fmt.Errorf("invalid id, should be higher than zero")
@@ -315,6 +331,9 @@ func (b btrfsBackend) DeleteSnapshot(rootDir string, id int) error {
 	return nil
 }
 
+// SnapshotsCleanup removes old snapshost to match the maximum criteria. Starts deleting the oldest and
+// continues deleting the next one until it matches the maximum number. It cannot delete the current
+// snapshot, as soon as the snapshot to be deleted matches the current one it returns without error
 func (b btrfsBackend) SnapshotsCleanup(rootDir string) error {
 	list, err := b.ListSnapshots(rootDir)
 	if err != nil {
@@ -339,6 +358,7 @@ func (b btrfsBackend) SnapshotsCleanup(rootDir string) error {
 	return nil
 }
 
+// writeSnapperSnapshotXML writes the info.xml file used by snapper to hold some snapshot metadata
 func (b btrfsBackend) writeSnapperSnapshotXML(filepath string, snapshot SnapperSnapshotXML) error {
 	data, err := xml.MarshalIndent(snapshot, "", "  ")
 	if err != nil {
@@ -353,6 +373,7 @@ func (b btrfsBackend) writeSnapperSnapshotXML(filepath string, snapshot SnapperS
 	return nil
 }
 
+// loadSnapperSnapshotXML unmarshals the info.xml file used by snapper to hold some snapshot metadata
 func (b btrfsBackend) loadSnapperSnapshotXML(filepath string) (SnapperSnapshotXML, error) {
 	var data SnapperSnapshotXML
 
@@ -371,6 +392,7 @@ func (b btrfsBackend) loadSnapperSnapshotXML(filepath string) (SnapperSnapshotXM
 	return data, nil
 }
 
+// findSubvolumeByPath returns the subvolume ID from a given subvolume path
 func (b btrfsBackend) findSubvolumeByPath(rootDir, path string) (int, error) {
 	subvolumes, err := b.getSubvolumes(rootDir)
 	if err != nil {
@@ -388,6 +410,7 @@ func (b btrfsBackend) findSubvolumeByPath(rootDir, path string) (int, error) {
 	return 0, fmt.Errorf("can't find subvolume '%s'", path)
 }
 
+// getSubvolumes lists all btrfs subvolumes for the given root
 func (b btrfsBackend) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "list", "--sort=path", rootDir)
 	if err != nil {
@@ -397,6 +420,7 @@ func (b btrfsBackend) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 	return parseVolumes(strings.TrimSpace(string(out))), nil
 }
 
+// getActiveSnapshot returns the active snapshot. Zero value means there is no active or default snapshot
 func (b btrfsBackend) getActiveSnapshot(rootDir string) (int, error) {
 	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "get-default", rootDir)
 	if err != nil {
@@ -414,6 +438,8 @@ func (b btrfsBackend) getActiveSnapshot(rootDir string) (int, error) {
 	return 0, fmt.Errorf("detected multiple active snapshots")
 }
 
+// parseVolumes parses the output 'btrfs subvolume list' and similar commands
+// in order to extract subvolume ID and path
 func parseVolumes(rawBtrfsList string) btrfsSubvolList {
 	re := regexp.MustCompile(`^ID (\d+) gen \d+ top level \d+ path (.*)$`)
 	list := btrfsSubvolList{}
@@ -430,6 +456,8 @@ func parseVolumes(rawBtrfsList string) btrfsSubvolList {
 	return list
 }
 
+// subvolumesListToSnapshotsIDs turns a list of btrfs subvolumes into a list
+// of snapshots IDs
 func subvolumesListToSnapshotsIDs(list btrfsSubvolList) []int {
 	ids := []int{}
 	re := regexp.MustCompile(snapshotPathRegex)
@@ -443,6 +471,7 @@ func subvolumesListToSnapshotsIDs(list btrfsSubvolList) []int {
 	return ids
 }
 
+// clearInProgressMetadata removes backend custom user data from the info.xml
 func (b btrfsBackend) clearInProgressMetadata(rootDir string, id int) error {
 	snapperXML := filepath.Join(rootDir, fmt.Sprintf(snapshotInfoPath, id))
 	snapshotData, err := b.loadSnapperSnapshotXML(snapperXML)
@@ -468,9 +497,10 @@ func (b btrfsBackend) clearInProgressMetadata(rootDir string, id int) error {
 	return nil
 }
 
+// computeNewID defines the next available snapshot ID
 func (b btrfsBackend) computeNewID(rootDir string) (int, error) {
 	if b.stat.activeID == 0 {
-		// If no active we assume this will be the first one
+		// If there is no active snapshot we assume this will be the first one
 		return 1, nil
 	}
 	list, err := b.ListSnapshots(rootDir)
@@ -479,11 +509,15 @@ func (b btrfsBackend) computeNewID(rootDir string) (int, error) {
 		return 0, err
 	}
 	if len(list.IDs) == 0 {
-		return 0, fmt.Errorf("snapshots found, inconsistent state")
+		return 0, fmt.Errorf("no snapshots found, inconsistent state")
 	}
 	return slices.Max(list.IDs) + 1, nil
 }
 
+// findStateMount returns, from the given device, the mount point of the top subvolume (@),
+// the mount point of the current snapshot and current snapshot ID. Elemental hardware
+// utilities only return a single mountpoint per partition without having a reliable criteria
+// on which one returns ('@', '.snapshots', '.snapshots/<ID>/snapshot', ...)
 func (b btrfsBackend) findStateMount(device string) (rootDir string, stateMount string, snapshotID int, err error) {
 	output, err := b.cfg.Runner.Run("findmnt", "-lno", "SOURCE,TARGET", device)
 	if err != nil {
