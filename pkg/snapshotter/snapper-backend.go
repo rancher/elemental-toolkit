@@ -33,8 +33,7 @@ var _ subvolumeBackend = (*snapperBackend)(nil)
 
 type snapperBackend struct {
 	cfg          *types.Config
-	activeID     int
-	device       string
+	stat         backendStat
 	btrfs        *btrfsBackend
 	maxSnapshots int
 }
@@ -43,11 +42,13 @@ func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
 	return &snapperBackend{cfg: cfg, maxSnapshots: maxSnapshots, btrfs: newBtrfsBackend(cfg, maxSnapshots)}
 }
 
-func (s *snapperBackend) InitBackend(device string, activeID int) {
-	s.activeID = activeID
-	s.device = device
-	// Also include init data to the underlaying btrfsBackend for consistentcy
-	s.btrfs.InitBackend(device, activeID)
+func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
+	stat, err := s.btrfs.Probe(device, mountpoint)
+	if err != nil {
+		return s.stat, err
+	}
+	s.stat = stat
+	return stat, nil
 }
 
 func (s *snapperBackend) InitBrfsPartition(rootDir string) error {
@@ -102,7 +103,7 @@ func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot)
 		return err
 	}
 
-	if s.activeID == 0 {
+	if s.stat.activeID == 0 && s.stat.currentID == 0 {
 		// Snapper does not support modifying a snapshot from a host not having a configured snapper
 		// and this is the case for the installation media
 		return s.btrfs.CommitSnapshot(rootDir, snapshot)
@@ -149,18 +150,15 @@ func (s snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 			if match[2] == "yes" {
 				sl.activeID = id
 			}
-			if match[3] == "yes" {
-				sl.currentID = id
-			}
 		}
 	}
 	sl.IDs = ids
-
+	s.stat.activeID = sl.activeID
 	return sl, nil
 }
 
 func (s snapperBackend) DeleteSnapshot(rootDir string, id int) error {
-	if s.activeID == 0 {
+	if s.stat.activeID == 0 && s.stat.currentID == 0 {
 		// With snapper is not possible to delete any snapshot without an active one
 		return s.btrfs.DeleteSnapshot(rootDir, id)
 	}
@@ -186,8 +184,10 @@ func (s snapperBackend) SnapshotsCleanup(rootDir string) error {
 
 func (s snapperBackend) rootArgs(rootDir string) []string {
 	args := []string{}
-	if rootDir != "/" {
-		args = []string{"--no-dbus", "--root", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, s.activeID))}
+	if rootDir != "/" && s.stat.currentID == 0 {
+		args = []string{"--no-dbus", "--root", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, s.stat.activeID))}
+	} else if rootDir != "/" {
+		args = []string{"--no-dbus", "--root", rootDir}
 	}
 	return args
 }

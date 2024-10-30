@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
+	"github.com/rancher/elemental-toolkit/v2/pkg/elemental"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
 )
@@ -48,6 +50,13 @@ type UserData struct {
 	Key     string   `xml:"key"`
 	Value   string   `xml:"value"`
 }
+
+type btrfsSubvol struct {
+	path string
+	id   int
+}
+
+type btrfsSubvolList []btrfsSubvol
 
 func newSnapperSnapshotXML(id int, desc string) SnapperSnapshotXML {
 	var usrData UserData
@@ -88,8 +97,7 @@ func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 
 type btrfsBackend struct {
 	cfg          *types.Config
-	activeID     int
-	device       string
+	stat         backendStat
 	maxSnapshots int
 }
 
@@ -97,9 +105,57 @@ func newBtrfsBackend(cfg *types.Config, maxSnapshots int) *btrfsBackend {
 	return &btrfsBackend{cfg: cfg, maxSnapshots: maxSnapshots}
 }
 
-func (b *btrfsBackend) InitBackend(device string, activeID int) {
-	b.activeID = activeID
-	b.device = device
+func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, error) {
+	var rootVolume, snapshotsVolume bool
+
+	// Do not compute it again if it was already done in advance
+	if b.stat.rootDir != "" && b.stat.stateMount != "" {
+		return b.stat, nil
+	}
+
+	volumes, err := b.getSubvolumes(mountpoint)
+	if err != nil {
+		return b.stat, err
+	}
+
+	b.cfg.Logger.Debugf(
+		"Looking for subvolume ids %d and %d in subvolume list: %v",
+		rootSubvolID, snapshotsSubvolID, volumes,
+	)
+	for _, vol := range volumes {
+		if vol.id == rootSubvolID {
+			rootVolume = true
+		} else if vol.id == snapshotsSubvolID {
+			snapshotsVolume = true
+		}
+	}
+
+	if rootVolume && snapshotsVolume {
+		id, err := b.getActiveSnapshot(mountpoint)
+		if err != nil {
+			return b.stat, err
+		}
+		if id > 0 {
+			b.stat.activeID = id
+		}
+	}
+
+	// On active or passive we must ensure the actual mountpoint reported by the state
+	// partition is the actual root, ghw only reports a single mountpoint per device...
+	if elemental.IsPassiveMode(*b.cfg) || elemental.IsActiveMode(*b.cfg) {
+		rootDir, stateMount, currentID, err := b.findStateMount(device)
+		if err != nil {
+			return b.stat, err
+		}
+		b.stat.rootDir = rootDir
+		b.stat.stateMount = stateMount
+		b.stat.currentID = currentID
+		return b.stat, nil
+	}
+
+	b.stat.rootDir = mountpoint
+	b.stat.stateMount = mountpoint
+	return b.stat, nil
 }
 
 func (b *btrfsBackend) InitBrfsPartition(rootDir string) error {
@@ -131,13 +187,22 @@ func (b *btrfsBackend) InitBrfsPartition(rootDir string) error {
 }
 
 func (b btrfsBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Snapshot, error) {
+	var workingDir string
+
+	newID, err := b.computeNewID(rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed computing a new snapshotID: %v", err)
+		return nil, err
+	}
+
+	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(rootDir, snapshotsPath, strconv.Itoa(newID)), constants.DirPerm)
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, newID))
+
 	if baseID == 0 {
-		b.cfg.Logger.Info("Creating first root filesystem as a snapshot")
-		newID := 1
-		err := utils.MkdirAll(b.cfg.Fs, filepath.Join(rootDir, snapshotsPath, strconv.Itoa(newID)), constants.DirPerm)
-		if err != nil {
-			return nil, err
-		}
+		b.cfg.Logger.Debug("Creating first root filesystem as a snapshot")
 		cmdOut, err := b.cfg.Runner.Run(
 			"btrfs", "subvolume", "create",
 			filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, newID)),
@@ -146,21 +211,38 @@ func (b btrfsBackend) CreateNewSnapshot(rootDir string, baseID int) (*types.Snap
 			b.cfg.Logger.Errorf("failed creating first snapshot volume: %s", string(cmdOut))
 			return nil, err
 		}
-		snapperXML := filepath.Join(rootDir, fmt.Sprintf(snapshotInfoPath, newID))
-		err = b.writeSnapperSnapshotXML(snapperXML, newSnapperSnapshotXML(newID, "first root filesystem"))
+		workingDir = path
+	} else {
+		b.cfg.Logger.Debugf("Creating snapshot %d", newID)
+		cmdOut, err := b.cfg.Runner.Run(
+			"btrfs", "subvolume", "snapshot",
+			filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, baseID)),
+			filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, newID)),
+		)
 		if err != nil {
-			b.cfg.Logger.Errorf("failed creating snapper info XML")
+			b.cfg.Logger.Errorf("failed creating first snapshot volume: %s", string(cmdOut))
 			return nil, err
 		}
-		workingDir := filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, newID))
-		return &types.Snapshot{
-			ID:      newID,
-			WorkDir: workingDir,
-			Path:    workingDir,
-		}, nil
+		workingDir = filepath.Join(rootDir, snapshotsPath, strconv.Itoa(newID), snapshotWorkDir)
+		err = utils.MkdirAll(b.cfg.Fs, workingDir, constants.DirPerm)
+		if err != nil {
+			b.cfg.Logger.Errorf("failed creating the snapshot working directory: %v", err)
+			_ = b.DeleteSnapshot(rootDir, newID)
+			return nil, err
+		}
+	}
+	snapperXML := filepath.Join(rootDir, fmt.Sprintf(snapshotInfoPath, newID))
+	err = b.writeSnapperSnapshotXML(snapperXML, newSnapperSnapshotXML(newID, "first root filesystem"))
+	if err != nil {
+		b.cfg.Logger.Errorf("failed creating snapper info XML")
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("not implemented yet")
+	return &types.Snapshot{
+		ID:      newID,
+		WorkDir: workingDir,
+		Path:    path,
+	}, nil
 }
 
 func (b btrfsBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) error {
@@ -190,17 +272,69 @@ func (b btrfsBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot) e
 	return nil
 }
 
-func (b btrfsBackend) ListSnapshots(_ string) (snapshotsList, error) {
+func (b btrfsBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	var snaps snapshotsList
-	return snaps, fmt.Errorf("not implemented yet")
+
+	list, err := b.getSubvolumes(rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed listing subvolumes: %v", err)
+		return snaps, err
+	}
+
+	activeID, err := b.getActiveSnapshot(rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed looking for active snapshot: %v", err)
+		return snaps, err
+	}
+
+	snaps.IDs = subvolumesListToSnapshotsIDs(list)
+	snaps.activeID = activeID
+	b.stat.activeID = activeID
+	return snaps, nil
 }
 
-func (b btrfsBackend) DeleteSnapshot(_ string, _ int) error {
-	return fmt.Errorf("not implemented yet")
+func (b btrfsBackend) DeleteSnapshot(rootDir string, id int) error {
+	if id <= 0 {
+		return fmt.Errorf("invalid id, should be higher than zero")
+	}
+	if id == b.stat.currentID {
+		return fmt.Errorf("invalid id, cannot delete current snapshot")
+	}
+	cmdOut, err := b.cfg.Runner.Run("btrfs", "subvolume", "delete", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, id)))
+	if err != nil {
+		b.cfg.Logger.Errorf("failed deleting snapshot %d: %s", id, string(cmdOut))
+		return err
+	}
+	err = utils.RemoveAll(b.cfg.Fs, filepath.Join(rootDir, snapshotsPath, strconv.Itoa(id)))
+	if err != nil {
+		b.cfg.Logger.Errorf("failed deleting snapshot %d folder: %v", id, err)
+		return err
+	}
+	return nil
 }
 
-func (b btrfsBackend) SnapshotsCleanup(_ string) error {
-	return fmt.Errorf("not implemented yet")
+func (b btrfsBackend) SnapshotsCleanup(rootDir string) error {
+	list, err := b.ListSnapshots(rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed cleaning up up snaphots, could not list them: %v", err)
+		return err
+	}
+	snapsToDelete := len(list.IDs) - b.maxSnapshots
+	if snapsToDelete > 0 {
+		slices.Sort(list.IDs)
+		for i := range snapsToDelete {
+			if list.IDs[i] == b.stat.currentID {
+				b.cfg.Logger.Warnf("current snapshot '%d' can't be cleaned up, stopping", list.IDs[i])
+				break
+			}
+			err = b.DeleteSnapshot(rootDir, list.IDs[i])
+			if err != nil {
+				b.cfg.Logger.Errorf("failed cleaning up up snaphots, could delete snapshot '%d': %v", list.IDs[i], err)
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (b btrfsBackend) writeSnapperSnapshotXML(filepath string, snapshot SnapperSnapshotXML) error {
@@ -258,10 +392,27 @@ func (b btrfsBackend) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
 		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
 		return nil, err
 	}
-	return b.parseVolumes(strings.TrimSpace(string(out))), nil
+	return parseVolumes(strings.TrimSpace(string(out))), nil
 }
 
-func (b btrfsBackend) parseVolumes(rawBtrfsList string) btrfsSubvolList {
+func (b btrfsBackend) getActiveSnapshot(rootDir string) (int, error) {
+	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "get-default", rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
+		return 0, err
+	}
+	list := parseVolumes(strings.TrimSpace(string(out)))
+	ids := subvolumesListToSnapshotsIDs(list)
+	if len(ids) == 1 {
+		return ids[0], nil
+	}
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	return 0, fmt.Errorf("detected multiple active snapshots")
+}
+
+func parseVolumes(rawBtrfsList string) btrfsSubvolList {
 	re := regexp.MustCompile(`^ID (\d+) gen \d+ top level \d+ path (.*)$`)
 	list := btrfsSubvolList{}
 
@@ -275,6 +426,19 @@ func (b btrfsBackend) parseVolumes(rawBtrfsList string) btrfsSubvolList {
 		}
 	}
 	return list
+}
+
+func subvolumesListToSnapshotsIDs(list btrfsSubvolList) []int {
+	ids := []int{}
+	re := regexp.MustCompile(snapshotPathRegex)
+	for _, v := range list {
+		match := re.FindStringSubmatch(v.path)
+		if match != nil {
+			id, _ := strconv.Atoi(match[1])
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 func (b btrfsBackend) clearInProgressMetadata(rootDir string, id int) error {
@@ -300,4 +464,48 @@ func (b btrfsBackend) clearInProgressMetadata(rootDir string, id int) error {
 		return err
 	}
 	return nil
+}
+
+func (b btrfsBackend) computeNewID(rootDir string) (int, error) {
+	if b.stat.activeID == 0 {
+		// If no active we assume this will be the first one
+		return 1, nil
+	}
+	list, err := b.ListSnapshots(rootDir)
+	if err != nil {
+		b.cfg.Logger.Errorf("failed computing new ID, could not list snapshots")
+		return 0, err
+	}
+	if len(list.IDs) == 0 {
+		return 0, fmt.Errorf("snapshots found, inconsistent state")
+	}
+	return slices.Max(list.IDs) + 1, nil
+}
+
+func (b btrfsBackend) findStateMount(device string) (rootDir string, stateMount string, snapshotID int, err error) {
+	output, err := b.cfg.Runner.Run("findmnt", "-lno", "SOURCE,TARGET", device)
+	if err != nil {
+		return "", "", 0, err
+	}
+	r := regexp.MustCompile(snapshotPathRegex)
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(output))))
+	for scanner.Scan() {
+		lineFields := strings.Fields(scanner.Text())
+		if len(lineFields) != 2 {
+			continue
+		}
+		if strings.Contains(lineFields[1], constants.RunningStateDir) {
+			stateMount = lineFields[1]
+		} else if match := r.FindStringSubmatch(lineFields[0]); match != nil {
+			rootDir = lineFields[1]
+			snapshotID, _ = strconv.Atoi(match[1])
+		}
+	}
+
+	if stateMount == "" || rootDir == "" {
+		err = fmt.Errorf("could not find expected mountpoints, findmnt output: %s", string(output))
+	}
+
+	return rootDir, stateMount, snapshotID, err
 }
