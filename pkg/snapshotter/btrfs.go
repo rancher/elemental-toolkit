@@ -63,14 +63,14 @@ type subvolumeBackend interface {
 
 type snapshotsList struct {
 	IDs      []int
-	activeID int
+	ActiveID int
 }
 
 type backendStat struct {
-	activeID   int
-	currentID  int
-	rootDir    string
-	stateMount string
+	ActiveID   int
+	CurrentID  int
+	RootDir    string
+	StateMount string
 }
 
 type Btrfs struct {
@@ -105,19 +105,21 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 			return nil, fmt.Errorf("%s", msg)
 		}
 	}
-	var backend subvolumeBackend
-	if btrfsCfg.Snapper {
-		backend = newSnapperBackend(&cfg, snapCfg.MaxSnaps)
-	} else {
-		backend = newBtrfsBackend(&cfg, snapCfg.MaxSnaps)
-	}
 	return &Btrfs{
 		cfg: cfg, snapshotterCfg: snapCfg,
 		btrfsCfg: *btrfsCfg, bootloader: bootloader,
 		snapshotsUmount: func() error { return nil },
 		snapshotsMount:  func() error { return nil },
-		backend:         backend,
+		backend:         NewSubvolumeBackend(&cfg, *btrfsCfg, snapCfg.MaxSnaps),
 	}, nil
+}
+
+// NewSubvolumeBackend returns an instance of a subvolume backend
+func NewSubvolumeBackend(cfg *types.Config, bCfg types.BtrfsConfig, maxSnaps int) subvolumeBackend {
+	if bCfg.Snapper {
+		return newSnapperBackend(cfg, maxSnaps)
+	}
+	return newBtrfsBackend(cfg, maxSnaps)
 }
 
 // InitSnapshotter initiates the snapshotter to the given root directory. This method includes the logic to create
@@ -314,7 +316,7 @@ func (b *Btrfs) GetSnapshots() (snapshots []int, err error) {
 		if err != nil {
 			return nil, err
 		}
-		b.activeSnapshotID = snapList.activeID
+		b.activeSnapshotID = snapList.ActiveID
 		return snapList.IDs, err
 	}
 
@@ -352,10 +354,10 @@ func (b *Btrfs) isInitiated(state *types.Partition) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	b.activeSnapshotID = bStat.activeID
-	b.rootDir = bStat.rootDir
-	state.MountPoint = bStat.stateMount
-	return bStat.activeID > 0, nil
+	b.activeSnapshotID = bStat.ActiveID
+	b.rootDir = bStat.RootDir
+	state.MountPoint = bStat.StateMount
+	return bStat.ActiveID > 0, nil
 }
 
 // getPassiveSnapshots returns a list of the available snapshots
@@ -437,7 +439,7 @@ func (b *Btrfs) remountStatePartition(state *types.Partition) error {
 	return err
 }
 
-// mountSnapshotsSubvolumeInSnapshot mounts the snapshots subvolume inside the active snapshot tree
+// mountSnapshotsSubvolumeInSnapshot mounts the snapshots subvolume inside the given snapshot tree
 func (b *Btrfs) mountSnapshotsSubvolumeInSnapshot(root, device string, snapshotID int) error {
 	var mountpoint, subvol string
 

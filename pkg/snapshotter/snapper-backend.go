@@ -38,14 +38,15 @@ var _ subvolumeBackend = (*snapperBackend)(nil)
 
 type snapperBackend struct {
 	cfg          *types.Config
-	stat         backendStat
+	currentID    int
+	activeID     int
 	btrfs        *btrfsBackend
 	maxSnapshots int
 }
 
 // newSnapperBackend creates a new instance for of the snapper backend
 func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
-	// snapper backend embeds an instance of a btrfs backend to handle fill the gap for the
+	// snapper backend embeds an instance of a btrfs backend to fill the gap for the
 	// operatons that snapper can't entirely handle.
 	return &snapperBackend{cfg: cfg, maxSnapshots: maxSnapshots, btrfs: newBtrfsBackend(cfg, maxSnapshots)}
 }
@@ -54,9 +55,9 @@ func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
 func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
 	stat, err := s.btrfs.Probe(device, mountpoint)
 	if err != nil {
-		return s.stat, err
+		return stat, err
 	}
-	s.stat = stat
+	s.activeID, s.currentID = stat.ActiveID, stat.CurrentID
 	return stat, nil
 }
 
@@ -116,7 +117,7 @@ func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot)
 		return err
 	}
 
-	if s.stat.activeID == 0 && s.stat.currentID == 0 {
+	if s.activeID == 0 && s.currentID == 0 {
 		// Snapper does not support modifying a snapshot from a host not having a configured snapper
 		// and this is the case for the installation media
 		return s.btrfs.CommitSnapshot(rootDir, snapshot)
@@ -162,18 +163,18 @@ func (s snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 			}
 			ids = append(ids, id)
 			if match[2] == "yes" {
-				sl.activeID = id
+				sl.ActiveID = id
 			}
 		}
 	}
 	sl.IDs = ids
-	s.stat.activeID = sl.activeID
+	s.activeID = sl.ActiveID
 	return sl, nil
 }
 
 // DeleteSnapshot deletes the given snapshot
 func (s snapperBackend) DeleteSnapshot(rootDir string, id int) error {
-	if s.stat.activeID == 0 && s.stat.currentID == 0 {
+	if s.activeID == 0 && s.currentID == 0 {
 		// With snapper is not possible to delete any snapshot without an active one
 		return s.btrfs.DeleteSnapshot(rootDir, id)
 	}
@@ -202,8 +203,8 @@ func (s snapperBackend) SnapshotsCleanup(rootDir string) error {
 // over the actual "/" root
 func (s snapperBackend) rootArgs(rootDir string) []string {
 	args := []string{}
-	if rootDir != "/" && s.stat.currentID == 0 {
-		args = []string{"--no-dbus", "--root", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, s.stat.activeID))}
+	if rootDir != "/" && s.currentID == 0 && s.activeID > 0 {
+		args = []string{"--no-dbus", "--root", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, s.activeID))}
 	} else if rootDir != "/" {
 		args = []string{"--no-dbus", "--root", rootDir}
 	}

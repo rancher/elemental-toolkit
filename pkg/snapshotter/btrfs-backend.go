@@ -107,7 +107,8 @@ func (d *Date) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 
 type btrfsBackend struct {
 	cfg          *types.Config
-	stat         backendStat
+	currentID    int
+	activeID     int
 	maxSnapshots int
 }
 
@@ -119,15 +120,11 @@ func newBtrfsBackend(cfg *types.Config, maxSnapshots int) *btrfsBackend {
 // Probe tests the given device and returns the found state as a backendStat struct
 func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, error) {
 	var rootVolume, snapshotsVolume bool
-
-	// Do not compute it again if it was already done in advance
-	if b.stat.rootDir != "" && b.stat.stateMount != "" {
-		return b.stat, nil
-	}
+	var stat backendStat
 
 	volumes, err := b.getSubvolumes(mountpoint)
 	if err != nil {
-		return b.stat, err
+		return stat, err
 	}
 
 	b.cfg.Logger.Debugf(
@@ -145,10 +142,10 @@ func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, err
 	if rootVolume && snapshotsVolume {
 		id, err := b.getActiveSnapshot(mountpoint)
 		if err != nil {
-			return b.stat, err
+			return stat, err
 		}
 		if id > 0 {
-			b.stat.activeID = id
+			b.activeID = id
 		}
 	}
 
@@ -157,17 +154,19 @@ func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, err
 	if elemental.IsPassiveMode(*b.cfg) || elemental.IsActiveMode(*b.cfg) {
 		rootDir, stateMount, currentID, err := b.findStateMount(device)
 		if err != nil {
-			return b.stat, err
+			return stat, err
 		}
-		b.stat.rootDir = rootDir
-		b.stat.stateMount = stateMount
-		b.stat.currentID = currentID
-		return b.stat, nil
+		stat.RootDir = rootDir
+		stat.StateMount = stateMount
+		stat.CurrentID, b.currentID = currentID, currentID
+		stat.ActiveID = b.activeID
+		return stat, nil
 	}
 
-	b.stat.rootDir = mountpoint
-	b.stat.stateMount = mountpoint
-	return b.stat, nil
+	stat.RootDir = mountpoint
+	stat.StateMount = mountpoint
+	stat.ActiveID = b.activeID
+	return stat, nil
 }
 
 // InitBrfsPartition is the method required to create snapshots structure on just formated partition
@@ -305,8 +304,8 @@ func (b btrfsBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	}
 
 	snaps.IDs = subvolumesListToSnapshotsIDs(list)
-	snaps.activeID = activeID
-	b.stat.activeID = activeID
+	snaps.ActiveID = activeID
+	b.activeID = activeID
 	return snaps, nil
 }
 
@@ -315,7 +314,7 @@ func (b btrfsBackend) DeleteSnapshot(rootDir string, id int) error {
 	if id <= 0 {
 		return fmt.Errorf("invalid id, should be higher than zero")
 	}
-	if id == b.stat.currentID {
+	if id == b.currentID {
 		return fmt.Errorf("invalid id, cannot delete current snapshot")
 	}
 	cmdOut, err := b.cfg.Runner.Run("btrfs", "subvolume", "delete", filepath.Join(rootDir, fmt.Sprintf(snapshotPathTmpl, id)))
@@ -344,7 +343,7 @@ func (b btrfsBackend) SnapshotsCleanup(rootDir string) error {
 	if snapsToDelete > 0 {
 		slices.Sort(list.IDs)
 		for i := range snapsToDelete {
-			if list.IDs[i] == b.stat.currentID {
+			if list.IDs[i] == b.currentID {
 				b.cfg.Logger.Warnf("current snapshot '%d' can't be cleaned up, stopping", list.IDs[i])
 				break
 			}
@@ -499,7 +498,7 @@ func (b btrfsBackend) clearInProgressMetadata(rootDir string, id int) error {
 
 // computeNewID defines the next available snapshot ID
 func (b btrfsBackend) computeNewID(rootDir string) (int, error) {
-	if b.stat.activeID == 0 {
+	if b.activeID == 0 {
 		// If there is no active snapshot we assume this will be the first one
 		return 1, nil
 	}
