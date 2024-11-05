@@ -288,6 +288,7 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					{"btrfs", "subvolume", "list"},
 					{"btrfs", "subvolume", "get-default"},
 				})).To(Succeed())
+
 			})
 
 			Describe("Closing a transaction on a recovery system", func() {
@@ -302,21 +303,22 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 
 					snap, err = b.StartTransaction()
+					fmt.Println(runner.GetCmds())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(snap.InProgress).To(BeTrue())
 					Expect(runner.MatchMilestones([][]string{
 						{"snapper", "--no-dbus", "--root", "/some/root/.snapshots/1/snapshot", "create"},
 					})).To(Succeed())
 
-					defaultTmpl := filepath.Join(snap.WorkDir, "/etc/snapper/config-templates/default")
+					defaultTmpl := filepath.Join(snap.Path, "/etc/snapper/config-templates/default")
 					Expect(utils.MkdirAll(fs, filepath.Dir(defaultTmpl), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(defaultTmpl, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperSysconfig := filepath.Join(snap.WorkDir, "/etc/sysconfig/snapper")
+					snapperSysconfig := filepath.Join(snap.Path, "/etc/sysconfig/snapper")
 					Expect(utils.MkdirAll(fs, filepath.Dir(snapperSysconfig), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(snapperSysconfig, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperCfg := filepath.Join(snap.WorkDir, "/etc/snapper/configs")
+					snapperCfg := filepath.Join(snap.Path, "/etc/snapper/configs")
 					Expect(utils.MkdirAll(fs, snapperCfg, constants.DirPerm)).To(Succeed())
 				})
 
@@ -371,17 +373,8 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						})).To(Succeed())
 					})
 
-					It("fails setting snapshot read only", func() {
-						failCmd = "btrfs property set"
-						err = b.CloseTransaction(snap)
-						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{
-							{"snapper", "--no-dbus", "--root", "/some/root/.snapshots/1/snapshot", "delete"},
-						})).To(Succeed())
-					})
-
-					It("fails setting default", func() {
-						failCmd = "btrfs subvolume set-default"
+					It("fails setting snapshot read only and default", func() {
+						failCmd = "snapper --no-dbus --root /some/root/.snapshots/1/snapshot modify --read-only --default"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{
@@ -502,15 +495,15 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						{"snapper", "--no-dbus", "--root", "/some/root", "create", "--from"},
 					})).To(Succeed())
 
-					defaultTmpl := filepath.Join(snap.WorkDir, "/etc/snapper/config-templates/default")
+					defaultTmpl := filepath.Join(snap.Path, "/etc/snapper/config-templates/default")
 					Expect(utils.MkdirAll(fs, filepath.Dir(defaultTmpl), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(defaultTmpl, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperSysconfig := filepath.Join(snap.WorkDir, "/etc/sysconfig/snapper")
+					snapperSysconfig := filepath.Join(snap.Path, "/etc/sysconfig/snapper")
 					Expect(utils.MkdirAll(fs, filepath.Dir(snapperSysconfig), constants.DirPerm)).To(Succeed())
 					Expect(fs.WriteFile(snapperSysconfig, []byte{}, constants.FilePerm)).To(Succeed())
 
-					snapperCfg := filepath.Join(snap.WorkDir, "/etc/snapper/configs")
+					snapperCfg := filepath.Join(snap.Path, "/etc/snapper/configs")
 					Expect(utils.MkdirAll(fs, snapperCfg, constants.DirPerm)).To(Succeed())
 				})
 
@@ -561,15 +554,8 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
 					})
 
-					It("fails setting snapshot read only", func() {
-						failCmd = "btrfs property set"
-						err = b.CloseTransaction(snap)
-						Expect(err.Error()).To(ContainSubstring(failCmd))
-						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())
-					})
-
-					It("fails setting default", func() {
-						failCmd = "btrfs subvolume set-default"
+					It("fails setting snapshot read only and default", func() {
+						failCmd = "snapper --no-dbus --root /some/root modify --read-only --default"
 						err = b.CloseTransaction(snap)
 						Expect(err.Error()).To(ContainSubstring(failCmd))
 						Expect(runner.MatchMilestones([][]string{{"snapper", "--no-dbus", "--root", "/some/root", "delete"}})).To(Succeed())

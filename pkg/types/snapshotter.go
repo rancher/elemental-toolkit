@@ -55,7 +55,9 @@ type LoopDeviceConfig struct {
 	FS   string `yaml:"fs,omitempty" mapstructure:"fs"`
 }
 
-type BtrfsConfig struct{}
+type BtrfsConfig struct {
+	Snapper bool `yaml:"snapper,omitempty" mapstructure:"snapper"`
+}
 
 func NewLoopDeviceConfig() *LoopDeviceConfig {
 	return &LoopDeviceConfig{
@@ -65,7 +67,9 @@ func NewLoopDeviceConfig() *LoopDeviceConfig {
 }
 
 func NewBtrfsConfig() *BtrfsConfig {
-	return &BtrfsConfig{}
+	return &BtrfsConfig{
+		Snapper: true, // By default use snapper
+	}
 }
 
 func NewLoopDevice() SnapshotterConfig {
