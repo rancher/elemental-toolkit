@@ -2,4 +2,4 @@ snapshotter:
   type: btrfs
   max-snaps: 4
   config:
-    snapper: false
+    snapper: true
