@@ -303,7 +303,6 @@ var _ = Describe("Btrfs", Label("snapshotter", " btrfs"), func() {
 					}
 
 					snap, err = b.StartTransaction()
-					fmt.Println(runner.GetCmds())
 					Expect(err).NotTo(HaveOccurred())
 					Expect(snap.InProgress).To(BeTrue())
 					Expect(runner.MatchMilestones([][]string{
