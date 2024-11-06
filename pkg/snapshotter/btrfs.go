@@ -265,8 +265,9 @@ func (b *Btrfs) CloseTransaction(snapshot *types.Snapshot) (err error) {
 		return err
 	}
 
-	_ = b.setBootloader()
+	// cleanup snapshots before setting bootloader otherwise deleted snapshots may show up in bootloader
 	_ = b.backend.SnapshotsCleanup(b.rootDir)
+	_ = b.setBootloader(snapshot.ID)
 	return nil
 }
 
@@ -379,7 +380,7 @@ func (b *Btrfs) getPassiveSnapshots() ([]int, error) {
 }
 
 // setBootloader sets the bootloader variables to update new passives
-func (b *Btrfs) setBootloader() error {
+func (b *Btrfs) setBootloader(activeSnapshotID int) error {
 	var passives, fallbacks []string
 
 	b.cfg.Logger.Infof("Setting bootloader with current passive snapshots")
@@ -404,6 +405,7 @@ func (b *Btrfs) setBootloader() error {
 	envs := map[string]string{
 		constants.GrubFallback:         fallbackList,
 		constants.GrubPassiveSnapshots: snapsList,
+		constants.GrubActiveSnapshot:   strconv.Itoa(activeSnapshotID),
 		"snapshotter":                  constants.BtrfsSnapshotterType,
 	}
 

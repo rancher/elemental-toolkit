@@ -30,8 +30,9 @@ import (
 )
 
 const (
-	snapperRootConfig = "/etc/snapper/configs/root"
-	snapperSysconfig  = "/etc/sysconfig/snapper"
+	snapperRootConfig    = "/etc/snapper/configs/root"
+	snapperSysconfig     = "/etc/sysconfig/snapper"
+	snapperDefaultconfig = "/etc/default/snapper"
 )
 
 var _ subvolumeBackend = (*snapperBackend)(nil)
@@ -220,7 +221,11 @@ func (s snapperBackend) configureSnapper(snapshotPath string) error {
 	}
 
 	sysconfigData := map[string]string{}
-	sysconfig := filepath.Join(snapshotPath, snapperSysconfig)
+	sysconfig := filepath.Join(snapshotPath, snapperDefaultconfig)
+	if ok, _ := utils.Exists(s.cfg.Fs, sysconfig); !ok {
+		sysconfig = filepath.Join(snapshotPath, snapperSysconfig)
+	}
+
 	if ok, _ := utils.Exists(s.cfg.Fs, sysconfig); ok {
 		sysconfigData, err = utils.LoadEnvFile(s.cfg.Fs, sysconfig)
 		if err != nil {
