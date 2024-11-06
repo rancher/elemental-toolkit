@@ -31,7 +31,7 @@ Source:         %{name}.tar.xz
 Requires:       dosfstools
 Requires:       e2fsprogs
 # for blkdeactivate
-Requires: lvm2
+Requires:       lvm2
 Requires:       parted
 Requires:       rsync
 Requires:       udev
@@ -42,6 +42,10 @@ Requires:       xorriso >= 1.5
 Requires:       mtools
 Requires:       util-linux
 Requires:       gptfdisk
+Requires:       dracut
+Requires:       grub2-common
+Requires:       squashfs
+Requires:       util-linux-systemd
 
 %if 0%{?suse_version}
 BuildRequires:  golang(API) >= 1.22
