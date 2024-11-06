@@ -24,14 +24,9 @@ install() {
     declare systemdsystemunitdir=${systemdsystemunitdir}
 
     inst_multiple \
-        mount mountpoint sort rmdir findmnt rsync cut realpath basename lsblk
+        mount cut basename lsblk elemental
 
     inst_simple "/etc/elemental/config.yaml"
-
-    # Include utilities required for elemental-setup services,
-    # probably a devoted dracut module makes sense
-    inst_multiple -o \
-        "$systemdutildir"/systemd-fsck systemd-analyze partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat mkfs.xfs blkid e2fsck resize2fs mount xfs_growfs umount sgdisk elemental
 
     inst_simple "/etc/systemd/system/elemental-rootfs.service" \
         "${systemdsystemunitdir}/elemental-rootfs.service"
