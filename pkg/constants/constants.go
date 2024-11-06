@@ -89,6 +89,7 @@ const (
 	GrubDefEntry           = "Elemental"
 	GrubFallback           = "default_fallback"
 	GrubPassiveSnapshots   = "passive_snaps"
+	GrubActiveSnapshot     = "active_snap"
 	ElementalBootloaderBin = "/usr/lib/elemental/bootloader"
 
 	// Mountpoints or links to images and partitions

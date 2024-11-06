@@ -51,7 +51,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   locales \
   kbd \
   podman \
-  xz-utils
+  btrfs-progs \
+  btrfsmaintenance \
+  xz-utils && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Hack to prevent systemd-firstboot failures while setting keymap, this is known
 # Debian issue (T_T) https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790955
@@ -74,6 +77,9 @@ RUN cp /usr/share/systemd/tmp.mount /etc/systemd/system
 # Generate en_US.UTF-8 locale, this the locale set at boot by
 # the default cloud-init
 RUN locale-gen --lang en_US.UTF-8
+
+# Add default snapshotter setup
+ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
 
 # Generate initrd with required elemental services
 RUN elemental --debug init -f

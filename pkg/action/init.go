@@ -18,6 +18,7 @@ package action
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
@@ -69,7 +70,12 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 	if kernel != constants.KernelPath {
 		cfg.Config.Logger.Debugf("Creating kernel symlink from %s to %s", kernel, constants.KernelPath)
 		_ = cfg.Fs.Remove(constants.KernelPath)
-		err = cfg.Fs.Symlink(kernel, constants.KernelPath)
+		relKernel, err := filepath.Rel(filepath.Dir(constants.KernelPath), kernel)
+		if err != nil {
+			cfg.Config.Logger.Errorf("could set a relative path from '%s' to '%s': %v", constants.KernelPath, kernel, err)
+			return err
+		}
+		err = cfg.Fs.Symlink(relKernel, constants.KernelPath)
 		if err != nil {
 			cfg.Config.Logger.Errorf("failed creating kernel symlink")
 			return err
@@ -89,7 +95,7 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 		cfg.Config.Logger.Errorf("dracut failed with output: %s", output)
 	}
 
-	cfg.Config.Logger.Debugf("darcut output: %s", output)
+	cfg.Config.Logger.Debugf("dracut output: %s", output)
 
 	initrd, err := utils.FindInitrd(cfg.Fs, "/")
 	if err != nil || !strings.HasPrefix(initrd, constants.ElementalInitrd) {
@@ -99,9 +105,15 @@ func RunInit(cfg *types.RunConfig, spec *types.InitSpec) error {
 
 	cfg.Config.Logger.Debugf("Creating initrd symlink from %s to %s", initrd, constants.InitrdPath)
 	_ = cfg.Fs.Remove(constants.InitrdPath)
-	err = cfg.Fs.Symlink(initrd, constants.InitrdPath)
+	relInitrd, err := filepath.Rel(filepath.Dir(constants.InitrdPath), initrd)
+	if err != nil {
+		cfg.Config.Logger.Errorf("could set a relative path from '%s' to '%s': %v", constants.InitrdPath, initrd, err)
+		return err
+	}
+	err = cfg.Fs.Symlink(relInitrd, constants.InitrdPath)
 	if err != nil {
 		cfg.Config.Logger.Errorf("failed creating initrd symlink")
+		return err
 	}
 
 	return err
