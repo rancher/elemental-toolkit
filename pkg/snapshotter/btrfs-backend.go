@@ -119,27 +119,14 @@ func newBtrfsBackend(cfg *types.Config, maxSnapshots int) *btrfsBackend {
 
 // Probe tests the given device and returns the found state as a backendStat struct
 func (b *btrfsBackend) Probe(device string, mountpoint string) (backendStat, error) {
-	var rootVolume, snapshotsVolume bool
 	var stat backendStat
 
-	volumes, err := b.getSubvolumes(mountpoint)
+	rootVolume, snapshotsVolume, err := b.getStateSubvolumes(mountpoint)
 	if err != nil {
 		return stat, err
 	}
 
-	b.cfg.Logger.Debugf(
-		"Looking for subvolume ids %d and %d in subvolume list: %v",
-		rootSubvolID, snapshotsSubvolID, volumes,
-	)
-	for _, vol := range volumes {
-		if vol.id == rootSubvolID {
-			rootVolume = true
-		} else if vol.id == snapshotsSubvolID {
-			snapshotsVolume = true
-		}
-	}
-
-	if rootVolume && snapshotsVolume {
+	if (rootVolume != nil) && (snapshotsVolume != nil) {
 		id, err := b.getActiveSnapshot(mountpoint)
 		if err != nil {
 			return stat, err
@@ -411,12 +398,34 @@ func (b btrfsBackend) findSubvolumeByPath(rootDir, path string) (int, error) {
 
 // getSubvolumes lists all btrfs subvolumes for the given root
 func (b btrfsBackend) getSubvolumes(rootDir string) (btrfsSubvolList, error) {
-	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "list", "--sort=path", rootDir)
+	out, err := b.cfg.Runner.Run("btrfs", "subvolume", "list", "-a", "--sort=path", rootDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed listing btrfs subvolumes: %s", err.Error())
 		return nil, err
 	}
 	return parseVolumes(strings.TrimSpace(string(out))), nil
+}
+
+func (b btrfsBackend) getStateSubvolumes(rootDir string) (rootVolume *btrfsSubvol, snapshotsVolume *btrfsSubvol, err error) {
+	volumes, err := b.getSubvolumes(rootDir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	snapshots := filepath.Join(rootSubvol, snapshotsPath)
+	b.cfg.Logger.Debugf(
+		"Looking for subvolumes %s and %s in subvolume list: %v",
+		rootSubvol, snapshots, volumes,
+	)
+	for _, vol := range volumes {
+		if vol.path == rootSubvol {
+			rootVolume = &vol
+		} else if vol.path == snapshots {
+			snapshotsVolume = &vol
+		}
+	}
+
+	return rootVolume, snapshotsVolume, err
 }
 
 // getActiveSnapshot returns the active snapshot. Zero value means there is no active or default snapshot
@@ -448,7 +457,7 @@ func parseVolumes(rawBtrfsList string) btrfsSubvolList {
 		match := re.FindStringSubmatch(strings.TrimSpace(scanner.Text()))
 		if match != nil {
 			id, _ := strconv.Atoi(match[1])
-			path := match[2]
+			path := strings.TrimPrefix(match[2], "<FS_TREE>/")
 			list = append(list, btrfsSubvol{id: id, path: path})
 		}
 	}
@@ -530,11 +539,19 @@ func (b btrfsBackend) findStateMount(device string) (rootDir string, stateMount 
 		if len(lineFields) != 2 {
 			continue
 		}
-		if strings.Contains(lineFields[1], constants.RunningStateDir) {
-			stateMount = lineFields[1]
-		} else if match := r.FindStringSubmatch(lineFields[0]); match != nil {
-			rootDir = lineFields[1]
-			snapshotID, _ = strconv.Atoi(match[1])
+
+		subStart := strings.Index(lineFields[0], "[/")
+		subEnd := strings.LastIndex(lineFields[0], "]")
+
+		if subStart != -1 && subEnd != -1 {
+			subVolume := lineFields[0][subStart+2 : subEnd]
+
+			if subVolume == rootSubvol {
+				stateMount = lineFields[1]
+			} else if match := r.FindStringSubmatch(subVolume); match != nil {
+				rootDir = lineFields[1]
+				snapshotID, _ = strconv.Atoi(match[1])
+			}
 		}
 	}
 
