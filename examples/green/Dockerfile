@@ -59,7 +59,7 @@ RUN ARCH=$(uname -m); \
       sed \
       iproute2 \
       podman \
-      # audit \ comment out 'audit' package, installation fails in containers boo#1231236
+      audit \
       patterns-microos-selinux \
       btrfsprogs \
       btrfsmaintenance \
