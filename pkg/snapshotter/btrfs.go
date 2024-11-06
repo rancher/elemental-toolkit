@@ -31,8 +31,6 @@ import (
 
 const (
 	rootSubvol        = "@"
-	rootSubvolID      = 257
-	snapshotsSubvolID = 258
 	snapshotsPath     = ".snapshots"
 	snapshotPathTmpl  = ".snapshots/%d/snapshot"
 	snapshotPathRegex = `.snapshots/(\d+)/snapshot`
