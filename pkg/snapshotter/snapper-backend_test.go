@@ -140,7 +140,6 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 				sEffects = append(sEffects, &sideEffect{cmd: listCmd, cmdOut: cmdOut})
 
 				err = backend.CommitSnapshot(rootDir, snap)
-				fmt.Println(runner.GetCmds())
 				Expect(err).To(Succeed())
 
 				Expect(runner.MatchMilestones([][]string{
@@ -157,7 +156,6 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(lst.ActiveID).To(Equal(0))
 			Expect(len(lst.IDs)).To(Equal(0))
-			fmt.Println(runner.GetCmds())
 			Expect(runner.MatchMilestones([][]string{
 				{"snapper", "--no-dbus", "--root", "/some/root", "--csvout", "list"},
 			})).To(Succeed())
@@ -170,7 +168,6 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
 			_, err := backend.ListSnapshots(rootDir)
 			Expect(err).To(HaveOccurred())
-			fmt.Println(runner.GetCmds())
 			Expect(runner.MatchMilestones([][]string{
 				strings.Fields(listCmd),
 			})).To(Succeed())
@@ -329,7 +326,6 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 					strings.Fields(createCmd),
 					{"snapper", "--no-dbus", "--root", "/some/root/.snapshots/1/snapshot", "delete", "--sync", "2"},
 				})).To(Succeed())
-				fmt.Println(runner.GetCmds())
 			})
 		})
 	})
@@ -402,7 +398,6 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 			It("cleans up snapshots", func() {
 				cleanupCmd := "snapper --no-dbus --root /some/root cleanup --path /some/root/.snapshots number"
 				Expect(backend.SnapshotsCleanup(rootDir)).To(Succeed())
-				fmt.Println(runner.GetCmds())
 				Expect(runner.MatchMilestones([][]string{
 					strings.Fields(cleanupCmd),
 				})).To(Succeed())
