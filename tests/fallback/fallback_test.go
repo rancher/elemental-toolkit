@@ -101,6 +101,9 @@ var _ = Describe("Elemental booting fallback tests", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(cmdline).To(ContainSubstring("1"))
 
+			cmdline, err = s.Command("sudo test -f /run/elemental/persistent/network-stage.sentinel")
+			Expect(err).ShouldNot(HaveOccurred())
+
 			By("Waiting for the failed health checker to trigger a reboot")
 			s.EventuallyDisconnects(300)
 

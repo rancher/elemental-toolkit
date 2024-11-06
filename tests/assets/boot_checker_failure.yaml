@@ -7,7 +7,14 @@ stages:
       content: |
         #!/bin/bash
         
-        exit 1
+        systemctl is-failed --quiet && exit 1
       permissions: 0755
       owner: 0
       group: 0
+  network:
+  - name: "A command that just fails"
+    commands:
+    - exit 1
+  - name: "To verify this is still executed"
+    commands:
+    - touch /run/elemental/persistent/network-stage.sentinel
