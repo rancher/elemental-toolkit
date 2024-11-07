@@ -1,0 +1,14 @@
+name: "Hacks for testing environment"
+stages:
+   initramfs:
+   # This is needed in case some unit service have been
+   # refactored across distro releases.
+   # Fixes downgrade test (Nov 2024)
+   - name: "Remove broken unit links"
+     commands:
+     - |
+       find /etc/systemd/system/ -type l -print0 | while IFS= read -r -d $'\0' file; do
+         [ -e ${file} ] && continue
+         echo "Removing broken link ${file}"
+         rm -f "${file}"
+       done

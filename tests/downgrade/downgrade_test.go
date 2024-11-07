@@ -42,10 +42,11 @@ var _ = Describe("Elemental Feature tests", func() {
 	})
 
 	Context("After install", func() {
-		It("downgrades to an older image including upgrade and reset hooks", func() {
+		It("downgrades to an older image to then upgrade again to current including upgrade and reset hooks", func() {
 			By("setting /oem/chroot_hooks.yaml")
-			err := s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")
-			Expect(err).ToNot(HaveOccurred())
+			Expect(s.SendFile("../assets/chroot_hooks.yaml", "/oem/chroot_hooks.yaml", "0770")).To(Succeed())
+			Expect(s.SendFile("../assets/hacks_for_tests.yaml", "/oem/hacks_for_tests.yaml", "0770")).To(Succeed())
+
 			originalVersion := s.GetOSRelease("TIMESTAMP")
 
 			By(fmt.Sprintf("upgrading to %s", comm.DefaultUpgradeImage))
@@ -56,8 +57,8 @@ var _ = Describe("Elemental Feature tests", func() {
 
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Active)
-			currentVersion := s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).NotTo(Equal(originalVersion))
+			downgradedVersion := s.GetOSRelease("TIMESTAMP")
+			Expect(downgradedVersion).NotTo(Equal(originalVersion))
 
 			_, err = s.Command("cat /after-upgrade-chroot")
 			Expect(err).ToNot(HaveOccurred())
@@ -70,8 +71,10 @@ var _ = Describe("Elemental Feature tests", func() {
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Passive)
 			passiveVersion := s.GetOSRelease("TIMESTAMP")
-			Expect(currentVersion).NotTo(Equal(passiveVersion))
+			Expect(downgradedVersion).NotTo(Equal(passiveVersion))
+			Expect(originalVersion).To(Equal(passiveVersion))
 
+			// Tests we can upgrade active from passive
 			By(fmt.Sprintf("Upgrading again from passive to %s", comm.UpgradeImage()))
 			out, err = s.Command(s.ElementalCmd("upgrade", "--system", comm.UpgradeImage()))
 			Expect(err).ToNot(HaveOccurred())
@@ -80,6 +83,34 @@ var _ = Describe("Elemental Feature tests", func() {
 			By("Rebooting to active")
 			s.Reboot()
 			s.EventuallyBootedFrom(sut.Active)
+			activeVersion := s.GetOSRelease("TIMESTAMP")
+			Expect(downgradedVersion).NotTo(Equal(activeVersion))
+			Expect(originalVersion).To(Equal(activeVersion))
+
+			By("Rebooting to passive")
+			s.ChangeBootOnce(sut.Passive)
+			s.Reboot()
+			s.EventuallyBootedFrom(sut.Passive)
+			passiveVersion = s.GetOSRelease("TIMESTAMP")
+			Expect(downgradedVersion).To(Equal(passiveVersion))
+			Expect(originalVersion).NotTo(Equal(passiveVersion))
+
+			// Test we can upgrade from the downgraded version back to original
+			By(fmt.Sprintf("Upgrading again from passive to %s", comm.UpgradeImage()))
+			upgradeCmd := s.ElementalCmd("upgrade", "--tls-verify=false", "--bootloader", "--system", comm.UpgradeImage())
+			out, err = s.NewPodmanRunCommand(comm.ToolkitImage(), fmt.Sprintf("-c \"mount --rbind /host/run /run && %s\"", upgradeCmd)).
+				Privileged().
+				NoTLSVerify().
+				WithMount("/", "/host").
+				Run()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).Should(ContainSubstring("Upgrade completed"))
+			By("Rebooting to active")
+			s.Reboot()
+			s.EventuallyBootedFrom(sut.Active)
+			activeVersion = s.GetOSRelease("TIMESTAMP")
+			Expect(downgradedVersion).NotTo(Equal(activeVersion))
+			Expect(originalVersion).To(Equal(activeVersion))
 		})
 	})
 })
