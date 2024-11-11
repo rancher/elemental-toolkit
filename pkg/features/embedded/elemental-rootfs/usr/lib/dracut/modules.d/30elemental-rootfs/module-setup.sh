@@ -24,7 +24,7 @@ install() {
     declare systemdsystemunitdir=${systemdsystemunitdir}
 
     inst_multiple \
-        mount cut basename lsblk elemental
+        mount cut basename elemental rsync findmnt
 
     inst_simple "/etc/elemental/config.yaml"
 

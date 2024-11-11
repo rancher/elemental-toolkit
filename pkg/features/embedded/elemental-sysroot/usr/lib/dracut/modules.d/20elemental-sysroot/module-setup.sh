@@ -18,8 +18,8 @@ install() {
     declare systemdutildir=${systemdutildir}
     declare systemdsystemunitdir=${systemdsystemunitdir}
 
-    inst_multiple -o \
-        "$systemdutildir"/systemd-fsck ln mkdir mount umount systemd-escape e2fsck
+    inst_multiple \
+        "$systemdutildir"/systemd-fsck ln mkdir mount umount systemd-escape e2fsck lsblk basename
 
     inst_hook cmdline 30 "${moddir}/elemental-cmdline.sh"
 
