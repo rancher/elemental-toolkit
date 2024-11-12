@@ -962,14 +962,14 @@ var _ = Describe("Utils", Label("utils"), func() {
 
 			err := utils.CreateSquashFS(
 				runner, logger, "source", "dest", constants.GetDefaultSquashfsCompressionOptions(),
-				"/root/some/path", "/root/another/path",
+				"some/path", "another/path",
 			)
 			cmd := []string{"mksquashfs", "source", "dest"}
 			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
-			cmd = append(cmd, "-e", "/root/some/path", "/root/another/path")
+			cmd = append(cmd, "-wildcards", "-e", "some/path", "another/path")
 			Expect(runner.IncludesCmds([][]string{
 				cmd,
-			})).To(BeNil())
+			})).To(Succeed())
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("returns an error if it fails", func() {

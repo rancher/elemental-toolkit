@@ -295,7 +295,7 @@ func CreateSquashFS(runner types.Runner, logger types.Logger, source string, des
 	}
 	args = append(args, optionsExpanded...)
 	if len(excludes) >= 0 {
-		excludesOpt := append([]string{"-e"}, excludes...)
+		excludesOpt := append([]string{"-wildcards", "-e"}, excludes...)
 		args = append(args, excludesOpt...)
 	}
 	out, err := runner.Run("mksquashfs", args...)

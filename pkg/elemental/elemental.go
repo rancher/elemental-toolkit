@@ -355,7 +355,6 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 		}
 	}()
 
-	excludes := cnst.GetDefaultSystemExcludes(rootDir)
 	if img.FS == cnst.SquashFs {
 		c.Logger.Infof("Creating squashfs image for file %s", img.File)
 
@@ -370,12 +369,14 @@ func CreateImageFromTree(c types.Config, img *types.Image, rootDir string, prelo
 			c.Logger.Warnf("failed SELinux labelling at %s: %v", rootDir, err)
 		}
 
+		excludes := cnst.GetDefaultSystemExcludes()
 		err = utils.CreateSquashFS(c.Runner, c.Logger, rootDir, img.File, c.SquashFsCompressionConfig, excludes...)
 		if err != nil {
 			c.Logger.Errorf("failed creating squashfs image for %s: %v", img.File, err)
 			return err
 		}
 	} else {
+		excludes := cnst.GetDefaultSystemRootedExcludes(rootDir)
 		err = CreateFileSystemImage(c, img, rootDir, preload, excludes...)
 		if err != nil {
 			c.Logger.Errorf("failed creating filesystem image: %v", err)
@@ -585,7 +586,7 @@ func DumpSource(
 		}
 		imgSrc.SetDigest(digest)
 	} else if imgSrc.IsDir() {
-		excludes := cnst.GetDefaultSystemExcludes(imgSrc.Value())
+		excludes := cnst.GetDefaultSystemRootedExcludes(imgSrc.Value())
 		err = syncFunc(c.Logger, c.Runner, c.Fs, imgSrc.Value(), target, excludes...)
 		if err != nil {
 			return err
