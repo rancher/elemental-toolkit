@@ -10,6 +10,11 @@ endif
 	@scripts/run_vm.sh start $(DISK)
 	@echo "VM started from $(DISK)"
 
+.PHONY: prepare-local-registry
+prepare-local-registry:
+	@scripts/run_registry.sh start
+	@scripts/run_registry.sh push "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
+
 .PHONY: prepare-upgrade-test
 prepare-upgrade-test: 
 ifeq ("$(UPGRADE_DISK_CHECK)","")
@@ -17,9 +22,7 @@ ifeq ("$(UPGRADE_DISK_CHECK)","")
 	@echo "Downloading disk from $(UPGRADE_DISK_URL) ..."
 	@wget -q --tries=3 $(UPGRADE_DISK_URL) -O $(ROOT_DIR)/build/$(UPGRADE_DISK)
 endif
-	@scripts/run_registry.sh start
 	@scripts/run_vm.sh start $(ROOT_DIR)/build/$(UPGRADE_DISK)
-	@scripts/run_registry.sh push "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
 	@echo "VM started from $(ROOT_DIR)/build/$(UPGRADE_DISK)"
 
 .PHONY: test-active
@@ -70,12 +73,12 @@ test-fsck: test-active
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/fsck
 
 .PHONY: test-downgrade
-test-downgrade: test-active
-	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/downgrade -- $(UPGRADE_ARGS)
+test-downgrade: prepare-test prepare-local-registry
+	@scripts/run_upgradetest.sh start $(GINKGO) "$(GINKGO_ARGS)" "./tests/downgrade" "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
 
 .PHONY: test-upgrade
-test-upgrade: prepare-upgrade-test
-	@scripts/run_upgradetest.sh start $(GINKGO) "$(GINKGO_ARGS)" "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
+test-upgrade: prepare-upgrade-test prepare-local-registry
+	@scripts/run_upgradetest.sh start $(GINKGO) "$(GINKGO_ARGS)" "./tests/upgrade" "$(TOOLKIT_REPO):$(VERSION)" "$(REPO):$(VERSION)"
 
 .PHONY: test-cli
 test-cli:

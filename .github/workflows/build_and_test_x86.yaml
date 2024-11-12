@@ -201,7 +201,7 @@ jobs:
           go-version-file: go.mod
       - run: |
           git fetch --prune --unshallow
-      - if: ${{ matrix.test == 'test-upgrade' }}
+      - if: ${{ matrix.test == 'test-upgrade' || matrix.test == 'test-downgrade' }}
         name: Pull images
         uses: ./.github/actions/fetchimages
         with:

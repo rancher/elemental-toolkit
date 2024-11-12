@@ -15,8 +15,9 @@ function _abort {
 function start {
   local ginkgo="$1"
   local ginkgo_args="$2"
-  local toolkit_img="$3"
-  local upgrade_img="$4"
+  local suite_folder="$3"
+  local toolkit_img="$4"
+  local upgrade_img="$5"
   local reg_url
 
   export VM_PID=$(${SCRIPTS_PATH}/run_vm.sh vmpid)
@@ -26,7 +27,7 @@ function start {
 
   pushd "${ROOT_PATH}" > /dev/null
     go run ${ginkgo} ${ginkgo_args} ./tests/wait-active
-    go run ${ginkgo} ${ginkgo_args} ./tests/upgrade -- \
+    go run ${ginkgo} ${ginkgo_args} ${suite_folder} -- \
       --toolkit-image=docker://${reg_url}/${toolkit_img} --upgrade-image=docker://${reg_url}/${upgrade_img} 
   popd > /dev/null
 }
@@ -36,10 +37,10 @@ cmd=$1
 case $cmd in
   start)
     shift
-    if [[ $# -ne 4 ]]; then
+    if [[ $# -ne 5 ]]; then
       _abort "Wrong number of arguments"
     fi
-    start "$1" "$2" "$3" "$4"
+    start "$1" "$2" "$3" "$4" "$5"
     ;;
   *)
     _abort "Unknown command: ${cmd}"
