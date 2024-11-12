@@ -948,6 +948,30 @@ var _ = Describe("Utils", Label("utils"), func() {
 			})).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
+		It("ignores any '-e' option", func() {
+			args := append(constants.GetDefaultSquashfsCompressionOptions(), "-e /some/path")
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", args)
+			cmd := []string{"mksquashfs", "source", "dest"}
+			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
+			Expect(runner.IncludesCmds([][]string{
+				cmd,
+			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("excludes given paths", func() {
+
+			err := utils.CreateSquashFS(
+				runner, logger, "source", "dest", constants.GetDefaultSquashfsCompressionOptions(),
+				"/root/some/path", "/root/another/path",
+			)
+			cmd := []string{"mksquashfs", "source", "dest"}
+			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
+			cmd = append(cmd, "-e", "/root/some/path", "/root/another/path")
+			Expect(runner.IncludesCmds([][]string{
+				cmd,
+			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
 		It("returns an error if it fails", func() {
 			runner.ReturnError = errors.New("error")
 			err := utils.CreateSquashFS(runner, logger, "source", "dest", []string{})
