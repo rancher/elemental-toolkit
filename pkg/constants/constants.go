@@ -189,22 +189,33 @@ const (
 	LegacyGrubCfgPath = "/etc/cos"
 )
 
-// GetDefaultSystemEcludes returns a list of transient paths
+// GetDefaultSystemExcludes returns a list of paths
 // that are commonly present in an Elemental based running system.
-// Those paths are not needed or wanted in order to replicate the
-// root-tree as they are generated at runtime.
-func GetDefaultSystemExcludes(rootDir string) []string {
+// Those paths are not needed or wanted in order to replicate the root-tree.
+func GetDefaultSystemExcludes() []string {
 	return []string{
-		filepath.Join(rootDir, "/.snapshots"),
-		filepath.Join(rootDir, "/mnt"),
-		filepath.Join(rootDir, "/proc"),
-		filepath.Join(rootDir, "/sys"),
-		filepath.Join(rootDir, "/dev"),
-		filepath.Join(rootDir, "/tmp"),
-		filepath.Join(rootDir, "/run"),
-		filepath.Join(rootDir, "/host"),
-		filepath.Join(rootDir, "/etc/resolv.conf"),
+		".snapshots",
+		"mnt/*",
+		"proc/*",
+		"sys/*",
+		"dev/*",
+		"tmp/*",
+		"run/*",
+		"host",
+		"etc/resolv.conf",
 	}
+}
+
+// GetDefaultSystemExcludes returns a list of transient paths
+// that are commonly present in an Elemental based running system.
+// Paths are rooted to the given rootDir. Those paths are not
+// needed or wanted in order to replicate the root-tree.
+func GetDefaultSystemRootedExcludes(rootDir string) []string {
+	var list []string
+	for _, path := range GetDefaultSystemExcludes() {
+		list = append(list, filepath.Join(rootDir, path))
+	}
+	return list
 }
 
 func GetKernelPatterns() []string {
