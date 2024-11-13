@@ -18,6 +18,7 @@ package snapshotter
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -71,7 +72,7 @@ func newLoopDeviceSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig,
 		if !ok {
 			msg := "failed casting LoopDeviceConfig type"
 			cfg.Logger.Errorf(msg)
-			return nil, fmt.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 	}
 	return &LoopDevice{cfg: cfg, snapshotterCfg: snapCfg, loopDevCfg: *loopDevCfg, bootloader: bootloader}, nil
@@ -363,7 +364,7 @@ func (l *LoopDevice) SnapshotToImageSource(snap *types.Snapshot) (*types.ImageSo
 		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
 		l.cfg.Logger.Errorf(msg)
 		if err == nil {
-			err = fmt.Errorf(msg)
+			err = errors.New(msg)
 		}
 		return nil, err
 	}
