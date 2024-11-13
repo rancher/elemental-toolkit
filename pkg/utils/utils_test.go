@@ -452,13 +452,18 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.CreateDirStructure(fs, "/my/root")).NotTo(BeNil())
 		})
 	})
-	Describe("SyncData", Label("SyncData"), func() {
-		It("Copies all files from source to target", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
-			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elementaltarget")
-			Expect(err).ShouldNot(HaveOccurred())
+	Describe("Rsync tests", Label("rsync"), func() {
+		var sourceDir, destDir string
+		var err error
 
+		BeforeEach(func() {
+			sourceDir, err = utils.TempDir(fs, "", "elementalsource")
+			Expect(err).ShouldNot(HaveOccurred())
+			destDir, err = utils.TempDir(fs, "", "elementaltarget")
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Copies all files from source to target", func() {
 			for i := 0; i < 5; i++ {
 				_, _ = utils.TempFile(fs, sourceDir, "file*")
 			}
@@ -479,11 +484,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("Copies all files from source to target respecting excludes", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
-			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elementaltarget")
-			Expect(err).ShouldNot(HaveOccurred())
-
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
 
@@ -522,11 +522,6 @@ var _ = Describe("Utils", Label("utils"), func() {
 		})
 
 		It("Copies all files from source to target respecting excludes with '/' prefix", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
-			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elementaltarget")
-			Expect(err).ShouldNot(HaveOccurred())
-
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "host"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
 			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
@@ -536,16 +531,14 @@ var _ = Describe("Utils", Label("utils"), func() {
 
 			filesDest, err := fs.ReadDir(destDir)
 			Expect(err).To(BeNil())
-
 			destNames := getNamesFromListFiles(filesDest)
 
 			filesSource, err := fs.ReadDir(sourceDir)
 			Expect(err).To(BeNil())
-
-			SourceNames := getNamesFromListFiles(filesSource)
+			sourceNames := getNamesFromListFiles(filesSource)
 
 			// Shouldn't be the same
-			Expect(destNames).ToNot(Equal(SourceNames))
+			Expect(destNames).ToNot(Equal(sourceNames))
 
 			Expect(utils.Exists(fs, filepath.Join(destDir, "var", "run"))).To(BeTrue())
 			Expect(utils.Exists(fs, filepath.Join(destDir, "tmp", "host"))).To(BeTrue())
@@ -553,23 +546,50 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(utils.Exists(fs, filepath.Join(destDir, "run"))).To(BeFalse())
 		})
 
+		It("Copies all files from source to target respecting excludes with wildcards", func() {
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
+			Expect(fs.WriteFile(filepath.Join(sourceDir, "run", "testfile"), []byte{}, constants.DirPerm)).To(Succeed())
+
+			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir, "/run/*")).To(BeNil())
+
+			Expect(utils.Exists(fs, filepath.Join(destDir, "var", "run"))).To(BeTrue())
+			Expect(utils.Exists(fs, filepath.Join(destDir, "run"))).To(BeTrue())
+			Expect(utils.Exists(fs, filepath.Join(destDir, "run", "testfile"))).To(BeFalse())
+		})
+
+		It("Mirrors all files from source to destination deleting pre-existing files in destination if needed", func() {
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "run"), constants.DirPerm)
+			utils.MkdirAll(fs, filepath.Join(sourceDir, "var", "run"), constants.DirPerm)
+			Expect(fs.WriteFile(filepath.Join(sourceDir, "run", "testfile"), []byte{}, constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(destDir, "testfile"), []byte{}, constants.DirPerm)).To(Succeed())
+
+			Expect(utils.MirrorData(logger, realRunner, fs, sourceDir, destDir)).To(BeNil())
+
+			filesDest, err := fs.ReadDir(destDir)
+			Expect(err).To(BeNil())
+			destNames := getNamesFromListFiles(filesDest)
+
+			filesSource, err := fs.ReadDir(sourceDir)
+			Expect(err).To(BeNil())
+			sourceNames := getNamesFromListFiles(filesSource)
+
+			// Should be the same
+			Expect(destNames).To(Equal(sourceNames))
+
+			// pre-exising file in destination deleted if this is not part of source
+			Expect(utils.Exists(fs, filepath.Join(destDir, "testfile"))).To(BeFalse())
+		})
+
 		It("should not fail if dirs are empty", func() {
-			sourceDir, err := utils.TempDir(fs, "", "elementalsource")
-			Expect(err).ShouldNot(HaveOccurred())
-			destDir, err := utils.TempDir(fs, "", "elementaltarget")
-			Expect(err).ShouldNot(HaveOccurred())
 			Expect(utils.SyncData(logger, realRunner, fs, sourceDir, destDir)).To(BeNil())
 		})
 		It("should fail if destination does not exist", func() {
-			sourceDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(sourceDir)
+			fs.RemoveAll(destDir)
 			Expect(utils.SyncData(logger, realRunner, nil, sourceDir, "/welp")).NotTo(BeNil())
 		})
 		It("should fail if source does not exist", func() {
-			destDir, err := os.MkdirTemp("", "elemental")
-			Expect(err).To(BeNil())
-			defer os.RemoveAll(destDir)
+			fs.RemoveAll(sourceDir)
 			Expect(utils.SyncData(logger, realRunner, nil, "/welp", destDir)).NotTo(BeNil())
 		})
 	})
@@ -946,6 +966,30 @@ var _ = Describe("Utils", Label("utils"), func() {
 			Expect(runner.IncludesCmds([][]string{
 				cmd,
 			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("ignores any '-e' option", func() {
+			args := append(constants.GetDefaultSquashfsCompressionOptions(), "-e /some/path")
+			err := utils.CreateSquashFS(runner, logger, "source", "dest", args)
+			cmd := []string{"mksquashfs", "source", "dest"}
+			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
+			Expect(runner.IncludesCmds([][]string{
+				cmd,
+			})).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+		It("excludes given paths", func() {
+
+			err := utils.CreateSquashFS(
+				runner, logger, "source", "dest", constants.GetDefaultSquashfsCompressionOptions(),
+				"some/path", "another/path",
+			)
+			cmd := []string{"mksquashfs", "source", "dest"}
+			cmd = append(cmd, constants.GetDefaultSquashfsCompressionOptions()...)
+			cmd = append(cmd, "-wildcards", "-e", "some/path", "another/path")
+			Expect(runner.IncludesCmds([][]string{
+				cmd,
+			})).To(Succeed())
 			Expect(err).ToNot(HaveOccurred())
 		})
 		It("returns an error if it fails", func() {
