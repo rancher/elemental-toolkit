@@ -53,7 +53,6 @@ func NewYipCloudInitRunner(l types.Logger, r types.Runner, fs vfs.FS) *YipCloudI
 			// Note, the plugin execution order depends on the order passed here
 			plugins.DNS,
 			plugins.Download,
-			plugins.Git,
 			plugins.Entities,
 			plugins.EnsureDirectories,
 			plugins.EnsureFiles,
@@ -63,7 +62,6 @@ func NewYipCloudInitRunner(l types.Logger, r types.Runner, fs vfs.FS) *YipCloudI
 			plugins.Sysctl,
 			plugins.User,
 			plugins.SSH,
-			plugins.LoadModules,
 			plugins.Timesyncd,
 			plugins.Systemctl,
 			plugins.Environment,

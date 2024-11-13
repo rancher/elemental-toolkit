@@ -371,7 +371,7 @@ func funcOpSub(_, l, r any) any {
 		L:
 			for _, l := range l {
 				for _, r := range r {
-					if compare(l, r) == 0 {
+					if Compare(l, r) == 0 {
 						continue L
 					}
 				}
@@ -433,11 +433,11 @@ func deepMergeObjects(l, r map[string]any) any {
 }
 
 func repeatString(s string, n float64) any {
-	if n <= 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
+	if n < 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
 		return nil
 	}
-	if int(n) < 1 {
-		return s
+	if s == "" {
+		return ""
 	}
 	return strings.Repeat(s, int(n))
 }
@@ -446,9 +446,6 @@ func funcOpDiv(_, l, r any) any {
 	return binopTypeSwitch(l, r,
 		func(l, r int) any {
 			if r == 0 {
-				if l == 0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			if l%r == 0 {
@@ -458,18 +455,12 @@ func funcOpDiv(_, l, r any) any {
 		},
 		func(l, r float64) any {
 			if r == 0.0 {
-				if l == 0.0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			return l / r
 		},
 		func(l, r *big.Int) any {
 			if r.Sign() == 0 {
-				if l.Sign() == 0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			d, m := new(big.Int).DivMod(l, r, new(big.Int))
@@ -508,6 +499,9 @@ func funcOpMod(_, l, r any) any {
 			if ri == 0 {
 				return &zeroModuloError{l, r}
 			}
+			if math.IsNaN(l) || math.IsNaN(r) {
+				return math.NaN()
+			}
 			return floatToInt(l) % ri
 		},
 		func(l, r *big.Int) any {
@@ -531,25 +525,25 @@ func funcOpAlt(_, l, r any) any {
 }
 
 func funcOpEq(_, l, r any) any {
-	return compare(l, r) == 0
+	return Compare(l, r) == 0
 }
 
 func funcOpNe(_, l, r any) any {
-	return compare(l, r) != 0
+	return Compare(l, r) != 0
 }
 
 func funcOpGt(_, l, r any) any {
-	return compare(l, r) > 0
+	return Compare(l, r) > 0
 }
 
 func funcOpLt(_, l, r any) any {
-	return compare(l, r) < 0
+	return Compare(l, r) < 0
 }
 
 func funcOpGe(_, l, r any) any {
-	return compare(l, r) >= 0
+	return Compare(l, r) >= 0
 }
 
 func funcOpLe(_, l, r any) any {
-	return compare(l, r) <= 0
+	return Compare(l, r) <= 0
 }

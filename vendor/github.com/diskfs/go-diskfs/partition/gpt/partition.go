@@ -1,6 +1,7 @@
 package gpt
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -14,6 +15,8 @@ import (
 
 // PartitionEntrySize fixed size of a GPT partition entry
 const PartitionEntrySize = 128
+
+var zeroUUIDBytes = make([]byte, 16)
 
 // Partition represents the structure of a single partition on the disk
 type Partition struct {
@@ -90,6 +93,9 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 		return nil, fmt.Errorf("data for partition was %d bytes instead of expected %d", len(b), PartitionEntrySize)
 	}
 	// is it all zeroes?
+	if bytes.Equal(b[0:16], zeroUUIDBytes) {
+		return nil, nil
+	}
 	typeGUID, err := uuid.FromBytes(bytesToUUIDBytes(b[0:16]))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read partition type GUID: %v", err)
@@ -284,4 +290,15 @@ func (p *Partition) sectorSizes() (physical, logical int) {
 
 func (p *Partition) Equal(o *Partition) bool {
 	return p != nil && o != nil && *p == *o
+}
+
+// UUID returns the partitions UUID
+func (p *Partition) UUID() string {
+	return p.GUID
+}
+
+// Expand increases the size of the partition by a number of sectors
+func (p *Partition) Expand(sectors uint64) {
+	p.End += sectors
+	p.Size += sectors * uint64(p.logicalSectorSize)
 }

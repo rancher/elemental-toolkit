@@ -6,11 +6,8 @@ package sysinfo
 
 import (
 	"bufio"
-	"crypto/rand"
-	"fmt"
 	"os"
 	"strings"
-	"time"
 )
 
 // Node information.
@@ -58,27 +55,17 @@ func (si *SysInfo) getSetMachineID() {
 		si.Node.MachineID = systemdMachineID
 		return
 	}
-
-	// Generate and write fresh new machine ID to both locations, conforming to the DBUS specification:
-	// https://dbus.freedesktop.org/doc/dbus-specification.html#uuids
-
-	random := make([]byte, 12)
-	if _, err := rand.Read(random); err != nil {
-		return
-	}
-	newMachineID := fmt.Sprintf("%x%x", random, time.Now().Unix())
-
-	spewFile(pathSystemdMachineID, newMachineID, 0444)
-	spewFile(pathDbusMachineID, newMachineID, 0444)
-	si.Node.MachineID = newMachineID
 }
 
 func (si *SysInfo) getTimezone() {
+	const zoneInfoPrefix = "/usr/share/zoneinfo/"
+
 	if fi, err := os.Lstat("/etc/localtime"); err == nil {
 		if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
 			if tzfile, err := os.Readlink("/etc/localtime"); err == nil {
-				if strings.HasPrefix(tzfile, "/usr/share/zoneinfo/") {
-					si.Node.Timezone = strings.TrimPrefix(tzfile, "/usr/share/zoneinfo/")
+				tzfile = strings.TrimPrefix(tzfile, "..")
+				if strings.HasPrefix(tzfile, zoneInfoPrefix) {
+					si.Node.Timezone = strings.TrimPrefix(tzfile, zoneInfoPrefix)
 					return
 				}
 			}

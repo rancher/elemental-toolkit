@@ -11,20 +11,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	xusers "github.com/mauromorales/xpasswd/pkg/users"
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
-	passwd "github.com/willdonnelly/passwd"
+
+	"github.com/gofrs/flock"
 )
 
 func UserDefault(s string) string {
@@ -39,31 +41,19 @@ func UserDefault(s string) string {
 }
 
 func userGetFreeUid(path string) (int, error) {
-	uidStart, uidEnd := DynamicRange()
-	mUids := make(map[int]*UserPasswd)
-	ans := -1
-
-	current, err := ParseUser(path)
+	list := xusers.NewUserList()
+	list.SetPath(path)
+	err := list.Load()
 	if err != nil {
-		return ans, err
+		return 0, errors.Wrap(err, "Failed parsing passwd")
 	}
 
-	for _, e := range current {
-		mUids[e.Uid] = &e
+	id, err := list.GenerateUIDInRange(HumanIDMin, HumanIDMax)
+	if err != nil {
+		return 0, errors.Wrap(err, "Failed generating a unique uid")
 	}
 
-	for i := uidStart; i >= uidEnd; i-- {
-		if _, ok := mUids[i]; !ok {
-			ans = i
-			break
-		}
-	}
-
-	if ans < 0 {
-		return ans, errors.New("No free UID found")
-	}
-
-	return ans, nil
+	return id, nil
 }
 
 type UserPasswd struct {
@@ -80,44 +70,47 @@ type UserPasswd struct {
 func ParseUser(path string) (map[string]UserPasswd, error) {
 	ans := make(map[string]UserPasswd, 0)
 
-	current, err := passwd.ParseFile(path)
-	if err != nil {
-		return ans, errors.Wrap(err, "Failed parsing passwd")
+	list := xusers.NewUserList()
+	list.SetPath(path)
+	users, err := list.GetAll()
+	if err != nil && len(users) == 0 {
+		return ans, errors.Wrap(err, "Failed loading user list")
 	}
+
 	_, err = permbits.Stat(path)
 	if err != nil {
 		return ans, errors.Wrap(err, "Failed getting permissions")
 	}
 
-	for k, v := range current {
-
-		uid, err := strconv.Atoi(v.Uid)
+	for _, user := range users {
+		username := user.Username()
+		uid, err := user.UID()
 		if err != nil {
 			fmt.Println(fmt.Sprintf(
 				"WARN: Found invalid uid for user %s: %s.\nSetting 0. Check the file soon.",
-				k, err.Error(),
+				username, err.Error(),
 			))
 			uid = 0
 		}
 
-		gid, err := strconv.Atoi(v.Gid)
+		gid, err := user.GID()
 		if err != nil {
 			fmt.Println(fmt.Sprintf(
 				"WARN: Found invalid gid for user %s and uid %d: %s",
-				k, uid, err.Error(),
+				username, uid, err.Error(),
 			))
 			// Set gid with the same value of uid
 			gid = uid
 		}
 
-		ans[k] = UserPasswd{
-			Username: k,
-			Password: v.Pass,
+		ans[username] = UserPasswd{
+			Username: username,
+			Password: user.Password(),
 			Uid:      uid,
 			Gid:      gid,
-			Info:     v.Gecos,
-			Homedir:  v.Home,
-			Shell:    v.Shell,
+			Info:     user.RealName(),
+			Homedir:  user.HomeDir(),
+			Shell:    user.Shell(),
 		}
 	}
 
@@ -175,7 +168,29 @@ func (u UserPasswd) String() string {
 
 func (u UserPasswd) Delete(s string) error {
 	s = UserDefault(s)
-	input, err := ioutil.ReadFile(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
+
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
+	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
 	}
@@ -185,7 +200,7 @@ func (u UserPasswd) Delete(s string) error {
 	}
 	lines := bytes.Replace(input, []byte(u.String()+"\n"), []byte(""), 1)
 
-	err = ioutil.WriteFile(s, []byte(lines), os.FileMode(permissions))
+	err = os.WriteFile(s, []byte(lines), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -195,17 +210,41 @@ func (u UserPasswd) Delete(s string) error {
 
 func (u UserPasswd) Create(s string) error {
 	s = UserDefault(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
 
-	u, err := u.prepare(s)
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
+	u, err = u.prepare(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := passwd.ParseFile(s)
+	list := xusers.NewUserList()
+	list.SetPath(s)
+	err = list.Load()
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
 	}
-	if _, ok := current[u.Username]; ok {
+
+	user := list.Get(u.Username)
+	if user != nil {
 		return errors.New("Entity already present")
 	}
 	permissions, err := permbits.Stat(s)
@@ -266,8 +305,28 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Username]; ok {
+		d, err := RetryForDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting delay")
+		}
 
-		input, err := ioutil.ReadFile(s)
+		baseName := filepath.Base(s)
+		fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+		defer os.Remove(fileLock.Path())
+		defer fileLock.Close()
+		lockCtx, cancel := context.WithTimeout(context.Background(), d)
+		defer cancel()
+
+		i, err := RetryIntervalDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting interval")
+		}
+		locked, err := fileLock.TryLockContext(lockCtx, i)
+		if err != nil || !locked {
+			return errors.Wrap(err, "Failed locking file")
+		}
+
+		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")
 		}
@@ -282,7 +341,7 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 			}
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+		err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 		if err != nil {
 			return errors.Wrap(err, "Could not write")
 		}

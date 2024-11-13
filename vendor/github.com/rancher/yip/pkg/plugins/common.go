@@ -4,13 +4,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/zcalusic/sysinfo"
 
 	"github.com/rancher/yip/pkg/logger"
@@ -65,7 +64,7 @@ func download(url string) (string, error) {
 		time.Sleep(time.Second)
 	}
 	if err != nil {
-		return "", errors.Wrap(err, "failed while getting file")
+		return "", fmt.Errorf("failed getting file: %s", err.Error())
 	}
 	if resp.Body != nil {
 		defer resp.Body.Close()
@@ -73,7 +72,7 @@ func download(url string) (string, error) {
 	if resp.StatusCode/100 > 2 {
 		return "", fmt.Errorf("%s %s", resp.Proto, resp.Status)
 	}
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	return string(bytes), err
 }
 

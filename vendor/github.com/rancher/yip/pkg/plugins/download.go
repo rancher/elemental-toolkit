@@ -1,13 +1,13 @@
 package plugins
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"time"
 
 	grab "github.com/cavaliergopher/grab/v3"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/twpayne/go-vfs/v4"
 
@@ -88,7 +88,7 @@ Loop:
 		// FIXUP: Doesn't support fs. It reads real /etc/passwd files
 		uid, gid, err := utils.GetUserDataFromString(dl.OwnerString)
 		if err != nil {
-			return errors.Wrap(err, "Failed getting gid")
+			return errors.New("Failed getting gid")
 		}
 		return os.Chown(dl.Path, uid, gid)
 	}

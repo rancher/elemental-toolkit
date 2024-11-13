@@ -1,11 +1,11 @@
 package plugins
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/joho/godotenv"
-	"github.com/pkg/errors"
 	"github.com/twpayne/go-vfs/v4"
 
 	"github.com/rancher/yip/pkg/logger"
@@ -47,7 +47,7 @@ func Environment(l logger.Interface, s schema.Stage, fs vfs.FS, console Console)
 	}
 
 	if err := utils.Touch(environment, os.ModePerm, fs); err != nil {
-		return errors.Wrap(err, "failed touching environment file")
+		return fmt.Errorf("failed touching environment file: %s", err.Error())
 	}
 
 	content, err := fs.ReadFile(environment)

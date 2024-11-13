@@ -16,6 +16,7 @@ package schema
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,8 +24,6 @@ import (
 	"strings"
 
 	"github.com/google/shlex"
-
-	"github.com/pkg/errors"
 
 	config "github.com/rancher/yip/pkg/schema/cloudinit"
 
@@ -149,7 +148,6 @@ type Stage struct {
 	SSHKeys         map[string][]string `yaml:"authorized_keys,omitempty"`
 	Node            string              `yaml:"node,omitempty"`
 	Users           map[string]User     `yaml:"users,omitempty"`
-	Modules         []string            `yaml:"modules,omitempty"`
 	Systemctl       Systemctl           `yaml:"systemctl,omitempty"`
 	Environment     map[string]string   `yaml:"environment,omitempty"`
 	EnvironmentFile string              `yaml:"environment_file,omitempty"`
@@ -200,12 +198,12 @@ func Load(s string, fs vfs.FS, l Loader, m Modifier) (*YipConfig, error) {
 	}
 	data, err := l(s, fs, m)
 	if err != nil {
-		return nil, errors.Wrap(err, "while loading yipconfig")
+		return nil, fmt.Errorf("error while loading yipconfig: %s", err.Error())
 	}
 
 	loader, err := detect(data)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid file type")
+		return nil, fmt.Errorf("invalid file type: %s", err.Error())
 	}
 	return loader.Load(data, fs)
 }
@@ -270,7 +268,7 @@ func jq(command string, data map[string]interface{}) (map[string]interface{}, er
 
 	v, ok := iter.Next()
 	if !ok {
-		return nil, errors.New("failed getting rsult from gojq")
+		return nil, errors.New("failed getting result from gojq")
 	}
 	if err, ok := v.(error); ok {
 		return nil, err
