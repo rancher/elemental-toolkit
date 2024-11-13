@@ -279,17 +279,25 @@ func CosignVerify(fs types.FS, runner types.Runner, image string, publicKey stri
 }
 
 // CreateSquashFS creates a squash file at destination from a source, with options
-// TODO: Check validity of source maybe?
-func CreateSquashFS(runner types.Runner, logger types.Logger, source string, destination string, options []string) error {
+func CreateSquashFS(runner types.Runner, logger types.Logger, source string, destination string, options []string, excludes ...string) error {
 	// create args
 	args := []string{source, destination}
 	// append options passed to args in order to have the correct order
 	// protect against options passed together in the same string , i.e. "-x add" instead of "-x", "add"
 	var optionsExpanded []string
 	for _, op := range options {
-		optionsExpanded = append(optionsExpanded, strings.Split(op, " ")...)
+		opExpanded := strings.Split(op, " ")
+		if opExpanded[0] == "-e" {
+			logger.Warnf("Ignoring option '%s', exclude directories must be passed as excludes argument", op)
+			continue
+		}
+		optionsExpanded = append(optionsExpanded, opExpanded...)
 	}
 	args = append(args, optionsExpanded...)
+	if len(excludes) >= 0 {
+		excludesOpt := append([]string{"-wildcards", "-e"}, excludes...)
+		args = append(args, excludesOpt...)
+	}
 	out, err := runner.Run("mksquashfs", args...)
 	if err != nil {
 		logger.Debugf("Error running squashfs creation, stdout: %s", out)
