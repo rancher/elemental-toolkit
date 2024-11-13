@@ -84,6 +84,13 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	setscope := c.lazy(func() *code {
 		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
 	})
+	for _, name := range c.variables {
+		if !newLexer(name).validVarName() {
+			return nil, &variableNameError{name}
+		}
+		c.appendCodeInfo(name)
+		c.append(&code{op: opstore, v: c.pushVariable(name)})
+	}
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
 			LoadInitModules() ([]*Query, error)
@@ -113,13 +120,6 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 }
 
 func (c *compiler) compile(q *Query) error {
-	for _, name := range c.variables {
-		if !newLexer(name).validVarName() {
-			return &variableNameError{name}
-		}
-		c.appendCodeInfo(name)
-		c.append(&code{op: opstore, v: c.pushVariable(name)})
-	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return err
@@ -398,6 +398,8 @@ func (c *compiler) compileQuery(e *Query) error {
 		return c.compileTerm(e.Term)
 	}
 	switch e.Op {
+	case Operator(0):
+		return errors.New(`missing query (try ".")`)
 	case OpPipe:
 		if err := c.compileQuery(e.Left); err != nil {
 			return err
@@ -538,6 +540,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 }
 
 func (c *compiler) compileBind(e *Term, b *Bind) error {
+	defer c.newScopeDepth()()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opexpbegin})
 	if err := c.compileTerm(e); err != nil {
@@ -734,7 +737,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	}
 	f()
 	c.append(&code{op: opstore, v: v})
-	if err := c.compileTerm(e.Term); err != nil {
+	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
@@ -765,7 +768,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	}
 	f()
 	c.append(&code{op: opstore, v: v})
-	if err := c.compileTerm(e.Term); err != nil {
+	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
@@ -990,6 +993,22 @@ func (c *compiler) compileFunc(e *Func) error {
 				true,
 				-1,
 			)
+		case "debug":
+			setfork := c.lazy(func() *code {
+				return &code{op: opfork, v: len(c.codes)}
+			})
+			if err := c.compileQuery(e.Args[0]); err != nil {
+				return err
+			}
+			if err := c.compileFunc(&Func{Name: "debug"}); err != nil {
+				if _, ok := err.(*funcNotFoundError); ok {
+					err = &funcNotFoundError{e}
+				}
+				return err
+			}
+			c.append(&code{op: opbacktrack})
+			setfork()
+			return nil
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
@@ -1172,7 +1191,7 @@ func (c *compiler) funcInput(any, []any) any {
 func (c *compiler) funcModulemeta(v any, _ []any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"modulemeta", v}
+		return &func0TypeError{"modulemeta", v}
 	}
 	if c.moduleLoader == nil {
 		return fmt.Errorf("cannot load module: %q", s)
@@ -1196,35 +1215,52 @@ func (c *compiler) funcModulemeta(v any, _ []any) any {
 	if meta == nil {
 		meta = make(map[string]any)
 	}
-	var deps []any
-	for _, i := range q.Imports {
+	meta["defs"] = listModuleDefs(q)
+	meta["deps"] = listModuleDeps(q)
+	return meta
+}
+
+func listModuleDefs(q *Query) []any {
+	type funcNameArity struct {
+		name  string
+		arity int
+	}
+	var xs []*funcNameArity
+	for _, fd := range q.FuncDefs {
+		if fd.Name[0] != '_' {
+			xs = append(xs, &funcNameArity{fd.Name, len(fd.Args)})
+		}
+	}
+	sort.Slice(xs, func(i, j int) bool {
+		return xs[i].name < xs[j].name ||
+			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
+	})
+	defs := make([]any, len(xs))
+	for i, x := range xs {
+		defs[i] = x.name + "/" + strconv.Itoa(x.arity)
+	}
+	return defs
+}
+
+func listModuleDeps(q *Query) []any {
+	deps := make([]any, len(q.Imports))
+	for j, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {
 			v = make(map[string]any)
-		} else {
-			for k := range v {
-				// dirty hack to remove the internal fields
-				if strings.HasPrefix(k, "$$") {
-					delete(v, k)
-				}
-			}
 		}
-		if i.ImportPath == "" {
-			v["relpath"] = i.IncludePath
-		} else {
-			v["relpath"] = i.ImportPath
+		relpath := i.ImportPath
+		if relpath == "" {
+			relpath = i.IncludePath
 		}
-		if err != nil {
-			return err
-		}
+		v["relpath"] = relpath
 		if i.ImportAlias != "" {
 			v["as"] = strings.TrimPrefix(i.ImportAlias, "$")
 		}
 		v["is_data"] = strings.HasPrefix(i.ImportAlias, "$")
-		deps = append(deps, v)
+		deps[j] = v
 	}
-	meta["deps"] = deps
-	return meta
+	return deps
 }
 
 func (c *compiler) compileObject(e *Object) error {
@@ -1311,10 +1347,8 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 	}
 	if kv.Val != nil {
 		c.append(&code{op: opload, v: v})
-		for _, e := range kv.Val.Queries {
-			if err := c.compileQuery(e); err != nil {
-				return err
-			}
+		if err := c.compileQuery(kv.Val); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1409,6 +1443,8 @@ func formatToFunc(format string) *Func {
 		return &Func{Name: "_tohtml"}
 	case "@uri":
 		return &Func{Name: "_touri"}
+	case "@urid":
+		return &Func{Name: "_tourid"}
 	case "@csv":
 		return &Func{Name: "_tocsv"}
 	case "@tsv":

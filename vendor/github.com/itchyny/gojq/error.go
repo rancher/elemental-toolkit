@@ -27,20 +27,20 @@ func (err *expectedArrayError) Error() string {
 	return "expected an array but got: " + typeErrorPreview(err.v)
 }
 
-type expectedStringError struct {
-	v any
-}
-
-func (err *expectedStringError) Error() string {
-	return "expected a string but got: " + typeErrorPreview(err.v)
-}
-
 type iteratorError struct {
 	v any
 }
 
 func (err *iteratorError) Error() string {
 	return "cannot iterate over: " + typeErrorPreview(err.v)
+}
+
+type arrayIndexNegativeError struct {
+	v int
+}
+
+func (err *arrayIndexNegativeError) Error() string {
+	return "array index should not be negative: " + Preview(err.v)
 }
 
 type arrayIndexTooLargeError struct {
@@ -83,13 +83,10 @@ func (err *expectedStartEndError) Error() string {
 	return `expected "start" and "end" for slicing but got: ` + typeErrorPreview(err.v)
 }
 
-type lengthMismatchError struct {
-	name string
-	v, x []any
-}
+type lengthMismatchError struct{}
 
-func (err *lengthMismatchError) Error() string {
-	return "length mismatch in " + err.name + ": " + typeErrorPreview(err.v) + ", " + typeErrorPreview(err.x)
+func (*lengthMismatchError) Error() string {
+	return "length mismatch"
 }
 
 type inputNotAllowedError struct{}
@@ -106,19 +103,66 @@ func (err *funcNotFoundError) Error() string {
 	return "function not defined: " + err.f.Name + "/" + strconv.Itoa(len(err.f.Args))
 }
 
-type funcTypeError struct {
+type func0TypeError struct {
 	name string
 	v    any
 }
 
-func (err *funcTypeError) Error() string {
+func (err *func0TypeError) Error() string {
 	return err.name + " cannot be applied to: " + typeErrorPreview(err.v)
+}
+
+type func1TypeError struct {
+	name string
+	v, w any
+}
+
+func (err *func1TypeError) Error() string {
+	return err.name + "(" + Preview(err.w) + ") cannot be applied to: " + typeErrorPreview(err.v)
+}
+
+type func2TypeError struct {
+	name    string
+	v, w, x any
+}
+
+func (err *func2TypeError) Error() string {
+	return err.name + "(" + Preview(err.w) + "; " + Preview(err.x) + ") cannot be applied to: " + typeErrorPreview(err.v)
+}
+
+type func0WrapError struct {
+	name string
+	v    any
+	err  error
+}
+
+func (err *func0WrapError) Error() string {
+	return err.name + " cannot be applied to " + Preview(err.v) + ": " + err.err.Error()
+}
+
+type func1WrapError struct {
+	name string
+	v, w any
+	err  error
+}
+
+func (err *func1WrapError) Error() string {
+	return err.name + "(" + Preview(err.w) + ") cannot be applied to " + Preview(err.v) + ": " + err.err.Error()
+}
+
+type func2WrapError struct {
+	name    string
+	v, w, x any
+	err     error
+}
+
+func (err *func2WrapError) Error() string {
+	return err.name + "(" + Preview(err.w) + "; " + Preview(err.x) + ") cannot be applied to " + Preview(err.v) + ": " + err.err.Error()
 }
 
 type exitCodeError struct {
 	value any
 	code  int
-	halt  bool
 }
 
 func (err *exitCodeError) Error() string {
@@ -126,10 +170,6 @@ func (err *exitCodeError) Error() string {
 		return "error: " + s
 	}
 	return "error: " + jsonMarshal(err.value)
-}
-
-func (err *exitCodeError) IsEmptyError() bool {
-	return err.value == nil
 }
 
 func (err *exitCodeError) Value() any {
@@ -140,24 +180,28 @@ func (err *exitCodeError) ExitCode() int {
 	return err.code
 }
 
-func (err *exitCodeError) IsHaltError() bool {
-	return err.halt
+// HaltError is an error emitted by halt and halt_error functions.
+// It implements [ValueError], and if the value is nil, discard the error
+// and stop the iteration. Consider a query like "1, halt, 2";
+// the first value is 1, and the second value is a HaltError with nil value.
+// You might think the iterator should not emit an error this case, but it
+// should so that we can recognize the halt error to stop the outer loop
+// of iterating input values; echo 1 2 3 | gojq "., halt".
+type HaltError exitCodeError
+
+func (err *HaltError) Error() string {
+	return "halt " + (*exitCodeError)(err).Error()
 }
 
-type containsTypeError struct {
-	l, r any
+// Value returns the value of the error. This implements [ValueError],
+// but halt error is not catchable by try-catch.
+func (err *HaltError) Value() any {
+	return (*exitCodeError)(err).Value()
 }
 
-func (err *containsTypeError) Error() string {
-	return "cannot check contains(" + Preview(err.r) + "): " + typeErrorPreview(err.l)
-}
-
-type hasKeyTypeError struct {
-	l, r any
-}
-
-func (err *hasKeyTypeError) Error() string {
-	return "cannot check whether " + typeErrorPreview(err.l) + " has a key: " + typeErrorPreview(err.r)
+// ExitCode returns the exit code of the error.
+func (err *HaltError) ExitCode() int {
+	return (*exitCodeError)(err).ExitCode()
 }
 
 type flattenDepthError struct {
@@ -165,7 +209,7 @@ type flattenDepthError struct {
 }
 
 func (err *flattenDepthError) Error() string {
-	return "flatten depth must not be negative: " + typeErrorPreview(err.v)
+	return "flatten depth should not be negative: " + Preview(err.v)
 }
 
 type joinTypeError struct {
@@ -173,7 +217,13 @@ type joinTypeError struct {
 }
 
 func (err *joinTypeError) Error() string {
-	return "cannot join: " + typeErrorPreview(err.v)
+	return "join cannot be applied to an array including: " + typeErrorPreview(err.v)
+}
+
+type timeArrayError struct{}
+
+func (*timeArrayError) Error() string {
+	return "expected an array of 8 numbers"
 }
 
 type unaryTypeError struct {
@@ -229,7 +279,7 @@ func (err *formatRowError) Error() string {
 
 type tooManyVariableValuesError struct{}
 
-func (err *tooManyVariableValuesError) Error() string {
+func (*tooManyVariableValuesError) Error() string {
 	return "too many variable values provided"
 }
 
@@ -266,7 +316,7 @@ func (err *breakError) Error() string {
 	return "label not defined: " + err.n
 }
 
-func (err *breakError) ExitCode() int {
+func (*breakError) ExitCode() int {
 	return 3
 }
 
@@ -292,14 +342,6 @@ type invalidPathIterError struct {
 
 func (err *invalidPathIterError) Error() string {
 	return "invalid path on iterating against: " + typeErrorPreview(err.v)
-}
-
-type getpathError struct {
-	v, path any
-}
-
-func (err *getpathError) Error() string {
-	return "cannot getpath with " + Preview(err.path) + " against: " + typeErrorPreview(err.v)
 }
 
 type queryParseError struct {

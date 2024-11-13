@@ -21,8 +21,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -43,18 +41,13 @@ linters:
     - predeclared
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - thelper
     - tparallel
     - typecheck
     - unconvert
     - unparam
-    - varcheck
     - whitespace
-    # - wsl # лишние пустые строки и т.д., чистый стиль
-    # - goconst # проверка на наличие переменных, которых следовало бы вынести в const
-    # - gomnd # поиск всяких "магических" чисел, переменных
 
 run:
   issues-exit-code: 1

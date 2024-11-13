@@ -37,7 +37,6 @@ def strings: select(type == "string");
 def nulls: select(. == null);
 def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
-def leaf_paths: paths(scalars);
 
 def inside(xs): . as $x | xs | contains($x);
 def combinations:
@@ -52,7 +51,7 @@ def walk(f):
     if type == "array" then
       map(_walk)
     elif type == "object" then
-      map_values(last(_walk))
+      map_values(_walk)
     end | f;
   _walk;
 
@@ -117,7 +116,9 @@ def tostream:
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths: path(..) | select(. != []);
-def paths(f): paths as $p | select(getpath($p) | f) | $p;
+def paths(f): path(.. | select(f)) | select(. != []);
+def pick(f): . as $v |
+  reduce path(f) as $p (null; setpath($p; $v | getpath($p)));
 
 def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%S%z") | mktime;
 def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");
@@ -149,7 +150,7 @@ def sub($re; str; $flags):
     else
       .matches[-1] as $r |
       {
-        string: (($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string),
+        string: ($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string,
         offset: $r.offset,
         matches: .matches[:-1],
       } |

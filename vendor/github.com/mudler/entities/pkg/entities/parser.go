@@ -11,11 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -85,7 +84,7 @@ func (p Parser) ReadEntityFromBytes(yamlFile []byte) (Entity, error) {
 	return nil, errors.New("Unsupported format")
 }
 func (p Parser) ReadEntity(entity string) (Entity, error) {
-	yamlFile, err := ioutil.ReadFile(entity)
+	yamlFile, err := os.ReadFile(entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed while reading entity file")
 	}

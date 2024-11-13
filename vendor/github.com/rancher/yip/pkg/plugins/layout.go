@@ -810,7 +810,7 @@ func (mkfs MkfsCall) buildOptions() ([]string, error) {
 		opts = append(opts, mkfs.dev)
 	case fatFS:
 		if mkfs.part.FSLabel != "" {
-			opts = append(opts, "-i")
+			opts = append(opts, "-n")
 			opts = append(opts, mkfs.part.FSLabel)
 		}
 		if len(mkfs.customOpts) > 0 {

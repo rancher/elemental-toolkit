@@ -11,18 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/gofrs/flock"
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
 )
@@ -84,31 +85,27 @@ func parseGroupLine(line string) (string, Group, error) {
 }
 
 func groupGetFreeGid(path string) (int, error) {
-	uidStart, uidEnd := DynamicRange()
-	mGids := make(map[int]*Group)
-	ans := -1
+	result := -1
+	allGroups, _ := ParseGroup(path)
+	groupSet := make(map[int]struct{})
 
-	current, err := ParseGroup(path)
-	if err != nil {
-		return ans, err
+	for _, groupID := range allGroups {
+		groupSet[*groupID.Gid] = struct{}{}
 	}
 
-	for _, e := range current {
-		mGids[*e.Gid] = &e
-	}
-
-	for i := uidStart; i >= uidEnd; i-- {
-		if _, ok := mGids[i]; !ok {
-			ans = i
-			break
+	for i := HumanIDMin; i <= HumanIDMax; i++ {
+		if _, found := groupSet[i]; found {
+			continue // uid in use, skip it
 		}
+		result = i // found a free one, stop here
+		break
 	}
 
-	if ans < 0 {
-		return ans, errors.New("No free GID found")
+	if result == -1 {
+		return result, errors.New("no available gid in range")
 	}
 
-	return ans, nil
+	return result, nil
 }
 
 type Group struct {
@@ -149,7 +146,26 @@ func (u Group) String() string {
 
 func (u Group) Delete(s string) error {
 	s = GroupsDefault(s)
-	input, err := ioutil.ReadFile(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
+
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
 	}
@@ -174,7 +190,7 @@ func (u Group) Delete(s string) error {
 
 	output := strings.Join(lines, "\n")
 
-	err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+	err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -184,8 +200,27 @@ func (u Group) Delete(s string) error {
 
 func (u Group) Create(s string) error {
 	s = GroupsDefault(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
 
-	u, err := u.prepare(s)
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
+	u, err = u.prepare(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
@@ -277,7 +312,27 @@ func (u Group) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Name]; ok {
-		input, err := ioutil.ReadFile(s)
+		d, err := RetryForDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting delay")
+		}
+
+		baseName := filepath.Base(s)
+		fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+		defer os.Remove(fileLock.Path())
+		defer fileLock.Close()
+		lockCtx, cancel := context.WithTimeout(context.Background(), d)
+		defer cancel()
+		i, err := RetryIntervalDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting interval")
+		}
+		locked, err := fileLock.TryLockContext(lockCtx, i)
+		if err != nil || !locked {
+			return errors.Wrap(err, "Failed locking file")
+		}
+
+		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")
 		}
@@ -316,7 +371,7 @@ func (u Group) Apply(s string, safe bool) error {
 			}
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+		err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 		if err != nil {
 			return errors.Wrap(err, "Could not write")
 		}
