@@ -43,7 +43,7 @@ Requires:       mtools
 Requires:       util-linux
 Requires:       gptfdisk
 Requires:       dracut
-Requires:       grub2-common
+Requires:       grub2
 Requires:       squashfs
 Requires:       util-linux-systemd
 
