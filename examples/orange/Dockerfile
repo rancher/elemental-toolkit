@@ -85,11 +85,11 @@ ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
 RUN elemental --debug init -f
 
 # Update os-release file with some metadata
-RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
+RUN echo IMAGE_REPO=\"${REPO}\"             >> /etc/os-release && \
     echo IMAGE_TAG=\"${VERSION}\"           >> /etc/os-release && \
-    echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
-    echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release
-RUN echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+    echo IMAGE=\"${REPO}:${VERSION}\"       >> /etc/os-release && \
+    echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release && \
+    echo GRUB_ENTRY_NAME=\"Elemental\"      >> /etc/os-release
 
 # Adding specific network configuration based on netplan
 ADD 05_network.yaml /system/oem/05_network.yaml
