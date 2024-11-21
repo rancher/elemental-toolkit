@@ -68,12 +68,11 @@ RUN elemental --debug init --force \
       arm-firmware
 
 # Update os-release file with some metadata
-RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
+RUN echo IMAGE_REPO=\"${REPO}\"             >> /etc/os-release && \
     echo IMAGE_TAG=\"${VERSION}\"           >> /etc/os-release && \
-    echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
+    echo IMAGE=\"${REPO}:${VERSION}\"       >> /etc/os-release && \
     echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release && \
-    echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+    echo GRUB_ENTRY_NAME=\"Elemental\"      >> /etc/os-release
 
 # Good for validation after the build
 CMD /bin/bash
-
