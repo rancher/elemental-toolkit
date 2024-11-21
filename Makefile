@@ -5,7 +5,11 @@ DISK?=$(shell ls $(ROOT_DIR)/build/elemental*.qcow2 2> /dev/null)
 DISKSIZE?=20G
 ISO?=$(shell ls $(ROOT_DIR)/build/elemental*.iso 2> /dev/null)
 FLAVOR?=green
+ifdef PLATFORM
+ARCH=$(subst linux/,,$(PLATFORM))
+else
 ARCH?=$(shell uname -m)
+endif
 UPGRADE_DISK_URL?=https://github.com/rancher/elemental-toolkit/releases/download/v1.1.4/elemental-$(FLAVOR)-v1.1.4.$(ARCH).qcow2
 UPGRADE_DISK?=upgrade-test-elemental-disk-$(FLAVOR).qcow2
 UPGRADE_DISK_CHECK?=$(shell ls $(ROOT_DIR)/build/$(UPGRADE_DISK) 2> /dev/null)
@@ -51,6 +55,7 @@ include make/Makefile.test
 
 .PHONY: build
 build:
+	@echo Building $(ARCH) Image
 	$(DOCKER) build --platform $(PLATFORM) ${DOCKER_ARGS} \
 			--build-arg ELEMENTAL_VERSION=$(GIT_TAG) \
 			--build-arg ELEMENTAL_COMMIT=$(GIT_COMMIT) \
@@ -60,17 +65,20 @@ build:
 
 .PHONY: build-save
 build-save: build
+	@echo Saving $(ARCH) Image
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) save --output build/elemental-toolkit-image-$(VERSION).tar \
 			$(TOOLKIT_REPO):$(VERSION)
 
 .PHONY: build-cli
 build-cli:
+	@echo Building $(ARCH) CLI
 	go generate ./...
 	go build -ldflags '$(LDFLAGS)' -o build/elemental
 
 .PHONY: build-os
 build-os:
+	@echo Building $(ARCH) OS
 	$(DOCKER) build --platform $(PLATFORM) ${DOCKER_ARGS} \
 			--build-arg TOOLKIT_REPO=$(TOOLKIT_REPO) \
 			--build-arg VERSION=$(VERSION) \
@@ -78,6 +86,7 @@ build-os:
 			$(BUILD_OPTS) examples/$(FLAVOR)
 .PHONY: build-os-save
 build-os-save: build-os
+	@echo Saving $(ARCH) OS
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) save --output build/elemental-$(FLAVOR)-image-$(VERSION).tar \
 			$(REPO):$(VERSION)

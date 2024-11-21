@@ -159,7 +159,7 @@ func (b *BuildDiskAction) preparePartitionsRoot() error {
 func (b *BuildDiskAction) BuildDiskRun() (err error) { //nolint:gocyclo
 	var rawImg string
 
-	b.cfg.Logger.Infof("Building disk image type %s for arch %s", b.spec.Type, b.cfg.Arch)
+	b.cfg.Logger.Infof("Building disk image type %s for arch %s", b.spec.Type, b.cfg.Platform.Arch)
 
 	cleanup := utils.NewCleanStack()
 	defer func() { err = cleanup.Cleanup(err) }()
