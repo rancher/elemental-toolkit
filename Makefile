@@ -19,7 +19,6 @@ REPO?=local/elemental-$(FLAVOR)
 TOOLKIT_REPO?=local/elemental-toolkit
 DOCKER?=docker
 BASE_OS_IMAGE?=registry.opensuse.org/opensuse/tumbleweed
-BASE_OS_VERSION?=latest
 DOCKER_SOCK?=/var/run/docker.sock
 
 GIT_COMMIT?=$(shell git rev-parse HEAD)
@@ -31,17 +30,6 @@ PKG:=./cmd ./pkg/...
 LDFLAGS:=-w -s
 LDFLAGS+=-X "github.com/rancher/elemental-toolkit/v2/internal/version.version=$(GIT_TAG)"
 LDFLAGS+=-X "github.com/rancher/elemental-toolkit/v2/internal/version.gitCommit=$(GIT_COMMIT)"
-
-# For RISC-V 64bit support
-ifeq ($(PLATFORM),linux/riscv64)
-BASE_OS_IMAGE=registry.opensuse.org/opensuse/factory/riscv/images/opensuse/tumbleweed
-BASE_OS_VERSION=latest
-ifeq ($(FLAVOR),tumbleweed)
-OS_IMAGE=registry.opensuse.org/opensuse/factory/riscv/images/opensuse/tumbleweed
-ADD_REPO=https://download.opensuse.org/repositories/devel:/RISCV:/Factory:/Contrib:/StarFive:/VisionFive2/standard
-BUILD_OPTS=--build-arg OS_IMAGE=$(OS_IMAGE) --build-arg ADD_REPO=$(ADD_REPO)
-endif
-endif
 
 # default target
 .PHONY: all
@@ -60,7 +48,6 @@ build:
 			--build-arg ELEMENTAL_VERSION=$(GIT_TAG) \
 			--build-arg ELEMENTAL_COMMIT=$(GIT_COMMIT) \
 			--build-arg BASE_OS_IMAGE=$(BASE_OS_IMAGE) \
-			--build-arg BASE_OS_VERSION=$(BASE_OS_VERSION) \
 			--target elemental-toolkit -t $(TOOLKIT_REPO):$(VERSION) .
 
 .PHONY: build-save
@@ -122,19 +109,6 @@ endif
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
 		--entrypoint /usr/bin/elemental \
 		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/$(FLAVOR) --expandable -n elemental-$(FLAVOR).aarch64 --local \
-		--squash-no-compression -o /build --system $(REPO):$(VERSION)
-
-PHONY: build-vf2-disk
-build-vf2-disk:
-ifneq ("$(PLATFORM)","linux/riscv64")
-	@echo "Cannot build VisionFive2 disk for $(PLATFORM)"
-	@exit 1
-endif
-	@echo Building $(ARCH) disk
-	mkdir -p $(ROOT_DIR)/build
-	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/examples:/examples -v $(ROOT_DIR)/build:/build \
-		--entrypoint /usr/bin/elemental \
-		$(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) --cloud-init-paths /examples/$(FLAVOR) --expandable -n elemental-$(FLAVOR).riscv64 --local \
 		--squash-no-compression -o /build --system $(REPO):$(VERSION)
 
 .PHONY: clean
