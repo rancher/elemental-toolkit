@@ -82,6 +82,8 @@ func NewBuildISOAction(cfg *types.BuildConfig, spec *types.LiveISO, opts ...Buil
 
 // Run will install the system from a given configuration
 func (b *BuildISOAction) Run() error {
+	b.cfg.Logger.Infof("Building iso for arch %s", b.cfg.Platform.Arch)
+
 	cleanup := utils.NewCleanStack()
 	var err error
 	defer func() { err = cleanup.Cleanup(err) }()
