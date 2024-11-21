@@ -68,6 +68,7 @@ var (
 		FeatureCloudConfigDefaults,
 		FeatureCloudConfigEssentials,
 		FeatureBootAssessment,
+		FeatureAutologin,
 		FeatureArmFirmware,
 	}
 
