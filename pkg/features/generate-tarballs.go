@@ -62,7 +62,7 @@ func main() {
 
 		fmt.Printf("Generate %s from %s\n", output, input)
 
-		cmd := exec.Command("tar", "-C", inputDir, "-czvf", output, input)
+		cmd := exec.Command("tar", "--sort=name", "--mtime=@1", "--owner=0", "--group=0", "--numeric-owner", "--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime", "-C", inputDir, "-czvf", output, input)
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {
