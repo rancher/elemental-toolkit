@@ -6,6 +6,9 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS elemental-bin
 ENV CGO_ENABLED=0
 WORKDIR /src/
 
+# install GNU tar instead of busybox one to support --sort
+RUN apk add --no-cache tar
+
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
 ADD go.mod .
 ADD go.sum .
