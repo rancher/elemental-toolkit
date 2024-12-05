@@ -158,6 +158,13 @@ func addPlatformFlags(cmd *cobra.Command) {
 	cmd.Flags().String("platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "Platform to build the image for")
 }
 
+// addEncryptionFlags adds the disk encryption flag for install command
+func addEncryptionFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("encrypt-persistent", false, "Encrypt the persistent data partition on install")
+	cmd.Flags().StringArray("enroll-passphrase", nil, "Clear text password to enroll as key for disk encryption")
+	cmd.Flags().StringArray("enroll-key-file", nil, "Key-files to enroll as keys for disk encryption")
+}
+
 type enum struct {
 	Allowed []string
 	Value   string

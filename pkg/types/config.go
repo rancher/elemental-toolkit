@@ -215,20 +215,23 @@ func KeyValuePairFromData(data interface{}) (KeyValuePair, error) {
 
 // InstallSpec struct represents all the installation action details
 type InstallSpec struct {
-	Target           string `yaml:"target,omitempty" mapstructure:"target"`
-	Firmware         string
-	PartTable        string
-	Partitions       ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
-	ExtraPartitions  PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
-	NoFormat         bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
-	Force            bool                `yaml:"force,omitempty" mapstructure:"force"`
-	CloudInit        []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
-	Iso              string              `yaml:"iso,omitempty" mapstructure:"iso"`
-	GrubDefEntry     string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
-	System           *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
-	RecoverySystem   Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
-	DisableBootEntry bool                `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
-	SnapshotLabels   KeyValuePair        `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
+	Target            string `yaml:"target,omitempty" mapstructure:"target"`
+	Firmware          string
+	PartTable         string
+	Partitions        ElementalPartitions `yaml:"partitions,omitempty" mapstructure:"partitions"`
+	ExtraPartitions   PartitionList       `yaml:"extra-partitions,omitempty" mapstructure:"extra-partitions"`
+	NoFormat          bool                `yaml:"no-format,omitempty" mapstructure:"no-format"`
+	Force             bool                `yaml:"force,omitempty" mapstructure:"force"`
+	CloudInit         []string            `yaml:"cloud-init,omitempty" mapstructure:"cloud-init"`
+	Iso               string              `yaml:"iso,omitempty" mapstructure:"iso"`
+	GrubDefEntry      string              `yaml:"grub-entry-name,omitempty" mapstructure:"grub-entry-name"`
+	System            *ImageSource        `yaml:"system,omitempty" mapstructure:"system"`
+	RecoverySystem    Image               `yaml:"recovery-system,omitempty" mapstructure:"recovery-system"`
+	DisableBootEntry  bool                `yaml:"disable-boot-entry,omitempty" mapstructure:"disable-boot-entry"`
+	EncryptPersistent bool                `yaml:"encrypt-persistent,omitempty" mapstructure:"encrypt-persistent"`
+	SnapshotLabels    KeyValuePair        `yaml:"snapshot-labels,omitempty" mapstructure:"snapshot-labels"`
+	EnrollPassphrases []SensitiveString   `yaml:"enroll-passphrase,omitempty" mapstructure:"enroll-passphrase"`
+	EnrollKeyFiles    []string            `yaml:"enroll-key-file,omitempty" mapstructure:"enroll-key-file"`
 }
 
 // Sanitize checks the consistency of the struct, returns error
@@ -258,6 +261,36 @@ func (i *InstallSpec) Sanitize() error {
 	for _, p := range i.ExtraPartitions {
 		if p.Size == 0 {
 			extraPartsSizeCheck++
+		}
+	}
+
+	// Setup disk encryption
+	if i.EncryptPersistent {
+		slot := 0
+		keySlots := []KeySlot{}
+		if i.EnrollPassphrases != nil {
+			for _, passphrase := range i.EnrollPassphrases {
+				keySlots = append(keySlots, KeySlot{
+					Slot:       slot,
+					Passphrase: passphrase,
+				})
+				slot++
+			}
+		}
+
+		if i.EnrollKeyFiles != nil {
+			for _, keyfile := range i.EnrollKeyFiles {
+				keySlots = append(keySlots, KeySlot{
+					Slot:    slot,
+					KeyFile: keyfile,
+				})
+				slot++
+			}
+		}
+
+		i.Partitions.Persistent.Encryption = &PartitionEncryption{
+			MappedDeviceName: constants.PersistentDeviceMapperName,
+			KeySlots:         keySlots,
 		}
 	}
 
@@ -301,9 +334,10 @@ type VolumeMount struct {
 // PersistentMounts struct contains settings for which paths to mount as
 // persistent
 type PersistentMounts struct {
-	Mode   string      `yaml:"mode,omitempty" mapstructure:"mode"`
-	Paths  []string    `yaml:"paths,omitempty" mapstructure:"paths"`
-	Volume VolumeMount `yaml:"volume,omitempty" mapstructure:"volume"`
+	Mode      string      `yaml:"mode,omitempty" mapstructure:"mode"`
+	Paths     []string    `yaml:"paths,omitempty" mapstructure:"paths"`
+	Volume    VolumeMount `yaml:"volume,omitempty" mapstructure:"volume"`
+	Encrypted bool        `yaml:"encrypted,omitempty" mapstructure:"encrypted"`
 }
 
 // EphemeralMounts contains information about the RW overlay mounted over the
@@ -465,16 +499,15 @@ func (u *UpgradeSpec) SanitizeForRecoveryOnly() error {
 // Partition struct represents a partition with its commonly configurable values, size in MiB
 type Partition struct {
 	Name            string
-	FilesystemLabel string   `yaml:"label,omitempty" mapstructure:"label"`
-	Size            uint     `yaml:"size,omitempty" mapstructure:"size"`
-	FS              string   `yaml:"fs,omitempty" mapstructure:"fs"`
-	Flags           []string `yaml:"flags,omitempty" mapstructure:"flags"`
+	FilesystemLabel string               `yaml:"label,omitempty" mapstructure:"label"`
+	Size            uint                 `yaml:"size,omitempty" mapstructure:"size"`
+	FS              string               `yaml:"fs,omitempty" mapstructure:"fs"`
+	Flags           []string             `yaml:"flags,omitempty" mapstructure:"flags"`
+	Encryption      *PartitionEncryption `yaml:"encryption,omitempty" mapstructure:"encryption"`
 	MountPoint      string
 	Path            string
 	Disk            string
 }
-
-type PartitionList []*Partition
 
 // ToImage returns an image object that matches the partition. This is helpful if the partition
 // is managed as an image.
@@ -488,6 +521,23 @@ func (p Partition) ToImage() *Image {
 		MountPoint: p.MountPoint,
 	}
 }
+
+// PartitionEncryption contains information needed for encrypting a partition
+type PartitionEncryption struct {
+	// MappedDeviceName is the mapped device usable after encryption, eg cr_root
+	MappedDeviceName string `yaml:"name,omitempty" mapstructure:"name"`
+	// KeySlots contains all key-slots to write to the LUKS-header
+	KeySlots []KeySlot `yaml:"key_slots,omitempty" mapstructure:"key_slots"`
+}
+
+// KeySlot is a key-slot in a LUKS-header
+type KeySlot struct {
+	Slot       int
+	Passphrase SensitiveString
+	KeyFile    string
+}
+
+type PartitionList []*Partition
 
 // GetByName gets a partitions by its name from the PartitionList
 func (pl PartitionList) GetByName(name string) *Partition {

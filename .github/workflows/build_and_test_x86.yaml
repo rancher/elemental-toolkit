@@ -164,6 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
+      installertests: ${{ steps.detect.outputs.installertests }}
     steps:
       - id: detect
         env:
@@ -171,8 +172,10 @@ jobs:
         run: |
           if [ "${FLAVOR}" == green ]; then
             echo "tests=['test-upgrade', 'test-downgrade', 'test-recovery', 'test-fallback', 'test-fsck', 'test-grubfallback']" >> $GITHUB_OUTPUT
+            echo "installertests=['test-installer', 'test-encryption']" >> $GITHUB_OUTPUT
           else
             echo "tests=['test-active']" >> $GITHUB_OUTPUT
+            echo "installertests=['test-installer']" >> $GITHUB_OUTPUT
           fi
 
   tests-matrix:
@@ -255,6 +258,10 @@ jobs:
       - build-iso
       - detect
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test: ${{ fromJson(needs.detect.outputs.installertests) }}
+      fail-fast: false
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -288,12 +295,12 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Run installer test
         run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd test-installer
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd ${{ matrix.test }}
       - name: Upload serial console for installer tests
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
+          name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
           path: tests/serial.log
           if-no-files-found: error
           overwrite: true
@@ -301,7 +308,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
+          name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
           path: tests/vmstdout
           if-no-files-found: error
           overwrite: true

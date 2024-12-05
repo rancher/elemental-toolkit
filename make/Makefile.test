@@ -52,6 +52,10 @@ test-installer: prepare-installer-test
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/installer
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/smoke
 
+.PHONY: test-encryption
+test-encryption: prepare-installer-test
+	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/encryption
+
 .PHONY: test-smoke
 test-smoke: test-active
 	VM_PID=$$(scripts/run_vm.sh vmpid) go run $(GINKGO) $(GINKGO_ARGS) ./tests/smoke

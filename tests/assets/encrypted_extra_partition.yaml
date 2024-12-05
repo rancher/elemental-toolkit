@@ -1,0 +1,11 @@
+install:
+  extra-partitions:
+    - Name: extra
+      size: 100
+      fs: ext4
+      label: extra
+      encryption:
+        name: cr_extra
+        key_slots:
+        - slot: 1
+          passphrase: "extrapass"

@@ -58,6 +58,7 @@ RUN ARCH=$(uname -m); \
       btrfsmaintenance \
       snapper \
       xterm-resize \
+      cryptsetup \
       ${ADD_PKGS} && \
     zypper clean --all
 

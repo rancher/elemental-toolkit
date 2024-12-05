@@ -60,7 +60,8 @@ RUN ARCH=$(uname -m); \
         gptfdisk \
         patterns-microos-selinux \
         btrfsprogs \
-	snapper \
+        snapper \
+        cryptsetup \
         lvm2 && \
     zypper cc -a
 
