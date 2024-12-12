@@ -6,42 +6,55 @@ on:
   push:
     branches:
       - main
-  schedule:
-   - cron: 0 20 * * *
-
-permissions:
-  contents: read
 
 jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      HUGO_VERSION: 0.111.0
     steps:
-      - name: Checkout Repo
+      - name: Install Hugo CLI
+        run: |
+          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb \
+          && sudo dpkg -i ${{ runner.temp }}/hugo.deb
+      - name: Install Dart Sass
+        run: sudo snap install dart-sass
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: '0.111.0'
-          extended: true
-      - name: Install deps
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install Node.js dependencies
+        run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
+      - name: Install npm dependencies
         run: |
-          npm install postcss-cli
-          npm install autoprefixer
-      - name: Build package docs
+           npm install postcss-cli
+           npm install autoprefixer
+      - name: Build with Hugo
+        env:
+          HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
+          HUGO_ENVIRONMENT: production
         run: |
           make BASE_URL=https://rancher.github.io/elemental-toolkit build-docs
-      - name: Deploy
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: public
+          path: ./public
 
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
