@@ -74,11 +74,11 @@ function start {
 
   if [ "${ELMNTL_DEBUG}" == "yes" ]; then
       qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${global_arg} ${firmware_arg} \
-          ${usrnet_arg} ${kvm_arg} ${memory_arg} ${graphics_arg} -serial stdio ${pidfile_arg} \
+          ${usrnet_arg} ${memory_arg} ${graphics_arg} -serial stdio ${pidfile_arg} \
           ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg}
   else 
       qemu-system-${ELMNTL_TARGETARCH} ${kvm_arg} ${disk_arg} ${cdrom_arg} ${global_arg} ${firmware_arg} \
-          ${usrnet_arg} ${kvm_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
+          ${usrnet_arg} ${memory_arg} ${graphics_arg} ${serial_arg} ${pidfile_arg} \
           ${display_arg} ${machine_arg} ${accel_arg} ${cpu_arg} > ${ELMNTL_VMSTDOUT} 2>&1 &
   fi
 }
