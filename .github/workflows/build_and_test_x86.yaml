@@ -18,7 +18,7 @@ jobs:
   build-os:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -64,7 +64,7 @@ jobs:
       contents: read
     needs: 
       - build-os
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -110,7 +110,7 @@ jobs:
       contents: read
     needs:
       - build-os
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -161,7 +161,7 @@ jobs:
   detect:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       tests: ${{ steps.detect.outputs.tests }}
     steps:
@@ -181,7 +181,7 @@ jobs:
     needs:
       - build-disk
       - detect
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -220,13 +220,13 @@ jobs:
       - name: Enable KVM group perms
         run: |
           sudo apt-get update
-          sudo apt-get install qemu qemu-utils ovmf qemu-system-x86
+          sudo apt-get install qemu-utils ovmf qemu-system-x86
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Run ${{ matrix.test }}
         run: |
-          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd ${{ matrix.test }}
+          make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
         uses: actions/upload-artifact@v4
         if: always()
@@ -254,7 +254,7 @@ jobs:
     needs:
       - build-iso
       - detect
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: x86_64
@@ -282,13 +282,13 @@ jobs:
       - name: Enable KVM group perms
         run: |
           sudo apt-get update
-          sudo apt-get install qemu qemu-utils ovmf qemu-system-x86
+          sudo apt-get install qemu-utils ovmf qemu-system-x86
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Run installer test
         run: |
-          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd test-installer
+          make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd test-installer
       - name: Upload serial console for installer tests
         uses: actions/upload-artifact@v4
         if: always()
