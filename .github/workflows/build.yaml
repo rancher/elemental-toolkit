@@ -13,7 +13,7 @@ jobs:
   detect:
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       flavor: ${{ steps.set-matrix.outputs.flavor }}
       platform: ${{ steps.set-platform.outputs.platform }}
@@ -38,7 +38,7 @@ jobs:
       contents: read
     needs:
       - detect
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       PLATFORM: ${{ needs.detect.outputs.platform }}
     outputs:
