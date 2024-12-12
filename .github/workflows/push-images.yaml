@@ -14,7 +14,7 @@ jobs:
   build-toolkit:
     permissions:
       packages: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
       REPO: ghcr.io/${{github.repository}}/elemental-${{ github.event.inputs.flavor }} 
