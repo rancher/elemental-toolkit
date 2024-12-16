@@ -17,8 +17,10 @@ limitations under the License.
 package snapshotter
 
 import (
+	"bufio"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -455,5 +457,72 @@ func (b *Btrfs) mountSnapshotsSubvolumeInSnapshot(root, device string, snapshotI
 		return err
 	}
 	b.snapshotsUmount = func() error { return b.cfg.Mounter.Unmount(mountpoint) }
+	return nil
+}
+
+// findStateMount returns, from the given device, the mount point of the top subvolume (@),
+// the mount point of the current snapshot and current snapshot ID. Elemental hardware
+// utilities only return a single mountpoint per partition without having a reliable criteria
+// on which one returns ('@', '.snapshots', '.snapshots/<ID>/snapshot', ...)
+func findStateMount(runner types.Runner, device string) (rootDir string, stateMount string, snapshotID int, err error) {
+	output, err := runner.Run("findmnt", "-lno", "SOURCE,TARGET", device)
+	if err != nil {
+		return "", "", 0, err
+	}
+	r := regexp.MustCompile(snapshotPathRegex)
+
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(string(output))))
+	for scanner.Scan() {
+		lineFields := strings.Fields(scanner.Text())
+		if len(lineFields) != 2 {
+			continue
+		}
+
+		subStart := strings.Index(lineFields[0], "[/")
+		subEnd := strings.LastIndex(lineFields[0], "]")
+
+		if subStart != -1 && subEnd != -1 {
+			subVolume := lineFields[0][subStart+2 : subEnd]
+
+			if subVolume == rootSubvol {
+				stateMount = lineFields[1]
+			} else if match := r.FindStringSubmatch(subVolume); match != nil {
+				rootDir = lineFields[1]
+				snapshotID, _ = strconv.Atoi(match[1])
+			}
+		}
+	}
+
+	if stateMount == "" || rootDir == "" {
+		err = fmt.Errorf("could not find expected mountpoints, findmnt output: %s", string(output))
+	}
+
+	return rootDir, stateMount, snapshotID, err
+}
+
+// createRootSubvolume is the method required to create root subvolume '@' and enable quota
+func initBtrfsQuotaAndRootSubvolume(runner types.Runner, log types.Logger, rootDir string) error {
+	log.Debug("Enabling btrfs quota")
+	cmdOut, err := runner.Run("btrfs", "quota", "enable", rootDir)
+	if err != nil {
+		log.Errorf("failed setting quota for btrfs partition at %s: %s", rootDir, string(cmdOut))
+		return err
+	}
+
+	subvolume := filepath.Join(rootDir, rootSubvol)
+	log.Debugf("Creating subvolume: %s", subvolume)
+	cmdOut, err = runner.Run("btrfs", "subvolume", "create", filepath.Join(rootDir, rootSubvol))
+	if err != nil {
+		log.Errorf("failed creating subvolume %s: %s", subvolume, string(cmdOut))
+		return err
+	}
+
+	log.Debug("Create btrfs quota group")
+	cmdOut, err = runner.Run("btrfs", "qgroup", "create", "1/0", rootDir)
+	if err != nil {
+		log.Errorf("failed creating quota group for %s: %s", rootDir, string(cmdOut))
+		return err
+	}
+
 	return nil
 }
