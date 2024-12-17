@@ -74,8 +74,9 @@ func (s *snapperBackend) Probe(device, mountpoint string) (stat backendStat, ret
 
 		stat.RootDir = rootDir
 		stat.StateMount = stateMount
-		stat.CurrentID, s.currentID = currentID, currentID
+		stat.CurrentID = currentID
 		stat.ActiveID = sl.ActiveID
+		s.activeID, s.currentID = stat.ActiveID, stat.CurrentID
 		return stat, nil
 	} else if ok, _ := utils.Exists(s.cfg.Fs, snapshots); ok {
 		// We must mount .snapshots to ensure snapper is capable to list snapshots
@@ -100,6 +101,7 @@ func (s *snapperBackend) Probe(device, mountpoint string) (stat backendStat, ret
 
 	stat.RootDir = mountpoint
 	stat.StateMount = mountpoint
+	s.activeID, s.currentID = stat.ActiveID, stat.CurrentID
 	return stat, nil
 }
 
@@ -247,9 +249,6 @@ func (s *snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 // DeleteSnapshot deletes the given snapshot
 func (s snapperBackend) DeleteSnapshot(rootDir string, id int) error {
 	if s.activeID == 0 && s.currentID == 0 {
-		// With snapper is not possible to delete any snapshot without an active one
-		//return s.btrfs.DeleteSnapshot(rootDir, id)
-
 		s.cfg.Logger.Warnf("cannot delete snapshot %d without a current and active snapshot defined, nothing to do", id)
 		return nil
 	}

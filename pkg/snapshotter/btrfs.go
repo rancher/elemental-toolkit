@@ -83,7 +83,7 @@ type Btrfs struct {
 	bootloader       types.Bootloader
 	backend          subvolumeBackend
 	snapshotsUmount  func() error
-	snapshotsMount   func() error
+	snapshotsMount   func(id int) error
 }
 
 // newBtrfsSnapshotter creates a new btrfs snapshotter vased on the given configuration and the given bootloader
@@ -109,7 +109,7 @@ func newBtrfsSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig, boot
 		cfg: cfg, snapshotterCfg: snapCfg,
 		btrfsCfg: *btrfsCfg, bootloader: bootloader,
 		snapshotsUmount: func() error { return nil },
-		snapshotsMount:  func() error { return nil },
+		snapshotsMount:  func(_ int) error { return nil },
 		backend:         NewSubvolumeBackend(&cfg, *btrfsCfg, snapCfg.MaxSnaps),
 	}, nil
 }
@@ -301,7 +301,7 @@ func (b *Btrfs) GetSnapshots() (snapshots []int, err error) {
 		// Check if snapshots subvolume is mounted
 		snapshotsSubolume := filepath.Join(b.rootDir, fmt.Sprintf(snapshotPathTmpl, b.activeSnapshotID), snapshotsPath)
 		if notMnt, _ := b.cfg.Mounter.IsLikelyNotMountPoint(snapshotsSubolume); notMnt {
-			err = b.snapshotsMount()
+			err = b.snapshotsMount(b.activeSnapshotID)
 			if err != nil {
 				return nil, err
 			}
@@ -445,13 +445,13 @@ func (b *Btrfs) remountStatePartition(state *types.Partition) error {
 func (b *Btrfs) mountSnapshotsSubvolumeInSnapshot(root, device string, snapshotID int) error {
 	var mountpoint, subvol string
 
-	b.snapshotsMount = func() error {
-		b.cfg.Logger.Debugf("Mount snapshots subvolume in active snapshot %d", snapshotID)
-		mountpoint = filepath.Join(filepath.Join(root, fmt.Sprintf(snapshotPathTmpl, snapshotID)), snapshotsPath)
+	b.snapshotsMount = func(id int) error {
+		b.cfg.Logger.Debugf("Mount snapshots subvolume in active snapshot %d", id)
+		mountpoint = filepath.Join(filepath.Join(root, fmt.Sprintf(snapshotPathTmpl, id)), snapshotsPath)
 		subvol = fmt.Sprintf("subvol=%s", filepath.Join(rootSubvol, snapshotsPath))
 		return b.cfg.Mounter.Mount(device, mountpoint, "btrfs", []string{"rw", subvol})
 	}
-	err := b.snapshotsMount()
+	err := b.snapshotsMount(snapshotID)
 	if err != nil {
 		b.cfg.Logger.Errorf("failed mounting subvolume %s at %s", subvol, mountpoint)
 		return err
