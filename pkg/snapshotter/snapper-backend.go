@@ -194,11 +194,6 @@ func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot)
 		return err
 	}
 
-	/*if s.activeID == 0 && s.currentID == 0 {
-		// Snapper does not support modifying a snapshot from a host not having a configured snapper
-		// and this is the case for the installation media
-		return s.btrfs.CommitSnapshot(rootDir, snapshot)
-	}*/
 	args := []string{
 		"modify", "--read-only", "--default", "--userdata",
 		fmt.Sprintf("%s=,%s=", installProgress, updateProgress), strconv.Itoa(snapshot.ID),

@@ -104,9 +104,71 @@ var _ = Describe("snapperBackend", Label("snapshotter", " btrfs"), func() {
 	})
 
 	Describe("in a not initiated environment", func() {
-		// Probe and InitBtrfsPartition methods are just borrowed from the btrfs
-		// backend hence those are not nested here as this would be the same exact
-		// test as in btrfs-backend.go
+		It("probes a non initiated environment, missing subvolumes", func() {
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			stat, err := backend.Probe(statePart.Path, statePart.MountPoint)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stat.ActiveID).To(Equal(0))
+			Expect(len(runner.GetCmds())).To(Equal(0))
+			runner.ClearCmds()
+		})
+
+		It("initalizes the btrfs partition", func() {
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			Expect(backend.InitBrfsPartition(rootDir)).To(Succeed())
+			Expect(runner.MatchMilestones([][]string{
+				{"btrfs", "quota", "enable"},
+				{"btrfs", "subvolume", "create"},
+				{"btrfs", "qgroup", "create"},
+				{"/usr/lib/snapper/installation-helper", "--root-prefix"},
+			})).To(Succeed())
+		})
+
+		It("partition initialization fails enabling quota", func() {
+			errMsg := "btrfs quota failed"
+			sEffects = append(sEffects, &sideEffect{cmd: "btrfs quota enable", errorMsg: errMsg})
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			Expect(backend.InitBrfsPartition(rootDir)).NotTo(Succeed())
+			Expect(runner.MatchMilestones([][]string{
+				{"btrfs", "quota", "enable"},
+			})).To(Succeed())
+		})
+
+		It("partition initialization fails creating subvolume", func() {
+			errMsg := "subvolume create failed"
+			sEffects = append(sEffects, &sideEffect{cmd: "btrfs subvolume create", errorMsg: errMsg})
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			Expect(backend.InitBrfsPartition(rootDir)).NotTo(Succeed())
+			Expect(runner.MatchMilestones([][]string{
+				{"btrfs", "quota", "enable"},
+				{"btrfs", "subvolume", "create"},
+			})).To(Succeed())
+		})
+
+		It("partition initialization fails setting quota group", func() {
+			errMsg := "qgroup create failed"
+			sEffects = append(sEffects, &sideEffect{cmd: "btrfs qgroup create", errorMsg: errMsg})
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			Expect(backend.InitBrfsPartition(rootDir)).NotTo(Succeed())
+			Expect(runner.MatchMilestones([][]string{
+				{"btrfs", "quota", "enable"},
+				{"btrfs", "subvolume", "create"},
+				{"btrfs", "qgroup", "create"},
+			})).To(Succeed())
+		})
+
+		It("partition initialization fails running snapper's installation helper", func() {
+			errMsg := "/usr/lib/snapper/installation-helper failed"
+			sEffects = append(sEffects, &sideEffect{cmd: "/usr/lib/snapper/installation-helper --root-prefix", errorMsg: errMsg})
+			backend := snapshotter.NewSubvolumeBackend(cfg, btrfsCfg, 4)
+			Expect(backend.InitBrfsPartition(rootDir)).NotTo(Succeed())
+			Expect(runner.MatchMilestones([][]string{
+				{"btrfs", "quota", "enable"},
+				{"btrfs", "subvolume", "create"},
+				{"btrfs", "qgroup", "create"},
+				{"/usr/lib/snapper/installation-helper", "--root-prefix"},
+			})).To(Succeed())
+		})
 
 		Describe("snapshot created", func() {
 			var err error
