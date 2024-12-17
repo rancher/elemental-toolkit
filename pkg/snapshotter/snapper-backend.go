@@ -57,10 +57,8 @@ func newSnapperBackend(cfg *types.Config, maxSnapshots int) *snapperBackend {
 }
 
 // Probe tests the given device and returns the found state as a backendStat struct
-func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
-	var stat backendStat
-	var err error
-
+func (s *snapperBackend) Probe(device, mountpoint string) (stat backendStat, retErr error) {
+	snapshots := filepath.Join(mountpoint, snapshotsPath)
 	// On active or passive we must ensure the actual mountpoint reported by the state
 	// partition is the actual root, ghw only reports a single mountpoint per device...
 	if elemental.IsPassiveMode(*s.cfg) || elemental.IsActiveMode(*s.cfg) {
@@ -79,7 +77,20 @@ func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
 		stat.CurrentID, s.currentID = currentID, currentID
 		stat.ActiveID = sl.ActiveID
 		return stat, nil
-	} else if ok, _ := utils.Exists(s.cfg.Fs, filepath.Join(mountpoint, snapperRootConfig)); ok {
+	} else if ok, _ := utils.Exists(s.cfg.Fs, snapshots); ok {
+		// We must mount .snapshots to ensure snapper is capable to list snapshots
+		if ok, _ := s.cfg.Mounter.IsLikelyNotMountPoint(snapshots); ok {
+			err := s.cfg.Mounter.Mount(device, snapshots, "btrfs", []string{"ro", fmt.Sprintf("subvol=%s", filepath.Join(rootSubvol, snapshotsPath))})
+			if err != nil {
+				return stat, err
+			}
+			defer func() {
+				err = s.cfg.Mounter.Unmount(snapshots)
+				if err != nil && retErr == nil {
+					retErr = err
+				}
+			}()
+		}
 		sl, err := s.ListSnapshots(mountpoint)
 		if err != nil {
 			return stat, err
@@ -89,7 +100,7 @@ func (s *snapperBackend) Probe(device, mountpoint string) (backendStat, error) {
 
 	stat.RootDir = mountpoint
 	stat.StateMount = mountpoint
-	return stat, err
+	return stat, nil
 }
 
 // InitBrfsPartition is the method required to create snapshots structure on just formated partition
