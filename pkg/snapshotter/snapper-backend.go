@@ -213,7 +213,7 @@ func (s snapperBackend) CommitSnapshot(rootDir string, snapshot *types.Snapshot)
 }
 
 // ListSnapshots list the available snapshots in the state filesystem
-func (s snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
+func (s *snapperBackend) ListSnapshots(rootDir string) (snapshotsList, error) {
 	var sl snapshotsList
 	ids := []int{}
 	re := regexp.MustCompile(`^(\d+),(yes|no),(yes|no)$`)
