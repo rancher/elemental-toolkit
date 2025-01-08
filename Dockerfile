@@ -1,5 +1,5 @@
 ARG BASE_OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
-ARG GO_VERSION=1.22
+ARG GO_VERSION=1.23
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS elemental-bin
 
