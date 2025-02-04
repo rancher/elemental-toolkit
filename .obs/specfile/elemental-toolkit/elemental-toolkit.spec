@@ -48,7 +48,7 @@ Requires:       squashfs
 Requires:       util-linux-systemd
 
 %if 0%{?suse_version}
-BuildRequires:  golang(API) >= 1.22
+BuildRequires:  golang(API) >= 1.23
 BuildRequires:  golang-packaging
 %{go_provides}
 %else
