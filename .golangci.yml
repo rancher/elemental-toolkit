@@ -2,7 +2,9 @@ run:
   timeout: 5m
   tests: false
 output:
-  format: github-actions
+  formats:
+    - format: github-actions
+    - format: colored-line-number
 linters:
   disable-all: true
   enable:
