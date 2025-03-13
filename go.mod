@@ -118,7 +118,7 @@ require (
 	github.com/twpayne/go-vfs/v4 v4.3.0
 	github.com/vbatts/tar-split v0.11.6 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
