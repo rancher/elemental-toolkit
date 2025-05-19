@@ -1,6 +1,6 @@
 module github.com/rancher/elemental-toolkit/v2
 
-go 1.23.4
+go 1.24.0
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.5.0
@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/mount-utils v0.32.2
+	k8s.io/mount-utils v0.33.1
 )
 
 require (
