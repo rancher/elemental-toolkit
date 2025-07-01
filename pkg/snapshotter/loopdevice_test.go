@@ -22,14 +22,15 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
+
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
-	"github.com/twpayne/go-vfs/v4"
-	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
@@ -190,6 +191,17 @@ var _ = Describe("LoopDevice", Label("snapshotter", "loopdevice"), func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(lp.GetSnapshots()).Error().To(HaveOccurred())
+	})
+
+	It("closes a transaction with 0 MaxSnaps", func() {
+		snapCfg.MaxSnaps = 0
+		lp, err := snapshotter.NewSnapshotter(cfg, snapCfg, bootloader)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(lp.InitSnapshotter(statePart, efiDir)).To(Succeed())
+
+		snap, err := lp.StartTransaction()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(lp.CloseTransaction(snap)).Error().ToNot(HaveOccurred())
 	})
 
 	Describe("using loopdevice on sixth snapshot", func() {
