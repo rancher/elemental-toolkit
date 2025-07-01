@@ -464,7 +464,7 @@ func (l *LoopDevice) cleanOldSnapshots() error {
 	}
 
 	sort.Ints(ids)
-	for len(ids) > l.snapshotterCfg.MaxSnaps-1 {
+	for len(ids) > l.snapshotterCfg.MaxSnaps-1 && len(ids) > 0 {
 		err = l.DeleteSnapshot(ids[0])
 		if err != nil {
 			l.cfg.Logger.Warnf("could not delete snapshot %d", ids[0])
