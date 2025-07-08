@@ -85,7 +85,14 @@ stages:
 The default cloud-config format is split into *stages* (*initramfs*, *boot*, *network*, *initramfs*, *reconcile*, called generically **STAGE_ID** below) [see also stages](../../customizing/stages) that are emitted internally during the various phases by calling `cos-setup STAGE_ID`. 
 *steps* (**STEP_NAME** below) defined for each stage are executed in order.
 
-Each cloud-config file is loaded and executed only at the apprioriate stage, this allows further components to emit their own stages at the desired time.
+Each cloud-config file is loaded and executed only at the appropriate stage, this allows further components to emit their own stages at the desired time.
+
+_Note_:
+- The execution order of multiple `substeps` (such as `files`, `commands`, `environment` etc.) within a single `step` is not guaranteed. 
+  Therefore, when you have multiple `substeps` that related to each other, please do not define them in a single `step`.
+  Instead, you can split the `substeps` into multiple `steps` which are ensured to be executed by the definition order.
+- The name of `steps` and output of `substeps` will be output to system journal log which can be viewed by the command `journalctl -u 'elemental*'`.
+- It is highly recommended to declare the `name` property of *steps*, so that it will be easier to investigate the output of `journalctl -u 'elemental*'` by the name.
 
 {{% pageinfo %}}
 The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases).
