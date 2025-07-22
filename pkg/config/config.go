@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -552,4 +553,55 @@ func NewBuildConfig(opts ...GenericOptions) *types.BuildConfig {
 		Snapshotter: types.NewLoopDevice(),
 	}
 	return b
+}
+
+// ReconcileUpgradeSpec will check current mounts which may differ from elemental disovery from /sys/block tree
+// as this skips multipathed devices which may be in use.
+func ReconcileUpgradeSpec(spec *v1.UpgradeSpec) error {
+	if spec.Partitions.State != nil {
+		if err := reconcilePartition(spec.Partitions.State); err != nil {
+			return err
+		}
+	}
+	if spec.Partitions.Recovery != nil {
+		if err := reconcilePartition(spec.Partitions.Recovery); err != nil {
+			return err
+		}
+	}
+
+	if spec.Partitions.Persistent != nil {
+		if err := reconcilePartition(spec.Partitions.Persistent); err != nil {
+			return err
+		}
+	}
+
+	if spec.Partitions.OEM != nil {
+		if err := reconcilePartition(spec.Partitions.OEM); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func reconcilePartition(part *v1.Partition) error {
+	discoveredMountDiskBytes, err := execBlkid(part.FilesystemLabel)
+	if err != nil {
+		return fmt.Errorf("error discovering current partition using label %s: %w", part.FilesystemLabel, err)
+	}
+
+	// trim space since `blkid` output has a newline in result
+	discoveredMount := strings.TrimSpace(string(discoveredMountDiskBytes))
+	if part.Path != discoveredMount {
+		part.Path = discoveredMount
+	}
+	return nil
+}
+func execBlkid(name string) ([]byte, error) {
+	path, err := exec.LookPath("blkid")
+	if err != nil {
+		return nil, err
+	}
+
+	blkidCmd := exec.Command(path, "-L", name)
+	return blkidCmd.Output()
 }
