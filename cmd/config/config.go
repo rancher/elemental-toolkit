@@ -453,6 +453,11 @@ func ReadUpgradeSpec(r *types.RunConfig, flags *pflag.FlagSet, recoveryOnly bool
 	} else {
 		err = upgrade.Sanitize()
 	}
+	if err != nil {
+		return nil, fmt.Errorf("failed sanitizing upgrade spec: %v", err)
+	}
+
+	err = config.ReconcileUpgradeSpec(upgrade)
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
 }
