@@ -6,11 +6,12 @@ FROM golang:${GO_VERSION}-alpine as elemental-bin
 ENV CGO_ENABLED=0
 WORKDIR /src/
 
+# needed for `go mod download`
+RUN apk add git
 # Add specific dirs to the image so cache is not invalidated when modifying non go files
 ADD go.mod .
 ADD go.sum .
 ADD vendor vendor
-RUN go mod download
 ADD cmd cmd
 ADD internal internal
 ADD pkg pkg
