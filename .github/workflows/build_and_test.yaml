@@ -98,7 +98,7 @@ jobs:
           enableCrossOsArchive: true
 
   tests-matrix:
-    needs: 
+    needs:
       - build-disk
     runs-on: ubuntu-latest
     env:
@@ -115,9 +115,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
-      - name: Install deps
-        run: |
-          make test-deps
       - run: |
           git fetch --prune --unshallow
       - name: Cached Disk

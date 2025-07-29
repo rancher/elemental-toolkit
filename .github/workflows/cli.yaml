@@ -27,8 +27,6 @@ jobs:
           args: -v
       - name: Build
         run: make build-cli
-      - name: Deps
-        run: make test-deps
       - name: Run tests
         run: |
           make test-cli
