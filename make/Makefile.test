@@ -1,9 +1,5 @@
-GINKGO?=$(shell which ginkgo 2> /dev/null)
-ifeq ("$(GINKGO)","")
-GINKGO="$(HOME)/go/bin/ginkgo"
-endif
-
-GINKGO_ARGS?=-v --fail-fast -r --timeout=3h
+GINKGO       ?= "github.com/onsi/ginkgo/v2/ginkgo"
+GINKGO_ARGS  ?=-v --fail-fast -r --timeout=3h
 
 .PHONY: prepare-test
 prepare-test:
@@ -13,7 +9,7 @@ ifeq ("$(DISK)","")
 endif
 	@scripts/run_vm.sh start $(DISK)
 	@echo "VM started from $(DISK)"
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/wait-active
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/wait-active
 
 .PHONY: prepare-installer-test
 prepare-installer-test:
@@ -31,27 +27,27 @@ test-clean:
 
 .PHONY: test-smoke
 test-smoke: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/smoke
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/smoke
 
 .PHONY: test-grubfallback
 test-grubfallback: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/grubfallback
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/grubfallback
 
 .PHONY: test-recovery
 test-recovery: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/recovery
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/recovery
 
 .PHONY: test-fallback
 test-fallback: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/fallback
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/fallback
 
 .PHONY: test-fsck
 test-fsck: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/fsck
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/fsck
 
 .PHONY: test-upgrade
 test-upgrade: prepare-test
-	$(GINKGO) run $(GINKGO_ARGS) ./tests/upgrade
+	go run $(GINKGO) run $(GINKGO_ARGS) ./tests/upgrade
 
 .PHONY: test-deps
 test-deps:
@@ -60,16 +56,16 @@ test-deps:
 	go install github.com/onsi/ginkgo/v2/ginkgo
 
 .PHONY: test-cli
-test-cli: $(GINKGO)
-	$(GINKGO) run --label-filter '!root' --fail-fast --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-toolkit/... -p -r ${PKG}
+test-cli:
+	go run $(GINKGO) run --label-filter '!root' --fail-fast --race --covermode=atomic --coverprofile=coverage.txt --coverpkg=github.com/rancher/elemental-toolkit/... -p -r ${PKG}
 
 .PHONY: test-root
-test-root: $(GINKGO)
+test-root:
 ifneq ($(shell id -u), 0)
 	@echo "This tests require root/sudo to run."
 	@exit 1
 else
-	$(GINKGO) run --label-filter root --fail-fast --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-toolkit/... -procs=1 -r ${PKG}
+	go run $(GINKGO) run --label-filter root --fail-fast --race --covermode=atomic --coverprofile=coverage_root.txt --coverpkg=github.com/rancher/elemental-toolkit/... -procs=1 -r ${PKG}
 endif
 
 
