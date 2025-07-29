@@ -53,7 +53,7 @@ jobs:
           path: /tmp/*.iso
           key: ${{ env.cache-name }}-${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
           enableCrossOsArchive: true
-  
+
   build-disk:
     runs-on: ubuntu-latest
     env:
@@ -139,7 +139,7 @@ jobs:
           make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE.fd ${{ matrix.test }}
       # TODO include other logs SUT collects on failure
       - name: Upload serial console for ${{ matrix.test }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
