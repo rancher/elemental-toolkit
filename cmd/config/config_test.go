@@ -61,9 +61,7 @@ var _ = Describe("Config", Label("config"), func() {
 
 				up, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).Should(HaveOccurred(), litter.Sdump(cfg))
-
-				Expect(up.GrubDefEntry).To(Equal("so"))
-				Expect(up.Active.Size).To(Equal(uint(2000)), litter.Sdump(up))
+				Expect(up).To(BeNil())
 
 				inst, err := ReadInstallSpec(cfg, nil)
 				Expect(err).Should(HaveOccurred(), litter.Sdump(cfg))
@@ -438,7 +436,7 @@ var _ = Describe("Config", Label("config"), func() {
 				ghwTest.CreateDevices()
 				defer ghwTest.Clean()
 
-				err := os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")
+				Expect(os.Setenv("ELEMENTAL_UPGRADE_RECOVERY", "true")).To(Succeed())
 				spec, err := ReadUpgradeSpec(cfg, nil)
 				Expect(err).ShouldNot(HaveOccurred())
 				// Overwrites recovery-system image, flags have priority over files and env vars

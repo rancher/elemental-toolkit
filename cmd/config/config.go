@@ -300,7 +300,7 @@ func ReadUpgradeSpec(r *v1.RunConfig, flags *pflag.FlagSet) (*v1.UpgradeSpec, er
 		return nil, fmt.Errorf("failed sanitizing upgrade spec: %v", err)
 	}
 
-	err = config.ReconcileUpgradeSpec(upgrade)
+	err = config.ReconcileUpgradeSpec(r, upgrade)
 	r.Logger.Debugf("Loaded upgrade UpgradeSpec: %s", litter.Sdump(upgrade))
 	return upgrade, err
 }
