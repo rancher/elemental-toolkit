@@ -74,8 +74,8 @@ RUN systemd-sysusers
 # This is for automatic testing purposes, do not do this in production.
 RUN echo "PermitRootLogin yes" > /etc/ssh/sshd_config.d/rootlogin.conf
 
-# SELinux in enforce mode
-#RUN sed -i "s|SELINUX=.*|SELINUX=enforcing|g" /etc/selinux/config
+# SELinux in permissive mode
+RUN sed -i "s|SELINUX=.*|SELINUX=permissive|g" /etc/selinux/config
 
 # Add default snapshotter setup
 ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
