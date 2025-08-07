@@ -23,14 +23,15 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/twpayne/go-vfs/v4"
+	"github.com/twpayne/go-vfs/v4/vfst"
+
 	conf "github.com/rancher/elemental-toolkit/v2/pkg/config"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/mocks"
 	"github.com/rancher/elemental-toolkit/v2/pkg/snapshotter"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"
-	"github.com/twpayne/go-vfs/v4"
-	"github.com/twpayne/go-vfs/v4/vfst"
 )
 
 var _ = Describe("btrfsBackend", Label("snapshotter", " btrfs"), func() {
@@ -89,7 +90,7 @@ var _ = Describe("btrfsBackend", Label("snapshotter", " btrfs"), func() {
 			for _, effect := range sEffects {
 				if strings.HasPrefix(fullCmd, effect.cmd) {
 					if effect.errorMsg != "" {
-						return []byte(effect.cmdOut), fmt.Errorf(effect.errorMsg)
+						return []byte(effect.cmdOut), fmt.Errorf("side-effect error: %s", effect.errorMsg)
 					}
 					return []byte(effect.cmdOut), nil
 				}
