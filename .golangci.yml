@@ -3,8 +3,9 @@ run:
   tests: false
 output:
   formats:
-    - format: github-actions
-    - format: colored-line-number
+    text:
+      path: stdout
+      colors: true
 linters:
   disable-all: true
   enable:
