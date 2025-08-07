@@ -15,7 +15,6 @@ linters:
     - govet # run govet
     - ineffassign # check ineffectual assignments
     - staticcheck # staticcheck
-    - typecheck # parse and check go code
     - unused # unused constants, variables, functions and types
     - revive # replacement for golint
     - dupl # check duplicated code
