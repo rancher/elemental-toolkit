@@ -11,7 +11,6 @@ linters:
   default: none
   enable:
     - errcheck # all errors checked
-    - gosimple # simplify code
     - govet # run govet
     - ineffassign # check ineffectual assignments
     - staticcheck # staticcheck
@@ -19,9 +18,7 @@ linters:
     - revive # replacement for golint
     - dupl # check duplicated code
     - goconst # check strings that can turn into constants
-    - gofmt # check fmt
     - goheader # Check license headers, only checks files in current year
-    - goimports # check imports
     - gocyclo # check complexity
   settings:
     gocyclo:
@@ -41,3 +38,7 @@ linters:
         WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
         See the License for the specific language governing permissions and
         limitations under the License.
+formatters:
+  enable:
+    - goimports
+    - gofmt
