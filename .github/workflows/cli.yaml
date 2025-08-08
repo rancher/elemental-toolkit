@@ -21,7 +21,7 @@ jobs:
       - name: Build
         run: make build-cli
       - name: Analysis
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
           args: -v
       - name: Run tests
