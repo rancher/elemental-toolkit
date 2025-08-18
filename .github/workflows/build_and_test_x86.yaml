@@ -24,7 +24,7 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }} 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
@@ -70,7 +70,7 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
@@ -116,7 +116,7 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
@@ -192,7 +192,7 @@ jobs:
         test: ${{ fromJson(needs.detect.outputs.tests) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - name: Install Go
@@ -261,7 +261,7 @@ jobs:
       COS_TIMEOUT: 1600
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - name: Install Go

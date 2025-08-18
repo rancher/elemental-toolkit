@@ -15,7 +15,7 @@ jobs:
       PLATFORM: x86_64
       TOOLKIT_REPO: ghcr.io/${{github.repository}}/elemental-cli 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           git fetch --prune --unshallow
       - name: Log in to ghcr.io
