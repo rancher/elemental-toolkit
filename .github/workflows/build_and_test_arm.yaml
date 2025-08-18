@@ -25,7 +25,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
@@ -65,7 +65,7 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
@@ -117,7 +117,7 @@ jobs:
           - test-smoke
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -168,7 +168,7 @@ jobs:
       ARCH: aarch64
       COS_TIMEOUT: 1600
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Go
         uses: actions/setup-go@v5
         with:
