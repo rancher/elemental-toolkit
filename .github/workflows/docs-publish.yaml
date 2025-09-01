@@ -40,7 +40,7 @@ jobs:
         run: |
           make BASE_URL=https://rancher.github.io/elemental-toolkit build-docs
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./public
 
