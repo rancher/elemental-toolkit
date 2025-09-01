@@ -21,7 +21,7 @@ require (
 	github.com/sanity-io/litter v1.5.8
 	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.6
+	github.com/spf13/pflag v1.0.9
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.41.0
 	gopkg.in/yaml.v3 v3.0.1
