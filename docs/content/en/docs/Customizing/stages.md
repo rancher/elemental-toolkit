@@ -14,18 +14,34 @@ We have a custom augmented cloud-init syntax that allows to hook into various st
 - Network availability
 - During upgrades, installation, deployments  , and resets
 
-Cloud-init files in `/system/oem`, `/oem` and `/usr/local/oem` are applied in 5 different phases: `boot`, `network`, `fs`, `initramfs` and `reconcile`. All the available cloud-init keywords can be used in each stage. Additionally, it's possible also to hook before or after a stage has run, each one has a specific stage which is possible to run steps: `boot.after`, `network.before`, `fs.after` etc.
+Cloud-init files in `/system/oem`, `/oem`, `/usr/local/oem`, and kernel boot args are applied in 5 different stages: `boot`, `network`, `fs`, `initramfs` and `reconcile`. All the available cloud-init keywords can be used in each stage. Additionally, it's possible also to hook before or after a stage has run, each one has a specific stage which is possible to run steps: `boot.after`, `network.before`, `fs.after` etc.
 
 Multiple stages can be specified in a single cloud-init file.
 
+File extension name must be *.yaml or *.yml.
+
 {{% alert title="Note" %}}
-When a Elemental derivative boots it creates sentinel files in order to allow to execute cloud-init steps programmaticaly.
+When an Elemental derivative boots it creates sentinel files in order to allow executing cloud-init steps programmatically.
 
 - `/run/cos/recovery_mode` is being created when booting from the recovery partition
 - `/run/cos/live_mode` is created when booting from the LiveCD
 
 To execute a block using the sentinel files you can specify: `if: '[ -f "/run/cos/..." ]'`, see the examples below.
 {{% /alert %}}
+
+At every stage, Elemental derivative parse and execute Cloud-init files in the following order:
+- `/system/oem`  (Cannot be modified by users)
+- `/oem`  (Can be modified by users)
+- `/usr/local/oem` (Can be modified by users)
+- Cloud-init config URL specified in kernel boot args, e.g., elemental.setup=http://example.com/cloudinit.cfg
+- Cloud-init config encoded in kernel boot args, e.g., stages.network[0].authorized_keys.user=github:user
+
+In each above directory, files are processed in the lexical order of file name. 
+
+Unlike the standard Cloud-init, which merges all config files before execution, Elemental derivative executes
+Cloud-init files one by one.
+
+Therefore, definitions in later Cloud-init files override what previous files defined, partially or completely.
 
 ## Stages
 
