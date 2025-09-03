@@ -128,8 +128,8 @@ var _ = Describe("btrfsBackend", Label("snapshotter", " btrfs"), func() {
 			Expect(runner.MatchMilestones([][]string{
 				{"btrfs", "quota", "enable"},
 				{"btrfs", "subvolume", "create"},
-				{"btrfs", "subvolume", "create"},
 				{"btrfs", "qgroup", "create"},
+				{"btrfs", "subvolume", "create"},
 			})).To(Succeed())
 		})
 
@@ -161,7 +161,6 @@ var _ = Describe("btrfsBackend", Label("snapshotter", " btrfs"), func() {
 			Expect(backend.InitBrfsPartition(rootDir)).NotTo(Succeed())
 			Expect(runner.MatchMilestones([][]string{
 				{"btrfs", "quota", "enable"},
-				{"btrfs", "subvolume", "create"},
 				{"btrfs", "subvolume", "create"},
 				{"btrfs", "qgroup", "create"},
 			})).To(Succeed())
