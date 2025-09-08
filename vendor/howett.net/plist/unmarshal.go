@@ -21,6 +21,7 @@ var (
 	plistUnmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
 	textUnmarshalerType  = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 	uidType              = reflect.TypeOf(UID(0))
+	stringType           = reflect.TypeOf("")
 )
 
 func isEmptyInterface(v reflect.Value) bool {
@@ -95,7 +96,7 @@ func (p *Decoder) unmarshal(pval cfValue, val reflect.Value) {
 		return
 	}
 
-	if val.Kind() == reflect.Ptr {
+	for val.Kind() == reflect.Ptr {
 		if val.IsNil() {
 			val.Set(reflect.New(val.Type().Elem()))
 		}
@@ -110,6 +111,11 @@ func (p *Decoder) unmarshal(pval cfValue, val reflect.Value) {
 
 	incompatibleTypeError := &incompatibleDecodeTypeError{val.Type(), pval.typeName()}
 
+	if receiver, can := implementsInterface(val, plistUnmarshalerType); can {
+		p.unmarshalPlistInterface(pval, receiver.(Unmarshaler))
+		return
+	}
+
 	// time.Time implements TextMarshaler, but we need to parse it as RFC3339
 	if date, ok := pval.(cfDate); ok {
 		if val.Type() == timeType {
@@ -117,11 +123,6 @@ func (p *Decoder) unmarshal(pval cfValue, val reflect.Value) {
 			return
 		}
 		panic(incompatibleTypeError)
-	}
-
-	if receiver, can := implementsInterface(val, plistUnmarshalerType); can {
-		p.unmarshalPlistInterface(pval, receiver.(Unmarshaler))
-		return
 	}
 
 	if val.Type() != timeType {
@@ -217,10 +218,10 @@ func (p *Decoder) unmarshalArray(a *cfArray, val reflect.Value) {
 		// Slice of element values.
 		// Grow slice.
 		cnt := len(a.values) + val.Len()
-		if cnt >= val.Cap() {
-			ncap := 2 * cnt
-			if ncap < 4 {
-				ncap = 4
+		if cnt > val.Cap() {
+			ncap := val.Cap()
+			for ncap < cnt {
+				ncap = growSliceCap(ncap)
 			}
 			new := reflect.MakeSlice(val.Type(), val.Len(), ncap)
 			reflect.Copy(new, val)
@@ -241,7 +242,16 @@ func (p *Decoder) unmarshalArray(a *cfArray, val reflect.Value) {
 		p.unmarshal(sval, val.Index(n))
 		n++
 	}
-	return
+}
+
+func growSliceCap(cap int) int {
+	if cap == 0 {
+		return 4
+	} else if cap < 1024 {
+		return cap * 2 // Double for small slices
+	} else {
+		return cap + cap/4 // Increase by 25% for large slices
+	}
 }
 
 func (p *Decoder) unmarshalDictionary(dict *cfDictionary, val reflect.Value) {
@@ -260,11 +270,17 @@ func (p *Decoder) unmarshalDictionary(dict *cfDictionary, val reflect.Value) {
 		}
 
 		for _, finfo := range tinfo.fields {
-			p.unmarshal(entries[finfo.name], finfo.value(val))
+			if ent, ok := entries[finfo.name]; ok {
+				p.unmarshal(ent, finfo.valueForWriting(val))
+			}
 		}
 	case reflect.Map:
 		if val.IsNil() {
 			val.Set(reflect.MakeMap(typ))
+		}
+
+		if !stringType.ConvertibleTo(val.Type().Key()) {
+			panic(fmt.Errorf("plist: attempt to decode dictionary into map with non-string key type `%v'", val.Type().Key()))
 		}
 
 		for i, k := range dict.keys {
