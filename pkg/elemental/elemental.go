@@ -670,7 +670,6 @@ func SelinuxRelabel(c types.Config, rootDir string, extraPaths ...string) error 
 // ApplySELinuxLabels relables with setfiles the given root in a chroot env. Additionaly after the first
 // chrooted call it runs a non chrooted call to relabel any mountpoint used within the chroot.
 func ApplySELinuxLabels(c types.Config, rootDir string, bind map[string]string) (err error) {
-	var out []byte
 	extraPaths := []string{}
 
 	for _, v := range bind {
@@ -685,14 +684,32 @@ func ApplySELinuxLabels(c types.Config, rootDir string, bind map[string]string) 
 	contextsFile := filepath.Join(rootDir, cnst.SELinuxTargetedContextFile)
 	existsCon, _ := utils.Exists(c.Fs, contextsFile)
 
-	if existsCon && c.Runner.CommandExists("setfiles") {
-		args := []string{"-r", rootDir, "-i", "-F", contextsFile}
-		for _, path := range append([]string{"/dev", "/proc", "/sys"}, extraPaths...) {
-			args = append(args, filepath.Join(rootDir, path))
-		}
-		out, err = c.Runner.Run("setfiles", args...)
-		c.Logger.Debugf("SELinux setfiles output: %s", string(out))
+	if !existsCon || !c.Runner.CommandExists("setfiles") {
+		return nil
 	}
+
+	// Now we call setfiles to label the directories and mountpoints that were bind mounted
+	// inside the previous chrooted call. Since /dev is likely to be an empty folder in that context
+	// we create a /dev/null device as setfiles will complain without it.
+	devnull := filepath.Join(rootDir, "/dev/null")
+	if ok, _ := utils.Exists(c.Fs, devnull); !ok {
+		_, err = c.Runner.Run("mknod", "-m", "666", devnull, "c", "1", "3")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = c.Fs.RemoveAll(devnull)
+		}()
+	}
+
+	var restoreOut []byte
+	args := append([]string{"-i", "-F", cnst.SELinuxTargetedContextFile, "/dev", "/proc", "/sys"}, extraPaths...)
+	restoreLabels := func() error {
+		restoreOut, err = c.Runner.Run("setfiles", args...)
+		return err
+	}
+	err = utils.ChrootedCallback(&c, rootDir, map[string]string{}, restoreLabels, utils.NoDefaultBinds())
+	c.Logger.Debugf("SELinux setfiles output: %s", string(restoreOut))
 
 	return err
 }
