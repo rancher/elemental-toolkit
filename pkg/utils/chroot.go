@@ -28,6 +28,14 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
+type ChrootOpt func(ch *Chroot)
+
+func NoDefaultBinds() ChrootOpt {
+	return func(ch *Chroot) {
+		ch.defaultMounts = []string{}
+	}
+}
+
 // Chroot represents the struct that will allow us to run commands inside a given chroot
 type Chroot struct {
 	path          string
@@ -37,19 +45,23 @@ type Chroot struct {
 	config        *types.Config
 }
 
-func NewChroot(path string, config *types.Config) *Chroot {
-	return &Chroot{
+func NewChroot(path string, config *types.Config, opts ...ChrootOpt) *Chroot {
+	ch := &Chroot{
 		path:          path,
 		defaultMounts: []string{"/dev", "/dev/pts", "/proc", "/sys"},
 		extraMounts:   map[string]string{},
 		activeMounts:  []string{},
 		config:        config,
 	}
+	for _, opt := range opts {
+		opt(ch)
+	}
+	return ch
 }
 
 // ChrootedCallback runs the given callback in a chroot environment
-func ChrootedCallback(cfg *types.Config, path string, bindMounts map[string]string, callback func() error) error {
-	chroot := NewChroot(path, cfg)
+func ChrootedCallback(cfg *types.Config, path string, bindMounts map[string]string, callback func() error, opts ...ChrootOpt) error {
+	chroot := NewChroot(path, cfg, opts...)
 	if bindMounts == nil {
 		bindMounts = map[string]string{}
 	}
