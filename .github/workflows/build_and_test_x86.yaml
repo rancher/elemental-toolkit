@@ -131,12 +131,6 @@ jobs:
           key: ${{ env.cache-name }}-${{ inputs.version }}
           lookup-only: true
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
-        name: Cleanup worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-          sudo df -h
-      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Pull images
         uses: ./.github/actions/fetchimages
         with:
