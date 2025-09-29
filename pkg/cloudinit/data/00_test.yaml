@@ -1,0 +1,17 @@
+stages:
+  rootfs:
+    - name: "testtest-rootfs-stage-from-00_test_yaml"
+      commands:
+      - ls
+  initramfs:
+    - name: "testtest-initramfs-stage-from-00_test_yaml"
+      commands:
+      - ls
+  fs:
+    - name: "testtest-fs-stage-from-00_test_yaml"
+      commands:
+      - ls
+  boot:
+    - name: "testtest-boot-stage-from-00_test_yaml"
+      commands:
+      - ls

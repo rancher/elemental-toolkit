@@ -51,6 +51,43 @@ var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), fun
 	Describe("loading yaml files", func() {
 		logger := v1.NewNullLogger()
 
+		It("executes commands a1", func() {
+			fs := vfs.OSFS
+			var err error
+			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			err = runner.Run("rootfs", path)
+			Expect(err).Should(BeNil())
+		})
+
+		It("executes commands a2", func() {
+			fs := vfs.OSFS
+			var err error
+			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			err = runner.Run("initramfs", path)
+			Expect(err).Should(BeNil())
+		})
+
+		It("executes commands a3", func() {
+			fs := vfs.OSFS
+			var err error
+			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			err = runner.Run("fs", path)
+			Expect(err).Should(BeNil())
+		})
+
+		It("executes commands a4", func() {
+			fs := vfs.OSFS
+			var err error
+			runner := NewYipCloudInitRunner(logger, &v1.RealRunner{}, fs)
+			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			err = runner.Run("boot", path)
+			Expect(err).Should(BeNil())
+		})
+
+
 		It("executes commands", func() {
 
 			fs2, cleanup2, err := vfst.NewTestFS(map[string]interface{}{})
@@ -342,5 +379,6 @@ stages:
 			cloudRunner := NewYipCloudInitRunner(logger, runner, afs)
 			Expect(cloudRunner.Run("test", "/some/yip")).NotTo(BeNil())
 		})
+
 	})
 })

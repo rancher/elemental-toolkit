@@ -1,0 +1,6 @@
+name: Harvester Configuration
+stages:
+    initramfs:
+        - commands:
+            - ls
+            - date

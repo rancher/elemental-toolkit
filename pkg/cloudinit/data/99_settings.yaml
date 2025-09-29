@@ -1,0 +1,6 @@
+name: oem_settings
+stages:
+    initramfs:
+        - name: ntp
+          commands:
+          - ls
