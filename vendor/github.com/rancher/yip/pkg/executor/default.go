@@ -108,6 +108,8 @@ func (e *DefaultExecutor) applyStage(stage schema.Stage, fs vfs.FS, console plug
 	b, _ := json.Marshal(stage)
 	e.logger.Debugf("Stage: %s", string(b))
 
+	fmt.Printf("Processing stage step %s \n", stage.Name)
+
 	for _, p := range e.plugins {
 		if err := p(e.logger, stage, fs, console); err != nil {
 			e.logger.Error(err.Error())
@@ -272,6 +274,13 @@ func (e *DefaultExecutor) Analyze(stage string, fs vfs.FS, console plugins.Conso
 	}
 }
 
+func dumpOps(uri string, ops opList) {
+	fmt.Printf("the uri is %v\n", uri)
+	for _, op := range ops {
+		fmt.Printf("%+v\n", op)
+	}
+}
+
 func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugins.Console) (g *dag.Graph, loaderError error, err error) {
 	f, err := fs.Stat(uri)
 
@@ -283,13 +292,14 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 		if err != nil {
 			return nil, loaderError, err
 		}
+		dumpOps(uri, ops)
 	case err == nil:
 		config, err := schema.Load(uri, fs, schema.FromFile, e.modifier)
 		if err != nil {
 			return nil, nil, err
 		}
-
 		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
+		dumpOps(uri, ops)
 	case utils.IsUrl(uri):
 		config, err := schema.Load(uri, fs, schema.FromUrl, e.modifier)
 		if err != nil {
@@ -297,6 +307,7 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 		}
 
 		ops = e.genOpFromSchema(uri, stage, *config, fs, console)
+		dumpOps(uri, ops)
 	default:
 		config, err := schema.Load(uri, fs, nil, e.modifier)
 		if err != nil {
@@ -304,6 +315,7 @@ func (e *DefaultExecutor) prepareDAG(stage, uri string, fs vfs.FS, console plugi
 		}
 
 		ops = e.genOpFromSchema("<STDIN>", stage, *config, fs, console)
+		dumpOps(uri, ops)
 	}
 
 	// Ensure all names are unique
@@ -387,6 +399,8 @@ STAGES:
 
 		b, _ := json.Marshal(stage)
 		e.logger.Debugf("Stage: %s", string(b))
+
+		fmt.Printf("Processing stage step %s \n", stage.Name)
 
 		for _, p := range e.plugins {
 			if err := p(e.logger, stage, fs, console); err != nil {
