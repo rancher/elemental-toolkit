@@ -38,7 +38,7 @@ var _ = Describe("Elemental booting an expandable disk image", func() {
 	Context("Wait until system is expanded", func() {
 		It("eventually is active", func() {
 			Eventually(func() string {
-				out, _ := s.Command("cat /run/cos/active_mode")
+				out, _ := s.Command("cat /run/elemental/active_mode")
 				return out
 			}, 15*time.Minute, 10*time.Second).Should(ContainSubstring("1"))
 
