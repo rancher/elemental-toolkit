@@ -62,7 +62,7 @@ var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), fun
 			fs := vfs.OSFS
 			var err error
 			runner := NewYipCloudInitRunner(logger, &types.RealRunner{}, fs)
-			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			path := "/go/src/github.com/rancher/elemental-toolkit/pkg/cloudinit"
 			err = runner.Run("rootfs", path)
 			Expect(err).Should(BeNil())
 		})
@@ -71,7 +71,7 @@ var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), fun
 			fs := vfs.OSFS
 			var err error
 			runner := NewYipCloudInitRunner(logger, &types.RealRunner{}, fs)
-			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			path := "/go/src/github.com/rancher/elemental-toolkit/pkg/cloudinit"
 			err = runner.Run("initramfs", path)
 			Expect(err).Should(BeNil())
 		})
@@ -80,7 +80,7 @@ var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), fun
 			fs := vfs.OSFS
 			var err error
 			runner := NewYipCloudInitRunner(logger,  &types.RealRunner{}, fs)
-			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			path := "/go/src/github.com/rancher/elemental-toolkit/pkg/cloudinit"
 			err = runner.Run("fs", path)
 			Expect(err).Should(BeNil())
 		})
@@ -89,7 +89,7 @@ var _ = Describe("CloudRunner", Label("CloudRunner", "types", "cloud-init"), fun
 			fs := vfs.OSFS
 			var err error
 			runner := NewYipCloudInitRunner(logger,  &types.RealRunner{}, fs)
-			path := "/go/src/github.com/rancher/elemental-toolkit-v11x/elemental-toolkit/pkg/cloudinit"
+			path := "/go/src/github.com/rancher/elemental-toolkit/pkg/cloudinit"
 			err = runner.Run("boot", path)
 			Expect(err).Should(BeNil())
 		})
