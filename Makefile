@@ -18,6 +18,11 @@ BASE_OS_IMAGE?=registry.opensuse.org/opensuse/tumbleweed
 BASE_OS_VERSION?=latest
 DOCKER_SOCK?=/var/run/docker.sock
 
+SNAPSHOTTER_TYPE?=loopdevice
+ifeq ("$(FLAVOR)","green")
+	SNAPSHOTTER_TYPE=btrfs
+endif
+
 GIT_COMMIT?=$(shell git rev-parse HEAD)
 GIT_COMMIT_SHORT?=$(shell git rev-parse --short HEAD)
 GIT_TAG?=$(shell git describe --candidates=50 --abbrev=0 --tags 2>/dev/null || echo "v0.0.1" )
@@ -98,7 +103,8 @@ build-disk:
 	mkdir -p $(ROOT_DIR)/build
 	$(DOCKER) run --rm -v $(DOCKER_SOCK):$(DOCKER_SOCK) -v $(ROOT_DIR)/build:/build -v $(ROOT_DIR)/tests/assets:/assets \
 		--entrypoint /usr/bin/elemental $(TOOLKIT_REPO):$(VERSION) --debug build-disk --platform $(PLATFORM) \
-		--expandable -n elemental-$(FLAVOR).$(ARCH) --local --cloud-init /assets/remote_login.yaml -o /build --system $(REPO):$(VERSION)
+		--expandable -n elemental-$(FLAVOR).$(ARCH) --local --cloud-init /assets/remote_login.yaml -o /build --system $(REPO):$(VERSION) \
+		--snapshotter.type $(SNAPSHOTTER_TYPE)
 	qemu-img convert -O qcow2 $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).raw $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2
 	qemu-img resize $(ROOT_DIR)/build/elemental-$(FLAVOR).$(ARCH).qcow2 $(DISKSIZE) 
 
