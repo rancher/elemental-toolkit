@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
 
@@ -83,6 +84,15 @@ func addSnapshotLabelsFlag(cmd *cobra.Command) {
 // addLocalImageFlag add local image flag shared between install, pull-image, upgrade
 func addLocalImageFlag(cmd *cobra.Command) {
 	cmd.Flags().Bool("local", false, "Use an image from local cache")
+}
+
+func addSnapshotterFlags(cmd *cobra.Command) {
+	snapshotterType := newEnumFlag(
+		[]string{constants.LoopDeviceSnapshotterType, constants.BtrfsSnapshotterType},
+		constants.LoopDeviceSnapshotterType,
+	)
+
+	cmd.Flags().Var(snapshotterType, "snapshotter.type", "Sets the snapshotter type to install")
 }
 
 // addVerifyRegistryFlag add local image flag shared between install, pull-image, upgrade
