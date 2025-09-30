@@ -110,6 +110,7 @@ func NewBuildDisk(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	addLocalImageFlag(c)
 	addSquashFsCompressionFlags(c)
 	addCosignFlags(c)
+	addSnapshotterFlags(c)
 	return c
 }
 
