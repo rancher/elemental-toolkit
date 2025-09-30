@@ -99,10 +99,6 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	}
 	firmType := newEnumFlag([]string{types.EFI}, types.EFI)
 	pTableType := newEnumFlag([]string{types.GPT}, types.GPT)
-	snapshotterType := newEnumFlag(
-		[]string{constants.LoopDeviceSnapshotterType, constants.BtrfsSnapshotterType},
-		constants.LoopDeviceSnapshotterType,
-	)
 
 	root.AddCommand(c)
 	c.Flags().StringSliceP("cloud-init", "c", []string{}, "Cloud-init config files")
@@ -118,11 +114,11 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().Bool("force", false, "Force install")
 	c.Flags().Bool("eject-cd", false, "Try to eject the cd on reboot, only valid if booting from iso")
 	c.Flags().Bool("disable-boot-entry", false, "Dont create an EFI entry for the system install.")
-	c.Flags().Var(snapshotterType, "snapshotter.type", "Sets the snapshotter type to install")
 	c.Flags().StringSlice("cloud-init-paths", []string{}, "Cloud-init config files to run during install")
 	addSharedInstallUpgradeFlags(c)
 	addLocalImageFlag(c)
 	addPlatformFlags(c)
+	addSnapshotterFlags(c)
 	return c
 }
 
