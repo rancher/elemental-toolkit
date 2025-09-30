@@ -3,6 +3,7 @@ stages:
     - name: "testtest-rootfs-stage-from-99_test_yaml"
       commands:
       - ls
+      - echo "99_test" >> ./output.log
   initramfs:
     - name: "testtest-initramfs-stage-from-99_test_yaml"
       commands:

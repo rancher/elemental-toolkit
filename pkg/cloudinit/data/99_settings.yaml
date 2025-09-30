@@ -4,3 +4,4 @@ stages:
         - name: ntp
           commands:
           - ls
+          - echo "99_setting" >> ./output.log

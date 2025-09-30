@@ -3,4 +3,5 @@ stages:
     initramfs:
         - commands:
             - ls
+            - echo "90_custom" >> ./output.log
             - date
