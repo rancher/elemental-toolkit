@@ -555,8 +555,14 @@ func NewDisk(cfg *types.BuildConfig) *types.DiskSpec {
 		)+mountSuffix,
 	)
 
+	partitions := NewDiskElementalPartitions(workdir)
+
+	if cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
+		partitions.State.FS = constants.Btrfs
+	}
+
 	return &types.DiskSpec{
-		Partitions:     NewDiskElementalPartitions(workdir),
+		Partitions:     partitions,
 		GrubConf:       filepath.Join(constants.GrubCfgPath, constants.GrubCfg),
 		System:         types.NewEmptySrc(),
 		RecoverySystem: recoveryImg,
