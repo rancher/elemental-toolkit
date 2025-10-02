@@ -50,19 +50,19 @@ func Read_EFI_PARTITION_TABLE_HEADER(r io.Reader) (out *EFI_PARTITION_TABLE_HEAD
 	origCrc := hdr.CRC
 	hdr.CRC = 0
 
-	b := new(bytes.Buffer)
-	if err := binary.Write(b, binary.LittleEndian, &hdr); err != nil {
+	var b bytes.Buffer
+	if err := binary.Write(&b, binary.LittleEndian, &hdr); err != nil {
 		return nil, 0, err
 	}
 
-	if _, err := io.CopyN(b, r, int64(hdr.HeaderSize-uint32(binary.Size(hdr)))); err != nil {
+	if _, err := io.CopyN(&b, r, int64(hdr.HeaderSize-uint32(binary.Size(hdr)))); err != nil {
 		return nil, 0, ioerr.EOFIsUnexpected(err)
 	}
 
 	crc = crc32.ChecksumIEEE(b.Bytes())
 
 	out = &EFI_PARTITION_TABLE_HEADER{}
-	if err := binary.Read(b, binary.LittleEndian, out); err != nil {
+	if err := binary.Read(&b, binary.LittleEndian, out); err != nil {
 		return nil, 0, err
 	}
 	out.Hdr.CRC = origCrc

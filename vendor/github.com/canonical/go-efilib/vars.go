@@ -30,8 +30,13 @@ const (
 
 var (
 	ErrVarsUnavailable = errors.New("no variable backend is available")
-	ErrVarNotExist     = errors.New("variable does not exist")
-	ErrVarPermission   = errors.New("permission denied")
+
+	ErrVarNotExist          = errors.New("variable does not exist")
+	ErrVarInvalidParam      = errors.New("invalid parameter for variable access")
+	ErrVarDeviceError       = errors.New("variable access failed because of a hardware error")
+	ErrVarPermission        = errors.New("variable access failed because of insufficient permissions or an authentication failure")
+	ErrVarInsufficientSpace = errors.New("insufficient storage space available for variable")
+	ErrVarWriteProtected    = errors.New("variable is write protected")
 )
 
 // VariableDescriptor represents the identity of a variable.

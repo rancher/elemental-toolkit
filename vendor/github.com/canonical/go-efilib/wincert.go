@@ -390,6 +390,7 @@ type WinCertificatePKCS1v15 struct {
 	Signature     [256]byte
 }
 
+// Type implements [WinCertificate.Type].
 func (c *WinCertificatePKCS1v15) Type() WinCertificateType {
 	return WinCertificateTypePKCS1v15
 }
@@ -427,10 +428,12 @@ type WinCertificateGUIDUnknown struct {
 	Data            []byte
 }
 
+// Type implements [WinCertificate.Type].
 func (c *WinCertificateGUIDUnknown) Type() WinCertificateType {
 	return WinCertificateTypeGUID
 }
 
+// GUIDType implements [WinCertificateGUID.GUIDType].
 func (c *WinCertificateGUIDUnknown) GUIDType() GUID {
 	return c.unknownGUIDType
 }
@@ -443,10 +446,12 @@ type WinCertificateGUIDPKCS1v15 struct {
 	Signature [256]byte
 }
 
+// Type implements [WinCertificate.Type].
 func (c *WinCertificateGUIDPKCS1v15) Type() WinCertificateType {
 	return WinCertificateTypeGUID
 }
 
+// GUIDType implements [WinCertificateGUID.GUIDType].
 func (c *WinCertificateGUIDPKCS1v15) GUIDType() GUID {
 	return CertTypeRSA2048SHA256Guid
 }
@@ -458,10 +463,12 @@ type WinCertificatePKCS7 struct {
 	p7 *pkcs7.SignedData
 }
 
+// Type implements [WinCertificate.Type].
 func (c *WinCertificatePKCS7) Type() WinCertificateType {
 	return WinCertificateTypeGUID
 }
 
+// GUIDType implements [WinCertificateGUID.GUIDType].
 func (c *WinCertificatePKCS7) GUIDType() GUID {
 	return CertTypePKCS7Guid
 }
@@ -520,6 +527,7 @@ type WinCertificateAuthenticode struct {
 	authenticode *authenticodeContent
 }
 
+// Type implements [WinCertificate.Type].
 func (c *WinCertificateAuthenticode) Type() WinCertificateType {
 	return WinCertificateTypeAuthenticode
 }

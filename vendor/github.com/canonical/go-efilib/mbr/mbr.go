@@ -48,6 +48,32 @@ type Record struct {
 	Partitions      [4]PartitionEntry
 }
 
+// IsProtectiveMBR indicates whether this is a PMBR, which is present
+// in the first sector of a GPT volume.
+func (r *Record) IsProtectiveMBR() bool {
+	var maybePMBR bool
+	for _, p := range r.Partitions {
+		switch p.Type {
+		case 0x00:
+			// This is ok for a PMBR
+		case 0xee:
+			// Maybe a PMBR.
+			// XXX: We probably should check the geometry.
+			switch {
+			case maybePMBR:
+				// There should only be one of these.
+				return false
+			default:
+				maybePMBR = true
+			}
+		default:
+			// This is not a valid PMBR
+			return false
+		}
+	}
+	return maybePMBR
+}
+
 type record struct {
 	BootstrapCode   [440]byte
 	UniqueSignature uint32

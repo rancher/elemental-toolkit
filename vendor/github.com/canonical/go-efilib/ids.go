@@ -92,4 +92,13 @@ var (
 	// ImageSecurityDatabaseGuid is the namespace for signature databases defined
 	// byt the UEFI specification.
 	ImageSecurityDatabaseGuid GUID = GUID(uefi.EFI_IMAGE_SECURITY_DATABASE_GUID)
+
+	PCAnsiGuid                         GUID = GUID(uefi.EFI_PC_ANSI_GUID)
+	VT100Guid                          GUID = GUID(uefi.EFI_VT_100_GUID)
+	VT100PlusGuid                      GUID = GUID(uefi.EFI_VT_100_PLUS_GUID)
+	VTUTF8Guid                         GUID = GUID(uefi.EFI_VT_UTF8_GUID)
+	DevicePathMessagingUARTFlowControl GUID = GUID(uefi.DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL)
+	SASDevicePathGuid                  GUID = GUID(uefi.EFI_SAS_DEVICE_PATH_GUID)
+
+	DebugPortProtocolGuid GUID = GUID(uefi.EFI_DEBUGPORT_PROTOCOL_GUID)
 )

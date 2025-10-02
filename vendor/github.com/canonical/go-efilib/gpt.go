@@ -11,14 +11,16 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"strings"
 
 	"github.com/canonical/go-efilib/internal/uefi"
 	"github.com/canonical/go-efilib/mbr"
 )
 
 var (
-	ErrCRCCheck        = errors.New("CRC check failed")
-	ErrNoProtectiveMBR = errors.New("no protective master boot record found")
+	ErrCRCCheck         = errors.New("CRC check failed")                       // the partition table header or partition entry CRC check failed
+	ErrNoProtectiveMBR  = errors.New("no protective master boot record found") // no protective MBR record was found
+	ErrStandardMBRFound = errors.New("a MBR was found")                        // a standard MBR was found
 
 	// ErrInvalidBackupPartitionTableLocation may be returned from
 	// ReadPartitionTable when called with the BackupPartitionTable
@@ -122,10 +124,17 @@ func (h *PartitionTableHeader) Write(w io.Writer) error {
 }
 
 func (h *PartitionTableHeader) String() string {
-	return fmt.Sprintf("EFI_PARTITION_TABLE_HEADER{ MyLBA: 0x%x, AlternateLBA: 0x%x, FirstUsableLBA: 0x%x, "+
-		"LastUsableLBA: 0x%x, DiskGUID: %v, PartitionEntryLBA: 0x%x, NumberOfPartitionEntries: %d, "+
-		"SizeOfPartitionEntry: 0x%x, PartitionEntryArrayCRC32: 0x%08x }",
-		h.MyLBA, h.AlternateLBA, h.FirstUsableLBA, h.LastUsableLBA, h.DiskGUID, h.PartitionEntryLBA,
+	return fmt.Sprintf(`EFI_PARTITION_TABLE_HEADER {
+	MyLBA: %#x,
+	AlternateLBA: %#x,
+	FirstUsableLBA: %#x,
+	LastUsableLBA: %#x,
+	DiskGUID: %v,
+	PartitionEntryLBA: %#x,
+	NumberOfPartitionEntries: %d,
+	SizeOfPartitionEntry: %#x,
+	PartitionEntryArrayCRC32: %#08x,
+}`, h.MyLBA, h.AlternateLBA, h.FirstUsableLBA, h.LastUsableLBA, h.DiskGUID, h.PartitionEntryLBA,
 		h.NumberOfPartitionEntries, h.SizeOfPartitionEntry, h.PartitionEntryArrayCRC32)
 }
 
@@ -155,10 +164,16 @@ func ReadPartitionEntry(r io.Reader) (*PartitionEntry, error) {
 		PartitionName:       ConvertUTF16ToUTF8(e.PartitionName[:])}, nil
 }
 
+// String implements [fmt.Stringer].
 func (e *PartitionEntry) String() string {
-	return fmt.Sprintf("EFI_PARTITION_ENTRY{ PartitionTypeGUID: %s, UniquePartitionGUID: %s, StartingLBA: 0x%x, "+
-		"EndingLBA: 0x%x, Attributes: 0x%016x, PartitionName: \"%s\" }",
-		e.PartitionTypeGUID, e.UniquePartitionGUID, e.StartingLBA, e.EndingLBA, e.Attributes, e.PartitionName)
+	return fmt.Sprintf(`EFI_PARTITION_ENTRY {
+	PartitionTypeGUID: %s,
+	UniquePartitionGUID: %s,
+	StartingLBA: 0x%x,
+	EndingLBA: %#x,
+	Attributes: %#016x,
+	PartitionName: %q,
+}`, e.PartitionTypeGUID, e.UniquePartitionGUID, e.StartingLBA, e.EndingLBA, e.Attributes, e.PartitionName)
 }
 
 // Write serializes this PartitionEntry to w. Note that it doesn't write
@@ -187,11 +202,11 @@ func readPartitionEntries(r io.Reader, num, sz, expectedCrc uint32, checkCrc boo
 	crc := crc32.NewIEEE()
 	r2 := io.TeeReader(r, crc)
 
-	b := new(bytes.Buffer)
+	var buf bytes.Buffer
 	for i := uint32(0); i < num; i++ {
-		b.Reset()
+		buf.Reset()
 
-		if _, err := io.CopyN(b, r2, int64(sz)); err != nil {
+		if _, err := io.CopyN(&buf, r2, int64(sz)); err != nil {
 			switch {
 			case err == io.EOF && i == 0:
 				return nil, err
@@ -201,7 +216,7 @@ func readPartitionEntries(r io.Reader, num, sz, expectedCrc uint32, checkCrc boo
 			return nil, fmt.Errorf("cannot read entry %d: %w", i, err)
 		}
 
-		e, err := ReadPartitionEntry(b)
+		e, err := ReadPartitionEntry(&buf)
 		if err != nil {
 			return nil, err
 		}
@@ -239,13 +254,19 @@ type PartitionTable struct {
 	Entries []*PartitionEntry
 }
 
+// String implements [fmt.Stringer].
 func (t *PartitionTable) String() string {
-	b := new(bytes.Buffer)
-	fmt.Fprintf(b, "GPT{\n\tHdr: %s,\n\tEntries: [", t.Hdr)
-	for _, entry := range t.Entries {
-		fmt.Fprintf(b, "\n\t\t%s", entry)
+	var b strings.Builder
+	fmt.Fprintf(&b, `GPT {
+	Hdr: %s,
+	Entries: [`, indent(t.Hdr, 1))
+	for i, entry := range t.Entries {
+		if entry.PartitionTypeGUID == UnusedPartitionType {
+			continue
+		}
+		fmt.Fprintf(&b, "\n\t\t%d: %s,", i, indent(entry, 2))
 	}
-	fmt.Fprintf(b, "\n\t]\n}")
+	b.WriteString("\n\t],\n}")
 	return b.String()
 }
 
@@ -303,19 +324,13 @@ func ReadPartitionTable(r io.ReaderAt, totalSz, blockSz int64, role PartitionTab
 	r2 := io.NewSectionReader(r, 0, totalSz)
 
 	record, err := mbr.ReadRecord(r2)
-	if err != nil {
-		return nil, err
-	}
-
-	validPmbr := false
-	for _, p := range record.Partitions {
-		if p.Type == 0xee {
-			validPmbr = true
-			break
-		}
-	}
-	if !validPmbr {
+	switch {
+	case errors.Is(err, mbr.ErrInvalidSignature):
 		return nil, ErrNoProtectiveMBR
+	case err != nil:
+		return nil, err
+	case !record.IsProtectiveMBR():
+		return nil, ErrStandardMBRFound
 	}
 
 	switch role {
