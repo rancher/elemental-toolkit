@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	openVarFile   = realOpenVarFile
 	removeVarFile = os.Remove
 	unixStatfs    = unix.Statfs
 )

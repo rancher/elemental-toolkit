@@ -5,6 +5,8 @@
 package efi
 
 import (
+	"fmt"
+	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -53,4 +55,21 @@ func ConvertUTF8ToUCS2(in string) []uint16 {
 		in = in[sz:]
 	}
 	return utf16.Encode(unicodeStr)
+}
+
+type indentStringer struct {
+	src    fmt.Stringer
+	indent int
+}
+
+func (s *indentStringer) String() string {
+	indent := make([]byte, s.indent)
+	for i := range indent {
+		indent[i] = '\t'
+	}
+	return strings.Replace(s.src.String(), "\n", "\n"+string(indent), -1)
+}
+
+func indent(src fmt.Stringer, indent int) fmt.Stringer {
+	return &indentStringer{src: src, indent: indent}
 }

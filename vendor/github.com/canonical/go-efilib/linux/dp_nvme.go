@@ -5,7 +5,6 @@
 package linux
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -37,7 +36,7 @@ func handleNVMEDevicePathNode(state *devicePathBuilderState) error {
 		return fmt.Errorf("cannot parse nsid: %w", err)
 	}
 
-	var euid [8]uint8
+	var euid efi.EUI64
 
 	euidBuf, err := os.ReadFile(filepath.Join(state.SysfsPath(), "eui"))
 	if os.IsNotExist(err) {
@@ -61,6 +60,6 @@ func handleNVMEDevicePathNode(state *devicePathBuilderState) error {
 
 	state.Path = append(state.Path, &efi.NVMENamespaceDevicePathNode{
 		NamespaceID:   uint32(nsid),
-		NamespaceUUID: uint64(binary.LittleEndian.Uint64(euid[:]))})
+		NamespaceUUID: euid})
 	return nil
 }

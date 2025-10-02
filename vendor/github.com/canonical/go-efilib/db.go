@@ -7,10 +7,12 @@ package efi
 import (
 	"bytes"
 	"crypto"
+	_ "crypto/sha256"
 	"crypto/x509"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/canonical/go-efilib/internal/uefi"
 )
@@ -74,27 +76,40 @@ func (l *SignatureList) toUefiType() (out *uefi.EFI_SIGNATURE_LIST, err error) {
 }
 
 func (l *SignatureList) String() string {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, "EFI_SIGNATURE_LIST{ SignatureType: %v, SignatureHeader: %x, Signatures: [", l.Type, l.Header)
+	var b strings.Builder
+	fmt.Fprintf(&b, `EFI_SIGNATURE_LIST {
+	SignatureType: %v,
+	SignatureHeader: %x,
+	Signatures: [`, l.Type, l.Header)
 	for _, d := range l.Signatures {
-		fmt.Fprintf(&b, "\n\tEFI_SIGNATURE_DATA{ SignatureOwner: %v, Details: {", d.Owner)
+		fmt.Fprintf(&b, `
+		EFI_SIGNATURE_DATA {
+			SignatureOwner: %v,
+			Details: {`, d.Owner)
 		switch l.Type {
 		case CertSHA1Guid, CertSHA256Guid, CertSHA224Guid, CertSHA384Guid, CertSHA512Guid:
-			fmt.Fprintf(&b, "\n\t\tHash: %x", d.Data)
+			fmt.Fprintf(&b, " Hash: %x },", d.Data)
 		case CertX509Guid:
 			cert, err := x509.ParseCertificate(d.Data)
-			if err != nil {
-				fmt.Fprintf(&b, "%v", err)
+			switch {
+			case err != nil:
+				fmt.Fprintf(&b, " Cannot parse certificate: %v },", err)
+			default:
+				h := crypto.SHA256.New()
+				h.Write(cert.Raw)
+				fmt.Fprintf(&b, `
+				Subject: %v
+				Issuer: %v
+				SHA256 fingerprint: %x
+			},`, cert.Subject, cert.Issuer, h.Sum(nil))
 			}
-			h := crypto.SHA256.New()
-			h.Write(cert.RawTBSCertificate)
-			fmt.Fprintf(&b, "\n\t\tSubject: %v\n\t\tIssuer: %v\n\t\tSHA256 fingerprint: %x", cert.Subject, cert.Issuer, h.Sum(nil))
 		default:
-			fmt.Fprintf(&b, "<unrecognized type>")
+			b.WriteString(" <unrecognized type> ")
 		}
-		fmt.Fprintf(&b, "}}")
+		b.WriteString("\n\t\t},")
 	}
-	fmt.Fprintf(&b, "]")
+	b.WriteString("\n\t],\n}")
+
 	return b.String()
 }
 
@@ -127,20 +142,22 @@ func ReadSignatureList(r io.Reader) (*SignatureList, error) {
 type SignatureDatabase []*SignatureList
 
 func (db SignatureDatabase) String() string {
-	var s string
+	var b strings.Builder
+	b.WriteString("{")
 	for _, l := range db {
-		s = s + "\n" + l.String() + "\n"
+		fmt.Fprintf(&b, "\n\t%s,", indent(l, 1))
 	}
-	return s
+	b.WriteString("\n}")
+	return b.String()
 }
 
 // Bytes returns the serialized form of this signature database.
 func (db SignatureDatabase) Bytes() ([]byte, error) {
-	w := new(bytes.Buffer)
-	if err := db.Write(w); err != nil {
+	var buf bytes.Buffer
+	if err := db.Write(&buf); err != nil {
 		return nil, err
 	}
-	return w.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // Write serializes this signature database to w.

@@ -40,6 +40,7 @@ func (guid GUID) E() [6]uint8 {
 	return out
 }
 
+// String implements [fmt.Stringer].
 func (guid GUID) String() string {
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", guid.A(), guid.B(), guid.C(), guid.D(), guid.E())
 }

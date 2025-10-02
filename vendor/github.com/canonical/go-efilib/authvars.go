@@ -79,20 +79,24 @@ const (
 	// VariableAuthentication3TimestampType indicates that a
 	// VariableAuthentication3 is a timestamp based enhanced authentication
 	// and is implemented by the *VariableAuthentication3Timestamp type.
+	// It also indicates that the VariableAuthentication3Descriptor is
+	// implemented by *VariableAuthentication3TimestampDescriptor.
 	VariableAuthentication3TimestampType VariableAuthentication3Type = uefi.EFI_VARIABLE_AUTHENTICATION_3_TIMESTAMP_TYPE
 
 	// VariableAuthentication3iNonceType indicates that a
 	// VariableAuthentication3 is a nonce based enhanced authentication
 	// and is implemented by the *VariableAuthentication3Nonce type.
+	// It also indicates that the VariableAuthentication3Descriptor is
+	// implemented by *VariableAuthentication3NonceDescriptor.
 	VariableAuthentication3NonceType VariableAuthentication3Type = uefi.EFI_VARIABLE_AUTHENTICATION_3_NONCE_TYPE
 )
 
 // VariableAuthentication3 is used to authenticate updates to variables
 // with the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
 type VariableAuthentication3 interface {
-	Type() VariableAuthentication3Type
-	NewCert() WinCertificateGUID
-	SigningCert() WinCertificateGUID
+	Type() VariableAuthentication3Type // The authentication type (timestamp or nonce)
+	NewCert() WinCertificateGUID       // Optional new certificate in order to rotate the signing key for authenticated writes.
+	SigningCert() WinCertificateGUID   // The certificate associated with the current signing key.
 }
 
 type variableAuthentication3 struct {
@@ -116,6 +120,7 @@ type VariableAuthentication3Timestamp struct {
 	variableAuthentication3
 }
 
+// Type implements [VariableAuthentication3.Type].
 func (a *VariableAuthentication3Timestamp) Type() VariableAuthentication3Type {
 	return VariableAuthentication3TimestampType
 }
@@ -128,6 +133,7 @@ type VariableAuthentication3Nonce struct {
 	variableAuthentication3
 }
 
+// Type implements [VariableAuthentication3.Type].
 func (a *VariableAuthentication3Nonce) Type() VariableAuthentication3Type {
 	return VariableAuthentication3NonceType
 }
@@ -224,12 +230,24 @@ func ReadEnhancedVariableAuthentication(r io.Reader) (VariableAuthentication3, e
 	}
 }
 
+// VariableAuthentication3CertIdType describes the format of the
+// certificate ID.
+type VariableAuthentication3CertIdType uint8
+
+const (
+	// VariableAuthentication3CertIdSHA256Type indicates that a
+	VariableAuthentication3CertIdSHA256Type VariableAuthentication3CertIdType = uefi.EFI_VARIABLE_AUTHENTICATION_3_CERT_ID_SHA256
+)
+
 // VariableAuthentication3CertId corresponds to the EFI_VARIABLE_AUTHENTICATION_3_CERT_ID
 // type and represents the identification of an authority certificate
 // associated with a variable that has the EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS
 // attribute set.
 type VariableAuthentication3CertId interface {
-	// Matches determines whether the specified certificate matches this ID
+	// Type describes the format of this certificate ID.
+	Type() VariableAuthentication3CertIdType
+
+	// Matches determines whether the specified certificate matches this ID.
 	Matches(cert *x509.Certificate) bool
 }
 
@@ -237,8 +255,8 @@ type VariableAuthentication3CertId interface {
 // descriptor provided when reading the payload of a variable with the
 // EFI_VARIABLE_ENHANCED_AUTHENTICATED_ACCESS attribute set.
 type VariableAuthentication3Descriptor interface {
-	Type() VariableAuthentication3Type
-	Id() VariableAuthentication3CertId // The ID of the authority associated with the variable
+	Type() VariableAuthentication3Type // The authentication type (timestamp or nonce).
+	Id() VariableAuthentication3CertId // The ID of the authority associated with the variable.
 }
 
 // VariableAuthentication3CertIdSHA256 corresponds to a EFI_VARIABLE_AUTHENTICATION_3_CERT_ID
@@ -246,6 +264,12 @@ type VariableAuthentication3Descriptor interface {
 // SHA-256 digest of the TBS content of a X.509 certificate.
 type VariableAuthentication3CertIdSHA256 [32]byte
 
+// Type implements [VariableAuthentication3CertId.Type].
+func (VariableAuthentication3CertIdSHA256) Type() VariableAuthentication3CertIdType {
+	return VariableAuthentication3CertIdSHA256Type
+}
+
+// Matches implements [VariableAuthentication3CertId.Matches].
 func (i VariableAuthentication3CertIdSHA256) Matches(cert *x509.Certificate) bool {
 	h := crypto.SHA256.New()
 	h.Write(cert.RawTBSCertificate)
@@ -276,10 +300,12 @@ type VariableAuthentication3TimestampDescriptor struct {
 	id        VariableAuthentication3CertId
 }
 
+// Type implements [VariableAuthentication3Descriptor.Type].
 func (d *VariableAuthentication3TimestampDescriptor) Type() VariableAuthentication3Type {
 	return VariableAuthentication3TimestampType
 }
 
+// Id implements [VariableAuthentication3Descriptor.Id].
 func (d *VariableAuthentication3TimestampDescriptor) Id() VariableAuthentication3CertId {
 	return d.id
 }
@@ -293,10 +319,12 @@ type VariableAuthentication3NonceDescriptor struct {
 	id    VariableAuthentication3CertId
 }
 
+// Type implements [VariableAuthentication3Descriptor.Type].
 func (d *VariableAuthentication3NonceDescriptor) Type() VariableAuthentication3Type {
 	return VariableAuthentication3NonceType
 }
 
+// Id implements [VariableAuthentication3Descriptor.Id].
 func (d *VariableAuthentication3NonceDescriptor) Id() VariableAuthentication3CertId {
 	return d.id
 }

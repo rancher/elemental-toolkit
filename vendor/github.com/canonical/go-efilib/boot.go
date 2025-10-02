@@ -162,12 +162,12 @@ func WriteLoadOrderVariable(ctx context.Context, class LoadOptionClass, order []
 		}
 	}
 
-	w := new(bytes.Buffer)
-	if err := binary.Write(w, binary.LittleEndian, order); err != nil {
+	var buf bytes.Buffer
+	if err := binary.Write(&buf, binary.LittleEndian, order); err != nil {
 		return err
 	}
 
-	return WriteVariable(ctx, string(class)+"Order", GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, w.Bytes())
+	return WriteVariable(ctx, string(class)+"Order", GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, buf.Bytes())
 }
 
 // ReadLoadOptionVariable returns the LoadOption for the specified class and option number.
@@ -209,12 +209,12 @@ func WriteLoadOptionVariable(ctx context.Context, class LoadOptionClass, n uint1
 		return fmt.Errorf("invalid class %q: only suitable for Driver, SysPrep or Boot", class)
 	}
 
-	w := new(bytes.Buffer)
-	if err := option.Write(w); err != nil {
+	var buf bytes.Buffer
+	if err := option.Write(&buf); err != nil {
 		return fmt.Errorf("cannot serialize load option: %w", err)
 	}
 
-	return WriteVariable(ctx, fmt.Sprintf("%s%04x", class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, w.Bytes())
+	return WriteVariable(ctx, fmt.Sprintf("%s%04x", class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, buf.Bytes())
 }
 
 // DeleteLoadOptionVariable deletes the load option variable for the specified
