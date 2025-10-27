@@ -222,7 +222,7 @@ jobs:
         run: |
           make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -230,7 +230,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -284,7 +284,7 @@ jobs:
         run: |
           make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd test-installer
       - name: Upload serial console for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
@@ -292,7 +292,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
