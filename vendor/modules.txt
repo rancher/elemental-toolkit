@@ -111,12 +111,13 @@ github.com/docker/cli/cli/config/types
 ## explicit
 github.com/docker/distribution/digestset
 github.com/docker/distribution/registry/client/auth/challenge
-# github.com/docker/docker v27.5.0+incompatible
+# github.com/docker/docker v28.0.0+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/checkpoint
+github.com/docker/docker/api/types/common
 github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/events
 github.com/docker/docker/api/types/filters
@@ -124,6 +125,7 @@ github.com/docker/docker/api/types/image
 github.com/docker/docker/api/types/mount
 github.com/docker/docker/api/types/network
 github.com/docker/docker/api/types/registry
+github.com/docker/docker/api/types/storage
 github.com/docker/docker/api/types/strslice
 github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
@@ -133,6 +135,7 @@ github.com/docker/docker/api/types/versions
 github.com/docker/docker/api/types/volume
 github.com/docker/docker/client
 github.com/docker/docker/errdefs
+github.com/docker/docker/internal/lazyregexp
 github.com/docker/docker/internal/multierror
 # github.com/docker/docker-credential-helpers v0.8.2
 ## explicit; go 1.19
@@ -469,7 +472,7 @@ github.com/tredoe/osutil/user/crypt/sha512_crypt
 ## explicit; go 1.19
 github.com/twpayne/go-vfs/v4
 github.com/twpayne/go-vfs/v4/vfst
-# github.com/ulikunitz/xz v0.5.12
+# github.com/ulikunitz/xz v0.5.14
 ## explicit; go 1.12
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
