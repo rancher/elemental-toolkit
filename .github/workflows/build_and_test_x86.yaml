@@ -31,7 +31,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Check cache for OS image
         id: cache-os
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
@@ -52,7 +52,7 @@ jobs:
       - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
         name: Save OS image in cache
         id: save-os
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -77,7 +77,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
@@ -98,7 +98,7 @@ jobs:
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Save ISO
         id: save-iso
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -122,7 +122,7 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-disk
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
@@ -145,7 +145,7 @@ jobs:
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Save cached disk
         id: save-disk
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -204,7 +204,7 @@ jobs:
       - if: ${{ matrix.test != 'test-upgrade' }}
         name: Cached Disk
         id: cache-disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -266,7 +266,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
