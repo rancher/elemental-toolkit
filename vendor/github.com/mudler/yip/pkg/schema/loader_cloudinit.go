@@ -105,7 +105,6 @@ func (cloudInit) Load(s []byte, fs vfs.FS) (*YipConfig, error) {
 	}
 
 	result := &YipConfig{
-		Name: "Cloud init",
 		Stages: map[string][]Stage{
 			"boot": stages,
 			"initramfs": {{

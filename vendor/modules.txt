@@ -436,7 +436,7 @@ github.com/moby/sys/sequential
 # github.com/mudler/entities v0.0.0-20220905203055-68348bae0f49
 ## explicit; go 1.12
 github.com/mudler/entities/pkg/entities
-# github.com/mudler/yip v1.4.0
+# github.com/mudler/yip v1.4.4
 ## explicit; go 1.18
 github.com/mudler/yip/pkg/executor
 github.com/mudler/yip/pkg/logger
@@ -446,7 +446,7 @@ github.com/mudler/yip/pkg/schema/cloudinit
 github.com/mudler/yip/pkg/utils
 # github.com/nxadm/tail v1.4.8
 ## explicit; go 1.13
-# github.com/onsi/ginkgo/v2 v2.11.0
+# github.com/onsi/ginkgo/v2 v2.12.1
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -518,7 +518,7 @@ github.com/pkg/xattr
 # github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230907090440-1cc5d66b1725
 ## explicit; go 1.20
 github.com/rancher-sandbox/ele-testhelpers/vm
-# github.com/rancher-sandbox/linuxkit v1.0.1
+# github.com/rancher-sandbox/linuxkit v1.0.2
 ## explicit; go 1.18
 github.com/rancher-sandbox/linuxkit/providers
 # github.com/russross/blackfriday/v2 v2.1.0
@@ -580,11 +580,6 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/tredoe/osutil/v2 v2.0.0-rc.16
-## explicit; go 1.16
-github.com/tredoe/osutil/v2/userutil/crypt
-github.com/tredoe/osutil/v2/userutil/crypt/common
-github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt
 # github.com/twpayne/go-vfs v1.7.2
 ## explicit; go 1.13
 github.com/twpayne/go-vfs

@@ -25,10 +25,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ListCDROMs lists all the cdroms in the system
-func ListCDROMs() []Provider {
+// ListConfigDrives lists all the cdroms in the system the fill the config-drive standard
+func ListConfigDrives() []Provider {
 	// UserdataFiles is where to find the user data
-	var userdataFiles = []string{"user-data", "config"}
+	var userdataFiles = []string{"/openstack/latest/user_data"}
 	cdroms, err := filepath.Glob(cdromDevs)
 	if err != nil {
 		// Glob can only error on invalid pattern
@@ -36,15 +36,15 @@ func ListCDROMs() []Provider {
 	}
 	log.Debugf("cdrom devices to be checked: %v", cdroms)
 	// get the devices that match the cloud-init spec
-	cidevs := FindCIs("cidata")
-	log.Debugf("CIDATA devices to be checked: %v", cidevs)
+	cidevs := FindCIs("config-2")
+	log.Debugf("CONFIG-2 devices to be checked: %v", cidevs)
 	// merge the two, ensuring that the list is unique
 	cdroms = append(cidevs, cdroms...)
 	cdroms = uniqueString(cdroms)
 	log.Debugf("unique devices to be checked: %v", cdroms)
 	var providers []Provider
 	for _, device := range cdroms {
-		providers = append(providers, NewProviderCDROM(device, userdataFiles, "CDROM"))
+		providers = append(providers, NewProviderCDROM(device, userdataFiles, "CONFIG_DRIVE"))
 	}
 	return providers
 }

@@ -448,7 +448,7 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 		}
 		freeS := dev.computeFreeSpaceWithoutLast()
 		if size > freeS {
-			return "", errors.New(fmt.Sprintf("Not enough free space for to expand last partition up to %d sectors", size))
+			return "", fmt.Errorf("Not enough free space for to expand last partition up to %d sectors", size)
 		}
 	}
 
@@ -461,7 +461,11 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 	}
 
 	// Expand FS
-	fullDevice := fmt.Sprintf("%s%d", dev.Device, part.Number)
+	fullDevice, err := dev.findFullPartName(console, part.Number)
+	if err != nil {
+		return fullDevice, err
+	}
+
 	out, err = dev.expandFilesystem(fullDevice, console)
 	if err != nil {
 		return out, err
@@ -473,6 +477,24 @@ func (dev *Disk) ExpandLastPartition(l logger.Interface, size uint, console Cons
 	}
 
 	return out, nil
+}
+
+func (dev Disk) findFullPartName(console Console, partNum int) (string, error) {
+	allParts, err := console.Run(fmt.Sprintf("lsblk -ltnpo name %s", dev.Device))
+	if err != nil {
+		return allParts, fmt.Errorf("listing partitions %w", err)
+	}
+
+	for _, part := range strings.Split(allParts, "\n") {
+		matches, err := regexp.MatchString(fmt.Sprintf("%s.*%d", dev.Device, partNum), part)
+		if err != nil {
+			return "", err
+		}
+		if matches {
+			return part, nil
+		}
+	}
+	return "", errors.New("no partition found")
 }
 
 func (dev Disk) expandFilesystem(device string, console Console) (string, error) {
