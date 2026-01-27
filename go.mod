@@ -13,8 +13,8 @@ require (
 	github.com/jaypipes/ghw v0.9.1-0.20220511134554-dac2f19e1c76
 	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/mudler/yip v1.4.0
-	github.com/onsi/ginkgo/v2 v2.11.0
+	github.com/mudler/yip v1.4.4
+	github.com/onsi/ginkgo/v2 v2.12.1
 	github.com/onsi/gomega v1.27.10
 	github.com/rancher-sandbox/ele-testhelpers v0.0.0-20230907090440-1cc5d66b1725
 	github.com/sanity-io/litter v1.5.5
@@ -100,7 +100,7 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/xattr v0.4.9 // indirect
-	github.com/rancher-sandbox/linuxkit v1.0.1 // indirect
+	github.com/rancher-sandbox/linuxkit v1.0.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.37.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b // indirect
@@ -112,7 +112,6 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/tredoe/osutil/v2 v2.0.0-rc.16 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
