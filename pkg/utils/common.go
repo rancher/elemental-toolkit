@@ -178,7 +178,7 @@ func SyncData(log v1.Logger, runner v1.Runner, fs v1.FS, source string, target s
 
 	log.Infof("Starting rsync...")
 
-	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls"}
+	args := []string{"--progress", "--partial", "--human-readable", "--archive", "--xattrs", "--acls", "--filter=-x security.selinux"}
 	for _, e := range excludes {
 		args = append(args, fmt.Sprintf("--exclude=%s", e))
 	}
