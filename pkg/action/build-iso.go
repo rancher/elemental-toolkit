@@ -23,7 +23,7 @@ import (
 
 	"github.com/rancher/elemental-toolkit/pkg/constants"
 	"github.com/rancher/elemental-toolkit/pkg/elemental"
-	elementalError "github.com/rancher/elemental-toolkit/pkg/error"
+	elerr "github.com/rancher/elemental-toolkit/pkg/error"
 	"github.com/rancher/elemental-toolkit/pkg/live"
 	v1 "github.com/rancher/elemental-toolkit/pkg/types/v1"
 	"github.com/rancher/elemental-toolkit/pkg/utils"
@@ -70,7 +70,7 @@ func (b *BuildISOAction) ISORun() error {
 
 	isoTmpDir, err := utils.TempDir(b.cfg.Fs, "", "elemental-iso")
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CreateTempDir)
+		return elerr.NewFromError(err, elerr.CreateTempDir)
 	}
 	cleanup.Push(func() error { return b.cfg.Fs.RemoveAll(isoTmpDir) })
 
@@ -78,28 +78,28 @@ func (b *BuildISOAction) ISORun() error {
 	err = utils.MkdirAll(b.cfg.Fs, rootDir, constants.DirPerm)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed creating rootfs dir: %s", rootDir)
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+		return elerr.NewFromError(err, elerr.CreateDir)
 	}
 
 	uefiDir := filepath.Join(isoTmpDir, "uefi")
 	err = utils.MkdirAll(b.cfg.Fs, uefiDir, constants.DirPerm)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed creating uefi dir: %s", uefiDir)
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+		return elerr.NewFromError(err, elerr.CreateDir)
 	}
 
 	isoDir := filepath.Join(isoTmpDir, "iso")
 	err = utils.MkdirAll(b.cfg.Fs, isoDir, constants.DirPerm)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed creating iso dir: %s", isoDir)
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+		return elerr.NewFromError(err, elerr.CreateDir)
 	}
 
 	if b.cfg.OutDir != "" {
 		err = utils.MkdirAll(b.cfg.Fs, b.cfg.OutDir, constants.DirPerm)
 		if err != nil {
 			b.cfg.Logger.Errorf("Failed creating output dir: %s", b.cfg.OutDir)
-			return elementalError.NewFromError(err, elementalError.CreateDir)
+			return elerr.NewFromError(err, elerr.CreateDir)
 		}
 	}
 
@@ -112,7 +112,7 @@ func (b *BuildISOAction) ISORun() error {
 	err = utils.CreateDirStructure(b.cfg.Fs, rootDir)
 	if err != nil {
 		b.cfg.Logger.Errorf("Failed creating root directory structure: %v", err)
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+		return elerr.NewFromError(err, elerr.CreateDir)
 	}
 
 	if b.spec.Firmware == v1.EFI {
@@ -121,7 +121,7 @@ func (b *BuildISOAction) ISORun() error {
 			err = b.liveBoot.PrepareEFI(rootDir, uefiDir)
 			if err != nil {
 				b.cfg.Logger.Errorf("Failed fetching EFI data: %v", err)
-				return elementalError.NewFromError(err, elementalError.CopyData)
+				return elerr.NewFromError(err, elerr.CopyData)
 			}
 		}
 		err = b.applySources(uefiDir, b.spec.UEFI...)
@@ -136,7 +136,7 @@ func (b *BuildISOAction) ISORun() error {
 		err = b.liveBoot.PrepareISO(rootDir, isoDir)
 		if err != nil {
 			b.cfg.Logger.Errorf("Failed fetching bootloader binaries: %v", err)
-			return elementalError.NewFromError(err, elementalError.CreateFile)
+			return elerr.NewFromError(err, elerr.CreateFile)
 		}
 	}
 	err = b.applySources(isoDir, b.spec.Image...)
@@ -173,29 +173,29 @@ func (b BuildISOAction) prepareISORoot(isoDir string, rootDir string) error {
 	kernel, initrd, err := b.e.FindKernelInitrd(rootDir)
 	if err != nil {
 		b.cfg.Logger.Error("Could not find kernel and/or initrd")
-		return elementalError.NewFromError(err, elementalError.StatFile)
+		return elerr.NewFromError(err, elerr.StatFile)
 	}
 	err = utils.MkdirAll(b.cfg.Fs, filepath.Join(isoDir, live.IsoLoaderPath), constants.DirPerm)
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CreateDir)
+		return elerr.NewFromError(err, elerr.CreateDir)
 	}
 	//TODO document boot/kernel and boot/initrd expectation in bootloader config
 	b.cfg.Logger.Debugf("Copying Kernel file %s to iso root tree", kernel)
 	err = utils.CopyFile(b.cfg.Fs, kernel, filepath.Join(isoDir, constants.ISOKernelPath))
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
+		return elerr.NewFromError(err, elerr.CopyFile)
 	}
 
 	b.cfg.Logger.Debugf("Copying initrd file %s to iso root tree", initrd)
 	err = utils.CopyFile(b.cfg.Fs, initrd, filepath.Join(isoDir, constants.ISOInitrdPath))
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CopyFile)
+		return elerr.NewFromError(err, elerr.CopyFile)
 	}
 
 	b.cfg.Logger.Info("Creating squashfs...")
 	squashOptions := append(constants.GetDefaultSquashfsOptions(), b.cfg.SquashFsCompressionConfig...)
 	err = utils.CreateSquashFS(b.cfg.Runner, b.cfg.Logger, rootDir, filepath.Join(isoDir, constants.ISORootFile), squashOptions)
-	return elementalError.NewFromError(err, elementalError.MKFSCall)
+	return elerr.NewFromError(err, elerr.MKFSCall)
 }
 
 func (b BuildISOAction) createEFI(root string, img string) error {
@@ -254,7 +254,7 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 		b.cfg.Logger.Warnf("Overwriting already existing %s", outputFile)
 		err := b.cfg.Fs.Remove(outputFile)
 		if err != nil {
-			return elementalError.NewFromError(err, elementalError.RemoveFile)
+			return elerr.NewFromError(err, elerr.RemoveFile)
 		}
 	}
 
@@ -267,18 +267,18 @@ func (b BuildISOAction) burnISO(root, efiImg string) error {
 	out, err := b.cfg.Runner.Run(cmd, args...)
 	b.cfg.Logger.Debugf("Xorriso: %s", string(out))
 	if err != nil {
-		return elementalError.NewFromError(err, elementalError.CommandRun)
+		return elerr.NewFromError(err, elerr.CommandRun)
 	}
 
 	checksum, err := utils.CalcFileChecksum(b.cfg.Fs, outputFile)
 	if err != nil {
 		b.cfg.Logger.Errorf("checksum computation failed: %v", err)
-		return elementalError.NewFromError(err, elementalError.CalculateChecksum)
+		return elerr.NewFromError(err, elerr.CalculateChecksum)
 	}
 	err = b.cfg.Fs.WriteFile(fmt.Sprintf("%s.sha256", outputFile), []byte(fmt.Sprintf("%s %s\n", checksum, isoFileName)), 0644)
 	if err != nil {
 		b.cfg.Logger.Errorf("cannot write checksum file: %v", err)
-		return elementalError.NewFromError(err, elementalError.CreateFile)
+		return elerr.NewFromError(err, elerr.CreateFile)
 	}
 
 	return nil
@@ -288,7 +288,7 @@ func (b BuildISOAction) applySources(target string, sources ...*v1.ImageSource) 
 	for _, src := range sources {
 		_, err := b.e.DumpSource(target, src)
 		if err != nil {
-			return elementalError.NewFromError(err, elementalError.DumpSource)
+			return elerr.NewFromError(err, elerr.DumpSource)
 		}
 	}
 	return nil

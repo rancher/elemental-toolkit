@@ -16,15 +16,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Required for go-header check.
       - name: Install Go
-        uses: actions/setup-go@v3.3.1
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - name: Analysis
         uses: golangci/golangci-lint-action@v3
         with:
-          args: -v
+          args: -v --new-from-rev=${{GITHUB_BASE_REF}}
       - name: Build
         run: make build-cli
       - name: Run tests
