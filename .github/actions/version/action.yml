@@ -19,3 +19,4 @@ runs:
         version="${{ env.hash }}"
         version=${version::16}
         echo "version=${version}" >> $GITHUB_OUTPUT
+
