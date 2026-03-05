@@ -30,7 +30,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
           enableCrossOsArchive: true
@@ -50,7 +50,7 @@ jobs:
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Save ISO
         id: save-iso
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
         with:
@@ -69,7 +69,7 @@ jobs:
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-check
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
@@ -94,7 +94,7 @@ jobs:
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Save cached disk
         id: cache-disk
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
         with:
@@ -126,7 +126,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached Disk
         id: cache-disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
         with:
@@ -177,7 +177,7 @@ jobs:
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
         with:

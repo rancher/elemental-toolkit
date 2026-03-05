@@ -50,7 +50,7 @@ jobs:
         uses: ./.github/actions/version
       - name: Check cache for Toolkit image
         id: cache-toolkit
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           cache-name: toolkit-build-x86_64-${{ github.event_name }}
           lookup-only: true
@@ -67,7 +67,7 @@ jobs:
       - if: ${{ steps.cache-toolkit.outputs.cache-hit != 'true' }}
         name: Save toolkit image in cache
         id: save-toolkit
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         env:
           cache-name: toolkit-build-x86_64-${{ github.event_name }}
         with:
