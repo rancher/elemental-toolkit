@@ -3,7 +3,7 @@
 
 name: Cleanup caches by a branch
 on:
-  pull_request_target:
+  pull_request:
     types:
       - synchronize
       - closed
@@ -18,11 +18,12 @@ jobs:
   version:
     permissions:
       contents: read
+    if: github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
@@ -37,6 +38,7 @@ jobs:
       #  https://docs.github.com/en/rest/actions/cache?apiVersion=2022-11-28#delete-a-github-actions-cache-for-a-repository-using-a-cache-id
       actions: write
       contents: read
+    if: github.event.pull_request.head.repo.fork == false
     needs:
       - version
     runs-on: ubuntu-24.04
@@ -63,4 +65,4 @@ jobs:
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.event_name == 'workflow_run' && github.ref_name || format('refs/pull/{0}/merge', github.event.pull_request.number) }} 
           VERSION: ${{ needs.version.outputs.version }}
-          DELETE_ALL: ${{ github.event_name == 'workflow_run' && 'yes' || github.event_name == 'pull_request_target' && github.event.action == 'closed' && 'yes' || 'no' }}
+          DELETE_ALL: ${{ github.event_name == 'workflow_run' && 'yes' || github.event_name == 'pull_request' && github.event.action == 'closed' && 'yes' || 'no' }}
