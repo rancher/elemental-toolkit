@@ -469,7 +469,7 @@ github.com/tredoe/osutil/user/crypt/sha512_crypt
 ## explicit; go 1.19
 github.com/twpayne/go-vfs/v4
 github.com/twpayne/go-vfs/v4/vfst
-# github.com/ulikunitz/xz v0.5.12
+# github.com/ulikunitz/xz v0.5.15
 ## explicit; go 1.12
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
