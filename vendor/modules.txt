@@ -26,7 +26,7 @@ github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/osversion
 github.com/Microsoft/hcsshim/pkg/ociwclayer
-# github.com/bramvdbogaerde/go-scp v1.5.0
+# github.com/bramvdbogaerde/go-scp v1.6.0
 ## explicit; go 1.21
 github.com/bramvdbogaerde/go-scp
 # github.com/canonical/go-efilib v1.6.0
