@@ -24,14 +24,14 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }} 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Check cache for OS image
         id: cache-os
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
@@ -52,7 +52,7 @@ jobs:
       - if: ${{ steps.cache-os.outputs.cache-hit != 'true' }}
         name: Save OS image in cache
         id: save-os
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -70,14 +70,14 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
           lookup-only: true
@@ -98,7 +98,7 @@ jobs:
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Save ISO
         id: save-iso
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -116,13 +116,13 @@ jobs:
       ARCH: x86_64
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         id: cache-disk
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
@@ -130,12 +130,6 @@ jobs:
           path: /tmp/*.qcow2
           key: ${{ env.cache-name }}-${{ inputs.version }}
           lookup-only: true
-      - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
-        name: Cleanup worker
-        run: |
-          sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-          sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-          sudo df -h
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Pull images
         uses: ./.github/actions/fetchimages
@@ -151,7 +145,7 @@ jobs:
       - if: ${{ steps.cache-disk.outputs.cache-hit != 'true' }}
         name: Save cached disk
         id: save-disk
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -192,16 +186,16 @@ jobs:
         test: ${{ fromJson(needs.detect.outputs.tests) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: go.mod
       - run: |
           git fetch --prune --unshallow
-      - if: ${{ matrix.test == 'test-upgrade' }}
+      - if: ${{ matrix.test == 'test-upgrade' || matrix.test == 'test-downgrade' }}
         name: Pull images
         uses: ./.github/actions/fetchimages
         with:
@@ -210,7 +204,7 @@ jobs:
       - if: ${{ matrix.test != 'test-upgrade' }}
         name: Cached Disk
         id: cache-disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: disk-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -228,7 +222,7 @@ jobs:
         run: |
           make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -236,7 +230,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -261,18 +255,18 @@ jobs:
       COS_TIMEOUT: 1600
       VERSION: ${{ inputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "${{ github.event.pull_request.head.sha }}"
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: go.mod
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: iso-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
         with:
@@ -290,7 +284,7 @@ jobs:
         run: |
           make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/OVMF/OVMF_CODE_4M.fd test-installer
       - name: Upload serial console for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
@@ -298,7 +292,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
