@@ -27,7 +27,7 @@ runs:
     - if: ${{ inputs.toolkit == 'true' }}
       name: Fetch toolkit image
       id: cache-toolkit
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       env:
         cache-name: toolkit-build-x86_64-${{ github.event_name }}
       with:
@@ -43,7 +43,7 @@ runs:
     - if: ${{ inputs.os == 'true' }}
       name: Fetch OS image
       id: cache-os
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       env:
         cache-name: os-build-x86_64-${{ inputs.flavor }}-${{ github.event_name }}
       with:
