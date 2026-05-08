@@ -1,8 +1,8 @@
 # run `make build` to build local/elemental-toolkit image
 ARG TOOLKIT_REPO=local/elemental-toolkit
 ARG VERSION=latest
-ARG OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
-ARG OS_VERSION=latest
+ARG OS_IMAGE=registry.opensuse.org/opensuse/leap
+ARG OS_VERSION=16.0
 
 FROM ${TOOLKIT_REPO}:${VERSION} AS toolkit
 
@@ -53,7 +53,8 @@ RUN ARCH=$(uname -m); \
       iproute2 \
       podman \
       audit \
-      patterns-microos-selinux \
+      patterns-base-selinux \
+      container-selinux \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
