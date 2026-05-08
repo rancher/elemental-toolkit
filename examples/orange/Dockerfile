@@ -53,14 +53,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   podman \
   btrfs-progs \
   btrfsmaintenance \
-  xz-utils && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
+  xz-utils
 
 # Hack to prevent systemd-firstboot failures while setting keymap, this is known
 # Debian issue (T_T) https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790955
-ARG KBD=2.6.4
-RUN curl -L https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-${KBD}.tar.xz --output kbd-${KBD}.tar.xz && \
-    tar xaf kbd-${KBD}.tar.xz && mkdir -p /usr/share/keymaps && cp -Rp kbd-${KBD}/data/keymaps/* /usr/share/keymaps/
+RUN DEBIAN_FRONTEND=noninteractive apt install -y console-data || true && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    cd /usr/share/keymaps/i386/qwerty && \
+      find . -name '*.kmap.gz' -exec sh -c 'ln -s "$0" "${0%.kmap.gz}.map.gz"' {} \;
 
 # Symlink grub2-editenv
 RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
