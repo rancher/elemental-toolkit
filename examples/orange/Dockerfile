@@ -51,13 +51,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
   locales \
   kbd \
   podman \
+  btrfs-progs \
+  btrfsmaintenance \
   xz-utils
 
 # Hack to prevent systemd-firstboot failures while setting keymap, this is known
 # Debian issue (T_T) https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790955
-ARG KBD=2.6.4
-RUN curl -L https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-${KBD}.tar.xz --output kbd-${KBD}.tar.xz && \
-    tar xaf kbd-${KBD}.tar.xz && mkdir -p /usr/share/keymaps && cp -Rp kbd-${KBD}/data/keymaps/* /usr/share/keymaps/
+RUN DEBIAN_FRONTEND=noninteractive apt install -y console-data || true && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    cd /usr/share/keymaps/i386/qwerty && \
+      find . -name '*.kmap.gz' -exec sh -c 'ln -s "$0" "${0%.kmap.gz}.map.gz"' {} \;
 
 # Symlink grub2-editenv
 RUN ln -sf /usr/bin/grub-editenv /usr/bin/grub2-editenv
@@ -79,11 +82,11 @@ RUN locale-gen --lang en_US.UTF-8
 RUN elemental --debug init -f
 
 # Update os-release file with some metadata
-RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
+RUN echo IMAGE_REPO=\"${REPO}\"             >> /etc/os-release && \
     echo IMAGE_TAG=\"${VERSION}\"           >> /etc/os-release && \
-    echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
-    echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release
-RUN echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+    echo IMAGE=\"${REPO}:${VERSION}\"       >> /etc/os-release && \
+    echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release && \
+    echo GRUB_ENTRY_NAME=\"Elemental\"      >> /etc/os-release
 
 # Adding specific network configuration based on netplan
 ADD 05_network.yaml /system/oem/05_network.yaml
