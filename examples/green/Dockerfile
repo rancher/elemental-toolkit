@@ -1,8 +1,8 @@
 # run `make build` to build local/elemental-toolkit image
 ARG TOOLKIT_REPO=local/elemental-toolkit
 ARG VERSION=latest
-ARG OS_IMAGE=registry.opensuse.org/opensuse/tumbleweed
-ARG OS_VERSION=latest
+ARG OS_IMAGE=registry.opensuse.org/opensuse/leap
+ARG OS_VERSION=16.0
 
 FROM ${TOOLKIT_REPO}:${VERSION} AS toolkit
 
@@ -59,8 +59,9 @@ RUN ARCH=$(uname -m); \
       sed \
       iproute2 \
       podman \
-      # audit \ comment out 'audit' package, installation fails in containers boo#1231236
-      patterns-microos-selinux \
+      audit \
+      patterns-base-selinux \
+      container-selinux \
       btrfsprogs \
       btrfsmaintenance \
       snapper \
@@ -90,11 +91,11 @@ ADD snapshotter.yaml /etc/elemental/config.d/snapshotter.yaml
 RUN elemental --debug init --force
 
 # Update os-release file with some metadata
-RUN echo IMAGE_REPO=\"${REPO}\"         >> /etc/os-release && \
+RUN echo IMAGE_REPO=\"${REPO}\"             >> /etc/os-release && \
     echo IMAGE_TAG=\"${VERSION}\"           >> /etc/os-release && \
-    echo IMAGE=\"${REPO}:${VERSION}\" >> /etc/os-release && \
+    echo IMAGE=\"${REPO}:${VERSION}\"       >> /etc/os-release && \
     echo TIMESTAMP="`date +'%Y%m%d%H%M%S'`" >> /etc/os-release && \
-    echo GRUB_ENTRY_NAME=\"Elemental\" >> /etc/os-release
+    echo GRUB_ENTRY_NAME=\"Elemental\"      >> /etc/os-release
 
 # Good for validation after the build
 CMD ["/bin/bash"]
