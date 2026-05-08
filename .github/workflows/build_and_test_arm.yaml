@@ -25,12 +25,12 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
           enableCrossOsArchive: true
@@ -50,7 +50,7 @@ jobs:
       - if: ${{ steps.cache-iso.outputs.cache-hit != 'true' }}
         name: Save ISO
         id: save-iso
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
         with:
@@ -65,11 +65,11 @@ jobs:
       FLAVOR: ${{ inputs.flavor }}
       ARCH: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - run: |
           git fetch --prune --unshallow
       - name: Checks cached Disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         id: cache-check
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
@@ -94,7 +94,7 @@ jobs:
       - if: ${{ steps.cache-check.outputs.cache-hit != 'true' }}
         name: Save cached disk
         id: cache-disk
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
         with:
@@ -117,16 +117,16 @@ jobs:
           - test-smoke
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: go.mod
       - run: |
           git fetch --prune --unshallow
       - name: Cached Disk
         id: cache-disk
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: pr-disk-build-aarch64-${{ inputs.flavor }}
         with:
@@ -138,7 +138,7 @@ jobs:
         run: |
           make DISK=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.qcow2 ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd ${{ matrix.test }}
       - name: Upload serial console for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -146,7 +146,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for ${{ matrix.test }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-${{ matrix.test }}.log
@@ -168,16 +168,16 @@ jobs:
       ARCH: aarch64
       COS_TIMEOUT: 1600
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
           go-version-file: go.mod
       - run: |
           git fetch --prune --unshallow
       - name: Cached ISO
         id: cache-iso
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         env:
           cache-name: pr-iso-build-aarch64-${{ inputs.flavor }}
         with:
@@ -189,7 +189,7 @@ jobs:
         run: |
           make ISO=/tmp/elemental-${{ env.FLAVOR }}.${{ env.ARCH}}.iso ELMNTL_ACCEL=none ELMNTL_MACHINETYPE=virt ELMNTL_TARGETARCH=${{ env.ARCH }} ELMNTL_FIRMWARE=/usr/share/AAVMF/AAVMF_CODE.fd test-installer
       - name: Upload serial console for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: serial-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
@@ -197,7 +197,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
       - name: Upload qemu stdout for installer tests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: failure()
         with:
           name: vmstdout-${{ env.ARCH }}-${{ env.FLAVOR }}-installer.log
