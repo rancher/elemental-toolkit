@@ -44,7 +44,7 @@ Requires:       util-linux
 Requires:       gptfdisk
 
 %if 0%{?suse_version}
-BuildRequires:  golang(API) >= 1.23
+BuildRequires:  golang(API) >= 1.25
 BuildRequires:  golang-packaging
 %{go_provides}
 %else
