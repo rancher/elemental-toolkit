@@ -53,7 +53,7 @@ require (
 	github.com/rancher-sandbox/linuxkit v1.0.2 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/tredoe/osutil v1.5.0 //indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vishvananda/netlink v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3 // indirect
