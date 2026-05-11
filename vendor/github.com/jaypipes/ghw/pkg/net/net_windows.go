@@ -8,7 +8,7 @@ package net
 import (
 	"strings"
 
-	"github.com/StackExchange/wmi"
+	"github.com/yusufpapurcu/wmi"
 )
 
 const wqlNetworkAdapter = "SELECT Description, DeviceID, Index, InterfaceIndex, MACAddress, Manufacturer, Name, NetConnectionID, ProductName, ServiceName, PhysicalAdapter FROM Win32_NetworkAdapter"
@@ -45,10 +45,10 @@ func nics(win32NetDescriptions []win32NetworkAdapter) []*NIC {
 		nic := &NIC{
 			Name:         netDeviceName(nicDescription),
 			MacAddress:   *nicDescription.MACAddress,
+			MACAddress:   *nicDescription.MACAddress,
 			IsVirtual:    netIsVirtual(nicDescription),
 			Capabilities: []*NICCapability{},
 		}
-		// Appenging NIC to NICs
 		nics = append(nics, nic)
 	}
 

@@ -15,24 +15,19 @@ import (
 	"github.com/jaypipes/ghw/pkg/context"
 	"github.com/jaypipes/ghw/pkg/marshal"
 	"github.com/jaypipes/ghw/pkg/option"
-	pciaddr "github.com/jaypipes/ghw/pkg/pci/address"
 	"github.com/jaypipes/ghw/pkg/topology"
 	"github.com/jaypipes/ghw/pkg/util"
 )
 
-// backward compatibility, to be removed in 1.0.0
-type Address pciaddr.Address
-
-// backward compatibility, to be removed in 1.0.0
-var AddressFromString = pciaddr.FromString
-
 type Device struct {
 	// The PCI address of the device
-	Address   string         `json:"address"`
-	Vendor    *pcidb.Vendor  `json:"vendor"`
-	Product   *pcidb.Product `json:"product"`
-	Revision  string         `json:"revision"`
-	Subsystem *pcidb.Product `json:"subsystem"`
+	Address string `json:"address"`
+	// The PCI address of the parent device
+	ParentAddress string         `json:"parent_address"`
+	Vendor        *pcidb.Vendor  `json:"vendor"`
+	Product       *pcidb.Product `json:"product"`
+	Revision      string         `json:"revision"`
+	Subsystem     *pcidb.Product `json:"subsystem"`
 	// optional subvendor/sub-device information
 	Class *pcidb.Class `json:"class"`
 	// optional sub-class for the device
@@ -43,6 +38,9 @@ type Device struct {
 	// architecture is not NUMA.
 	Node   *topology.Node `json:"node,omitempty"`
 	Driver string         `json:"driver"`
+	// for IOMMU Groups see also:
+	// https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-iommu-deep-dive
+	IOMMUGroup string `json:"iommu_group"`
 }
 
 type devIdent struct {
@@ -51,15 +49,17 @@ type devIdent struct {
 }
 
 type devMarshallable struct {
-	Driver    string   `json:"driver"`
-	Address   string   `json:"address"`
-	Vendor    devIdent `json:"vendor"`
-	Product   devIdent `json:"product"`
-	Revision  string   `json:"revision"`
-	Subsystem devIdent `json:"subsystem"`
-	Class     devIdent `json:"class"`
-	Subclass  devIdent `json:"subclass"`
-	Interface devIdent `json:"programming_interface"`
+	Driver        string   `json:"driver"`
+	Address       string   `json:"address"`
+	ParentAddress string   `json:"parent_address"`
+	Vendor        devIdent `json:"vendor"`
+	Product       devIdent `json:"product"`
+	Revision      string   `json:"revision"`
+	Subsystem     devIdent `json:"subsystem"`
+	Class         devIdent `json:"class"`
+	Subclass      devIdent `json:"subclass"`
+	Interface     devIdent `json:"programming_interface"`
+	IOMMUGroup    string   `json:"iommu_group"`
 }
 
 // NOTE(jaypipes) Device has a custom JSON marshaller because we don't want
@@ -68,8 +68,9 @@ type devMarshallable struct {
 // human-readable name of the vendor, product, class, etc.
 func (d *Device) MarshalJSON() ([]byte, error) {
 	dm := devMarshallable{
-		Driver:  d.Driver,
-		Address: d.Address,
+		Driver:        d.Driver,
+		Address:       d.Address,
+		ParentAddress: d.ParentAddress,
 		Vendor: devIdent{
 			ID:   d.Vendor.ID,
 			Name: d.Vendor.Name,
@@ -95,6 +96,7 @@ func (d *Device) MarshalJSON() ([]byte, error) {
 			ID:   d.ProgrammingInterface.ID,
 			Name: d.ProgrammingInterface.Name,
 		},
+		IOMMUGroup: d.IOMMUGroup,
 	}
 	return json.Marshal(dm)
 }
@@ -123,22 +125,11 @@ func (d *Device) String() string {
 }
 
 type Info struct {
+	db   *pcidb.PCIDB
 	arch topology.Architecture
 	ctx  *context.Context
 	// All PCI devices on the host system
 	Devices []*Device
-	// hash of class ID -> class information
-	// DEPRECATED. Will be removed in v1.0. Please use
-	// github.com/jaypipes/pcidb to explore PCIDB information
-	Classes map[string]*pcidb.Class `json:"-"`
-	// hash of vendor ID -> vendor information
-	// DEPRECATED. Will be removed in v1.0. Please use
-	// github.com/jaypipes/pcidb to explore PCIDB information
-	Vendors map[string]*pcidb.Vendor `json:"-"`
-	// hash of vendor ID + product/device ID -> product information
-	// DEPRECATED. Will be removed in v1.0. Please use
-	// github.com/jaypipes/pcidb to explore PCIDB information
-	Products map[string]*pcidb.Product `json:"-"`
 }
 
 func (i *Info) String() string {
@@ -153,7 +144,7 @@ func New(opts ...*option.Option) (*Info, error) {
 	// by default we don't report NUMA information;
 	// we will only if are sure we are running on NUMA architecture
 	info := &Info{
-		arch: topology.ARCHITECTURE_SMP,
+		arch: topology.ArchitectureSMP,
 		ctx:  ctx,
 	}
 
@@ -166,6 +157,9 @@ func New(opts ...*option.Option) (*Info, error) {
 			info.arch = topo.Architecture
 		} else {
 			ctx.Warn("error detecting system topology: %v", err)
+		}
+		if merged.PCIDB != nil {
+			info.db = merged.PCIDB
 		}
 		return info.load()
 	}

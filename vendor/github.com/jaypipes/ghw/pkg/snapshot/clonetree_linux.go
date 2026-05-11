@@ -7,7 +7,6 @@
 package snapshot
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -43,6 +42,7 @@ func ExpectedCloneStaticContent() []string {
 		"/sys/devices/system/node/online",
 		"/sys/devices/system/node/possible",
 		"/sys/devices/system/node/node*/cpu*",
+		"/sys/devices/system/node/node*/cpu*/online",
 		"/sys/devices/system/node/node*/distance",
 		"/sys/devices/system/node/node*/meminfo",
 		"/sys/devices/system/node/node*/memory*",
@@ -67,7 +67,7 @@ func cloneContentByClass(devClass string, subEntries []string, filterName filter
 	// warning: don't use the context package here, this means not even the linuxpath package.
 	// TODO(fromani) remove the path duplication
 	sysClass := filepath.Join("sys", "class", devClass)
-	entries, err := ioutil.ReadDir(sysClass)
+	entries, err := os.ReadDir(sysClass)
 	if err != nil {
 		// we should not import context, hence we can't Warn()
 		return fileSpecs

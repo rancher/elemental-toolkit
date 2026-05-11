@@ -7,7 +7,7 @@ package topology
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -21,9 +21,9 @@ import (
 func (i *Info) load() error {
 	i.Nodes = topologyNodes(i.ctx)
 	if len(i.Nodes) == 1 {
-		i.Architecture = ARCHITECTURE_SMP
+		i.Architecture = ArchitectureSMP
 	} else {
-		i.Architecture = ARCHITECTURE_NUMA
+		i.Architecture = ArchitectureNUMA
 	}
 	return nil
 }
@@ -32,7 +32,7 @@ func topologyNodes(ctx *context.Context) []*Node {
 	paths := linuxpath.New(ctx)
 	nodes := make([]*Node, 0)
 
-	files, err := ioutil.ReadDir(paths.SysDevicesSystemNode)
+	files, err := os.ReadDir(paths.SysDevicesSystemNode)
 	if err != nil {
 		ctx.Warn("failed to determine nodes: %s\n", err)
 		return nodes
@@ -89,7 +89,7 @@ func distancesForNode(ctx *context.Context, nodeID int) ([]int, error) {
 		"distance",
 	)
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ package snapshot
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,6 +40,7 @@ func CloneTreeInto(scratchDir string) error {
 func ExpectedCloneContent() []string {
 	fileSpecs := ExpectedCloneStaticContent()
 	fileSpecs = append(fileSpecs, ExpectedCloneNetContent()...)
+	fileSpecs = append(fileSpecs, ExpectedCloneUSBContent()...)
 	fileSpecs = append(fileSpecs, ExpectedClonePCIContent()...)
 	fileSpecs = append(fileSpecs, ExpectedCloneGPUContent()...)
 	return fileSpecs
@@ -182,7 +182,7 @@ func copyLink(path, targetPath string) error {
 }
 
 func copyPseudoFile(path, targetPath string) error {
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
