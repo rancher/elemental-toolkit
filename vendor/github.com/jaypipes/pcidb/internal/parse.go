@@ -4,28 +4,38 @@
 // See the COPYING file in the root project directory for full text.
 //
 
-package pcidb
+package internal
 
 import (
 	"bufio"
+	"io"
 	"strings"
+
+	"github.com/jaypipes/pcidb/types"
 )
 
-func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
+// FromReader reads the supplied io.ReadCloser representing a PCIIDS database
+// file or gzipped database file and returns a populated pcidb.DB with parsed
+// PCI product, vendor and class information.
+func FromReader(
+	f io.ReadCloser,
+) *types.DB {
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
 	inClassBlock := false
-	db.Classes = make(map[string]*Class, 20)
-	db.Vendors = make(map[string]*Vendor, 200)
-	db.Products = make(map[string]*Product, 1000)
-	subclasses := make([]*Subclass, 0)
-	progIfaces := make([]*ProgrammingInterface, 0)
-	var curClass *Class
-	var curSubclass *Subclass
-	var curProgIface *ProgrammingInterface
-	vendorProducts := make([]*Product, 0)
-	var curVendor *Vendor
-	var curProduct *Product
-	var curSubsystem *Product
-	productSubsystems := make([]*Product, 0)
+	classes := make(map[string]*types.Class, 20)
+	vendors := make(map[string]*types.Vendor, 200)
+	products := make(map[string]*types.Product, 1000)
+	subclasses := make([]*types.Subclass, 0)
+	progIfaces := make([]*types.ProgrammingInterface, 0)
+	var curClass *types.Class
+	var curSubclass *types.Subclass
+	var curProgIface *types.ProgrammingInterface
+	vendorProducts := make([]*types.Product, 0)
+	var curVendor *types.Vendor
+	var curProduct *types.Product
+	var curSubsystem *types.Product
+	productSubsystems := make([]*types.Product, 0)
 	for scanner.Scan() {
 		line := scanner.Text()
 		// skip comments and blank lines
@@ -42,17 +52,17 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 			if curClass != nil {
 				// finalize existing class because we found a new class block
 				curClass.Subclasses = subclasses
-				subclasses = make([]*Subclass, 0)
+				subclasses = make([]*types.Subclass, 0)
 			}
 			inClassBlock = true
 			classID := string(lineBytes[2:4])
 			className := string(lineBytes[6:])
-			curClass = &Class{
+			curClass = &types.Class{
 				ID:         classID,
 				Name:       className,
 				Subclasses: subclasses,
 			}
-			db.Classes[curClass.ID] = curClass
+			classes[curClass.ID] = curClass
 			continue
 		}
 
@@ -65,17 +75,17 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 			if curVendor != nil {
 				// finalize existing vendor because we found a new vendor block
 				curVendor.Products = vendorProducts
-				vendorProducts = make([]*Product, 0)
+				vendorProducts = make([]*types.Product, 0)
 			}
 			inClassBlock = false
 			vendorID := string(lineBytes[0:4])
 			vendorName := string(lineBytes[6:])
-			curVendor = &Vendor{
+			curVendor = &types.Vendor{
 				ID:       vendorID,
 				Name:     vendorName,
 				Products: vendorProducts,
 			}
-			db.Vendors[curVendor.ID] = curVendor
+			vendors[curVendor.ID] = curVendor
 			continue
 		}
 
@@ -97,11 +107,11 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 				if curSubclass != nil {
 					// finalize existing subclass because we found a new subclass block
 					curSubclass.ProgrammingInterfaces = progIfaces
-					progIfaces = make([]*ProgrammingInterface, 0)
+					progIfaces = make([]*types.ProgrammingInterface, 0)
 				}
 				subclassID := string(lineBytes[1:3])
 				subclassName := string(lineBytes[5:])
-				curSubclass = &Subclass{
+				curSubclass = &types.Subclass{
 					ID:                    subclassID,
 					Name:                  subclassName,
 					ProgrammingInterfaces: progIfaces,
@@ -111,18 +121,18 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 				if curProduct != nil {
 					// finalize existing product because we found a new product block
 					curProduct.Subsystems = productSubsystems
-					productSubsystems = make([]*Product, 0)
+					productSubsystems = make([]*types.Product, 0)
 				}
 				productID := string(lineBytes[1:5])
 				productName := string(lineBytes[7:])
 				productKey := curVendor.ID + productID
-				curProduct = &Product{
+				curProduct = &types.Product{
 					VendorID: curVendor.ID,
 					ID:       productID,
 					Name:     productName,
 				}
 				vendorProducts = append(vendorProducts, curProduct)
-				db.Products[productKey] = curProduct
+				products[productKey] = curProduct
 			}
 		} else {
 			// Lines beginning with two TAB characters are *either* a subsystem
@@ -141,7 +151,7 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 			if inClassBlock {
 				progIfaceID := string(lineBytes[2:4])
 				progIfaceName := string(lineBytes[6:])
-				curProgIface = &ProgrammingInterface{
+				curProgIface = &types.ProgrammingInterface{
 					ID:   progIfaceID,
 					Name: progIfaceName,
 				}
@@ -150,7 +160,7 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 				vendorID := string(lineBytes[2:6])
 				subsystemID := string(lineBytes[7:11])
 				subsystemName := string(lineBytes[13:])
-				curSubsystem = &Product{
+				curSubsystem = &types.Product{
 					VendorID: vendorID,
 					ID:       subsystemID,
 					Name:     subsystemName,
@@ -159,5 +169,9 @@ func parseDBFile(db *PCIDB, scanner *bufio.Scanner) error {
 			}
 		}
 	}
-	return nil
+	return &types.DB{
+		Classes:  classes,
+		Products: products,
+		Vendors:  vendors,
+	}
 }
