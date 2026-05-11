@@ -42,7 +42,7 @@ Requires:       util-linux
 Requires:       gptfdisk
 
 %if 0%{?suse_version}
-BuildRequires:  golang(API) >= 1.23
+BuildRequires:  golang(API) >= 1.25
 BuildRequires:  golang-packaging
 %{go_provides}
 %else
@@ -51,7 +51,7 @@ BuildRequires:  golang-packaging
 %global commit     d1ae3f9a425de2618f9058f3b37583ef3ce52c7d
 %gometa
 %if (0%{?centos_version} == 800) || (0%{?rhel_version} == 800)
-BuildRequires:  go1.23
+BuildRequires:  go1.25
 %else
 BuildRequires:  compiler(go-compiler)
 %endif
