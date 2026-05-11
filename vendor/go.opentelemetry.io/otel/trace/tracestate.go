@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package trace // import "go.opentelemetry.io/otel/trace"
 
@@ -72,7 +61,10 @@ func checkValue(val string) bool {
 func checkKeyRemain(key string) bool {
 	// ( lcalpha / DIGIT / "_" / "-"/ "*" / "/" )
 	for _, v := range key {
-		if isAlphaNum(byte(v)) {
+		if v > 127 {
+			return false
+		}
+		if isAlphaNumASCII(v) {
 			continue
 		}
 		switch v {
@@ -91,7 +83,7 @@ func checkKeyRemain(key string) bool {
 //
 // param n is remain part length, should be 255 in simple-key or 13 in system-id.
 func checkKeyPart(key string, n int) bool {
-	if len(key) == 0 {
+	if key == "" {
 		return false
 	}
 	first := key[0] // key's first char
@@ -100,7 +92,7 @@ func checkKeyPart(key string, n int) bool {
 	return ret && checkKeyRemain(key[1:])
 }
 
-func isAlphaNum(c byte) bool {
+func isAlphaNumASCII[T rune | byte](c T) bool {
 	if c >= 'a' && c <= 'z' {
 		return true
 	}
@@ -113,10 +105,10 @@ func isAlphaNum(c byte) bool {
 //
 // param n is remain part length, should be 240 exactly.
 func checkKeyTenant(key string, n int) bool {
-	if len(key) == 0 {
+	if key == "" {
 		return false
 	}
-	return isAlphaNum(key[0]) && len(key[1:]) <= n && checkKeyRemain(key[1:])
+	return isAlphaNumASCII(key[0]) && len(key[1:]) <= n && checkKeyRemain(key[1:])
 }
 
 // based on the W3C Trace Context specification
@@ -202,7 +194,7 @@ func ParseTraceState(ts string) (TraceState, error) {
 	for ts != "" {
 		var memberStr string
 		memberStr, ts, _ = strings.Cut(ts, listDelimiters)
-		if len(memberStr) == 0 {
+		if memberStr == "" {
 			continue
 		}
 
@@ -269,6 +261,16 @@ func (ts TraceState) Get(key string) string {
 	}
 
 	return ""
+}
+
+// Walk walks all key value pairs in the TraceState by calling f
+// Iteration stops if f returns false.
+func (ts TraceState) Walk(f func(key, value string) bool) {
+	for _, m := range ts.list {
+		if !f(m.Key, m.Value) {
+			break
+		}
+	}
 }
 
 // Insert adds a new list-member defined by the key/value pair to the
