@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/StackExchange/wmi"
+	"github.com/yusufpapurcu/wmi"
 
 	"github.com/jaypipes/ghw/pkg/util"
 )
@@ -85,18 +85,20 @@ type win32LogicalDiskToPartition struct {
 	Dependent  *string
 }
 
-const wqlLogicalDisk = "SELECT Caption, CreationClassName, Description, DeviceID, FileSystem, FreeSpace, Name, Size, SystemName FROM Win32_LogicalDisk"
+const wqlLogicalDisk = "SELECT Caption, CreationClassName, Description, DeviceID, FileSystem, FreeSpace, Name, Size, SystemName, VolumeName, VolumeSerialNumber  FROM Win32_LogicalDisk"
 
 type win32LogicalDisk struct {
-	Caption           *string
-	CreationClassName *string
-	Description       *string
-	DeviceID          *string
-	FileSystem        *string
-	FreeSpace         *uint64
-	Name              *string
-	Size              *uint64
-	SystemName        *string
+	Caption            *string
+	CreationClassName  *string
+	Description        *string
+	DeviceID           *string
+	FileSystem         *string
+	FreeSpace          *uint64
+	Name               *string
+	Size               *uint64
+	SystemName         *string
+	VolumeName         *string
+	VolumeSerialNumber *string
 }
 
 const wqlPhysicalDisk = "SELECT DeviceId, MediaType FROM MSFT_PhysicalDisk"
@@ -173,13 +175,14 @@ func (i *Info) load() error {
 						if *logicaldisktodiskpartition.Antecedent == desiredAntecedent && *logicaldisktodiskpartition.Dependent == desiredDependent {
 							// Appending Partition
 							p := &Partition{
-								Name:       strings.TrimSpace(*logicaldisk.Caption),
+								Disk:       disk,
+								Name:       strings.TrimSpace(*logicaldisk.VolumeName),
 								Label:      strings.TrimSpace(*logicaldisk.Caption),
 								SizeBytes:  *logicaldisk.Size,
 								MountPoint: *logicaldisk.DeviceID,
 								Type:       *diskpartition.Type,
 								IsReadOnly: toReadOnly(*diskpartition.Access),
-								UUID:       "",
+								UUID:       *logicaldisk.VolumeSerialNumber,
 							}
 							disk.Partitions = append(disk.Partitions, p)
 							break
