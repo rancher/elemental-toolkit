@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.6.0
-	github.com/canonical/go-efilib v1.6.0
+	github.com/canonical/go-efilib v1.8.0
 	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/containerd/containerd v1.7.32

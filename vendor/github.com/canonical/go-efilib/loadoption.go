@@ -87,7 +87,7 @@ func (o *LoadOption) Write(w io.Writer) error {
 }
 
 // IsActive indicates whether the attributes has the LOAD_OPTION_ACTIVE flag set.
-// These will be tried automaitcally if they are in BootOrder.
+// These will be tried automatically if they are in BootOrder.
 func (o *LoadOption) IsActive() bool {
 	return o.Attributes&LoadOptionActive > 0
 }
