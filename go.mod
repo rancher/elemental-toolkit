@@ -1,6 +1,6 @@
 module github.com/rancher/elemental-toolkit/v2
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/bramvdbogaerde/go-scp v1.6.0
@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	golang.org/x/crypto v0.52.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/mount-utils v0.34.2
+	k8s.io/mount-utils v0.36.1
 )
 
 require (
@@ -130,6 +130,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	howett.net/plist v1.0.2-0.20250314012144-ee69052608d9 // indirect
-	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
+	k8s.io/klog/v2 v2.140.0 // indirect
+	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2 // indirect
 )
