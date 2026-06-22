@@ -23,11 +23,7 @@ jobs:
         echo "flavor=['green', 'blue', 'orange']" >> $GITHUB_OUTPUT
     - id: set-platform
       run: |
-        if [ "${{ startsWith(github.event.ref, 'refs/tags/v') }}" == "true" ]; then
-          echo "platform='linux/x86_64,linux/arm64'" >> $GITHUB_OUTPUT
-        else
-          echo "platform='linux/x86_64'" >> $GITHUB_OUTPUT
-        fi
+        echo "platform='linux/x86_64'" >> $GITHUB_OUTPUT
 
   build-toolkit:
     permissions:
