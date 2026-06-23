@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"sync"
+	"time"
 
 	"github.com/canonical/go-efilib/internal/uefi"
 )
@@ -29,14 +31,23 @@ const (
 )
 
 var (
+	// ErrVarsUnavailable indicates that there is no backend available for variable accesses in the current platform
 	ErrVarsUnavailable = errors.New("no variable backend is available")
+)
 
-	ErrVarNotExist          = errors.New("variable does not exist")
-	ErrVarInvalidParam      = errors.New("invalid parameter for variable access")
-	ErrVarDeviceError       = errors.New("variable access failed because of a hardware error")
-	ErrVarPermission        = errors.New("variable access failed because of insufficient permissions or an authentication failure")
-	ErrVarInsufficientSpace = errors.New("insufficient storage space available for variable")
-	ErrVarWriteProtected    = errors.New("variable is write protected")
+var (
+	// These errors gneerally ccrrespnod to errors that are returned from the variable service. They
+	// may be returned in other cirumstaces too, particularly because the kernel may map these errors
+	// to commonly used error codes, eg, efivarfs at least uses EINVAL
+	ErrVarNotExist          = errors.New("variable does not exist")                                                                 // corresponds to EFI_NOT_FOUND
+	ErrVarInvalidParam      = errors.New("invalid parameter for variable access")                                                   // corresponds to EFI_INVALID_PARAMETER
+	ErrVarDeviceError       = errors.New("variable access failed because of a hardware error")                                      // corresponds to EFI_DEVICE_ERROR
+	ErrVarPermission        = errors.New("variable access failed because of insufficient permissions or an authentication failure") // corresponds eo EFI_SECURTY_VIOLATION.
+	ErrVarInsufficientSpace = errors.New("insufficient storage space available for variable")                                       // corresponds to EFI_INSUFFICIENT_SPACE.
+
+	// ErrVarWritProtected corresponds to EFI_WRITE_PROTECTED although there are other reasons
+	// this error could be returned such as permissions errors in the VFS layer with efivarfs.
+	ErrVarWriteProtected = errors.New("variable is write protected")
 )
 
 // VariableDescriptor represents the identity of a variable.
@@ -59,7 +70,7 @@ type VarsBackend interface {
 }
 
 // VarsBackend2 is like [VarsBackend] only it takes a context that the backend can use
-// for deadlines or cancellation - this is paricularly applicable on systems where there
+// for deadlines or cancellation - this is particularly applicable on systems where there
 // may be multiple writers and writes have to be serialized by the operating system to
 // some degree.
 type VarsBackend2 interface {
@@ -212,6 +223,34 @@ func newDefaultVarContext() context.Context {
 	return addDefaultVarsBackend(context.Background())
 }
 
+type defaultVarContextInitializer struct {
+	once    sync.Once
+	context context.Context
+}
+
+func (d *defaultVarContextInitializer) init() context.Context {
+	d.once.Do(func () {
+		d.context = newDefaultVarContext()
+	})
+	return d.context
+}
+
+func (d *defaultVarContextInitializer) Deadline() (deadline time.Time, ok bool) {
+	return d.init().Deadline()
+}
+
+func (d *defaultVarContextInitializer) Done() <-chan struct{} {
+	return d.init().Done()
+}
+
+func (d *defaultVarContextInitializer) Err() error {
+	return d.init().Err()
+}
+
+func (d *defaultVarContextInitializer) Value(key any) any {
+	return d.init().Value(key)
+}
+
 // DefaultVarContext should generally be passed to functions that interact with
 // EFI variables in order to use the default system backend for accessing EFI
 // variables. It is based on a new background context.
@@ -223,9 +262,9 @@ func newDefaultVarContext() context.Context {
 // of code that perform multiple variable reads worthwhile in some cases.
 // Unfortunately, there is no way to determine whether an access will be ratelimited
 // before performing it.
-var DefaultVarContext = newDefaultVarContext()
+var DefaultVarContext context.Context = &defaultVarContextInitializer{}
 
-// WithDefaultVarsBackend adds the default system backend for accesssing EFI
+// WithDefaultVarsBackend adds the default system backend for accessing EFI
 // variables to an existing context. It allows for usage of any context other
 // than the internally created background one.
 //

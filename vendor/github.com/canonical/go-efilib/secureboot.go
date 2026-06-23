@@ -83,6 +83,12 @@ var (
 
 	// DbxVariable corresponds to the forbidden signature database variable
 	DbxVariable VariableDescriptor = VariableDescriptor{Name: "dbx", GUID: ImageSecurityDatabaseGuid}
+
+	// DbtVariable corresponds to the authorized timestamp signature database variable.
+	DbtVariable VariableDescriptor = VariableDescriptor{Name: "dbt", GUID: ImageSecurityDatabaseGuid}
+
+	// DbrVariable corresponds to the authorized recovery signature database variable.
+	DbrVariable VariableDescriptor = VariableDescriptor{Name: "dbr", GUID: ImageSecurityDatabaseGuid}
 )
 
 // ReadSignatureDatabaseVariable reads the signature database from the supplied

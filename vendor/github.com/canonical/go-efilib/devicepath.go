@@ -284,30 +284,36 @@ type devicePathToStringer interface {
 	ToString(flags DevicePathToStringFlags) string
 }
 
+// devicePathString calls ToString(DevicePathDisplayOnly | DevicePathAllowVendorShortcuts)
+// on any object that supports the devicePathToStringer interface
 func devicePathString[P devicePathToStringer](path P) string {
 	return path.ToString(DevicePathDisplayOnly | DevicePathAllowVendorShortcuts)
 }
 
+// devicePathFormatter allows any object that implements devicePathToStringer to support
+// fmt.Formatter.
 type devicePathFormatter[P devicePathToStringer] struct {
 	path P
 }
 
 func (formatter devicePathFormatter[P]) Format(f fmt.State, verb rune) {
+	flags := DevicePathAllowVendorShortcuts // Display vendor shortcuts by default
+
 	switch verb {
-	case 's', 'v':
-		flags := DevicePathAllowVendorShortcuts
+	case 'q':
+		fmt.Fprintf(f, formatString(f, verb), formatter.path.ToString(flags))
+	case 's', 'v', 'x', 'X':
 		if !f.Flag('+') {
+			// Display only unless the '+' flag is given
 			flags |= DevicePathDisplayOnly
 			if f.Flag('#') {
+				// Convert FW GUIDs to well-known names with the '#' flag
 				flags |= DevicePathDisplayFWGUIDNames
 			}
 		}
-
-		var b bytes.Buffer
-		b.WriteString(formatter.path.ToString(flags))
-		b.WriteTo(f)
+		fmt.Fprintf(f, formatString(f, verb), formatter.path.ToString(flags))
 	default:
-		panic(fmt.Sprintf("invalid verb: %c", verb))
+		panic(fmt.Errorf("invalid verb: %c", verb))
 	}
 }
 
@@ -315,8 +321,18 @@ func (formatter devicePathFormatter[P]) Format(f fmt.State, verb rune) {
 // representing the root.
 type DevicePath []DevicePathNode
 
+// Deprecated: Use [Format].
 func (p DevicePath) Formatter() fmt.Formatter {
 	return devicePathFormatter[DevicePath]{path: p}
+}
+
+// Format implements [fmt.Formatter]. For the 's', 'v', 'x' and 'X' verbs,
+// the '+' flag turns off the [DevicePathDisplayOnly] flag to make the string
+// more verbose. The '#' flag enables conversions of firmware GUIDs to well-known
+// names where these are known.
+func (p DevicePath) Format(s fmt.State, c rune) {
+	f := devicePathFormatter[DevicePath]{path: p}
+	f.Format(s, c)
 }
 
 // ToString returns a string representation of this device path with the
