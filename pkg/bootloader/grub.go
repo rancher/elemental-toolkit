@@ -308,10 +308,16 @@ func (g *Grub) DoEFIEntries(shimName, efiDir string) error {
 // clearEntry will go over the BootXXXX efi vars and remove any that matches our name
 // Used in install as we re-create the partitions, so the UUID of those partitions is no longer valid for the old entry
 // And we don't want to leave a broken entry around
+//
+// Only the standard load options are candidates: Boot#### under the EFI global
+// variable GUID. Some firmware keeps vendor variables whose names merely contain
+// "Boot####" and whose contents parse as load options (Lenovo's lBoot#### twins,
+// which the firmware also refuses to delete); touching those aborted installs.
 func (g *Grub) clearEntry(efivars eleefi.Variables) error {
+	bootEntry := regexp.MustCompile(`^Boot[0-9a-fA-F]{4}$`)
 	variables, _ := efivars.ListVariables()
 	for _, v := range variables {
-		if regexp.MustCompile(`Boot[0-9a-fA-F]{4}`).MatchString(v.Name) {
+		if v.GUID == efilib.GlobalVariable && bootEntry.MatchString(v.Name) {
 			variable, _, _ := efivars.GetVariable(v.GUID, v.Name)
 			option, err := efilib.ReadLoadOption(bytes.NewReader(variable))
 			if err != nil {

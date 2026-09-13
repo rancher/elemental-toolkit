@@ -403,6 +403,29 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		Expect(option.FilePath.String()).To(ContainSubstring(`\EFI\test1.efi`))
 	})
 
+	It("Clears a stale entry of its own name and leaves vendor variables alone", func() {
+		grub = bootloader.NewGrub(cfg)
+		Expect(grub.CreateEntry("test.efi", relativeTo, efivars)).To(Succeed())
+		data, attrs, err := efivars.GetVariable(efi.GlobalVariable, "Boot0000")
+		Expect(err).ToNot(HaveOccurred())
+		// Some firmware (Lenovo) keeps a twin of every Boot#### under its own GUID,
+		// with the same load option inside, and refuses to delete it. Its name
+		// contains "Boot0000" but it is not a boot entry.
+		vendor := efi.MakeGUID(0x146b234d, 0x4052, 0x4e07, 0xb326, [...]uint8{0x11, 0x22, 0x0f, 0x8e, 0x1f, 0xe8})
+		Expect(efivars.SetVariable(vendor, "lBoot0000", data, attrs)).To(Succeed())
+		// And an unrelated entry under the global GUID that is not ours
+		Expect(efivars.SetVariable(efi.GlobalVariable, "Boot0001", []byte("not a load option"), attrs)).To(Succeed())
+
+		Expect(bootloader.ClearEntry(grub, efivars)).To(Succeed())
+
+		_, _, err = efivars.GetVariable(efi.GlobalVariable, "Boot0000")
+		Expect(err).To(HaveOccurred(), "the stale elemental-shim entry is removed")
+		_, _, err = efivars.GetVariable(vendor, "lBoot0000")
+		Expect(err).ToNot(HaveOccurred(), "the vendor twin is not a candidate")
+		_, _, err = efivars.GetVariable(efi.GlobalVariable, "Boot0001")
+		Expect(err).ToNot(HaveOccurred(), "an entry that is not ours is left alone")
+	})
+
 	It("Sets default grub menu entry name from the os-release file", func() {
 		grub = bootloader.NewGrub(cfg)
 		Expect(grub.SetDefaultEntry(efiDir, rootDir, "")).To(Succeed())
