@@ -601,7 +601,7 @@ func Raw2Gce(source string, fs types.FS, logger types.Logger, keepOldImage bool)
 	logger.Infof("Compressing raw image into a tar.gz")
 	// Create destination file
 	file, err := fs.Create(fmt.Sprintf("%s.tar.gz", source))
-	logger.Debugf(fmt.Sprintf("destination: %s.tar.gz", source))
+	logger.Debug(fmt.Sprintf("destination: %s.tar.gz", source))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.CreateFile)
 	}
