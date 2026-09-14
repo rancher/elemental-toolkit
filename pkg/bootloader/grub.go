@@ -375,7 +375,7 @@ func (g *Grub) SetPersistentVariables(grubEnvFile string, vars map[string]string
 		g.logger.Debugf("Running %s with params: %s set %s=%s", cmd, grubEnvFile, key, value)
 		out, err := g.runner.Run(cmd, grubEnvFile, "set", fmt.Sprintf("%s=%s", key, value))
 		if err != nil {
-			g.logger.Errorf(fmt.Sprintf("Failed setting grub variables: %s", out))
+			g.logger.Error(fmt.Sprintf("Failed setting grub variables: %s", out))
 			return err
 		}
 	}
