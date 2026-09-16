@@ -25,6 +25,9 @@ github.com/Microsoft/hcsshim/internal/safefile
 github.com/Microsoft/hcsshim/internal/wclayer
 github.com/Microsoft/hcsshim/internal/winapi
 github.com/Microsoft/hcsshim/pkg/ociwclayer
+# github.com/anchore/go-lzo v0.1.1
+## explicit; go 1.24.0
+github.com/anchore/go-lzo
 # github.com/bramvdbogaerde/go-scp v1.6.0
 ## explicit; go 1.21
 github.com/bramvdbogaerde/go-scp
@@ -84,14 +87,18 @@ github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/denisbrodbeck/machineid v1.0.1
 ## explicit
 github.com/denisbrodbeck/machineid
-# github.com/diskfs/go-diskfs v1.4.1
-## explicit; go 1.21
+# github.com/diskfs/go-diskfs v1.9.4
+## explicit; go 1.25.0
 github.com/diskfs/go-diskfs
+github.com/diskfs/go-diskfs/backend
+github.com/diskfs/go-diskfs/backend/file
 github.com/diskfs/go-diskfs/disk
 github.com/diskfs/go-diskfs/filesystem
 github.com/diskfs/go-diskfs/filesystem/ext4
 github.com/diskfs/go-diskfs/filesystem/ext4/crc
 github.com/diskfs/go-diskfs/filesystem/ext4/md4
+github.com/diskfs/go-diskfs/filesystem/fat12
+github.com/diskfs/go-diskfs/filesystem/fat16
 github.com/diskfs/go-diskfs/filesystem/fat32
 github.com/diskfs/go-diskfs/filesystem/iso9660
 github.com/diskfs/go-diskfs/filesystem/squashfs
@@ -99,7 +106,10 @@ github.com/diskfs/go-diskfs/partition
 github.com/diskfs/go-diskfs/partition/gpt
 github.com/diskfs/go-diskfs/partition/mbr
 github.com/diskfs/go-diskfs/partition/part
-github.com/diskfs/go-diskfs/util
+github.com/diskfs/go-diskfs/util/bitmap
+github.com/diskfs/go-diskfs/util/slices
+github.com/diskfs/go-diskfs/util/timestamp
+github.com/diskfs/go-diskfs/version
 # github.com/distribution/distribution v2.8.1+incompatible
 ## explicit
 github.com/distribution/distribution/reference
@@ -155,7 +165,7 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
-# github.com/elliotwutingfeng/asciiset v0.0.0-20240214025120-24af97c84155
+# github.com/elliotwutingfeng/asciiset v0.0.0-20260801111138-45c5fff54b41
 ## explicit; go 1.11
 github.com/elliotwutingfeng/asciiset
 # github.com/felixge/httpsnoop v1.1.0
@@ -250,8 +260,8 @@ github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
-# github.com/itchyny/gojq v0.12.16
-## explicit; go 1.20
+# github.com/itchyny/gojq v0.12.17
+## explicit; go 1.21
 github.com/itchyny/gojq
 # github.com/itchyny/timefmt-go v0.1.6
 ## explicit; go 1.20
@@ -305,8 +315,8 @@ github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/magiconair/properties v1.8.7
 ## explicit; go 1.19
 github.com/magiconair/properties
-# github.com/mauromorales/xpasswd v0.4.0
-## explicit; go 1.20
+# github.com/mauromorales/xpasswd v0.4.1
+## explicit; go 1.23
 github.com/mauromorales/xpasswd/pkg/users
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
@@ -387,8 +397,8 @@ github.com/pelletier/go-toml/v2/unstable
 # github.com/phayes/permbits v0.0.0-20190612203442-39d7c581d2ee
 ## explicit
 github.com/phayes/permbits
-# github.com/pierrec/lz4/v4 v4.1.21
-## explicit; go 1.14
+# github.com/pierrec/lz4/v4 v4.1.29
+## explicit; go 1.17
 github.com/pierrec/lz4/v4
 github.com/pierrec/lz4/v4/internal/lz4block
 github.com/pierrec/lz4/v4/internal/lz4errors
@@ -397,14 +407,14 @@ github.com/pierrec/lz4/v4/internal/xxh32
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pkg/xattr v0.4.10
+# github.com/pkg/xattr v0.4.12
 ## explicit; go 1.14
 github.com/pkg/xattr
-# github.com/rancher-sandbox/linuxkit v1.0.2
-## explicit; go 1.18
+# github.com/rancher-sandbox/linuxkit v1.0.3
+## explicit; go 1.26.0
 github.com/rancher-sandbox/linuxkit/providers
-# github.com/rancher/yip v1.9.6
-## explicit; go 1.22.0
+# github.com/rancher/yip v1.9.7
+## explicit; go 1.26.0
 github.com/rancher/yip/pkg/dag
 github.com/rancher/yip/pkg/executor
 github.com/rancher/yip/pkg/logger
@@ -476,8 +486,8 @@ github.com/tredoe/osutil/user/crypt/sha512_crypt
 ## explicit; go 1.19
 github.com/twpayne/go-vfs/v4
 github.com/twpayne/go-vfs/v4/vfst
-# github.com/ulikunitz/xz v0.5.15
-## explicit; go 1.12
+# github.com/ulikunitz/xz v0.5.16
+## explicit; go 1.20
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
@@ -502,7 +512,7 @@ github.com/vmware/vmw-guestinfo/vmcheck
 # github.com/yusufpapurcu/wmi v1.2.4
 ## explicit; go 1.16
 github.com/yusufpapurcu/wmi
-# github.com/zcalusic/sysinfo v1.1.2
+# github.com/zcalusic/sysinfo v1.1.3
 ## explicit; go 1.22
 github.com/zcalusic/sysinfo
 github.com/zcalusic/sysinfo/cpuid
@@ -552,8 +562,6 @@ go.opentelemetry.io/otel/trace/noop
 # go.uber.org/atomic v1.9.0
 ## explicit; go 1.13
 go.uber.org/atomic
-# go.uber.org/automaxprocs v1.6.0
-## explicit; go 1.20
 # go.uber.org/multierr v1.9.0
 ## explicit; go 1.19
 go.uber.org/multierr
