@@ -1,5 +1,5 @@
 {
-    "extends": ["config:base"],
+    "extends": ["config:recommended"],
     "ignoreTests": false,
     "packageRules": [
         {
