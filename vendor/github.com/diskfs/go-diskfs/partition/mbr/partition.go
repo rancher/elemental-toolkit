@@ -7,13 +7,17 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/diskfs/go-diskfs/util"
+	"github.com/diskfs/go-diskfs/backend"
+	"github.com/diskfs/go-diskfs/partition/part"
 )
+
+var _ part.Partition = &Partition{}
 
 // Partition represents the structure of a single partition on the disk
 // note that start and end cylinder, head, sector (CHS) are ignored, for the most part.
 // godiskfs works with disks that support [Logical Block Addressing (LBA)](https://en.wikipedia.org/wiki/Logical_block_addressing)
 type Partition struct {
+	Index         int
 	Bootable      bool
 	Type          Type   //
 	Start         uint32 // Start first absolute LBA sector for partition
@@ -59,6 +63,9 @@ func (p *Partition) Equal(p2 *Partition) bool {
 		p.Size == p2.Size
 }
 
+func (p *Partition) GetIndex() int {
+	return p.Index
+}
 func (p *Partition) GetSize() int64 {
 	_, lss := p.sectorSizes()
 	return int64(p.Size) * int64(lss)
@@ -89,9 +96,11 @@ func (p *Partition) toBytes() []byte {
 }
 
 // partitionFromBytes create a partition entry from 16 bytes
+// The index should start with 1. It is up to
+// the caller to convert from zero-based indexing to one-based partition numbering.
 //
 //nolint:unparam // this always receives logicalSectorSize=512, but since it can be different, we want to leave it as a param
-func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*Partition, error) {
+func partitionFromBytes(index int, b []byte, logicalSectorSize, physicalSectorSize int) (*Partition, error) {
 	if len(b) != partitionEntrySize {
 		return nil, fmt.Errorf("data for partition was %d bytes instead of expected %d", len(b), partitionEntrySize)
 	}
@@ -106,6 +115,7 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 	}
 
 	return &Partition{
+		Index:              index,
 		Bootable:           bootable,
 		StartHead:          b[1],
 		StartSector:        b[2],
@@ -115,7 +125,7 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 		EndSector:          b[6],
 		EndCylinder:        b[7],
 		Start:              binary.LittleEndian.Uint32(b[8:12]),
-		Size:               binary.LittleEndian.Uint32(b[12:16]),
+		Size:               binary.LittleEndian.Uint32(b[12:16]), //nolint:gosec // we already checked the length above
 		logicalSectorSize:  logicalSectorSize,
 		physicalSectorSize: physicalSectorSize,
 	}, nil
@@ -123,7 +133,7 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 
 // WriteContents fills the partition with the contents provided
 // reads from beginning of reader to exactly size of partition in bytes
-func (p *Partition) WriteContents(f util.File, contents io.Reader) (uint64, error) {
+func (p *Partition) WriteContents(f backend.WritableFile, contents io.Reader) (uint64, error) {
 	pss, lss := p.sectorSizes()
 	total := uint64(0)
 
@@ -159,14 +169,14 @@ func (p *Partition) WriteContents(f util.File, contents io.Reader) (uint64, erro
 	}
 	// did the total written equal the size of the partition?
 	if total != uint64(size) {
-		return total, fmt.Errorf("write %d bytes to partition but actual size is %d", total, size)
+		return total, part.NewIncompletePartitionWriteError(total, uint64(size))
 	}
 	return total, nil
 }
 
 // readContents reads the contents of the partition into a writer
 // streams the entire partition to the writer
-func (p *Partition) ReadContents(f util.File, out io.Writer) (int64, error) {
+func (p *Partition) ReadContents(f backend.File, out io.Writer) (int64, error) {
 	pss, lss := p.sectorSizes()
 	total := int64(0)
 	// chunks of physical sector size for efficient writing
@@ -211,4 +221,9 @@ func (p *Partition) sectorSizes() (physical, logical int) {
 // partition table UUID with the partition number as a suffix.
 func (p *Partition) UUID() string {
 	return p.partitionUUID
+}
+
+// Label returns the partition label. MBR partitions do not have labels, so an empty string is returned.
+func (p *Partition) Label() string {
+	return ""
 }

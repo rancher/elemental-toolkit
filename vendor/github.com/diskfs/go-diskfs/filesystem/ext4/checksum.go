@@ -29,8 +29,6 @@ func directoryChecksummer(seed, inodeNumber, inodeGeneration uint32) checksummer
 // directoryChecksumAppender returns a function that implements checksumAppender for a directory entries block
 // original calculations can be seen for e2fsprogs https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git/tree/lib/ext2fs/csum.c#n301
 // and in the linux tree https://github.com/torvalds/linux/blob/master/fs/ext4/namei.c#L376-L384
-//
-//nolint:unparam // inodeGeneration is always 0
 func directoryChecksumAppender(seed, inodeNumber, inodeGeneration uint32) checksumAppender {
 	fn := directoryChecksummer(seed, inodeNumber, inodeGeneration)
 	return func(b []byte) []byte {
@@ -47,4 +45,9 @@ func directoryChecksumAppender(seed, inodeNumber, inodeGeneration uint32) checks
 // nullDirectoryChecksummer does not change anything
 func nullDirectoryChecksummer(b []byte) []byte {
 	return b
+}
+
+// bitmapChecksum calculate the checksum for a bitmap
+func bitmapChecksum(b []byte, hashSeed uint32) uint32 {
+	return crc.CRC32c(hashSeed, b)
 }

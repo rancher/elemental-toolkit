@@ -2,19 +2,66 @@ package fat32
 
 import (
 	"encoding/binary"
-	"reflect"
+	"slices"
+
+	"github.com/diskfs/go-diskfs/filesystem/fat12"
 )
 
-// table a FAT32 table
+// table is fat32's in-memory FAT table. It implements fat12.FATTable so that
+// fat12.FileSystem (embedded in fat32.FileSystem) can use it for all cluster-
+// chain operations.
 type table struct {
 	fatID          uint32
 	eocMarker      uint32
 	unusedMarker   uint32
-	clusters       map[uint32]uint32
+	clusters       []uint32
 	rootDirCluster uint32
 	size           uint32
 	maxCluster     uint32
 }
+
+// Verify the interface is satisfied at compile time.
+var _ fat12.FATTable = (*table)(nil)
+
+// ── fat12.FATTable interface ──────────────────────────────────────────────────
+
+func (t *table) ClusterValue(n uint32) uint32 { return t.clusters[n] }
+func (t *table) SetCluster(n, val uint32)     { t.clusters[n] = val }
+func (t *table) IsEOC(val uint32) bool        { return val&0xFFFFFF8 == 0xFFFFFF8 }
+func (t *table) EOCMarker() uint32            { return t.eocMarker }
+func (t *table) UnusedMarker() uint32         { return t.unusedMarker }
+func (t *table) MaxCluster() uint32           { return t.maxCluster }
+func (t *table) FATID() uint32                { return t.fatID }
+func (t *table) RootDirCluster() uint32       { return t.rootDirCluster }
+func (t *table) Size() uint32                 { return t.size }
+
+// FromBytes populates the table from raw FAT bytes read from disk.
+func (t *table) FromBytes(b []byte) {
+	for i := uint32(2); i < t.maxCluster; i++ {
+		bStart := i * 4
+		val := binary.LittleEndian.Uint32(b[bStart : bStart+4])
+		if val != 0 {
+			t.clusters[i] = val
+		}
+	}
+}
+
+// Bytes serialises the table to raw FAT bytes ready to write to disk.
+func (t *table) Bytes() []byte {
+	b := make([]byte, t.size)
+	binary.LittleEndian.PutUint32(b[0:4], t.fatID)
+	binary.LittleEndian.PutUint32(b[4:8], t.eocMarker)
+	for i := uint32(2); i < t.maxCluster; i++ {
+		bStart := i * 4
+		binary.LittleEndian.PutUint32(b[bStart:bStart+4], t.clusters[i])
+	}
+	return b
+}
+
+// ── internal helpers (used by fat32 tests and Create/Read) ───────────────────
+
+// isEoc is retained for the table_internal_test.go tests.
+func (t *table) isEoc(cluster uint32) bool { return t.IsEOC(cluster) }
 
 func (t *table) equal(a *table) bool {
 	if (t == nil && a != nil) || (t != nil && a == nil) {
@@ -28,59 +75,24 @@ func (t *table) equal(a *table) bool {
 		t.rootDirCluster == a.rootDirCluster &&
 		t.size == a.size &&
 		t.maxCluster == a.maxCluster &&
-		reflect.DeepEqual(t.clusters, a.clusters)
+		slices.Equal(a.clusters, t.clusters)
 }
 
-/*
-  when reading from disk, remember that *any* of the following is a valid eocMarker:
-  0x?ffffff8 - 0x?fffffff
-*/
-
+// tableFromBytes constructs a fat32 table from raw FAT bytes.
 func tableFromBytes(b []byte) *table {
-	t := table{
+	maxCluster := uint32(len(b) / 4)
+	t := &table{
 		fatID:          binary.LittleEndian.Uint32(b[0:4]),
 		eocMarker:      binary.LittleEndian.Uint32(b[4:8]),
 		size:           uint32(len(b)),
-		clusters:       map[uint32]uint32{},
-		maxCluster:     uint32(len(b) / 4),
-		rootDirCluster: 2, // always 2 for FAT32
+		clusters:       make([]uint32, maxCluster+1),
+		maxCluster:     maxCluster,
+		rootDirCluster: 2,
 	}
-	// just need to map the clusters in
-	for i := uint32(2); i < t.maxCluster; i++ {
-		bStart := i * 4
-		bEnd := bStart + 4
-		val := binary.LittleEndian.Uint32(b[bStart:bEnd])
-		// 0 indicates an empty cluster, so we can ignore
-		if val != 0 {
-			t.clusters[i] = val
-		}
-	}
-	return &t
+	t.FromBytes(b)
+	return t
 }
 
-// bytes returns a FAT32 table as bytes ready to be written to disk
-func (t *table) bytes() []byte {
-	b := make([]byte, t.size)
-
-	// FAT ID and fixed values
-	binary.LittleEndian.PutUint32(b[0:4], t.fatID)
-	// End-of-Cluster marker
-	binary.LittleEndian.PutUint32(b[4:8], t.eocMarker)
-	// now just clusters
-	numClusters := t.maxCluster
-	for i := uint32(2); i < numClusters; i++ {
-		bStart := i * 4
-		bEnd := bStart + 4
-		val := uint32(0)
-		if cluster, ok := t.clusters[i]; ok {
-			val = cluster
-		}
-		binary.LittleEndian.PutUint32(b[bStart:bEnd], val)
-	}
-
-	return b
-}
-
-func (t *table) isEoc(cluster uint32) bool {
-	return cluster&0xFFFFFF8 == 0xFFFFFF8
-}
+// bytes is retained so existing code that calls t.bytes() still compiles.
+// New code should prefer t.Bytes().
+func (t *table) bytes() []byte { return t.Bytes() }
