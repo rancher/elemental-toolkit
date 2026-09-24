@@ -28,12 +28,12 @@ go-test-appengine:latest:
 
 go-test:1.6:
     <<: *template-go-test
-    image: golang:1.6-alpine
+    image: golang:1.27-alpine
 
 go-test:1.4:
     <<: *template-go-test
-    image: golang:1.4-alpine
+    image: golang:1.27-alpine
 
 go-test:1.2:
     <<: *template-go-test
-    image: golang:1.2
+    image: golang:1.27
