@@ -17,6 +17,9 @@ package name
 import (
 	// nolint: depguard
 	_ "crypto/sha256" // Recommended by go-digest.
+	// nolint: depguard
+	_ "crypto/sha512" // Needed for sha512 digests.
+	"encoding"
 	"encoding/json"
 	"strings"
 
@@ -32,8 +35,11 @@ type Digest struct {
 	original string
 }
 
-// Ensure Digest implements Reference
 var _ Reference = (*Digest)(nil)
+var _ encoding.TextMarshaler = (*Digest)(nil)
+var _ encoding.TextUnmarshaler = (*Digest)(nil)
+var _ json.Marshaler = (*Digest)(nil)
+var _ json.Unmarshaler = (*Digest)(nil)
 
 // Context implements Reference.
 func (d Digest) Context() Repository {
@@ -79,6 +85,21 @@ func (d *Digest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalText formats the digest into a string for text serialization.
+func (d Digest) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
+}
+
+// UnmarshalText parses a text string into a Digest.
+func (d *Digest) UnmarshalText(data []byte) error {
+	n, err := NewDigest(string(data))
+	if err != nil {
+		return err
+	}
+	*d = n
+	return nil
+}
+
 // NewDigest returns a new Digest representing the given name.
 func NewDigest(name string, opts ...Option) (Digest, error) {
 	// Split on "@"
@@ -88,13 +109,8 @@ func NewDigest(name string, opts ...Option) (Digest, error) {
 	}
 	base := parts[0]
 	dig := parts[1]
-	prefix := digest.Canonical.String() + ":"
-	if !strings.HasPrefix(dig, prefix) {
-		return Digest{}, newErrBadName("unsupported digest algorithm: %s", dig)
-	}
-	hex := strings.TrimPrefix(dig, prefix)
-	if err := digest.Canonical.Validate(hex); err != nil {
-		return Digest{}, err
+	if err := digest.Digest(dig).Validate(); err != nil {
+		return Digest{}, newErrBadName("%s: %s", err, dig)
 	}
 
 	tag, err := NewTag(base, opts...)
