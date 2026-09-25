@@ -53,7 +53,7 @@ func (a IPv4Address) AsNetIPAddr() netip.Addr {
 	return netip.AddrFrom4([4]uint8(a))
 }
 
-// IPv4AddressOrigin descibes how an IP v4 address was assigned.
+// IPv4AddressOrigin describes how an IP v4 address was assigned.
 type IPv4AddressOrigin bool
 
 const (
@@ -87,7 +87,7 @@ func (a IPv6Address) AsNetIPAddr() netip.Addr {
 	return netip.AddrFrom16([16]uint8(a))
 }
 
-// IPv6AddressOrigin descibes how an IP v6 address was assigned.
+// IPv6AddressOrigin describes how an IP v6 address was assigned.
 type IPv6AddressOrigin uint8
 
 const (

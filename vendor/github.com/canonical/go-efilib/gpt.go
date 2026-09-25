@@ -39,7 +39,7 @@ func (e InvalidGPTHeaderError) Error() string {
 	return "invalid GPT header: " + string(e)
 }
 
-// PartitionTableHeader correponds to the EFI_PARTITION_TABLE_HEADER type.
+// PartitionTableHeader corresponds to the EFI_PARTITION_TABLE_HEADER type.
 type PartitionTableHeader struct {
 	HeaderSize               uint32
 	MyLBA                    LBA
