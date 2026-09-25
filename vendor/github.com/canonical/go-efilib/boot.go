@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
+	"strconv"
 
 	"github.com/canonical/go-efilib/internal/uefi"
 )
@@ -30,7 +30,7 @@ const (
 	// ready to boot signal.
 	LoadOptionClassSysPrep LoadOptionClass = "SysPrep"
 
-	// LoadOptionClassBoot corresponds to normal boot applicationds.
+	// LoadOptionClassBoot corresponds to normal boot applications.
 	LoadOptionClassBoot LoadOptionClass = "Boot"
 
 	// LoadOptionClassPlatformRecovery corresponds to platform supplied recovery
@@ -110,6 +110,56 @@ func ReadBootOptionSupportVariable(ctx context.Context) (BootOptionSupport, erro
 	return BootOptionSupport(binary.LittleEndian.Uint32(data)), nil
 }
 
+// FormatLoadOptionVariableName returns a variable name for the specified load option
+// class and load option number.
+func FormatLoadOptionVariableName(class LoadOptionClass, n uint16) string {
+	return fmt.Sprintf("%s%04X", class, n)
+}
+
+// ScanLoadOptionVariableName returns the load option class and load option number
+// from the specified variable name. This will return an error if the supplied
+// name is too short, contains an unrecognized load option class or an invalid
+// load option number.
+func ScanLoadOptionVariableName(name string) (LoadOptionClass, uint16, error) {
+	// The variable name contains a uint16 base-16 number.
+	if len(name) < 4 {
+		return "", 0, errors.New("name too short")
+	}
+
+	// Obtain the load option class.
+	class := LoadOptionClass(name[:len(name)-4])
+	switch class {
+	case LoadOptionClassDriver, LoadOptionClassSysPrep, LoadOptionClassBoot, LoadOptionClassPlatformRecovery:
+		// ok
+	default:
+		return "", 0, fmt.Errorf("invalid class %q", class)
+	}
+
+	// Obtain the load option number.
+	ns := name[len(name)-4:]
+
+	// The load option number is in base-16 format. A-F are
+	// always upper case.
+	for _, c := range ns {
+		switch {
+		case c >= '0' && c <= '9':
+			// ok
+		case c >= 'A' && c <= 'F':
+			// ok
+		default:
+			return "", 0, fmt.Errorf("invalid number %q", ns)
+		}
+	}
+
+	// Extract the number. This shouldn't fail now.
+	n, err := strconv.ParseUint(ns, 16, 16)
+	if err != nil {
+		return "", 0, fmt.Errorf("cannot parse number: %w", err)
+	}
+
+	return class, uint16(n), nil
+}
+
 // ReadLoadOrderVariable returns the load option order for the specified class,
 // which must be one of LoadOptionClassDriver, LoadOptionClassSysPrep, or
 // LoadOptionClassBoot. In general [DefaultVarContext] should be supplied
@@ -181,7 +231,7 @@ func ReadLoadOptionVariable(ctx context.Context, class LoadOptionClass, n uint16
 		return nil, fmt.Errorf("invalid class %q: only suitable for Driver, SysPrep, Boot, or PlatformRecovery", class)
 	}
 
-	data, _, err := ReadVariable(ctx, fmt.Sprintf("%s%04x", class, n), GlobalVariable)
+	data, _, err := ReadVariable(ctx, FormatLoadOptionVariableName(class, n), GlobalVariable)
 	if err != nil {
 		return nil, err
 	}
@@ -214,12 +264,12 @@ func WriteLoadOptionVariable(ctx context.Context, class LoadOptionClass, n uint1
 		return fmt.Errorf("cannot serialize load option: %w", err)
 	}
 
-	return WriteVariable(ctx, fmt.Sprintf("%s%04x", class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, buf.Bytes())
+	return WriteVariable(ctx, FormatLoadOptionVariableName(class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, buf.Bytes())
 }
 
 // DeleteLoadOptionVariable deletes the load option variable for the specified
 // class and option number. The variable is written to the global namespace. This will
-// succeed even if the variable doesn't alreeady exist. The class must be one of
+// succeed even if the variable doesn't already exist. The class must be one of
 // LoadOptionClassDriver, LoadOptionClassSysprep, or LoadOptionClassBoot. In general
 // [DefaultVarContext] should be supplied to this.
 func DeleteLoadOptionVariable(ctx context.Context, class LoadOptionClass, n uint16) error {
@@ -230,7 +280,7 @@ func DeleteLoadOptionVariable(ctx context.Context, class LoadOptionClass, n uint
 		return fmt.Errorf("invalid class %q: only suitable for Driver, SysPrep or Boot", class)
 	}
 
-	return WriteVariable(ctx, fmt.Sprintf("%s%04x", class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, nil)
+	return WriteVariable(ctx, FormatLoadOptionVariableName(class, n), GlobalVariable, AttributeNonVolatile|AttributeBootserviceAccess|AttributeRuntimeAccess, nil)
 }
 
 // ListLoadOptionNumbers lists the numbers of all of the load option variables
@@ -248,19 +298,15 @@ func ListLoadOptionNumbers(ctx context.Context, class LoadOptionClass) ([]uint16
 		if name.GUID != GlobalVariable {
 			continue
 		}
-		if !strings.HasPrefix(name.Name, string(class)) {
+		c, n, err := ScanLoadOptionVariableName(name.Name)
+		if err != nil {
 			continue
 		}
-		if len(name.Name) != len(class)+4 {
-			continue
-		}
-
-		var x uint16
-		if n, err := fmt.Sscanf(name.Name, string(class)+"%x", &x); err != nil || n != 1 {
+		if c != class {
 			continue
 		}
 
-		out = append(out, x)
+		out = append(out, n)
 	}
 
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
