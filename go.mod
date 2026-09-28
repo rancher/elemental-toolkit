@@ -11,7 +11,7 @@ require (
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.20.3
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jaypipes/ghw v0.21.2
+	github.com/jaypipes/ghw v0.25.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/onsi/ginkgo/v2 v2.33.0
