@@ -3,8 +3,14 @@ package iso9660
 import (
 	"fmt"
 	"io"
+	iofs "io/fs"
 	"os"
+
+	"github.com/diskfs/go-diskfs/filesystem"
 )
+
+var _ filesystem.File = (*File)(nil)
+var _ iofs.File = (*File)(nil)
 
 // File represents a single file in an iso9660 filesystem
 //
@@ -33,7 +39,7 @@ func (fl *File) Read(b []byte) (int, error) {
 	size := int(fl.size) - int(fl.offset)
 	location := int(fl.location)
 	maxRead := size
-	file := fs.file
+	file := fs.backend
 
 	// if there is nothing left to read, just return EOF
 	if size <= 0 {
@@ -65,7 +71,7 @@ func (fl *File) Read(b []byte) (int, error) {
 //
 //	you cannot write to an iso, so this returns an error
 func (fl *File) Write(_ []byte) (int, error) {
-	return 0, fmt.Errorf("cannot write to a read-only iso filesystem")
+	return 0, filesystem.ErrReadonlyFilesystem
 }
 
 // Seek set the offset to a particular point in the file
@@ -97,4 +103,9 @@ func (fl *File) Location() uint32 {
 func (fl *File) Close() error {
 	fl.closed = true
 	return nil
+}
+
+// Stat returns a fs.FileInfo structure describing file
+func (fl *File) Stat() (iofs.FileInfo, error) {
+	return fl.directoryEntry, nil
 }
