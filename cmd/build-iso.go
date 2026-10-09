@@ -87,7 +87,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 				spec.RootFS = []*types.ImageSource{imgSource}
 			} else if len(spec.RootFS) == 0 {
 				errmsg := "rootfs source image for building ISO was not provided"
-				cfg.Logger.Errorf(errmsg)
+				cfg.Logger.Error(errmsg)
 				return elementalError.New(errmsg, elementalError.NoSourceProvided)
 			}
 
@@ -102,7 +102,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 					spec.RootFS = append(spec.RootFS, types.NewDirSrc(oRootfs))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oRootfs, err)
-					cfg.Logger.Errorf(msg)
+					cfg.Logger.Error(msg)
 					return elementalError.New(msg, elementalError.StatFile)
 				}
 			}
@@ -111,7 +111,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 					spec.UEFI = append(spec.UEFI, types.NewDirSrc(oUEFI))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oUEFI, err)
-					cfg.Logger.Errorf(msg)
+					cfg.Logger.Error(msg)
 					return elementalError.New(msg, elementalError.StatFile)
 				}
 			}
@@ -120,7 +120,7 @@ func NewBuildISO(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 					spec.Image = append(spec.Image, types.NewDirSrc(oISO))
 				} else {
 					msg := fmt.Sprintf("Invalid path '%s': %v", oISO, err)
-					cfg.Logger.Errorf(msg)
+					cfg.Logger.Error(msg)
 					return elementalError.New(msg, elementalError.StatFile)
 				}
 			}

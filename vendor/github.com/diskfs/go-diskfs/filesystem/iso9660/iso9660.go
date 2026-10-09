@@ -3,11 +3,15 @@ package iso9660
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	iofs "io/fs"
 	"os"
 	"path"
+	"path/filepath"
+	"time"
 
+	"github.com/diskfs/go-diskfs/backend"
 	"github.com/diskfs/go-diskfs/filesystem"
-	"github.com/diskfs/go-diskfs/util"
 )
 
 const (
@@ -20,22 +24,25 @@ const (
 
 // FileSystem implements the FileSystem interface
 type FileSystem struct {
-	workspace      string
-	size           int64
-	start          int64
-	file           util.File
-	blocksize      int64
-	volumes        volumeDescriptors
-	pathTable      *pathTable
-	rootDir        *directoryEntry
-	suspEnabled    bool  // is the SUSP in use?
-	suspSkip       uint8 // how many bytes to skip in each directory record
-	suspExtensions []suspExtension
+	workspace       string
+	size            int64
+	start           int64
+	backend         backend.Storage
+	blocksize       int64
+	volumes         volumeDescriptors
+	pathTable       *pathTable
+	rootDir         *directoryEntry
+	suspEnabled     bool  // is the SUSP in use?
+	suspSkip        uint8 // how many bytes to skip in each directory record
+	suspExtensions  []suspExtension
+	jolietEnabled   bool
+	jolietPathTable *pathTable
+	jolietRootDir   *directoryEntry
 }
 
 // Equal compare if two filesystems are equal
 func (fsm *FileSystem) Equal(a *FileSystem) bool {
-	localMatch := fsm.file == a.file && fsm.size == a.size
+	localMatch := fsm.backend == a.backend && fsm.size == a.size
 	vdMatch := fsm.volumes.equal(&a.volumes)
 	return localMatch && vdMatch
 }
@@ -47,8 +54,8 @@ func (fsm *FileSystem) Workspace() string {
 
 // Create creates an ISO9660 filesystem in a given directory
 //
-// requires the util.File where to create the filesystem, size is the size of the filesystem in bytes,
-// start is how far in bytes from the beginning of the util.File to create the filesystem,
+// requires the backend.Storage where to create the filesystem, size is the size of the filesystem in bytes,
+// start is how far in bytes from the beginning of the backend.Storage to create the filesystem,
 // and blocksize is is the logical blocksize to use for creating the filesystem
 //
 // note that you are *not* required to create the filesystem on the entire disk. You could have a disk of size
@@ -60,7 +67,7 @@ func (fsm *FileSystem) Workspace() string {
 // where a partition starts and ends.
 //
 // If the provided blocksize is 0, it will use the default of 2 KB.
-func Create(f util.File, size, start, blocksize int64, workspace string) (*FileSystem, error) {
+func Create(b backend.Storage, size, start, blocksize int64, workspace string) (*FileSystem, error) {
 	if blocksize == 0 {
 		blocksize = defaultSectorSize
 	}
@@ -97,13 +104,16 @@ func Create(f util.File, size, start, blocksize int64, workspace string) (*FileS
 		}
 	}
 
+	// sometimes, at least on macos, extra separators in path can cause panic
+	workdir = filepath.Clean(workdir)
+
 	// create root directory
 	// there is nothing in there
 	return &FileSystem{
 		workspace: workdir,
 		start:     start,
 		size:      size,
-		file:      f,
+		backend:   b,
 		volumes:   volumeDescriptors{},
 		blocksize: blocksize,
 	}, nil
@@ -111,8 +121,8 @@ func Create(f util.File, size, start, blocksize int64, workspace string) (*FileS
 
 // Read reads a filesystem from a given disk.
 //
-// requires the util.File where to read the filesystem, size is the size of the filesystem in bytes,
-// start is how far in bytes from the beginning of the util.File the filesystem is expected to begin,
+// requires the backend.File where to read the filesystem, size is the size of the filesystem in bytes,
+// start is how far in bytes from the beginning of the backend.File the filesystem is expected to begin,
 // and blocksize is is the physical blocksize to use for reading the filesystem
 //
 // note that you are *not* required to read a filesystem on the entire disk. You could have a disk of size
@@ -124,7 +134,7 @@ func Create(f util.File, size, start, blocksize int64, workspace string) (*FileS
 // where a partition starts and ends.
 //
 // If the provided blocksize is 0, it will use the default of 2K bytes
-func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
+func Read(b backend.Storage, size, start, blocksize int64) (*FileSystem, error) {
 	var read int
 
 	if blocksize == 0 {
@@ -146,7 +156,7 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 	// load the information from the disk
 	// read system area
 	systemArea := make([]byte, systemAreaSize)
-	n, err := file.ReadAt(systemArea, start)
+	n, err := b.ReadAt(systemArea, start)
 	if err != nil {
 		return nil, fmt.Errorf("could not read bytes from file: %v", err)
 	}
@@ -156,16 +166,17 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 	// we do not do anything with the system area for now
 
 	// next read the volume descriptors, one at a time, until we hit the terminator
-	vds := make([]volumeDescriptor, 2)
+	vds := make([]volumeDescriptor, 0, 128)
 	terminated := false
 	var (
-		pvd *primaryVolumeDescriptor
-		vd  volumeDescriptor
+		pvd       *primaryVolumeDescriptor
+		jolietSVD *supplementaryVolumeDescriptor
+		vd        volumeDescriptor
 	)
 	for i := 0; !terminated; i++ {
 		vdBytes := make([]byte, volumeDescriptorSize)
 		// read vdBytes
-		read, err = file.ReadAt(vdBytes, start+systemAreaSize+int64(i)*volumeDescriptorSize)
+		read, err = b.ReadAt(vdBytes, start+systemAreaSize+int64(i)*volumeDescriptorSize)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read bytes for volume descriptor %d: %v", i, err)
 		}
@@ -185,6 +196,11 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 		case volumeDescriptorPrimary:
 			vds = append(vds, vd)
 			pvd, _ = vd.(*primaryVolumeDescriptor)
+		case volumeDescriptorSupplementary:
+			vds = append(vds, vd)
+			if svd, ok := vd.(*supplementaryVolumeDescriptor); ok && isJolietSVD(svd) {
+				jolietSVD = svd
+			}
 		default:
 			vds = append(vds, vd)
 		}
@@ -199,7 +215,7 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 		rootDirEntry = pvd.rootDirectoryEntry
 		pathTableBytes := make([]byte, pvd.pathTableSize)
 		pathTableLocation := pvd.pathTableLLocation * uint32(pvd.blocksize)
-		read, err = file.ReadAt(pathTableBytes, int64(pathTableLocation))
+		read, err = b.ReadAt(pathTableBytes, int64(pathTableLocation))
 		if err != nil {
 			return nil, fmt.Errorf("unable to read path table of size %d at location %d: %v", pvd.pathTableSize, pathTableLocation, err)
 		}
@@ -209,39 +225,72 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 		pt = parsePathTable(pathTableBytes)
 	}
 
-	// is system use enabled?
+	// load Joliet path table and root if present
+	jolietPT, jolietRootDir, jolietEnabled := loadJoliet(jolietSVD, b)
+
+	// detect SUSP/Rock Ridge from root directory entry
+	suspEnabled, skipBytes, suspHandlers, err := detectSUSP(rootDirEntry, b, blocksize)
+	if err != nil {
+		return nil, err
+	}
+
+	fs := &FileSystem{
+		workspace: "", // no workspace when we do nothing with it
+		start:     start,
+		size:      size,
+		backend:   b,
+		volumes: volumeDescriptors{
+			descriptors:   vds,
+			primary:       pvd,
+			supplementary: jolietSVD,
+		},
+		blocksize:       blocksize,
+		pathTable:       pt,
+		rootDir:         rootDirEntry,
+		suspEnabled:     suspEnabled,
+		suspSkip:        skipBytes,
+		suspExtensions:  suspHandlers,
+		jolietEnabled:   jolietEnabled,
+		jolietPathTable: jolietPT,
+		jolietRootDir:   jolietRootDir,
+	}
+	rootDirEntry.filesystem = fs
+	if jolietRootDir != nil {
+		jolietRootDir.filesystem = fs
+	}
+	return fs, nil
+}
+
+// detectSUSP reads the root directory entry and checks for SUSP/Rock Ridge extensions.
+func detectSUSP(rootDirEntry *directoryEntry, b backend.Storage, blocksize int64) (suspFound bool, suspSkip uint8, extensions []suspExtension, err error) {
 	location := int64(rootDirEntry.location) * blocksize
-	// get the size of the directory entry
-	b := make([]byte, 1)
-	read, err = file.ReadAt(b, location)
+	dirEntBytes := make([]byte, 1)
+	read, err := b.ReadAt(dirEntBytes, location)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read root directory size at location %d: %v", location, err)
+		return false, 0, nil, fmt.Errorf("unable to read root directory size at location %d: %v", location, err)
 	}
-	if read != len(b) {
-		return nil, fmt.Errorf("root directory entry size, read %d bytes instead of expected %d", read, len(b))
+	if read != len(dirEntBytes) {
+		return false, 0, nil, fmt.Errorf("root directory entry size, read %d bytes instead of expected %d", read, len(dirEntBytes))
 	}
-	if b[0] == 0 {
-		return nil, fmt.Errorf("root directory entry size at location %d was zero, check header and blocksize, given as %d", location, blocksize)
+	if dirEntBytes[0] == 0 {
+		return false, 0, nil, fmt.Errorf("root directory entry size at location %d was zero, check header and blocksize, given as %d", location, blocksize)
 	}
-	// now read the whole entry
-	b = make([]byte, b[0])
-	read, err = file.ReadAt(b, location)
+	dirEntBytes = make([]byte, dirEntBytes[0])
+	read, err = b.ReadAt(dirEntBytes, location)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read root directory entry at location %d: %v", location, err)
+		return false, 0, nil, fmt.Errorf("unable to read root directory entry at location %d: %v", location, err)
 	}
-	if read != len(b) {
-		return nil, fmt.Errorf("root directory entry, read %d bytes instead of expected %d", read, len(b))
+	if read != len(dirEntBytes) {
+		return false, 0, nil, fmt.Errorf("root directory entry, read %d bytes instead of expected %d", read, len(dirEntBytes))
 	}
-	// parse it - we do not have any handlers yet
-	de, err := parseDirEntry(b, &FileSystem{
+	de, err := parseDirEntry(dirEntBytes, &FileSystem{
 		suspEnabled: true,
-		file:        file,
+		backend:     b,
 		blocksize:   blocksize,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error parsing root entry from bytes: %v", err)
+		return false, 0, nil, fmt.Errorf("error parsing root entry from bytes: %v", err)
 	}
-	// is the SUSP in use?
 	var (
 		suspEnabled  bool
 		skipBytes    uint8
@@ -252,8 +301,6 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 			suspEnabled = true
 			skipBytes = s.SkipBytes()
 		}
-
-		// register any extension handlers
 		if s, ok := ext.(directoryEntrySystemUseExtensionReference); suspEnabled && ok {
 			extHandler := getRockRidgeExtension(s.ExtensionID())
 			if extHandler != nil {
@@ -261,25 +308,34 @@ func Read(file util.File, size, start, blocksize int64) (*FileSystem, error) {
 			}
 		}
 	}
+	return suspEnabled, skipBytes, suspHandlers, nil
+}
 
-	fs := &FileSystem{
-		workspace: "", // no workspace when we do nothing with it
-		start:     start,
-		size:      size,
-		file:      file,
-		volumes: volumeDescriptors{
-			descriptors: vds,
-			primary:     pvd,
-		},
-		blocksize:      blocksize,
-		pathTable:      pt,
-		rootDir:        rootDirEntry,
-		suspEnabled:    suspEnabled,
-		suspSkip:       skipBytes,
-		suspExtensions: suspHandlers,
+// loadJoliet loads the Joliet path table and root directory entry from a supplementary volume descriptor.
+func loadJoliet(svd *supplementaryVolumeDescriptor, b backend.Storage) (*pathTable, *directoryEntry, bool) {
+	if svd == nil {
+		return nil, nil, false
 	}
-	rootDirEntry.filesystem = fs
-	return fs, nil
+	rootDir := svd.rootDirectoryEntry
+	rootDir.joliet = true
+	pathTableBytes := make([]byte, svd.pathTableSize)
+	ptLoc := svd.pathTableLLocation * uint32(svd.blocksize)
+	read, err := b.ReadAt(pathTableBytes, int64(ptLoc))
+	if err != nil || read != len(pathTableBytes) {
+		return nil, rootDir, false
+	}
+	return parseJolietPathTable(pathTableBytes), rootDir, true
+}
+
+// interface guard
+var _ filesystem.FileSystem = (*FileSystem)(nil)
+
+// Delete the temporary directory created during the iso9660 image creation
+func (fsm *FileSystem) Close() error {
+	if fsm.workspace != "" {
+		return os.RemoveAll(fsm.workspace)
+	}
+	return nil
 }
 
 // Type returns the type code for the filesystem. Always returns filesystem.TypeFat32
@@ -295,7 +351,7 @@ func (fsm *FileSystem) Type() filesystem.Type {
 // if readonly and not in workspace, will return an error
 func (fsm *FileSystem) Mkdir(p string) error {
 	if fsm.workspace == "" {
-		return fmt.Errorf("cannot write to read-only filesystem")
+		return filesystem.ErrReadonlyFilesystem
 	}
 	err := os.MkdirAll(path.Join(fsm.workspace, p), 0o755)
 	if err != nil {
@@ -305,13 +361,68 @@ func (fsm *FileSystem) Mkdir(p string) error {
 	return err
 }
 
+// creates a filesystem node (file, device special file, or named pipe) named pathname,
+// with attributes specified by mode and dev
+//
+//nolint:revive // parameters will be used eventually
+func (fsm *FileSystem) Mknod(pathname string, mode uint32, dev int) error {
+	// Rock Ridge has device files support
+	// https://en.wikipedia.org/wiki/ISO_9660#Rock_Ridge
+	return filesystem.ErrNotImplemented
+}
+
+// creates a new link (also known as a hard link) to an existing file.
+func (fsm *FileSystem) Link(_, _ string) error {
+	return filesystem.ErrNotSupported
+}
+
+// creates a symbolic link named linkpath which contains the string target.
+//
+//nolint:revive // parameters will be used eventually
+func (fsm *FileSystem) Symlink(oldpath, newpath string) error {
+	// Rock Ridge has symlink support
+	// https://en.wikipedia.org/wiki/ISO_9660#Rock_Ridge
+	return filesystem.ErrNotImplemented
+}
+
+// Chmod changes the mode of the named file to mode. If the file is a symbolic link,
+// it changes the mode of the link's target.
+//
+//nolint:revive // parameters will be used eventually
+func (fsm *FileSystem) Chmod(name string, mode os.FileMode) error {
+	// Rock Ridge has UNIX-style file modes support
+	// https://en.wikipedia.org/wiki/ISO_9660#Rock_Ridge
+	return filesystem.ErrNotImplemented
+}
+
+// Chtimes changes the file creation, access and modification times
+//
+//nolint:revive // parameters will be used eventually
+func (fs *FileSystem) Chtimes(name string, ctime, atime, mtime time.Time) error {
+	return filesystem.ErrNotImplemented
+}
+
+// Chown changes the numeric uid and gid of the named file. If the file is a symbolic link,
+// it changes the uid and gid of the link's target. A uid or gid of -1 means to not change that value
+//
+//nolint:revive // parameters will be used eventually
+func (fsm *FileSystem) Chown(name string, uid, gid int) error {
+	// Rock Ridge has user ids and group ids support
+	// https://en.wikipedia.org/wiki/ISO_9660#Rock_Ridge
+	return filesystem.ErrNotImplemented
+}
+
 // ReadDir return the contents of a given directory in a given filesystem.
 //
 // Returns a slice of os.FileInfo with all of the entries in the directory.
 //
 // Will return an error if the directory does not exist or is a regular file and not a directory
-func (fsm *FileSystem) ReadDir(p string) ([]os.FileInfo, error) {
-	var fi []os.FileInfo
+func (fsm *FileSystem) ReadDir(p string) ([]iofs.DirEntry, error) {
+	// should not accept anything that starts with /
+	if err := validatePath(p); err != nil {
+		return nil, err
+	}
+	var de []iofs.DirEntry
 	// non-workspace: read from iso9660
 	// workspace: read from regular filesystem
 	if fsm.workspace != "" {
@@ -321,28 +432,70 @@ func (fsm *FileSystem) ReadDir(p string) ([]os.FileInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read directory %s: %v", p, err)
 		}
-		for _, e := range dirEntries {
-			info, err := e.Info()
-			if err != nil {
-				return nil, fmt.Errorf("could not read directory %s: %v", p, err)
-			}
-			fi = append(fi, info)
-		}
+		de = dirEntries
 	} else {
 		dirEntries, err := fsm.readDirectory(p)
 		if err != nil {
 			return nil, fmt.Errorf("error reading directory %s: %v", p, err)
 		}
-		fi = make([]os.FileInfo, 0, len(dirEntries))
 		for _, entry := range dirEntries {
 			// ignore any entry that is current directory or parent
 			if entry.isSelf || entry.isParent {
 				continue
 			}
-			fi = append(fi, entry)
+			de = append(de, entry)
 		}
 	}
-	return fi, nil
+	return de, nil
+}
+
+// Open returns an fs.File for the named file or directory.
+// If the path refers to a directory, the returned file also implements
+// fs.ReadDirFile, allowing callers such as http.FileServer(http.FS(fs))
+// to list directory contents.
+func (fsm *FileSystem) Open(p string) (iofs.File, error) {
+	// should not accept anything that starts with /
+	if err := validatePath(p); err != nil {
+		return nil, err
+	}
+
+	// workspace mode: os.Open handles both files and directories
+	if fsm.workspace != "" {
+		return os.Open(path.Join(fsm.workspace, p))
+	}
+
+	// root directory
+	if p == "." {
+		return &dirFile{entry: fsm.rootDir, fs: fsm, path: "."}, nil
+	}
+
+	// look up the entry in its parent directory
+	dir := path.Dir(p)
+	filename := path.Base(p)
+	entries, err := fsm.readDirectory(dir)
+	if err != nil {
+		return nil, &iofs.PathError{Op: "open", Path: p, Err: err}
+	}
+
+	for _, e := range entries {
+		if e.isSelf || e.isParent {
+			continue
+		}
+		if e.Name() == filename {
+			if e.IsDir() {
+				return &dirFile{entry: e, fs: fsm, path: p}, nil
+			}
+			// regular file
+			return &File{
+				directoryEntry: e,
+				isReadWrite:    false,
+				isAppend:       false,
+				offset:         0,
+			}, nil
+		}
+	}
+
+	return nil, &iofs.PathError{Op: "open", Path: p, Err: iofs.ErrNotExist}
 }
 
 // OpenFile returns an io.ReadWriter from which you can read the contents of a file
@@ -368,7 +521,7 @@ func (fsm *FileSystem) OpenFile(p string, flag int) (filesystem.File, error) {
 	writeMode := flag&os.O_WRONLY != 0 || flag&os.O_RDWR != 0 || flag&os.O_APPEND != 0 || flag&os.O_CREATE != 0 || flag&os.O_TRUNC != 0 || flag&os.O_EXCL != 0
 	if fsm.workspace == "" {
 		if writeMode {
-			return nil, fmt.Errorf("cannot write to read-only filesystem")
+			return nil, filesystem.ErrReadonlyFilesystem
 		}
 
 		// get the directory entries
@@ -414,8 +567,63 @@ func (fsm *FileSystem) OpenFile(p string, flag int) (filesystem.File, error) {
 	return f, nil
 }
 
+// ReadFile implements ReadFileFS to read an entire file into memory
+func (fsm *FileSystem) ReadFile(name string) ([]byte, error) {
+	f, err := fsm.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return io.ReadAll(f)
+}
+
+// Rename renames (moves) oldpath to newpath. If newpath already exists and is not a directory, Rename replaces it.
+func (fsm *FileSystem) Rename(oldpath, newpath string) error {
+	if fsm.workspace == "" {
+		return filesystem.ErrReadonlyFilesystem
+	}
+	return os.Rename(path.Join(fsm.workspace, oldpath), path.Join(fsm.workspace, newpath))
+}
+
+func (fsm *FileSystem) Remove(p string) error {
+	if fsm.workspace == "" {
+		return filesystem.ErrReadonlyFilesystem
+	}
+	return os.Remove(path.Join(fsm.workspace, p))
+}
+
+// Stat returns a FileInfo describing the file.
+func (fsm *FileSystem) Stat(name string) (iofs.FileInfo, error) {
+	// root directory
+	if name == "." {
+		return rootDirInfo{fsm.rootDir}, nil
+	}
+	dir := path.Dir(name)
+	basename := path.Base(name)
+	des, err := fsm.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read directory %s: %v", dir, err)
+	}
+	for _, de := range des {
+		if de.Name() == basename {
+			return de.Info()
+		}
+	}
+	return nil, &iofs.PathError{Op: "stat", Path: name, Err: fmt.Errorf("file %s not found in directory %s", basename, dir)}
+}
+
 // readDirectory - read directory entry on iso only (not workspace)
+// When Joliet is enabled and Rock Ridge is not, reads from the Joliet (SVD) tree
+// to get full Unicode filenames.
 func (fsm *FileSystem) readDirectory(p string) ([]*directoryEntry, error) {
+	// use Joliet tree when available and Rock Ridge is not active
+	if fsm.jolietEnabled && !fsm.suspEnabled {
+		return fsm.readDirectoryJoliet(p)
+	}
+	return fsm.readDirectoryPVD(p)
+}
+
+func (fsm *FileSystem) readDirectoryPVD(p string) ([]*directoryEntry, error) {
 	var (
 		location, size uint32
 		err            error
@@ -439,7 +647,7 @@ func (fsm *FileSystem) readDirectory(p string) ([]*directoryEntry, error) {
 	if location != 0 {
 		// we need 4 bytes to read the size of the directory; it is at offset 10 from beginning
 		dirb := make([]byte, 4)
-		n, err = fsm.file.ReadAt(dirb, int64(location)*fsm.blocksize+10)
+		n, err = fsm.backend.ReadAt(dirb, int64(location)*fsm.blocksize+10)
 		if err != nil {
 			return nil, fmt.Errorf("could not read directory %s: %v", p, err)
 		}
@@ -464,7 +672,7 @@ func (fsm *FileSystem) readDirectory(p string) ([]*directoryEntry, error) {
 
 	// we have a location, let's read the directories from it
 	b := make([]byte, size)
-	n, err = fsm.file.ReadAt(b, int64(location)*fsm.blocksize)
+	n, err = fsm.backend.ReadAt(b, int64(location)*fsm.blocksize)
 	if err != nil {
 		return nil, fmt.Errorf("could not read directory entries for %s: %v", p, err)
 	}
@@ -475,6 +683,50 @@ func (fsm *FileSystem) readDirectory(p string) ([]*directoryEntry, error) {
 	entries, err := parseDirEntries(b, fsm)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse directory entries for %s: %v", p, err)
+	}
+	return entries, nil
+}
+
+// readDirectoryJoliet reads a directory from the Joliet (SVD) tree, decoding UCS-2 filenames.
+func (fsm *FileSystem) readDirectoryJoliet(p string) ([]*directoryEntry, error) {
+	var (
+		location, size uint32
+		n              int
+	)
+
+	if fsm.jolietPathTable != nil {
+		location = fsm.jolietPathTable.getLocation(p)
+	}
+
+	if location != 0 {
+		dirb := make([]byte, 4)
+		n, err := fsm.backend.ReadAt(dirb, int64(location)*fsm.blocksize+10)
+		if err != nil {
+			return nil, fmt.Errorf("could not read Joliet directory %s: %v", p, err)
+		}
+		if n != len(dirb) {
+			return nil, fmt.Errorf("read %d bytes instead of expected %d", n, len(dirb))
+		}
+		size = binary.LittleEndian.Uint32(dirb)
+	} else if fsm.jolietRootDir != nil {
+		location, size, _ = fsm.jolietRootDir.getLocation(p)
+	}
+
+	if location == 0 {
+		return nil, fmt.Errorf("could not find Joliet directory %s", p)
+	}
+
+	b := make([]byte, size)
+	n, err := fsm.backend.ReadAt(b, int64(location)*fsm.blocksize)
+	if err != nil {
+		return nil, fmt.Errorf("could not read Joliet directory entries for %s: %v", p, err)
+	}
+	if n != int(size) {
+		return nil, fmt.Errorf("reading Joliet directory %s returned %d bytes read instead of expected %d", p, n, size)
+	}
+	entries, err := parseDirEntriesJoliet(b, fsm)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse Joliet directory entries for %s: %v", p, err)
 	}
 	return entries, nil
 }
@@ -497,4 +749,10 @@ func (fsm *FileSystem) Label() string {
 
 func (fsm *FileSystem) SetLabel(string) error {
 	return fmt.Errorf("ISO9660 filesystem is read-only")
+}
+func validatePath(name string) error {
+	if !iofs.ValidPath(name) {
+		return iofs.ErrInvalid
+	}
+	return nil
 }

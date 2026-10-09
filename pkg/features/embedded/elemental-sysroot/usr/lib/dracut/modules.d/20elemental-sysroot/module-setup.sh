@@ -32,5 +32,3 @@ install() {
 
     dracut_need_initqueue
 }
-
-

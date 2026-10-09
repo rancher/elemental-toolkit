@@ -39,7 +39,9 @@ func (e *extent) equal(a *extent) bool {
 	return *e == *a
 }
 
-// blockCount how many blocks are covered in the extents
+// blockCount how many filesystem blocks are covered in the extents.
+// Remember that these are filesystem blocks, which can vary, not the fixed 512-byte sectors on disk,
+// often used in superblock or inode in various places.
 //
 //nolint:unused // useful function for future
 func (e extents) blockCount() uint64 {
@@ -106,7 +108,8 @@ type extentChildPtr struct {
 // By definition, this is a leaf node, so depth=0
 type extentLeafNode struct {
 	extentNodeHeader
-	extents extents // the actual extents
+	extents   extents // the actual extents
+	diskBlock uint64  // block number where this node is stored on disk (0 if root/in inode)
 }
 
 // findBlocks find the actual blocks for a range in the file. leaf nodes already have all of the data inside,
@@ -191,7 +194,8 @@ func (e *extentLeafNode) getCount() uint32 {
 // By definition, this is an internal node, so depth>0
 type extentInternalNode struct {
 	extentNodeHeader
-	children []*extentChildPtr // the children
+	children  []*extentChildPtr // the children
+	diskBlock uint64            // block number where this node is stored on disk (0 if root/in inode)
 }
 
 // findBlocks find the actual blocks for a range in the file. internal nodes need to read the filesystem to
@@ -370,8 +374,9 @@ func parseExtents(b []byte, blocksize, start, count uint32) (extentBlockFinder, 
 // if the existing tree is nil, create a new one.
 // For example, if the input is an extent tree - like the kind found in an inode - and you want to add more extents to it,
 // you add the provided extents, and it expands the tree, including creating new internal nodes and writing them to disk, as needed.
+// Returns the updated tree, the number of metadata blocks allocated for extent tree nodes, and any error.
 
-func extendExtentTree(existing extentBlockFinder, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, error) {
+func extendExtentTree(existing extentBlockFinder, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, uint64, error) {
 	// Check if existing is a leaf or internal node
 	switch node := existing.(type) {
 	case *extentLeafNode:
@@ -380,9 +385,10 @@ func extendExtentTree(existing extentBlockFinder, added *extents, fs *FileSystem
 		return extendInternalNode(node, added, fs, parent)
 	case nil:
 		// brand new extent tree. The root is in the inode, which has a max of 4 extents.
-		return createRootExtentTree(added, fs)
+		result, err := createRootExtentTree(added, fs)
+		return result, 0, err
 	default:
-		return nil, fmt.Errorf("unsupported extentBlockFinder type")
+		return nil, 0, fmt.Errorf("unsupported extentBlockFinder type")
 	}
 }
 
@@ -405,7 +411,7 @@ func createRootExtentTree(added *extents, fs *FileSystem) (extentBlockFinder, er
 	return nil, fmt.Errorf("cannot create root internal node")
 }
 
-func extendLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, error) {
+func extendLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, uint64, error) {
 	// Check if the leaf node has enough space for the added extents
 	if len(node.extents)+len(*added) <= int(node.max) {
 		// Simply append the extents if there's enough space
@@ -415,39 +421,94 @@ func extendLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent
 		// Write the updated node back to the disk
 		err := writeNodeToDisk(node, fs, parent)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
-		return node, nil
+		return node, 0, nil
 	}
 
-	// If not enough space, split the node
-	newNodes, err := splitLeafNode(node, added, fs, parent)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if the original node was the root
+	// Check if the original node was the root (parent == nil)
 	if parent == nil {
+		// Calculate max entries for a non-root leaf node
+		maxEntriesNonRoot := (node.blockSize - 12) / 12
+		totalExtents := len(node.extents) + len(*added)
+
+		// If all extents fit in a single non-root leaf node, create one leaf + internal root
+		// This avoids unnecessarily splitting into two nodes
+		if uint32(totalExtents) <= maxEntriesNonRoot {
+			newLeaf, metaBlocks, err := promoteLeafToChild(node, added, fs)
+			if err != nil {
+				return nil, 0, err
+			}
+			newRoot := createInternalNode([]extentBlockFinder{newLeaf})
+			return newRoot, metaBlocks, nil
+		}
+
+		// Otherwise split the node
+		newNodes, metaBlocks, err := splitLeafNode(node, added, fs)
+		if err != nil {
+			return nil, 0, err
+		}
+
 		// Create a new internal node to reference the split leaf nodes
 		var newNodesAsBlockFinder []extentBlockFinder
 		for _, n := range newNodes {
 			newNodesAsBlockFinder = append(newNodesAsBlockFinder, n)
 		}
-		newRoot := createInternalNode(newNodesAsBlockFinder, nil, fs)
-		return newRoot, nil
+		newRoot := createInternalNode(newNodesAsBlockFinder)
+		return newRoot, metaBlocks, nil
 	}
 
-	// If the original node was not the root, handle the parent internal node
-	parentNode, err := getParentNode(node, fs)
+	// If not enough space in a non-root node, split it
+	newNodes, splitMetaBlocks, err := splitLeafNode(node, added, fs)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return extendInternalNode(parentNode, added, fs, parent)
+	// Replace the old child pointer in the parent with pointers to the new split nodes.
+	// Find the index of the old child in the parent.
+	oldIndex := -1
+	for i, child := range parent.children {
+		if child.diskBlock == node.diskBlock {
+			oldIndex = i
+			break
+		}
+	}
+	if oldIndex == -1 {
+		return nil, 0, fmt.Errorf("could not find old child in parent during leaf split")
+	}
+
+	// Build new child pointers for the split nodes
+	newChildPtrs := make([]*extentChildPtr, 0, len(newNodes))
+	for _, n := range newNodes {
+		newChildPtrs = append(newChildPtrs, &extentChildPtr{
+			fileBlock: n.extents[0].fileBlock,
+			count:     uint32(len(n.extents)),
+			diskBlock: n.diskBlock,
+		})
+	}
+
+	// Replace the single child with the new children
+	newChildren := make([]*extentChildPtr, 0, len(parent.children)+len(newChildPtrs)-1)
+	newChildren = append(newChildren, parent.children[:oldIndex]...)
+	newChildren = append(newChildren, newChildPtrs...)
+	newChildren = append(newChildren, parent.children[oldIndex+1:]...)
+	parent.children = newChildren
+	parent.entries = uint16(len(parent.children))
+
+	// Write the updated parent back to disk
+	// If parent is the root (lives in inode), we just return it; the inode will be written by the caller.
+	// If parent is not the root, write it to its disk block.
+	if parent.diskBlock != 0 {
+		if err := writeNodeToBlock(parent, fs, parent.diskBlock); err != nil {
+			return nil, 0, fmt.Errorf("could not write updated parent: %w", err)
+		}
+	}
+
+	return parent, splitMetaBlocks, nil
 }
 
-func splitLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent *extentInternalNode) ([]*extentLeafNode, error) {
+func splitLeafNode(node *extentLeafNode, added *extents, fs *FileSystem) ([]*extentLeafNode, uint64, error) {
 	// Combine existing and new extents
 	allExtents := node.extents
 	allExtents = append(allExtents, *added...)
@@ -459,12 +520,16 @@ func splitLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent 
 	// Calculate the midpoint to split the extents
 	mid := len(allExtents) / 2
 
+	// Calculate max entries for non-root nodes (based on block size)
+	// Each entry is 12 bytes, header is 12 bytes
+	maxEntries := (node.blockSize - 12) / 12
+
 	// Create the first new leaf node
 	firstLeaf := &extentLeafNode{
 		extentNodeHeader: extentNodeHeader{
 			depth:     0,
 			entries:   uint16(mid),
-			max:       node.max,
+			max:       uint16(maxEntries),
 			blockSize: node.blockSize,
 		},
 		extents: allExtents[:mid],
@@ -475,54 +540,117 @@ func splitLeafNode(node *extentLeafNode, added *extents, fs *FileSystem, parent 
 		extentNodeHeader: extentNodeHeader{
 			depth:     0,
 			entries:   uint16(len(allExtents) - mid),
-			max:       node.max,
+			max:       uint16(maxEntries),
 			blockSize: node.blockSize,
 		},
 		extents: allExtents[mid:],
 	}
 
-	// Write new leaf nodes to the disk
-	err := writeNodeToDisk(firstLeaf, fs, parent)
-	if err != nil {
-		return nil, err
+	// A non-root leaf already lives on disk (node.diskBlock != 0): reuse that
+	// block for one half and allocate a single new block for the other, matching
+	// ext4 ([A] -> [A, C]) and avoiding a leak. The inode-root leaf
+	// (node.diskBlock == 0) has no block to reuse, so allocate two.
+	newBlocks := 1
+	if node.diskBlock == 0 {
+		newBlocks = 2
 	}
-	err = writeNodeToDisk(secondLeaf, fs, parent)
+	blockAlloc, err := fs.allocateExtents(uint64(fs.superblock.blockSize)*uint64(newBlocks), nil)
 	if err != nil {
-		return nil, err
+		return nil, 0, fmt.Errorf("could not allocate blocks for split leaf nodes: %w", err)
+	}
+	allocatedExtents := *blockAlloc
+	if len(allocatedExtents) == 0 || int(allocatedExtents[0].count) < newBlocks {
+		return nil, 0, fmt.Errorf("could not allocate enough blocks for split leaf nodes")
+	}
+	if node.diskBlock != 0 {
+		firstLeaf.diskBlock = node.diskBlock
+		secondLeaf.diskBlock = allocatedExtents[0].startingBlock
+	} else {
+		firstLeaf.diskBlock = allocatedExtents[0].startingBlock
+		secondLeaf.diskBlock = allocatedExtents[0].startingBlock + 1
+	}
+	metaBlocks := uint64(newBlocks)
+
+	if err := writeNodeToBlock(firstLeaf, fs, firstLeaf.diskBlock); err != nil {
+		return nil, 0, err
+	}
+	if err := writeNodeToBlock(secondLeaf, fs, secondLeaf.diskBlock); err != nil {
+		return nil, 0, err
 	}
 
-	return []*extentLeafNode{firstLeaf, secondLeaf}, nil
+	return []*extentLeafNode{firstLeaf, secondLeaf}, metaBlocks, nil
 }
 
-func createInternalNode(nodes []extentBlockFinder, parent *extentInternalNode, fs *FileSystem) *extentInternalNode {
+// promoteLeafToChild takes a root leaf node and its new extents, combines them into a single
+// non-root leaf node that will live on disk. This is used when all extents fit in one non-root leaf.
+func promoteLeafToChild(node *extentLeafNode, added *extents, fs *FileSystem) (*extentLeafNode, uint64, error) {
+	// Combine existing and new extents
+	allExtents := node.extents
+	allExtents = append(allExtents, *added...)
+	// Sort extents by fileBlock to maintain order
+	sort.Slice(allExtents, func(i, j int) bool {
+		return allExtents[i].fileBlock < allExtents[j].fileBlock
+	})
+
+	// Calculate max entries for non-root nodes (based on block size)
+	maxEntries := (node.blockSize - 12) / 12
+
+	// Create the new leaf node
+	newLeaf := &extentLeafNode{
+		extentNodeHeader: extentNodeHeader{
+			depth:     0,
+			entries:   uint16(len(allExtents)),
+			max:       uint16(maxEntries),
+			blockSize: node.blockSize,
+		},
+		extents: allExtents,
+	}
+
+	// Allocate a block for the new leaf node
+	blockAlloc, err := fs.allocateExtents(uint64(fs.superblock.blockSize), nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("could not allocate block for leaf node: %w", err)
+	}
+	allocatedExtents := *blockAlloc
+	if len(allocatedExtents) == 0 || allocatedExtents[0].count < 1 {
+		return nil, 0, fmt.Errorf("could not allocate block for leaf node")
+	}
+	newLeaf.diskBlock = allocatedExtents[0].startingBlock
+
+	// Write the leaf node to its allocated block
+	if err := writeNodeToBlock(newLeaf, fs, newLeaf.diskBlock); err != nil {
+		return nil, 0, err
+	}
+
+	return newLeaf, 1, nil
+}
+
+func createInternalNode(nodes []extentBlockFinder) *extentInternalNode {
+	// Always builds a new root internal node, which lives in the inode: capped at
+	// 4 entries and persisted with the inode, so nothing is written to disk here.
 	internalNode := &extentInternalNode{
 		extentNodeHeader: extentNodeHeader{
 			depth:     nodes[0].getDepth() + 1, // Depth is 1 more than the children
 			entries:   uint16(len(nodes)),
-			max:       nodes[0].getMax(), // Assuming uniform max for all nodes
+			max:       4,
 			blockSize: nodes[0].getBlockSize(),
 		},
 		children: make([]*extentChildPtr, len(nodes)),
 	}
-
 	for i, node := range nodes {
 		internalNode.children[i] = &extentChildPtr{
 			fileBlock: node.getFileBlock(),
 			count:     node.getCount(),
-			diskBlock: getBlockNumberFromNode(node, parent),
+			diskBlock: getDiskBlockFromNode(node),
 		}
 	}
-
-	// Write the new internal node to the disk
-	err := writeNodeToDisk(internalNode, fs, parent)
-	if err != nil {
-		return nil
-	}
-
 	return internalNode
 }
 
 func getBlockNumberFromNode(node extentBlockFinder, parent *extentInternalNode) uint64 {
+	if parent == nil {
+		return 0
+	}
 	for _, childPtr := range parent.children {
 		if childPtrMatchesNode(childPtr, node) {
 			return childPtr.diskBlock
@@ -531,21 +659,49 @@ func getBlockNumberFromNode(node extentBlockFinder, parent *extentInternalNode) 
 	return 0 // Return 0 or an appropriate error value if the block number is not found
 }
 
+// getDiskBlockFromNode retrieves the disk block number stored in the node itself
+func getDiskBlockFromNode(node extentBlockFinder) uint64 {
+	switch n := node.(type) {
+	case *extentLeafNode:
+		return n.diskBlock
+	case *extentInternalNode:
+		return n.diskBlock
+	default:
+		return 0
+	}
+}
+
+// writeNodeToBlock writes an extent node to a specific disk block
+func writeNodeToBlock(node extentBlockFinder, fs *FileSystem, blockNumber uint64) error {
+	writableFile, err := fs.backend.Writable()
+	if err != nil {
+		return err
+	}
+
+	data := node.toBytes()
+	_, err = writableFile.WriteAt(data, int64(blockNumber)*int64(fs.superblock.blockSize))
+	return err
+}
+
 // Helper function to match a child pointer to a node
 func childPtrMatchesNode(childPtr *extentChildPtr, node extentBlockFinder) bool {
 	switch n := node.(type) {
 	case *extentLeafNode:
+		if len(n.extents) == 0 {
+			return false
+		}
 		return childPtr.fileBlock == n.extents[0].fileBlock
 	case *extentInternalNode:
-		// Logic to determine if the childPtr matches the internal node
-		// Placeholder: Implement based on your specific matching criteria
-		return true
+		if len(n.children) == 0 {
+			return false
+		}
+		return childPtr.fileBlock == n.children[0].fileBlock
 	default:
 		return false
 	}
 }
 
-func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, error) {
+func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem, parent *extentInternalNode) (extentBlockFinder, uint64, error) {
 	// Find the appropriate child node to extend
 	childIndex := findChildNode(node, added)
 	childPtr := node.children[childIndex]
@@ -553,13 +709,37 @@ func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem
 	// Load the actual child node from the disk
 	childNode, err := loadChildNode(childPtr, fs)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Recursively extend the child node
-	updatedChild, err := extendExtentTree(childNode, added, fs, node)
+	updatedChild, metaBlocks, err := extendExtentTree(childNode, added, fs, node)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// When a non-root leaf split occurs, extendLeafNode directly updates
+	// our children and returns us (node) back. Detect this and skip the
+	// redundant child-pointer update — but still split if the inode-root
+	// internal node exceeded its max (4 entries).
+	if asInternal, ok := updatedChild.(*extentInternalNode); ok && asInternal == node {
+		if len(node.children) > int(node.max) {
+			newInternalNodes, splitMeta, err := splitInternalNodeChildren(node, fs)
+			if err != nil {
+				return nil, 0, err
+			}
+			metaBlocks += splitMeta
+			if parent == nil {
+				var newNodesAsBlockFinder []extentBlockFinder
+				for _, n := range newInternalNodes {
+					newNodesAsBlockFinder = append(newNodesAsBlockFinder, n)
+				}
+				newRoot := createInternalNode(newNodesAsBlockFinder)
+				return newRoot, metaBlocks, nil
+			}
+			return nil, 0, fmt.Errorf("internal node split with non-root parent not supported")
+		}
+		return node, metaBlocks, nil
 	}
 
 	// Update the current internal node to reference the updated child
@@ -568,24 +748,24 @@ func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem
 		node.children[childIndex] = &extentChildPtr{
 			fileBlock: updatedChild.extents[0].fileBlock,
 			count:     uint32(len(updatedChild.extents)),
-			diskBlock: getBlockNumberFromNode(updatedChild, node),
+			diskBlock: getDiskBlockFromNode(updatedChild),
 		}
 	case *extentInternalNode:
 		node.children[childIndex] = &extentChildPtr{
 			fileBlock: updatedChild.children[0].fileBlock,
 			count:     uint32(len(updatedChild.children)),
-			diskBlock: getBlockNumberFromNode(updatedChild, node),
+			diskBlock: getDiskBlockFromNode(updatedChild),
 		}
 	default:
-		return nil, fmt.Errorf("unsupported updatedChild type")
+		return nil, 0, fmt.Errorf("unsupported updatedChild type")
 	}
 
 	// Check if the internal node is at capacity
 	if len(node.children) > int(node.max) {
 		// Split the internal node if it's at capacity
-		newInternalNodes, err := splitInternalNode(node, node.children[childIndex], fs, parent)
+		newInternalNodes, err := splitInternalNode(node, node.children[childIndex], fs)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// Check if the original node was the root
@@ -595,8 +775,8 @@ func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem
 			for _, n := range newInternalNodes {
 				newNodesAsBlockFinder = append(newNodesAsBlockFinder, n)
 			}
-			newRoot := createInternalNode(newNodesAsBlockFinder, nil, fs)
-			return newRoot, nil
+			newRoot := createInternalNode(newNodesAsBlockFinder)
+			return newRoot, metaBlocks, nil
 		}
 
 		// If the original node was not the root, handle the parent internal node
@@ -606,22 +786,68 @@ func extendInternalNode(node *extentInternalNode, added *extents, fs *FileSystem
 	// Write the updated node back to the disk
 	err = writeNodeToDisk(node, fs, parent)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return node, nil
+	return node, metaBlocks, nil
 }
 
-// Helper function to get the parent node of a given internal node
-//
-//nolint:revive // this parameter will be used eventually
-func getParentNode(node extentBlockFinder, fs *FileSystem) (*extentInternalNode, error) {
-	// Logic to find and return the parent node of the given node
-	// This is a placeholder and needs to be implemented based on your specific tree structure
-	return nil, fmt.Errorf("getParentNode not implemented")
+// nonRootInternalMaxEntries is the max child pointers for an internal node
+// stored on disk (not in the inode root, which is capped at 4).
+func nonRootInternalMaxEntries(blockSize uint32) uint16 {
+	return uint16((blockSize - 12) / 12)
 }
 
-func splitInternalNode(node *extentInternalNode, newChild *extentChildPtr, fs *FileSystem, parent *extentInternalNode) ([]*extentInternalNode, error) {
+// splitInternalNodeChildren splits an over-capacity internal node into two
+// on-disk internal nodes. Used when a leaf split under the inode-root
+// internal node pushes child count past max (4).
+func splitInternalNodeChildren(node *extentInternalNode, fs *FileSystem) ([]*extentInternalNode, uint64, error) {
+	allChildren := node.children
+	mid := len(allChildren) / 2
+	maxEntries := nonRootInternalMaxEntries(node.blockSize)
+
+	firstInternal := &extentInternalNode{
+		extentNodeHeader: extentNodeHeader{
+			depth:     node.depth,
+			entries:   uint16(mid),
+			max:       maxEntries,
+			blockSize: node.blockSize,
+		},
+		children: allChildren[:mid],
+	}
+
+	secondInternal := &extentInternalNode{
+		extentNodeHeader: extentNodeHeader{
+			depth:     node.depth,
+			entries:   uint16(len(allChildren) - mid),
+			max:       maxEntries,
+			blockSize: node.blockSize,
+		},
+		children: allChildren[mid:],
+	}
+
+	blockAlloc, err := fs.allocateExtents(uint64(fs.superblock.blockSize)*2, nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("could not allocate blocks for split internal nodes: %w", err)
+	}
+	allocatedExtents := *blockAlloc
+	if len(allocatedExtents) == 0 || allocatedExtents[0].count < 2 {
+		return nil, 0, fmt.Errorf("could not allocate enough blocks for split internal nodes")
+	}
+	firstInternal.diskBlock = allocatedExtents[0].startingBlock
+	secondInternal.diskBlock = allocatedExtents[0].startingBlock + 1
+
+	if err := writeNodeToBlock(firstInternal, fs, firstInternal.diskBlock); err != nil {
+		return nil, 0, err
+	}
+	if err := writeNodeToBlock(secondInternal, fs, secondInternal.diskBlock); err != nil {
+		return nil, 0, err
+	}
+
+	return []*extentInternalNode{firstInternal, secondInternal}, 2, nil
+}
+
+func splitInternalNode(node *extentInternalNode, newChild *extentChildPtr, fs *FileSystem) ([]*extentInternalNode, error) {
 	// Combine existing children with the new child
 	allChildren := node.children
 	allChildren = append(allChildren, newChild)
@@ -632,13 +858,14 @@ func splitInternalNode(node *extentInternalNode, newChild *extentChildPtr, fs *F
 
 	// Calculate the midpoint to split the children
 	mid := len(allChildren) / 2
+	maxEntries := nonRootInternalMaxEntries(node.blockSize)
 
 	// Create the first new internal node
 	firstInternal := &extentInternalNode{
 		extentNodeHeader: extentNodeHeader{
 			depth:     node.depth,
 			entries:   uint16(mid),
-			max:       node.max,
+			max:       maxEntries,
 			blockSize: node.blockSize,
 		},
 		children: allChildren[:mid],
@@ -649,19 +876,30 @@ func splitInternalNode(node *extentInternalNode, newChild *extentChildPtr, fs *F
 		extentNodeHeader: extentNodeHeader{
 			depth:     node.depth,
 			entries:   uint16(len(allChildren) - mid),
-			max:       node.max,
+			max:       maxEntries,
 			blockSize: node.blockSize,
 		},
 		children: allChildren[mid:],
 	}
 
-	// Write new internal nodes to the disk
-	err := writeNodeToDisk(firstInternal, fs, parent)
+	// Allocate blocks for both new internal nodes. Same issue as
+	// splitLeafNode: freshly created nodes aren't in parent.children yet,
+	// so writeNodeToDisk's lookup would fail.
+	blockAlloc, err := fs.allocateExtents(uint64(fs.superblock.blockSize)*2, nil)
 	if err != nil {
+		return nil, fmt.Errorf("could not allocate blocks for split internal nodes: %w", err)
+	}
+	allocatedExtents := *blockAlloc
+	if len(allocatedExtents) == 0 || allocatedExtents[0].count < 2 {
+		return nil, fmt.Errorf("could not allocate enough blocks for split internal nodes")
+	}
+	firstInternal.diskBlock = allocatedExtents[0].startingBlock
+	secondInternal.diskBlock = allocatedExtents[0].startingBlock + 1
+
+	if err := writeNodeToBlock(firstInternal, fs, firstInternal.diskBlock); err != nil {
 		return nil, err
 	}
-	err = writeNodeToDisk(secondInternal, fs, parent)
-	if err != nil {
+	if err := writeNodeToBlock(secondInternal, fs, secondInternal.diskBlock); err != nil {
 		return nil, err
 	}
 
@@ -669,19 +907,23 @@ func splitInternalNode(node *extentInternalNode, newChild *extentChildPtr, fs *F
 }
 
 func writeNodeToDisk(node extentBlockFinder, fs *FileSystem, parent *extentInternalNode) error {
-	var blockNumber uint64
-	if parent != nil {
-		blockNumber = getBlockNumberFromNode(node, parent)
-	} else {
-		blockNumber = getNewBlockNumber(fs)
+	// Root nodes live in the inode; only write when there's a parent block.
+	if parent == nil {
+		return nil
 	}
+	blockNumber := getBlockNumberFromNode(node, parent)
 
 	if blockNumber == 0 {
 		return fmt.Errorf("block number not found for node")
 	}
 
+	writableFile, err := fs.backend.Writable()
+	if err != nil {
+		return err
+	}
+
 	data := node.toBytes()
-	_, err := fs.file.WriteAt(data, int64(blockNumber)*int64(fs.superblock.blockSize))
+	_, err = writableFile.WriteAt(data, int64(blockNumber)*int64(fs.superblock.blockSize))
 	return err
 }
 
@@ -716,18 +958,37 @@ func findChildNode(node *extentInternalNode, added *extents) int {
 }
 
 // loadChildNode load up a child node from the disk
-//
-//nolint:unparam // this parameter will be used eventually
 func loadChildNode(childPtr *extentChildPtr, fs *FileSystem) (extentBlockFinder, error) {
 	data := make([]byte, fs.superblock.blockSize)
-	_, err := fs.file.ReadAt(data, int64(childPtr.diskBlock)*int64(fs.superblock.blockSize))
+	_, err := fs.backend.ReadAt(data, int64(childPtr.diskBlock)*int64(fs.superblock.blockSize))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not read extent tree block %d: %w", childPtr.diskBlock, err)
 	}
 
-	// Logic to decode data into an extentBlockFinder (extentLeafNode or extentInternalNode)
-	// This is a placeholder and needs to be implemented based on your specific encoding scheme
-	var node extentBlockFinder
-	// Implement the logic to decode the node from the data
+	node, err := parseExtents(data, fs.superblock.blockSize, childPtr.fileBlock, childPtr.count)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse extent tree block %d: %w", childPtr.diskBlock, err)
+	}
+
+	// Set the diskBlock on the parsed node so it can be written back to the same location
+	switch n := node.(type) {
+	case *extentLeafNode:
+		n.diskBlock = childPtr.diskBlock
+	case *extentInternalNode:
+		n.diskBlock = childPtr.diskBlock
+	}
+
 	return node, nil
+}
+
+func extentsBlockFinderFromExtents(exts extents, blocksize uint32) extentBlockFinder {
+	return &extentLeafNode{
+		extentNodeHeader: extentNodeHeader{
+			depth:     0,
+			entries:   uint16(len(exts)),
+			max:       4, // assuming max 4 for leaf nodes in inode
+			blockSize: blocksize,
+		},
+		extents: exts,
+	}
 }

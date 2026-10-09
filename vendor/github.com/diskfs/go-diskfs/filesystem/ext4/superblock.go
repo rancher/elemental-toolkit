@@ -4,12 +4,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"math/bits"
 	"reflect"
 	"sort"
 	"time"
 
 	"github.com/diskfs/go-diskfs/filesystem/ext4/crc"
-	"github.com/diskfs/go-diskfs/util"
+	"github.com/diskfs/go-diskfs/util/slices"
 	"github.com/google/uuid"
 )
 
@@ -268,7 +269,7 @@ func superblockFromBytes(b []byte) (*superblock, error) {
 	sb.freeInodes = binary.LittleEndian.Uint32(b[0x10:0x14])
 	sb.firstDataBlock = binary.LittleEndian.Uint32(b[0x14:0x18])
 	sb.blockSize = uint32(math.Exp2(float64(10 + binary.LittleEndian.Uint32(b[0x18:0x1c]))))
-	sb.clusterSize = uint64(math.Exp2(float64(binary.LittleEndian.Uint32(b[0x1c:0x20]))))
+	sb.clusterSize = uint64(math.Exp2(float64(10 + binary.LittleEndian.Uint32(b[0x1c:0x20]))))
 	sb.blocksPerGroup = binary.LittleEndian.Uint32(b[0x20:0x24])
 	if sb.features.bigalloc {
 		sb.clustersPerGroup = binary.LittleEndian.Uint32(b[0x24:0x28])
@@ -347,7 +348,10 @@ func superblockFromBytes(b []byte) (*superblock, error) {
 
 	sb.hashVersion = hashAlgorithm(b[0xfc])
 
-	sb.groupDescriptorSize = binary.LittleEndian.Uint16(b[0xfe:0x100])
+	sb.groupDescriptorSize = 32
+	if sb.features.fs64Bit {
+		sb.groupDescriptorSize = binary.LittleEndian.Uint16(b[0xfe:0x100])
+	}
 
 	sb.defaultMountOptions = parseMountOptions(binary.LittleEndian.Uint32(b[0x100:0x104]))
 	sb.firstMetablockGroup = binary.LittleEndian.Uint32(b[0x104:0x108])
@@ -486,8 +490,37 @@ func (sb *superblock) toBytes() ([]byte, error) {
 
 	binary.LittleEndian.PutUint32(b[0x10:0x14], sb.freeInodes)
 	binary.LittleEndian.PutUint32(b[0x14:0x18], sb.firstDataBlock)
-	binary.LittleEndian.PutUint32(b[0x18:0x1c], uint32(math.Log2(float64(sb.blockSize))-10))
-	binary.LittleEndian.PutUint32(b[0x1c:0x20], uint32(math.Log2(float64(sb.clusterSize))))
+	// blockSize must be power-of-two and >= 1024
+	logBlockSize := uint32(bits.TrailingZeros32(sb.blockSize)) - 10
+	binary.LittleEndian.PutUint32(b[0x18:0x1c], logBlockSize)
+
+	if sb.blockSize < 1024 || sb.blockSize&(sb.blockSize-1) != 0 {
+		return nil, fmt.Errorf("invalid blockSize %d", sb.blockSize)
+	}
+	if sb.clusterSize <= 0 {
+		return nil, fmt.Errorf("invalid clusterSize %d", sb.clusterSize)
+	}
+
+	// s_log_cluster_size uses the same encoding as s_log_block_size:
+	// cluster_size_bytes = 2^(10 + s_log_cluster_size)
+	// For non-bigalloc, cluster == block, so s_log_cluster_size == s_log_block_size.
+	// e2fsck validates s_log_block_size <= s_log_cluster_size and rejects the superblock
+	// as corrupt if this check fails.
+	var logCluster uint32
+	blockSize := uint64(sb.blockSize)
+	if sb.features.bigalloc {
+		if sb.clusterSize%blockSize != 0 {
+			return nil, fmt.Errorf("clusterSize %d not multiple of blockSize %d", sb.clusterSize, sb.blockSize)
+		}
+		ratio := sb.clusterSize / blockSize
+		if ratio == 0 || ratio&(ratio-1) != 0 {
+			return nil, fmt.Errorf("clusterSize/blockSize ratio must be power of two, got %d", ratio)
+		}
+		logCluster = uint32(bits.TrailingZeros32(uint32(ratio))) + logBlockSize
+	} else {
+		logCluster = logBlockSize
+	}
+	binary.LittleEndian.PutUint32(b[0x1c:0x20], logCluster)
 
 	binary.LittleEndian.PutUint32(b[0x20:0x24], sb.blocksPerGroup)
 	if sb.features.bigalloc {
@@ -575,13 +608,12 @@ func (sb *superblock) toBytes() ([]byte, error) {
 	binary.LittleEndian.PutUint32(b[0xe8:0xec], sb.orphanedInodesStart)
 
 	// to be safe
-	if len(sb.hashTreeSeed) < 4 {
-		sb.hashTreeSeed = append(sb.hashTreeSeed, 0, 0, 0, 0)
-	}
-	binary.LittleEndian.PutUint32(b[0xec:0xf0], sb.hashTreeSeed[0])
-	binary.LittleEndian.PutUint32(b[0xf0:0xf4], sb.hashTreeSeed[1])
-	binary.LittleEndian.PutUint32(b[0xf4:0xf8], sb.hashTreeSeed[2])
-	binary.LittleEndian.PutUint32(b[0xf8:0xfc], sb.hashTreeSeed[3])
+	hashTreeSeed := make([]uint32, 4)
+	copy(hashTreeSeed, sb.hashTreeSeed)
+	binary.LittleEndian.PutUint32(b[0xec:0xf0], hashTreeSeed[0])
+	binary.LittleEndian.PutUint32(b[0xf0:0xf4], hashTreeSeed[1])
+	binary.LittleEndian.PutUint32(b[0xf4:0xf8], hashTreeSeed[2])
+	binary.LittleEndian.PutUint32(b[0xf8:0xfc], hashTreeSeed[3])
 
 	b[0xfc] = byte(sb.hashVersion)
 
@@ -614,7 +646,6 @@ func (sb *superblock) toBytes() ([]byte, error) {
 
 	binary.LittleEndian.PutUint16(b[0x166:0x168], sb.multiMountPreventionInterval)
 	binary.LittleEndian.PutUint64(b[0x168:0x170], sb.multiMountProtectionBlock)
-
 	b[0x174] = uint8(math.Log2(float64(sb.logGroupsPerFlex)))
 
 	b[0x175] = sb.checksumType // only valid one is 1
@@ -735,7 +766,7 @@ func calculateBackupSuperblockGroups(bgs int64) []int64 {
 		backupGroups = append(backupGroups, bg)
 	}
 	// sort the backup groups
-	uniqBackupGroups := util.Uniqify[int64](backupGroups)
+	uniqBackupGroups := slices.Uniqify[int64](backupGroups)
 	sort.Slice(uniqBackupGroups, func(i, j int) bool {
 		return uniqBackupGroups[i] < uniqBackupGroups[j]
 	})
