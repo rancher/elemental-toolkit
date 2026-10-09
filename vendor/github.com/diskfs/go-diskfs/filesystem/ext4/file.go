@@ -3,17 +3,24 @@ package ext4
 import (
 	"fmt"
 	"io"
+	"io/fs"
+
+	"github.com/diskfs/go-diskfs/filesystem"
 )
+
+var _ filesystem.File = (*File)(nil)
+var _ fs.File = (*File)(nil)
 
 // File represents a single file in an ext4 filesystem
 type File struct {
-	*directoryEntry
 	*inode
 	isReadWrite bool
 	isAppend    bool
 	offset      int64
 	filesystem  *FileSystem
 	extents     extents
+	fileType    directoryFileType
+	filename    string
 }
 
 // Read reads up to len(b) bytes from the File.
@@ -22,6 +29,9 @@ type File struct {
 // reads from the last known offset in the file from last read or write
 // use Seek() to set at a particular point
 func (fl *File) Read(b []byte) (int, error) {
+	if fl.fileType == dirFileTypeDirectory {
+		return 0, fmt.Errorf("cannot read directory")
+	}
 	var (
 		fileSize  = int64(fl.size)
 		blocksize = uint64(fl.filesystem.superblock.blockSize)
@@ -61,7 +71,7 @@ func (fl *File) Read(b []byte) (int, error) {
 		// read those bytes
 		startPosOnDisk := e.startingBlock*blocksize + uint64(startPositionInExtent)
 		b2 := make([]byte, toReadInOffset)
-		read, err := fl.filesystem.file.ReadAt(b2, int64(startPosOnDisk))
+		read, err := fl.filesystem.backend.ReadAt(b2, int64(startPosOnDisk))
 		if err != nil {
 			return int(readBytes), fmt.Errorf("failed to read bytes: %v", err)
 		}
@@ -90,7 +100,6 @@ func (fl *File) Write(b []byte) (int, error) {
 	var (
 		fileSize           = int64(fl.size)
 		originalFileSize   = int64(fl.size)
-		blockCount         = fl.blocks
 		originalBlockCount = fl.blocks
 		blocksize          = uint64(fl.filesystem.superblock.blockSize)
 	)
@@ -118,19 +127,37 @@ func (fl *File) Write(b []byte) (int, error) {
 	if fl.size%blocksize > 0 {
 		newBlockCount++
 	}
-	blocksNeeded := newBlockCount - blockCount
-	bytesNeeded := blocksNeeded * blocksize
-	if newBlockCount > blockCount {
-		newExtents, err := fl.filesystem.allocateExtents(bytesNeeded, &fl.extents)
+	allocatedBlocks := fl.extents.blockCount()
+	if newBlockCount > allocatedBlocks {
+		// Calculate the previously accumulated tree metadata blocks so we don't lose them.
+		// fl.blocks (in its current unit) = data blocks + meta blocks from prior writes.
+		var oldMetaBlocks uint64
+		if fl.filesystemBlocks {
+			oldMetaBlocks = fl.blocks - allocatedBlocks
+		} else {
+			oldMetaBlocks = fl.blocks*512/blocksize - allocatedBlocks
+		}
+
+		newExtents, err := fl.filesystem.allocateExtents(fl.size, &fl.extents)
 		if err != nil {
 			return 0, fmt.Errorf("could not allocate disk space for file %w", err)
 		}
-		extentTreeParsed, err := extendExtentTree(fl.inode.extents, newExtents, fl.filesystem, nil)
+		extentTreeParsed, metaBlocks, err := extendExtentTree(fl.inode.extents, newExtents, fl.filesystem, nil)
 		if err != nil {
 			return 0, fmt.Errorf("could not convert extents into tree: %w", err)
 		}
 		fl.inode.extents = extentTreeParsed
-		fl.blocks = newBlockCount
+		updatedExtents, err := fl.inode.extents.blocks(fl.filesystem)
+		if err != nil {
+			return 0, fmt.Errorf("could not read updated extents: %w", err)
+		}
+		fl.extents = updatedExtents
+		totalMetaBlocks := oldMetaBlocks + metaBlocks
+		if fl.filesystemBlocks {
+			fl.blocks = newBlockCount + totalMetaBlocks
+		} else {
+			fl.blocks = (newBlockCount + totalMetaBlocks) * blocksize / 512
+		}
 	}
 
 	if originalFileSize != int64(fl.size) || originalBlockCount != fl.blocks {
@@ -145,6 +172,12 @@ func (fl *File) Write(b []byte) (int, error) {
 	// the offset given for reading is relative to the file, so we need to calculate
 	// where these are in the extents relative to the file
 	writeStartBlock := uint64(fl.offset) / blocksize
+
+	writableFile, err := fl.filesystem.backend.Writable()
+	if err != nil {
+		return -1, err
+	}
+
 	for _, e := range fl.extents {
 		// if the last block of the extent is before the first block we want to write, skip it
 		if uint64(e.fileBlock)+uint64(e.count) < writeStartBlock {
@@ -164,7 +197,7 @@ func (fl *File) Write(b []byte) (int, error) {
 		startPosOnDisk := e.startingBlock*blocksize + uint64(startPositionInExtent)
 		b2 := make([]byte, toWriteInOffset)
 		copy(b2, b[writtenBytes:])
-		written, err := fl.filesystem.file.WriteAt(b2, int64(startPosOnDisk))
+		written, err := writableFile.WriteAt(b2, int64(startPosOnDisk))
 		if err != nil {
 			return int(writtenBytes), fmt.Errorf("failed to read bytes: %v", err)
 		}
@@ -175,12 +208,8 @@ func (fl *File) Write(b []byte) (int, error) {
 			break
 		}
 	}
-	var err error
-	if fl.offset >= fileSize {
-		err = io.EOF
-	}
 
-	return int(writtenBytes), err
+	return int(writtenBytes), nil
 }
 
 // Seek set the offset to a particular point in the file
@@ -205,4 +234,16 @@ func (fl *File) Seek(offset int64, whence int) (int64, error) {
 func (fl *File) Close() error {
 	*fl = File{}
 	return nil
+}
+
+// Stat returns a fs.FileInfo structure describing file
+func (fl *File) Stat() (fs.FileInfo, error) {
+	return &FileInfo{
+		modTime: fl.modifyTime,
+		name:    fl.filename,
+		size:    int64(fl.size),
+		isDir:   fl.fileType == dirFileTypeDirectory,
+		mode:    fl.permissionsToMode(),
+		sys:     fl.stat(),
+	}, nil
 }

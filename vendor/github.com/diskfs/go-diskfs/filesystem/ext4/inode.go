@@ -3,6 +3,7 @@ package ext4
 import (
 	"encoding/binary"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/diskfs/go-diskfs/filesystem/ext4/crc"
@@ -67,6 +68,9 @@ const (
 	filePermissionsOtherExecute uint16 = 0x1
 	filePermissionsOtherWrite   uint16 = 0x2
 	filePermissionsOtherRead    uint16 = 0x4
+	filePermissionsSticky       uint16 = 0x200
+	filePermissionsGroupSetgid  uint16 = 0x400
+	filePermissionsOwnerSetuid  uint16 = 0x800
 )
 
 // mountOptions is a structure holding flags for an inode
@@ -104,6 +108,7 @@ type filePermissions struct {
 	read    bool
 	write   bool
 	execute bool
+	special bool
 }
 
 // inode is a structure holding the data about an inode
@@ -131,7 +136,80 @@ type inode struct {
 	inodeSize              uint16
 	project                uint32
 	extents                extentBlockFinder
+	blockPointers          [15]uint32
 	linkTarget             string
+}
+
+// deviceNumber extracts the device major/minor from blockPointers using the
+// Linux kernel encoding from include/linux/kdev_t.h:
+//
+// Old encoding (blockPointers[0] != 0):
+//
+//	dev_t old_decode_dev(u16 val) {
+//	    return MKDEV((val >> 8) & 255, val & 255);
+//	}
+//
+// New encoding (blockPointers[1]):
+//
+//	dev_t new_decode_dev(u32 dev) {
+//	    unsigned major = (dev & 0xfff00) >> 8;
+//	    unsigned minor = (dev & 0xff) | ((dev >> 12) & 0xfff00);
+//	    return MKDEV(major, minor);
+//	}
+func (i *inode) deviceNumber() (major, minor uint32) {
+	if i.fileType != fileTypeCharacterDevice && i.fileType != fileTypeBlockDevice {
+		return 0, 0
+	}
+	old := i.blockPointers[0]
+	if old != 0 {
+		major = (old >> 8) & 0xff
+		minor = old & 0xff
+		return
+	}
+	raw := i.blockPointers[1]
+	major = (raw >> 8) & 0xfff
+	minor = (raw & 0xff) | ((raw >> 12) & 0xfff00)
+	return
+}
+
+func (i *inode) stat() *StatT {
+	major, minor := i.deviceNumber()
+	s := &StatT{
+		UID:        i.owner,
+		GID:        i.group,
+		Major:      major,
+		Minor:      minor,
+		Ino:        i.number,
+		Nlink:      i.hardLinks,
+		Blocks:     i.blocks,
+		AccessTime: i.accessTime,
+		ChangeTime: i.changeTime,
+		CreateTime: i.createTime,
+		LinkTarget: i.linkTarget,
+	}
+	if i.flags != nil {
+		s.Flags = inodeFlagsToInodeFlags(i.flags)
+	}
+	return s
+}
+
+func inodeFlagsToInodeFlags(f *inodeFlags) InodeFlags {
+	return InodeFlags{
+		Immutable:          f.immutable,
+		AppendOnly:         f.appendOnly,
+		NoDump:             f.noDump,
+		NoAtime:            f.noAccessTimeUpdate,
+		Synchronous:        f.synchronous,
+		Compressed:         f.compressed,
+		Encrypted:          f.encryptedInode,
+		HashedIndexes:      f.hashedDirectoryIndexes,
+		JournalData:        f.alwaysJournal,
+		HugeFile:           f.hugeFile,
+		Extents:            f.usesExtents,
+		ExtendedAttributes: f.extendedAttributes,
+		InlineData:         f.inlineData,
+		TopDirectory:       f.topDirectory,
+	}
 }
 
 //nolint:unused // will be used in the future, not yet
@@ -151,6 +229,8 @@ func inodeFromBytes(b []byte, sb *superblock, number uint32) (*inode, error) {
 	if len(b) < int(minInodeSize) {
 		return nil, fmt.Errorf("inode data too short: %d bytes, must be min %d bytes", len(b), minInodeSize)
 	}
+	// only work with the amount of data that is the size of the inode, even if more was passed in
+	b = b[:sb.inodeSize]
 
 	// checksum before using the data
 	checksumBytes := make([]byte, 4)
@@ -168,12 +248,7 @@ func inodeFromBytes(b []byte, sb *superblock, number uint32) (*inode, error) {
 	owner := make([]byte, 4)
 	fileSize := make([]byte, 8)
 	group := make([]byte, 4)
-	accessTime := make([]byte, 8)
-	changeTime := make([]byte, 8)
-	modifyTime := make([]byte, 8)
-	createTime := make([]byte, 8)
 	version := make([]byte, 8)
-	extendedAttributeBlock := make([]byte, 8)
 
 	mode := binary.LittleEndian.Uint16(b[0x0:0x2])
 
@@ -185,33 +260,47 @@ func inodeFromBytes(b []byte, sb *superblock, number uint32) (*inode, error) {
 	copy(fileSize[4:8], b[0x6c:0x70])
 	copy(version[0:4], b[0x24:0x28])
 	copy(version[4:8], b[0x98:0x9c])
-	copy(extendedAttributeBlock[0:4], b[0x88:0x8c])
-	copy(extendedAttributeBlock[4:6], b[0x76:0x78])
 
-	// get the the times
-	// the structure is as follows:
+	// i_generation (nfs file version)
+	iGeneration := binary.LittleEndian.Uint32(b[0x64:0x68])
+	fileACLLo := binary.LittleEndian.Uint32(b[0x68:0x6c])
+	fileACLHi := uint32(binary.LittleEndian.Uint16(b[0x76:0x78]))
+	extendedAttributeBlock := (uint64(fileACLHi) << 32) | uint64(fileACLLo)
+
+	// get the times
+	// the structure normally is 0:4 (32 bits) is seconds since the epoch
+	// The docs say:
+	// If the inode structure size sb->s_inode_size is larger than 128 bytes and the i_inode_extra field is large
+	// enough to encompass the respective i_[cma]time_extra field, the ctime, atime, and mtime inode fields are widened
+	// to 64 bits. Within this "extra" 32-bit field, the lower two bits are used to extend the 32-bit seconds field to
+	// be 34 bit wide; the upper 30 bits are used to provide nanosecond timestamp accuracy.
+	//
+	// Thus, the full 64-bit timestamp value is constructed as follows:
 	//  original 32 bits (0:4) are seconds. Add (to the left) 2 more bits from the 32
 	//  the remaining 30 bites are nanoseconds
-	copy(accessTime[0:4], b[0x8:0xc])
-	// take the two bits relevant and add to fifth byte
-	accessTime[4] = b[0x8c] & 0x3
-	copy(changeTime[0:4], b[0xc:0x10])
-	changeTime[4] = b[0x84] & 0x3
-	copy(modifyTime[0:4], b[0x10:0x14])
-	modifyTime[4] = b[0x88] & 0x3
-	copy(createTime[0:4], b[0x90:0x94])
-	createTime[4] = b[0x94] & 0x3
+	accessTimeSeconds := int32(binary.LittleEndian.Uint32(b[0x8:0xc]))
+	changeTimeSeconds := int32(binary.LittleEndian.Uint32(b[0xc:0x10]))
+	modifyTimeSeconds := int32(binary.LittleEndian.Uint32(b[0x10:0x14]))
+	createTimeSeconds := int32(binary.LittleEndian.Uint32(b[0x90:0x94]))
 
-	accessTimeSeconds := binary.LittleEndian.Uint64(accessTime)
-	changeTimeSeconds := binary.LittleEndian.Uint64(changeTime)
-	modifyTimeSeconds := binary.LittleEndian.Uint64(modifyTime)
-	createTimeSeconds := binary.LittleEndian.Uint64(createTime)
+	accessTimeExtra := binary.LittleEndian.Uint32(b[0x8c:0x90])
+	changeTimeExtra := binary.LittleEndian.Uint32(b[0x84:0x88])
+	modifyTimeExtra := binary.LittleEndian.Uint32(b[0x88:0x8c])
+	createTimeExtra := binary.LittleEndian.Uint32(b[0x94:0x98])
 
-	// now get the nanoseconds by using the upper 30 bites
-	accessTimeNanoseconds := binary.LittleEndian.Uint32(b[0x8c:0x90]) >> 2
-	changeTimeNanoseconds := binary.LittleEndian.Uint32(b[0x84:0x88]) >> 2
-	modifyTimeNanoseconds := binary.LittleEndian.Uint32(b[0x88:0x8c]) >> 2
-	createTimeNanoseconds := binary.LittleEndian.Uint32(b[0x94:0x98]) >> 2
+	decodeTimestamp := func(seconds int32, extra uint32) (int64, int64) {
+		// The formula derived from the kernel documentation table is:
+		// Decoded = int64(int32(lower)) + (int64(extra_bits) << 32)
+		sec := int64(seconds) + (int64(extra&0x3) << 32)
+		// Nanoseconds are in the upper 30 bits
+		nano := int64(extra >> 2)
+		return sec, nano
+	}
+
+	atimeSec, atimeNano := decodeTimestamp(accessTimeSeconds, accessTimeExtra)
+	ctimeSec, ctimeNano := decodeTimestamp(changeTimeSeconds, changeTimeExtra)
+	mtimeSec, mtimeNano := decodeTimestamp(modifyTimeSeconds, modifyTimeExtra)
+	crtimeSec, crtimeNano := decodeTimestamp(createTimeSeconds, createTimeExtra)
 
 	flagsNum := binary.LittleEndian.Uint32(b[0x20:0x24])
 
@@ -252,13 +341,21 @@ func inodeFromBytes(b []byte, sb *superblock, number uint32) (*inode, error) {
 	)
 	if fileType == fileTypeSymbolicLink && fileSizeNum < 60 {
 		linkTarget = string(extentInfo[:fileSizeNum])
-	} else {
+	} else if flags.usesExtents {
 		// parse the extent information in the inode to get the root of the extents tree
 		// we do not walk the entire tree, to get a slice of blocks for the file.
 		// If we want to do that, we call the extentBlockFinder.blocks() method
 		allExtents, err = parseExtents(extentInfo, sb.blockSize, 0, uint32(blocks))
 		if err != nil {
 			return nil, fmt.Errorf("error parsing extent tree: %v", err)
+		}
+	}
+
+	var blockPointers [15]uint32
+	if !flags.usesExtents && (fileType != fileTypeSymbolicLink || fileSizeNum >= 60) {
+		for i := 0; i < 15; i++ {
+			offset := i * 4
+			blockPointers[i] = binary.LittleEndian.Uint32(extentInfo[offset : offset+4])
 		}
 	}
 
@@ -275,17 +372,18 @@ func inodeFromBytes(b []byte, sb *superblock, number uint32) (*inode, error) {
 		blocks:                 blocks,
 		filesystemBlocks:       filesystemBlocks,
 		flags:                  &flags,
-		nfsFileVersion:         binary.LittleEndian.Uint32(b[0x64:0x68]),
+		nfsFileVersion:         iGeneration,
 		version:                binary.LittleEndian.Uint64(version),
 		inodeSize:              binary.LittleEndian.Uint16(b[0x80:0x82]) + minInodeSize,
 		deletionTime:           binary.LittleEndian.Uint32(b[0x14:0x18]),
-		accessTime:             time.Unix(int64(accessTimeSeconds), int64(accessTimeNanoseconds)),
-		changeTime:             time.Unix(int64(changeTimeSeconds), int64(changeTimeNanoseconds)),
-		modifyTime:             time.Unix(int64(modifyTimeSeconds), int64(modifyTimeNanoseconds)),
-		createTime:             time.Unix(int64(createTimeSeconds), int64(createTimeNanoseconds)),
-		extendedAttributeBlock: binary.LittleEndian.Uint64(extendedAttributeBlock),
+		accessTime:             time.Unix(atimeSec, atimeNano),
+		changeTime:             time.Unix(ctimeSec, ctimeNano),
+		modifyTime:             time.Unix(mtimeSec, mtimeNano),
+		createTime:             time.Unix(crtimeSec, crtimeNano),
+		extendedAttributeBlock: extendedAttributeBlock,
 		project:                binary.LittleEndian.Uint32(b[0x9c:0x100]),
 		extents:                allExtents,
+		blockPointers:          blockPointers,
 		linkTarget:             linkTarget,
 	}
 	checksum := binary.LittleEndian.Uint32(checksumBytes)
@@ -324,17 +422,31 @@ func (i *inode) toBytes(sb *superblock) []byte {
 	binary.LittleEndian.PutUint64(version, i.version)
 	binary.LittleEndian.PutUint64(extendedAttributeBlock, i.extendedAttributeBlock)
 
-	// there is some odd stuff that ext4 does with nanoseconds. We might need this in the future.
+	// ext4 timestamps are 32 bits of seconds, plus an extra 32-bit field
+	// containing 30 bits of nanoseconds and 2 bits of extended seconds.
 	// See https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Inode_Timestamps
-	// binary.LittleEndian.PutUint32(accessTime[4:8], (i.accessTimeNanoseconds<<2)&accessTime[4])
-	binary.LittleEndian.PutUint64(accessTime, uint64(i.accessTime.Unix()))
-	binary.LittleEndian.PutUint32(accessTime[4:8], uint32(i.accessTime.Nanosecond()))
-	binary.LittleEndian.PutUint64(createTime, uint64(i.createTime.Unix()))
-	binary.LittleEndian.PutUint32(createTime[4:8], uint32(i.createTime.Nanosecond()))
-	binary.LittleEndian.PutUint64(changeTime, uint64(i.changeTime.Unix()))
-	binary.LittleEndian.PutUint32(changeTime[4:8], uint32(i.changeTime.Nanosecond()))
-	binary.LittleEndian.PutUint64(modifyTime, uint64(i.modifyTime.Unix()))
-	binary.LittleEndian.PutUint32(modifyTime[4:8], uint32(i.modifyTime.Nanosecond()))
+	//
+	// The encoding formula from Linux kernel is:
+	//   extra_epoch = ((sec - (int32)sec) >> 32) & 0x3
+	// This correctly handles the signed 32-bit wraparound for dates outside 1970-2038.
+	encodeAndWriteTimestamp := func(t time.Time, target []byte) {
+		sec := t.Unix()
+		nsec := uint32(t.Nanosecond())
+		// Calculate epoch bits using the kernel's formula:
+		// The difference between the full timestamp and its signed 32-bit truncation
+		// gives us the correct epoch value.
+		low32 := int32(sec)                                 // signed truncation to 32 bits
+		epoch := uint32(((sec - int64(low32)) >> 32) & 0x3) // epoch bits
+		extra := (nsec << 2) | epoch
+
+		binary.LittleEndian.PutUint32(target[0:4], uint32(low32))
+		binary.LittleEndian.PutUint32(target[4:8], extra)
+	}
+
+	encodeAndWriteTimestamp(i.accessTime, accessTime)
+	encodeAndWriteTimestamp(i.createTime, createTime)
+	encodeAndWriteTimestamp(i.changeTime, changeTime)
+	encodeAndWriteTimestamp(i.modifyTime, modifyTime)
 
 	blocks := make([]byte, 8)
 	binary.LittleEndian.PutUint64(blocks, i.blocks)
@@ -352,12 +464,23 @@ func (i *inode) toBytes(sb *superblock) []byte {
 	copy(b[0x1c:0x20], blocks[0:4])
 	binary.LittleEndian.PutUint32(b[0x20:0x24], i.flags.toInt())
 	copy(b[0x24:0x28], version[0:4])
-	copy(b[0x28:0x64], i.extents.toBytes())
+	switch {
+	case i.fileType == fileTypeSymbolicLink && i.size < 60:
+		copy(b[0x28:0x28+int(i.size)], i.linkTarget)
+	case i.flags != nil && i.flags.usesExtents:
+		copy(b[0x28:0x64], i.extents.toBytes())
+	default:
+		for idx, ptr := range i.blockPointers {
+			base := 0x28 + idx*4
+			binary.LittleEndian.PutUint32(b[base:base+4], ptr)
+		}
+	}
+
 	binary.LittleEndian.PutUint32(b[0x64:0x68], i.nfsFileVersion)
 	copy(b[0x68:0x6c], extendedAttributeBlock[0:4])
 	copy(b[0x6c:0x70], fileSize[4:8])
 	// b[0x70:0x74] is obsolete
-	copy(b[0x74:0x76], blocks[4:8])
+	copy(b[0x74:0x76], blocks[4:6])
 	copy(b[0x76:0x78], extendedAttributeBlock[4:6])
 	copy(b[0x78:0x7a], owner[2:4])
 	copy(b[0x7a:0x7c], group[2:4])
@@ -380,11 +503,74 @@ func (i *inode) toBytes(sb *superblock) []byte {
 	return b
 }
 
+func (i *inode) permissionsToMode() os.FileMode {
+	var mode os.FileMode
+
+	// Map filetype to filemode
+	switch i.fileType {
+	case fileTypeRegularFile:
+		// no extra bits for regular files
+	case fileTypeDirectory:
+		mode |= os.ModeDir
+	case fileTypeSymbolicLink:
+		mode |= os.ModeSymlink
+	case fileTypeCharacterDevice:
+		mode |= os.ModeDevice | os.ModeCharDevice
+	case fileTypeBlockDevice:
+		mode |= os.ModeDevice
+	case fileTypeFifo:
+		mode |= os.ModeNamedPipe
+	case fileTypeSocket:
+		mode |= os.ModeSocket
+	}
+
+	// Map permissions
+	if i.permissionsOwner.read {
+		mode |= 0o400
+	}
+	if i.permissionsOwner.write {
+		mode |= 0o200
+	}
+	if i.permissionsOwner.execute {
+		mode |= 0o100
+	}
+	if i.permissionsOwner.special {
+		mode |= os.ModeSetuid
+	}
+	if i.permissionsGroup.read {
+		mode |= 0o040
+	}
+	if i.permissionsGroup.write {
+		mode |= 0o020
+	}
+	if i.permissionsGroup.execute {
+		mode |= 0o010
+	}
+	if i.permissionsGroup.special {
+		mode |= os.ModeSetgid
+	}
+	if i.permissionsOther.read {
+		mode |= 0o004
+	}
+	if i.permissionsOther.write {
+		mode |= 0o002
+	}
+	if i.permissionsOther.execute {
+		mode |= 0o001
+	}
+	if i.permissionsOther.special {
+		mode |= os.ModeSticky
+	}
+
+	return mode
+}
+
 func parseOwnerPermissions(mode uint16) filePermissions {
 	return filePermissions{
 		execute: mode&filePermissionsOwnerExecute == filePermissionsOwnerExecute,
 		write:   mode&filePermissionsOwnerWrite == filePermissionsOwnerWrite,
 		read:    mode&filePermissionsOwnerRead == filePermissionsOwnerRead,
+		special: mode&filePermissionsOwnerSetuid == filePermissionsOwnerSetuid,
 	}
 }
 func parseGroupPermissions(mode uint16) filePermissions {
@@ -392,6 +578,7 @@ func parseGroupPermissions(mode uint16) filePermissions {
 		execute: mode&filePermissionsGroupExecute == filePermissionsGroupExecute,
 		write:   mode&filePermissionsGroupWrite == filePermissionsGroupWrite,
 		read:    mode&filePermissionsGroupRead == filePermissionsGroupRead,
+		special: mode&filePermissionsGroupSetgid == filePermissionsGroupSetgid,
 	}
 }
 func parseOtherPermissions(mode uint16) filePermissions {
@@ -399,6 +586,7 @@ func parseOtherPermissions(mode uint16) filePermissions {
 		execute: mode&filePermissionsOtherExecute == filePermissionsOtherExecute,
 		write:   mode&filePermissionsOtherWrite == filePermissionsOtherWrite,
 		read:    mode&filePermissionsOtherRead == filePermissionsOtherRead,
+		special: mode&filePermissionsSticky == filePermissionsSticky,
 	}
 }
 
@@ -413,6 +601,9 @@ func (fp *filePermissions) toOwnerInt() uint16 {
 	}
 	if fp.read {
 		mode |= filePermissionsOwnerRead
+	}
+	if fp.special {
+		mode |= filePermissionsOwnerSetuid
 	}
 	return mode
 }
@@ -429,6 +620,9 @@ func (fp *filePermissions) toOtherInt() uint16 {
 	if fp.read {
 		mode |= filePermissionsOtherRead
 	}
+	if fp.special {
+		mode |= filePermissionsSticky
+	}
 	return mode
 }
 
@@ -443,6 +637,9 @@ func (fp *filePermissions) toGroupInt() uint16 {
 	}
 	if fp.read {
 		mode |= filePermissionsGroupRead
+	}
+	if fp.special {
+		mode |= filePermissionsGroupSetgid
 	}
 	return mode
 }
