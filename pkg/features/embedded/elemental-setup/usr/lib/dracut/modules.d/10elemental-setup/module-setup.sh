@@ -18,12 +18,8 @@ install() {
     declare systemdutildir=${systemdutildir}
     declare systemdsystemunitdir=${systemdsystemunitdir}
 
-    inst_multiple \
-        ln mkdir mount umount elemental
-
     inst_multiple -o \
-        systemd-analyze partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat \
-	mkfs.fat mkfs.xfs blkid resize2fs mount xfs_growfs umount sgdisk partx mkfs.btrfs btrfs
+        ln mkdir mount umount partx elemental systemd-escape
 
     inst_script "${moddir}/oem-generator.sh" \
         "${systemdutildir}/system-generators/dracut-elemental-oem-generator"
