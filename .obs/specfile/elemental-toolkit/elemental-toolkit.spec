@@ -42,10 +42,6 @@ Requires:       xorriso >= 1.5
 Requires:       mtools
 Requires:       util-linux
 Requires:       gptfdisk
-Requires:       dracut
-Requires:       grub2
-Requires:       squashfs
-Requires:       util-linux-systemd
 
 %if 0%{?suse_version}
 BuildRequires:  golang(API) == 1.26
