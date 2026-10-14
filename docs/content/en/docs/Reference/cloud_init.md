@@ -85,7 +85,84 @@ stages:
 The default cloud-config format is split into *stages* (*initramfs*, *boot*, *network*, *initramfs*, *reconcile*, called generically **STAGE_ID** below) [see also stages](../../customizing/stages) that are emitted internally during the various phases by calling `cos-setup STAGE_ID`. 
 *steps* (**STEP_NAME** below) defined for each stage are executed in order.
 
-Each cloud-config file is loaded and executed only at the apprioriate stage, this allows further components to emit their own stages at the desired time.
+Each cloud-config file is loaded and executed only at the appropriate stage, this allows further components to emit their own stages at the desired time.
+
+_Note_:
+- The execution order of multiple `substeps` within a single `step` might be not what you think, especially whether the `commands` are executed after other substeps. For example:
+  ```
+  stages:
+    fs:
+      - name: test
+        environment_file: /tmp/env_file1
+        environment:
+          ENV1: this is ENV1
+        files:
+          - path: /tmp/file1
+            content: "this is file1\n"
+        directories:
+          - path: /tmp/dir1
+        users:
+          user1:
+              passwd: password
+        commands:
+          - |
+            bash -x >> /tmp/log 2>&1 <<'EOF'
+            ls -lFd /tmp/env_file1
+            printenv ENV1
+            ls -lFd /tmp/file1
+            ls -lFd /tmp/dir1
+            id user1
+            EOF
+  ```
+  
+  You might expect that when the `commands` get executed, all things defined above it has been executed, such as the user1 has been created.
+  But it is not.  As of now, the output (/tmp/log) is:
+  ```
+  + ls -lFd /tmp/env_file1
+  ls: cannot access '/tmp/env_file1': No such file or directory
+  + printenv ENV1
+  this is ENV1
+  + ls -lFd /tmp/file1
+  ---------- 1 root root 14 Aug  6 07:13 /tmp/file1
+  + ls -lFd /tmp/dir1
+  d--------- 2 root root 40 Aug  6 07:13 /tmp/dir1/
+  + id user1
+  id: ‘user1’: no such user
+  ```
+
+  The internal order is depending on the implementation, see [cloudinit.go](https://github.com/rancher/elemental-toolkit/blob/main/pkg/cloudinit/cloudinit.go#L52).
+  You can see that the `plugins.User` is behind `plugins.Commands`.
+
+  Therefore, to make sure the order is what you want, you may split the `substeps` into multiple `steps`, for example:
+  ```
+  stages:
+    fs:
+      - name: step1
+        environment_file: /tmp/env_file1
+        environment:
+          ENV1: this is ENV1
+        files:
+          - path: /tmp/file1
+            content: "this is file1\n"
+        directories:
+          - path: /tmp/dir1
+        users:
+          user1:
+              passwd: password
+      - name: step2
+        commands:
+          - |
+            bash -x >> /tmp/log 2>&1 <<'EOF'
+            ls -lFd /tmp/env_file1
+            printenv ENV1
+            ls -lFd /tmp/file1
+            ls -lFd /tmp/dir1
+            id user1
+            EOF
+  ```
+
+- The name of `steps` and output of `substeps` will be output to system journal log which can be viewed by the command `journalctl -u 'elemental*'`.
+- It is highly recommended to declare the `name` property of *steps*, so that it will be easier to investigate the output of `journalctl -u 'elemental*'` by the name.
 
 {{% pageinfo %}}
 The [cloud-init tool](https://github.com/mudler/yip#readme) can be also run standalone, this helps debugging locally and also during development, you can find separate [releases here](https://github.com/mudler/yip/releases).
