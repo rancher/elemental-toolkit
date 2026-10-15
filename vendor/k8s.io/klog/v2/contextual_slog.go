@@ -1,8 +1,8 @@
-//go:build !go1.19
-// +build !go1.19
+//go:build go1.21
+// +build go1.21
 
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package exec
+package klog
 
 import (
-	osexec "os/exec"
+	"log/slog"
+
+	"github.com/go-logr/logr"
 )
 
-func maskErrDotCmd(cmd *osexec.Cmd) *osexec.Cmd {
-	return cmd
-}
-
-func maskErrDot(err error) error {
-	return err
+// SetSlogLogger reconfigures klog to log through the slog logger. The logger must not be nil.
+func SetSlogLogger(logger *slog.Logger) {
+	SetLoggerWithOptions(logr.FromSlogHandler(logger.Handler()), ContextualLogger(true))
 }
