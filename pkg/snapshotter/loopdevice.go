@@ -71,7 +71,7 @@ func newLoopDeviceSnapshotter(cfg types.Config, snapCfg types.SnapshotterConfig,
 		loopDevCfg, ok = snapCfg.Config.(*types.LoopDeviceConfig)
 		if !ok {
 			msg := "failed casting LoopDeviceConfig type"
-			cfg.Logger.Errorf(msg)
+			cfg.Logger.Error(msg)
 			return nil, errors.New(msg)
 		}
 	}
@@ -362,7 +362,7 @@ func (l *LoopDevice) SnapshotToImageSource(snap *types.Snapshot) (*types.ImageSo
 	ok, err := utils.Exists(l.cfg.Fs, snap.Path)
 	if err != nil || !ok {
 		msg := fmt.Sprintf("snapshot path does not exist: %s.", snap.Path)
-		l.cfg.Logger.Errorf(msg)
+		l.cfg.Logger.Error(msg)
 		if err == nil {
 			err = errors.New(msg)
 		}
