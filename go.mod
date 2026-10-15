@@ -25,7 +25,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	golang.org/x/crypto v0.58.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/mount-utils v0.23.0
+	k8s.io/mount-utils v0.33.3
 )
 
 require (
@@ -49,6 +49,7 @@ require (
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/kendru/darwin/go/depgraph v0.0.0-20221105232959-877d6a81060c // indirect
 	github.com/mauromorales/xpasswd v0.4.1 // indirect
+	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/sys/userns v0.2.1 // indirect
 	github.com/mudler/entities v0.8.1 // indirect
 	github.com/packethost/packngo v0.31.0 // indirect
@@ -119,6 +120,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	howett.net/plist v1.0.2-0.20250314012144-ee69052608d9 // indirect
-	k8s.io/klog/v2 v2.90.1 // indirect
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
+	k8s.io/klog/v2 v2.140.0 // indirect
+	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
 )
