@@ -9,7 +9,8 @@ import (
 	"strings"
 	"unicode/utf16"
 
-	"github.com/diskfs/go-diskfs/util"
+	"github.com/diskfs/go-diskfs/backend"
+	"github.com/diskfs/go-diskfs/partition/part"
 	uuid "github.com/google/uuid"
 )
 
@@ -18,8 +19,11 @@ const PartitionEntrySize = 128
 
 var zeroUUIDBytes = make([]byte, 16)
 
+var _ part.Partition = &Partition{}
+
 // Partition represents the structure of a single partition on the disk
 type Partition struct {
+	Index              int    // index of the partition in the table
 	Start              uint64 // start sector for the partition
 	End                uint64 // end sector for the partition
 	Size               uint64 // size of the partition in bytes
@@ -87,8 +91,9 @@ func (p *Partition) toBytes() ([]byte, error) {
 	return b, nil
 }
 
-// FromBytes create a partition entry from bytes
-func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*Partition, error) {
+// FromBytes create a partition entry from bytes. The index should start with 1. It is up to
+// the caller to convert from zero-based indexing to one-based partition numbering.
+func partitionFromBytes(index int, b []byte, logicalSectorSize, physicalSectorSize int) (*Partition, error) {
 	if len(b) != PartitionEntrySize {
 		return nil, fmt.Errorf("data for partition was %d bytes instead of expected %d", len(b), PartitionEntrySize)
 	}
@@ -124,6 +129,7 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 	name := string(r)
 
 	return &Partition{
+		Index:              index,
 		Start:              firstLBA,
 		End:                lastLBA,
 		Name:               name,
@@ -133,6 +139,10 @@ func partitionFromBytes(b []byte, logicalSectorSize, physicalSectorSize int) (*P
 		logicalSectorSize:  logicalSectorSize,
 		physicalSectorSize: physicalSectorSize,
 	}, nil
+}
+
+func (p *Partition) GetIndex() int {
+	return p.Index
 }
 
 func (p *Partition) GetSize() int64 {
@@ -147,7 +157,7 @@ func (p *Partition) GetStart() int64 {
 
 // WriteContents fills the partition with the contents provided
 // reads from beginning of reader to exactly size of partition in bytes
-func (p *Partition) WriteContents(f util.File, contents io.Reader) (uint64, error) {
+func (p *Partition) WriteContents(f backend.WritableFile, contents io.Reader) (uint64, error) {
 	pss, lss := p.sectorSizes()
 	total := uint64(0)
 	// validate start/end/size
@@ -195,14 +205,14 @@ func (p *Partition) WriteContents(f util.File, contents io.Reader) (uint64, erro
 	}
 	// did the total written equal the size of the partition?
 	if total != p.Size {
-		return total, fmt.Errorf("write %d bytes to partition but actual size is %d", total, p.Size)
+		return total, part.NewIncompletePartitionWriteError(total, p.Size)
 	}
 	return total, nil
 }
 
 // ReadContents reads the contents of the partition into a writer
 // streams the entire partition to the writer
-func (p *Partition) ReadContents(f util.File, out io.Writer) (int64, error) {
+func (p *Partition) ReadContents(f backend.File, out io.Writer) (int64, error) {
 	pss, _ := p.sectorSizes()
 	total := int64(0)
 	// chunks of physical sector size for efficient writing
@@ -231,23 +241,23 @@ func (p *Partition) ReadContents(f util.File, out io.Writer) (int64, error) {
 }
 
 // initEntry adjust the Start/End/Size entries and ensure it has a GUID
-func (p *Partition) initEntry(blocksize, starting uint64) error {
-	part := p
-	if part.Type == Unused {
+func (p *Partition) initEntry(blocksize uint64) error {
+	actualPart := p
+	if actualPart.Type == Unused {
 		return nil
 	}
 	var guid uuid.UUID
 
-	if part.GUID == "" {
+	if actualPart.GUID == "" {
 		guid, _ = uuid.NewRandom()
 	} else {
 		var err error
-		guid, err = uuid.Parse(part.GUID)
+		guid, err = uuid.Parse(actualPart.GUID)
 		if err != nil {
-			return fmt.Errorf("invalid UUID: %s", part.GUID)
+			return fmt.Errorf("invalid UUID: %s", actualPart.GUID)
 		}
 	}
-	part.GUID = strings.ToUpper(guid.String())
+	actualPart.GUID = strings.ToUpper(guid.String())
 
 	// check size matches sectors
 	// valid possibilities:
@@ -255,22 +265,19 @@ func (p *Partition) initEntry(blocksize, starting uint64) error {
 	// 2- size>0, start>=0, end=0 - valid - begin at start for size bytes
 	// 3- size>0, start=0, end=0 - valid - begin at end of previous partition, go for size bytes
 	// anything else is an error
-	size, start, end := part.Size, part.Start, part.End
+	size, start, end := actualPart.Size, actualPart.Start, actualPart.End
 	calculatedSize := (end - start + 1) * blocksize
 	switch {
+	case start == 0:
+		// neither start nor end specified, we cannot do anything with it
+		return fmt.Errorf("invalid partition entry, start sector is 0")
 	case end >= start && size == calculatedSize:
 	case size == 0 && end >= start:
 		// provided specific start and end, so calculate size
-		part.Size = calculatedSize
+		actualPart.Size = calculatedSize
 	case size > 0 && size%blocksize == 0 && start > 0 && end == 0:
 		// provided specific start and size, so calculate end
-		part.End = start + size/blocksize - 1
-	case size > 0 && size%blocksize == 0 && start == 0 && end == 0:
-		// we start right after the end of the previous
-		start = starting
-		end = start + size/blocksize - 1
-		part.Start = start
-		part.End = end
+		actualPart.End = start + size/blocksize - 1
 	default:
 		return fmt.Errorf("invalid partition entry, size %d bytes does not match start sector %d and end sector %d", size, start, end)
 	}
@@ -295,6 +302,11 @@ func (p *Partition) Equal(o *Partition) bool {
 // UUID returns the partitions UUID
 func (p *Partition) UUID() string {
 	return p.GUID
+}
+
+// Label returns the partition label
+func (p *Partition) Label() string {
+	return p.Name
 }
 
 // Expand increases the size of the partition by a number of sectors

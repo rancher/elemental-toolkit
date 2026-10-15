@@ -9,9 +9,6 @@ import (
 	"github.com/diskfs/go-diskfs/filesystem"
 )
 
-// FileStat is the extended data underlying a single file, similar to https://golang.org/pkg/syscall/#Stat_t
-type FileStat = *directoryEntry
-
 // directoryEntry is a single directory entry
 // it combines information from inode and the actual entry
 // also fulfills os.FileInfo
@@ -48,7 +45,7 @@ func (d *directoryEntry) equal(o *directoryEntry) bool {
 	if !d.inode.equal(o.inode) {
 		return false
 	}
-	return d.isSubdirectory == o.isSubdirectory && d.name == o.name && d.size == o.size && d.modTime == o.modTime && d.mode == o.mode
+	return d.isSubdirectory == o.isSubdirectory && d.name == o.name && d.size == o.size && d.modTime.Equal(o.modTime) && d.mode == o.mode
 }
 
 // Name string       // base name of the file
@@ -69,6 +66,16 @@ func (d *directoryEntry) IsDir() bool {
 // ModTime time.Time // modification time
 func (d *directoryEntry) ModTime() time.Time {
 	return d.modTime
+}
+
+// Info returns the FileInfo representation of the directory entry
+func (d *directoryEntry) Info() (fs.FileInfo, error) {
+	return d, nil
+}
+
+// Type returns the type of the directory entry
+func (d *directoryEntry) Type() fs.FileMode {
+	return d.Mode().Type()
 }
 
 // Mode FileMode     // file mode bits
@@ -115,24 +122,61 @@ func (d *directoryEntry) Mode() os.FileMode {
 	return mode
 }
 
-// Sys interface{}   // underlying data source (can return nil)
+// Sys returns *StatT with squashfs-specific metadata.
 func (d *directoryEntry) Sys() interface{} {
-	return d
+	return d.statT()
 }
 
-// UID get uid of file
-func (d *directoryEntry) UID() uint32 {
-	return d.uid
+func (d *directoryEntry) statT() *StatT {
+	s := &StatT{
+		UID:       d.uid,
+		GID:       d.gid,
+		Xattrs:    d.xattrs,
+		InodeType: "unknown",
+	}
+	if d.inode != nil {
+		s.Inode = d.inode.index()
+		s.InodeType = inodeTypeName(d.inode.inodeType())
+		if target, err := d.Readlink(); err == nil {
+			s.LinkTarget = target
+		}
+	}
+	return s
 }
 
-// GID get gid of file
-func (d *directoryEntry) GID() uint32 {
-	return d.gid
-}
-
-// Xattrs get extended attributes of file
-func (d *directoryEntry) Xattrs() map[string]string {
-	return d.xattrs
+func inodeTypeName(t inodeType) string {
+	switch t {
+	case inodeBasicDirectory:
+		return "basic-directory"
+	case inodeBasicFile:
+		return "basic-file"
+	case inodeBasicSymlink:
+		return "basic-symlink"
+	case inodeBasicBlock:
+		return "basic-block-device"
+	case inodeBasicChar:
+		return "basic-char-device"
+	case inodeBasicFifo:
+		return "basic-fifo"
+	case inodeBasicSocket:
+		return "basic-socket"
+	case inodeExtendedDirectory:
+		return "extended-directory"
+	case inodeExtendedFile:
+		return "extended-file"
+	case inodeExtendedSymlink:
+		return "extended-symlink"
+	case inodeExtendedBlock:
+		return "extended-block-device"
+	case inodeExtendedChar:
+		return "extended-char-device"
+	case inodeExtendedFifo:
+		return "extended-fifo"
+	case inodeExtendedSocket:
+		return "extended-socket"
+	default:
+		return "unknown"
+	}
 }
 
 // Readlink returns the destination of the symbolic link if this entry
@@ -174,26 +218,58 @@ func (d *directoryEntry) Open() (filesystem.File, error) {
 	// get the inode data for this file
 	// now open the file
 	// get the inode for the file
-	var eFile *extendedFile
+	var (
+		eFile *extendedFile
+		f     filesystem.File
+		err   error
+	)
 	in := d.inode
 	iType := in.inodeType()
 	body := in.getBody()
 	//nolint:exhaustive // all other cases fall under default
 	switch iType {
 	case inodeBasicFile:
-		extFile := body.(*basicFile).toExtended()
+		bFile, _ := body.(*basicFile)
+		extFile := bFile.toExtended()
 		eFile = &extFile
+		f = &File{
+			directoryEntry: d,
+			extendedFile:   eFile,
+			isReadWrite:    false,
+			isAppend:       false,
+			offset:         0,
+			filesystem:     d.fs,
+		}
 	case inodeExtendedFile:
 		eFile, _ = body.(*extendedFile)
+		f = &File{
+			directoryEntry: d,
+			extendedFile:   eFile,
+			isReadWrite:    false,
+			isAppend:       false,
+			offset:         0,
+			filesystem:     d.fs,
+		}
+	case inodeBasicSymlink:
+		bLink, _ := body.(*basicSymlink)
+		target := bLink.target
+		f, err = d.fs.OpenFile(target, os.O_RDONLY)
+	case inodeExtendedSymlink:
+		eLink, _ := body.(*extendedSymlink)
+		target := eLink.target
+		f, err = d.fs.OpenFile(target, os.O_RDONLY)
+	case inodeBasicDirectory, inodeExtendedDirectory:
+		f = &File{
+			directoryEntry: d,
+			extendedFile:   eFile,
+			isReadWrite:    false,
+			isAppend:       false,
+			offset:         0,
+			filesystem:     d.fs,
+		}
 	default:
 		return nil, fmt.Errorf("inode is of type %d, neither basic nor extended file", iType)
 	}
 
-	return &File{
-		extendedFile: eFile,
-		isReadWrite:  false,
-		isAppend:     false,
-		offset:       0,
-		filesystem:   d.fs,
-	}, nil
+	return f, err
 }
