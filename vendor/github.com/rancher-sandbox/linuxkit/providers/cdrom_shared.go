@@ -2,13 +2,14 @@ package providers
 
 import (
 	"fmt"
-	"github.com/diskfs/go-diskfs"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/diskfs/go-diskfs"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -132,7 +133,7 @@ func FindCIs(findLabel string) []string {
 		fs, err := disk.GetFilesystem(0)
 		if err != nil {
 			log.Debugf("failed to get filesystem on partition 0 for device: %s: %v", dev, err)
-			_ = disk.File.Close()
+			_ = disk.Close()
 			continue
 		}
 		// get the label
@@ -142,7 +143,7 @@ func FindCIs(findLabel string) []string {
 			log.Debugf("adding device: %s", dev)
 			foundDevices = append(foundDevices, dev)
 		}
-		err = disk.File.Close()
+		err = disk.Close()
 		if err != nil {
 			log.Debugf("failed closing device %s", dev)
 		}

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/diskfs/go-diskfs/util"
+	"github.com/diskfs/go-diskfs/backend"
 	"github.com/pkg/xattr"
 )
 
@@ -25,6 +25,11 @@ const (
 	fileChar
 	fileFifo
 	fileSocket
+)
+
+const (
+	appleXattrPrefix     = "com.apple."
+	appleXattrProvenance = appleXattrPrefix + "provenance"
 )
 
 // FinalizeOptions options to pass to finalize
@@ -86,7 +91,11 @@ func (fs *FileSystem) Finalize(options FinalizeOptions) error {
 
 	*/
 
-	f := fs.file
+	f, err := fs.backend.Writable()
+	if err != nil {
+		return err
+	}
+
 	blocksize := int(fs.blocksize)
 	comp := compressionNone
 	if options.Compression != nil {
@@ -133,11 +142,11 @@ func (fs *FileSystem) Finalize(options FinalizeOptions) error {
 	// write file fragments
 	//
 	fragmentBlockStart := location
-	fragmentBlocks, fragsWritten, err := writeFragmentBlocks(fileList, f, fs.workspace, blocksize, options, fragmentBlockStart)
+	fragmentBlocks, _, err := writeFragmentBlocks(fileList, f, fs.workspace, blocksize, options, fragmentBlockStart)
 	if err != nil {
 		return fmt.Errorf("error writing file fragment blocks: %v", err)
 	}
-	location += fragsWritten
+	location += int64(len(fragmentBlocks) * blocksize)
 
 	// extract extended attributes, and save them for later; these are written at the very end
 	// this must be done *before* creating inodes, as inodes reference these
@@ -213,12 +222,20 @@ func (fs *FileSystem) Finalize(options FinalizeOptions) error {
 		return fmt.Errorf("error updating inodes with final directory data: %v", err)
 	}
 
-	// write the inodes to the file
-	inodesWritten, inodeTableLocation, err := writeInodes(fileList, f, compressor, location)
+	// write the inodes to the file. writeInodes returns the byte offset (relative
+	// to the inode table start) of each metadata block it wrote, so we can fix up
+	// the logical block indices in inodeLocations and directory entries before
+	// writing the directory table.
+	inodesWritten, inodeTableLocation, inodeBlockOffsets, err := writeInodes(fileList, f, compressor, location)
 	if err != nil {
 		return fmt.Errorf("error writing inode data blocks: %v", err)
 	}
 	location += int64(inodesWritten)
+
+	// translate logical block indices into real on-disk byte offsets now that
+	// the actual compressed sizes are known. See updateInodeLocations for why
+	// this is needed — issue #360.
+	translateInodeLocations(fileList, directories, inodeBlockOffsets)
 
 	// write directory data
 	dirsWritten, dirTableLocation, err := writeDirectories(directories, f, compressor, location)
@@ -356,7 +373,7 @@ func (fs *FileSystem) Finalize(options FinalizeOptions) error {
 	return nil
 }
 
-func copyFileData(from, to util.File, fromOffset, toOffset, blocksize int64, c Compressor) (raw, compressed int, blocks []*blockData, err error) {
+func copyFileData(from backend.File, to backend.WritableFile, fromOffset, toOffset, blocksize int64, c Compressor) (raw, compressed int, blocks []*blockData, err error) {
 	buf := make([]byte, blocksize)
 	blocks = make([]*blockData, 0)
 	for {
@@ -371,6 +388,7 @@ func copyFileData(from, to util.File, fromOffset, toOffset, blocksize int64, c C
 
 		// compress the block if needed
 		isCompressed := false
+		outBuf := buf[:n]
 		if c != nil {
 			out, err := c.compress(buf)
 			if err != nil {
@@ -378,21 +396,21 @@ func copyFileData(from, to util.File, fromOffset, toOffset, blocksize int64, c C
 			}
 			if len(out) < len(buf) {
 				isCompressed = true
-				buf = out
+				outBuf = out
 			}
 		}
-		blocks = append(blocks, &blockData{size: uint32(len(buf)), compressed: isCompressed})
-		if _, err := to.WriteAt(buf[:n], toOffset+int64(compressed)); err != nil {
+		blocks = append(blocks, &blockData{size: uint32(len(outBuf)), compressed: isCompressed})
+		if _, err := to.WriteAt(outBuf, toOffset+int64(compressed)); err != nil {
 			return raw, compressed, blocks, err
 		}
-		compressed += len(buf)
+		compressed += len(outBuf)
 	}
 	return raw, compressed, blocks, nil
 }
 
 // finalizeFragment write fragment data out to the archive, compressing if relevant.
 // Returns the total amount written, whether compressed, and any error.
-func finalizeFragment(buf []byte, to util.File, toOffset int64, c Compressor) (raw int, compressed bool, err error) {
+func finalizeFragment(buf []byte, to backend.WritableFile, toOffset int64, c Compressor) (raw int, compressed bool, err error) {
 	// compress the block if needed
 	if c != nil {
 		out, err := c.compress(buf)
@@ -427,6 +445,8 @@ func walkTree(workspace string) ([]*finalizeFileInfo, error) {
 		fp = strings.TrimPrefix(fp, string(filepath.Separator))
 		if fp == "" {
 			fp = "."
+		} else {
+			fp = filepath.ToSlash(fp)
 		}
 		isRoot := fp == "."
 		name := d.Name()
@@ -458,8 +478,11 @@ func walkTree(workspace string) ([]*finalizeFileInfo, error) {
 		}
 		xattrs := map[string]string{}
 		for _, name := range xattrNames {
+			if strings.HasPrefix(name, appleXattrProvenance) {
+				continue
+			}
 			val, err := xattr.Get(fp, name)
-			if err != nil {
+			if err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("unable to get xattr %s for %s: %v", name, fp, err)
 			}
 			xattrs[name] = string(val)
@@ -482,7 +505,7 @@ func walkTree(workspace string) ([]*finalizeFileInfo, error) {
 		}
 
 		// we will have to save it as its parent
-		parentDir := filepath.Dir(fp)
+		parentDir := path.Dir(fp)
 		parentDirInfo := dirMap[parentDir]
 
 		if fi.IsDir() {
@@ -517,8 +540,8 @@ func getTableIdx(m map[uint32]uint16, index uint32) uint16 {
 	return m[index]
 }
 
-func writeFileDataBlocks(e *finalizeFileInfo, to util.File, ws string, startBlock uint64, blocksize int, compressor Compressor, location int64) (blockCount, compressed int, err error) {
-	from, err := os.Open(path.Join(ws, e.path))
+func writeFileDataBlocks(e *finalizeFileInfo, to backend.WritableFile, ws string, startBlock uint64, blocksize int, compressor Compressor, location int64) (blockCount, compressed int, err error) {
+	from, err := os.Open(workspacePath(ws, e.path))
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to open file for reading %s: %v", e.path, err)
 	}
@@ -541,7 +564,7 @@ func writeFileDataBlocks(e *finalizeFileInfo, to util.File, ws string, startBloc
 	return blockCount, compressed, nil
 }
 
-func writeMetadataBlock(buf []byte, to util.File, c Compressor, location int64) (int, error) {
+func writeMetadataBlock(buf []byte, to backend.WritableFile, c Compressor, location int64) (int, error) {
 	// compress the block if needed
 	isCompressed := false
 	if c != nil {
@@ -569,7 +592,7 @@ func writeMetadataBlock(buf []byte, to util.File, c Compressor, location int64) 
 	return len(buf), nil
 }
 
-func writeDataBlocks(fileList []*finalizeFileInfo, f util.File, ws string, blocksize int, compressor Compressor, location int64) (int, error) {
+func writeDataBlocks(fileList []*finalizeFileInfo, f backend.WritableFile, ws string, blocksize int, compressor Compressor, location int64) (int, error) {
 	allBlocks := 0
 	allWritten := 0
 	for _, e := range fileList {
@@ -584,12 +607,13 @@ func writeDataBlocks(fileList []*finalizeFileInfo, f util.File, ws string, block
 		}
 		allBlocks += blocks
 		allWritten += written
+		location += int64(written)
 	}
 	return allWritten, nil
 }
 
 // writeFragmentBlocks writes all of the fragment blocks to the archive. Returns slice of blocks written, the total bytes written, any error
-func writeFragmentBlocks(fileList []*finalizeFileInfo, f util.File, ws string, blocksize int, options FinalizeOptions, location int64) ([]fragmentBlock, int64, error) {
+func writeFragmentBlocks(fileList []*finalizeFileInfo, f backend.WritableFile, ws string, blocksize int, options FinalizeOptions, location int64) ([]fragmentBlock, int64, error) {
 	compressor := options.Compression
 	if options.NoCompressFragments {
 		compressor = nil
@@ -633,9 +657,10 @@ func writeFragmentBlocks(fileList []*finalizeFileInfo, f util.File, ws string, b
 				compressed: compressed,
 				location:   location,
 			})
+			location += int64(blocksize)
 			// increment as all writes will be to next block block
 			fragmentBlockIndex++
-			fragmentData = fragmentData[:blocksize]
+			fragmentData = make([]byte, 0)
 		}
 
 		e.fragment = &fragmentRef{
@@ -644,7 +669,7 @@ func writeFragmentBlocks(fileList []*finalizeFileInfo, f util.File, ws string, b
 		}
 		// save the fragment data from the file
 
-		from, err := os.Open(path.Join(ws, e.path))
+		from, err := os.Open(workspacePath(ws, e.path))
 		if err != nil {
 			return fragmentBlocks, 0, fmt.Errorf("failed to open file for reading %s: %v", e.path, err)
 		}
@@ -683,41 +708,46 @@ func writeFragmentBlocks(fileList []*finalizeFileInfo, f util.File, ws string, b
 	return fragmentBlocks, allWritten, nil
 }
 
-func writeInodes(files []*finalizeFileInfo, f util.File, compressor Compressor, location int64) (inodesWritten int, finalLocation uint64, err error) {
+// writeInodes writes the inode metadata table and returns the on-disk byte
+// offset (relative to inodeTableStart) of each metadata block, so callers can
+// translate logical block indices into real byte offsets.
+func writeInodes(files []*finalizeFileInfo, f backend.WritableFile, compressor Compressor, location int64) (inodesWritten int, finalLocation uint64, blockOffsets []int64, err error) {
 	var (
 		buf             []byte
 		maxSize         = int(metadataBlockSize)
 		initialLocation = location
 	)
+	// blockOffsets[i] is the byte offset (from inode table start) of logical
+	// metadata block i. Block 0 always starts at offset 0.
+	blockOffsets = []int64{0}
 	for _, e := range files {
 		// keep writing until we run out, or we hit 8KB
 		buf = append(buf, e.inode.toBytes()...)
 		if len(buf) > maxSize {
 			written, err := writeMetadataBlock(buf[:maxSize], f, compressor, location)
 			if err != nil {
-				return inodesWritten, 0, err
+				return inodesWritten, 0, nil, err
 			}
-			// count all we have written
 			inodesWritten += written
-			// increment for next write
 			location += int64(written)
-			// truncate all except what we wrote
 			buf = buf[maxSize:]
+			// record the byte offset where the NEXT metadata block starts
+			blockOffsets = append(blockOffsets, int64(inodesWritten))
 		}
 	}
 	// was there anything left?
 	if len(buf) > 0 {
 		written, err := writeMetadataBlock(buf, f, compressor, location)
 		if err != nil {
-			return inodesWritten, 0, err
+			return inodesWritten, 0, nil, err
 		}
 		inodesWritten += written
 	}
-	return inodesWritten, uint64(initialLocation), nil
+	return inodesWritten, uint64(initialLocation), blockOffsets, nil
 }
 
 // writeDirectories write all directories out to disk. Assumes it already has been optimized.
-func writeDirectories(dirs []*finalizeFileInfo, f util.File, compressor Compressor, location int64) (directoriesWritten int, finalLocation uint64, err error) {
+func writeDirectories(dirs []*finalizeFileInfo, f backend.WritableFile, compressor Compressor, location int64) (directoriesWritten int, finalLocation uint64, err error) {
 	var (
 		buf             []byte
 		maxSize         = int(metadataBlockSize)
@@ -756,7 +786,7 @@ func writeDirectories(dirs []*finalizeFileInfo, f util.File, compressor Compress
 // writeFragmentTable write the fragment table
 //
 //nolint:unparam,unused,revive // this does not use fragmentBlocksStart yet, but only because we have not yet added support
-func writeFragmentTable(fragmentBlocks []fragmentBlock, fragmentBlocksStart int64, f util.File, compressor Compressor, location int64) (fragmentsWritten int, finalLocation uint64, err error) {
+func writeFragmentTable(fragmentBlocks []fragmentBlock, fragmentBlocksStart int64, f backend.WritableFile, compressor Compressor, location int64) (fragmentsWritten int, finalLocation uint64, err error) {
 	// now write the actual fragment table entries
 	var (
 		indexEntries []uint64
@@ -818,7 +848,7 @@ func writeFragmentTable(fragmentBlocks []fragmentBlock, fragmentBlocksStart int6
 }
 
 // writeExportTable write the export table at the given location.
-func writeExportTable(files []*finalizeFileInfo, f util.File, compressor Compressor, location int64) (entriesWritten int, finalLocation uint64, err error) {
+func writeExportTable(files []*finalizeFileInfo, f backend.WritableFile, compressor Compressor, location int64) (entriesWritten int, finalLocation uint64, err error) {
 	var (
 		maxSize = int(metadataBlockSize)
 	)
@@ -878,7 +908,7 @@ func writeExportTable(files []*finalizeFileInfo, f util.File, compressor Compres
 }
 
 // writeIDTable write the uidgid table at the given location.
-func writeIDTable(idtable map[uint32]uint16, f util.File, compressor Compressor, location int64) (entriesWritten int, finalLocation uint64, err error) {
+func writeIDTable(idtable map[uint32]uint16, f backend.WritableFile, compressor Compressor, location int64) (entriesWritten int, finalLocation uint64, err error) {
 	var (
 		maxSize = int(metadataBlockSize)
 	)
@@ -938,7 +968,7 @@ func writeIDTable(idtable map[uint32]uint16, f util.File, compressor Compressor,
 }
 
 // writeXattrs write the xattrs and its lookup table at the given location.
-func writeXattrs(xattrs []map[string]string, f util.File, compressor Compressor, location int64) (xattrsWritten int, finalLocation uint64, err error) {
+func writeXattrs(xattrs []map[string]string, f backend.WritableFile, compressor Compressor, location int64) (xattrsWritten int, finalLocation uint64, err error) {
 	var (
 		maxSize     = int(metadataBlockSize)
 		offset      int
@@ -1100,11 +1130,11 @@ func createInodes(fileList []*finalizeFileInfo, idtable map[uint32]uint16, optio
 			if e.startBlock|uint32max != uint32max || e.Size()|int64(uint32max) != int64(uint32max) || len(e.xattrs) > 0 || e.links > 0 {
 				// use extendedFile inode
 				ef := &extendedFile{
-					startBlock: e.startBlock,
-					fileSize:   uint64(e.Size()),
-					blockSizes: e.blocks,
-					links:      e.links,
-					xAttrIndex: e.xAttrIndex,
+					blocksStart: uint64(e.dataLocation),
+					fileSize:    uint64(e.Size()),
+					blockSizes:  e.blocks,
+					links:       e.links,
+					xAttrIndex:  e.xAttrIndex,
 				}
 				if e.fragment != nil {
 					ef.fragmentBlockIndex = e.fragment.block
@@ -1115,13 +1145,15 @@ func createInodes(fileList []*finalizeFileInfo, idtable map[uint32]uint16, optio
 			} else {
 				// use basicFile
 				bf := &basicFile{
-					startBlock: uint32(e.startBlock),
-					fileSize:   uint32(e.Size()),
-					blockSizes: e.blocks,
+					blocksStart: uint32(e.dataLocation),
+					fileSize:    uint32(e.Size()),
+					blockSizes:  e.blocks,
 				}
 				if e.fragment != nil {
 					bf.fragmentBlockIndex = e.fragment.block
 					bf.fragmentOffset = e.fragment.offset
+				} else {
+					bf.fragmentBlockIndex = 0xffffffff
 				}
 				in = bf
 				inodeT = inodeBasicFile
@@ -1406,22 +1438,49 @@ func createDirectories(e *finalizeFileInfo) []*finalizeFileInfo {
 	return dirs
 }
 
-// updateInodeLocations update each inode with where it will be on disk
-// i.e. the inode block, and the offset into the block
+// updateInodeLocations assigns each inode a logical metadata-block index plus an
+// offset within that block. The `block` field here is a LOGICAL INDEX (0, 1, 2…),
+// not a byte offset. After writeInodes actually writes and compresses each block,
+// translateInodeLocations converts these indices into on-disk byte offsets.
+//
+// Why: with compression enabled, compressed block sizes vary, so the on-disk
+// offset of metadata block N is not N * (metadataBlockSize + 2). The old code
+// pre-computed a fake byte offset from the logical index and it was wrong
+// whenever compression actually reduced block size — see issue #360.
 func updateInodeLocations(files []*finalizeFileInfo) {
 	var pos int64
-
-	// get block position for each inode
 	for _, f := range files {
 		b := f.inode.toBytes()
-		block, offset := uint32(pos/metadataBlockSize), uint16(pos%metadataBlockSize)
-		blockPos := block * (standardMetadataBlocksize + 2)
 		f.inodeLocation = blockPosition{
-			block:  blockPos,
-			offset: offset,
+			block:  uint32(pos / metadataBlockSize),
+			offset: uint16(pos % metadataBlockSize),
 			size:   len(b),
 		}
 		pos += int64(len(b))
+	}
+}
+
+// translateInodeLocations walks every inode location and every directory entry
+// and replaces its logical block index with the actual byte offset of that
+// metadata block in the inode table, using the offsets recorded by writeInodes.
+func translateInodeLocations(files, directories []*finalizeFileInfo, blockOffsets []int64) {
+	translate := func(logical uint32) uint32 {
+		if int(logical) >= len(blockOffsets) {
+			// should not happen, but be defensive — keep the value rather than panic
+			return logical
+		}
+		return uint32(blockOffsets[logical])
+	}
+	for _, f := range files {
+		f.inodeLocation.block = translate(f.inodeLocation.block)
+	}
+	for _, d := range directories {
+		if d.directory == nil {
+			continue
+		}
+		for _, e := range d.directory.entries {
+			e.startBlock = translate(e.startBlock)
+		}
 	}
 }
 
@@ -1444,7 +1503,7 @@ func populateDirectoryLocations(directories []*finalizeFileInfo) {
 		d.directoryLocation = blockPosition{
 			block:  uint32(pos / int(metadataBlockSize)),
 			offset: uint16(pos % int(metadataBlockSize)),
-			size:   len(b),
+			size:   len(b) + 3,
 		}
 		pos += len(b)
 	}

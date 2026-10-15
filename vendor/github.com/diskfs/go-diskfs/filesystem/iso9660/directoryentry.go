@@ -38,6 +38,7 @@ type directoryEntry struct {
 	hasMoreEntries           bool
 	isSelf                   bool
 	isParent                 bool
+	joliet                   bool
 	volumeSequence           uint16
 	filesystem               *FileSystem
 	filename                 string
@@ -52,6 +53,8 @@ func (de *directoryEntry) countNamelenBytes() int {
 		namelen = 1
 	case de.isParent:
 		namelen = 1
+	case de.joliet:
+		namelen = len(ucs2StringToBytes(de.filename))
 	default:
 		namelen = len(de.filename)
 	}
@@ -117,6 +120,8 @@ func (de *directoryEntry) toBytes(skipExt bool, ceBlocks []uint32) ([][]byte, er
 		filenameBytes = []byte{0x00}
 	case de.isParent:
 		filenameBytes = []byte{0x01}
+	case de.joliet:
+		filenameBytes = ucs2StringToBytes(de.filename)
 	default:
 		// first validate the filename
 		err = validateFilename(de.filename, de.isSubdirectory, de.filesystem.suspEnabled)
@@ -137,8 +142,9 @@ func (de *directoryEntry) toBytes(skipExt bool, ceBlocks []uint32) ([][]byte, er
 	copy(b[33:], filenameBytes)
 
 	// output directory entry extensions - but only if we did not skip it
+	// Joliet SVD entries don't carry SUSP; Rock Ridge extensions live in the PVD tree only
 	var extBytes [][]byte
-	if !skipExt {
+	if !skipExt && !de.joliet {
 		extBytes, err = dirEntryExtensionsToBytes(de.extensions, directoryEntryMaxSize-len(b), de.filesystem.blocksize, ceBlocks)
 		if err != nil {
 			return nil, fmt.Errorf("enable to convert directory entry SUSP extensions to bytes: %v", err)
@@ -200,6 +206,10 @@ func dirEntryExtensionsToBytes(extensions []directoryEntrySystemUseExtension, ma
 }
 
 func dirEntryFromBytes(b []byte, ext []suspExtension) (*directoryEntry, error) {
+	return dirEntryFromBytesWithJoliet(b, ext, false)
+}
+
+func dirEntryFromBytesWithJoliet(b []byte, ext []suspExtension, joliet bool) (*directoryEntry, error) {
 	// has to be at least 34 bytes
 	if len(b) < int(directoryEntryMinSize) {
 		return nil, fmt.Errorf("cannot read directoryEntry from %d bytes, fewer than minimum of %d bytes", len(b), directoryEntryMinSize)
@@ -243,13 +253,16 @@ func dirEntryFromBytes(b []byte, ext []suspExtension) (*directoryEntry, error) {
 	case namelen == 1 && nameBytes[0] == 0x01:
 		filename = ""
 		isParent = true
+	case joliet:
+		filename = bytesToUCS2String(nameBytes)
 	default:
 		filename = string(nameBytes)
 	}
 
 	// and now for extensions in the system use area
+	// Joliet SVD entries don't carry SUSP; Rock Ridge extensions live in the PVD tree only
 	suspFields := make([]directoryEntrySystemUseExtension, 0)
-	if len(b) > 33+int(nameLenWithPadding) {
+	if !joliet && len(b) > 33+int(nameLenWithPadding) {
 		var err error
 		suspFields, err = parseDirectoryEntryExtensions(b[33+nameLenWithPadding:], ext)
 		if err != nil {
@@ -270,6 +283,7 @@ func dirEntryFromBytes(b []byte, ext []suspExtension) (*directoryEntry, error) {
 		hasMoreEntries:           hasMoreEntries,
 		isSelf:                   isSelf,
 		isParent:                 isParent,
+		joliet:                   joliet,
 		volumeSequence:           volumeSequence,
 		filename:                 filename,
 		extensions:               suspFields,
@@ -305,7 +319,7 @@ func parseDirEntry(b []byte, f *FileSystem) (*directoryEntry, error) {
 				offset := int64(ce.Offset())
 				// read it from disk
 				continuationBytes := make([]byte, size)
-				read, err := f.file.ReadAt(continuationBytes, location*f.blocksize+offset)
+				read, err := f.backend.ReadAt(continuationBytes, location*f.blocksize+offset)
 				if err != nil {
 					return nil, fmt.Errorf("error reading continuation entry data at %d: %v", location, err)
 				}
@@ -362,18 +376,40 @@ func parseDirEntries(b []byte, f *FileSystem) ([]*directoryEntry, error) {
 	return dirEntries, nil
 }
 
+// parseDirEntriesJoliet parses directory entries from a Joliet (SVD) directory extent.
+// Filenames are decoded as UCS-2 and no SUSP extensions are parsed.
+func parseDirEntriesJoliet(b []byte, f *FileSystem) ([]*directoryEntry, error) {
+	dirEntries := make([]*directoryEntry, 0, 20)
+	count := 0
+	for i := 0; i < len(b); count++ {
+		entryLen := int(b[i+0])
+		if entryLen == 0 {
+			i += (int(f.blocksize) - i%int(f.blocksize))
+			continue
+		}
+		de, err := dirEntryFromBytesWithJoliet(b[i:i+entryLen], nil, true)
+		if err != nil {
+			return nil, fmt.Errorf("invalid Joliet directory entry %d at byte %d: %v", count, i, err)
+		}
+		de.filesystem = f
+		dirEntries = append(dirEntries, de)
+		i += entryLen
+	}
+	return dirEntries, nil
+}
+
 // get the location of a particular path relative to this directory
 func (de *directoryEntry) getLocation(p string) (location, size uint32, err error) {
 	// break path down into parts and levels
 	parts := splitPath(p)
-	if len(parts) == 0 {
+	if len(parts) == 0 || parts[0] == "." {
 		location = de.location
 		size = de.size
 	} else {
 		current := parts[0]
 		// read the directory bytes
 		dirb := make([]byte, de.size)
-		n, err := de.filesystem.file.ReadAt(dirb, int64(de.location)*de.filesystem.blocksize)
+		n, err := de.filesystem.backend.ReadAt(dirb, int64(de.location)*de.filesystem.blocksize)
 		if err != nil {
 			return 0, 0, fmt.Errorf("could not read directory: %v", err)
 		}
@@ -400,37 +436,38 @@ func (de *directoryEntry) getLocation(p string) (location, size uint32, err erro
 						return 0, 0, fmt.Errorf("extension %s count not find a filename property: %v", e.ID(), err2)
 					default:
 						checkFilename = filename
-						//nolint:gosimple // redundant break, but we want this explicit
+						//nolint:staticcheck // redundant break, but we want this explicit
 						break
 					}
 				}
 			}
 			if checkFilename == current {
-				if len(parts) > 1 {
-					// just dig down further - what if it looks like a file, but is a relocated directory?
-					if !entry.isSubdirectory && de.filesystem.suspEnabled && !entry.isSelf && !entry.isParent {
-						for _, e := range de.filesystem.suspExtensions {
-							location2 := e.GetDirectoryLocation(entry)
-							if location2 != 0 {
-								// need to get the directory entry for the child
-								dirb := make([]byte, de.filesystem.blocksize)
-								n, err2 := de.filesystem.file.ReadAt(dirb, int64(location2)*de.filesystem.blocksize)
-								if err2 != nil {
-									return 0, 0, fmt.Errorf("could not read bytes of relocated directory %s from block %d: %v", checkFilename, location2, err2)
-								}
-								if n != len(dirb) {
-									return 0, 0, fmt.Errorf("read %d bytes instead of expected %d for relocated directory %s from block %d: %v", n, len(dirb), checkFilename, location2, err)
-								}
-								// get the size of the actual directory entry
-								size2 := dirb[0]
-								entry, err2 = parseDirEntry(dirb[:size2], de.filesystem)
-								if err2 != nil {
-									return 0, 0, fmt.Errorf("error converting bytes to a directory entry for relocated directory %s from block %d: %v", checkFilename, location2, err2)
-								}
-								break
+				// check if this is a placeholder for a relocated directory (CL extension)
+				if !entry.isSubdirectory && de.filesystem.suspEnabled && !entry.isSelf && !entry.isParent {
+					for _, e := range de.filesystem.suspExtensions {
+						location2 := e.GetDirectoryLocation(entry)
+						if location2 != 0 {
+							// need to get the directory entry for the child
+							dirb := make([]byte, de.filesystem.blocksize)
+							n, err2 := de.filesystem.backend.ReadAt(dirb, int64(location2)*de.filesystem.blocksize)
+							if err2 != nil {
+								return 0, 0, fmt.Errorf("could not read bytes of relocated directory %s from block %d: %v", checkFilename, location2, err2)
 							}
+							if n != len(dirb) {
+								return 0, 0, fmt.Errorf("read %d bytes instead of expected %d for relocated directory %s from block %d: %v", n, len(dirb), checkFilename, location2, err)
+							}
+							// get the size of the actual directory entry
+							size2 := dirb[0]
+							entry, err2 = parseDirEntry(dirb[:size2], de.filesystem)
+							if err2 != nil {
+								return 0, 0, fmt.Errorf("error converting bytes to a directory entry for relocated directory %s from block %d: %v", checkFilename, location2, err2)
+							}
+							break
 						}
 					}
+				}
+				if len(parts) > 1 {
+					// dig down further
 					location, size, err = entry.getLocation(path.Join(parts[1:]...))
 					if err != nil {
 						return 0, 0, fmt.Errorf("could not get location: %v", err)
@@ -459,7 +496,7 @@ func (de *directoryEntry) Name() string {
 				continue
 			default:
 				name = filename
-				//nolint:gosimple // redundant break, but we want this explicit
+				//nolint:staticcheck // redundant break, but we want this explicit
 				break
 			}
 		}
@@ -482,8 +519,17 @@ func (de *directoryEntry) Size() int64 {
 // Mode() FileMode     // file mode bits
 func (de *directoryEntry) Mode() os.FileMode {
 	for _, ext := range de.extensions {
-		if s, ok := ext.(rockRidgeSymlink); ok && !s.continued {
-			return 0o755 | os.ModeSymlink
+		if px, ok := ext.(rockRidgePosixAttributes); ok {
+			return px.mode
+		}
+	}
+	// Fallback for non-Rock Ridge
+	if de.isSubdirectory {
+		return os.ModeDir | 0o755
+	}
+	for _, ext := range de.extensions {
+		if _, ok := ext.(rockRidgeSymlink); ok {
+			return os.ModeSymlink | 0o777
 		}
 	}
 	return 0o755
@@ -509,9 +555,49 @@ func (de *directoryEntry) IsDir() bool {
 	return de.isSubdirectory
 }
 
-// Sys() interface{}   // underlying data source (can return nil)
+// Sys returns *StatT with ISO9660 and Rock Ridge metadata.
 func (de *directoryEntry) Sys() interface{} {
-	return nil
+	return de.statT()
+}
+
+func (de *directoryEntry) statT() *StatT {
+	s := &StatT{
+		ExtAttrSize:              de.extAttrSize,
+		Location:                 de.location,
+		VolumeSequence:           de.volumeSequence,
+		IsHidden:                 de.isHidden,
+		IsAssociated:             de.isAssociated,
+		HasExtendedAttrs:         de.hasExtendedAttrs,
+		HasOwnerGroupPermissions: de.hasOwnerGroupPermissions,
+	}
+	for _, ext := range de.extensions {
+		switch e := ext.(type) {
+		case rockRidgePosixAttributes:
+			s.RockRidge = true
+			s.UID = e.uid
+			s.GID = e.gid
+			s.NLink = e.linkCount
+			s.Inode = uint32(e.serial)
+		case rockRidgeSymlink:
+			s.RockRidge = true
+			if !e.continued {
+				s.LinkTarget = e.name
+			}
+		case rockRidgeName, rockRidgeTimestamps, rockRidgeChildDirectory, rockRidgeParentDirectory, rockRidgeRelocatedDirectory, rockRidgeSparseFile, rockRidgePosixDeviceNumber:
+			s.RockRidge = true
+		}
+	}
+	return s
+}
+
+// Info returns the FileInfo structure, which directoryEntry already implements
+func (de *directoryEntry) Info() (os.FileInfo, error) {
+	return de, nil
+}
+
+// Type returns the type of the directory entry
+func (de *directoryEntry) Type() os.FileMode {
+	return de.Mode()
 }
 
 // utilities
