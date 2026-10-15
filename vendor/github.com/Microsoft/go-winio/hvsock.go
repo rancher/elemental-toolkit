@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package winio
 
@@ -10,7 +9,6 @@ import (
 	"io"
 	"net"
 	"os"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -181,13 +179,13 @@ type HvsockConn struct {
 var _ net.Conn = &HvsockConn{}
 
 func newHVSocket() (*win32File, error) {
-	fd, err := syscall.Socket(afHVSock, syscall.SOCK_STREAM, 1)
+	fd, err := windows.Socket(afHVSock, windows.SOCK_STREAM, 1)
 	if err != nil {
 		return nil, os.NewSyscallError("socket", err)
 	}
 	f, err := makeWin32File(fd)
 	if err != nil {
-		syscall.Close(fd)
+		windows.Close(fd)
 		return nil, err
 	}
 	f.socket = true
@@ -197,16 +195,24 @@ func newHVSocket() (*win32File, error) {
 // ListenHvsock listens for connections on the specified hvsock address.
 func ListenHvsock(addr *HvsockAddr) (_ *HvsockListener, err error) {
 	l := &HvsockListener{addr: *addr}
-	sock, err := newHVSocket()
+
+	var sock *win32File
+	sock, err = newHVSocket()
 	if err != nil {
 		return nil, l.opErr("listen", err)
 	}
+	defer func() {
+		if err != nil {
+			_ = sock.Close()
+		}
+	}()
+
 	sa := addr.raw()
-	err = socket.Bind(windows.Handle(sock.handle), &sa)
+	err = socket.Bind(sock.handle, &sa)
 	if err != nil {
 		return nil, l.opErr("listen", os.NewSyscallError("socket", err))
 	}
-	err = syscall.Listen(sock.handle, 16)
+	err = windows.Listen(sock.handle, 16)
 	if err != nil {
 		return nil, l.opErr("listen", os.NewSyscallError("listen", err))
 	}
@@ -246,7 +252,7 @@ func (l *HvsockListener) Accept() (_ net.Conn, err error) {
 	var addrbuf [addrlen * 2]byte
 
 	var bytes uint32
-	err = syscall.AcceptEx(l.sock.handle, sock.handle, &addrbuf[0], 0 /* rxdatalen */, addrlen, addrlen, &bytes, &c.o)
+	err = windows.AcceptEx(l.sock.handle, sock.handle, &addrbuf[0], 0 /* rxdatalen */, addrlen, addrlen, &bytes, &c.o)
 	if _, err = l.sock.asyncIO(c, nil, bytes, err); err != nil {
 		return nil, l.opErr("accept", os.NewSyscallError("acceptex", err))
 	}
@@ -263,7 +269,7 @@ func (l *HvsockListener) Accept() (_ net.Conn, err error) {
 	conn.remote.fromRaw((*rawHvsockAddr)(unsafe.Pointer(&addrbuf[addrlen])))
 
 	// initialize the accepted socket and update its properties with those of the listening socket
-	if err = windows.Setsockopt(windows.Handle(sock.handle),
+	if err = windows.Setsockopt(sock.handle,
 		windows.SOL_SOCKET, windows.SO_UPDATE_ACCEPT_CONTEXT,
 		(*byte)(unsafe.Pointer(&l.sock.handle)), int32(unsafe.Sizeof(l.sock.handle))); err != nil {
 		return nil, conn.opErr("accept", os.NewSyscallError("setsockopt", err))
@@ -334,7 +340,7 @@ func (d *HvsockDialer) Dial(ctx context.Context, addr *HvsockAddr) (conn *Hvsock
 	}()
 
 	sa := addr.raw()
-	err = socket.Bind(windows.Handle(sock.handle), &sa)
+	err = socket.Bind(sock.handle, &sa)
 	if err != nil {
 		return nil, conn.opErr(op, os.NewSyscallError("bind", err))
 	}
@@ -347,7 +353,7 @@ func (d *HvsockDialer) Dial(ctx context.Context, addr *HvsockAddr) (conn *Hvsock
 	var bytes uint32
 	for i := uint(0); i <= d.Retries; i++ {
 		err = socket.ConnectEx(
-			windows.Handle(sock.handle),
+			sock.handle,
 			&sa,
 			nil, // sendBuf
 			0,   // sendDataLen
@@ -367,7 +373,7 @@ func (d *HvsockDialer) Dial(ctx context.Context, addr *HvsockAddr) (conn *Hvsock
 
 	// update the connection properties, so shutdown can be used
 	if err = windows.Setsockopt(
-		windows.Handle(sock.handle),
+		sock.handle,
 		windows.SOL_SOCKET,
 		windows.SO_UPDATE_CONNECT_CONTEXT,
 		nil, // optvalue
@@ -378,7 +384,7 @@ func (d *HvsockDialer) Dial(ctx context.Context, addr *HvsockAddr) (conn *Hvsock
 
 	// get the local name
 	var sal rawHvsockAddr
-	err = socket.GetSockName(windows.Handle(sock.handle), &sal)
+	err = socket.GetSockName(sock.handle, &sal)
 	if err != nil {
 		return nil, conn.opErr(op, os.NewSyscallError("getsockname", err))
 	}
@@ -421,7 +427,7 @@ func (d *HvsockDialer) redialWait(ctx context.Context) (err error) {
 	return ctx.Err()
 }
 
-// assumes error is a plain, unwrapped syscall.Errno provided by direct syscall.
+// assumes error is a plain, unwrapped windows.Errno provided by direct syscall.
 func canRedial(err error) bool {
 	//nolint:errorlint // guaranteed to be an Errno
 	switch err {
@@ -435,7 +441,7 @@ func canRedial(err error) bool {
 
 func (conn *HvsockConn) opErr(op string, err error) error {
 	// translate from "file closed" to "socket closed"
-	if errors.Is(err, ErrFileClosed) {
+	if errors.Is(err, os.ErrClosed) {
 		err = socket.ErrSocketClosed
 	}
 	return &net.OpError{Op: op, Net: "hvsock", Source: &conn.local, Addr: &conn.remote, Err: err}
@@ -447,9 +453,9 @@ func (conn *HvsockConn) Read(b []byte) (int, error) {
 		return 0, conn.opErr("read", err)
 	}
 	defer conn.sock.wg.Done()
-	buf := syscall.WSABuf{Buf: &b[0], Len: uint32(len(b))}
+	buf := windows.WSABuf{Buf: &b[0], Len: uint32(len(b))}
 	var flags, bytes uint32
-	err = syscall.WSARecv(conn.sock.handle, &buf, 1, &bytes, &flags, &c.o, nil)
+	err = windows.WSARecv(conn.sock.handle, &buf, 1, &bytes, &flags, &c.o, nil)
 	n, err := conn.sock.asyncIO(c, &conn.sock.readDeadline, bytes, err)
 	if err != nil {
 		var eno windows.Errno
@@ -482,9 +488,9 @@ func (conn *HvsockConn) write(b []byte) (int, error) {
 		return 0, conn.opErr("write", err)
 	}
 	defer conn.sock.wg.Done()
-	buf := syscall.WSABuf{Buf: &b[0], Len: uint32(len(b))}
+	buf := windows.WSABuf{Buf: &b[0], Len: uint32(len(b))}
 	var bytes uint32
-	err = syscall.WSASend(conn.sock.handle, &buf, 1, &bytes, 0, &c.o, nil)
+	err = windows.WSASend(conn.sock.handle, &buf, 1, &bytes, 0, &c.o, nil)
 	n, err := conn.sock.asyncIO(c, &conn.sock.writeDeadline, bytes, err)
 	if err != nil {
 		var eno windows.Errno
@@ -511,7 +517,7 @@ func (conn *HvsockConn) shutdown(how int) error {
 		return socket.ErrSocketClosed
 	}
 
-	err := syscall.Shutdown(conn.sock.handle, how)
+	err := windows.Shutdown(conn.sock.handle, how)
 	if err != nil {
 		// If the connection was closed, shutdowns fail with "not connected"
 		if errors.Is(err, windows.WSAENOTCONN) ||
@@ -525,7 +531,7 @@ func (conn *HvsockConn) shutdown(how int) error {
 
 // CloseRead shuts down the read end of the socket, preventing future read operations.
 func (conn *HvsockConn) CloseRead() error {
-	err := conn.shutdown(syscall.SHUT_RD)
+	err := conn.shutdown(windows.SHUT_RD)
 	if err != nil {
 		return conn.opErr("closeread", err)
 	}
@@ -535,7 +541,7 @@ func (conn *HvsockConn) CloseRead() error {
 // CloseWrite shuts down the write end of the socket, preventing future write operations and
 // notifying the other endpoint that no more data will be written.
 func (conn *HvsockConn) CloseWrite() error {
-	err := conn.shutdown(syscall.SHUT_WR)
+	err := conn.shutdown(windows.SHUT_WR)
 	if err != nil {
 		return conn.opErr("closewrite", err)
 	}

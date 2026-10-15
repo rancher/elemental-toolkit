@@ -15,12 +15,8 @@ var _ unsafe.Pointer
 
 // Do the interface allocations only once for common
 // Errno values.
-const (
-	errnoERROR_IO_PENDING = 997
-)
-
 var (
-	errERROR_IO_PENDING error = syscall.Errno(errnoERROR_IO_PENDING)
+	errERROR_IO_PENDING error = windows.ERROR_IO_PENDING
 	errERROR_EINVAL     error = syscall.EINVAL
 )
 
@@ -30,12 +26,9 @@ func errnoErr(e syscall.Errno) error {
 	switch e {
 	case 0:
 		return errERROR_EINVAL
-	case errnoERROR_IO_PENDING:
+	case windows.ERROR_IO_PENDING:
 		return errERROR_IO_PENDING
 	}
-	// TODO: add more here, after collecting data on the common
-	// error values see on Windows. (perhaps when running
-	// all.bat?)
 	return e
 }
 
@@ -48,7 +41,7 @@ var (
 )
 
 func bind(s windows.Handle, name unsafe.Pointer, namelen int32) (err error) {
-	r1, _, e1 := syscall.Syscall(procbind.Addr(), 3, uintptr(s), uintptr(name), uintptr(namelen))
+	r1, _, e1 := syscall.SyscallN(procbind.Addr(), uintptr(s), uintptr(name), uintptr(namelen))
 	if r1 == socketError {
 		err = errnoErr(e1)
 	}
@@ -56,7 +49,7 @@ func bind(s windows.Handle, name unsafe.Pointer, namelen int32) (err error) {
 }
 
 func getpeername(s windows.Handle, name unsafe.Pointer, namelen *int32) (err error) {
-	r1, _, e1 := syscall.Syscall(procgetpeername.Addr(), 3, uintptr(s), uintptr(name), uintptr(unsafe.Pointer(namelen)))
+	r1, _, e1 := syscall.SyscallN(procgetpeername.Addr(), uintptr(s), uintptr(name), uintptr(unsafe.Pointer(namelen)))
 	if r1 == socketError {
 		err = errnoErr(e1)
 	}
@@ -64,7 +57,7 @@ func getpeername(s windows.Handle, name unsafe.Pointer, namelen *int32) (err err
 }
 
 func getsockname(s windows.Handle, name unsafe.Pointer, namelen *int32) (err error) {
-	r1, _, e1 := syscall.Syscall(procgetsockname.Addr(), 3, uintptr(s), uintptr(name), uintptr(unsafe.Pointer(namelen)))
+	r1, _, e1 := syscall.SyscallN(procgetsockname.Addr(), uintptr(s), uintptr(name), uintptr(unsafe.Pointer(namelen)))
 	if r1 == socketError {
 		err = errnoErr(e1)
 	}
