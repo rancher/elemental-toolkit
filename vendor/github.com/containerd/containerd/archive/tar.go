@@ -29,11 +29,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/moby/sys/userns"
+
 	"github.com/containerd/containerd/archive/tarheader"
-	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/pkg/epoch"
-	"github.com/containerd/containerd/pkg/userns"
 	"github.com/containerd/continuity/fs"
+	"github.com/containerd/log"
 )
 
 var bufPool = &sync.Pool{
@@ -168,6 +169,9 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 		// Used for handling opaque directory markers which
 		// may occur out of order
 		unpackedPaths = make(map[string]struct{})
+		// Used for tracking directories that have already processed an
+		// opaque directory marker to avoid redundant directory walks
+		opaqueDirs = make(map[string]struct{})
 
 		convertWhiteout = options.ConvertWhiteout
 	)
@@ -178,6 +182,11 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 			base := filepath.Base(path)
 			dir := filepath.Dir(path)
 			if base == whiteoutOpaqueDir {
+				if _, ok := opaqueDirs[dir]; ok {
+					return false, nil
+				}
+				opaqueDirs[dir] = struct{}{}
+
 				_, err := os.Lstat(dir)
 				if err != nil {
 					return false, err
@@ -194,7 +203,12 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 					}
 					if _, exists := unpackedPaths[path]; !exists {
 						err := os.RemoveAll(path)
-						return err
+						if err != nil {
+							return err
+						}
+						if info.IsDir() {
+							return filepath.SkipDir
+						}
 					}
 					return nil
 				})
@@ -342,7 +356,7 @@ func createTarFile(ctx context.Context, path, extractDir string, hdr *tar.Header
 			}
 		}
 
-	//nolint:staticcheck // TypeRegA is deprecated but we may still receive an external tar with TypeRegA
+	//nolint:staticcheck // Ignore SA1019.  TypeRegA is deprecated but we may still receive an external tar with TypeRegA
 	case tar.TypeReg, tar.TypeRegA:
 		file, err := openFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, hdrInfo.Mode())
 		if err != nil {

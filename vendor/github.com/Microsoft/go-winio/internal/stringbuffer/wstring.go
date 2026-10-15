@@ -7,7 +7,7 @@ import (
 
 // TODO: worth exporting and using in mkwinsyscall?
 
-// Uint16BufferSize is the buffer size in the pool, chosen somewhat arbitrarily to accommodate
+// MinWStringCap is the buffer size in the pool, chosen somewhat arbitrarily to accommodate
 // large path strings:
 // MAX_PATH (260) + size of volume GUID prefix (49) + null terminator = 310.
 const MinWStringCap = 310
@@ -16,7 +16,7 @@ const MinWStringCap = 310
 // is copied to heap and then referenced via pointer in the interface header that sync.Pool
 // stores.
 var pathPool = sync.Pool{ // if go1.18+ adds Pool[T], use that to store []uint16 directly
-	New: func() interface{} {
+	New: func() any {
 		b := make([]uint16, MinWStringCap)
 		return &b
 	},
@@ -62,7 +62,7 @@ func (b *WString) Free() {
 // ResizeTo grows the buffer to at least c and returns the new capacity, freeing the
 // previous buffer back into pool.
 func (b *WString) ResizeTo(c uint32) uint32 {
-	// allready sufficient (or n is 0)
+	// already sufficient (or n is 0)
 	if c <= b.Cap() {
 		return b.Cap()
 	}

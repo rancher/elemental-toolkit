@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package backuptar
 
@@ -11,14 +10,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/Microsoft/go-winio"
 	"golang.org/x/sys/windows"
 )
 
-//nolint:deadcode,varcheck // keep unused constants for potential future use
 const (
 	cISUID  = 0004000 // Set uid
 	cISGID  = 0002000 // Set gid
@@ -106,7 +103,7 @@ func BasicInfoHeader(name string, size int64, fileInfo *winio.FileBasicInfo) *ta
 	hdr.PAXRecords[hdrFileAttributes] = fmt.Sprintf("%d", fileInfo.FileAttributes)
 	hdr.PAXRecords[hdrCreationTime] = formatPAXTime(time.Unix(0, fileInfo.CreationTime.Nanoseconds()))
 
-	if (fileInfo.FileAttributes & syscall.FILE_ATTRIBUTE_DIRECTORY) != 0 {
+	if (fileInfo.FileAttributes & windows.FILE_ATTRIBUTE_DIRECTORY) != 0 {
 		hdr.Mode |= cISDIR
 		hdr.Size = 0
 		hdr.Typeflag = tar.TypeDir
@@ -213,7 +210,7 @@ func WriteTarFileFromBackupStream(t *tar.Writer, r io.Reader, name string, size 
 		if err != nil {
 			return err
 		}
-		switch bhdr.Id {
+		switch bhdr.Id { //nolint:revive // ignore "switch" with identical branches.
 		case winio.BackupData:
 			hdr.Mode |= cISREG
 			if !readTwice {
@@ -257,6 +254,8 @@ func WriteTarFileFromBackupStream(t *tar.Writer, r io.Reader, name string, size 
 
 		case winio.BackupAlternateData, winio.BackupLink, winio.BackupPropertyData, winio.BackupObjectId, winio.BackupTxfsData:
 			// ignore these streams
+		case winio.BackupSparseBlock:
+			// Skip sparse content during the metadata scan; copySparse handles it in the data pass.
 		default:
 			return fmt.Errorf("%s: unknown stream ID %d", name, bhdr.Id)
 		}
@@ -339,7 +338,7 @@ func WriteTarFileFromBackupStream(t *tar.Writer, r io.Reader, name string, size 
 		if err != nil {
 			return err
 		}
-		switch bhdr.Id {
+		switch bhdr.Id { //nolint:revive // ignore "switch" with identical branches.
 		case winio.BackupAlternateData:
 			if (bhdr.Attributes & winio.StreamSparseAttributes) != 0 {
 				// Unsupported for now, since the size of the alternate stream is not present
@@ -367,6 +366,8 @@ func WriteTarFileFromBackupStream(t *tar.Writer, r io.Reader, name string, size 
 			}
 		case winio.BackupEaData, winio.BackupLink, winio.BackupPropertyData, winio.BackupObjectId, winio.BackupTxfsData:
 			// ignore these streams
+		case winio.BackupSparseBlock:
+			// Empty sparse files skip copySparse and may leave a zero-size, zero-offset terminator.
 		default:
 			return fmt.Errorf("%s: unknown stream ID %d after data", name, bhdr.Id)
 		}
@@ -378,7 +379,7 @@ func WriteTarFileFromBackupStream(t *tar.Writer, r io.Reader, name string, size 
 // WriteTarFileFromBackupStream.
 func FileInfoFromHeader(hdr *tar.Header) (name string, size int64, fileInfo *winio.FileBasicInfo, err error) {
 	name = hdr.Name
-	if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
+	if hdr.Typeflag == tar.TypeReg {
 		size = hdr.Size
 	}
 	fileInfo = &winio.FileBasicInfo{
@@ -396,7 +397,7 @@ func FileInfoFromHeader(hdr *tar.Header) (name string, size int64, fileInfo *win
 		fileInfo.FileAttributes = uint32(attr)
 	} else {
 		if hdr.Typeflag == tar.TypeDir {
-			fileInfo.FileAttributes |= syscall.FILE_ATTRIBUTE_DIRECTORY
+			fileInfo.FileAttributes |= windows.FILE_ATTRIBUTE_DIRECTORY
 		}
 	}
 	if creationTimeStr, ok := hdr.PAXRecords[hdrCreationTime]; ok {
@@ -469,7 +470,7 @@ func WriteBackupStreamFromTarFile(w io.Writer, t *tar.Reader, hdr *tar.Header) (
 		}
 	}
 
-	if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
+	if hdr.Typeflag == tar.TypeReg {
 		bhdr := winio.BackupHeader{
 			Id:   winio.BackupData,
 			Size: hdr.Size,
