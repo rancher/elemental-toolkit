@@ -6,5 +6,9 @@
   "baseBranchPatterns": [
     "main"
   ],
-  "prHourlyLimit": 2
+  "prHourlyLimit": 2,
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodVendor"
+  ]
 }
