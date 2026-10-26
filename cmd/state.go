@@ -24,7 +24,7 @@ import (
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func NewStateCmd(root *cobra.Command) *cobra.Command {

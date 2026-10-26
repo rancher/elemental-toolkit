@@ -23,7 +23,7 @@ import (
 	"github.com/rancher/yip/pkg/plugins"
 	"github.com/rancher/yip/pkg/schema"
 	"github.com/twpayne/go-vfs/v4"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 	"github.com/rancher/elemental-toolkit/v2/pkg/utils"

@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/rancher/yip/pkg/schema"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/types"
 )
