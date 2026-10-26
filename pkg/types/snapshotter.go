@@ -22,7 +22,7 @@ import (
 
 	mapstructure "github.com/mitchellh/mapstructure"
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type Snapshotter interface {

@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	registry "github.com/google/go-containerregistry/pkg/v1"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 
 	"github.com/rancher/elemental-toolkit/v2/pkg/constants"
 )

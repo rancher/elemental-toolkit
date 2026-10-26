@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 
 	"github.com/distribution/distribution/reference"
 )
