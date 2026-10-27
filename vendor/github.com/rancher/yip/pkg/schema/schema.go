@@ -30,7 +30,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/itchyny/gojq"
 	"github.com/twpayne/go-vfs/v4"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 type YipEntity struct {
