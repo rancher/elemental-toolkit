@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // NewCloudConfig instantiates a new CloudConfig from the given contents (a
