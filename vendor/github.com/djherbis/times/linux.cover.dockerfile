@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.27
 
 WORKDIR /go/src/github.com/djherbis/times
 COPY . .
