@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.27
 
 RUN curl -sL https://deb.nodesource.com/setup_17.x | bash
 RUN apt-get install --yes nodejs
