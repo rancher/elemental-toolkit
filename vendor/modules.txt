@@ -303,7 +303,7 @@ github.com/joho/godotenv
 # github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767
 ## explicit; go 1.16
 github.com/kendru/darwin/go/depgraph
-# github.com/klauspost/compress v1.20.0
+# github.com/klauspost/compress v1.20.2
 ## explicit; go 1.25
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
