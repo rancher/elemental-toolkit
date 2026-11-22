@@ -538,6 +538,26 @@ type ElementalPartitions struct {
 	Persistent *Partition `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
+// SetLegacyBootPartition sets the state partition as the bootloader partition. This is the
+// layout of legacy BIOS installs done with elemental-toolkit v1.x, which have no bootloader
+// partition and keep grub in the state partition. It is a no-op if a bootloader partition
+// is already defined or there is no state partition. Returns true if the legacy layout is set.
+func (ep *ElementalPartitions) SetLegacyBootPartition() bool {
+	if ep.Boot != nil || ep.State == nil {
+		return false
+	}
+	boot := *ep.State
+	boot.Flags = []string{}
+	ep.Boot = &boot
+	return true
+}
+
+// IsLegacyBootLayout returns true if the state partition is also the bootloader partition,
+// as on legacy BIOS installs done with elemental-toolkit v1.x
+func (ep ElementalPartitions) IsLegacyBootLayout() bool {
+	return ep.Boot != nil && ep.State != nil && ep.Boot.Path != "" && ep.Boot.Path == ep.State.Path
+}
+
 // GetBootloaderDisk returns the disk device holding the bootloader partition, falls back
 // to the disk of the state partition. Returns an empty string if none is known.
 func (ep ElementalPartitions) GetBootloaderDisk() string {

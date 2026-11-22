@@ -100,6 +100,13 @@ func NewResetAction(cfg *types.RunConfig, spec *types.ResetSpec, opts ...ResetAc
 		)
 	}
 
+	// Legacy BIOS layouts (no bootloader partition) keep grub files at the root of the
+	// state partition, which is not compatible with the btrfs snapshotter subvolumes layout
+	if spec.Partitions.IsLegacyBootLayout() && cfg.Snapshotter.Type == constants.BtrfsSnapshotterType {
+		cfg.Logger.Warnf("btrfs snapshotter is not supported on legacy BIOS layouts, using %s snapshotter", constants.LoopDeviceSnapshotterType)
+		cfg.Snapshotter = types.NewLoopDevice()
+	}
+
 	if r.snapshotter == nil {
 		r.snapshotter, err = snapshotter.NewSnapshotter(cfg.Config, cfg.Snapshotter, r.bootloader)
 		if err != nil {
@@ -194,6 +201,18 @@ func (r ResetAction) Run() (err error) {
 	err = elemental.UnmountPartitions(r.cfg.Config, r.spec.Partitions.PartitionsByMountPoint(true, r.spec.Partitions.Recovery))
 	if err != nil {
 		return elementalError.NewFromError(err, elementalError.UnmountPartitions)
+	}
+
+	// Legacy BIOS layouts (no bootloader partition) also mount the state partition as
+	// bootloader partition, release that mount too before formatting
+	if r.spec.Partitions.IsLegacyBootLayout() {
+		if notMnt, _ := r.cfg.Mounter.IsLikelyNotMountPoint(constants.BootDir); !notMnt {
+			r.cfg.Logger.Debugf("Unmounting state partition from %s", constants.BootDir)
+			err = r.cfg.Mounter.Unmount(constants.BootDir)
+			if err != nil {
+				return elementalError.NewFromError(err, elementalError.UnmountPartitions)
+			}
+		}
 	}
 
 	// Reformat state partition

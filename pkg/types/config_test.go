@@ -193,6 +193,17 @@ var _ = Describe("Types", Label("types", "config"), func() {
 			err := ep.SetFirmwarePartitions(types.EFI, types.GPT)
 			Expect(err).Should(HaveOccurred())
 		})
+		It("sets the state partition as legacy bootloader partition", func() {
+			Expect(ep.SetLegacyBootPartition()).To(BeFalse()) // no state partition
+			ep.State = &types.Partition{Name: constants.StatePartName, MountPoint: "/state", Disk: "/dev/sda", Flags: []string{"x"}}
+			Expect(ep.SetLegacyBootPartition()).To(BeTrue())
+			Expect(ep.Boot).NotTo(BeIdenticalTo(ep.State))
+			Expect(ep.Boot.MountPoint).To(Equal("/state"))
+			Expect(ep.Boot.Flags).To(BeEmpty())
+			Expect(ep.GetBootloaderDisk()).To(Equal("/dev/sda"))
+			// no-op if a bootloader partition already exists
+			Expect(ep.SetLegacyBootPartition()).To(BeFalse())
+		})
 		It("sets firmware partitions on bios", func() {
 			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
 			// bootloader partition is required on legacy BIOS too
