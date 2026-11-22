@@ -389,6 +389,9 @@ func (r *ResetSpec) Sanitize() error {
 	if r.Partitions.State == nil || r.Partitions.State.MountPoint == "" {
 		return fmt.Errorf("undefined state partition")
 	}
+	if r.Partitions.Boot == nil || r.Partitions.Boot.MountPoint == "" {
+		return fmt.Errorf("undefined bootloader partition, layouts without a bootloader partition (%s) are not supported", constants.BootPartName)
+	}
 
 	return nil
 }
@@ -423,10 +426,8 @@ func (u *UpgradeSpec) Sanitize() error {
 		}
 	}
 
-	if u.BootloaderUpgrade {
-		if u.Partitions.Boot == nil || u.Partitions.Boot.MountPoint == "" {
-			return fmt.Errorf("undefined Bootloader partition")
-		}
+	if u.Partitions.Boot == nil || u.Partitions.Boot.MountPoint == "" {
+		return fmt.Errorf("undefined bootloader partition, layouts without a bootloader partition (%s) are not supported", constants.BootPartName)
 	}
 
 	// Set default label for non squashfs images
@@ -537,6 +538,18 @@ type ElementalPartitions struct {
 	Persistent *Partition `yaml:"persistent,omitempty" mapstructure:"persistent"`
 }
 
+// GetBootloaderDisk returns the disk device holding the bootloader partition, falls back
+// to the disk of the state partition. Returns an empty string if none is known.
+func (ep ElementalPartitions) GetBootloaderDisk() string {
+	if ep.Boot != nil && ep.Boot.Disk != "" {
+		return ep.Boot.Disk
+	}
+	if ep.State != nil {
+		return ep.State.Disk
+	}
+	return ""
+}
+
 // GetConfigStorage returns the path, usually a mountpoint, of the configuration partition
 func (ep ElementalPartitions) GetConfigStorage() string {
 	if ep.OEM != nil {
@@ -553,6 +566,12 @@ func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable 
 		}
 		ep.BIOS = nil
 	} else if firmware == BIOS && partTable == GPT {
+		// The bootloader partition is kept on legacy BIOS: it holds the grub
+		// modules and configuration (shared with EFI) and the EFI binaries,
+		// so the same disk can boot in both modes.
+		if ep.Boot == nil {
+			return fmt.Errorf("nil bootloader partition")
+		}
 		ep.BIOS = &Partition{
 			FilesystemLabel: "",
 			Size:            constants.BiosSize,
@@ -561,7 +580,6 @@ func (ep *ElementalPartitions) SetFirmwarePartitions(firmware string, partTable 
 			MountPoint:      "",
 			Flags:           []string{bios},
 		}
-		ep.Boot = nil
 	} else {
 		if ep.State == nil {
 			return fmt.Errorf("nil state partition")

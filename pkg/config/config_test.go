@@ -136,7 +136,18 @@ var _ = Describe("Types", Label("types", "config"), func() {
 
 				Expect(spec.Partitions.Boot).NotTo(BeNil())
 			})
+			It("sets legacy BIOS firmware if no EFI firmware is detected", Label("install"), func() {
+				spec := config.NewInstallSpec(*c)
+				Expect(spec.Firmware).To(Equal(types.BIOS))
+				Expect(spec.Partitions.Boot).NotTo(BeNil())
+				Expect(spec.Partitions.SetFirmwarePartitions(spec.Firmware, spec.PartTable)).To(Succeed())
+				Expect(spec.Partitions.BIOS).NotTo(BeNil())
+				Expect(spec.Partitions.Boot).NotTo(BeNil())
+			})
 			It("sets installation defaults without being on installation media", Label("install"), func() {
+				// Set EFI firmware detection
+				err := utils.MkdirAll(c.Fs, constants.EfiDevice, constants.DirPerm)
+				Expect(err).ShouldNot(HaveOccurred())
 				spec := config.NewInstallSpec(*c)
 				Expect(spec.Firmware).To(Equal(types.EFI))
 				Expect(spec.System.IsEmpty()).To(BeTrue())

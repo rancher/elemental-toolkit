@@ -416,6 +416,11 @@ var _ = Describe("Config", Label("config"), func() {
 							Type:            "ext4",
 							MountPoint:      constants.RunningStateDir,
 						},
+						{
+							Name:            "device3",
+							FilesystemLabel: "COS_GRUB",
+							Type:            "vfat",
+						},
 					},
 				}
 				ghwTest = mocks.GhwMock{}
@@ -484,6 +489,11 @@ var _ = Describe("Config", Label("config"), func() {
 							FilesystemLabel: "COS_RECOVERY",
 							Type:            "ext4",
 							MountPoint:      constants.RunningStateDir,
+						},
+						{
+							Name:            "device4",
+							FilesystemLabel: "COS_GRUB",
+							Type:            "vfat",
 						},
 					},
 				}

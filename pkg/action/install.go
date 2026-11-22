@@ -64,6 +64,8 @@ func NewInstallAction(cfg *types.RunConfig, spec *types.InstallSpec, opts ...Ins
 		i.bootloader = bootloader.NewGrub(&cfg.Config,
 			bootloader.WithGrubDisableBootEntry(i.spec.DisableBootEntry),
 			bootloader.WithGrubAutoDisableBootEntry(),
+			bootloader.WithGrubFirmware(i.spec.Firmware),
+			bootloader.WithGrubBIOSDevice(i.spec.Target),
 		)
 	}
 

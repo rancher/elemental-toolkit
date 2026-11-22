@@ -19,6 +19,8 @@ RUN ARCH=$(uname -m); \
       ADD_PKGS+=" shim"; \
       [[ "${ARCH}" == "aarch64" ]] && ARCH="arm64"; \
     fi; \
+    # legacy BIOS boot support on x86_64
+    [[ "${ARCH}" == "x86_64" ]] && ADD_PKGS+=" grub2-i386-pc"; \
     zypper --non-interactive removerepo repo-update || true; \
     zypper --non-interactive --gpg-auto-import-keys install --no-recommends -- \
       kernel-default \

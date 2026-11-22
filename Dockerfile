@@ -43,8 +43,10 @@ ARG TARGETARCH
 
 RUN ARCH=$(uname -m); \
     [[ "${ARCH}" == "aarch64" ]] && ARCH="arm64"; \
+    # legacy BIOS grub modules, required to install for legacy BIOS on x86_64
+    [[ "${ARCH}" == "x86_64" ]] && ADD_PKGS+=" grub2-i386-pc"; \
     zypper --non-interactive removerepo repo-update || true; \
-    zypper install -y --no-recommends xfsprogs \
+    zypper install -y --no-recommends ${ADD_PKGS} xfsprogs \
         parted \
         util-linux-systemd \
         e2fsprogs \

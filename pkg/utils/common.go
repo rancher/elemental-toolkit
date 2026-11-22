@@ -663,3 +663,12 @@ func PreAppendRoot(root string, paths ...string) []string {
 	}
 	return newPaths
 }
+
+// DetectFirmware returns the firmware type of the running host, efi if EFI
+// firmware interfaces are available, bios otherwise.
+func DetectFirmware(fs types.FS) string {
+	if efiExists, _ := Exists(fs, constants.EfiDevice); efiExists {
+		return types.EFI
+	}
+	return types.BIOS
+}

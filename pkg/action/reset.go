@@ -95,6 +95,8 @@ func NewResetAction(cfg *types.RunConfig, spec *types.ResetSpec, opts ...ResetAc
 			bootloader.WithGrubDisableBootEntry(r.spec.DisableBootEntry),
 			bootloader.WithGrubAutoDisableBootEntry(),
 			bootloader.WithGrubClearBootEntry(false),
+			bootloader.WithGrubFirmware(utils.DetectFirmware(cfg.Fs)),
+			bootloader.WithGrubBIOSDevice(r.spec.Partitions.GetBootloaderDisk()),
 		)
 	}
 

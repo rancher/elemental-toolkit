@@ -280,6 +280,16 @@ func GetDefaultGrubModules() []string {
 	return []string{"loopback.mod", "squash4.mod", "xzio.mod"}
 }
 
+// GetGrubBIOSModulesPatterns returns patterns to find the grub i386-pc boot image,
+// its directory contains the modules required for legacy BIOS installs
+func GetGrubBIOSModulesPatterns() []string {
+	return []string{
+		"/usr/share/grub2/i386-pc/boot.img",
+		"/usr/lib/grub2/i386-pc/boot.img",
+		"/usr/lib/grub/i386-pc/boot.img",
+	}
+}
+
 func GetDefaultGrubModulesPatterns() []string {
 	return []string{
 		"/boot/grub2/*-efi",
