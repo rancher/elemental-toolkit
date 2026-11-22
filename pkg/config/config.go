@@ -200,7 +200,7 @@ func NewInstallSpec(cfg types.Config) *types.InstallSpec {
 	recoverySystem.MountPoint = constants.TransitionDir
 
 	return &types.InstallSpec{
-		Firmware:       types.EFI,
+		Firmware:       utils.DetectFirmware(cfg.Fs),
 		PartTable:      types.GPT,
 		Partitions:     NewInstallElementalPartitions(),
 		System:         system,
@@ -228,21 +228,46 @@ func NewMountSpec(cfg types.Config) *types.MountSpec {
 		selinuxRelabel = true
 	}
 
+	volumes := []*types.VolumeMount{
+		{
+			Mountpoint: constants.OEMPath,
+			Device:     fmt.Sprintf("PARTLABEL=%s", constants.OEMPartName),
+			Options:    []string{"rw", "defaults"},
+		},
+	}
+
+	// Legacy BIOS installs from elemental-toolkit v1.x have no bootloader partition, grub
+	// lives in the state partition, so mount it as the bootloader partition instead
+	efiPart, _ := utils.Exists(cfg.Fs, filepath.Join("/dev/disk/by-partlabel", constants.BootPartName))
+	statePart, _ := utils.Exists(cfg.Fs, filepath.Join("/dev/disk/by-partlabel", constants.StatePartName))
+	recoveryMode, _ := utils.Exists(cfg.Fs, constants.RecoveryMode)
+	switch {
+	case efiPart || !statePart:
+		volumes = append(volumes, &types.VolumeMount{
+			Mountpoint: constants.BootDir,
+			Device:     fmt.Sprintf("PARTLABEL=%s", constants.BootPartName),
+			Options:    []string{"ro", "defaults"},
+		})
+	case recoveryMode:
+		// Do not hold the state partition in recovery mode, reset needs to format it
+		// and services with private mount namespaces would keep a copy of the mount
+		cfg.Logger.Warnf("no bootloader partition found, not mounting %s in recovery mode (legacy BIOS layout)", constants.BootDir)
+	default:
+		cfg.Logger.Warnf("no bootloader partition found, mounting the state partition at %s (legacy BIOS layout)", constants.BootDir)
+		volumes = append(volumes, &types.VolumeMount{
+			Mountpoint: constants.BootDir,
+			Device:     fmt.Sprintf("PARTLABEL=%s", constants.StatePartName),
+			// The state partition is already mounted read-write by the initrd, a second
+			// mount can't change the read-only state of the filesystem
+			Options: []string{"rw", "defaults"},
+		})
+	}
+
 	return &types.MountSpec{
 		Sysroot:        "/sysroot",
 		WriteFstab:     true,
 		SelinuxRelabel: selinuxRelabel,
-		Volumes: []*types.VolumeMount{
-			{
-				Mountpoint: constants.OEMPath,
-				Device:     fmt.Sprintf("PARTLABEL=%s", constants.OEMPartName),
-				Options:    []string{"rw", "defaults"},
-			}, {
-				Mountpoint: constants.BootDir,
-				Device:     fmt.Sprintf("PARTLABEL=%s", constants.BootPartName),
-				Options:    []string{"ro", "defaults"},
-			},
-		},
+		Volumes:        volumes,
 		Ephemeral: types.EphemeralMounts{
 			Type:  constants.Tmpfs,
 			Size:  "25%",
@@ -372,9 +397,24 @@ func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
 		}
 	}
 
+	// Legacy BIOS installs from elemental-toolkit v1.x keep grub in the state partition
+	if utils.DetectFirmware(cfg.Fs) == types.BIOS && ep.SetLegacyBootPartition() {
+		cfg.Logger.Warnf("no bootloader partition found, using the state partition for grub (legacy BIOS layout)")
+	}
+
 	if ep.Boot != nil {
 		if ep.Boot.MountPoint == "" {
 			ep.Boot.MountPoint = constants.BootDir
+		}
+	}
+
+	// Upgrades from elemental-toolkit v1.x deployments must also update the bootloader,
+	// otherwise grub keeps loading the v1.x configuration and images
+	bootloaderUpgrade := false
+	if ep.State != nil {
+		if ok, _ := utils.Exists(cfg.Fs, filepath.Join(ep.State.MountPoint, constants.LegacyImagesPath)); ok {
+			cfg.Logger.Infof("legacy deployment detected, the bootloader will be upgraded too")
+			bootloaderUpgrade = true
 		}
 	}
 
@@ -388,10 +428,11 @@ func NewUpgradeSpec(cfg types.Config) (*types.UpgradeSpec, error) {
 	}
 
 	return &types.UpgradeSpec{
-		System:         types.NewEmptySrc(),
-		RecoverySystem: recovery,
-		Partitions:     ep,
-		State:          installState,
+		System:            types.NewEmptySrc(),
+		RecoverySystem:    recovery,
+		Partitions:        ep,
+		State:             installState,
+		BootloaderUpgrade: bootloaderUpgrade,
 	}, nil
 }
 
@@ -416,14 +457,8 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 	}
 	ep := types.NewElementalPartitionsFromList(parts, installState)
 
-	if efiExists {
-		if ep.Boot == nil {
-			return nil, fmt.Errorf("Bootloader partition not found")
-		}
-		if ep.Boot.MountPoint == "" {
-			ep.Boot.MountPoint = constants.BootDir
-		}
-		ep.Boot.Name = constants.BootPartName
+	if efiExists && ep.Boot == nil {
+		return nil, fmt.Errorf("Bootloader partition not found")
 	}
 
 	if ep.State == nil {
@@ -440,6 +475,20 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 	if ep.Recovery.MountPoint == "" {
 		ep.Recovery.MountPoint = constants.RecoveryDir
 	}
+
+	// Legacy BIOS installs from elemental-toolkit v1.x keep grub in the state partition
+	if !efiExists && ep.SetLegacyBootPartition() {
+		cfg.Logger.Warnf("no bootloader partition found, using the state partition for grub (legacy BIOS layout)")
+	}
+
+	// The bootloader partition is required on both, EFI and legacy BIOS setups
+	if ep.Boot == nil {
+		return nil, fmt.Errorf("Bootloader partition not found")
+	}
+	if ep.Boot.MountPoint == "" {
+		ep.Boot.MountPoint = constants.BootDir
+	}
+	ep.Boot.Name = constants.BootPartName
 
 	target := ep.State.Disk
 

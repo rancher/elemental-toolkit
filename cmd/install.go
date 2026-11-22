@@ -97,7 +97,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 			return err
 		},
 	}
-	firmType := newEnumFlag([]string{types.EFI}, types.EFI)
+	firmType := newEnumFlag([]string{types.EFI, types.BIOS}, types.EFI)
 	pTableType := newEnumFlag([]string{types.GPT}, types.GPT)
 
 	root.AddCommand(c)
@@ -105,8 +105,7 @@ func NewInstallCmd(root *cobra.Command, addCheckRoot bool) *cobra.Command {
 	c.Flags().StringP("iso", "i", "", "Performs an installation from the ISO url")
 	c.Flags().Bool("no-format", false, "Don’t format disks. It is implied that COS_STATE, COS_RECOVERY, COS_PERSISTENT, COS_OEM are already existing")
 
-	c.Flags().Var(firmType, "firmware", "Firmware to install, only 'efi' is currently supported")
-	_ = c.Flags().MarkDeprecated("firmware", "'firmware' is deprecated. only efi firmware is supported.")
+	c.Flags().Var(firmType, "firmware", "Firmware to install for ('efi' or 'bios'), defaults to the firmware of the running host")
 
 	c.Flags().Var(pTableType, "part-table", "Partition table type to use, only GPT type is currently supported")
 	_ = c.Flags().MarkDeprecated("part-table", "'part-table' is deprecated. only GPT type is supported.")

@@ -63,7 +63,12 @@ func NewUpgradeAction(config *types.RunConfig, spec *types.UpgradeSpec, opts ...
 	}
 
 	if u.bootloader == nil {
-		u.bootloader = bootloader.NewGrub(&config.Config, bootloader.WithGrubDisableBootEntry(true))
+		u.bootloader = bootloader.NewGrub(
+			&config.Config,
+			bootloader.WithGrubDisableBootEntry(true),
+			bootloader.WithGrubFirmware(utils.DetectFirmware(config.Fs)),
+			bootloader.WithGrubBIOSDevice(spec.Partitions.GetBootloaderDisk()),
+		)
 	}
 
 	// Reuse the snapshotter of the previous setup if there is an inconsistency

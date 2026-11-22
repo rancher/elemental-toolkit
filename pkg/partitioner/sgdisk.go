@@ -28,7 +28,8 @@ import (
 )
 
 const efiType = "EF00"
-const biosType = "EF02" //nolint:unused
+const biosType = "EF02"
+const biosFlag = "bios_grub"
 const linuxType = "8300"
 
 type gdiskCall struct {
@@ -36,6 +37,7 @@ type gdiskCall struct {
 	wipe      bool
 	parts     []*Partition
 	deletions []int
+	biosParts map[int]bool
 	runner    types.Runner
 	expand    bool
 	pretend   bool
@@ -49,6 +51,7 @@ func newGdiskCall(dev string, runner types.Runner) *gdiskCall {
 		runner:    runner,
 		parts:     []*Partition{},
 		deletions: []int{},
+		biosParts: map[int]bool{},
 	}
 }
 
@@ -80,7 +83,9 @@ func (gd gdiskCall) buildOptions() []string {
 		}
 
 		// Assumes any fat partition is for EFI
-		if isFat.MatchString(part.FileSystem) {
+		if gd.biosParts[part.Number] {
+			opts = append(opts, fmt.Sprintf("-t=%d:%s", part.Number, biosType))
+		} else if isFat.MatchString(part.FileSystem) {
 			opts = append(opts, fmt.Sprintf("-t=%d:%s", part.Number, efiType))
 		} else if part.FileSystem != "" {
 			opts = append(opts, fmt.Sprintf("-t=%d:%s", part.Number, linuxType))
@@ -119,6 +124,7 @@ func (gd *gdiskCall) WriteChanges() (string, error) {
 	gd.wipe = false
 	gd.parts = []*Partition{}
 	gd.deletions = []int{}
+	gd.biosParts = map[int]bool{}
 	return string(out), err
 }
 
@@ -137,9 +143,15 @@ func (gd *gdiskCall) DeletePartition(num int) {
 	gd.deletions = append(gd.deletions, num)
 }
 
-func (gd *gdiskCall) SetPartitionFlag(_ int, _ string, _ bool) {
-	// Just implemented in case there is a shared interface with parted wrapper someday
+func (gd *gdiskCall) SetPartitionFlag(num int, flag string, active bool) {
 	// sgdisk does not make use of flags concept, doesn't make much sense for GPT.
+	// The only flag considered is bios_grub, which is mapped to the BIOS boot partition type code.
+	if flag == biosFlag {
+		if gd.biosParts == nil {
+			gd.biosParts = map[int]bool{}
+		}
+		gd.biosParts[num] = active
+	}
 }
 
 func (gd *gdiskCall) WipeTable(wipe bool) {

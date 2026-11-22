@@ -167,6 +167,26 @@ var _ = Describe("Reset action tests", func() {
 			Expect(reset.Run()).To(BeNil())
 			Expect(runner.IncludesCmds([][]string{{"reboot", "-f"}}))
 		})
+		It("Successfully resets a legacy BIOS layout without bootloader partition", Label("bios"), func() {
+			// state partition used as bootloader partition and also mounted at the bootloader mountpoint
+			spec.Partitions.Boot = nil
+			Expect(spec.Partitions.SetLegacyBootPartition()).To(BeTrue())
+			Expect(spec.Partitions.State.Path).NotTo(BeEmpty())
+			Expect(utils.MkdirAll(fs, constants.BootDir, constants.DirPerm)).To(Succeed())
+			Expect(mounter.Mount(spec.Partitions.State.Path, constants.BootDir, "auto", []string{"rw"})).To(Succeed())
+			Expect(spec.Partitions.IsLegacyBootLayout()).To(BeTrue())
+			// btrfs snapshotter is not compatible with grub in the state partition
+			config.Snapshotter = types.NewBtrfs()
+			reset, err = action.NewResetAction(config, spec, action.WithResetBootloader(bootloader))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(config.Snapshotter.Type).To(Equal(constants.LoopDeviceSnapshotterType))
+			Expect(spec.Partitions.State.FS).NotTo(Equal(constants.Btrfs))
+			Expect(reset.Run()).To(BeNil())
+			mnts, _ := mounter.List()
+			for _, m := range mnts {
+				Expect(m.Path).NotTo(Equal(constants.BootDir))
+			}
+		})
 		It("Successfully resets on non-squashfs recovery including persistent data", func() {
 			config.PowerOff = true
 			spec.FormatPersistent = true

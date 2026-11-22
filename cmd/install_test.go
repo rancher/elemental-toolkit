@@ -38,11 +38,11 @@ var _ = Describe("Install", Label("install", "cmd"), func() {
 	AfterEach(func() {
 		viper.Reset()
 	})
-	It("Errors out setting firmware to anything else than efi", Label("flags"), func() {
-		_, _, err := executeCommandC(rootCmd, "install", "--firmware", "bios", "/dev/whatever")
+	It("Errors out setting firmware to anything else than efi or bios", Label("flags"), func() {
+		_, _, err := executeCommandC(rootCmd, "install", "--firmware", "uboot", "/dev/whatever")
 		Expect(err).ToNot(BeNil())
 		Expect(err.Error()).To(ContainSubstring("invalid argument"))
-		Expect(err.Error()).To(ContainSubstring("'bios' is not included in: efi"))
+		Expect(err.Error()).To(ContainSubstring("'uboot' is not included in: efi,bios"))
 	})
 	It("Errors out setting part-table to anything else than GPT", Label("flags"), func() {
 		_, _, err := executeCommandC(rootCmd, "install", "--part-table", "msdos", "/dev/whatever")
