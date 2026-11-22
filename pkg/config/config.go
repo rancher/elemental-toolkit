@@ -200,7 +200,7 @@ func NewInstallSpec(cfg types.Config) *types.InstallSpec {
 	recoverySystem.MountPoint = constants.TransitionDir
 
 	return &types.InstallSpec{
-		Firmware:       types.EFI,
+		Firmware:       utils.DetectFirmware(cfg.Fs),
 		PartTable:      types.GPT,
 		Partitions:     NewInstallElementalPartitions(),
 		System:         system,
@@ -416,14 +416,8 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 	}
 	ep := types.NewElementalPartitionsFromList(parts, installState)
 
-	if efiExists {
-		if ep.Boot == nil {
-			return nil, fmt.Errorf("Bootloader partition not found")
-		}
-		if ep.Boot.MountPoint == "" {
-			ep.Boot.MountPoint = constants.BootDir
-		}
-		ep.Boot.Name = constants.BootPartName
+	if efiExists && ep.Boot == nil {
+		return nil, fmt.Errorf("Bootloader partition not found")
 	}
 
 	if ep.State == nil {
@@ -440,6 +434,15 @@ func NewResetSpec(cfg types.Config) (*types.ResetSpec, error) {
 	if ep.Recovery.MountPoint == "" {
 		ep.Recovery.MountPoint = constants.RecoveryDir
 	}
+
+	// The bootloader partition is required on both, EFI and legacy BIOS setups
+	if ep.Boot == nil {
+		return nil, fmt.Errorf("Bootloader partition not found")
+	}
+	if ep.Boot.MountPoint == "" {
+		ep.Boot.MountPoint = constants.BootDir
+	}
+	ep.Boot.Name = constants.BootPartName
 
 	target := ep.State.Disk
 

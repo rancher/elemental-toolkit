@@ -195,9 +195,19 @@ var _ = Describe("Types", Label("types", "config"), func() {
 		})
 		It("sets firmware partitions on bios", func() {
 			Expect(ep.Boot == nil && ep.BIOS == nil).To(BeTrue())
+			// bootloader partition is required on legacy BIOS too
 			err := ep.SetFirmwarePartitions(types.BIOS, types.GPT)
+			Expect(err).Should(HaveOccurred())
+
+			ep.Boot = &types.Partition{Name: constants.BootPartName}
+			err = ep.SetFirmwarePartitions(types.BIOS, types.GPT)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(ep.Boot == nil && ep.BIOS != nil).To(BeTrue())
+			Expect(ep.Boot != nil && ep.BIOS != nil).To(BeTrue())
+			Expect(ep.BIOS.Flags).To(ContainElement("bios_grub"))
+			// BIOS boot partition is placed first
+			parts := ep.PartitionsByInstallOrder(types.PartitionList{})
+			Expect(parts[0]).To(Equal(ep.BIOS))
+			Expect(parts[1]).To(Equal(ep.Boot))
 		})
 		It("sets firmware partitions on msdos", func() {
 			ep.State = &types.Partition{}
@@ -435,10 +445,18 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					State: &types.Partition{
 						MountPoint: "mountpoint",
 					},
+					Boot: &types.Partition{
+						MountPoint: "mountpoint",
+					},
 				},
 			}
 			err := spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
+
+			//Fails on missing bootloader partition
+			spec.Partitions.Boot = nil
+			err = spec.Sanitize()
+			Expect(err).Should(HaveOccurred())
 
 			//Fails on missing state partition
 			spec.Partitions.State = nil
@@ -466,10 +484,19 @@ var _ = Describe("Types", Label("types", "config"), func() {
 					Recovery: &types.Partition{
 						MountPoint: "mountpoint",
 					},
+					Boot: &types.Partition{
+						MountPoint: "mountpoint",
+					},
 				},
 			}
 			err := spec.Sanitize()
 			Expect(err).ShouldNot(HaveOccurred())
+
+			// Fails on missing bootloader partition
+			bootPart := spec.Partitions.Boot
+			spec.Partitions.Boot = nil
+			Expect(spec.Sanitize()).NotTo(Succeed())
+			spec.Partitions.Boot = bootPart
 
 			// Sets image labels to empty string on squashfs
 			spec.RecoverySystem.FS = constants.SquashFs

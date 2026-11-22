@@ -65,6 +65,11 @@ type Grub struct {
 	disableBootEntry   bool
 	clearBootEntry     bool
 	secureBoot         bool
+
+	// firmware is the firmware type the bootloader is installed for (efi or bios)
+	firmware string
+	// biosDevice is the disk device grub core image is embedded to on legacy BIOS installs
+	biosDevice string
 }
 
 var _ types.Bootloader = (*Grub)(nil)
@@ -88,6 +93,7 @@ func NewGrub(cfg *types.Config, opts ...GrubOptions) *Grub {
 		legacyElementalCfg: filepath.Join(constants.LegacyGrubCfgPath, constants.GrubCfg),
 		clearBootEntry:     true,
 		secureBoot:         secureBoot,
+		firmware:           types.EFI,
 	}
 
 	for _, o := range opts {
@@ -122,6 +128,33 @@ func WithGrubDisableBootEntry(disableBootEntry bool) func(g *Grub) error {
 	}
 }
 
+// WithGrubFirmware sets the firmware type (efi or bios) the bootloader is installed for
+func WithGrubFirmware(firmware string) func(g *Grub) error {
+	return func(g *Grub) error {
+		switch firmware {
+		case "":
+			return nil
+		case types.EFI, types.BIOS:
+			g.firmware = firmware
+			if firmware == types.BIOS {
+				// There are no EFI variables to manage on legacy BIOS systems
+				g.disableBootEntry = true
+			}
+			return nil
+		default:
+			return fmt.Errorf("unsupported firmware type: %s", firmware)
+		}
+	}
+}
+
+// WithGrubBIOSDevice sets the disk device used to embed the grub core image on legacy BIOS installs
+func WithGrubBIOSDevice(device string) func(g *Grub) error {
+	return func(g *Grub) error {
+		g.biosDevice = device
+		return nil
+	}
+}
+
 func WithGrubAutoDisableBootEntry() func(g *Grub) error {
 	return func(g *Grub) error {
 		if g.disableBootEntry {
@@ -129,10 +162,20 @@ func WithGrubAutoDisableBootEntry() func(g *Grub) error {
 			return nil
 		}
 
+		if exists, _ := utils.Exists(g.fs, constants.EfivarsMountPath); !exists {
+			// No efivars on this host (e.g. legacy BIOS), there are no boot entries to write
+			g.logger.Debugf("%s not found, disabling EFI boot entry creation", constants.EfivarsMountPath)
+			g.disableBootEntry = true
+			return nil
+		}
+
 		rw, err := elemental.IsRWMountPoint(g.runner, constants.EfivarsMountPath)
 		if err != nil {
-			g.logger.Errorf("error finding efivar mounts: %s", err.Error())
-			return err
+			// efivars is not a mountpoint, e.g. running in a container. Writing boot
+			// entries is not possible, disable it rather than failing
+			g.logger.Warnf("error finding efivar mounts, disabling EFI boot entry creation: %s", err.Error())
+			g.disableBootEntry = true
+			return nil
 		}
 
 		// If efivars is not RW, disable writing boot entries.
@@ -419,6 +462,10 @@ func (g *Grub) SetDefaultEntry(partMountPoint, imgMountPoint, defaultEntry strin
 
 // Install installs grub into the device, copy the config file and add any extra TTY to grub
 func (g *Grub) Install(rootDir, bootDir string) (err error) {
+	if g.firmware == types.BIOS {
+		return g.installForBIOS(rootDir, bootDir)
+	}
+
 	err = g.InstallEFI(rootDir, bootDir)
 	if err != nil {
 		return err
@@ -467,5 +514,79 @@ func (g Grub) InstallConfig(rootDir, bootDir string) error {
 		}
 	}
 
+	return nil
+}
+
+// installForBIOS installs grub for legacy BIOS firmware. EFI binaries are also
+// installed in the bootloader partition when available, so the same disk can
+// boot in both, legacy BIOS and UEFI modes. No EFI boot entries are created.
+func (g *Grub) installForBIOS(rootDir, bootDir string) error {
+	err := g.InstallEFI(rootDir, bootDir)
+	if err != nil {
+		g.logger.Warnf("EFI binaries not installed, the system will only boot in legacy BIOS mode: %s", err.Error())
+	}
+
+	err = g.InstallBIOS(rootDir, bootDir)
+	if err != nil {
+		return err
+	}
+
+	return g.InstallConfig(rootDir, bootDir)
+}
+
+// InstallBIOS embeds the grub core image into the BIOS boot partition of the
+// configured device and installs the i386-pc modules into the bootloader partition.
+// rootDir is the root of the OS image, modules are taken from there so they match
+// the grub version of the installed OS. bootDir is the bootloader partition mountpoint.
+// It also writes a small grub.cfg in the grub prefix directory that loads the
+// elemental grub configuration shared with EFI.
+func (g *Grub) InstallBIOS(rootDir, bootDir string) error {
+	if g.biosDevice == "" {
+		return fmt.Errorf("undefined target device to install grub for legacy BIOS")
+	}
+
+	bootImg, err := utils.FindFile(g.fs, rootDir, constants.GetGrubBIOSModulesPatterns()...)
+	if err != nil {
+		g.logger.Errorf("failed to find grub i386-pc modules, is grub2-i386-pc installed in the image?")
+		return err
+	}
+	modulesDir := filepath.Dir(bootImg)
+
+	cmd := "grub2-install"
+	prefixDir := "grub2"
+	if !g.runner.CommandExists(cmd) {
+		cmd = "grub-install"
+		prefixDir = "grub"
+	}
+
+	g.logger.Infof("Installing grub for legacy BIOS to %s", g.biosDevice)
+	out, err := g.runner.Run(
+		cmd, "--target=i386-pc",
+		fmt.Sprintf("--directory=%s", modulesDir),
+		fmt.Sprintf("--boot-directory=%s", bootDir),
+		g.biosDevice,
+	)
+	if err != nil {
+		g.logger.Errorf("failed installing grub for legacy BIOS: %s", string(out))
+		return err
+	}
+
+	// grub-install sets the prefix to <bootDir>/<prefixDir>, from there
+	// we chain load the elemental grub configuration
+	stubDir := filepath.Join(bootDir, prefixDir)
+	err = utils.MkdirAll(g.fs, stubDir, constants.DirPerm)
+	if err != nil {
+		return fmt.Errorf("error creating grub dir: %s", err.Error())
+	}
+	stub := fmt.Sprintf(
+		"# Generated by elemental, legacy BIOS entry point\nconfigfile %s\n",
+		filepath.Join(constants.EntryEFIPath, g.configFile),
+	)
+	err = g.fs.WriteFile(filepath.Join(stubDir, g.configFile), []byte(stub), constants.FilePerm)
+	if err != nil {
+		return fmt.Errorf("error writing grub config stub: %s", err.Error())
+	}
+
+	g.logger.Infof("Grub install for legacy BIOS to device %s complete", g.biosDevice)
 	return nil
 }

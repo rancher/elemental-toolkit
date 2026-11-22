@@ -109,6 +109,125 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 		)
 	})
 
+	Describe("legacy BIOS", Label("bios"), func() {
+		var cmds [][]string
+		BeforeEach(func() {
+			cmds = [][]string{}
+			runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
+				cmds = append(cmds, append([]string{cmd}, args...))
+				return []byte{}, nil
+			}
+			Expect(utils.MkdirAll(fs, filepath.Join(rootDir, "/usr/share/grub2/i386-pc"), constants.DirPerm)).To(Succeed())
+			Expect(fs.WriteFile(filepath.Join(rootDir, "/usr/share/grub2/i386-pc/boot.img"), []byte(""), constants.FilePerm)).To(Succeed())
+		})
+
+		It("installs grub for BIOS, EFI binaries and the config stub", func() {
+			grub = bootloader.NewGrub(
+				cfg, bootloader.WithGrubFirmware(types.BIOS),
+				bootloader.WithGrubBIOSDevice("/dev/sda"),
+			)
+			Expect(grub).NotTo(BeNil())
+			Expect(grub.Install(rootDir, efiDir)).To(Succeed())
+
+			// grub-install embeds core image in the device using modules from the image root
+			var grubInstall []string
+			for _, c := range cmds {
+				if c[0] == "grub2-install" {
+					grubInstall = c
+				}
+			}
+			Expect(grubInstall).To(HaveLen(5))
+			Expect(grubInstall[1]).To(Equal("--target=i386-pc"))
+			Expect(grubInstall[2]).To(HavePrefix("--directory="))
+			Expect(grubInstall[2]).To(HaveSuffix(filepath.Join(rootDir, "/usr/share/grub2/i386-pc")))
+			Expect(grubInstall[3]).To(Equal("--boot-directory=" + efiDir))
+			Expect(grubInstall[4]).To(Equal("/dev/sda"))
+
+			// No EFI boot entries are created on legacy BIOS
+			for _, c := range cmds {
+				Expect(c[0]).NotTo(Equal("efibootmgr"))
+			}
+
+			// Stub config chain loads the elemental config
+			data, err := fs.ReadFile(filepath.Join(efiDir, "grub2/grub.cfg"))
+			Expect(err).To(BeNil())
+			Expect(string(data)).To(ContainSubstring("configfile /EFI/ELEMENTAL/grub.cfg"))
+
+			data, err = fs.ReadFile(filepath.Join(efiDir, "/EFI/ELEMENTAL/grub.cfg"))
+			Expect(err).To(BeNil())
+			Expect(data).To(Equal(grubCfg))
+
+			// EFI binaries are also installed, so the disk can boot in UEFI mode too
+			_, err = fs.Stat(filepath.Join(efiDir, "/EFI/BOOT/bootx64.efi"))
+			Expect(err).To(BeNil())
+		})
+
+		It("installs for BIOS even if EFI binaries are missing", func() {
+			Expect(fs.RemoveAll(filepath.Join(rootDir, "/usr/share/efi"))).To(Succeed())
+			grub = bootloader.NewGrub(
+				cfg, bootloader.WithGrubFirmware(types.BIOS),
+				bootloader.WithGrubBIOSDevice("/dev/sda"),
+			)
+			Expect(grub.Install(rootDir, efiDir)).To(Succeed())
+			_, err = fs.Stat(filepath.Join(efiDir, "grub2/grub.cfg"))
+			Expect(err).To(BeNil())
+		})
+
+		It("fails if no device is set", func() {
+			grub = bootloader.NewGrub(cfg, bootloader.WithGrubFirmware(types.BIOS))
+			Expect(grub.Install(rootDir, efiDir)).NotTo(Succeed())
+		})
+
+		It("fails if i386-pc modules are missing", func() {
+			Expect(fs.RemoveAll(filepath.Join(rootDir, "/usr/share/grub2/i386-pc"))).To(Succeed())
+			grub = bootloader.NewGrub(
+				cfg, bootloader.WithGrubFirmware(types.BIOS),
+				bootloader.WithGrubBIOSDevice("/dev/sda"),
+			)
+			Expect(grub.Install(rootDir, efiDir)).NotTo(Succeed())
+		})
+
+		It("fails if grub install fails", func() {
+			runner.SideEffect = func(cmd string, _ ...string) ([]byte, error) {
+				if cmd == "grub2-install" {
+					return []byte("boom"), fmt.Errorf("grub2-install failed")
+				}
+				return []byte{}, nil
+			}
+			grub = bootloader.NewGrub(
+				cfg, bootloader.WithGrubFirmware(types.BIOS),
+				bootloader.WithGrubBIOSDevice("/dev/sda"),
+			)
+			Expect(grub.Install(rootDir, efiDir)).NotTo(Succeed())
+		})
+
+		It("rejects unknown firmware types", func() {
+			Expect(bootloader.NewGrub(cfg, bootloader.WithGrubFirmware("uboot"))).To(BeNil())
+		})
+
+		It("disables boot entries when efivars is not a mountpoint", func() {
+			Expect(utils.MkdirAll(fs, constants.EfivarsMountPath, constants.DirPerm)).To(Succeed())
+			runner.SideEffect = func(cmd string, _ ...string) ([]byte, error) {
+				if cmd == "findmnt" {
+					return []byte{}, fmt.Errorf("not a mountpoint")
+				}
+				return []byte{}, nil
+			}
+			grub = bootloader.NewGrub(cfg, bootloader.WithGrubAutoDisableBootEntry())
+			Expect(grub).NotTo(BeNil())
+			Expect(grub.Install(rootDir, efiDir)).To(Succeed())
+			Expect(runner.IncludesCmds([][]string{{"efibootmgr"}})).NotTo(Succeed())
+		})
+
+		It("disables boot entries when efivars are not available", func() {
+			grub = bootloader.NewGrub(cfg, bootloader.WithGrubAutoDisableBootEntry())
+			Expect(grub).NotTo(BeNil())
+			for _, c := range cmds {
+				Expect(c[0]).NotTo(Equal("findmnt"))
+			}
+		})
+	})
+
 	It("installs without errors and auto detects there is no writable efivars", func() {
 		runner.SideEffect = func(cmd string, args ...string) ([]byte, error) {
 			if cmd == "findmnt" && len(args) > 0 && args[0] == "-fno" {
