@@ -171,8 +171,11 @@ func WithGrubAutoDisableBootEntry() func(g *Grub) error {
 
 		rw, err := elemental.IsRWMountPoint(g.runner, constants.EfivarsMountPath)
 		if err != nil {
-			g.logger.Errorf("error finding efivar mounts: %s", err.Error())
-			return err
+			// efivars is not a mountpoint, e.g. running in a container. Writing boot
+			// entries is not possible, disable it rather than failing
+			g.logger.Warnf("error finding efivar mounts, disabling EFI boot entry creation: %s", err.Error())
+			g.disableBootEntry = true
+			return nil
 		}
 
 		// If efivars is not RW, disable writing boot entries.

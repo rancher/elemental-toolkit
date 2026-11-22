@@ -205,6 +205,20 @@ var _ = Describe("Booloader", Label("bootloader", "grub"), func() {
 			Expect(bootloader.NewGrub(cfg, bootloader.WithGrubFirmware("uboot"))).To(BeNil())
 		})
 
+		It("disables boot entries when efivars is not a mountpoint", func() {
+			Expect(utils.MkdirAll(fs, constants.EfivarsMountPath, constants.DirPerm)).To(Succeed())
+			runner.SideEffect = func(cmd string, _ ...string) ([]byte, error) {
+				if cmd == "findmnt" {
+					return []byte{}, fmt.Errorf("not a mountpoint")
+				}
+				return []byte{}, nil
+			}
+			grub = bootloader.NewGrub(cfg, bootloader.WithGrubAutoDisableBootEntry())
+			Expect(grub).NotTo(BeNil())
+			Expect(grub.Install(rootDir, efiDir)).To(Succeed())
+			Expect(runner.IncludesCmds([][]string{{"efibootmgr"}})).NotTo(Succeed())
+		})
+
 		It("disables boot entries when efivars are not available", func() {
 			grub = bootloader.NewGrub(cfg, bootloader.WithGrubAutoDisableBootEntry())
 			Expect(grub).NotTo(BeNil())
