@@ -417,7 +417,10 @@ func newWinCertificateGUID(cert *uefi.WIN_CERTIFICATE_UEFI_GUID) (WinCertificate
 		}
 		return &WinCertificatePKCS7{p7: p7}, nil
 	default:
-		return &WinCertificateGUIDUnknown{unknownGUIDType: GUID(cert.CertType), Data: cert.CertData}, nil
+		return &WinCertificateGUIDUnknown{
+			unknownGUIDType: GUID(cert.CertType),
+			Data:            cert.CertData,
+		}, nil
 	}
 }
 
@@ -613,67 +616,63 @@ func digestAlgorithmIdToCryptoHash(id GUID) (crypto.Hash, error) {
 // *[WinCertificatePKCS1v15], *[WinCertificatePKCS7] or
 // *[WinCertificateGUIDPKCS1v15].
 func ReadWinCertificate(r io.Reader) (WinCertificate, error) {
+	rHdr := new(bytes.Buffer)
+	rTmp := io.TeeReader(r, rHdr)
+
 	var hdr uefi.WIN_CERTIFICATE
-	if err := binary.Read(r, binary.LittleEndian, &hdr); err != nil {
-		return nil, err
+	if err := binary.Read(rTmp, binary.LittleEndian, &hdr); err != nil {
+		return nil, ioerr.PassRawEOF("cannot read WIN_CERTIFICATE: %w", err)
 	}
-	if hdr.Revision != 0x0200 {
-		return nil, errors.New("unexpected revision")
-	}
+
+	mr := io.MultiReader(rHdr, r)
 
 	switch hdr.CertificateType {
 	case uefi.WIN_CERT_TYPE_PKCS_SIGNED_DATA:
-		cert := uefi.WIN_CERTIFICATE_EFI_PKCS{Hdr: hdr}
-		cert.CertData = make([]byte, int(cert.Hdr.Length)-binary.Size(cert.Hdr))
-		if _, err := io.ReadFull(r, cert.CertData); err != nil {
-			return nil, ioerr.EOFIsUnexpected("cannot read WIN_CERTIFICATE_EFI_PKCS: %w", err)
+		cert, err := uefi.Read_WIN_CERTIFICATE_EFI_PKCS(mr)
+		if err != nil {
+			return nil, ioerr.PassRawEOF("cannot read WIN_CERTIFICATE_EFI_PKCS: %w", err)
 		}
 
 		p7, err := pkcs7.UnmarshalSignedData(cert.CertData)
 		if err != nil {
-			return nil, fmt.Errorf("cannot decode WIN_CERTIFICATE_EFI_PKCS payload: %w", err)
+			return nil, fmt.Errorf("cannot decode WIN_CERTIFICATE_EFI_PKCS.CertData payload: %w", err)
 		}
 		if len(p7.GetSigners()) != 1 {
-			return nil, errors.New("WIN_CERTIFICATE_EFI_PKCS has invalid number of signers")
+			return nil, errors.New("WIN_CERTIFICATE_EFI_PKCS.CertData PKCS7 content has invalid number of signers")
 		}
 
 		if !p7.ContentType().Equal(oidSpcIndirectData) {
-			return nil, errors.New("WIN_CERTIFICATE_EFI_PKCS has invalid content type")
+			return nil, fmt.Errorf("WIN_CERTIFICATE_EFI_PKCS.CertData PKCS7 content has invalid content type (expected %v)", oidSpcIndirectData)
 		}
 		auth, err := unmarshalAuthenticodeContent(p7.Content())
 		if err != nil {
-			return nil, fmt.Errorf("cannot decode authenticode content for WIN_CERTIFICATE_EFI_PKCS: %w", err)
+			return nil, fmt.Errorf("cannot decode authenticode content for WIN_CERTIFICATE_EFI_PKCS from PKCS7 contents: %w", err)
 		}
-		return &WinCertificateAuthenticode{p7: p7, authenticode: auth}, nil
+		return &WinCertificateAuthenticode{
+			p7:           p7,
+			authenticode: auth,
+		}, nil
 	case uefi.WIN_CERT_TYPE_EFI_PKCS115:
-		if hdr.Length != uint32(binary.Size(uefi.WIN_CERTIFICATE_EFI_PKCS1_15{})) {
-			return nil, fmt.Errorf("invalid length for WIN_CERTIFICATE_EFI_PKCS1_15: %d", hdr.Length)
-		}
-
-		cert := uefi.WIN_CERTIFICATE_EFI_PKCS1_15{Hdr: hdr}
-		if _, err := io.ReadFull(r, cert.HashAlgorithm[:]); err != nil {
-			return nil, ioerr.EOFIsUnexpected("cannot read WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
-		}
-		if _, err := io.ReadFull(r, cert.Signature[:]); err != nil {
-			return nil, ioerr.EOFIsUnexpected("cannot read WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
+		cert, err := uefi.Read_WIN_CERTIFICATE_EFI_PKCS1_15(mr)
+		if err != nil {
+			return nil, ioerr.PassRawEOF("cannot read WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
 		}
 
 		digest, err := digestAlgorithmIdToCryptoHash(GUID(cert.HashAlgorithm))
 		if err != nil {
-			return nil, fmt.Errorf("cannot determine digest algorithm for WIN_CERTIFICATE_EFI_PKCS1_15: %w", err)
+			return nil, fmt.Errorf("cannot determine digest algorithm from WIN_CERTIFICATE_EFI_PKCS1_15.HashAlgorithm: %w", err)
 		}
 
-		return &WinCertificatePKCS1v15{HashAlgorithm: digest, Signature: cert.Signature}, nil
+		return &WinCertificatePKCS1v15{
+			HashAlgorithm: digest,
+			Signature:     cert.Signature,
+		}, nil
 	case uefi.WIN_CERT_TYPE_EFI_GUID:
-		cert := uefi.WIN_CERTIFICATE_UEFI_GUID{Hdr: hdr}
-		cert.CertData = make([]byte, int(cert.Hdr.Length)-binary.Size(cert.Hdr)-binary.Size(cert.CertType))
-		if _, err := io.ReadFull(r, cert.CertType[:]); err != nil {
-			return nil, ioerr.EOFIsUnexpected("cannot read WIN_CERTIFICATE_UEFI_GUID: %w", err)
+		cert, err := uefi.Read_WIN_CERTIFICATE_UEFI_GUID(mr)
+		if err != nil {
+			return nil, ioerr.PassRawEOF("cannot read WIN_CERTIFICATE_UEFI_GUID: %w", err)
 		}
-		if _, err := io.ReadFull(r, cert.CertData); err != nil {
-			return nil, ioerr.EOFIsUnexpected("cannot read WIN_CERTIFICATE_UEFI_GUID: %w", err)
-		}
-		return newWinCertificateGUID(&cert)
+		return newWinCertificateGUID(cert)
 	default:
 		return nil, errors.New("unexpected type")
 	}

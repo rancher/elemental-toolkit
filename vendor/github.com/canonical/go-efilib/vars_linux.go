@@ -204,7 +204,7 @@ func writeEfivarfsFile(path string, attrs VariableAttributes, data []byte) (retr
 			// If the supplied attributes are incompatible with the variable,
 			// the variable service will return EFI_INVALID_PARAMETER and
 			// we'll get EINVAL back. If the supplied attributes are correct
-			// but we perform a zero-byte write to an authenticated vaiable,
+			// but we perform a zero-byte write to an authenticated variable,
 			// the variable service will return EFI_SECURITY_VIOLATION, but
 			// the kernel also turns this into EINVAL. Instead, we generate
 			// an appropriate error if the supplied attributes indicate that
