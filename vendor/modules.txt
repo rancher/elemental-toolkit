@@ -28,8 +28,8 @@ github.com/Microsoft/hcsshim/pkg/ociwclayer
 # github.com/anchore/go-lzo v0.1.1
 ## explicit; go 1.24.0
 github.com/anchore/go-lzo
-# github.com/bramvdbogaerde/go-scp v1.6.0
-## explicit; go 1.21
+# github.com/bramvdbogaerde/go-scp v1.6.1
+## explicit; go 1.25.0
 github.com/bramvdbogaerde/go-scp
 # github.com/canonical/go-efilib v1.6.0
 ## explicit; go 1.18
